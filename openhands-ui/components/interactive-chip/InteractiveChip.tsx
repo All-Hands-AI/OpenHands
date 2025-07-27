@@ -1,5 +1,5 @@
 import { type PropsWithChildren, type ReactElement } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { cloneIcon } from "../../shared/utils/clone-icon";
 import "./index.css";
@@ -16,7 +16,7 @@ export type InteractiveChipProps = Omit<
   chipType?: InteractiveChipType;
   start?: ReactElement<HTMLProps<"svg">>;
   end?: ReactElement<HTMLProps<"svg">>;
-};
+} & BaseProps;
 
 export const InteractiveChip = ({
   chipType = "elevated",
@@ -24,6 +24,7 @@ export const InteractiveChip = ({
   children,
   start,
   end,
+  testId,
   ...props
 }: PropsWithChildren<InteractiveChipProps>) => {
   const buttonClassNames = buttonStyles[chipType];
@@ -34,6 +35,7 @@ export const InteractiveChip = ({
   return (
     <button
       {...props}
+      data-testid={testId}
       aria-disabled={props.disabled ? "true" : "false"}
       className={cn(
         "px-1.5 py-1 min-w-32",

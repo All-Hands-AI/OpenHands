@@ -337,7 +337,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
     if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
         logger.openhands_logger.warning(
             'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+            "Please use SANDBOX_VOLUMES instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'"
         )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts

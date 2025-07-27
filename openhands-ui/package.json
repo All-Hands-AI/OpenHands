@@ -14,7 +14,7 @@
       "email": "stephan@all-hands.dev"
     }
   ],
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.8",
   "description": "OpenHands UI Components",
   "keywords": [
     "openhands",
@@ -71,8 +71,10 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": ">=19.1.0",
+    "react-dom": ">=19.1.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.10"
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
@@ -82,9 +84,7 @@
     "react-bootstrap-icons": "^1.11.6",
     "react-select": "^5.10.2",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.1",
-    "tailwind-scrollbar": "^4.0.2",
-    "tailwindcss": "^4.1.10"
+    "tailwind-scrollbar": "^4.0.2"
   },
   "scripts": {
     "dev": "storybook dev -p 6006",
