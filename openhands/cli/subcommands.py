@@ -36,7 +36,9 @@ async def handle_cli_command(args: argparse.Namespace) -> None:
 def create_subcommand_parser() -> argparse.ArgumentParser:
     """Create the main parser with subcommands."""
     parser = argparse.ArgumentParser(
-        description='OpenHands: Code Less, Make More', prog='openhands'
+        description='OpenHands: Code Less, Make More',
+        prog='openhands',
+        epilog='For more information about a command, run: openhands COMMAND --help',
     )
 
     # Add version argument at top level
@@ -46,12 +48,15 @@ def create_subcommand_parser() -> argparse.ArgumentParser:
 
     # Create subparsers
     subparsers = parser.add_subparsers(
-        dest='command', help='Available commands', metavar='COMMAND'
+        dest='command',
+        title='commands',
+        description='OpenHands supports two main commands:',
+        metavar='COMMAND',
     )
 
     # Add 'serve' subcommand
     serve_parser = subparsers.add_parser(
-        'serve', help='Launch the OpenHands GUI server using Docker'
+        'serve', help='Launch the OpenHands GUI server using Docker (web interface)'
     )
     serve_parser.add_argument(
         '--mount-cwd',
@@ -67,7 +72,9 @@ def create_subcommand_parser() -> argparse.ArgumentParser:
     )
 
     # Add 'cli' subcommand - import all the existing CLI arguments
-    cli_parser = subparsers.add_parser('cli', help='Run OpenHands in CLI mode')
+    cli_parser = subparsers.add_parser(
+        'cli', help='Run OpenHands in CLI mode (terminal interface)'
+    )
 
     # Add all the existing CLI arguments to the cli subcommand
     _add_cli_arguments(cli_parser)
@@ -122,31 +129,6 @@ def _add_cli_arguments(parser: argparse.ArgumentParser) -> None:
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
-    # --eval configs are for evaluations only
-    parser.add_argument(
-        '--eval-output-dir',
-        default='evaluation/evaluation_outputs/outputs',
-        type=str,
-        help='The directory to save evaluation output',
-    )
-    parser.add_argument(
-        '--eval-n-limit',
-        default=None,
-        type=int,
-        help='The number of instances to evaluate',
-    )
-    parser.add_argument(
-        '--eval-num-workers',
-        default=4,
-        type=int,
-        help='The number of workers to use for evaluation',
-    )
-    parser.add_argument(
-        '--eval-note',
-        default=None,
-        type=str,
-        help='The note to add to the evaluation directory',
-    )
     parser.add_argument(
         '-l',
         '--llm-config',
@@ -166,12 +148,6 @@ def _add_cli_arguments(parser: argparse.ArgumentParser) -> None:
         help='Session name',
         type=str,
         default='',
-    )
-    parser.add_argument(
-        '--eval-ids',
-        default=None,
-        type=str,
-        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
     parser.add_argument(
         '--no-auto-continue',

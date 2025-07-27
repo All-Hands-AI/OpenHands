@@ -70,12 +70,29 @@ def main():
         parser.add_argument(
             '-v', '--version', action='store_true', help='Show version information'
         )
+
+        # Add a note about available commands
+        parser.add_argument(
+            '--commands',
+            action='store_true',
+            help=argparse.SUPPRESS,
+        )
+
         _add_cli_arguments(parser)
 
         args = parser.parse_args()
 
         if args.version:
             print(f'OpenHands version: {__version__}')
+            sys.exit(0)
+
+        if hasattr(args, 'commands') and args.commands:
+            print('OpenHands supports two main commands:')
+            print('  serve - Launch the OpenHands GUI server (web interface)')
+            print('  cli   - Run OpenHands in CLI mode (terminal interface)')
+            print(
+                '\nFor more information, run: openhands serve --help or openhands cli --help'
+            )
             sys.exit(0)
 
         # Run CLI mode using the same function as the explicit CLI subcommand
