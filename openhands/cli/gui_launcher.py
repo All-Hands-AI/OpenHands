@@ -162,6 +162,13 @@ def launch_gui_server(
         # Add the --gpus all flag to enable all GPUs
         docker_cmd.insert(2, '--gpus')
         docker_cmd.insert(3, 'all')
+        # Add environment variable to pass GPU support to sandbox containers
+        docker_cmd.extend(
+            [
+                '-e',
+                'SANDBOX_ENABLE_GPU=true',
+            ]
+        )
 
     # Add current working directory mount if requested
     if mount_cwd:
