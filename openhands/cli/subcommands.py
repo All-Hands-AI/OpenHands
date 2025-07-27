@@ -9,7 +9,7 @@ from openhands.cli.main import main_with_loop
 
 def handle_serve_command(args: argparse.Namespace) -> None:
     """Handle the 'serve' subcommand to launch GUI server."""
-    launch_gui_server(mount_cwd=args.mount_cwd)
+    launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
 
 
 async def handle_cli_command(args: argparse.Namespace) -> None:
@@ -56,6 +56,12 @@ def create_subcommand_parser() -> argparse.ArgumentParser:
     serve_parser.add_argument(
         '--mount-cwd',
         help='Mount the current working directory into the GUI server container',
+        action='store_true',
+        default=False,
+    )
+    serve_parser.add_argument(
+        '--gpu',
+        help='Enable GPU support by mounting all GPUs into the Docker container via nvidia-docker',
         action='store_true',
         default=False,
     )

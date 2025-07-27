@@ -37,6 +37,24 @@ openhands serve --mount-cwd
 
 This is useful when you want to work on files in your current directory through the GUI. The directory will be mounted at `/workspace` inside the container.
 
+#### Using GPU Support
+
+If you have NVIDIA GPUs and want to make them available to the OpenHands container, use the `--gpu` flag:
+
+```bash
+openhands serve --gpu
+```
+
+This will enable GPU support via nvidia-docker, mounting all available GPUs into the container. You can combine this with other flags:
+
+```bash
+openhands serve --gpu --mount-cwd
+```
+
+**Prerequisites for GPU support:**
+- NVIDIA GPU drivers must be installed on your host system
+- [NVIDIA Container Toolkit (nvidia-docker2)](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) must be installed and configured
+
 #### Requirements
 
 Before using the `openhands serve` command, ensure that:

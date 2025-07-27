@@ -67,12 +67,15 @@ def ensure_config_dir_exists() -> None:
     config_dir.mkdir(exist_ok=True)
 
 
-def launch_gui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
+def launch_gui_server(
+    dry_run: bool = False, mount_cwd: bool = False, gpu: bool = False
+) -> None:
     """Launch the OpenHands GUI server using Docker.
 
     Args:
         dry_run: If True, only show what would be executed without running it.
         mount_cwd: If True, mount the current working directory into the container.
+        gpu: If True, enable GPU support by mounting all GPUs into the container via nvidia-docker.
     """
     print_formatted_text(
         HTML('<ansiblue>🚀 Launching OpenHands GUI server...</ansiblue>')
@@ -150,6 +153,22 @@ def launch_gui_server(dry_run: bool = False, mount_cwd: bool = False) -> None:
         '-v',
         f'{config_dir}:/.openhands',
     ]
+
+    # Add GPU support if requested
+    if gpu:
+        print_formatted_text(
+            HTML('<ansigreen>🖥️ Enabling GPU support via nvidia-docker...</ansigreen>')
+        )
+        # Add the --gpus all flag to enable all GPUs
+        docker_cmd.insert(2, '--gpus')
+        docker_cmd.insert(3, 'all')
+        # Add environment variable to pass GPU support to sandbox containers
+        docker_cmd.extend(
+            [
+                '-e',
+                'SANDBOX_RUNTIME_GPU=true',
+            ]
+        )
 
     # Add current working directory mount if requested
     if mount_cwd:
