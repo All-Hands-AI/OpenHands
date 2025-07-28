@@ -1173,6 +1173,8 @@ def test_main(
         mock_args.reviewer,
         mock_args.pr_title,
         ANY,
+        ANY,  # git_user_name from args
+        ANY,  # git_user_email from args
     )
 
     # Other assertions
@@ -1279,9 +1281,8 @@ def test_make_commit_with_custom_git_config(mock_subprocess_run):
     custom_git_user_name = 'custom-user'
     custom_git_user_email = 'custom@example.com'
 
-    # Mock subprocess.run to simulate git username not set, then successful operations
+    # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0, stdout=''),  # git config user.name (empty)
         MagicMock(returncode=0),  # git config set user.name and user.email
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
@@ -1293,14 +1294,10 @@ def test_make_commit_with_custom_git_config(mock_subprocess_run):
 
     # Assert that subprocess.run was called with the correct arguments
     calls = mock_subprocess_run.call_args_list
-    assert len(calls) == 5
+    assert len(calls) == 4
 
-    # Check git config check call
-    git_config_check_call = calls[0][0][0]
-    assert f'git -C {repo_dir} config user.name' == git_config_check_call
-
-    # Check git config set call
-    git_config_set_call = calls[1][0][0]
+    # Check git config set call (now the first call)
+    git_config_set_call = calls[0][0][0]
     expected_config_command = (
         f'git -C {repo_dir} config user.name "{custom_git_user_name}" && '
         f'git -C {repo_dir} config user.email "{custom_git_user_email}" && '
@@ -1321,11 +1318,9 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
         body='Test body',
     )
 
-    # Mock subprocess.run to simulate git username already set
+    # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
-        MagicMock(
-            returncode=0, stdout='existing-user'
-        ),  # git config user.name (has value)
+        MagicMock(returncode=0),  # git config set user.name and user.email (always called now)
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
         MagicMock(returncode=0),  # git commit
@@ -1336,12 +1331,12 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
 
     # Assert that subprocess.run was called with the correct arguments
     calls = mock_subprocess_run.call_args_list
-    assert len(calls) == 4  # No git config set call since username already exists
+    assert len(calls) == 4
 
-    # Check that git config set was NOT called
-    for call_args in calls:
-        command = call_args[0][0]
-        assert 'config user.name "' not in command
+    # Check that git config set WAS called (now always called)
+    git_config_set_call = calls[0][0][0]
+    assert 'config user.name "openhands"' in git_config_set_call
+    assert 'config user.email "openhands@all-hands.dev"' in git_config_set_call
 
 
 @patch('subprocess.run')
@@ -1358,9 +1353,8 @@ def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
     git_user_name = 'User "with quotes"'
     git_user_email = 'user@domain.com'
 
-    # Mock subprocess.run to simulate git username not set
+    # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0, stdout=''),  # git config user.name (empty)
         MagicMock(returncode=0),  # git config set
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
@@ -1372,7 +1366,7 @@ def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
 
     # Assert that subprocess.run was called with properly escaped git config
     calls = mock_subprocess_run.call_args_list
-    git_config_set_call = calls[1][0][0]
+    git_config_set_call = calls[0][0][0]
 
     # Check that quotes are properly handled in the command
     expected_config_command = (
