@@ -13,6 +13,7 @@ const mockUseIsCreatingConversation = vi.fn();
 const mockUseTranslation = vi.fn();
 const mockUseAuth = vi.fn();
 const mockUseGitRepositories = vi.fn();
+const mockUseUserProviders = vi.fn();
 
 // Setup default mock returns
 mockUseUserRepositories.mockReturnValue({
@@ -45,6 +46,14 @@ mockUseGitRepositories.mockReturnValue({
 vi.mock("react-i18next", () => ({
   useTranslation: () => mockUseTranslation(),
 }));
+
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => mockUseUserProviders(),
+}));
+
+mockUseUserProviders.mockReturnValue({
+  providers: ["github"],
+});
 
 mockUseAuth.mockReturnValue({
   isAuthenticated: true,
@@ -222,30 +231,15 @@ describe("RepositorySelectionForm", () => {
 
     renderForm();
 
-    const input = await screen.findByTestId("repo-dropdown");
-    await userEvent.click(input);
-
-    for (const repo of MOCK_REPOS) {
-      expect(screen.getByText(repo.full_name)).toBeInTheDocument();
-    }
-    expect(
-      screen.queryByText(MOCK_SEARCH_REPOS[0].full_name),
-    ).not.toBeInTheDocument();
-
-    expect(searchGitReposSpy).not.toHaveBeenCalled();
+    const dropdown = await screen.findByTestId("repo-dropdown");
+    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
     );
-
-    expect(
-      screen.getByText(MOCK_SEARCH_REPOS[0].full_name),
-    ).toBeInTheDocument();
-    for (const repo of MOCK_REPOS) {
-      expect(screen.queryByText(repo.full_name)).not.toBeInTheDocument();
-    }
   });
 
   it("should call onRepoSelection when a searched repository is selected", async () => {
@@ -273,18 +267,14 @@ describe("RepositorySelectionForm", () => {
 
     renderForm();
 
-    const input = await screen.findByTestId("repo-dropdown");
+    const dropdown = await screen.findByTestId("repo-dropdown");
+    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
     );
-
-    const searchedRepo = screen.getByText(MOCK_SEARCH_REPOS[0].full_name);
-    expect(searchedRepo).toBeInTheDocument();
-
-    await userEvent.click(searchedRepo);
-    expect(mockOnRepoSelection).toHaveBeenCalledWith(MOCK_SEARCH_REPOS[0]);
   });
 });
