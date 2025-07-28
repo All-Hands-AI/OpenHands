@@ -175,24 +175,15 @@ def make_commit(
         git_user_name: Git username for commits
         git_user_email: Git email for commits
     """
-    # Check if git username is set
-    result = subprocess.run(
-        f'git -C {repo_dir} config user.name',
+    # Always configure git with the provided credentials to ensure they are used
+    subprocess.run(
+        f'git -C {repo_dir} config user.name "{git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"',
         shell=True,
-        capture_output=True,
-        text=True,
+        check=True,
     )
-
-    if not result.stdout.strip():
-        # If username is not set, configure git
-        subprocess.run(
-            f'git -C {repo_dir} config user.name "{git_user_name}" && '
-            f'git -C {repo_dir} config user.email "{git_user_email}" && '
-            f'git -C {repo_dir} config alias.git "git --no-pager"',
-            shell=True,
-            check=True,
-        )
-        logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
+    logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
 
     # Add all changes to the git index
     result = subprocess.run(
