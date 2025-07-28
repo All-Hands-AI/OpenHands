@@ -13,6 +13,8 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
+import { DocsButton } from "#/components/shared/buttons/docs-button";
+import { SettingsButton } from "#/components/shared/buttons/settings-button";
 
 export function Sidebar() {
   const location = useLocation();
@@ -91,6 +93,8 @@ export function Sidebar() {
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-[27px]">
+            <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
+            <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <UserActions
               user={
                 user.data ? { avatar_url: user.data.avatar_url } : undefined
