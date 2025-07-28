@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserConversation } from "./use-user-conversation";
-import { useBatchFeedback } from "./use-batch-feedback";
 import OpenHands from "#/api/open-hands";
 
 const FIVE_MINUTES = 1000 * 60 * 5;
@@ -14,9 +13,6 @@ export const useActiveConversation = () => {
     }
     return FIVE_MINUTES;
   });
-
-  // Fetch batch feedback data when conversation is loaded
-  useBatchFeedback();
 
   useEffect(() => {
     const conversation = userConversation.data;
