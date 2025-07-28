@@ -33,6 +33,8 @@ export LLM_API_KEY='your_api_key_here'
 export LLM_MODEL='gpt-4'
 export AGENT_MEMORY_ENABLED='true'
 export SANDBOX_TIMEOUT='300'
+export GIT_USER_NAME='your_name'
+export GIT_USER_EMAIL='your_email@example.com'
 ```
 
 ## Type Handling
@@ -48,6 +50,24 @@ If type casting fails, an error is logged, and the default value is retained.
 ## Default Values
 
 If an environment variable is not set, the default value specified in the model is used.
+
+## Git Configuration
+
+OpenHands supports configurable git user settings for commits made during code execution and pull request creation. You can customize the git user name and email through environment variables:
+
+- `GIT_USER_NAME`: The name to use for git commits (default: 'openhands')
+- `GIT_USER_EMAIL`: The email to use for git commits (default: 'openhands@all-hands.dev')
+
+These settings are used when:
+- The runtime environment initializes git configuration
+- Creating pull requests through the resolver
+- Any git operations performed by OpenHands
+
+Example:
+```bash
+export GIT_USER_NAME='John Doe'
+export GIT_USER_EMAIL='john.doe@company.com'
+```
 
 ## Security Considerations
 
