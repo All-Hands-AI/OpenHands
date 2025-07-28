@@ -1,11 +1,10 @@
 import React, { useRef, useEffect, useCallback } from "react";
-import PaperclipIcon from "#/icons/paper-clip.svg?react";
-import ArrowUpCircleFillIcon from "#/icons/arrow-up-circle-fill.svg?react";
-import PauseIcon from "#/icons/pause.svg?react";
-import { cn } from "#/utils/utils";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
+import { ChatSendButton } from "./chat-send-button";
+import { ChatAddFileButton } from "./chat-add-file-button";
+import { ChatStopButton } from "./chat-stop-button";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -150,26 +149,30 @@ export function CustomChatInput({
     autoResize();
 
     // Ensure cursor stays visible when content is scrollable
-    if (chatInputRef.current) {
-      const selection = window.getSelection();
-      if (selection && selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        // Check if getBoundingClientRect is available (not available in test environment)
-        if (
-          range.getBoundingClientRect &&
-          chatInputRef.current.getBoundingClientRect
-        ) {
-          const rect = range.getBoundingClientRect();
-          const inputRect = chatInputRef.current.getBoundingClientRect();
+    if (!chatInputRef.current) {
+      return;
+    }
 
-          // If cursor is below the visible area, scroll to show it
-          if (rect.bottom > inputRect.bottom) {
-            chatInputRef.current.scrollTop =
-              chatInputRef.current.scrollHeight -
-              chatInputRef.current.clientHeight;
-          }
-        }
-      }
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (
+      !range.getBoundingClientRect ||
+      !chatInputRef.current.getBoundingClientRect
+    ) {
+      return;
+    }
+
+    const rect = range.getBoundingClientRect();
+    const inputRect = chatInputRef.current.getBoundingClientRect();
+
+    // If cursor is below the visible area, scroll to show it
+    if (rect.bottom > inputRect.bottom) {
+      chatInputRef.current.scrollTop =
+        chatInputRef.current.scrollHeight - chatInputRef.current.clientHeight;
     }
   };
 
@@ -201,30 +204,36 @@ export function CustomChatInput({
     setTimeout(() => {
       autoResize();
       // Ensure cursor stays visible after key navigation
-      if (
-        chatInputRef.current &&
-        (e.key === "ArrowUp" || e.key === "ArrowDown")
-      ) {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-          const range = selection.getRangeAt(0);
-          // Check if getBoundingClientRect is available (not available in test environment)
-          if (
-            range.getBoundingClientRect &&
-            chatInputRef.current.getBoundingClientRect
-          ) {
-            const rect = range.getBoundingClientRect();
-            const inputRect = chatInputRef.current.getBoundingClientRect();
+      if (!chatInputRef.current) {
+        return;
+      }
 
-            // Scroll to keep cursor visible
-            if (rect.top < inputRect.top) {
-              chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-            } else if (rect.bottom > inputRect.bottom) {
-              chatInputRef.current.scrollTop +=
-                rect.bottom - inputRect.bottom + 5;
-            }
-          }
-        }
+      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
+      if (!isArrowKey) {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      if (
+        !range.getBoundingClientRect ||
+        !chatInputRef.current.getBoundingClientRect
+      ) {
+        return;
+      }
+
+      const rect = range.getBoundingClientRect();
+      const inputRect = chatInputRef.current.getBoundingClientRect();
+
+      // Scroll to keep cursor visible
+      if (rect.top < inputRect.top) {
+        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
+      } else if (rect.bottom > inputRect.bottom) {
+        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
       }
     }, 0);
   };
@@ -266,18 +275,7 @@ export function CustomChatInput({
         {/* Main Input Row */}
         <div className="box-border content-stretch flex flex-row items-center justify-between p-0 relative shrink-0 w-full pb-[18px]">
           <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-center justify-start min-h-px min-w-px p-0 relative shrink-0">
-            {/* Paperclip Icon */}
-            <div
-              className="h-[25px] relative shrink-0 w-[13px] cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95"
-              data-name="Shape"
-              data-testid="paperclip-icon"
-              onClick={handleFileIconClick}
-            >
-              <PaperclipIcon
-                className="block max-w-none w-[13px] h-[25px]"
-                color="#959CB2"
-              />
-            </div>
+            <ChatAddFileButton handleFileIconClick={handleFileIconClick} />
 
             {/* Chat Input Area */}
             <div
@@ -304,19 +302,11 @@ export function CustomChatInput({
 
           {/* Send Button */}
           {showButton && (
-            <button
-              type="button"
-              className={cn("size-[35px] cursor-pointer", buttonClassName)}
-              data-name="arrow-up-circle-fill"
-              data-testid="submit-button"
-              onClick={handleSubmit}
+            <ChatSendButton
+              buttonClassName={buttonClassName}
+              handleSubmit={handleSubmit}
               disabled={disabled}
-            >
-              <ArrowUpCircleFillIcon
-                className="block max-w-none size-full"
-                color="#959CB2"
-              />
-            </button>
+            />
           )}
         </div>
 
@@ -324,15 +314,7 @@ export function CustomChatInput({
           <ServerStatus conversationStatus={conversationStatus} />
           <div className="flex items-center gap-1">
             <AgentStatus />
-            {button === "stop" && (
-              <div
-                className="bg-[#959cb2] box-border content-stretch flex flex-row gap-[3px] items-center justify-center overflow-clip px-0.5 py-1 relative rounded-[100px] shrink-0 size-6 transition-all duration-200 hover:bg-[#a5abc2] active:scale-95 cursor-pointer"
-                onClick={handleStop}
-                data-testid="stop-button"
-              >
-                <PauseIcon className="block max-w-none size-full" />
-              </div>
-            )}
+            {button === "stop" && <ChatStopButton handleStop={handleStop} />}
           </div>
         </div>
       </div>
