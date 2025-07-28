@@ -63,7 +63,7 @@ export function GitRepositoryDropdown({
 
   const selectedOption = useMemo(() => {
     // First check in loaded pages
-    const option = allOptions.find((option) => option.value === value);
+    const option = allOptions.find((opt) => opt.value === value);
     if (option) return option;
 
     // If not found, check in search cache
@@ -83,9 +83,9 @@ export function GitRepositoryDropdown({
 
   const loadOptions = useCallback(
     async (inputValue: string): Promise<AsyncSelectOption[]> => {
-      // If it looks like a GitHub URL, extract the repo name and search
-      if (inputValue.includes("github.com/")) {
-        const match = inputValue.match(/github\.com\/([^/]+\/[^/]+)/);
+      // If it looks like a URL, extract the repo name and search
+      if (inputValue.startsWith("https://")) {
+        const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
         if (match) {
           const repoName = match[1];
           const searchResults = await OpenHands.searchGitRepositories(
