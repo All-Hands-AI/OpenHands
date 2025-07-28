@@ -1320,7 +1320,9 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
 
     # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0),  # git config set user.name and user.email (always called now)
+        MagicMock(
+            returncode=0
+        ),  # git config set user.name and user.email (always called now)
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
         MagicMock(returncode=0),  # git commit
