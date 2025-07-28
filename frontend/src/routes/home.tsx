@@ -6,8 +6,6 @@ import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestio
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
 import { NewConversation } from "#/components/features/home/new-conversation";
-import { useResizeWindow } from "#/hooks/use-resize-window";
-import { cn } from "#/utils/utils";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -16,8 +14,6 @@ function HomeScreen() {
   const [selectedRepo, setSelectedRepo] = React.useState<GitRepository | null>(
     null,
   );
-
-  const { isSmallerDevice } = useResizeWindow();
 
   const providersAreSet = providers.length > 0;
 
@@ -29,24 +25,14 @@ function HomeScreen() {
       <HomeHeader />
 
       <div className="pt-[70px] flex justify-center">
-        <div
-          className={cn(
-            "flex gap-[20px] md:max-w-full md:min-w-full lg:max-w-[703px] lg:min-w-[703px]",
-            isSmallerDevice && "flex-col max-w-full min-w-full",
-          )}
-        >
+        <div className="flex gap-[20px] sm:flex-col md:flex-row sm:max-w-full sm:min-w-full lg:max-w-[703px] lg:min-w-[703px]">
           <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
           <NewConversation />
         </div>
       </div>
 
       <div className="pt-[12px] flex justify-center mb-[262px]">
-        <div
-          className={cn(
-            "flex gap-[20px] md:max-w-full md:min-w-full lg:max-w-[703px] lg:min-w-[703px]",
-            isSmallerDevice && "flex-col max-w-full min-w-full",
-          )}
-        >
+        <div className="flex gap-[20px] sm:flex-col md:flex-row md:max-w-full md:min-w-full lg:max-w-[703px] lg:min-w-[703px]">
           {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
         </div>
       </div>

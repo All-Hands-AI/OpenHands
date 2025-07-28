@@ -1,4 +1,3 @@
-import { Typography } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { TaskGroup } from "./task-group";
 import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
@@ -36,17 +35,17 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       )}
     >
       <div className="flex items-center gap-2">
-        <Typography.H2 className="text-sm leading-[16px] text-white font-medium">
+        <h3 className="text-sm leading-[16px] text-white font-medium">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
-        </Typography.H2>
+        </h3>
       </div>
 
       <div className="flex flex-col">
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && (
-          <Typography.Text className="text-sm leading-[16px] text-white font-medium">
+          <span className="text-sm leading-[16px] text-white font-medium">
             {t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}
-          </Typography.Text>
+          </span>
         )}
         {suggestedTasks?.map((taskGroup, index) => (
           <TaskGroup

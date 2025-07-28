@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Icon, Typography } from "@openhands/ui";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "../settings/brand-button";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
+import PlusIcon from "#/icons/u-plus.svg?react";
 
 export function NewConversation() {
   const { t } = useTranslation();
@@ -26,16 +26,16 @@ export function NewConversation() {
     <section className="w-full flex flex-col bg-[#363940] rounded-[15px] p-[20px] gap-[10px]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px]">
-          <Icon icon="Plus" width={28} height={28} />
-          <Typography.Text className="leading-5 font-bold text-base">
+          <PlusIcon width={17} height={14} />
+          <span className="leading-5 font-bold text-base text-white">
             {t(I18nKey.COMMON$NEW_CONVERSATION)}
-          </Typography.Text>
+          </span>
         </div>
       </div>
       <div>
-        <Typography.Text className="leading-[22px] text-sm font-normal text-white">
+        <span className="leading-[22px] text-sm font-normal text-white">
           {t(I18nKey.HOME$NEW_PROJECT_DESCRIPTION)}
-        </Typography.Text>
+        </span>
       </div>
       <BrandButton
         testId="header-launch-button"

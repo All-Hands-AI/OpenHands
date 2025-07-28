@@ -1,8 +1,8 @@
 import { useLocation } from "react-router";
-import { Icon } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
+import PlusIcon from "#/icons/u-plus.svg?react";
 
 interface NewProjectButtonProps {
   disabled?: boolean;
@@ -23,11 +23,10 @@ export function NewProjectButton({ disabled = false }: NewProjectButtonProps) {
       testId="new-project-button"
       disabled={disabled}
     >
-      <Icon
-        icon="Plus"
-        width={35}
-        height={35}
-        fill={pathname === "/" ? "#ffffff" : "#B1B9D3"}
+      <PlusIcon
+        width={24}
+        height={24}
+        color={pathname === "/" ? "#ffffff" : "#B1B9D3"}
       />
     </TooltipButton>
   );

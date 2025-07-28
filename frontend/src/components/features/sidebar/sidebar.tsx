@@ -13,8 +13,6 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { useConfig } from "#/hooks/query/use-config";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { MicroagentManagementButton } from "#/components/shared/buttons/microagent-management-button";
-import { useResizeWindow } from "#/hooks/use-resize-window";
-import { cn } from "#/utils/utils";
 
 export function Sidebar() {
   const location = useLocation();
@@ -32,8 +30,6 @@ export function Sidebar() {
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =
     React.useState(false);
-
-  const { isSmallerDevice } = useResizeWindow();
 
   // TODO: Remove HIDE_LLM_SETTINGS check once released
   const shouldHideLlmSettings =
@@ -69,12 +65,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside
-        className={cn(
-          "h-[40px] md:h-auto flex flex-row md:flex-col gap-1 bg-[#1A1C21] md:w-[75px] md:min-w-[75px]",
-          isSmallerDevice ? "pt-0 px-2" : "pt-[22px] px-0",
-        )}
-      >
+      <aside className="h-[40px] md:h-auto flex flex-row md:flex-col gap-1 bg-[#1A1C21] md:w-[75px] md:min-w-[75px] sm:pt-0 sm:px-2 md:pt-[22px] md:px-0">
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
           <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">

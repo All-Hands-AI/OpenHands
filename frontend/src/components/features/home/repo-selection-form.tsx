@@ -1,7 +1,6 @@
 import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { Typography } from "@openhands/ui";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { useUserRepositories } from "#/hooks/query/use-user-repositories";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
@@ -262,9 +261,9 @@ export function RepositorySelectionForm({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px]">
           <RepoForkedIcon width={24} height={24} />
-          <Typography.Text className="leading-5 font-bold text-base">
+          <span className="leading-5 font-bold text-base text-white">
             {t(I18nKey.COMMON$OPEN_REPOSITORY)}
-          </Typography.Text>
+          </span>
         </div>
       </div>
 
