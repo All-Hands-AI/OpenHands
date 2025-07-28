@@ -886,6 +886,8 @@ def test_process_single_issue(
         reviewer=None,
         pr_title=None,
         base_domain='gitlab.com',
+        git_user_name='openhands',
+        git_user_email='openhands@all-hands.dev',
     )
 
 
