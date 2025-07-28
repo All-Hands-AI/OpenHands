@@ -780,7 +780,11 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr', 'openhands', 'openhands@all-hands.dev'
+        f'{mock_output_dir}/patches/pr_1',
+        resolver_output.issue,
+        'pr',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -863,7 +867,11 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue', 'openhands', 'openhands@all-hands.dev'
+        f'{mock_output_dir}/patches/issue_1',
+        resolver_output.issue,
+        'issue',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
