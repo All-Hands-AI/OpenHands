@@ -768,6 +768,11 @@ def test_process_single_pr_update(
         None,
         False,
         None,
+        None,
+        None,
+        None,
+        'openhands',
+        'openhands@all-hands.dev',
     )
 
     mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'pr', 'branch 1')
@@ -775,7 +780,7 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr'
+        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr', 'openhands', 'openhands@all-hands.dev'
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -845,6 +850,11 @@ def test_process_single_issue(
         None,
         False,
         None,
+        None,
+        None,
+        None,
+        'openhands',
+        'openhands@all-hands.dev',
     )
 
     # Assert that the mocked functions were called with correct arguments
@@ -853,7 +863,7 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
+        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue', 'openhands', 'openhands@all-hands.dev'
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -920,6 +930,11 @@ def test_process_single_issue_unsuccessful(
         None,
         False,
         None,
+        None,
+        None,
+        None,
+        'openhands',
+        'openhands@all-hands.dev',
     )
 
     # Assert that none of the mocked functions were called
@@ -1023,6 +1038,8 @@ def test_main(
     mock_args.reviewer = None
     mock_args.pr_title = None
     mock_args.selected_repo = None
+    mock_args.git_user_name = 'openhands'
+    mock_args.git_user_email = 'openhands@all-hands.dev'
     mock_parser.return_value.parse_args.return_value = mock_args
 
     # Setup environment variables
@@ -1065,6 +1082,8 @@ def test_main(
         mock_args.reviewer,
         mock_args.pr_title,
         ANY,
+        mock_args.git_user_name,
+        mock_args.git_user_email,
     )
 
     # Other assertions
