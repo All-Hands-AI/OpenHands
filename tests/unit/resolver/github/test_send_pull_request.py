@@ -1283,6 +1283,9 @@ def test_make_commit_with_custom_git_config(mock_subprocess_run):
 
     # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
+        MagicMock(
+            returncode=0, stdout=''
+        ),  # git config user.name check (empty = not set)
         MagicMock(returncode=0),  # git config set user.name and user.email
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
@@ -1294,10 +1297,14 @@ def test_make_commit_with_custom_git_config(mock_subprocess_run):
 
     # Assert that subprocess.run was called with the correct arguments
     calls = mock_subprocess_run.call_args_list
-    assert len(calls) == 4
+    assert len(calls) == 5
 
-    # Check git config set call (now the first call)
-    git_config_set_call = calls[0][0][0]
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check git config set call (second call)
+    git_config_set_call = calls[1][0][0]
     expected_config_command = (
         f'git -C {repo_dir} config user.name "{custom_git_user_name}" && '
         f'git -C {repo_dir} config user.email "{custom_git_user_email}" && '
@@ -1321,8 +1328,8 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
     # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
         MagicMock(
-            returncode=0
-        ),  # git config set user.name and user.email (always called now)
+            returncode=0, stdout='existing-user\n'
+        ),  # git config user.name check (non-empty = already set)
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
         MagicMock(returncode=0),  # git commit
@@ -1335,10 +1342,14 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
     calls = mock_subprocess_run.call_args_list
     assert len(calls) == 4
 
-    # Check that git config set WAS called (now always called)
-    git_config_set_call = calls[0][0][0]
-    assert 'config user.name "openhands"' in git_config_set_call
-    assert 'config user.email "openhands@all-hands.dev"' in git_config_set_call
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check that git config set was NOT called (since username already exists)
+    # The remaining calls should be git add, git status, git commit
+    git_add_call = calls[1][0][0]
+    assert f'git -C {repo_dir} add .' == git_add_call
 
 
 @patch('subprocess.run')
@@ -1357,6 +1368,9 @@ def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
 
     # Mock subprocess.run to simulate successful operations
     mock_subprocess_run.side_effect = [
+        MagicMock(
+            returncode=0, stdout=''
+        ),  # git config user.name check (empty = not set)
         MagicMock(returncode=0),  # git config set
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
@@ -1368,7 +1382,14 @@ def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
 
     # Assert that subprocess.run was called with properly escaped git config
     calls = mock_subprocess_run.call_args_list
-    git_config_set_call = calls[0][0][0]
+    assert len(calls) == 5
+
+    # Check git config check call (first call)
+    git_config_check_call = calls[0][0][0]
+    assert git_config_check_call == f'git -C {repo_dir} config user.name'
+
+    # Check git config set call (second call)
+    git_config_set_call = calls[1][0][0]
 
     # Check that quotes are properly handled in the command
     expected_config_command = (
