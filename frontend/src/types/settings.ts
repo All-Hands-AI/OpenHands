@@ -42,6 +42,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
+  ENABLE_SOLVABILITY_ANALYSIS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   SEARCH_API_KEY?: string;
   IS_NEW_USER?: boolean;
@@ -65,6 +66,7 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   enable_proactive_conversation_starters: boolean;
+  enable_solvability_analysis: boolean;
   user_consents_to_analytics: boolean | null;
   search_api_key?: string;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
