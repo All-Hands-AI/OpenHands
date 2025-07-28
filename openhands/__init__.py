@@ -10,7 +10,7 @@ def get_version():
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         candidate_paths = [
             Path(root_dir) / 'pyproject.toml',
-            Path(root_dir) / 'openhands' / 'pyproject.toml'
+            Path(root_dir) / 'openhands' / 'pyproject.toml',
         ]
         for file_path in candidate_paths:
             if file_path.is_file():
