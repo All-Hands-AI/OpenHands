@@ -45,26 +45,17 @@ export function GitBranchDropdown({
 
   const isDisabled = disabled || !repositoryName || isLoading;
 
-  const effectivePlaceholder = useMemo(() => {
-    if (isLoading) {
-      return "Loading branches...";
-    }
-    if (!repositoryName) {
-      return "Select a repository first";
-    }
-    return placeholder;
-  }, [isLoading, repositoryName, placeholder]);
-
   return (
     <ReactSelectDropdown
       options={options}
       value={selectedOption}
-      placeholder={effectivePlaceholder}
+      placeholder={placeholder}
       className={className}
       errorMessage={errorMessage}
       disabled={isDisabled}
       isClearable
       isSearchable
+      isLoading={isLoading}
       onChange={handleChange}
     />
   );

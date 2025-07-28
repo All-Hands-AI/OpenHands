@@ -100,11 +100,7 @@ export function RepositorySelectionForm({
       <GitRepositoryDropdown
         provider={selectedProvider || providers[0]}
         value={selectedRepository?.id || null}
-        placeholder={
-          selectedProvider
-            ? "Search repositories..."
-            : "Please select a provider first"
-        }
+        placeholder="Search repositories..."
         disabled={!selectedProvider}
         onChange={handleRepoSelection}
         className="max-w-[500px]"

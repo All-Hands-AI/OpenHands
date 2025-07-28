@@ -9,6 +9,7 @@ export interface GitProviderDropdownProps {
   className?: string;
   errorMessage?: string;
   disabled?: boolean;
+  isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
 }
 
@@ -19,6 +20,7 @@ export function GitProviderDropdown({
   className,
   errorMessage,
   disabled = false,
+  isLoading = false,
   onChange,
 }: GitProviderDropdownProps) {
   const options: SelectOption[] = useMemo(
@@ -49,6 +51,7 @@ export function GitProviderDropdown({
       disabled={disabled}
       isClearable={false}
       isSearchable={false}
+      isLoading={isLoading}
       onChange={handleChange}
     />
   );

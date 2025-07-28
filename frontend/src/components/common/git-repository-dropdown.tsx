@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Provider } from "../../types/settings";
 import { useGitRepositories } from "../../hooks/query/use-git-repositories";
 import {
@@ -25,11 +26,18 @@ export function GitRepositoryDropdown({
   disabled = false,
   onChange,
 }: GitRepositoryDropdownProps) {
-  const { data, fetchNextPage, hasNextPage, isLoading, isFetchingNextPage } =
-    useGitRepositories({
-      provider,
-      enabled: !disabled,
-    });
+  const { t } = useTranslation();
+  const {
+    data,
+    fetchNextPage,
+    hasNextPage,
+    isLoading,
+    isFetchingNextPage,
+    isError,
+  } = useGitRepositories({
+    provider,
+    enabled: !disabled,
+  });
 
   const allOptions: AsyncSelectOption[] = useMemo(
     () =>
@@ -73,18 +81,30 @@ export function GitRepositoryDropdown({
   }, [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]);
 
   return (
-    <ReactSelectAsyncDropdown
-      loadOptions={loadOptions}
-      value={selectedOption}
-      placeholder={placeholder}
-      className={className}
-      errorMessage={errorMessage}
-      disabled={disabled}
-      isClearable={false}
-      cacheOptions
-      defaultOptions={allOptions}
-      onChange={handleChange}
-      onMenuScrollToBottom={handleMenuScrollToBottom}
-    />
+    <>
+      <ReactSelectAsyncDropdown
+        testId="repo-dropdown"
+        loadOptions={loadOptions}
+        value={selectedOption}
+        placeholder={placeholder}
+        className={className}
+        errorMessage={errorMessage}
+        disabled={disabled}
+        isClearable={false}
+        isLoading={isLoading || isLoading || isFetchingNextPage}
+        cacheOptions
+        defaultOptions={allOptions}
+        onChange={handleChange}
+        onMenuScrollToBottom={handleMenuScrollToBottom}
+      />
+      {isError && (
+        <div
+          data-testid="repo-dropdown-error"
+          className="text-red-500 text-sm mt-1"
+        >
+          {t("HOME$FAILED_TO_LOAD_REPOSITORIES")}
+        </div>
+      )}
+    </>
   );
 }
