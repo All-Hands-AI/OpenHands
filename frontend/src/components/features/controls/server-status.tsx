@@ -1,4 +1,3 @@
-import { Typography } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import DebugStackframeDot from "#/icons/debug-stackframe-dot.svg?react";
 import { I18nKey } from "#/i18n/declaration";
@@ -53,9 +52,9 @@ export function ServerStatus({
   return (
     <div className={`flex items-center ${className}`}>
       <DebugStackframeDot className="w-6 h-6" color={statusColor} />
-      <Typography.Text className="text-[11px] text-[#D0D9FA] font-normal leading-5">
+      <span className="text-[11px] text-[#D0D9FA] font-normal leading-5">
         {statusText}
-      </Typography.Text>
+      </span>
     </div>
   );
 }

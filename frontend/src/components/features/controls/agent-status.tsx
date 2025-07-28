@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Typography } from "@openhands/ui";
 import { RootState } from "#/store";
 import { useWsClient } from "#/context/ws-client-provider";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -27,9 +26,9 @@ export function AgentStatus({ className = "" }: AgentStatusProps) {
 
   return (
     <div className={`flex items-center ${className}`}>
-      <Typography.Text className="text-[11px] text-[#D0D9FA] font-normal leading-5">
+      <span className="text-[11px] text-[#D0D9FA] font-normal leading-5">
         {t(statusCode)}
-      </Typography.Text>
+      </span>
     </div>
   );
 }
