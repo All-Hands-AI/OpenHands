@@ -874,7 +874,11 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr', 'openhands', 'openhands@all-hands.dev'
+        f'{mock_output_dir}/patches/pr_1',
+        resolver_output.issue,
+        'pr',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -952,7 +956,11 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue', 'openhands', 'openhands@all-hands.dev'
+        f'{mock_output_dir}/patches/issue_1',
+        resolver_output.issue,
+        'issue',
+        'openhands',
+        'openhands@all-hands.dev',
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -1315,7 +1323,9 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
 
     # Mock subprocess.run to simulate git username already set
     mock_subprocess_run.side_effect = [
-        MagicMock(returncode=0, stdout='existing-user'),  # git config user.name (has value)
+        MagicMock(
+            returncode=0, stdout='existing-user'
+        ),  # git config user.name (has value)
         MagicMock(returncode=0),  # git add
         MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
         MagicMock(returncode=0),  # git commit
@@ -1329,8 +1339,8 @@ def test_make_commit_with_existing_git_config(mock_subprocess_run):
     assert len(calls) == 4  # No git config set call since username already exists
 
     # Check that git config set was NOT called
-    for call in calls:
-        command = call[0][0]
+    for call_args in calls:
+        command = call_args[0][0]
         assert 'config user.name "' not in command
 
 
@@ -1363,7 +1373,7 @@ def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
     # Assert that subprocess.run was called with properly escaped git config
     calls = mock_subprocess_run.call_args_list
     git_config_set_call = calls[1][0][0]
-    
+
     # Check that quotes are properly handled in the command
     expected_config_command = (
         f'git -C {repo_dir} config user.name "{git_user_name}" && '
