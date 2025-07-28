@@ -17,7 +17,9 @@ import httpx
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -340,14 +342,23 @@ class Runtime(FileEditRuntimeMixin):
                 observation: Observation = await self.call_tool_mcp(event)
             else:
                 observation = await call_sync_from_async(self.run_action, event)
-        except Exception as e:
-            runtime_status = RuntimeStatus.ERROR
-            if isinstance(e, (httpx.NetworkError, AgentRuntimeDisconnectedError)):
-                runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
+        except PermissionError as e:
+            # Handle PermissionError specially - convert to ErrorObservation
+            # so the agent can receive feedback and continue execution
+            observation = ErrorObservation(content=str(e))
+        except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
+            runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.set_runtime_status(runtime_status, error_message)
+            self.set_runtime_status(runtime_status, error_message, level='error')
+            return
+        except Exception as e:
+            runtime_status = RuntimeStatus.ERROR
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message, level='error')
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
