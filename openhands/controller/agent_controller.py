@@ -278,7 +278,7 @@ class AgentController:
                 runtime_status = RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION
                 self.state.last_error = runtime_status.value
             elif isinstance(e, AgentRuntimeTimeoutError):
-                runtime_status = RuntimeStatus.ERROR
+                runtime_status = RuntimeStatus.ERROR_RUNTIME_TIMEOUT
                 # Keep the original error message for better debugging
             elif isinstance(e, RateLimitError):
                 # Check if this is the final retry attempt
