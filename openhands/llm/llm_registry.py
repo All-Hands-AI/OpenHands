@@ -18,10 +18,12 @@ class LLMRegistry:
         file_store: FileStore | None,
         conversation_id: str,
         user_id: str | None,
+        retry_listener: Callable[[int, int], None] | None = None,
     ):
         self.conversation_id = conversation_id
         self.user_id = user_id
         self.file_store = file_store
+        self.retry_listner = retry_listener
 
         self.registry_path = get_conversation_llm_registry_filename(
             self.conversation_id, self.user_id
@@ -56,7 +58,6 @@ class LLMRegistry:
         self,
         service_id: str,
         config: LLMConfig,
-        retry_listener: Callable[[int, int], None] | None = None,
     ):
         logger.info(
             f'[LLM registry {self.metrics_id}]: Registering service for {service_id}'
@@ -70,13 +71,13 @@ class LLMRegistry:
             llm = LLM(
                 config=config,
                 service_id=service_id,
-                retry_listener=retry_listener,
+                retry_listener=self.retry_listner,
                 metrics=self.restored_llm[service_id],
             )
             del self.restored_llm[service_id]
         else:
             llm = LLM(
-                config=config, service_id=service_id, retry_listener=retry_listener
+                config=config, service_id=service_id, retry_listener=self.retry_listner
             )
 
         self.service_to_llm[service_id] = llm

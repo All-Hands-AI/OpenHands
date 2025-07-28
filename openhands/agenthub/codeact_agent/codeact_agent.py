@@ -1,7 +1,7 @@
 import os
 import sys
 from collections import deque
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.llm.llm_registry import LLMRegistry
@@ -78,7 +78,6 @@ class CodeActAgent(Agent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        retry_listener: Callable[[int, int], None] | None = None,
         requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
@@ -86,9 +85,7 @@ class CodeActAgent(Agent):
         Parameters:
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(
-            config, llm_config, llm_registry, retry_listener, requested_service
-        )
+        super().__init__(config, llm_config, llm_registry, requested_service)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()

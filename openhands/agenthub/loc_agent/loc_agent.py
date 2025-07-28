@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING
 
 import openhands.agenthub.loc_agent.function_calling as locagent_function_calling
 from openhands.agenthub.codeact_agent import CodeActAgent
@@ -20,7 +20,6 @@ class LocAgent(CodeActAgent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        retry_listener: Callable[[int, int], None] | None = None,
         requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the LocAgent class.
@@ -30,9 +29,7 @@ class LocAgent(CodeActAgent):
         - config (AgentConfig): The configuration for the agent
         """
 
-        super().__init__(
-            config, llm_config, llm_registry, retry_listener, requested_service
-        )
+        super().__init__(config, llm_config, llm_registry, requested_service)
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(

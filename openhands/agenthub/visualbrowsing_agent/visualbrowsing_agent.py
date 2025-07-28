@@ -1,5 +1,3 @@
-from typing import Callable
-
 from browsergym.core.action.highlevel import HighLevelActionSet
 from browsergym.utils.obs import flatten_axtree_to_str
 
@@ -135,7 +133,6 @@ class VisualBrowsingAgent(Agent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        retry_listener: Callable[[int, int], None] | None = None,
         requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the VisualBrowsingAgent class.
@@ -143,9 +140,7 @@ class VisualBrowsingAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(
-            config, llm_config, llm_registry, retry_listener, requested_service
-        )
+        super().__init__(config, llm_config, llm_registry, requested_service)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = [

@@ -188,12 +188,9 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(
-            agent_config,
-            llm_config,
-            self.llm_registry,
-            retry_listener=self._notify_on_llm_retry,
-        )
+        agent = Agent.get_cls(agent_cls)(agent_config, llm_config, self.llm_registry)
+
+        self.llm_registry.retry_listner = self._notify_on_llm_retry
 
         git_provider_tokens = None
         selected_repository = None

@@ -489,14 +489,12 @@ class DockerNestedConversationManager(ConversationManager):
             sio=self.sio,
             user_id=user_id,
         )
+        llm_registry.retry_listner = session._notify_on_llm_retry
         agent_cls = settings.agent or self.config.default_agent
         agent_name = agent_cls if agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
-        retry_listener = session._notify_on_llm_retry
         agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(
-            agent_config, llm_config, llm_registry, retry_listener
-        )
+        agent = Agent.get_cls(agent_cls)(agent_config, llm_config, llm_registry)
 
         config = self.config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars

@@ -649,7 +649,6 @@ class AgentController:
             config=agent_config,
             llm_config=llm_config,
             llm_registry=self.llm_registry,
-            retry_listener=self.agent.llm.retry_listener,
             requested_service=self.agent.llm.service_id,
         )
 

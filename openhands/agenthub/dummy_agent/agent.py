@@ -1,4 +1,4 @@
-from typing import Callable, TypedDict
+from typing import TypedDict
 
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -48,12 +48,9 @@ class DummyAgent(Agent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        retry_listener: Callable[[int, int], None] | None = None,
         requested_service: str | None = None,
     ):
-        super().__init__(
-            config, llm_config, llm_registry, retry_listener, requested_service
-        )
+        super().__init__(config, llm_config, llm_registry, requested_service)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),
