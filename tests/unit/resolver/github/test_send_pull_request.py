@@ -874,7 +874,7 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr'
+        f'{mock_output_dir}/patches/pr_1', resolver_output.issue, 'pr', 'openhands', 'openhands@all-hands.dev'
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -952,7 +952,7 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
     mock_make_commit.assert_called_once_with(
-        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue'
+        f'{mock_output_dir}/patches/issue_1', resolver_output.issue, 'issue', 'openhands', 'openhands@all-hands.dev'
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
@@ -967,6 +967,8 @@ def test_process_single_issue(
         reviewer=None,
         pr_title=None,
         base_domain='github.com',
+        git_user_name='openhands',
+        git_user_email='openhands@all-hands.dev',
     )
 
 
@@ -1253,6 +1255,122 @@ def test_make_commit_no_changes(mock_subprocess_run):
     assert mock_subprocess_run.call_count == 3
     git_status_call = mock_subprocess_run.call_args_list[2][0][0]
     assert f'git -C {repo_dir} status --porcelain' in git_status_call
+
+
+@patch('subprocess.run')
+def test_make_commit_with_custom_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+    custom_git_user_name = 'custom-user'
+    custom_git_user_email = 'custom@example.com'
+
+    # Mock subprocess.run to simulate git username not set, then successful operations
+    mock_subprocess_run.side_effect = [
+        MagicMock(returncode=0, stdout=''),  # git config user.name (empty)
+        MagicMock(returncode=0),  # git config set user.name and user.email
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function with custom git config
+    make_commit(repo_dir, issue, 'issue', custom_git_user_name, custom_git_user_email)
+
+    # Assert that subprocess.run was called with the correct arguments
+    calls = mock_subprocess_run.call_args_list
+    assert len(calls) == 5
+
+    # Check git config check call
+    git_config_check_call = calls[0][0][0]
+    assert f'git -C {repo_dir} config user.name' == git_config_check_call
+
+    # Check git config set call
+    git_config_set_call = calls[1][0][0]
+    expected_config_command = (
+        f'git -C {repo_dir} config user.name "{custom_git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{custom_git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"'
+    )
+    assert expected_config_command == git_config_set_call
+
+
+@patch('subprocess.run')
+def test_make_commit_with_existing_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+
+    # Mock subprocess.run to simulate git username already set
+    mock_subprocess_run.side_effect = [
+        MagicMock(returncode=0, stdout='existing-user'),  # git config user.name (has value)
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function
+    make_commit(repo_dir, issue, 'issue')
+
+    # Assert that subprocess.run was called with the correct arguments
+    calls = mock_subprocess_run.call_args_list
+    assert len(calls) == 4  # No git config set call since username already exists
+
+    # Check that git config set was NOT called
+    for call in calls:
+        command = call[0][0]
+        assert 'config user.name "' not in command
+
+
+@patch('subprocess.run')
+def test_make_commit_with_special_characters_in_git_config(mock_subprocess_run):
+    # Setup
+    repo_dir = '/path/to/repo'
+    issue = Issue(
+        owner='test-owner',
+        repo='test-repo',
+        number=42,
+        title='Test Issue',
+        body='Test body',
+    )
+    git_user_name = 'User "with quotes"'
+    git_user_email = 'user@domain.com'
+
+    # Mock subprocess.run to simulate git username not set
+    mock_subprocess_run.side_effect = [
+        MagicMock(returncode=0, stdout=''),  # git config user.name (empty)
+        MagicMock(returncode=0),  # git config set
+        MagicMock(returncode=0),  # git add
+        MagicMock(returncode=0, stdout='modified files'),  # git status --porcelain
+        MagicMock(returncode=0),  # git commit
+    ]
+
+    # Call the function with special characters in git config
+    make_commit(repo_dir, issue, 'issue', git_user_name, git_user_email)
+
+    # Assert that subprocess.run was called with properly escaped git config
+    calls = mock_subprocess_run.call_args_list
+    git_config_set_call = calls[1][0][0]
+    
+    # Check that quotes are properly handled in the command
+    expected_config_command = (
+        f'git -C {repo_dir} config user.name "{git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"'
+    )
+    assert expected_config_command == git_config_set_call
 
 
 def test_apply_patch_rename_directory(mock_output_dir):
