@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import type { HTMLProps } from "../../../shared/types";
+import type { BaseProps, HTMLProps } from "../../../shared/types";
 import { cn } from "../../../shared/utils/cn";
 import { Icon, type IconProps } from "../../icon/Icon";
 import { Typography } from "../../typography/Typography";
@@ -10,7 +10,7 @@ export type AccordionHeaderProps = Omit<
 > & {
   icon: IconProps["icon"];
   expanded: boolean;
-};
+} & BaseProps;
 
 export const AccordionHeader = ({
   className,
@@ -43,7 +43,8 @@ export const AccordionHeader = ({
         // hover modifier
         "data-[expanded=true]:hover:bg-light-neutral-900",
         // focus modifier
-        "data-[expanded=false]:focus:bg-light-neutral-900"
+        "data-[expanded=false]:focus:bg-light-neutral-900",
+        className
       )}
     >
       <Icon icon={icon} className={cn(iconCss, "w-6 h-6")} />

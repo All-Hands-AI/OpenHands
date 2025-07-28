@@ -25,7 +25,6 @@ from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -508,7 +507,7 @@ class CLIRuntime(Runtime):
             )
         elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
-                raise LLMMalformedActionError(
+                raise PermissionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
             actual_filename = filename
@@ -520,7 +519,7 @@ class CLIRuntime(Runtime):
 
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
-            raise LLMMalformedActionError(
+            raise PermissionError(
                 f'Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}'
             )
 
