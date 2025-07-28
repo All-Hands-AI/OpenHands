@@ -169,6 +169,7 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
             llm_registry=llm_registry,
             max_size=config.max_size,
             keep_first=config.keep_first,
+            max_event_length=config.max_event_length,
         )
 
 
