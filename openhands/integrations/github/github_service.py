@@ -1,5 +1,6 @@
 import json
 import os
+import base64
 from datetime import datetime
 from typing import Any
 
@@ -683,9 +684,6 @@ class GitHubService(BaseGitService, GitService):
 
                 response.raise_for_status()
                 file_data = response.json()
-
-                # Decode base64 content
-                import base64
 
                 file_content = base64.b64decode(file_data['content']).decode('utf-8')
                 return file_content
