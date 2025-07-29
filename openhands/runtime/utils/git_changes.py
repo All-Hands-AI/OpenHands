@@ -46,7 +46,9 @@ def get_valid_ref(repo_dir: str) -> str | None:
         pass
 
     # compares with empty tree
-    ref_new_repo = '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'
+    ref_new_repo = (
+        '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'
+    )
     refs.append(ref_new_repo)
 
     # Find a ref that exists...
