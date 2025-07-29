@@ -7,7 +7,13 @@
         "ko-KR": "시스템 유지 보수",
         "no": "Systemvedlikehold",
         "it": "Manutenzione del sistema",
-        "pt": "Manutenção do sistema"
+        "pt": "Manutenção do sistema",
+        "ar": "صيانة النظام",
+        "de": "Systemwartung",
+        "fr": "Maintenance du système",
+        "es": "Mantenimiento del sistema",
+        "tr": "Sistem Bakımı",
+        "uk": "Технічне обслуговування системи"
     },
     "MAINTENANCE$DESCRIPTION": {
         "en": "OpenHands is currently undergoing scheduled maintenance. We apologize for any inconvenience this may cause.",
@@ -17,7 +23,13 @@
         "ko-KR": "OpenHands는 현재 예정된 유지 보수 중입니다. 불편을 끼쳐 드려 죄송합니다.",
         "no": "OpenHands gjennomgår for øyeblikket planlagt vedlikehold. Vi beklager eventuelle ulemper dette måtte medføre.",
         "it": "OpenHands è attualmente in fase di manutenzione programmata. Ci scusiamo per eventuali disagi che questo potrebbe causare.",
-        "pt": "OpenHands está atualmente em manutenção programada. Pedimos desculpas por qualquer inconveniente que isso possa causar."
+        "pt": "OpenHands está atualmente em manutenção programada. Pedimos desculpas por qualquer inconveniente que isso possa causar.",
+        "ar": "يخضع OpenHands حاليًا للصيانة المجدولة. نعتذر عن أي إزعاج قد يسببه ذلك.",
+        "de": "OpenHands wird derzeit einer geplanten Wartung unterzogen. Wir entschuldigen uns für eventuelle Unannehmlichkeiten.",
+        "fr": "OpenHands est actuellement en maintenance planifiée. Nous nous excusons pour tout inconvénient que cela pourrait causer.",
+        "es": "OpenHands está actualmente en mantenimiento programado. Nos disculpamos por cualquier inconveniente que esto pueda causar.",
+        "tr": "OpenHands şu anda planlı bakım geçiriyor. Bu durumun neden olabileceği herhangi bir rahatsızlık için özür dileriz.",
+        "uk": "OpenHands наразі проходить планове технічне обслуговування. Перепрошуємо за незручності, які це може спричинити."
     },
     "MAINTENANCE$SCHEDULED_TIME": {
         "en": "Scheduled Maintenance Window",
@@ -27,7 +39,13 @@
         "ko-KR": "예정된 유지 보수 시간",
         "no": "Planlagt vedlikeholdsvindu",
         "it": "Finestra di manutenzione programmata",
-        "pt": "Janela de manutenção programada"
+        "pt": "Janela de manutenção programada",
+        "ar": "نافذة الصيانة المجدولة",
+        "de": "Geplantes Wartungsfenster",
+        "fr": "Fenêtre de maintenance planifiée",
+        "es": "Ventana de mantenimiento programada",
+        "tr": "Planlı Bakım Penceresi",
+        "uk": "Заплановане вікно обслуговування"
     },
     "MAINTENANCE$START": {
         "en": "Start",
@@ -37,7 +55,13 @@
         "ko-KR": "시작",
         "no": "Start",
         "it": "Inizio",
-        "pt": "Início"
+        "pt": "Início",
+        "ar": "البداية",
+        "de": "Start",
+        "fr": "Début",
+        "es": "Inicio",
+        "tr": "Başlangıç",
+        "uk": "Початок"
     },
     "MAINTENANCE$END": {
         "en": "End",
@@ -47,7 +71,13 @@
         "ko-KR": "종료",
         "no": "Slutt",
         "it": "Fine",
-        "pt": "Fim"
+        "pt": "Fim",
+        "ar": "النهاية",
+        "de": "Ende",
+        "fr": "Fin",
+        "es": "Fin",
+        "tr": "Bitiş",
+        "uk": "Кінець"
     },
     "MAINTENANCE$COME_BACK_LATER": {
         "en": "Please check back after the maintenance window has ended. Thank you for your patience.",
@@ -57,7 +87,13 @@
         "ko-KR": "유지 보수 시간이 끝난 후 다시 확인해 주세요. 기다려 주셔서 감사합니다.",
         "no": "Vennligst sjekk tilbake etter at vedlikeholdsvinduet er avsluttet. Takk for din tålmodighet.",
         "it": "Si prega di controllare dopo la fine della finestra di manutenzione. Grazie per la pazienza.",
-        "pt": "Por favor, verifique novamente após o término da janela de manutenção. Obrigado pela sua paciência."
+        "pt": "Por favor, verifique novamente após o término da janela de manutenção. Obrigado pela sua paciência.",
+        "ar": "يرجى العودة بعد انتهاء فترة الصيانة. شكرًا لصبرك.",
+        "de": "Bitte schauen Sie nach Ende des Wartungsfensters wieder vorbei. Vielen Dank für Ihre Geduld.",
+        "fr": "Veuillez revenir après la fin de la fenêtre de maintenance. Merci pour votre patience.",
+        "es": "Por favor, vuelva a consultar después de que finalice la ventana de mantenimiento. Gracias por su paciencia.",
+        "tr": "Lütfen bakım penceresi sona erdikten sonra tekrar kontrol edin. Sabrınız için teşekkür ederiz.",
+        "uk": "Будь ласка, перевірте знову після закінчення вікна обслуговування. Дякуємо за ваше терпіння."
     },
     "MICROAGENT$NO_REPOSITORY_FOUND": {
         "en": "No repository found to launch microagent",
