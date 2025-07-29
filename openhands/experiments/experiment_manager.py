@@ -17,7 +17,7 @@ class ExperimentManager:
     def run_agent_config_variant_test(
         user_id: str, conversation_id: str, agent_config: AgentConfig
     ) -> AgentConfig:
-        logger.info(
+        logger.debug(
             f'Running agent config variant test for user_id={user_id}, conversation_id={conversation_id}'
         )
         return agent_config
