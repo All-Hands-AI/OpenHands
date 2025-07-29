@@ -664,30 +664,15 @@ def _create_server(
 
     logger.debug(f'Updated PATH for subprocesses: {env["PATH"]}')
 
-    # On Windows, we need to handle subprocess creation more carefully
-    if sys.platform == 'win32':
-        # Convert command list to string for shell execution on Windows
-        cmd_str = ' '.join(f'"{arg}"' if ' ' in arg else arg for arg in cmd)
-        server_process = subprocess.Popen(  # noqa: S603
-            cmd_str,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-            env=env,
-            cwd=code_repo_path,
-            shell=True,
-        )
-    else:
-        server_process = subprocess.Popen(  # noqa: S603
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            universal_newlines=True,
-            bufsize=1,
-            env=env,
-            cwd=code_repo_path,
-        )
+    server_process = subprocess.Popen(  # noqa: S603
+        cmd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        universal_newlines=True,
+        bufsize=1,
+        env=env,
+        cwd=code_repo_path,
+    )
 
     log_thread_exit_event = threading.Event()
 
