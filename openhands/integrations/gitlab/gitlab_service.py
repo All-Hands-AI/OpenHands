@@ -22,7 +22,7 @@ from openhands.integrations.service_types import (
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
-logger = logging.getLogger(__name__)
+from openhands.core.logger import openhands_logger as logger
 
 
 class GitLabService(BaseGitService, GitService):
