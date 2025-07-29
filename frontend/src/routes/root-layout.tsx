@@ -79,9 +79,15 @@ export default function MainApp() {
     isError: isAuthError,
   } = useIsAuthed();
 
-  // Check if maintenance has started
-  const isMaintenanceActive = React.useMemo(() => {
-    if (!config.data?.MAINTENANCE) return false;
+  // State to track if maintenance is currently active
+  const [isMaintenanceActive, setIsMaintenanceActive] = React.useState(false);
+
+  // Schedule maintenance activation based on start time
+  React.useEffect(() => {
+    if (!config.data?.MAINTENANCE) {
+      setIsMaintenanceActive(false);
+      return undefined;
+    }
 
     const now = new Date();
     const startTime = new Date(config.data.MAINTENANCE.startTime);
@@ -94,7 +100,22 @@ export default function MainApp() {
         ? startTime
         : new Date(`${config.data.MAINTENANCE.startTime} EST`);
 
-    return now >= maintenanceStartTime;
+    // Check if maintenance has already started
+    if (now >= maintenanceStartTime) {
+      setIsMaintenanceActive(true);
+      return undefined;
+    }
+
+    // Calculate time until maintenance starts
+    const timeUntilMaintenance = maintenanceStartTime.getTime() - now.getTime();
+
+    // Schedule maintenance activation
+    const timeoutId = setTimeout(() => {
+      setIsMaintenanceActive(true);
+    }, timeUntilMaintenance);
+
+    // Cleanup timeout on unmount or config change
+    return () => clearTimeout(timeoutId);
   }, [config.data?.MAINTENANCE]);
 
   // Handle maintenance mode - logout users when maintenance becomes active
