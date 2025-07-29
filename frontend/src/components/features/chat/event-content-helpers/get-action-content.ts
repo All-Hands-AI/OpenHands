@@ -77,25 +77,9 @@ const getMcpActionContent = (event: MCPAction): string => {
 const getThinkActionContent = (event: ThinkAction): string =>
   event.args.thought;
 
-const getFinishActionContent = (event: FinishAction): string => {
-  let content = event.args.final_thought;
-
-  switch (event.args.task_completed) {
-    case "success":
-      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_SUCCESSFULLY")}`;
-      break;
-    case "failure":
-      content += `\n\n\n${i18n.t("FINISH$TASK_NOT_COMPLETED")}`;
-      break;
-    case "partial":
-    default:
-      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_PARTIALLY")}`;
-      break;
-  }
-
-  return content.trim();
-};
-
+const getFinishActionContent = (event: FinishAction): string =>
+  // Return only the final thought without appending the task completion status message
+  event.args.final_thought.trim();
 const getNoContentActionContent = (): string => "";
 
 export const getActionContent = (event: OpenHandsAction): string => {
