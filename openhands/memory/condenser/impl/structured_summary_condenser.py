@@ -8,12 +8,12 @@ from pydantic import BaseModel, Field
 from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
@@ -167,8 +167,7 @@ class StructuredSummaryCondenser(RollingCondenser):
 
     def __init__(
         self,
-        llm_config: LLMConfig,
-        llm_registry: LLMRegistry,
+        llm: LLM,
         max_size: int = 100,
         keep_first: int = 1,
         max_event_length: int = 10_000,
@@ -185,7 +184,7 @@ class StructuredSummaryCondenser(RollingCondenser):
         self.max_size = max_size
         self.keep_first = keep_first
         self.max_event_length = max_event_length
-        self.llm = llm_registry.register_llm('structured_summary_condenser', llm_config)
+        self.llm = llm
         if not self.llm.is_function_calling_active():
             raise ValueError(
                 'LLM must support function calling to use StructuredSummaryCondenser'
@@ -317,10 +316,10 @@ Capture all relevant information, especially:
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
+        llm = llm_registry.register_llm('condenser', llm_config)
 
         return StructuredSummaryCondenser(
-            llm_config=llm_config,
-            llm_registry=llm_registry,
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,

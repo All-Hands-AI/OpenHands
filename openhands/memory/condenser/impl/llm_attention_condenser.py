@@ -4,8 +4,8 @@ from litellm import supports_response_schema
 from pydantic import BaseModel
 
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action.agent import CondensationAction
+from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
@@ -25,8 +25,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
     def __init__(
         self,
-        llm_config: LLMConfig,
-        llm_registry: LLMRegistry,
+        llm: LLM,
         max_size: int = 100,
         keep_first: int = 1,
     ):
@@ -41,7 +40,7 @@ class LLMAttentionCondenser(RollingCondenser):
 
         self.max_size = max_size
         self.keep_first = keep_first
-        self.llm = llm_registry.register_llm('attention_condenser', llm_config)
+        self.llm = llm
 
         # This condenser relies on the `response_schema` feature, which is not supported by all LLMs
         if not supports_response_schema(
@@ -129,9 +128,10 @@ class LLMAttentionCondenser(RollingCondenser):
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
 
+        llm = llm_registry.register_llm('condenser', llm_config)
+
         return LLMAttentionCondenser(
-            llm_config=llm_config,
-            llm_registry=llm_registry,
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
         )
