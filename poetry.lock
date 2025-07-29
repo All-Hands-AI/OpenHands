@@ -10622,7 +10622,7 @@ version = "0.7.5"
 description = "Unified diff parsing/metadata extraction library."
 optional = false
 python-versions = "*"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "unidiff-0.7.5-py2.py3-none-any.whl", hash = "sha256:c93bf2265cc1ba2a520e415ab05da587370bc2a3ae9e0414329f54f0c2fc09e8"},
     {file = "unidiff-0.7.5.tar.gz", hash = "sha256:2e5f0162052248946b9f0970a40e9e124236bf86c82b70821143a6fc1dea2574"},
@@ -11802,4 +11802,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "97b5a5e63d219dd03447e77269d2324d6394d892a1cc93e7d93110e180cf1357"
+content-hash = "6db1cead9e9959e4c921806028754e87097f699ccfb8302048b75eb4d0a1bad0"

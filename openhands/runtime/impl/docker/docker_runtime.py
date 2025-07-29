@@ -397,6 +397,27 @@ class DockerRuntime(ActionExecutionClient):
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
+            
+            # Fix file ownership for mounted volumes if HOST_UID and HOST_GID are set
+            if 'HOST_UID' in environment and 'HOST_GID' in environment:
+                host_uid = environment['HOST_UID']
+                host_gid = environment['HOST_GID']
+                self.log('debug', f'Setting up file ownership fix for {host_uid}:{host_gid}')
+                
+                # Create a background process to periodically fix ownership
+                fix_ownership_cmd = (
+                    f'nohup bash -c "while true; do '
+                    f'find /workspace -uid 0 -exec chown {host_uid}:{host_gid} {{}} + 2>/dev/null || true; '
+                    f'find /outputs -uid 0 -exec chown {host_uid}:{host_gid} {{}} + 2>/dev/null || true; '
+                    f'sleep 5; done" > /tmp/ownership_fix.log 2>&1 &'
+                )
+                
+                try:
+                    self.container.exec_run(fix_ownership_cmd, detach=True)
+                    self.log('debug', 'File ownership fix process started')
+                except Exception as e:
+                    self.log('warning', f'Failed to start ownership fix process: {e}')
+            
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:
             self.log(

@@ -102,6 +102,7 @@ runloop-api-client = { version = "0.43.0", optional = true }
 daytona = { version = "0.22.0", optional = true }
 datasets = "^4.0.0"
 commit0 = {git = "https://github.com/juanmichelini/commit0.git", rev = "main"}
+unidiff = "^0.7.5"
 
 [tool.poetry.extras]
 third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]

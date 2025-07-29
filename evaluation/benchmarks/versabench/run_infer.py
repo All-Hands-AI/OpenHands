@@ -92,6 +92,11 @@ def run_single_benchmark(benchmark, config_path, command):
     copy_config(output_path, full_config_path)
 
     env = os.environ.copy()  # inherit current environment with micromamba active
+    
+    # Add HOST_UID and HOST_GID for proper file permissions in containers
+    env['HOST_UID'] = str(os.getuid())
+    env['HOST_GID'] = str(os.getgid())
+    
     cwd = os.getcwd()  # preserve current directory
 
     # Run subprocess and capture stdout and stderr
@@ -115,6 +120,28 @@ def run_single_benchmark(benchmark, config_path, command):
             output=result.stdout,
             stderr=result.stderr,
         )
+
+    # Fix any remaining permission issues after benchmark completion
+    if benchmark == 'the_agent_company':
+        temp_dir = os.path.join(
+            'evaluation/benchmarks/versabench/versabench_cache/the_agent_company_tmp_dir'
+        )
+        if os.path.exists(temp_dir):
+            try:
+                current_user = os.getenv('USER', 'juan-all-hands')
+                subprocess.run(
+                    ['sudo', 'chown', '-R', f'{current_user}:{current_user}', temp_dir],
+                    check=False,  # Don't fail if this doesn't work
+                    capture_output=True
+                )
+                subprocess.run(
+                    ['sudo', 'chmod', '-R', '755', temp_dir],
+                    check=False,  # Don't fail if this doesn't work
+                    capture_output=True
+                )
+                logger.info(f'Fixed permissions for {temp_dir}')
+            except Exception as e:
+                logger.warning(f'Could not fix permissions for {temp_dir}: {e}')
 
     logger.info(f'Finished sub-benchmark {benchmark}')
 
@@ -176,8 +203,18 @@ def main():
 
         # Ensure the directory exists with proper permissions
         os.makedirs(the_agent_company_tmp_dir, exist_ok=True)
-        # Make sure the directory is writable
+        # Make sure the directory is writable and accessible
         os.chmod(the_agent_company_tmp_dir, 0o755)
+        
+        # Clean up any existing root-owned files/directories that might cause permission issues
+        try:
+            import subprocess
+            subprocess.run(['sudo', 'chown', '-R', f'{os.getuid()}:{os.getgid()}', the_agent_company_tmp_dir], 
+                         check=False, capture_output=True)
+            subprocess.run(['sudo', 'chmod', '-R', '755', the_agent_company_tmp_dir], 
+                         check=False, capture_output=True)
+        except Exception:
+            pass  # If sudo fails, continue anyway
 
         logger.info(f'Using temporary directory: {the_agent_company_tmp_dir}')
 
