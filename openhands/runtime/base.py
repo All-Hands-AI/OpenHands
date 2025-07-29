@@ -1149,14 +1149,11 @@ SHA1=$3
 CO_AUTHOR=$(git config --get user.coauthor)
 
 if [ -n "$CO_AUTHOR" ]; then
-    # Only add co-author if not already in the message and not an amend or merge
-    if [ "$COMMIT_SOURCE" != "message" ] && [ "$COMMIT_SOURCE" != "merge" ]; then
-        # Check if the message already contains a Co-authored-by line
-        if ! grep -q "Co-authored-by:" "$COMMIT_MSG_FILE"; then
-            # Add an empty line and the Co-authored-by line
-            echo "" >> "$COMMIT_MSG_FILE"
-            echo "Co-authored-by: $CO_AUTHOR" >> "$COMMIT_MSG_FILE"
-        fi
+    # Check if the message already contains a Co-authored-by line
+    if ! grep -q "Co-authored-by:" "$COMMIT_MSG_FILE"; then
+        # Add an empty line and the Co-authored-by line
+        echo "" >> "$COMMIT_MSG_FILE"
+        echo "Co-authored-by: $CO_AUTHOR" >> "$COMMIT_MSG_FILE"
     fi
 fi
 
