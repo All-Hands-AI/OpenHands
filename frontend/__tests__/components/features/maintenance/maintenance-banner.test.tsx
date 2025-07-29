@@ -3,11 +3,20 @@ import { describe, expect, it, vi } from "vitest";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 
 // Mock react-i18next
-vi.mock("react-i18next", () => ({
-  useTranslation: () => ({
-    t: (key: string) => key,
-  }),
-}));
+vi.mock("react-i18next", async () => {
+  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  return {
+    ...actual,
+    useTranslation: () => ({
+      t: (key: string, options?: { time?: string }) => {
+        const translations: Record<string, string> = {
+          "MAINTENANCE$SCHEDULED_MESSAGE": `Scheduled maintenance will begin at ${options?.time || "{{time}}"}`,
+        };
+        return translations[key] || key;
+      },
+    }),
+  };
+});
 
 describe("MaintenanceBanner", () => {
   it("renders maintenance banner with formatted time", () => {
