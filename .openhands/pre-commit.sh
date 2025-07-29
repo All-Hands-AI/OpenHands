@@ -14,10 +14,11 @@ STAGED_FILES=$(git diff --cached --name-only)
 has_frontend_changes=false
 has_backend_changes=false
 has_vscode_changes=false
+has_microagent_changes=false
 
 # Check each file individually to avoid issues with grep
 for file in $STAGED_FILES; do
-    if [[ $file == frontend/* ]]; then
+    if [[ $file == frontend/* || $file == openhands-ui/* ]]; then
         has_frontend_changes=true
     elif [[ $file == openhands/* || $file == evaluation/* || $file == tests/* ]]; then
         has_backend_changes=true
@@ -25,6 +26,8 @@ for file in $STAGED_FILES; do
         if [[ $file == openhands/integrations/vscode/* ]]; then
             has_vscode_changes=true
         fi
+    elif [[ $file == microagents/* || $file == .openhands/microagents/* ]]; then
+        has_microagent_changes=true
     fi
 done
 
@@ -32,6 +35,7 @@ echo "Analyzing changes..."
 echo "- Frontend changes: $has_frontend_changes"
 echo "- Backend changes: $has_backend_changes"
 echo "- VSCode extension changes: $has_vscode_changes"
+echo "- Microagent changes: $has_microagent_changes"
 
 # Run frontend linting if needed
 if [ "$has_frontend_changes" = true ]; then
@@ -138,8 +142,29 @@ else
     echo "Skipping VSCode extension checks (no VSCode extension changes detected)."
 fi
 
+# Run microagent checks if needed
+if [ "$has_microagent_changes" = true ]; then
+    echo "Running microagent checks..."
+    # Run basic checks for markdown files
+    poetry run pre-commit run trailing-whitespace --files $(echo "$STAGED_FILES" | grep -E "microagents/|\.openhands/microagents/" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+    if [ $? -ne 0 ]; then
+        echo "Microagent trailing whitespace check failed. Please fix the issues before committing."
+        EXIT_CODE=1
+    fi
+
+    poetry run pre-commit run end-of-file-fixer --files $(echo "$STAGED_FILES" | grep -E "microagents/|\.openhands/microagents/" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+    if [ $? -ne 0 ]; then
+        echo "Microagent end-of-file check failed. Please fix the issues before committing."
+        EXIT_CODE=1
+    fi
+
+    echo "Microagent checks completed."
+else
+    echo "Skipping microagent checks (no microagent changes detected)."
+fi
+
 # If no specific code changes detected, run basic checks
-if [ "$has_frontend_changes" = false ] && [ "$has_backend_changes" = false ]; then
+if [ "$has_frontend_changes" = false ] && [ "$has_backend_changes" = false ] && [ "$has_microagent_changes" = false ]; then
     echo "No specific code changes detected. Running basic checks..."
     if [ -n "$STAGED_FILES" ]; then
         # Run only basic pre-commit hooks for non-code files

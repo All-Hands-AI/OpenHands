@@ -10,11 +10,13 @@ on:
       - main
   pull_request:
     paths-ignore:
-      - '**.md'
       - 'docs/**'
       - '.github/*.md'
       - 'LICENSE'
       - 'CITATION.cff'
+      - '**.md'
+      - '!microagents/**.md'
+      - '!.openhands/microagents/**.md'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -27,7 +29,7 @@ jobs:
     name: Lint frontend
     runs-on: blacksmith-4vcpu-ubuntu-2204
     # Only run if frontend files have changed
-    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'frontend/') }}
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'frontend/') || contains(toJSON(github.event.pull_request.files.*.filename), 'openhands-ui/') }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Node.js 22
@@ -64,6 +66,31 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Run pre-commit hooks
         run: pre-commit run --all-files --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+
+  # Lint microagent files
+  lint-microagents:
+    name: Lint microagents
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    # Only run if microagent files have changed
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'microagents/') || contains(toJSON(github.event.pull_request.files.*.filename), '.openhands/microagents/') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: 3.12
+          cache: "pip"
+      - name: Install pre-commit
+        run: pip install pre-commit==3.7.0
+      - name: Run basic checks on microagent files
+        run: |
+          MICROAGENT_FILES=$(find microagents/ .openhands/microagents/ -type f -name "*.md" 2>/dev/null || echo "")
+          if [ -n "$MICROAGENT_FILES" ]; then
+            pre-commit run trailing-whitespace --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+            pre-commit run end-of-file-fixer --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+          else
+            echo "No microagent files found."
+          fi
 
   # Check version consistency across documentation
   check-version-consistency:
