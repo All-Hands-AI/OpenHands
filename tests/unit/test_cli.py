@@ -825,7 +825,14 @@ async def test_config_loading_order(
     mock_config = MagicMock()
     mock_config.workspace_base = '/test/dir'
     mock_config.cli_multiline_input = False
-    mock_config.get_llm_config = MagicMock(return_value=MagicMock())
+
+    # Create a mock LLM config that has no model or API key set
+    # This simulates the case where config.toml doesn't have LLM settings
+    mock_llm_config = MagicMock()
+    mock_llm_config.model = None
+    mock_llm_config.api_key = None
+
+    mock_config.get_llm_config = MagicMock(return_value=mock_llm_config)
     mock_config.set_llm_config = MagicMock()
     mock_config.get_agent_config = MagicMock(return_value=MagicMock())
     mock_config.set_agent_config = MagicMock()

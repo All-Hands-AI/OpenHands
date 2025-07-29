@@ -13,6 +13,7 @@ import {
   GitChange,
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
+  CreateMicroagent,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -251,6 +252,28 @@ class OpenHands {
     return data.results;
   }
 
+  static async searchConversations(
+    selectedRepository?: string,
+    conversationTrigger?: string,
+    limit: number = 20,
+  ): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append("limit", limit.toString());
+
+    if (selectedRepository) {
+      params.append("selected_repository", selectedRepository);
+    }
+
+    if (conversationTrigger) {
+      params.append("conversation_trigger", conversationTrigger);
+    }
+
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      `/api/conversations?${params.toString()}`,
+    );
+    return data.results;
+  }
+
   static async deleteUserConversation(conversationId: string): Promise<void> {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
@@ -262,6 +285,7 @@ class OpenHands {
     suggested_task?: SuggestedTask,
     selected_branch?: string,
     conversationInstructions?: string,
+    createMicroagent?: CreateMicroagent,
   ): Promise<Conversation> {
     const body = {
       repository: selectedRepository,
@@ -270,6 +294,7 @@ class OpenHands {
       initial_user_msg: initialUserMsg,
       suggested_task,
       conversation_instructions: conversationInstructions,
+      create_microagent: createMicroagent,
     };
 
     const { data } = await openHands.post<Conversation>(
