@@ -1,0 +1,7 @@
+This is a test file created in the OpenHands repository.
+Environment information:
+- Python: 3.12.11
+- Virtual Environment: /openhands/poetry/openhands-ai-5O4_aCHf-py3.12
+- Working Directory: /workspace/OpenHands
+- Git Branch: pre-commit-sh-not-called
+- Date: 2025-07-29
