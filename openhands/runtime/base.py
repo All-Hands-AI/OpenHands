@@ -1113,36 +1113,70 @@ fi
 
         # Set up coauthor information if user credentials are available
         if self.user_email and self.user_name:
-            coauthor_line = f'Co-authored-by: {self.user_name} <{self.user_email}>'
+            coauthor_value = f'{self.user_name} <{self.user_email}>'
 
-            # Create a commit template with coauthor information
-            template_content = f"""
-
-
-{coauthor_line}
-"""
-
-            # Write the commit template to a file
-            template_cmd = f'echo {json.dumps(template_content)} > ~/.gitmessage'
-            INIT_COMMANDS.append(template_cmd)
-
-            # Set the commit template
+            # Set up git config for coauthor
             if is_local_runtime:
                 if is_windows:
                     # Windows, local
                     INIT_COMMANDS.append(
-                        'git config --file ./.git_config commit.template ~/.gitmessage'
+                        f'git config --file ./.git_config user.coauthor "{coauthor_value}"'
                     )
                 else:
                     # Linux/macOS, local
                     INIT_COMMANDS.append(
-                        'git config --file ./.git_config commit.template ~/.gitmessage'
+                        f'git config --file ./.git_config user.coauthor "{coauthor_value}"'
                     )
             else:
                 # Non-local (implies Linux/macOS)
                 INIT_COMMANDS.append(
-                    'git config --global commit.template ~/.gitmessage'
+                    f'git config --global user.coauthor "{coauthor_value}"'
                 )
+
+            # Create prepare-commit-msg hook content
+            prepare_commit_msg_content = """#!/bin/sh
+#
+# Automatically add Co-authored-by line to commit messages
+#
+# This hook adds a Co-authored-by line to the commit message
+# if the user has configured a co-author in their git config.
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+# Check if a co-author is configured
+CO_AUTHOR=$(git config --get user.coauthor)
+
+if [ -n "$CO_AUTHOR" ]; then
+    # Only add co-author if not already in the message and not an amend or merge
+    if [ "$COMMIT_SOURCE" != "message" ] && [ "$COMMIT_SOURCE" != "merge" ]; then
+        # Check if the message already contains a Co-authored-by line
+        if ! grep -q "Co-authored-by:" "$COMMIT_MSG_FILE"; then
+            # Add an empty line and the Co-authored-by line
+            echo "" >> "$COMMIT_MSG_FILE"
+            echo "Co-authored-by: $CO_AUTHOR" >> "$COMMIT_MSG_FILE"
+        fi
+    fi
+fi
+
+exit 0
+"""
+
+            # Create the hooks directory if it doesn't exist
+            INIT_COMMANDS.append('mkdir -p .git/hooks')
+
+            # Write the prepare-commit-msg hook to a file
+            hook_cmd = f'echo {json.dumps(prepare_commit_msg_content)} > .git/hooks/prepare-commit-msg'
+            INIT_COMMANDS.append(hook_cmd)
+
+            # Make the hook executable
+            INIT_COMMANDS.append('chmod +x .git/hooks/prepare-commit-msg')
+
+            # Log that we're setting up the hook
+            logger.info(
+                'Setting up prepare-commit-msg hook for automatic co-author attribution'
+            )
 
         # Determine no-pager command
         if is_windows:
