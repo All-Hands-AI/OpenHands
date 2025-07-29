@@ -976,3 +976,11 @@ class CLIRuntime(Runtime):
         """
         self._shell_stream_callback = callback
         return True
+
+    @property
+    def action_execution_server_url(self) -> str:
+        """Get the URL of the action execution server.
+
+        For CLI runtime, this is not applicable as commands run locally.
+        """
+        return 'http://localhost:8000'

@@ -135,6 +135,11 @@ class MockRuntime(Runtime):
 
         return MCPObservation(content='', tool='', result='')
 
+    @property
+    def action_execution_server_url(self) -> str:
+        """Return a mock action execution server URL."""
+        return 'http://localhost:8000'
+
 
 def create_test_microagents(base_dir: Path, config_dir_name: str = '.openhands'):
     """Create test microagent files in the specified directory."""
