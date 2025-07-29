@@ -1,7 +1,6 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useInfiniteScroll } from "@heroui/use-infinite-scroll";
 import { OptionalTag } from "./optional-tag";
 import { cn } from "#/utils/utils";
 
@@ -15,7 +14,6 @@ interface SettingsDropdownInputProps {
   showOptionalTag?: boolean;
   isDisabled?: boolean;
   isLoading?: boolean;
-  isFetchingNextPage?: boolean;
   defaultSelectedKey?: string;
   selectedKey?: string;
   isClearable?: boolean;
@@ -24,9 +22,6 @@ interface SettingsDropdownInputProps {
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
-  // Infinite scroll props
-  onLoadMore?: () => void;
-  hasMore?: boolean;
 }
 
 export function SettingsDropdownInput({
@@ -39,7 +34,6 @@ export function SettingsDropdownInput({
   showOptionalTag,
   isDisabled,
   isLoading,
-  isFetchingNextPage,
   defaultSelectedKey,
   selectedKey,
   isClearable,
@@ -48,19 +42,8 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
-  hasMore,
-  onLoadMore,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
-
-  const [isOpen, setIsOpen] = React.useState(false);
-
-  const [, scrollerRef] = useInfiniteScroll({
-    hasMore,
-    isEnabled: isOpen,
-    shouldUseLoader: false,
-    onLoadMore,
-  });
 
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
@@ -81,7 +64,7 @@ export function SettingsDropdownInput({
         onInputChange={onInputChange}
         isClearable={isClearable}
         isDisabled={isDisabled || isLoading}
-        isLoading={isLoading || isFetchingNextPage}
+        isLoading={isLoading}
         placeholder={isLoading ? t("HOME$LOADING") : placeholder}
         allowsCustomValue={allowsCustomValue}
         isRequired={required}
@@ -95,9 +78,7 @@ export function SettingsDropdownInput({
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
           },
         }}
-        scrollRef={scrollerRef}
         defaultFilter={defaultFilter}
-        onOpenChange={setIsOpen}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
