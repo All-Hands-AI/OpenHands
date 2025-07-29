@@ -27,10 +27,9 @@ def test_empty_sse_config():
 
 def test_invalid_sse_url():
     """Test SSE configuration with invalid URL format."""
-    config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='not_a_url')])
-    with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
-    assert 'Invalid URL' in str(exc_info.value)
+    with pytest.raises(ValidationError) as exc_info:
+        MCPSSEServerConfig(url='not_a_url')
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_duplicate_sse_urls():
@@ -64,7 +63,7 @@ def test_from_toml_section_invalid_sse():
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)
-    assert 'Invalid URL' in str(exc_info.value)
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_complex_urls():
@@ -246,3 +245,28 @@ def test_stdio_server_equality_with_different_env_order():
 
     # Should not be equal
     assert server1 != server5
+
+
+def test_mcp_stdio_server_args_parsing_basic():
+    """Test MCPStdioServerConfig args parsing with basic shell-like format."""
+    # Test basic space-separated parsing
+    config = MCPStdioServerConfig(
+        name='test-server', command='python', args='arg1 arg2 arg3'
+    )
+    assert config.args == ['arg1', 'arg2', 'arg3']
+
+    # Test single argument
+    config = MCPStdioServerConfig(
+        name='test-server', command='python', args='single-arg'
+    )
+    assert config.args == ['single-arg']
+
+
+def test_mcp_stdio_server_args_parsing_invalid_quotes():
+    """Test MCPStdioServerConfig args parsing with invalid quotes."""
+    # Test unmatched quotes
+    with pytest.raises(ValidationError) as exc_info:
+        MCPStdioServerConfig(
+            name='test-server', command='python', args='--config "unmatched quote'
+        )
+    assert 'Invalid argument format' in str(exc_info.value)

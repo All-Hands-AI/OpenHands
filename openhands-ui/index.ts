@@ -16,6 +16,3 @@ export { Toggle } from "./components/toggle/Toggle";
 export { Tabs } from "./components/tabs/Tabs";
 export { Tooltip } from "./components/tooltip/Tooltip";
 export { Typography } from "./components/typography/Typography";
-
-// Styles
-import "./index.css";
