@@ -553,19 +553,13 @@ async def modify_search_api_settings(
         return
 
     # Update config
-    if search_api_key == '':
-        config.search_api_key = None
-    elif search_api_key:
-        config.search_api_key = SecretStr(search_api_key)
+    config.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     # Update settings store
     settings = await settings_store.load()
     if not settings:
         settings = Settings()
 
-    if search_api_key == '':
-        settings.search_api_key = None
-    elif search_api_key:
-        settings.search_api_key = SecretStr(search_api_key)
+    settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     await settings_store.store(settings)
