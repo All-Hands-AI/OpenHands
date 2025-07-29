@@ -541,6 +541,28 @@ class GitLabService(BaseGitService, GitService):
             # Default behavior: look for .openhands/microagents directory
             return '.openhands/microagents'
 
+    def _extract_project_id(self, repository: str) -> str:
+        """Extract project_id from repository name for GitLab API calls.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+
+        Returns:
+            URL-encoded project ID for GitLab API
+        """
+        if '/' in repository:
+            parts = repository.split('/')
+            if len(parts) >= 3 and '.' in parts[0]:
+                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
+                project_id = '/'.join(parts[1:]).replace('/', '%2F')
+            else:
+                # Regular GitLab: 'owner/repo' -> 'owner/repo'
+                project_id = repository.replace('/', '%2F')
+        else:
+            project_id = repository
+
+        return project_id
+
     def _create_microagent_response(
         self, file_name: str, path: str
     ) -> MicroagentResponse:
@@ -566,18 +588,7 @@ class GitLabService(BaseGitService, GitService):
         microagents_path = self._determine_microagents_path(repository)
 
         # Extract project_id from repository name
-        # For self-hosted GitLab with domain prefix (e.g., 'gitlab.example.com/owner/repo')
-        # or regular GitLab (e.g., 'owner/repo'), extract the project part
-        if '/' in repository:
-            parts = repository.split('/')
-            if len(parts) >= 3 and '.' in parts[0]:
-                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
-                project_id = '/'.join(parts[1:]).replace('/', '%2F')
-            else:
-                # Regular GitLab: 'owner/repo' -> 'owner/repo'
-                project_id = repository.replace('/', '%2F')
-        else:
-            project_id = repository
+        project_id = self._extract_project_id(repository)
 
         base_url = f'{self.BASE_URL}/projects/{project_id}'
         microagents = []
@@ -642,18 +653,7 @@ class GitLabService(BaseGitService, GitService):
             RuntimeError: If file cannot be fetched or doesn't exist
         """
         # Extract project_id from repository name
-        # For self-hosted GitLab with domain prefix (e.g., 'gitlab.example.com/owner/repo')
-        # or regular GitLab (e.g., 'owner/repo'), extract the project part
-        if '/' in repository:
-            parts = repository.split('/')
-            if len(parts) >= 3 and '.' in parts[0]:
-                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
-                project_id = '/'.join(parts[1:]).replace('/', '%2F')
-            else:
-                # Regular GitLab: 'owner/repo' -> 'owner/repo'
-                project_id = repository.replace('/', '%2F')
-        else:
-            project_id = repository
+        project_id = self._extract_project_id(repository)
 
         encoded_file_path = file_path.replace('/', '%2F')
         base_url = f'{self.BASE_URL}/projects/{project_id}'
