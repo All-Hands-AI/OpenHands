@@ -174,6 +174,17 @@ def initialize_runtime(
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
+    # Fix Git dubious ownership issue by adding the directory to safe.directory
+    action = CmdRunAction(command=f'git config --global --add safe.directory /workspace/{workspace_dir_name}')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to configure git safe.directory: {str(obs)}',
+    )
+
     action = CmdRunAction(command='git checkout -b openhands')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})

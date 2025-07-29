@@ -413,8 +413,9 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 
                 try:
-                    self.container.exec_run(fix_ownership_cmd, detach=True)
-                    self.log('debug', 'File ownership fix process started')
+                    if self.container is not None:
+                        self.container.exec_run(fix_ownership_cmd, detach=True)
+                        self.log('debug', 'File ownership fix process started')
                 except Exception as e:
                     self.log('warning', f'Failed to start ownership fix process: {e}')
             

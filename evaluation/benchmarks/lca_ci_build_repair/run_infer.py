@@ -131,6 +131,12 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
+    # Fix Git dubious ownership issue by adding the directory to safe.directory
+    action = CmdRunAction(command=f'git config --global --add safe.directory {lca_ci_path}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    assert obs.exit_code == 0
+
     action = CmdRunAction(command='git switch open-hands-integration')
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
