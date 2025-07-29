@@ -189,17 +189,6 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-      }
-
-      const fullSettings = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
-      };
-
       MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
       return HttpResponse.json(null, { status: 200 });
     }
