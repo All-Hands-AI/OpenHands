@@ -15,7 +15,10 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: resolve(__dirname, "index.ts"),
+      entry: {
+        index: resolve(__dirname, "index.ts"),
+        tokens: resolve(__dirname, "tokens.css"),
+      },
       name: "OpenHandsUI",
       formats: ["es"],
       fileName: "index",
@@ -29,6 +32,6 @@ export default defineConfig({
         },
       },
     },
-    cssCodeSplit: false, // Bundle all CSS into a single index.css file
+    cssCodeSplit: true,
   },
 });

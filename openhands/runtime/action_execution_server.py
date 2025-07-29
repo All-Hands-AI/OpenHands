@@ -72,7 +72,10 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
-from openhands.runtime.utils.system_stats import get_system_stats
+from openhands.runtime.utils.system_stats import (
+    get_system_stats,
+    update_last_execution_time,
+)
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 if sys.platform == 'win32':
@@ -844,6 +847,8 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+        finally:
+            update_last_execution_time()
 
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):

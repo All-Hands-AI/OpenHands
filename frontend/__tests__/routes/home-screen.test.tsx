@@ -222,10 +222,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -240,10 +242,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -258,10 +262,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
   });
