@@ -136,7 +136,6 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
                 {
                     'status': status,
                     'path': path,
-                    'ref': ref,
                 }
             )
         else:
@@ -148,7 +147,7 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
     ).splitlines()
     for path in untracked_files:
         if path:
-            changes.append({'status': 'A', 'path': path, 'ref': ref})
+            changes.append({'status': 'A', 'path': path})
 
     return changes
 
