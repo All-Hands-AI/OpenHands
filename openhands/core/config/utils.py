@@ -226,7 +226,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             )
         except ValueError as e:
             # Re-raise ValueError from SandboxConfig.from_toml_section
-            raise ValueError('Error in [sandbox] section in config.toml', e)
+            raise ValueError('Error in [sandbox] section in config.toml') from e
 
     # Process MCP sections if present
     if 'mcp' in toml_config:
