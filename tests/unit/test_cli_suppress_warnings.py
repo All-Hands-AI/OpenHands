@@ -29,25 +29,6 @@ class TestWarningSuppressionCLI:
         output = captured_output.getvalue()
         assert 'Pydantic serializer warnings' not in output
 
-    def test_suppress_httpx_warnings(self):
-        """Test that httpx deprecation warnings are suppressed."""
-        # Apply suppression
-        suppress_cli_warnings()
-
-        # Capture stderr to check if warnings are printed
-        captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
-            # Trigger httpx deprecation warning
-            warnings.warn(
-                "Use 'content=<...>' to upload raw bytes/text content.\n  headers, stream = encode_request(",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-
-        # Should be suppressed (no output to stderr)
-        output = captured_output.getvalue()
-        assert 'content=' not in output
-
     def test_suppress_deprecated_method_warnings(self):
         """Test that deprecated method warnings are suppressed."""
         # Apply suppression
@@ -146,5 +127,4 @@ class TestWarningSuppressionCLI:
         assert any(
             'Pydantic serializer warnings' in str(msg) for msg in filter_messages
         )
-        assert any('content=' in str(msg) for msg in filter_messages)
         assert any('deprecated method' in str(msg) for msg in filter_messages)

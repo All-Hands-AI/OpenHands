@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseMaxBudgetPerTask } from "../settings-utils";
+import { parseMaxBudgetPerTask, extractSettings } from "../settings-utils";
 
 describe("parseMaxBudgetPerTask", () => {
   it("should return null for empty string", () => {
@@ -45,5 +45,47 @@ describe("parseMaxBudgetPerTask", () => {
     expect(parseMaxBudgetPerTask("1e0")).toBe(1);
     expect(parseMaxBudgetPerTask("1.5e1")).toBe(15);
     expect(parseMaxBudgetPerTask("5e-1")).toBeNull(); // 0.5, which is < 1
+  });
+});
+
+describe("extractSettings", () => {
+  it("should preserve model name case when extracting settings", () => {
+    // Test cases with various model name formats
+    const testCases = [
+      { provider: "sambanova", model: "Meta-Llama-3.1-8B-Instruct" },
+      { provider: "openai", model: "GPT-4o" },
+      { provider: "anthropic", model: "Claude-3-5-Sonnet" },
+      { provider: "openrouter", model: "CamelCaseModel" },
+    ];
+
+    testCases.forEach(({ provider, model }) => {
+      const formData = new FormData();
+      formData.set("llm-provider-input", provider);
+      formData.set("llm-model-input", model);
+
+      const settings = extractSettings(formData);
+
+      // Verify that the model name case is preserved
+      const expectedModel = `${provider}/${model}`;
+      expect(settings.LLM_MODEL).toBe(expectedModel);
+      // Only test that it's not lowercased if the original has uppercase letters
+      if (expectedModel !== expectedModel.toLowerCase()) {
+        expect(settings.LLM_MODEL).not.toBe(expectedModel.toLowerCase());
+      }
+    });
+  });
+
+  it("should handle custom model without lowercasing", () => {
+    const formData = new FormData();
+    formData.set("llm-provider-input", "sambanova");
+    formData.set("llm-model-input", "Meta-Llama-3.1-8B-Instruct");
+    formData.set("use-advanced-options", "true");
+    formData.set("custom-model", "Custom-Model-Name");
+
+    const settings = extractSettings(formData);
+
+    // Custom model should take precedence and preserve case
+    expect(settings.LLM_MODEL).toBe("Custom-Model-Name");
+    expect(settings.LLM_MODEL).not.toBe("custom-model-name");
   });
 });

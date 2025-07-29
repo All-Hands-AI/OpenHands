@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     const mainContainer = screen
       .getByTestId("home-screen")
       .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
+    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {
@@ -222,10 +222,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -240,10 +242,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -258,10 +262,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
   });

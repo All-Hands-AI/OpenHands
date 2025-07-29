@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 
 class KubernetesConfig(BaseModel):
@@ -62,7 +62,7 @@ class KubernetesConfig(BaseModel):
         description='Run the runtime sandbox container in privileged mode for use with docker-in-docker',
     )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'KubernetesConfig']:

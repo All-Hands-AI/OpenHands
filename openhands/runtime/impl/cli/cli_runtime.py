@@ -9,11 +9,12 @@ import select
 import shutil
 import signal
 import subprocess
+import sys
 import tempfile
 import time
 import zipfile
 from pathlib import Path
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from binaryornot.check import is_binary
 from openhands_aci.editor.editor import OHEditor
@@ -24,7 +25,6 @@ from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -50,6 +50,41 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
+
+if TYPE_CHECKING:
+    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+
+# Import Windows PowerShell support if on Windows
+if sys.platform == 'win32':
+    try:
+        from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+        from openhands.runtime.utils.windows_exceptions import DotNetMissingError
+    except (ImportError, DotNetMissingError) as err:
+        # Print a user-friendly error message without stack trace
+        friendly_message = """
+ERROR: PowerShell and .NET SDK are required but not properly configured
+
+The .NET SDK and PowerShell are required for OpenHands CLI on Windows.
+PowerShell integration cannot function without .NET Core.
+
+Please install the .NET SDK by following the instructions at:
+https://docs.all-hands.dev/usage/windows-without-wsl
+
+After installing .NET SDK, restart your terminal and try again.
+"""
+        print(friendly_message, file=sys.stderr)
+        logger.error(
+            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
+        )
+        if (
+            isinstance(err, DotNetMissingError)
+            and hasattr(err, 'details')
+            and err.details
+        ):
+            logger.debug(f'Details: {err.details}')
+
+        # Exit the program with an error code
+        sys.exit(1)
 
 
 class CLIRuntime(Runtime):
@@ -77,7 +112,7 @@ class CLIRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable[[str, str, str], None] | None = None,
+        status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
@@ -119,6 +154,10 @@ class CLIRuntime(Runtime):
         self.file_editor = OHEditor(workspace_root=self._workspace_path)
         self._shell_stream_callback: Callable[[str], None] | None = None
 
+        # Initialize PowerShell session on Windows
+        self._is_windows = sys.platform == 'win32'
+        self._powershell_session: WindowsPowershellSession | None = None
+
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
@@ -134,6 +173,15 @@ class CLIRuntime(Runtime):
 
         # Change to the workspace directory
         os.chdir(self._workspace_path)
+
+        # Initialize PowerShell session if on Windows
+        if self._is_windows:
+            self._powershell_session = WindowsPowershellSession(
+                work_dir=self._workspace_path,
+                username=None,  # Use current user
+                no_change_timeout_seconds=30,
+                max_memory_mb=None,
+            )
 
         if not self.attach_to_existing:
             await asyncio.to_thread(self.setup_initial_env)
@@ -240,6 +288,40 @@ class CLIRuntime(Runtime):
             raise
         except Exception as e:
             logger.error(f'Error: {e}')
+
+    def _execute_powershell_command(
+        self, command: str, timeout: float
+    ) -> CmdOutputObservation | ErrorObservation:
+        """
+        Execute a command using PowerShell session on Windows.
+        Args:
+            command: The command to execute
+            timeout: Timeout in seconds for the command
+        Returns:
+            CmdOutputObservation containing the complete output and exit code
+        """
+        if self._powershell_session is None:
+            return ErrorObservation(
+                content='PowerShell session is not available.',
+                error_id='POWERSHELL_SESSION_ERROR',
+            )
+
+        try:
+            # Create a CmdRunAction for the PowerShell session
+            from openhands.events.action import CmdRunAction
+
+            ps_action = CmdRunAction(command=command)
+            ps_action.set_hard_timeout(timeout)
+
+            # Execute the command using the PowerShell session
+            return self._powershell_session.execute(ps_action)
+
+        except Exception as e:
+            logger.error(f'Error executing PowerShell command "{command}": {e}')
+            return ErrorObservation(
+                content=f'Error executing PowerShell command "{command}": {str(e)}',
+                error_id='POWERSHELL_EXECUTION_ERROR',
+            )
 
     def _execute_shell_command(
         self, command: str, timeout: float
@@ -378,9 +460,16 @@ class CLIRuntime(Runtime):
             logger.debug(
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
             )
-            return self._execute_shell_command(
-                action.command, timeout=effective_timeout
-            )
+
+            # Use PowerShell on Windows if available, otherwise use subprocess
+            if self._is_windows and self._powershell_session is not None:
+                return self._execute_powershell_command(
+                    action.command, timeout=effective_timeout
+                )
+            else:
+                return self._execute_shell_command(
+                    action.command, timeout=effective_timeout
+                )
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
@@ -418,7 +507,7 @@ class CLIRuntime(Runtime):
             )
         elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
-                raise LLMMalformedActionError(
+                raise PermissionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
             actual_filename = filename
@@ -430,7 +519,7 @@ class CLIRuntime(Runtime):
 
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
-            raise LLMMalformedActionError(
+            raise PermissionError(
                 f'Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}'
             )
 
@@ -599,8 +688,69 @@ class CLIRuntime(Runtime):
         )
 
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
-        """Not implemented for CLI runtime."""
-        return ErrorObservation('MCP functionality is not implemented in CLIRuntime')
+        """Execute an MCP tool action in CLI runtime.
+
+        Args:
+            action: The MCP action to execute
+
+        Returns:
+            Observation: The result of the MCP tool execution
+        """
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
+
+        # Import here to avoid circular imports
+        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp.utils import create_mcp_clients
+
+        try:
+            # Get the MCP config for this runtime
+            mcp_config = self.get_mcp_config()
+
+            if (
+                not mcp_config.sse_servers
+                and not mcp_config.shttp_servers
+                and not mcp_config.stdio_servers
+            ):
+                self.log('warning', 'No MCP servers configured')
+                return ErrorObservation('No MCP servers configured')
+
+            self.log(
+                'debug',
+                f'Creating MCP clients for action {action.name} with servers: '
+                f'SSE={len(mcp_config.sse_servers)}, SHTTP={len(mcp_config.shttp_servers)}, '
+                f'stdio={len(mcp_config.stdio_servers)}',
+            )
+
+            # Create clients for this specific operation
+            mcp_clients = await create_mcp_clients(
+                mcp_config.sse_servers,
+                mcp_config.shttp_servers,
+                self.sid,
+                mcp_config.stdio_servers,
+            )
+
+            if not mcp_clients:
+                self.log('warning', 'No MCP clients could be created')
+                return ErrorObservation(
+                    'No MCP clients could be created - check server configurations'
+                )
+
+            # Call the tool and return the result
+            self.log(
+                'debug',
+                f'Executing MCP tool: {action.name} with arguments: {action.arguments}',
+            )
+            result = await call_tool_mcp_handler(mcp_clients, action)
+            self.log('debug', f'MCP tool {action.name} executed successfully')
+            return result
+
+        except Exception as e:
+            error_msg = f'Error executing MCP tool {action.name}: {str(e)}'
+            self.log('error', error_msg)
+            return ErrorObservation(error_msg)
 
     @property
     def workspace_root(self) -> Path:
@@ -737,6 +887,16 @@ class CLIRuntime(Runtime):
             raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
+        # Clean up PowerShell session if it exists
+        if self._powershell_session is not None:
+            try:
+                self._powershell_session.close()
+                logger.debug('PowerShell session closed successfully.')
+            except Exception as e:
+                logger.warning(f'Error closing PowerShell session: {e}')
+            finally:
+                self._powershell_session = None
+
         self._runtime_initialized = False
         super().close()
 
@@ -769,8 +929,40 @@ class CLIRuntime(Runtime):
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None
     ) -> MCPConfig:
-        # TODO: Load MCP config from a local file
-        return MCPConfig()
+        """Get MCP configuration for CLI runtime.
+
+        Args:
+            extra_stdio_servers: Additional stdio servers to include in the config
+
+        Returns:
+            MCPConfig: The MCP configuration with stdio servers and any configured SSE/SHTTP servers
+        """
+        # Check if we're on Windows - MCP is disabled on Windows
+        if sys.platform == 'win32':
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
+            return MCPConfig(sse_servers=[], stdio_servers=[], shttp_servers=[])
+
+        # Note: we update the self.config.mcp directly for CLI runtime, which is different from other runtimes.
+        mcp_config = self.config.mcp
+
+        # Add any extra stdio servers
+        if extra_stdio_servers:
+            current_stdio_servers = list(mcp_config.stdio_servers)
+            for extra_server in extra_stdio_servers:
+                # Check if this stdio server is already in the config
+                if extra_server not in current_stdio_servers:
+                    current_stdio_servers.append(extra_server)
+                    self.log('info', f'Added extra stdio server: {extra_server.name}')
+            mcp_config.stdio_servers = current_stdio_servers
+
+        self.log(
+            'debug',
+            f'CLI MCP config: {len(mcp_config.sse_servers)} SSE servers, '
+            f'{len(mcp_config.stdio_servers)} stdio servers, '
+            f'{len(mcp_config.shttp_servers)} SHTTP servers',
+        )
+
+        return mcp_config
 
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None

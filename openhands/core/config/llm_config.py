@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from pydantic import BaseModel, Field, SecretStr, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
 from openhands.core.logger import LOG_DIR
 from openhands.core.logger import openhands_logger as logger
@@ -45,6 +45,7 @@ class LLMConfig(BaseModel):
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
         reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
         seed: The seed to use for the LLM.
+        safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
     """
 
     model: str = Field(default='claude-sonnet-4-20250514')
@@ -56,11 +57,11 @@ class LLMConfig(BaseModel):
     aws_region_name: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
-    # total wait time: 5 + 10 + 20 + 30 = 65 seconds
-    num_retries: int = Field(default=4)
-    retry_multiplier: float = Field(default=2)
-    retry_min_wait: int = Field(default=5)
-    retry_max_wait: int = Field(default=30)
+    # total wait time: 8 + 16 + 32 + 64 = 120 seconds
+    num_retries: int = Field(default=5)
+    retry_multiplier: float = Field(default=8)
+    retry_min_wait: int = Field(default=8)
+    retry_max_wait: int = Field(default=64)
     timeout: int | None = Field(default=None)
     max_message_chars: int = Field(
         default=30_000
@@ -86,8 +87,12 @@ class LLMConfig(BaseModel):
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default='high')
     seed: int | None = Field(default=None)
+    safety_settings: list[dict[str, str]] | None = Field(
+        default=None,
+        description='Safety settings for models that support them (like Mistral AI and Gemini)',
+    )
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:

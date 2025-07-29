@@ -1,13 +1,22 @@
 from typing import Optional
 
 from fastmcp import Client
-from fastmcp.client.transports import SSETransport, StreamableHttpTransport
+from fastmcp.client.transports import (
+    SSETransport,
+    StdioTransport,
+    StreamableHttpTransport,
+)
 from mcp import McpError
 from mcp.types import CallToolResult
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from openhands.core.config.mcp_config import MCPSHTTPServerConfig, MCPSSEServerConfig
+from openhands.core.config.mcp_config import (
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.logger import openhands_logger as logger
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.mcp.tool import MCPClientTool
 
 
@@ -16,13 +25,12 @@ class MCPClient(BaseModel):
     A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
     """
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     client: Optional[Client] = None
     description: str = 'MCP client tools for server interaction'
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
-
-    class Config:
-        arbitrary_types_allowed = True
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""
@@ -91,11 +99,51 @@ class MCPClient(BaseModel):
 
             await self._initialize_and_list_tools()
         except McpError as e:
-            logger.error(f'McpError connecting to {server_url}: {e}')
+            error_msg = f'McpError connecting to {server_url}: {e}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_url,
+                server_type='shttp'
+                if isinstance(server, MCPSHTTPServerConfig)
+                else 'sse',
+                error_message=error_msg,
+                exception_details=str(e),
+            )
             raise  # Re-raise the error
 
         except Exception as e:
-            logger.error(f'Error connecting to {server_url}: {e}')
+            error_msg = f'Error connecting to {server_url}: {e}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_url,
+                server_type='shttp'
+                if isinstance(server, MCPSHTTPServerConfig)
+                else 'sse',
+                error_message=error_msg,
+                exception_details=str(e),
+            )
+            raise
+
+    async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
+        """Connect to MCP server using stdio transport"""
+        try:
+            transport = StdioTransport(
+                command=server.command, args=server.args or [], env=server.env
+            )
+            self.client = Client(transport, timeout=timeout)
+            await self._initialize_and_list_tools()
+        except Exception as e:
+            server_name = getattr(
+                server, 'name', f'{server.command} {" ".join(server.args or [])}'
+            )
+            error_msg = f'Failed to connect to stdio server {server_name}: {e}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_name,
+                server_type='stdio',
+                error_message=error_msg,
+                exception_details=str(e),
+            )
             raise
 
     async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:

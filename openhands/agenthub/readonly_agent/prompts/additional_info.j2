@@ -10,6 +10,9 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 {% endif %}
 {% if runtime_info and (runtime_info.additional_agent_instructions or runtime_info.date) -%}
 <RUNTIME_INFORMATION>
+{% if runtime_info.working_dir %}
+The current working directory is {{ runtime_info.working_dir }}
+{% endif %}
 {% if runtime_info.additional_agent_instructions %}
 {{ runtime_info.additional_agent_instructions }}
 {% endif %}

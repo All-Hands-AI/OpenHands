@@ -3,6 +3,9 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import contextlib
+import datetime
+import json
 import sys
 import threading
 import time
@@ -35,6 +38,7 @@ from openhands.events.action import (
     ActionConfirmationStatus,
     ChangeAgentStateAction,
     CmdRunAction,
+    MCPAction,
     MessageAction,
 )
 from openhands.events.event import Event
@@ -44,13 +48,19 @@ from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
     FileReadObservation,
+    MCPObservation,
 )
 from openhands.llm.metrics import Metrics
+from openhands.mcp.error_collector import mcp_error_collector
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
 # Global TextArea for streaming output
 streaming_output_text_area: TextArea | None = None
+
+# Track recent thoughts to prevent duplicate display
+recent_thoughts: list[str] = []
+MAX_RECENT_THOUGHTS = 5
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -71,9 +81,12 @@ COMMANDS = {
     '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
+    '/mcp': 'Manage MCP server configuration and view errors',
 }
 
 print_lock = threading.Lock()
+
+pause_task: asyncio.Task | None = None  # No more than one pause task
 
 
 class UsageMetrics:
@@ -155,6 +168,7 @@ def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
+
     if message:
         print_formatted_text(
             HTML(f'{message} <grey>Type /help for help</grey>'),
@@ -179,31 +193,101 @@ def display_initial_user_prompt(prompt: str) -> None:
     )
 
 
+def display_mcp_errors() -> None:
+    """Display collected MCP errors."""
+    errors = mcp_error_collector.get_errors()
+
+    if not errors:
+        print_formatted_text(HTML('<ansigreen>✓ No MCP errors detected</ansigreen>\n'))
+        return
+
+    print_formatted_text(
+        HTML(
+            f'<ansired>✗ {len(errors)} MCP error(s) detected during startup:</ansired>\n'
+        )
+    )
+
+    for i, error in enumerate(errors, 1):
+        # Format timestamp
+        timestamp = datetime.datetime.fromtimestamp(error.timestamp).strftime(
+            '%H:%M:%S'
+        )
+
+        # Create error display text
+        error_text = (
+            f'[{timestamp}] {error.server_type.upper()} Server: {error.server_name}\n'
+        )
+        error_text += f'Error: {error.error_message}\n'
+        if error.exception_details:
+            error_text += f'Details: {error.exception_details}'
+
+        container = Frame(
+            TextArea(
+                text=error_text,
+                read_only=True,
+                style='ansired',
+                wrap_lines=True,
+            ),
+            title=f'MCP Error #{i}',
+            style='ansired',
+        )
+        print_container(container)
+        print_formatted_text('')  # Add spacing between errors
+
+
 # Prompt output display functions
+def display_thought_if_new(thought: str) -> None:
+    """Display a thought only if it hasn't been displayed recently."""
+    global recent_thoughts
+    if thought and thought.strip():
+        # Check if this thought was recently displayed
+        if thought not in recent_thoughts:
+            display_message(thought)
+            recent_thoughts.append(thought)
+            # Keep only the most recent thoughts
+            if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
+                recent_thoughts.pop(0)
+
+
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, Action):
-            if hasattr(event, 'thought'):
-                display_message(event.thought)
-            if hasattr(event, 'final_thought'):
-                display_message(event.final_thought)
-        if isinstance(event, MessageAction):
-            if event.source == EventSource.AGENT:
-                display_message(event.content)
         if isinstance(event, CmdRunAction):
-            display_command(event)
+            # For CmdRunAction, display thought first, then command
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+
+            # Only display the command if it's not already confirmed
+            # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
+            if event.confirmation_state != ActionConfirmationStatus.CONFIRMED:
+                display_command(event)
+
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
-        if isinstance(event, CmdOutputObservation):
+        elif isinstance(event, MCPAction):
+            display_mcp_action(event)
+        elif isinstance(event, Action):
+            # For other actions, display thoughts normally
+            if hasattr(event, 'thought') and event.thought:
+                display_message(event.thought)
+            if hasattr(event, 'final_thought') and event.final_thought:
+                display_message(event.final_thought)
+
+        if isinstance(event, MessageAction):
+            if event.source == EventSource.AGENT:
+                # Check if this message content is a duplicate thought
+                display_thought_if_new(event.content)
+        elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
-        if isinstance(event, FileEditObservation):
+        elif isinstance(event, FileEditObservation):
             display_file_edit(event)
-        if isinstance(event, FileReadObservation):
+        elif isinstance(event, FileReadObservation):
             display_file_read(event)
-        if isinstance(event, AgentStateChangedObservation):
+        elif isinstance(event, MCPObservation):
+            display_mcp_observation(event)
+        elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
-        if isinstance(event, ErrorObservation):
+        elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
@@ -300,6 +384,66 @@ def display_file_read(event: FileReadObservation) -> None:
             wrap_lines=True,
         ),
         title='File Read',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_action(event: MCPAction) -> None:
+    """Display an MCP action in the CLI."""
+    # Format the arguments for display
+    args_text = ''
+    if event.arguments:
+        try:
+            args_text = json.dumps(event.arguments, indent=2)
+        except (TypeError, ValueError):
+            args_text = str(event.arguments)
+
+    # Create the display text
+    display_text = f'Tool: {event.name}'
+    if args_text:
+        display_text += f'\n\nArguments:\n{args_text}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansiblue',
+            wrap_lines=True,
+        ),
+        title='MCP Tool Call',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_observation(event: MCPObservation) -> None:
+    """Display an MCP observation in the CLI."""
+    # Format the content for display
+    content = event.content.strip() if event.content else 'No output'
+
+    # Add tool name and arguments info if available
+    display_text = content
+    if event.name:
+        header = f'Tool: {event.name}'
+        if event.arguments:
+            try:
+                args_text = json.dumps(event.arguments, indent=2)
+                header += f'\nArguments: {args_text}'
+            except (TypeError, ValueError):
+                header += f'\nArguments: {event.arguments}'
+        display_text = f'{header}\n\nResult:\n{content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='MCP Tool Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -515,13 +659,16 @@ class CommandCompleter(Completer):
                     )
 
 
-def create_prompt_session() -> PromptSession[str]:
-    return PromptSession(style=DEFAULT_STYLE)
+def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
+    """Creates a prompt session with VI mode enabled if specified in the config."""
+    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
 
 
-async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
+async def read_prompt_input(
+    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+) -> str:
     try:
-        prompt_session = create_prompt_session()
+        prompt_session = create_prompt_session(config)
         prompt_session.completer = (
             CommandCompleter(agent_state) if not multiline else None
         )
@@ -553,28 +700,45 @@ async def read_prompt_input(agent_state: str, multiline: bool = False) -> str:
         return '/exit'
 
 
-async def read_confirmation_input() -> str:
+async def read_confirmation_input(config: OpenHandsConfig) -> str:
     try:
-        prompt_session = create_prompt_session()
+        choices = [
+            'Yes, proceed',
+            'No (and allow to enter instructions)',
+            "Always proceed (don't ask again)",
+        ]
 
-        with patch_stdout():
-            print_formatted_text('')
-            confirmation: str = await prompt_session.prompt_async(
-                HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-            )
+        # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
+        index = await asyncio.to_thread(
+            cli_confirm, config, 'Choose an option:', choices
+        )
 
-            confirmation = '' if confirmation is None else confirmation.strip().lower()
+        return {0: 'yes', 1: 'no', 2: 'always'}.get(index, 'no')
 
-            if confirmation in ['y', 'yes']:
-                return 'yes'
-            elif confirmation in ['n', 'no']:
-                return 'no'
-            elif confirmation in ['a', 'always']:
-                return 'always'
-            else:
-                return 'no'
     except (KeyboardInterrupt, EOFError):
         return 'no'
+
+
+def start_pause_listener(
+    loop: asyncio.AbstractEventLoop,
+    done_event: asyncio.Event,
+    event_stream,
+) -> None:
+    global pause_task
+    if pause_task is None or pause_task.done():
+        pause_task = loop.create_task(
+            process_agent_pause(done_event, event_stream)
+        )  # Create a task to track agent pause requests from the user
+
+
+async def stop_pause_listener() -> None:
+    global pause_task
+    if pause_task and not pause_task.done():
+        pause_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await pause_task
+        await asyncio.sleep(0)
+    pause_task = None
 
 
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
@@ -595,13 +759,18 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                 )
                 done.set()
 
-    with input.raw_mode():
-        with input.attach(keys_ready):
-            await done.wait()
+    try:
+        with input.raw_mode():
+            with input.attach(keys_ready):
+                await done.wait()
+    finally:
+        input.close()
 
 
 def cli_confirm(
-    question: str = 'Are you sure?', choices: list[str] | None = None
+    config: OpenHandsConfig,
+    question: str = 'Are you sure?',
+    choices: list[str] | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -625,15 +794,27 @@ def cli_confirm(
     kb = KeyBindings()
 
     @kb.add('up')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_up(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] - 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('k')
+        def _handle_k(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] - 1) % len(choices)
+
     @kb.add('down')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_down(event: KeyPressEvent) -> None:
         selected[0] = (selected[0] + 1) % len(choices)
 
+    if config.cli.vi_mode:
+
+        @kb.add('j')
+        def _handle_j(event: KeyPressEvent) -> None:
+            selected[0] = (selected[0] + 1) % len(choices)
+
     @kb.add('enter')
-    def _(event: KeyPressEvent) -> None:
+    def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
     style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})

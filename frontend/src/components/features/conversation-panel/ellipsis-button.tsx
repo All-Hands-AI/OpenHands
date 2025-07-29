@@ -6,7 +6,12 @@ interface EllipsisButtonProps {
 
 export function EllipsisButton({ onClick }: EllipsisButtonProps) {
   return (
-    <button data-testid="ellipsis-button" type="button" onClick={onClick}>
+    <button
+      data-testid="ellipsis-button"
+      type="button"
+      onClick={onClick}
+      className="cursor-pointer"
+    >
       <FaEllipsisV fill="#a3a3a3" />
     </button>
   );

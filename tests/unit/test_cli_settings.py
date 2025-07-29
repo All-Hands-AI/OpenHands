@@ -1,3 +1,4 @@
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -37,9 +38,10 @@ class TestDisplaySettings:
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
-        security_mock = MagicMock()
+        security_mock = MagicMock(spec=OpenHandsConfig)
         security_mock.confirmation_mode = True
         config.security = security_mock
 
@@ -48,13 +50,14 @@ class TestDisplaySettings:
 
     @pytest.fixture
     def advanced_app_config(self):
-        config = MagicMock(spec=OpenHandsConfig)
+        config = MagicMock()
         llm_config = MagicMock()
         llm_config.base_url = 'https://custom-api.com'
         llm_config.model = 'custom-model'
         llm_config.api_key = SecretStr('test-api-key')
         config.get_llm_config.return_value = llm_config
         config.default_agent = 'test-agent'
+        config.file_store_path = '/tmp'
 
         # Set up security as a separate mock
         security_mock = MagicMock()
@@ -87,6 +90,8 @@ class TestDisplaySettings:
         assert 'Enabled' in settings_text
         assert 'Memory Condensation:' in settings_text
         assert 'Enabled' in settings_text
+        assert 'Configuration File' in settings_text
+        assert str(Path(app_config.file_store_path)) in settings_text
 
     @patch('openhands.cli.settings.print_container')
     def test_display_settings_advanced_config(
@@ -171,16 +176,17 @@ class TestModifyLLMSettingsBasic:
         session_instance = MagicMock()
         session_instance.prompt_async = AsyncMock(
             side_effect=[
-                'openai',  # Provider
                 'gpt-4',  # Model
                 'new-api-key',  # API Key
             ]
         )
         mock_session.return_value = session_instance
 
-        # Mock cli_confirm to select the second option (change provider/model) for the first two calls
-        # and then select the first option (save settings) for the last call
-        mock_confirm.side_effect = [1, 1, 0]
+        # Mock cli_confirm to:
+        # 1. Select the first provider (openai) from the list
+        # 2. Select "Select another model" option
+        # 3. Select "Yes, save" option
+        mock_confirm.side_effect = [0, 1, 0]
 
         # Call the function
         await modify_llm_settings_basic(app_config, settings_store)
@@ -189,8 +195,8 @@ class TestModifyLLMSettingsBasic:
         app_config.set_llm_config.assert_called_once()
         args, kwargs = app_config.set_llm_config.call_args
         # The model name might be different based on the default model in the list
-        # Just check that it starts with 'openai/'
-        assert args[0].model.startswith('openai/')
+        # Just check that it contains 'gpt-4' instead of checking for prefix
+        assert 'gpt-4' in args[0].model
         assert args[0].api_key.get_secret_value() == 'new-api-key'
         assert args[0].base_url is None
 
@@ -199,8 +205,8 @@ class TestModifyLLMSettingsBasic:
         args, kwargs = settings_store.store.call_args
         settings = args[0]
         # The model name might be different based on the default model in the list
-        # Just check that it starts with openai/
-        assert settings.llm_model.startswith('openai/')
+        # Just check that it contains 'gpt-4' instead of checking for prefix
+        assert 'gpt-4' in settings.llm_model
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 
@@ -249,7 +255,7 @@ class TestModifyLLMSettingsBasic:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    async def test_modify_llm_settings_basic_invalid_input(
+    async def test_modify_llm_settings_basic_invalid_provider_input(
         self,
         mock_print,
         mock_confirm,
@@ -270,8 +276,7 @@ class TestModifyLLMSettingsBasic:
             side_effect=[
                 'invalid-provider',  # First invalid provider
                 'openai',  # Valid provider
-                'invalid-model',  # Invalid model
-                'gpt-4',  # Valid model
+                'custom-model',  # Custom model (now allowed with warning)
                 'new-api-key',  # API key
             ]
         )
@@ -284,34 +289,32 @@ class TestModifyLLMSettingsBasic:
         # Call the function
         await modify_llm_settings_basic(app_config, settings_store)
 
-        # Verify error messages were shown for invalid inputs
-        assert (
-            mock_print.call_count >= 2
-        )  # At least two error messages should be printed
+        # Verify error message was shown for invalid provider and warning for custom model
+        assert mock_print.call_count >= 2  # At least two messages should be printed
 
-        # Check for invalid provider error
+        # Check for invalid provider error and custom model warning
         provider_error_found = False
-        model_error_found = False
+        model_warning_found = False
 
         for call in mock_print.call_args_list:
             args, _ = call
             if args and isinstance(args[0], HTML):
                 if 'Invalid provider selected' in args[0].value:
                     provider_error_found = True
-                if 'Invalid model selected' in args[0].value:
-                    model_error_found = True
+                if 'Warning:' in args[0].value and 'custom-model' in args[0].value:
+                    model_warning_found = True
 
         assert provider_error_found, 'No error message for invalid provider'
-        assert model_error_found, 'No error message for invalid model'
+        assert model_warning_found, 'No warning message for custom model'
 
-        # Verify LLM config was updated with correct values
+        # Verify LLM config was updated with the custom model
         app_config.set_llm_config.assert_called_once()
 
-        # Verify settings were saved
+        # Verify settings were saved with the custom model
         settings_store.store.assert_called_once()
         args, kwargs = settings_store.store.call_args
         settings = args[0]
-        assert settings.llm_model == 'openai/gpt-4'
+        assert 'custom-model' in settings.llm_model
         assert settings.llm_api_key.get_secret_value() == 'new-api-key'
         assert settings.llm_base_url is None
 

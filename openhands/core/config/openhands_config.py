@@ -1,11 +1,13 @@
 import os
 from typing import Any, ClassVar
 
-from pydantic import BaseModel, Field, SecretStr
+from pydantic import BaseModel, ConfigDict, Field, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
+    DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
@@ -33,6 +35,7 @@ class OpenHandsConfig(BaseModel):
         file_store_path: Path to the file store.
         file_store_web_hook_url: Optional url for file store web hook
         file_store_web_hook_headers: Optional headers for file_store web hook
+        enable_browser: Whether to enable the browser environment
         save_trajectory_path: Either a folder path to store trajectories with auto-generated filenames, or a designated trajectory file path.
         save_screenshots_in_trajectory: Whether to save screenshots in trajectory (in encoded image format).
         replay_trajectory_path: Path to load trajectory and replay. If provided, trajectory would be replayed first before user's instruction.
@@ -45,7 +48,6 @@ class OpenHandsConfig(BaseModel):
         run_as_openhands: Whether to run as openhands.
         max_iterations: Maximum number of iterations allowed.
         max_budget_per_task: Maximum budget per task, agent stops if exceeded.
-        e2b_api_key: E2B API key.
         disable_color: Whether to disable terminal colors. For terminals that don't support color.
         debug: Whether to enable debugging mode.
         file_uploads_max_file_size_mb: Maximum file upload size in MB. `0` means unlimited.
@@ -68,6 +70,7 @@ class OpenHandsConfig(BaseModel):
     file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
+    enable_browser: bool = Field(default=True)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
     replay_trajectory_path: str | None = Field(default=None)
@@ -76,10 +79,13 @@ class OpenHandsConfig(BaseModel):
         description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
     )
 
+    workspace_base: str | None = Field(default=None)
+    workspace_mount_path_in_sandbox: str = Field(
+        default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+    )
+
     # Deprecated parameters - will be removed in a future version
-    workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     # End of deprecated parameters
 
@@ -87,19 +93,15 @@ class OpenHandsConfig(BaseModel):
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
-    e2b_api_key: SecretStr | None = Field(default=None)
-    modal_api_token_id: SecretStr | None = Field(default=None)
-    modal_api_token_secret: SecretStr | None = Field(default=None)
+    init_git_in_empty_workspace: bool = Field(default=False)
+
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)
     debug: bool = Field(default=False)
     file_uploads_max_file_size_mb: int = Field(default=0)
     file_uploads_restrict_file_types: bool = Field(default=False)
     file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
-    runloop_api_key: SecretStr | None = Field(default=None)
-    daytona_api_key: SecretStr | None = Field(default=None)
-    daytona_api_url: str = Field(default='https://app.daytona.io/api')
-    daytona_target: str = Field(default='eu')
+
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
     enable_default_condenser: bool = Field(default=True)
@@ -109,10 +111,11 @@ class OpenHandsConfig(BaseModel):
     mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
+    cli: CLIConfig = Field(default_factory=CLIConfig)
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""

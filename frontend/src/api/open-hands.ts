@@ -13,11 +13,13 @@ import {
   GitChange,
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
+  CreateMicroagent,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { RepositoryMicroagent } from "#/types/microagent-management";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -250,6 +252,28 @@ class OpenHands {
     return data.results;
   }
 
+  static async searchConversations(
+    selectedRepository?: string,
+    conversationTrigger?: string,
+    limit: number = 20,
+  ): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append("limit", limit.toString());
+
+    if (selectedRepository) {
+      params.append("selected_repository", selectedRepository);
+    }
+
+    if (conversationTrigger) {
+      params.append("conversation_trigger", conversationTrigger);
+    }
+
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      `/api/conversations?${params.toString()}`,
+    );
+    return data.results;
+  }
+
   static async deleteUserConversation(conversationId: string): Promise<void> {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
@@ -258,19 +282,19 @@ class OpenHands {
     selectedRepository?: string,
     git_provider?: Provider,
     initialUserMsg?: string,
-    imageUrls?: string[],
-    replayJson?: string,
     suggested_task?: SuggestedTask,
     selected_branch?: string,
+    conversationInstructions?: string,
+    createMicroagent?: CreateMicroagent,
   ): Promise<Conversation> {
     const body = {
       repository: selectedRepository,
       git_provider,
       selected_branch,
       initial_user_msg: initialUserMsg,
-      image_urls: imageUrls,
-      replay_json: replayJson,
       suggested_task,
+      conversation_instructions: conversationInstructions,
+      create_microagent: createMicroagent,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -293,9 +317,11 @@ class OpenHands {
 
   static async startConversation(
     conversationId: string,
+    providers?: Provider[],
   ): Promise<Conversation | null> {
     const { data } = await openHands.post<Conversation | null>(
       `/api/conversations/${conversationId}/start`,
+      providers ? { providers_set: providers } : {},
     );
 
     return data;
@@ -464,6 +490,22 @@ class OpenHands {
     return data;
   }
 
+  /**
+   * Get the available microagents for a specific repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @returns The available microagents for the repository
+   */
+  static async getRepositoryMicroagents(
+    owner: string,
+    repo: string,
+  ): Promise<RepositoryMicroagent[]> {
+    const { data } = await openHands.get<RepositoryMicroagent[]>(
+      `/api/user/repository/${owner}/${repo}/microagents`,
+    );
+    return data;
+  }
+
   static async getMicroagentPrompt(
     conversationId: string,
     eventId: number,
@@ -476,6 +518,18 @@ class OpenHands {
     );
 
     return data.prompt;
+  }
+
+  static async updateConversation(
+    conversationId: string,
+    updates: { title: string },
+  ): Promise<boolean> {
+    const { data } = await openHands.patch<boolean>(
+      `/api/conversations/${conversationId}`,
+      updates,
+    );
+
+    return data;
   }
 }
 

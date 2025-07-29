@@ -22,6 +22,7 @@ from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
@@ -56,12 +57,12 @@ class DockerNestedConversationManager(ConversationManager):
     _runtime_container_image: str | None = None
 
     async def __aenter__(self):
-        # No action is required on startup for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config.runtime)
+        runtime_cls.setup(self.config)
 
     async def __aexit__(self, exc_type, exc_value, traceback):
-        # No action is required on shutdown for this implementation
-        pass
+        runtime_cls = get_runtime_cls(self.config.runtime)
+        runtime_cls.teardown(self.config)
 
     async def attach_to_conversation(
         self, sid: str, user_id: str | None = None
@@ -86,9 +87,7 @@ class DockerNestedConversationManager(ConversationManager):
     async def get_running_agent_loops(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> set[str]:
-        """
-        Get the running agent loops directly from docker.
-        """
+        """Get the running agent loops directly from docker."""
         containers: list[Container] = self.docker_client.containers.list()
         names = (container.name or '' for container in containers)
         conversation_ids = {
@@ -275,6 +274,18 @@ class DockerNestedConversationManager(ConversationManager):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
+    async def send_event_to_conversation(self, sid, data):
+        async with httpx.AsyncClient(
+            headers={
+                'X-Session-API-Key': self._get_session_api_key_for_conversation(sid)
+            }
+        ) as client:
+            nested_url = self._get_nested_url(sid)
+            response = await client.post(
+                f'{nested_url}/api/conversations/{sid}/events', json=data
+            )
+            response.raise_for_status()
+
     async def disconnect_from_session(self, connection_id: str):
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
@@ -368,8 +379,10 @@ class DockerNestedConversationManager(ConversationManager):
 
     def get_agent_session(self, sid: str):
         """Get the agent session for a given session ID.
+
         Args:
             sid: The session ID.
+
         Returns:
             The agent session, or None if not found.
         """
@@ -488,20 +501,27 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
+        env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
 
-        # Set up mounted volume for conversation directory within workspace
-        # TODO: Check if we are using the standard event store and file store
-        volumes = config.sandbox.volumes
+        volumes: list[str | None]
         if not config.sandbox.volumes:
             volumes = []
         else:
             volumes = [v.strip() for v in config.sandbox.volumes.split(',')]
         conversation_dir = get_conversation_dir(sid, user_id)
 
-        volumes.append(
-            f'{config.file_store_path}/{conversation_dir}:/root/.openhands/file_store/{conversation_dir}:rw'
-        )
-        config.sandbox.volumes = ','.join(volumes)
+        # Set up mounted volume for conversation directory within workspace
+        if config.file_store == 'local':
+            # Resolve ~ from path as the docker container does not work otherwise
+            file_store_path = os.path.realpath(
+                os.path.expanduser(config.file_store_path)
+            )
+
+            volumes.append(
+                f'{file_store_path}/{conversation_dir}:/root/.openhands/{conversation_dir}:rw'
+            )
+
+        config.sandbox.volumes = ','.join([v for v in volumes if v is not None])
         if not config.sandbox.runtime_container_image:
             config.sandbox.runtime_container_image = self._runtime_container_image
 

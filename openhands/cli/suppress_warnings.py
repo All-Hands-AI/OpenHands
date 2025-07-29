@@ -27,13 +27,6 @@ def suppress_cli_warnings():
         category=UserWarning,
     )
 
-    # Suppress httpx deprecation warnings about content parameter
-    warnings.filterwarnings(
-        'ignore',
-        message=".*Use 'content=<...>' to upload raw bytes/text content.*",
-        category=DeprecationWarning,
-    )
-
     # Suppress general deprecation warnings from dependencies during CLI usage
     # This catches the "Call to deprecated method get_events" warning
     warnings.filterwarnings(
@@ -47,6 +40,13 @@ def suppress_cli_warnings():
         'ignore',
         message='.*Expected .* fields but got .*',
         category=UserWarning,
+    )
+
+    # Suppress LiteLLM close_litellm_async_clients was never awaited warning
+    warnings.filterwarnings(
+        'ignore',
+        message="coroutine 'close_litellm_async_clients' was never awaited",
+        category=RuntimeWarning,
     )
 
 
