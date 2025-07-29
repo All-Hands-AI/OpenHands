@@ -20,11 +20,11 @@ def mock_logger(monkeypatch):
     monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
     monkeypatch.setattr('openhands.llm.llm.logger', mock_logger)
     monkeypatch.setattr('openhands.core.config.llm_config.logger', mock_logger)
-    
+
     # Mock the log_prompt method to avoid the Message object issue
     mock_log_prompt = MagicMock()
     monkeypatch.setattr('openhands.llm.llm.LLM.log_prompt', mock_log_prompt)
-    
+
     return mock_logger
 
 
@@ -33,28 +33,20 @@ class TestLLMConfigReasoningEffortDefaults:
 
     def test_gemini_model_keeps_none_reasoning_effort(self):
         """Test that Gemini models keep reasoning_effort=None for optimization."""
-        config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key'
-        )
+        config = LLMConfig(model='gemini-2.5-pro', api_key='test_key')
         # reasoning_effort should remain None for Gemini models
         assert config.reasoning_effort is None
 
     def test_non_gemini_model_gets_high_reasoning_effort(self):
         """Test that non-Gemini models get reasoning_effort='high' by default."""
-        config = LLMConfig(
-            model='gpt-4o',
-            api_key='test_key'
-        )
+        config = LLMConfig(model='gpt-4o', api_key='test_key')
         # Non-Gemini models should get reasoning_effort='high'
         assert config.reasoning_effort == 'high'
 
     def test_explicit_reasoning_effort_preserved(self):
         """Test that explicitly set reasoning_effort is preserved."""
         config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key',
-            reasoning_effort='medium'
+            model='gemini-2.5-pro', api_key='test_key', reasoning_effort='medium'
         )
         # Explicitly set reasoning_effort should be preserved
         assert config.reasoning_effort == 'medium'
@@ -66,9 +58,7 @@ class TestLLMGeminiThinkingBudgetOptimization:
     @pytest.fixture
     def sample_messages(self):
         """Fixture for sample messages."""
-        return [
-            {'role': 'user', 'content': 'Hello, how are you?'}
-        ]
+        return [{'role': 'user', 'content': 'Hello, how are you?'}]
 
     @patch('openhands.llm.llm.litellm_completion')
     def test_gemini_none_reasoning_effort_uses_thinking_budget(
@@ -76,15 +66,13 @@ class TestLLMGeminiThinkingBudgetOptimization:
     ):
         """Test that Gemini with reasoning_effort=None uses thinking budget."""
         config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key',
-            reasoning_effort=None
+            model='gemini-2.5-pro', api_key='test_key', reasoning_effort=None
         )
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -102,15 +90,13 @@ class TestLLMGeminiThinkingBudgetOptimization:
     ):
         """Test that Gemini with reasoning_effort='low' uses thinking budget."""
         config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key',
-            reasoning_effort='low'
+            model='gemini-2.5-pro', api_key='test_key', reasoning_effort='low'
         )
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -128,15 +114,13 @@ class TestLLMGeminiThinkingBudgetOptimization:
     ):
         """Test that Gemini with reasoning_effort='medium' passes through to litellm."""
         config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key',
-            reasoning_effort='medium'
+            model='gemini-2.5-pro', api_key='test_key', reasoning_effort='medium'
         )
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -153,15 +137,13 @@ class TestLLMGeminiThinkingBudgetOptimization:
     ):
         """Test that Gemini with reasoning_effort='high' passes through to litellm."""
         config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key',
-            reasoning_effort='high'
+            model='gemini-2.5-pro', api_key='test_key', reasoning_effort='high'
         )
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -173,20 +155,14 @@ class TestLLMGeminiThinkingBudgetOptimization:
         assert call_kwargs.get('reasoning_effort') == 'high'
 
     @patch('openhands.llm.llm.litellm_completion')
-    def test_non_gemini_uses_reasoning_effort(
-        self, mock_completion, sample_messages
-    ):
+    def test_non_gemini_uses_reasoning_effort(self, mock_completion, sample_messages):
         """Test that non-Gemini models use reasoning_effort instead of thinking budget."""
-        config = LLMConfig(
-            model='o1',
-            api_key='test_key',
-            reasoning_effort='high'
-        )
+        config = LLMConfig(model='o1', api_key='test_key', reasoning_effort='high')
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -204,13 +180,13 @@ class TestLLMGeminiThinkingBudgetOptimization:
         """Test that non-reasoning models don't get optimization parameters."""
         config = LLMConfig(
             model='gpt-3.5-turbo',  # Not in REASONING_EFFORT_SUPPORTED_MODELS
-            api_key='test_key'
+            api_key='test_key',
         )
 
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Test response'}}],
-            'usage': {'prompt_tokens': 10, 'completion_tokens': 5}
+            'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
         }
 
         llm = LLM(config)
@@ -231,24 +207,19 @@ class TestGeminiPerformanceIntegration:
         # Mock the completion response
         mock_completion.return_value = {
             'choices': [{'message': {'content': 'Optimized response'}}],
-            'usage': {'prompt_tokens': 50, 'completion_tokens': 25}
+            'usage': {'prompt_tokens': 50, 'completion_tokens': 25},
         }
 
         # Create Gemini configuration
-        config = LLMConfig(
-            model='gemini-2.5-pro',
-            api_key='test_key'
-        )
+        config = LLMConfig(model='gemini-2.5-pro', api_key='test_key')
 
         # Verify config has optimized defaults
         assert config.reasoning_effort is None
 
         # Create LLM and make completion
         llm = LLM(config)
-        messages = [
-            {'role': 'user', 'content': 'Solve this complex problem'}
-        ]
-        
+        messages = [{'role': 'user', 'content': 'Solve this complex problem'}]
+
         response = llm.completion(messages=messages)
 
         # Verify response was generated
