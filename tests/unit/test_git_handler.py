@@ -1,12 +1,19 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
+import pytest
+
+from openhands.runtime.utils import git_changes, git_diff, git_handler
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
 
 
+@pytest.mark.skipif(sys.platform == 'win32', reason='Windows is not supported')
 class TestGitHandler(unittest.TestCase):
     def setUp(self):
         # Create temporary directories for our test repositories
@@ -20,10 +27,16 @@ class TestGitHandler(unittest.TestCase):
 
         # Track executed commands for verification
         self.executed_commands = []
+        self.created_files = []
 
-        # Initialize the GitHandler with our real execute function
-        self.git_handler = GitHandler(self._execute_command)
+        # Initialize the GitHandler with our mock functions
+        self.git_handler = GitHandler(
+            execute_shell_fn=self._execute_command, create_file_fn=self._create_file
+        )
         self.git_handler.set_cwd(self.local_dir)
+
+        self.git_handler.git_changes_cmd = f'python3 {git_changes.__file__}'
+        self.git_handler.git_diff_cmd = f'python3 {git_diff.__file__} "{{file_path}}"'
 
         # Set up the git repositories
         self._setup_git_repos()
@@ -34,202 +47,265 @@ class TestGitHandler(unittest.TestCase):
 
     def _execute_command(self, cmd, cwd=None):
         """Execute a shell command and return the result."""
-        self.executed_commands.append((cmd, cwd))
-        try:
-            result = subprocess.run(
-                cmd, shell=True, cwd=cwd, capture_output=True, text=True, check=False
+        result = subprocess.run(
+            args=cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            cwd=cwd,
+        )
+        stderr = result.stderr or b''
+        stdout = result.stdout or b''
+        return CommandResult((stderr + stdout).decode(), result.returncode)
+
+    def run_command(self, cmd, cwd=None):
+        result = self._execute_command(cmd, cwd)
+        if result.exit_code != 0:
+            raise RuntimeError(
+                f'command_error:{cmd};{result.exit_code};{result.content}'
             )
-            return CommandResult(result.stdout, result.returncode)
-        except Exception as e:
-            return CommandResult(str(e), 1)
+
+    def _create_file(self, path, content):
+        """Mock function for creating files."""
+        self.created_files.append((path, content))
+        try:
+            with open(path, 'w') as f:
+                f.write(content)
+            return 0
+        except Exception:
+            return -1
+
+    def write_file(
+        self,
+        dir: str,
+        name: str,
+        additional_content: tuple[str, ...] = ('Line 1', 'Line 2', 'Line 3'),
+    ):
+        with open(os.path.join(dir, name), 'w') as f:
+            f.write(name)
+            for line in additional_content:
+                f.write('\n')
+                f.write(line)
+        assert os.path.exists(os.path.join(dir, name))
 
     def _setup_git_repos(self):
         """Set up real git repositories for testing."""
         # Set up origin repository
+        self.run_command('git init --initial-branch=main', self.origin_dir)
         self._execute_command(
-            'git --no-pager init --initial-branch=main', self.origin_dir
+            "git config user.email 'test@example.com'", self.origin_dir
         )
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", self.origin_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.name 'Test User'", self.origin_dir
-        )
+        self._execute_command("git config user.name 'Test User'", self.origin_dir)
 
-        # Create a file and commit it
-        with open(os.path.join(self.origin_dir, 'file1.txt'), 'w') as f:
-            f.write('Original content')
-
-        self._execute_command('git --no-pager add file1.txt', self.origin_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Initial commit'", self.origin_dir
-        )
+        # Set up the initial state...
+        self.write_file(self.origin_dir, 'unchanged.txt')
+        self.write_file(self.origin_dir, 'committed_modified.txt')
+        self.write_file(self.origin_dir, 'staged_modified.txt')
+        self.write_file(self.origin_dir, 'unstaged_modified.txt')
+        self.write_file(self.origin_dir, 'committed_delete.txt')
+        self.write_file(self.origin_dir, 'staged_delete.txt')
+        self.write_file(self.origin_dir, 'unstaged_delete.txt')
+        self.run_command("git add . && git commit -m 'Initial Commit'", self.origin_dir)
 
         # Clone the origin repository to local
+        self.run_command(f'git clone "{self.origin_dir}" "{self.local_dir}"')
+
         self._execute_command(
-            f'git --no-pager clone {self.origin_dir} {self.local_dir}'
+            "git config user.email 'test@example.com'", self.local_dir
         )
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", self.local_dir
-        )
-        self._execute_command(
-            "git --no-pager config user.name 'Test User'", self.local_dir
-        )
+        self._execute_command("git config user.name 'Test User'", self.local_dir)
 
-        # Create a feature branch in the local repository
-        self._execute_command(
-            'git --no-pager checkout -b feature-branch', self.local_dir
-        )
+        self.run_command('git checkout -b feature-branch', self.local_dir)
 
-        # Modify a file and create a new file
-        with open(os.path.join(self.local_dir, 'file1.txt'), 'w') as f:
-            f.write('Modified content')
-
-        with open(os.path.join(self.local_dir, 'file2.txt'), 'w') as f:
-            f.write('New file content')
-
-        # Add and commit file1.txt changes to create a baseline
-        self._execute_command('git --no-pager add file1.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Update file1.txt'", self.local_dir
+        # Setup committed changes...
+        self.write_file(self.local_dir, 'committed_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'committed_add.txt')
+        os.remove(os.path.join(self.local_dir, 'committed_delete.txt'))
+        self.run_command(
+            "git add . && git commit -m 'First batch of changes'", self.local_dir
         )
 
-        # Add and commit file2.txt, then modify it
-        self._execute_command('git --no-pager add file2.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Add file2.txt'", self.local_dir
-        )
+        # Setup staged changes...
+        self.write_file(self.local_dir, 'staged_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'staged_add.txt')
+        os.remove(os.path.join(self.local_dir, 'staged_delete.txt'))
+        self.run_command('git add .', self.local_dir)
 
-        # Modify file2.txt and stage it
-        with open(os.path.join(self.local_dir, 'file2.txt'), 'w') as f:
-            f.write('Modified new file content')
-        self._execute_command('git --no-pager add file2.txt', self.local_dir)
+        # Setup unstaged changes...
+        self.write_file(self.local_dir, 'unstaged_modified.txt', ('Line 4',))
+        self.write_file(self.local_dir, 'unstaged_add.txt')
+        os.remove(os.path.join(self.local_dir, 'unstaged_delete.txt'))
 
-        # Create a file that will be deleted
-        with open(os.path.join(self.local_dir, 'file3.txt'), 'w') as f:
-            f.write('File to be deleted')
+    def setup_nested(self):
+        nested_1 = Path(self.local_dir, 'nested 1')
+        nested_1.mkdir()
+        nested_1 = str(nested_1)
+        self.run_command('git init --initial-branch=main', nested_1)
+        self._execute_command("git config user.email 'test@example.com'", nested_1)
+        self._execute_command("git config user.name 'Test User'", nested_1)
+        self.write_file(nested_1, 'committed_add.txt')
+        self.run_command('git add .', nested_1)
+        self.run_command('git commit -m "Initial Commit"', nested_1)
+        self.write_file(nested_1, 'staged_add.txt')
 
-        self._execute_command('git --no-pager add file3.txt', self.local_dir)
-        self._execute_command(
-            "git --no-pager commit -m 'Add file3.txt'", self.local_dir
-        )
-        self._execute_command('git --no-pager rm file3.txt', self.local_dir)
-
-        # Modify file1.txt again but don't stage it (unstaged change)
-        with open(os.path.join(self.local_dir, 'file1.txt'), 'w') as f:
-            f.write('Modified content again')
-
-        # Push the feature branch to origin
-        self._execute_command(
-            'git --no-pager push -u origin feature-branch', self.local_dir
-        )
-
-    def test_is_git_repo(self):
-        """Test that _is_git_repo returns True for a git repository."""
-        self.assertTrue(self.git_handler._is_git_repo())
-
-        # Verify the command was executed
-        self.assertTrue(
-            any(
-                cmd == 'git --no-pager rev-parse --is-inside-work-tree'
-                for cmd, _ in self.executed_commands
-            )
-        )
-
-    def test_get_current_file_content(self):
-        """Test that _get_current_file_content returns the current content of a file."""
-        content = self.git_handler._get_current_file_content('file1.txt')
-        self.assertEqual(content.strip(), 'Modified content again')
-
-        # Verify the command was executed
-        self.assertTrue(
-            any(cmd == 'cat file1.txt' for cmd, _ in self.executed_commands)
-        )
+        nested_2 = Path(self.local_dir, 'nested_2')
+        nested_2.mkdir()
+        nested_2 = str(nested_2)
+        self.run_command('git init --initial-branch=main', nested_2)
+        self._execute_command("git config user.email 'test@example.com'", nested_2)
+        self._execute_command("git config user.name 'Test User'", nested_2)
+        self.write_file(nested_2, 'committed_add.txt')
+        self.run_command('git add .', nested_2)
+        self.run_command('git commit -m "Initial Commit"', nested_2)
+        self.write_file(nested_2, 'unstaged_add.txt')
 
     def test_get_git_changes(self):
-        """Test that get_git_changes returns the combined list of changed and untracked files."""
-        # Create an untracked file
-        with open(os.path.join(self.local_dir, 'untracked.txt'), 'w') as f:
-            f.write('Untracked file content')
+        """
+        Test with unpushed commits, staged commits, and unstaged commits
+        """
+        changes = self.git_handler.get_git_changes()
 
-        # Create a new file and stage it
-        with open(os.path.join(self.local_dir, 'new_file2.txt'), 'w') as f:
-            f.write('New file 2 content')
-        self._execute_command('git --no-pager add new_file2.txt', self.local_dir)
+        expected_changes = [
+            {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'D', 'path': 'committed_delete.txt'},
+            {'status': 'M', 'path': 'committed_modified.txt'},
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
+
+        if changes != expected_changes:
+            raise RuntimeError(
+                '\n'.join(
+                    [
+                        f'incorrect_changes: {changes};',
+                        f'content: {os.listdir(self.local_dir)}',
+                        f'ref: {git_changes.get_valid_ref(self.local_dir)}',
+                    ]
+                )
+            )
+
+        assert changes == expected_changes
+
+    def test_get_git_changes_after_push(self):
+        """
+        Test with staged commits, and unstaged commits
+        """
+        self.run_command('git push -u origin feature-branch', self.local_dir)
+        changes = self.git_handler.get_git_changes()
+
+        expected_changes = [
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
+
+        assert changes == expected_changes
+
+    def test_get_git_changes_nested_repos(self):
+        """
+        Test with staged commits, and unstaged commits
+        """
+        self.setup_nested()
 
         changes = self.git_handler.get_git_changes()
-        self.assertIsNotNone(changes)
 
-        # Should include file1.txt (modified), file3.txt (deleted), new_file2.txt (added), and untracked.txt (untracked)
-        paths = [change['path'] for change in changes]
-        self.assertIn('file1.txt', paths)
-        self.assertIn('file3.txt', paths)
-        self.assertIn('new_file2.txt', paths)
-        self.assertIn('untracked.txt', paths)
+        expected_changes = [
+            {'status': 'A', 'path': 'committed_add.txt'},
+            {'status': 'D', 'path': 'committed_delete.txt'},
+            {'status': 'M', 'path': 'committed_modified.txt'},
+            {'status': 'A', 'path': 'nested 1/staged_add.txt'},
+            {'status': 'A', 'path': 'nested_2/unstaged_add.txt'},
+            {'status': 'A', 'path': 'staged_add.txt'},
+            {'status': 'D', 'path': 'staged_delete.txt'},
+            {'status': 'M', 'path': 'staged_modified.txt'},
+            {'status': 'A', 'path': 'unstaged_add.txt'},
+            {'status': 'D', 'path': 'unstaged_delete.txt'},
+            {'status': 'M', 'path': 'unstaged_modified.txt'},
+        ]
 
-        # Check that the changes include both changed and untracked files
-        statuses = [change['status'] for change in changes]
-        self.assertIn('M', statuses)  # Modified
-        self.assertIn('A', statuses)  # Added
-        self.assertIn('D', statuses)  # Deleted
+        assert changes == expected_changes
 
-    def test_get_git_changes_multiple_repositories(self):
-        """Test that get_git_changes can detect changes in multiple git repositories within a workspace."""
-        # Create a workspace directory with multiple git repositories
-        workspace_dir = os.path.join(self.test_dir, 'workspace')
-        repo1_dir = os.path.join(workspace_dir, 'repo1')
-        repo2_dir = os.path.join(workspace_dir, 'repo2')
-        non_git_dir = os.path.join(workspace_dir, 'non_git')
+    def test_get_git_diff_staged_modified(self):
+        """Test on a staged modified"""
+        diff = self.git_handler.get_git_diff('staged_modified.txt')
+        expected_diff = {
+            'original': 'staged_modified.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'staged_modified.txt\nLine 4',
+        }
+        assert diff == expected_diff
 
-        os.makedirs(workspace_dir, exist_ok=True)
-        os.makedirs(repo1_dir, exist_ok=True)
-        os.makedirs(repo2_dir, exist_ok=True)
-        os.makedirs(non_git_dir, exist_ok=True)
+    def test_get_git_diff_unchanged(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('unchanged.txt')
+        expected_diff = {
+            'original': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+        }
+        assert diff == expected_diff
 
-        # Set up repo1
-        self._execute_command('git --no-pager init', repo1_dir)
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", repo1_dir
-        )
-        self._execute_command("git --no-pager config user.name 'Test User'", repo1_dir)
-        with open(os.path.join(repo1_dir, 'repo1_file.txt'), 'w') as f:
-            f.write('repo1 content')
-        self._execute_command('git --no-pager add repo1_file.txt', repo1_dir)
-        self._execute_command("git --no-pager commit -m 'Initial commit'", repo1_dir)
-        # Modify the file to create changes
-        with open(os.path.join(repo1_dir, 'repo1_file.txt'), 'w') as f:
-            f.write('repo1 modified content')
+    def test_get_git_diff_unpushed(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('committed_modified.txt')
+        expected_diff = {
+            'original': 'committed_modified.txt\nLine 1\nLine 2\nLine 3',
+            'modified': 'committed_modified.txt\nLine 4',
+        }
+        assert diff == expected_diff
 
-        # Set up repo2
-        self._execute_command('git --no-pager init', repo2_dir)
-        self._execute_command(
-            "git --no-pager config user.email 'test@example.com'", repo2_dir
-        )
-        self._execute_command("git --no-pager config user.name 'Test User'", repo2_dir)
-        with open(os.path.join(repo2_dir, 'repo2_file.txt'), 'w') as f:
-            f.write('repo2 content')
-        self._execute_command('git --no-pager add repo2_file.txt', repo2_dir)
-        self._execute_command("git --no-pager commit -m 'Initial commit'", repo2_dir)
-        # Add an untracked file
-        with open(os.path.join(repo2_dir, 'untracked.txt'), 'w') as f:
-            f.write('untracked content')
+    def test_get_git_diff_unstaged_add(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+        diff = self.git_handler.get_git_diff('unstaged_add.txt')
+        expected_diff = {
+            'original': '',
+            'modified': 'unstaged_add.txt\nLine 1\nLine 2\nLine 3',
+        }
+        assert diff == expected_diff
 
-        # Add a file to the non-git directory (should be ignored)
-        with open(os.path.join(non_git_dir, 'ignored_file.txt'), 'w') as f:
-            f.write('ignored content')
+    def test_get_git_changes_fallback(self):
+        """Test that get_git_changes falls back to creating a script file when needed."""
 
-        # Create a GitHandler for the workspace directory
-        workspace_handler = GitHandler(self._execute_command)
-        workspace_handler.set_cwd(workspace_dir)
+        # Break the git changes command
+        with patch(
+            'openhands.runtime.utils.git_handler.GIT_CHANGES_CMD',
+            'non-existant-command',
+        ):
+            self.git_handler.git_changes_cmd = git_handler.GIT_CHANGES_CMD
 
-        # Clear executed commands to start fresh
-        self.executed_commands = []
+            changes = self.git_handler.get_git_changes()
 
-        # Get changes from all repositories
-        changes = workspace_handler.get_git_changes()
-        self.assertIsNotNone(changes)
+            expected_changes = [
+                {'status': 'A', 'path': 'committed_add.txt'},
+                {'status': 'D', 'path': 'committed_delete.txt'},
+                {'status': 'M', 'path': 'committed_modified.txt'},
+                {'status': 'A', 'path': 'staged_add.txt'},
+                {'status': 'D', 'path': 'staged_delete.txt'},
+                {'status': 'M', 'path': 'staged_modified.txt'},
+                {'status': 'A', 'path': 'unstaged_add.txt'},
+                {'status': 'D', 'path': 'unstaged_delete.txt'},
+                {'status': 'M', 'path': 'unstaged_modified.txt'},
+            ]
 
-        # Should find changes from both repositories
-        assert len(changes) == 2
-        assert {'status': 'M', 'path': 'repo1/repo1_file.txt'} in changes
-        assert {'status': 'A', 'path': 'repo2/untracked.txt'} in changes
+            assert changes == expected_changes
+
+    def test_get_git_diff_fallback(self):
+        """Test that get_git_diff delegates to the git_diff module."""
+
+        # Break the git diff command
+        with patch(
+            'openhands.runtime.utils.git_handler.GIT_DIFF_CMD', 'non-existant-command'
+        ):
+            self.git_handler.git_diff_cmd = git_handler.GIT_DIFF_CMD
+
+            diff = self.git_handler.get_git_diff('unchanged.txt')
+            expected_diff = {
+                'original': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+                'modified': 'unchanged.txt\nLine 1\nLine 2\nLine 3',
+            }
+            assert diff == expected_diff
