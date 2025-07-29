@@ -35,6 +35,25 @@ Add a comment to any issue with `@openhands` followed by your task description:
 ### Method 2: Label-based Delegation
 Add the label `openhands` to any issue. The OpenHands agent will automatically process the issue based on its description and requirements.
 
+### Git Repository Detection
+
+The OpenHands agent needs to identify which Git repository to work with when processing your issues. Here's how to ensure proper repository detection:
+
+#### Specifying the Target Repository
+
+**Required:** Include the target Git repository in your issue description or comment to ensure the agent works with the correct codebase.
+
+**Supported Repository Formats:**
+- Full HTTPS URL: `https://github.com/owner/repository.git`
+- GitHub URL without .git: `https://github.com/owner/repository`
+- Owner/repository format: `owner/repository`
+
+#### Platform-Specific Behavior
+
+**Linear Integration:** When GitHub integration is enabled for your Linear workspace with issue sync activated, the target repository is automatically detected from the linked GitHub issue. Manual specification is not required in this configuration.
+
+**Jira Integrations:** Always include the repository information in your issue description or `@openhands` comment to ensure proper repository detection.
+
 ## Troubleshooting
 
 ### Platform Configuration Issues
