@@ -27,6 +27,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenancePage } from "#/components/features/maintenance/maintenance-page";
+import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 import OpenHands from "#/api/open-hands";
 
 export function ErrorBoundary() {
@@ -78,13 +79,31 @@ export default function MainApp() {
     isError: isAuthError,
   } = useIsAuthed();
 
-  // Handle maintenance mode
+  // Check if maintenance has started
+  const isMaintenanceActive = React.useMemo(() => {
+    if (!config.data?.MAINTENANCE) return false;
+
+    const now = new Date();
+    const startTime = new Date(config.data.MAINTENANCE.startTime);
+
+    // Handle EST timezone if not already specified
+    const maintenanceStartTime =
+      config.data.MAINTENANCE.startTime.includes("Z") ||
+      config.data.MAINTENANCE.startTime.includes("+") ||
+      config.data.MAINTENANCE.startTime.includes("-")
+        ? startTime
+        : new Date(`${config.data.MAINTENANCE.startTime} EST`);
+
+    return now >= maintenanceStartTime;
+  }, [config.data?.MAINTENANCE]);
+
+  // Handle maintenance mode - logout users when maintenance becomes active
   React.useEffect(() => {
-    if (config.data?.MAINTENANCE && isAuthed) {
+    if (isMaintenanceActive && isAuthed && config.data?.APP_MODE) {
       // Logout the user if maintenance mode is active
       OpenHands.logout(config.data.APP_MODE);
     }
-  }, [config.data?.MAINTENANCE, isAuthed, config.data?.APP_MODE]);
+  }, [isMaintenanceActive, isAuthed, config.data?.APP_MODE]);
 
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
@@ -204,8 +223,8 @@ export default function MainApp() {
     config.data?.APP_MODE === "saas" &&
     loginMethodExists;
 
-  // If in maintenance mode, render the maintenance page instead of the normal app
-  if (config.data?.MAINTENANCE) {
+  // If maintenance is active, render the maintenance page instead of the normal app
+  if (isMaintenanceActive && config.data?.MAINTENANCE) {
     return (
       <MaintenancePage
         startTime={config.data.MAINTENANCE.startTime}
@@ -217,17 +236,27 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
+      className="bg-base h-screen lg:min-w-[1024px] flex flex-col"
     >
-      <Sidebar />
+      {/* Show maintenance banner if maintenance is scheduled but not yet active */}
+      {config.data?.MAINTENANCE && !isMaintenanceActive && (
+        <MaintenanceBanner
+          startTime={config.data.MAINTENANCE.startTime}
+          endTime={config.data.MAINTENANCE.endTime}
+        />
+      )}
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+      <div className="p-3 flex-1 flex flex-col md:flex-row gap-3">
+        <Sidebar />
+
+        <div
+          id="root-outlet"
+          className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
+        >
+          <EmailVerificationGuard>
+            <Outlet />
+          </EmailVerificationGuard>
+        </div>
       </div>
 
       {renderAuthModal && (

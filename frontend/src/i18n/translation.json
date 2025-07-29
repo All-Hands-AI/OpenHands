@@ -95,6 +95,22 @@
         "tr": "Lütfen bakım penceresi sona erdikten sonra tekrar kontrol edin. Sabrınız için teşekkür ederiz.",
         "uk": "Будь ласка, перевірте знову після закінчення вікна обслуговування. Дякуємо за ваше терпіння."
     },
+    "MAINTENANCE$BANNER_MESSAGE": {
+        "en": "Scheduled maintenance will begin at",
+        "ja": "予定されたメンテナンスが開始されます",
+        "zh-CN": "计划维护将开始于",
+        "zh-TW": "計劃維護將開始於",
+        "ko-KR": "예정된 유지 보수가 시작됩니다",
+        "no": "Planlagt vedlikehold vil begynne kl",
+        "it": "La manutenzione programmata inizierà alle",
+        "pt": "A manutenção programada começará às",
+        "ar": "ستبدأ الصيانة المجدولة في",
+        "de": "Die geplante Wartung beginnt um",
+        "fr": "La maintenance planifiée commencera à",
+        "es": "El mantenimiento programado comenzará a las",
+        "tr": "Planlı bakım şu saatte başlayacak:",
+        "uk": "Планове технічне обслуговування почнеться о"
+    },
     "MICROAGENT$NO_REPOSITORY_FOUND": {
         "en": "No repository found to launch microagent",
         "ja": "マイクロエージェントを起動するためのリポジトリが見つかりません",
