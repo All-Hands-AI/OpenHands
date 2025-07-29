@@ -86,11 +86,11 @@ describe("TrajectoryActions", () => {
       );
 
       const actions = screen.getByTestId("feedback-actions");
-      
+
       // Should not render feedback buttons in SaaS mode
       expect(within(actions).queryByTestId("positive-feedback")).toBeNull();
       expect(within(actions).queryByTestId("negative-feedback")).toBeNull();
-      
+
       // Should still render export button
       within(actions).getByTestId("export-trajectory");
     });
