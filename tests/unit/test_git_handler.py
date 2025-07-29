@@ -177,17 +177,6 @@ class TestGitHandler(unittest.TestCase):
             {'status': 'M', 'path': 'unstaged_modified.txt'},
         ]
 
-        if changes != expected_changes:
-            raise RuntimeError(
-                '\n'.join(
-                    [
-                        f'incorrect_changes: {changes};',
-                        f'content: {os.listdir(self.local_dir)}',
-                        f'ref: {git_changes.get_valid_ref(self.local_dir)}',
-                    ]
-                )
-            )
-
         assert changes == expected_changes
 
     def test_get_git_changes_after_push(self):
@@ -220,7 +209,9 @@ class TestGitHandler(unittest.TestCase):
             {'status': 'A', 'path': 'committed_add.txt'},
             {'status': 'D', 'path': 'committed_delete.txt'},
             {'status': 'M', 'path': 'committed_modified.txt'},
+            {'status': 'A', 'path': 'nested 1/committed_add.txt'},
             {'status': 'A', 'path': 'nested 1/staged_add.txt'},
+            {'status': 'A', 'path': 'nested_2/committed_add.txt'},
             {'status': 'A', 'path': 'nested_2/unstaged_add.txt'},
             {'status': 'A', 'path': 'staged_add.txt'},
             {'status': 'D', 'path': 'staged_delete.txt'},
