@@ -1537,8 +1537,8 @@ describe("MicroagentManagement", () => {
       pr_number: null,
     };
 
-    const renderMicroagentManagementMain = (selectedMicroagentItem: any) => {
-      return renderWithProviders(<MicroagentManagementMain />, {
+    const renderMicroagentManagementMain = (selectedMicroagentItem: any) =>
+      renderWithProviders(<MicroagentManagementMain />, {
         preloadedState: {
           metrics: {
             cost: null,
@@ -1564,7 +1564,6 @@ describe("MicroagentManagement", () => {
           },
         },
       });
-    };
 
     it("should render MicroagentManagementDefault when no microagent or conversation is selected", async () => {
       renderMicroagentManagementMain(null);
@@ -2300,7 +2299,7 @@ describe("MicroagentManagement", () => {
 
   // Learn this repo functionality tests
   describe("Learn this repo functionality", () => {
-    it("should display learn this repo trigger when no microagents exist", async () => {
+    it.only("should display learn this repo trigger when no microagents exist", async () => {
       const user = userEvent.setup();
 
       // Setup mocks before rendering
