@@ -40,8 +40,10 @@ function AppSettingsScreen() {
   ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
     React.useState(false);
-  const [gitUserNameHasChanged, setGitUserNameHasChanged] = React.useState(false);
-  const [gitUserEmailHasChanged, setGitUserEmailHasChanged] = React.useState(false);
+  const [gitUserNameHasChanged, setGitUserNameHasChanged] =
+    React.useState(false);
+  const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -64,8 +66,12 @@ function AppSettingsScreen() {
       ?.toString();
     const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
 
-    const gitUserName = formData.get("git-user-name-input")?.toString() || DEFAULT_SETTINGS.GIT_USER_NAME;
-    const gitUserEmail = formData.get("git-user-email-input")?.toString() || DEFAULT_SETTINGS.GIT_USER_EMAIL;
+    const gitUserName =
+      formData.get("git-user-name-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_NAME;
+    const gitUserEmail =
+      formData.get("git-user-email-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_EMAIL;
 
     saveSettings(
       {
@@ -217,7 +223,9 @@ function AppSettingsScreen() {
           />
 
           <div className="border-t border-t-tertiary pt-6 mt-2">
-            <h3 className="text-lg font-medium mb-4">{t(I18nKey.SETTINGS$GIT_SETTINGS)}</h3>
+            <h3 className="text-lg font-medium mb-4">
+              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
+            </h3>
             <div className="flex flex-col gap-6">
               <SettingsInput
                 testId="git-user-name-input"

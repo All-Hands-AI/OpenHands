@@ -32,7 +32,8 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
     GIT_USER_NAME: apiSettings.git_user_name || DEFAULT_SETTINGS.GIT_USER_NAME,
-    GIT_USER_EMAIL: apiSettings.git_user_email || DEFAULT_SETTINGS.GIT_USER_EMAIL,
+    GIT_USER_EMAIL:
+      apiSettings.git_user_email || DEFAULT_SETTINGS.GIT_USER_EMAIL,
     IS_NEW_USER: false,
   };
 };
