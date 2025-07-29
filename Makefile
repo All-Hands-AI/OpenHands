@@ -190,19 +190,17 @@ install-pre-commit-hooks:
 	@if [ -f ".openhands/pre-commit.sh" ]; then \
 		chmod +x .openhands/pre-commit.sh; \
 		cp .git/hooks/pre-commit .git/hooks/pre-commit.local 2>/dev/null || true; \
-		cat > .git/hooks/pre-commit << 'EOF'
-#!/bin/bash
-# This hook was installed by OpenHands
-# It calls the pre-commit script in the .openhands directory
-
-if [ -x ".openhands/pre-commit.sh" ]; then
-	source ".openhands/pre-commit.sh"
-	exit $?
-else
-	echo "Warning: .openhands/pre-commit.sh not found or not executable"
-	exit 0
-fi
-EOF
+		echo '#!/bin/bash' > .git/hooks/pre-commit; \
+		echo '# This hook was installed by OpenHands' >> .git/hooks/pre-commit; \
+		echo '# It calls the pre-commit script in the .openhands directory' >> .git/hooks/pre-commit; \
+		echo '' >> .git/hooks/pre-commit; \
+		echo 'if [ -x ".openhands/pre-commit.sh" ]; then' >> .git/hooks/pre-commit; \
+		echo '	source ".openhands/pre-commit.sh"' >> .git/hooks/pre-commit; \
+		echo '	exit $$?' >> .git/hooks/pre-commit; \
+		echo 'else' >> .git/hooks/pre-commit; \
+		echo '	echo "Warning: .openhands/pre-commit.sh not found or not executable"' >> .git/hooks/pre-commit; \
+		echo '	exit 0' >> .git/hooks/pre-commit; \
+		echo 'fi' >> .git/hooks/pre-commit; \
 		chmod +x .git/hooks/pre-commit; \
 		echo "$(BLUE)Selective pre-commit hook installed.$(RESET)"; \
 	else \
