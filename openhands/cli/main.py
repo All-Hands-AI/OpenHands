@@ -49,7 +49,10 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import (
+    MCPStdioServerConfig,
+    OpenHandsMCPConfigImpl,
+)
 from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -304,6 +307,14 @@ async def run_session(
         )
 
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        # Add `fetch` MCP server by default if not already present
+        fetch_mcp_config = MCPStdioServerConfig(
+            name='fetch',
+            command='uvx',
+            args=['mcp-server-fetch'],
+        )
+        if fetch_mcp_config not in runtime.config.mcp.stdio_servers:
+            runtime.config.mcp.stdio_servers.append(fetch_mcp_config)
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
 
