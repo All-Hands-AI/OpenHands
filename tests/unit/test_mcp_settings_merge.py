@@ -9,7 +9,6 @@ from openhands.core.config.mcp_config import (
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
-from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import Settings
 
 
@@ -26,10 +25,8 @@ async def test_mcp_settings_merge_config_only():
     # Frontend settings without MCP config
     frontend_settings = Settings(llm_model='gpt-4')
 
-    user_auth = DefaultUserAuth()
-
     with patch.object(Settings, 'from_config', return_value=mock_config_settings):
-        merged_settings = user_auth._merge_with_config_settings(frontend_settings)
+        merged_settings = frontend_settings.merge_with_config_settings()
 
     # Should use config.toml MCP settings
     assert merged_settings.mcp_config is not None
@@ -52,10 +49,8 @@ async def test_mcp_settings_merge_frontend_only():
         ),
     )
 
-    user_auth = DefaultUserAuth()
-
     with patch.object(Settings, 'from_config', return_value=mock_config_settings):
-        merged_settings = user_auth._merge_with_config_settings(frontend_settings)
+        merged_settings = frontend_settings.merge_with_config_settings()
 
     # Should keep frontend MCP settings
     assert merged_settings.mcp_config is not None
@@ -92,10 +87,8 @@ async def test_mcp_settings_merge_both_present():
         ),
     )
 
-    user_auth = DefaultUserAuth()
-
     with patch.object(Settings, 'from_config', return_value=mock_config_settings):
-        merged_settings = user_auth._merge_with_config_settings(frontend_settings)
+        merged_settings = frontend_settings.merge_with_config_settings()
 
     # Should merge both with config.toml taking priority (appearing first)
     assert merged_settings.mcp_config is not None
@@ -124,10 +117,8 @@ async def test_mcp_settings_merge_no_config():
         ),
     )
 
-    user_auth = DefaultUserAuth()
-
     with patch.object(Settings, 'from_config', return_value=mock_config_settings):
-        merged_settings = user_auth._merge_with_config_settings(frontend_settings)
+        merged_settings = frontend_settings.merge_with_config_settings()
 
     # Should keep frontend settings unchanged
     assert merged_settings.mcp_config is not None
@@ -145,10 +136,8 @@ async def test_mcp_settings_merge_neither_present():
     # Frontend settings without MCP config
     frontend_settings = Settings(llm_model='gpt-4')
 
-    user_auth = DefaultUserAuth()
-
     with patch.object(Settings, 'from_config', return_value=mock_config_settings):
-        merged_settings = user_auth._merge_with_config_settings(frontend_settings)
+        merged_settings = frontend_settings.merge_with_config_settings()
 
     # Should keep frontend settings unchanged
     assert merged_settings.mcp_config is None
