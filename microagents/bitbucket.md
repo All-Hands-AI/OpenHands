@@ -18,6 +18,37 @@ ALWAYS use the `create_bitbucket_pr` tool to open a pull request
 
 If you encounter authentication issues when pushing to Bitbucket (such as password prompts or permission errors), the old token may have expired. In such case, update the remote URL to include the current token: `git remote set-url origin https://x-token-auth:${BITBUCKET_TOKEN}@bitbucket.org/username/repo.git`
 
+## IP Allowlist Configuration
+
+When using OpenHands Cloud with private Bitbucket repositories or branches, you may need to add OpenHands Cloud IPs to your Bitbucket IP allowlist. This is necessary for OpenHands Cloud to access private content.
+
+### How to Configure IP Allowlist in Bitbucket
+
+1. Click **Settings** on the left navigation of your workspace.
+2. On the Workspace settings page, select **Access controls** from the left navigation.
+3. Add the following OpenHands Cloud IPs to your allowlist:
+
+#### Core app IP
+```
+34.68.58.200
+```
+
+#### Runtime IPs
+```
+34.10.175.217
+34.136.162.246
+34.45.0.142
+34.28.69.126
+35.224.240.213
+34.70.174.52
+34.42.4.87
+35.222.133.153
+34.29.175.97
+34.60.55.59
+```
+
+### Git Operations
+
 Here are some instructions for pushing, but ONLY do this if the user asks you to:
 * NEVER push directly to the `main` or `master` branch
 * Git config (username and email) is pre-set. Do not modify.
