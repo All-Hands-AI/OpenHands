@@ -9,14 +9,15 @@ on:
     branches:
       - main
   pull_request:
-    paths-ignore:
-      - 'docs/**'
-      - '.github/*.md'
-      - 'LICENSE'
-      - 'CITATION.cff'
-      - '**.md'
-      - '!microagents/**.md'
-      - '!.openhands/microagents/**.md'
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!.github/*.md'
+      - '!LICENSE'
+      - '!CITATION.cff'
+      - '!**.md'
+      - 'microagents/**.md'
+      - '.openhands/microagents/**.md'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -84,8 +85,20 @@ jobs:
         run: pip install pre-commit==3.7.0
       - name: Run basic checks on microagent files
         run: |
-          MICROAGENT_FILES=$(find microagents/ .openhands/microagents/ -type f -name "*.md" 2>/dev/null || echo "")
+          # Find microagent files safely
+          MICROAGENT_FILES=""
+          if [ -d "microagents" ]; then
+            MICROAGENT_FILES="$MICROAGENT_FILES $(find microagents -type f -name "*.md" 2>/dev/null || echo "")"
+          fi
+          if [ -d ".openhands/microagents" ]; then
+            MICROAGENT_FILES="$MICROAGENT_FILES $(find .openhands/microagents -type f -name "*.md" 2>/dev/null || echo "")"
+          fi
+
+          # Trim leading/trailing whitespace
+          MICROAGENT_FILES=$(echo "$MICROAGENT_FILES" | xargs)
+
           if [ -n "$MICROAGENT_FILES" ]; then
+            echo "Found microagent files: $MICROAGENT_FILES"
             pre-commit run trailing-whitespace --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
             pre-commit run end-of-file-fixer --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
           else

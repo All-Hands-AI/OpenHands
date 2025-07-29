@@ -145,20 +145,27 @@ fi
 # Run microagent checks if needed
 if [ "$has_microagent_changes" = true ]; then
     echo "Running microagent checks..."
-    # Run basic checks for markdown files
-    poetry run pre-commit run trailing-whitespace --files $(echo "$STAGED_FILES" | grep -E "microagents/|\.openhands/microagents/" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
-    if [ $? -ne 0 ]; then
-        echo "Microagent trailing whitespace check failed. Please fix the issues before committing."
-        EXIT_CODE=1
-    fi
+    # Get the list of microagent files that have changed
+    MICROAGENT_FILES=$(echo "$STAGED_FILES" | grep -E "microagents/|\.openhands/microagents/" | tr '\n' ' ')
 
-    poetry run pre-commit run end-of-file-fixer --files $(echo "$STAGED_FILES" | grep -E "microagents/|\.openhands/microagents/" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
-    if [ $? -ne 0 ]; then
-        echo "Microagent end-of-file check failed. Please fix the issues before committing."
-        EXIT_CODE=1
-    fi
+    if [ -n "$MICROAGENT_FILES" ]; then
+        # Run basic checks for markdown files
+        poetry run pre-commit run trailing-whitespace --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+        if [ $? -ne 0 ]; then
+            echo "Microagent trailing whitespace check failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        fi
 
-    echo "Microagent checks completed."
+        poetry run pre-commit run end-of-file-fixer --files $MICROAGENT_FILES --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+        if [ $? -ne 0 ]; then
+            echo "Microagent end-of-file check failed. Please fix the issues before committing."
+            EXIT_CODE=1
+        fi
+
+        echo "Microagent checks completed."
+    else
+        echo "No microagent files found in staged changes."
+    fi
 else
     echo "Skipping microagent checks (no microagent changes detected)."
 fi
