@@ -89,6 +89,7 @@ class GitLabService(BaseGitService, GitService):
         url: str,
         params: dict | None = None,
         method: RequestMethod = RequestMethod.GET,
+        is_json_response: bool = True,
     ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
@@ -120,7 +121,10 @@ class GitLabService(BaseGitService, GitService):
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
-                return response.json(), headers
+                if is_json_response:
+                    return response.json(), headers
+                else:
+                    return response.text, headers
 
         except httpx.HTTPStatusError as e:
             raise self.handle_http_status_error(e)
@@ -588,7 +592,8 @@ class GitLabService(BaseGitService, GitService):
             # Process .cursorrules if it exists
             try:
                 cursorrules_response, _ = await self._make_request(
-                    f'{base_url}/repository/files/.cursorrules/raw'
+                    f'{base_url}/repository/files/.cursorrules/raw',
+                    is_json_response=False,
                 )
                 if cursorrules_response:
                     microagents.append(
@@ -655,7 +660,7 @@ class GitLabService(BaseGitService, GitService):
         file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
 
         try:
-            response, _ = await self._make_request(file_url)
+            response, _ = await self._make_request(file_url, is_json_response=False)
             return response
 
         except Exception as e:
