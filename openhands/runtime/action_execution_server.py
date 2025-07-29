@@ -943,6 +943,15 @@ if __name__ == '__main__':
             return {'status': 'not initialized'}
         return {'status': 'ok'}
 
+    @app.get('/platform_info')
+    async def platform_info():
+        """Get platform information including whether the system is Windows."""
+        return {
+            'platform': sys.platform,
+            'is_windows': sys.platform == 'win32',
+            'is_local_runtime': os.environ.get('LOCAL_RUNTIME_MODE') == '1',
+        }
+
     # ================================
     # VSCode-specific operations
     # ================================

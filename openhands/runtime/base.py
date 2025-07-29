@@ -997,6 +997,12 @@ fi
         raise NotImplementedError('This method is not implemented in the base class.')
 
     @property
+    @abstractmethod
+    def action_execution_server_url(self) -> str:
+        """Get the URL of the action execution server."""
+        pass
+
+    @property
     def web_hosts(self) -> dict[str, int]:
         return {}
 
@@ -1033,14 +1039,48 @@ fi
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
 
-    def setup_git_config(self) -> None:
-        """Set up git configuration with OpenHands defaults and user coauthor information."""
+    def _get_platform_info(self) -> dict[str, str | bool]:
+        """Get platform information from the action execution server."""
+        try:
+            # Try to get platform info from the action execution server
+            server_url = self.action_execution_server_url
+            action = CmdRunAction(command=f'curl -s {server_url}/platform_info')
+            action.set_hard_timeout(10)
+            obs = self.run(action)
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
+                import json
+
+                try:
+                    return json.loads(obs.content)
+                except json.JSONDecodeError:
+                    logger.warning(
+                        'Failed to parse platform info response, using fallback'
+                    )
+            else:
+                logger.warning(
+                    'Failed to get platform info from server, using fallback'
+                )
+        except Exception as e:
+            logger.warning(f'Error getting platform info: {e}, using fallback')
+
+        # Fallback to local detection (though this may not be accurate in containerized environments)
         import os
         import sys
 
+        return {
+            'platform': sys.platform,
+            'is_windows': sys.platform == 'win32',
+            'is_local_runtime': os.environ.get('LOCAL_RUNTIME_MODE') == '1',
+        }
+
+    def setup_git_config(self) -> None:
+        """Set up git configuration with OpenHands defaults and user coauthor information."""
         INIT_COMMANDS = []
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-        is_windows = sys.platform == 'win32'
+
+        # Get platform information from the action execution server
+        platform_info = self._get_platform_info()
+        is_local_runtime = platform_info.get('is_local_runtime', False)
+        is_windows = platform_info.get('is_windows', False)
 
         # Determine git config commands based on platform and runtime mode
         if is_local_runtime:
