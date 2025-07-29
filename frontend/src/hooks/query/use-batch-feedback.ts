@@ -1,3 +1,4 @@
+import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
@@ -27,23 +28,25 @@ export const useBatchFeedback = () => {
   const queryClient = useQueryClient();
   const runtimeIsReady = useRuntimeIsReady();
 
-  return useQuery({
+  const query = useQuery({
     queryKey: getFeedbackQueryKey(conversationId),
     queryFn: () => OpenHands.getBatchFeedback(conversationId!),
     enabled: runtimeIsReady && !!conversationId && config?.APP_MODE === "saas",
     staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes,
-    select: (data) => {
-      // HACK: Using select as a side-effect hook since onSuccess is deprecated
-      // This keeps the individual feedback existence cache in sync with batch data
-      // Not the intended use of select, but avoids deprecated onSuccess
-      Object.entries(data).forEach(([eventId, feedback]) => {
+    gcTime: 1000 * 60 * 15, // 15 minutes
+  });
+
+  // Update individual feedback cache entries when batch data changes
+  React.useEffect(() => {
+    if (query.data && conversationId) {
+      Object.entries(query.data).forEach(([eventId, feedback]) => {
         queryClient.setQueryData(
-          getFeedbackExistsQueryKey(conversationId!, parseInt(eventId, 10)),
-          feedback.exists,
+          getFeedbackExistsQueryKey(conversationId, parseInt(eventId, 10)),
+          feedback,
         );
       });
-      return data;
-    },
-  });
+    }
+  }, [query.data, conversationId, queryClient]);
+
+  return query;
 };
