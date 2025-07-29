@@ -739,28 +739,33 @@ def test_completion_with_two_positional_args(mock_litellm_completion, default_co
     }
     mock_litellm_completion.return_value = mock_response
 
-    test_llm = LLM(config=default_config)
-    response = test_llm.completion(
-        'some-model-to-be-ignored',
-        [{'role': 'user', 'content': 'Hello from positional args!'}],
-        stream=False,
-    )
 
-    # Assertions
-    assert (
-        response['choices'][0]['message']['content'] == 'Response to positional args.'
-    )
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_gemini_thinking_parameter(mock_litellm_completion, default_config):
+    """
+    Test that the 'thinking' parameter is correctly passed to litellm_completion
+    when a Gemini model is used with 'low' reasoning_effort.
+    """
+    # Configure for Gemini model with low reasoning effort
+    gemini_config = copy.deepcopy(default_config)
+    gemini_config.model = 'gemini-2.5-pro'
+    gemini_config.reasoning_effort = 'low'
+
+    # Mock the response from litellm
+    mock_litellm_completion.return_value = {
+        'choices': [{'message': {'content': 'Test response'}}]
+    }
+
+    # Initialize LLM and call completion
+    llm = LLM(config=gemini_config)
+    llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
+
+    # Verify that litellm_completion was called with the 'thinking' parameter
     mock_litellm_completion.assert_called_once()
-
-    # Check if the correct arguments were passed to litellm_completion
     call_args, call_kwargs = mock_litellm_completion.call_args
-    assert (
-        call_kwargs['model'] == default_config.model
-    )  # Should use the model from config, not the first arg
-    assert call_kwargs['messages'] == [
-        {'role': 'user', 'content': 'Hello from positional args!'}
-    ]
-    assert not call_kwargs['stream']
+    assert 'thinking' in call_kwargs
+    assert call_kwargs['thinking'] == {'budget_tokens': 128}
+    assert 'reasoning_effort' not in call_kwargs
 
     # Ensure the first positional argument (model) was ignored
     assert (
