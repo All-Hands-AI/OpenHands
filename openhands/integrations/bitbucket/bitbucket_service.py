@@ -1,5 +1,7 @@
 import base64
+import logging
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -18,6 +20,8 @@ from openhands.integrations.service_types import (
 )
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
+
+logger = logging.getLogger(__name__)
 
 
 class BitBucketService(BaseGitService, GitService):
@@ -384,6 +388,194 @@ class BitBucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
+
+    def _determine_microagents_path(self, repository_name: str) -> str:
+        """Determine the microagents directory path based on repository name."""
+        repository_name.split('/')[-1]
+
+        # For Bitbucket, use default behavior: look for .openhands/microagents directory
+        return '.openhands/microagents'
+
+    def _create_microagent_response(self, file_name: str, path: str) -> dict:
+        """Create a microagent response from basic file information."""
+        # Extract name without extension
+        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
+
+        return {
+            'name': name,
+            'path': path,
+            'created_at': datetime.now().isoformat(),
+        }
+
+    async def _process_cursorrules_file(
+        self, client: httpx.AsyncClient, repository_name: str, main_branch: str
+    ) -> dict | None:
+        """Check if .cursorrules file exists and return basic metadata."""
+        try:
+            headers = await self._get_bitbucket_headers()
+            cursorrules_url = f'https://api.bitbucket.org/2.0/repositories/{repository_name}/src/{main_branch}/.cursorrules'
+            cursorrules_response = await client.get(cursorrules_url, headers=headers)
+            if cursorrules_response.status_code == 200:
+                return self._create_microagent_response('.cursorrules', '.cursorrules')
+        except Exception as e:
+            logger.warning(f'Error checking .cursorrules: {str(e)}')
+        return None
+
+    async def _process_bitbucket_md_files(
+        self, client: httpx.AsyncClient, directory_data: dict
+    ) -> list[dict]:
+        """Process .md files from Bitbucket directory data without fetching content."""
+        microagents = []
+
+        if 'values' in directory_data:
+            for item in directory_data['values']:
+                if (
+                    item['type'] == 'commit_file'
+                    and item['path'].endswith('.md')
+                    and not item['path'].endswith('README.md')
+                ):
+                    try:
+                        # Extract file name from path
+                        file_name = item['path'].split('/')[-1]
+                        microagents.append(
+                            self._create_microagent_response(file_name, item['path'])
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item["path"]}: {str(e)}'
+                        )
+
+        return microagents
+
+    async def get_microagents(self, repository: str) -> list[dict]:
+        """Fetch microagents from Bitbucket repository using Bitbucket API.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+
+        Returns:
+            List of microagents found in the repository (without content for performance)
+        """
+        microagents_path = self._determine_microagents_path(repository)
+        microagents = []
+
+        async with httpx.AsyncClient() as client:
+            try:
+                headers = await self._get_bitbucket_headers()
+
+                # Step 1: Get repository info to determine the main branch
+                repo_info_url = (
+                    f'https://api.bitbucket.org/2.0/repositories/{repository}'
+                )
+                repo_response = await client.get(repo_info_url, headers=headers)
+                repo_response.raise_for_status()
+                repo_data = repo_response.json()
+
+                # Extract main branch name from repository info
+                main_branch = repo_data.get('mainbranch', {}).get('name')
+                if not main_branch:
+                    raise RuntimeError(
+                        f'No main branch found in repository info for {repository}. '
+                        f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                    )
+
+                # Step 2: Get microagents directory listing using the main branch
+                src_url = f'https://api.bitbucket.org/2.0/repositories/{repository}/src/{main_branch}/{microagents_path}'
+                directory_response = await client.get(src_url, headers=headers)
+
+                if directory_response.status_code == 404:
+                    logger.info(
+                        f'No microagents directory found in {repository} at {microagents_path}'
+                    )
+                    return []
+
+                directory_response.raise_for_status()
+                directory_data = directory_response.json()
+
+                # Process .cursorrules if it exists
+                cursorrules_response = await self._process_cursorrules_file(
+                    client, repository, main_branch
+                )
+                if cursorrules_response:
+                    microagents.append(cursorrules_response)
+
+                # Process .md files in the directory
+                md_microagents = await self._process_bitbucket_md_files(
+                    client, directory_data
+                )
+                microagents.extend(md_microagents)
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    logger.info(
+                        f'No microagents directory found in {repository} at {microagents_path}'
+                    )
+                    return []
+                raise RuntimeError(
+                    f'Failed to fetch microagents from Bitbucket: {e.response.status_code} {e.response.text}'
+                )
+            except Exception as e:
+                raise RuntimeError(
+                    f'Error fetching microagents from Bitbucket: {str(e)}'
+                )
+
+        return microagents
+
+    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+        """Fetch individual file content from Bitbucket repository.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+            file_path: Path to the file within the repository
+
+        Returns:
+            File content as string
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        headers = await self._get_bitbucket_headers()
+
+        async with httpx.AsyncClient() as client:
+            try:
+                # Step 1: Get repository info to determine the main branch
+                repo_info_url = (
+                    f'https://api.bitbucket.org/2.0/repositories/{repository}'
+                )
+                repo_response = await client.get(repo_info_url, headers=headers)
+                repo_response.raise_for_status()
+                repo_data = repo_response.json()
+
+                # Extract main branch name from repository info
+                main_branch = repo_data.get('mainbranch', {}).get('name')
+                if not main_branch:
+                    raise RuntimeError(
+                        f'No main branch found in repository info for {repository}. '
+                        f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                    )
+
+                # Step 2: Get file content using the main branch
+                file_url = f'https://api.bitbucket.org/2.0/repositories/{repository}/src/{main_branch}/{file_path}'
+                file_response = await client.get(file_url, headers=headers)
+
+                if file_response.status_code == 404:
+                    raise RuntimeError(
+                        f'File not found: {file_path} in repository {repository}'
+                    )
+
+                file_response.raise_for_status()
+                return file_response.text
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise RuntimeError(
+                        f'File not found: {file_path} in repository {repository}'
+                    )
+                raise RuntimeError(
+                    f'Failed to fetch file from Bitbucket: {e.response.status_code} {e.response.text}'
+                )
+            except Exception as e:
+                raise RuntimeError(f'Error fetching file from Bitbucket: {str(e)}')
 
 
 bitbucket_service_cls = os.environ.get(

@@ -537,6 +537,170 @@ class GitHubService(BaseGitService, GitService):
         # Return the HTML URL of the created PR
         return response['html_url']
 
+    def _determine_microagents_path(self, repository_name: str) -> str:
+        """Determine the microagents directory path based on repository name."""
+        actual_repo_name = repository_name.split('/')[-1]
+
+        if actual_repo_name == '.openhands':
+            # For repository name ".openhands", scan "microagents" folder
+            return 'microagents'
+        else:
+            # Default behavior: look for .openhands/microagents directory
+            return '.openhands/microagents'
+
+    def _create_microagent_response(self, file_name: str, path: str) -> dict:
+        """Create a microagent response from basic file information."""
+        # Extract name without extension
+        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
+
+        return {
+            'name': name,
+            'path': path,
+            'created_at': datetime.now().isoformat(),
+        }
+
+    async def _process_cursorrules_file(
+        self, client: httpx.AsyncClient, cursorrules_url: str
+    ) -> dict | None:
+        """Check if .cursorrules file exists and return basic metadata."""
+        try:
+            headers = await self._get_github_headers()
+            cursorrules_response = await client.get(cursorrules_url, headers=headers)
+            if cursorrules_response.status_code == 200:
+                return self._create_microagent_response('.cursorrules', '.cursorrules')
+        except Exception as e:
+            logger.warning(f'Error checking .cursorrules: {str(e)}')
+        return None
+
+    async def _process_github_md_files(
+        self, client: httpx.AsyncClient, directory_contents: list, microagents_path: str
+    ) -> list[dict]:
+        """Process .md files from GitHub directory contents without fetching content."""
+        microagents = []
+        await self._get_github_headers()
+
+        for item in directory_contents:
+            if (
+                item['type'] == 'file'
+                and item['name'].endswith('.md')
+                and item['name'] != 'README.md'
+            ):
+                try:
+                    microagents.append(
+                        self._create_microagent_response(
+                            item['name'],
+                            f'{microagents_path}/{item["name"]}',
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f'Error processing microagent {item["name"]}: {str(e)}'
+                    )
+
+        return microagents
+
+    async def get_microagents(self, repository: str) -> list[dict]:
+        """Fetch microagents from GitHub repository using GitHub Contents API.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+
+        Returns:
+            List of microagents found in the repository (without content for performance)
+        """
+        microagents_path = self._determine_microagents_path(repository)
+        base_url = f'{self.BASE_URL}/repos/{repository}/contents'
+        microagents = []
+
+        async with httpx.AsyncClient() as client:
+            try:
+                headers = await self._get_github_headers()
+                # Use repository's default branch (no ref parameter)
+                response = await client.get(
+                    f'{base_url}/{microagents_path}', headers=headers
+                )
+
+                if response.status_code == 404:
+                    logger.info(
+                        f'No microagents directory found in {repository} at {microagents_path}'
+                    )
+                    return []
+
+                response.raise_for_status()
+                directory_contents = response.json()
+
+                # Process .cursorrules if it exists
+                cursorrules_response = await self._process_cursorrules_file(
+                    client, f'{base_url}/.cursorrules'
+                )
+                if cursorrules_response:
+                    microagents.append(cursorrules_response)
+
+                # Process .md files in microagents directory
+                md_microagents = await self._process_github_md_files(
+                    client, directory_contents, microagents_path
+                )
+                microagents.extend(md_microagents)
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    logger.info(
+                        f'No microagents directory found in {repository} at {microagents_path}'
+                    )
+                    return []
+                raise RuntimeError(
+                    f'Failed to fetch microagents from GitHub: {e.response.status_code} {e.response.text}'
+                )
+            except Exception as e:
+                raise RuntimeError(f'Error fetching microagents from GitHub: {str(e)}')
+
+        return microagents
+
+    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+        """Fetch individual file content from GitHub repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            file_path: Path to the file within the repository
+
+        Returns:
+            File content as string
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        headers = await self._get_github_headers()
+        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
+
+        async with httpx.AsyncClient() as client:
+            try:
+                response = await client.get(file_url, headers=headers)
+
+                if response.status_code == 404:
+                    raise RuntimeError(
+                        f'File not found: {file_path} in repository {repository}'
+                    )
+
+                response.raise_for_status()
+                file_data = response.json()
+
+                # Decode base64 content
+                import base64
+
+                file_content = base64.b64decode(file_data['content']).decode('utf-8')
+                return file_content
+
+            except httpx.HTTPStatusError as e:
+                if e.response.status_code == 404:
+                    raise RuntimeError(
+                        f'File not found: {file_path} in repository {repository}'
+                    )
+                raise RuntimeError(
+                    f'Failed to fetch file from GitHub: {e.response.status_code} {e.response.text}'
+                )
+            except Exception as e:
+                raise RuntimeError(f'Error fetching file from GitHub: {str(e)}')
+
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',

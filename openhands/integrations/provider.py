@@ -407,6 +407,109 @@ class ProviderHandler:
 
         return main_branches + other_branches
 
+    async def get_microagents(self, repository: str) -> list[dict]:
+        """Get microagents from a repository using the appropriate service.
+
+        Args:
+            repository: Repository name in the format 'owner/repo'
+
+        Returns:
+            List of microagents found in the repository
+
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        # Try all available providers in order
+        errors = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                result = await service.get_microagents(repository)
+                # Only return early if we got a non-empty result
+                if result:
+                    return result
+                # If we got an empty array, continue checking other providers
+                logger.debug(
+                    f'No microagents found on {provider} for {repository}, trying other providers'
+                )
+            except Exception as e:
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error fetching microagents from {provider} for {repository}: {e}'
+                )
+
+        # If all providers failed or returned empty results, return empty array
+        if errors:
+            logger.error(
+                f'Failed to fetch microagents for {repository} with all available providers. Errors: {"; ".join(errors)}'
+            )
+            raise AuthenticationError(f'Unable to fetch microagents for {repository}')
+
+        # All providers returned empty arrays
+        return []
+
+    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+        """Get content of a specific microagent file from a repository.
+
+        Args:
+            repository: Repository name in the format 'owner/repo'
+            file_path: Path to the microagent file within the repository
+
+        Returns:
+            File content as string
+
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        # Try all available providers in order
+        errors = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                result = await service.get_microagent_content(repository, file_path)
+                # If we got content, return it immediately
+                if result:
+                    return result
+                # If we got empty content, continue checking other providers
+                logger.debug(
+                    f'No content found on {provider} for {repository}/{file_path}, trying other providers'
+                )
+            except Exception as e:
+                error_msg = str(e).lower()
+                # If it's a "not found" error, continue to other providers
+                if any(
+                    phrase in error_msg
+                    for phrase in [
+                        'not found',
+                        '404',
+                        'file not found',
+                        'repository not found',
+                    ]
+                ):
+                    logger.debug(
+                        f'File not found on {provider} for {repository}/{file_path}, trying other providers'
+                    )
+                    continue
+                # For other errors (auth, rate limit, etc.), add to errors list
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error fetching microagent content from {provider} for {repository}: {e}'
+                )
+
+        # If all providers failed or returned empty results, raise an error
+        if errors:
+            logger.error(
+                f'Failed to fetch microagent content for {repository} with all available providers. Errors: {"; ".join(errors)}'
+            )
+            raise AuthenticationError(
+                f'Unable to fetch microagent content for {repository}'
+            )
+
+        # All providers returned empty content or file not found
+        raise AuthenticationError(
+            f'Microagent file {file_path} not found in {repository}'
+        )
+
     async def get_authenticated_git_url(self, repo_name: str) -> str:
         """Get an authenticated git URL for a repository.
 
