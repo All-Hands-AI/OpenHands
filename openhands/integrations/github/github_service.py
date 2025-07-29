@@ -1,6 +1,6 @@
+import base64
 import json
 import os
-import base64
 from datetime import datetime
 from typing import Any
 
