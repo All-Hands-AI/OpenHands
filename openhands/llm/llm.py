@@ -89,7 +89,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'kimi-k2-0711-preview',
     'kimi-k2-instruct',
     'Qwen3-Coder-480B-A35B-Instruct',
-    'qwen-3-coder-480b',
+    'qwen3-coder-480b',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
