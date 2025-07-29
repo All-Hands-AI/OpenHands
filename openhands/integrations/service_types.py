@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.microagent.types import MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -249,7 +250,7 @@ class GitService(Protocol):
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
 
-    async def get_microagents(self, repository: str) -> list[dict]:
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository"""
         ...
 

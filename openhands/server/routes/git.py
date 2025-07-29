@@ -1,10 +1,9 @@
-from datetime import datetime
 from types import MappingProxyType
 from typing import cast
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, SecretStr
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
@@ -18,6 +17,10 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     UnknownException,
     User,
+)
+from openhands.microagent.types import (
+    MicroagentContentResponse,
+    MicroagentResponse,
 )
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import server_config
@@ -235,26 +238,6 @@ async def get_repository_branches(
     )
 
 
-class MicroagentResponse(BaseModel):
-    """Response model for microagents endpoint.
-
-    Note: This model only includes basic metadata that can be determined
-    without parsing microagent content. Use the separate content API
-    to get detailed microagent information.
-    """
-
-    name: str
-    path: str
-    created_at: datetime
-
-
-class MicroagentContentResponse(BaseModel):
-    """Response model for individual microagent content endpoint."""
-
-    content: str
-    path: str
-
-
 def _extract_repo_name(repository_name: str) -> str:
     """Extract the actual repository name from the full repository path.
 
@@ -306,18 +289,7 @@ async def get_repository_microagents(
         )
 
         # Fetch microagents using the provider handler
-        microagents_data = await provider_handler.get_microagents(repository_name)
-
-        # Convert to MicroagentResponse objects
-        microagents = []
-        for microagent_data in microagents_data:
-            microagents.append(
-                MicroagentResponse(
-                    name=microagent_data['name'],
-                    path=microagent_data['path'],
-                    created_at=datetime.fromisoformat(microagent_data['created_at']),
-                )
-            )
+        microagents = await provider_handler.get_microagents(repository_name)
 
         logger.info(f'Found {len(microagents)} microagents in {repository_name}')
         return microagents

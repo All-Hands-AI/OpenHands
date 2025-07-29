@@ -1,4 +1,3 @@
-import logging
 import os
 from datetime import datetime
 from typing import Any
@@ -6,6 +5,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -19,10 +19,9 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.microagent.types import MicroagentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
-
-from openhands.core.logger import openhands_logger as logger
 
 
 class GitLabService(BaseGitService, GitService):
@@ -538,56 +537,20 @@ class GitLabService(BaseGitService, GitService):
             # Default behavior: look for .openhands/microagents directory
             return '.openhands/microagents'
 
-    def _create_microagent_response(self, file_name: str, path: str) -> dict:
+    def _create_microagent_response(
+        self, file_name: str, path: str
+    ) -> MicroagentResponse:
         """Create a microagent response from basic file information."""
         # Extract name without extension
         name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
 
-        return {
-            'name': name,
-            'path': path,
-            'created_at': datetime.now().isoformat(),
-        }
+        return MicroagentResponse(
+            name=name,
+            path=path,
+            created_at=datetime.now(),
+        )
 
-    async def _process_cursorrules_file(
-        self, client: httpx.AsyncClient, base_url: str
-    ) -> dict | None:
-        """Check if .cursorrules file exists and return basic metadata."""
-        try:
-            headers = await self._get_gitlab_headers()
-            cursorrules_response = await client.get(
-                f'{base_url}/repository/files/.cursorrules/raw', headers=headers
-            )
-            if cursorrules_response.status_code == 200:
-                return self._create_microagent_response('.cursorrules', '.cursorrules')
-        except Exception as e:
-            logger.warning(f'Error checking .cursorrules: {str(e)}')
-        return None
-
-    async def _process_gitlab_md_files(
-        self, client: httpx.AsyncClient, tree_items: list
-    ) -> list[dict]:
-        """Process .md files from GitLab tree items without fetching content."""
-        microagents = []
-
-        for item in tree_items:
-            if (
-                item['type'] == 'blob'
-                and item['name'].endswith('.md')
-                and item['name'] != 'README.md'
-            ):
-                try:
-                    microagents.append(
-                        self._create_microagent_response(item['name'], item['path'])
-                    )
-                except Exception as e:
-                    logger.warning(
-                        f'Error processing microagent {item["name"]}: {str(e)}'
-                    )
-
-        return microagents
-
-    async def get_microagents(self, repository: str) -> list[dict]:
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Fetch microagents from GitLab repository using GitLab API.
 
         Args:
@@ -598,65 +561,65 @@ class GitLabService(BaseGitService, GitService):
         """
         microagents_path = self._determine_microagents_path(repository)
 
-        # URL encode the repository name for GitLab API
-        project_id = repository.replace('/', '%2F')
-
-        # Determine base URL - check if it's a self-hosted GitLab instance
-        if '/' in repository and not repository.startswith('gitlab.com/'):
-            # Handle self-hosted GitLab (e.g., 'gitlab.example.com/owner/repo')
+        # Extract project_id from repository name
+        # For self-hosted GitLab with domain prefix (e.g., 'gitlab.example.com/owner/repo')
+        # or regular GitLab (e.g., 'owner/repo'), extract the project part
+        if '/' in repository:
             parts = repository.split('/')
-            if len(parts) >= 3:
-                domain = parts[0]
+            if len(parts) >= 3 and '.' in parts[0]:
+                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
                 project_id = '/'.join(parts[1:]).replace('/', '%2F')
-                base_url = f'https://{domain}/api/v4/projects/{project_id}'
             else:
-                base_url = f'{self.BASE_URL}/projects/{project_id}'
+                # Regular GitLab: 'owner/repo' -> 'owner/repo'
+                project_id = repository.replace('/', '%2F')
         else:
-            base_url = f'{self.BASE_URL}/projects/{project_id}'
+            project_id = repository
 
+        base_url = f'{self.BASE_URL}/projects/{project_id}'
         microagents = []
 
-        async with httpx.AsyncClient() as client:
+        try:
+            # Get repository tree for microagents directory
+            tree_response, _ = await self._make_request(
+                f'{base_url}/repository/tree',
+                params={'path': microagents_path, 'recursive': 'true'},
+            )
+
+            # Process .cursorrules if it exists
             try:
-                headers = await self._get_gitlab_headers()
-                # Use repository's default branch (no ref parameter)
-                tree_response = await client.get(
-                    f'{base_url}/repository/tree',
-                    headers=headers,
-                    params={'path': microagents_path, 'recursive': 'true'},
-                )
-
-                if tree_response.status_code == 404:
-                    logger.info(
-                        f'No microagents directory found in {repository} at {microagents_path}'
-                    )
-                    return []
-
-                tree_response.raise_for_status()
-                tree_items = tree_response.json()
-
-                # Process .cursorrules if it exists
-                cursorrules_response = await self._process_cursorrules_file(
-                    client, base_url
+                cursorrules_response, _ = await self._make_request(
+                    f'{base_url}/repository/files/.cursorrules/raw'
                 )
                 if cursorrules_response:
-                    microagents.append(cursorrules_response)
-
-                # Process .md files
-                md_microagents = await self._process_gitlab_md_files(client, tree_items)
-                microagents.extend(md_microagents)
-
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    logger.info(
-                        f'No microagents directory found in {repository} at {microagents_path}'
+                    microagents.append(
+                        self._create_microagent_response('.cursorrules', '.cursorrules')
                     )
-                    return []
-                raise RuntimeError(
-                    f'Failed to fetch microagents from GitLab: {e.response.status_code} {e.response.text}'
-                )
             except Exception as e:
-                raise RuntimeError(f'Error fetching microagents from GitLab: {str(e)}')
+                logger.debug(f'No .cursorrules file found in {repository}: {e}')
+
+            # Process .md files
+            for item in tree_response:
+                if (
+                    item['type'] == 'blob'
+                    and item['name'].endswith('.md')
+                    and item['name'] != 'README.md'
+                ):
+                    try:
+                        microagents.append(
+                            self._create_microagent_response(item['name'], item['path'])
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item["name"]}: {str(e)}'
+                        )
+
+        except Exception as e:
+            if '404' in str(e).lower():
+                logger.info(
+                    f'No microagents directory found in {repository} at {microagents_path}'
+                )
+                return []
+            raise RuntimeError(f'Error fetching microagents from GitLab: {str(e)}')
 
         return microagents
 
@@ -673,49 +636,34 @@ class GitLabService(BaseGitService, GitService):
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
         """
-        headers = await self._get_gitlab_headers()
-
-        # URL encode the repository name and file path for GitLab API
-        project_id = repository.replace('/', '%2F')
-        encoded_file_path = file_path.replace('/', '%2F')
-
-        # Determine base URL - check if it's a self-hosted GitLab instance
-        if '/' in repository and not repository.startswith('gitlab.com/'):
-            # Handle self-hosted GitLab (e.g., 'gitlab.example.com/owner/repo')
+        # Extract project_id from repository name
+        # For self-hosted GitLab with domain prefix (e.g., 'gitlab.example.com/owner/repo')
+        # or regular GitLab (e.g., 'owner/repo'), extract the project part
+        if '/' in repository:
             parts = repository.split('/')
-            if len(parts) >= 3:
-                domain = parts[0]
+            if len(parts) >= 3 and '.' in parts[0]:
+                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
                 project_id = '/'.join(parts[1:]).replace('/', '%2F')
-                base_url = f'https://{domain}/api/v4/projects/{project_id}'
             else:
-                base_url = f'{self.BASE_URL}/projects/{project_id}'
+                # Regular GitLab: 'owner/repo' -> 'owner/repo'
+                project_id = repository.replace('/', '%2F')
         else:
-            base_url = f'{self.BASE_URL}/projects/{project_id}'
+            project_id = repository
 
+        encoded_file_path = file_path.replace('/', '%2F')
+        base_url = f'{self.BASE_URL}/projects/{project_id}'
         file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
 
-        async with httpx.AsyncClient() as client:
-            try:
-                response = await client.get(file_url, headers=headers)
+        try:
+            response, _ = await self._make_request(file_url)
+            return response
 
-                if response.status_code == 404:
-                    raise RuntimeError(
-                        f'File not found: {file_path} in repository {repository}'
-                    )
-
-                response.raise_for_status()
-                return response.text
-
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 404:
-                    raise RuntimeError(
-                        f'File not found: {file_path} in repository {repository}'
-                    )
+        except Exception as e:
+            if '404' in str(e).lower():
                 raise RuntimeError(
-                    f'Failed to fetch file from GitLab: {e.response.status_code} {e.response.text}'
+                    f'File not found: {file_path} in repository {repository}'
                 )
-            except Exception as e:
-                raise RuntimeError(f'Error fetching file from GitLab: {str(e)}')
+            raise RuntimeError(f'Error fetching file from GitLab: {str(e)}')
 
 
 gitlab_service_cls = os.environ.get(

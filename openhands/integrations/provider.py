@@ -27,6 +27,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     User,
 )
+from openhands.microagent.types import MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -407,7 +408,7 @@ class ProviderHandler:
 
         return main_branches + other_branches
 
-    async def get_microagents(self, repository: str) -> list[dict]:
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository using the appropriate service.
 
         Args:
