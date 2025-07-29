@@ -24,15 +24,13 @@ class ServiceContext:
         self,
         strategy: IssueHandlerInterface,
         llm_config: LLMConfig | None,
-        service_id: str | None = None,
     ):
         self._strategy = strategy
         # TODO: we should store registry information as well
         llm_registry = LLMRegistry(None, 'convo_id', None)
         if llm_config is not None:
             # Use a unique service ID for each instance to avoid duplicate registration
-            self.service_id = service_id or f'resolver_embelishment_{id(self)}'
-            self.llm = llm_registry.register_llm(self.service_id, llm_config)
+            self.llm = llm_registry.register_llm('resolver', llm_config)
 
     def set_strategy(self, strategy: IssueHandlerInterface) -> None:
         self._strategy = strategy
@@ -42,13 +40,8 @@ class ServiceContext:
 class ServiceContextPR(ServiceContext):
     issue_type: ClassVar[str] = 'pr'
 
-    def __init__(
-        self,
-        strategy: IssueHandlerInterface,
-        llm_config: LLMConfig,
-        service_id: str | None = None,
-    ):
-        super().__init__(strategy, llm_config, service_id)
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
+        super().__init__(strategy, llm_config)
 
     def get_clone_url(self) -> str:
         return self._strategy.get_clone_url()
@@ -284,13 +277,8 @@ class ServiceContextPR(ServiceContext):
 class ServiceContextIssue(ServiceContext):
     issue_type: ClassVar[str] = 'issue'
 
-    def __init__(
-        self,
-        strategy: IssueHandlerInterface,
-        llm_config: LLMConfig | None,
-        service_id: str | None = None,
-    ):
-        super().__init__(strategy, llm_config, service_id)
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
+        super().__init__(strategy, llm_config)
 
     def get_base_url(self) -> str:
         return self._strategy.get_base_url()
