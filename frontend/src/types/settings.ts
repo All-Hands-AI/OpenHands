@@ -49,6 +49,8 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  GIT_USER_NAME?: string;
+  GIT_USER_EMAIL?: string;
 };
 
 export type ApiSettings = {
@@ -75,6 +77,8 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
+  git_user_name?: string;
+  git_user_email?: string;
 };
 
 export type PostSettings = Settings & {
