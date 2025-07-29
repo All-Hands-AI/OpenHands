@@ -199,23 +199,16 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
                 )
-                if (
-                    self.config.reasoning_effort is None
-                    or self.config.reasoning_effort == 'low'
-                    or self.config.reasoning_effort == 'none'
-                ):
+                if self.config.reasoning_effort in {None, 'low', 'none'}:
                     kwargs['thinking'] = {'budget_tokens': 128}
-                    kwargs['reasoning_effort'] = None
+                    kwargs['allowed_openai_params'] = ['thinking']
+                    kwargs.pop('reasoning_effort', None)
                 else:
-                    # Pass through medium, high to API as reasoning_effort
-                    # kwargs['reasoning_effort'] = self.config.reasoning_effort
-                    # kwargs.pop('thinking')
-                    # FIXME: fool litellm
-                    kwargs['thinking'] = {'budget_tokens': 128}
-                    kwargs['reasoning_effort'] = None
+                    kwargs['reasoning_effort'] = self.config.reasoning_effort
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
+
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
