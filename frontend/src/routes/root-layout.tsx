@@ -86,7 +86,7 @@ export default function MainApp() {
   React.useEffect(() => {
     if (!config.data?.MAINTENANCE) {
       setIsMaintenanceActive(false);
-      return;
+      return undefined;
     }
 
     const now = new Date();
@@ -103,7 +103,7 @@ export default function MainApp() {
     // Check if maintenance has already started
     if (now >= maintenanceStartTime) {
       setIsMaintenanceActive(true);
-      return;
+      return undefined;
     }
 
     // Calculate time until maintenance starts
@@ -118,6 +118,8 @@ export default function MainApp() {
 
       return () => clearTimeout(timeoutId);
     }
+
+    return undefined;
   }, [config.data?.MAINTENANCE, config.dataUpdatedAt]);
 
   // Handle maintenance mode - logout users when maintenance becomes active
