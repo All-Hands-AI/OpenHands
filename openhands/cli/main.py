@@ -74,6 +74,7 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.mcp import add_mcp_tools_to_agent
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -238,7 +239,7 @@ async def run_session(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                elif confirmation_status == 'edit':
+                else:  # 'no' or alternative instructions
                     # Tell the agent the proposed action was rejected
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
@@ -247,15 +248,8 @@ async def run_session(
                     # Notify the user
                     print_formatted_text(
                         HTML(
-                            '<skyblue>Okay, please tell me what I should do instead.</skyblue>'
+                            '<skyblue>Okay, please tell me what I should do next/instead.</skyblue>'
                         )
-                    )
-                    # Solicit replacement isntructions
-                    await prompt_for_next_task(AgentState.AWAITING_USER_INPUT)
-                else:  # 'no' or fallback
-                    event_stream.add_event(
-                        ChangeAgentStateAction(AgentState.USER_REJECTED),
-                        EventSource.USER,
                     )
 
                 # Set the always_confirm_mode flag if the user wants to always confirm
@@ -298,6 +292,10 @@ async def run_session(
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
+        # Clear any previous errors and enable collection
+        mcp_error_collector.clear_errors()
+        mcp_error_collector.enable_collection()
+
         # Add OpenHands' MCP server by default
         _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
@@ -309,6 +307,9 @@ async def run_session(
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
 
+        # Disable collection after startup
+        mcp_error_collector.disable_collection()
+
     # Clear loading animation
     is_loaded.set()
 
@@ -319,7 +320,27 @@ async def run_session(
     if not skip_banner:
         display_banner(session_id=sid)
 
-    welcome_message = 'What do you want to build?'  # from the application
+    welcome_message = ''
+
+    # Display number of MCP servers configured
+    if agent.config.enable_mcp:
+        total_mcp_servers = (
+            len(runtime.config.mcp.stdio_servers)
+            + len(runtime.config.mcp.sse_servers)
+            + len(runtime.config.mcp.shttp_servers)
+        )
+        if total_mcp_servers > 0:
+            mcp_line = f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.'
+
+            # Check for MCP errors and add indicator to the same line
+            if agent.config.enable_mcp and mcp_error_collector.has_errors():
+                mcp_line += (
+                    ' ✗ MCP errors detected (type /mcp → select View errors to view)'
+                )
+
+            welcome_message += mcp_line + '\n\n'
+
+    welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
 
     if task_content:
@@ -488,6 +509,16 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         if not env_log_level:
             logger.setLevel(logging.WARNING)
 
+    # If `config.toml` does not exist in current directory, use the file under home directory
+    if not os.path.exists(args.config_file):
+        home_config_file = os.path.join(
+            os.path.expanduser('~'), '.openhands', 'config.toml'
+        )
+        logger.info(
+            f'Config file {args.config_file} does not exist, using default config file in home directory: {home_config_file}.'
+        )
+        args.config_file = home_config_file
+
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
 
@@ -514,14 +545,30 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
+        # Handle agent configuration
         if args.agent_cls:
             config.default_agent = str(args.agent_cls)
         else:
             # settings.agent is not None because we check for it in setup_config_from_args
             assert settings.agent is not None
             config.default_agent = settings.agent
-        if not args.llm_config and settings.llm_model and settings.llm_api_key:
-            llm_config = config.get_llm_config()
+
+        # Handle LLM configuration with proper precedence:
+        # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
+        # 2. config.toml in current directory has next highest precedence (already loaded)
+        # 3. ~/.openhands/settings.json has lowest precedence (handled here)
+
+        # Only apply settings from settings.json if:
+        # - No LLM config was specified via CLI arguments (-l)
+        # - The current LLM config doesn't have model or API key set (indicating it wasn't loaded from config.toml)
+        llm_config = config.get_llm_config()
+        if (
+            not args.llm_config
+            and (not llm_config.model or not llm_config.api_key)
+            and settings.llm_model
+            and settings.llm_api_key
+        ):
+            logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
