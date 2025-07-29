@@ -51,6 +51,10 @@ export interface GetConfigResponse {
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
   PROVIDERS_CONFIGURED?: Provider[];
+  MAINTENANCE?: {
+    startTime: string;
+    endTime: string;
+  };
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;

@@ -26,6 +26,8 @@ import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
+import { MaintenancePage } from "#/components/features/maintenance/maintenance-page";
+import OpenHands from "#/api/open-hands";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -75,6 +77,14 @@ export default function MainApp() {
     isFetching: isFetchingAuth,
     isError: isAuthError,
   } = useIsAuthed();
+
+  // Handle maintenance mode
+  React.useEffect(() => {
+    if (config.data?.MAINTENANCE && isAuthed) {
+      // Logout the user if maintenance mode is active
+      OpenHands.logout(config.data.APP_MODE);
+    }
+  }, [config.data?.MAINTENANCE, isAuthed, config.data?.APP_MODE]);
 
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({
@@ -193,6 +203,16 @@ export default function MainApp() {
     !isOnTosPage &&
     config.data?.APP_MODE === "saas" &&
     loginMethodExists;
+
+  // If in maintenance mode, render the maintenance page instead of the normal app
+  if (config.data?.MAINTENANCE) {
+    return (
+      <MaintenancePage
+        startTime={config.data.MAINTENANCE.startTime}
+        endTime={config.data.MAINTENANCE.endTime}
+      />
+    );
+  }
 
   return (
     <div

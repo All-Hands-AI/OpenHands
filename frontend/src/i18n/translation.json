@@ -1,4 +1,64 @@
 {
+    "MAINTENANCE$TITLE": {
+        "en": "System Maintenance",
+        "ja": "システムメンテナンス",
+        "zh-CN": "系统维护",
+        "zh-TW": "系統維護",
+        "ko-KR": "시스템 유지 보수",
+        "no": "Systemvedlikehold",
+        "it": "Manutenzione del sistema",
+        "pt": "Manutenção do sistema"
+    },
+    "MAINTENANCE$DESCRIPTION": {
+        "en": "OpenHands is currently undergoing scheduled maintenance. We apologize for any inconvenience this may cause.",
+        "ja": "OpenHandsは現在、予定されたメンテナンスを実施中です。ご不便をおかけして申し訳ありません。",
+        "zh-CN": "OpenHands目前正在进行计划维护。对于可能造成的不便，我们深表歉意。",
+        "zh-TW": "OpenHands目前正在進行計劃維護。對於可能造成的不便，我們深表歉意。",
+        "ko-KR": "OpenHands는 현재 예정된 유지 보수 중입니다. 불편을 끼쳐 드려 죄송합니다.",
+        "no": "OpenHands gjennomgår for øyeblikket planlagt vedlikehold. Vi beklager eventuelle ulemper dette måtte medføre.",
+        "it": "OpenHands è attualmente in fase di manutenzione programmata. Ci scusiamo per eventuali disagi che questo potrebbe causare.",
+        "pt": "OpenHands está atualmente em manutenção programada. Pedimos desculpas por qualquer inconveniente que isso possa causar."
+    },
+    "MAINTENANCE$SCHEDULED_TIME": {
+        "en": "Scheduled Maintenance Window",
+        "ja": "予定されたメンテナンス時間",
+        "zh-CN": "计划维护时间",
+        "zh-TW": "計劃維護時間",
+        "ko-KR": "예정된 유지 보수 시간",
+        "no": "Planlagt vedlikeholdsvindu",
+        "it": "Finestra di manutenzione programmata",
+        "pt": "Janela de manutenção programada"
+    },
+    "MAINTENANCE$START": {
+        "en": "Start",
+        "ja": "開始",
+        "zh-CN": "开始",
+        "zh-TW": "開始",
+        "ko-KR": "시작",
+        "no": "Start",
+        "it": "Inizio",
+        "pt": "Início"
+    },
+    "MAINTENANCE$END": {
+        "en": "End",
+        "ja": "終了",
+        "zh-CN": "结束",
+        "zh-TW": "結束",
+        "ko-KR": "종료",
+        "no": "Slutt",
+        "it": "Fine",
+        "pt": "Fim"
+    },
+    "MAINTENANCE$COME_BACK_LATER": {
+        "en": "Please check back after the maintenance window has ended. Thank you for your patience.",
+        "ja": "メンテナンス時間終了後に再度ご確認ください。ご理解いただきありがとうございます。",
+        "zh-CN": "请在维护时间结束后再次查看。感谢您的耐心等待。",
+        "zh-TW": "請在維護時間結束後再次查看。感謝您的耐心等待。",
+        "ko-KR": "유지 보수 시간이 끝난 후 다시 확인해 주세요. 기다려 주셔서 감사합니다.",
+        "no": "Vennligst sjekk tilbake etter at vedlikeholdsvinduet er avsluttet. Takk for din tålmodighet.",
+        "it": "Si prega di controllare dopo la fine della finestra di manutenzione. Grazie per la pazienza.",
+        "pt": "Por favor, verifique novamente após o término da janela de manutenção. Obrigado pela sua paciência."
+    },
     "MICROAGENT$NO_REPOSITORY_FOUND": {
         "en": "No repository found to launch microagent",
         "ja": "マイクロエージェントを起動するためのリポジトリが見つかりません",

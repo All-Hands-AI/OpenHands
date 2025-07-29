@@ -24,6 +24,7 @@
     "@xterm/xterm": "^5.4.0",
     "axios": "^1.11.0",
     "clsx": "^2.1.1",
+    "date-fns-tz": "^3.2.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
     "framer-motion": "^12.23.11",
     "i18next": "^25.3.2",
