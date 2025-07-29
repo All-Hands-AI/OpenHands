@@ -27,12 +27,9 @@ export function RepositorySelectionForm({
   );
   const [selectedProvider, setSelectedProvider] =
     React.useState<Provider | null>(null);
-  // Add a ref to track if the branch was manually cleared by the user
-  const branchManuallyClearedRef = React.useRef<boolean>(false);
   const { providers } = useUserProviders();
-  const { data: branches } = useRepositoryBranches(
-    selectedRepository?.full_name || null,
-  );
+  const { data: branches, isLoading: isLoadingBranches } =
+    useRepositoryBranches(selectedRepository?.full_name || null);
   const {
     mutate: createConversation,
     isPending,
@@ -64,9 +61,9 @@ export function RepositorySelectionForm({
     const selectedBranchObj = branches?.find(
       (branch) => branch.name === branchName,
     );
-    setSelectedBranch(selectedBranchObj || null);
-    // Reset the manually cleared flag when a branch is explicitly selected
-    branchManuallyClearedRef.current = false;
+    if (selectedBranchObj) {
+      setSelectedBranch(selectedBranchObj);
+    }
   };
 
   // Render the provider dropdown
@@ -87,13 +84,29 @@ export function RepositorySelectionForm({
     );
   };
 
+  // Effect to auto-select main/master branch when branches are loaded
+  React.useEffect(() => {
+    if (branches?.length) {
+      // Look for main or master branch
+      const defaultBranch = branches.find(
+        (branch) => branch.name === "main" || branch.name === "master",
+      );
+
+      // If found, select it, otherwise select the first branch
+      setSelectedBranch(defaultBranch || branches[0]);
+    }
+  }, [branches]);
+
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {
     const handleRepoSelection = (repository?: GitRepository) => {
-      if (repository) onRepoSelection(repository);
-      setSelectedRepository(repository || null);
-      setSelectedBranch(null); // Reset branch selection when repo changes
-      branchManuallyClearedRef.current = false; // Reset the flag when repo changes
+      if (repository) {
+        onRepoSelection(repository);
+        setSelectedRepository(repository);
+      } else {
+        setSelectedRepository(null);
+        setSelectedBranch(null);
+      }
     };
 
     return (
@@ -132,6 +145,8 @@ export function RepositorySelectionForm({
         type="button"
         isDisabled={
           !selectedRepository ||
+          !selectedBranch ||
+          isLoadingBranches ||
           isCreatingConversation ||
           (providers.length > 1 && !selectedProvider)
         }

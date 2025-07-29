@@ -16,7 +16,7 @@ export interface GitRepositoryDropdownProps {
   className?: string;
   errorMessage?: string;
   disabled?: boolean;
-  onChange?: (repository?: any) => void;
+  onChange?: (repository?: GitRepository) => void;
 }
 
 interface SearchCache {
@@ -83,6 +83,11 @@ export function GitRepositoryDropdown({
 
   const loadOptions = useCallback(
     async (inputValue: string): Promise<AsyncSelectOption[]> => {
+      // If empty input, show all loaded options
+      if (!inputValue.trim()) {
+        return allOptions;
+      }
+
       // If it looks like a URL, extract the repo name and search
       if (inputValue.startsWith("https://")) {
         const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
@@ -101,11 +106,25 @@ export function GitRepositoryDropdown({
         }
       }
 
-      // Otherwise do local filtering
-      const filteredOptions = allOptions.filter((option) =>
+      // For any other input, search via API
+      if (inputValue.length >= 2) {
+        // Only search if at least 2 characters
+        const searchResults = await OpenHands.searchGitRepositories(
+          inputValue,
+          10,
+        );
+        // Cache the search results
+        searchCache.current[inputValue] = searchResults;
+        return searchResults.map((repo) => ({
+          value: repo.id,
+          label: repo.full_name,
+        }));
+      }
+
+      // For very short inputs, do local filtering
+      return allOptions.filter((option) =>
         option.label.toLowerCase().includes(inputValue.toLowerCase()),
       );
-      return filteredOptions;
     },
     [allOptions],
   );

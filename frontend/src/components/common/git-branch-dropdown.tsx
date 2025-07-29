@@ -53,7 +53,7 @@ export function GitBranchDropdown({
       className={className}
       errorMessage={errorMessage}
       disabled={isDisabled}
-      isClearable
+      isClearable={false}
       isSearchable
       isLoading={isLoading}
       onChange={handleChange}

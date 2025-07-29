@@ -41,21 +41,33 @@ export const getCustomStyles = <T extends SelectOptionBase>(): StylesConfig<
     backgroundColor: "#454545", // tertiary
     border: "1px solid #717888",
     borderRadius: "0.75rem",
+    overflow: "hidden", // ensure menu items don't overflow rounded corners
+  }),
+  menuList: (provided) => ({
+    ...provided,
+    padding: "0.25rem", // add some padding around menu items
   }),
   option: (provided, state) => {
     let backgroundColor = "transparent";
     if (state.isSelected) {
-      backgroundColor = "#C9B974"; // primary
+      backgroundColor = "#C9B974"; // primary for selected
     } else if (state.isFocused) {
-      backgroundColor = "#24272E"; // base-secondary
+      backgroundColor = "#24272E"; // base-secondary for hover/focus
     }
 
     return {
       ...provided,
       backgroundColor,
-      color: "#ECEDEE", // content
+      color: state.isSelected ? "#000000" : "#ECEDEE", // black text on yellow, white on gray
+      borderRadius: "0.5rem", // rounded menu items
+      margin: "0.125rem 0", // small gap between items
       "&:hover": {
-        backgroundColor: "#24272E", // base-secondary
+        backgroundColor: state.isSelected ? "#C9B974" : "#24272E", // keep yellow if selected, else gray
+        color: state.isSelected ? "#000000" : "#ECEDEE", // maintain text color on hover
+      },
+      "&:active": {
+        backgroundColor: state.isSelected ? "#C9B974" : "#24272E",
+        color: state.isSelected ? "#000000" : "#ECEDEE",
       },
     };
   },
