@@ -6,7 +6,6 @@ import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
 import { useSearchConversations } from "#/hooks/query/use-search-conversations";
 import { GitRepository } from "#/types/git";
-import { getGitProviderBaseUrl } from "#/utils/utils";
 import { RootState } from "#/store";
 import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
 
@@ -23,12 +22,10 @@ export function MicroagentManagementRepoMicroagents({
 
   const dispatch = useDispatch();
 
-  const { full_name: repositoryName, git_provider: gitProvider } = repository;
+  const { full_name: repositoryName } = repository;
 
   // Extract owner and repo from repositoryName (format: "owner/repo")
   const [owner, repo] = repositoryName.split("/");
-
-  const repositoryUrl = `${getGitProviderBaseUrl(gitProvider)}/${repositoryName}`;
 
   const {
     data: microagents,
@@ -86,7 +83,7 @@ export function MicroagentManagementRepoMicroagents({
   if (isError) {
     return (
       <div className="pb-4">
-        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
+        <MicroagentManagementLearnThisRepo repository={repository} />
       </div>
     );
   }
@@ -98,7 +95,7 @@ export function MicroagentManagementRepoMicroagents({
   return (
     <div className="pb-4">
       {totalItems === 0 && (
-        <MicroagentManagementLearnThisRepo repositoryUrl={repositoryUrl} />
+        <MicroagentManagementLearnThisRepo repository={repository} />
       )}
 
       {/* Render microagents */}

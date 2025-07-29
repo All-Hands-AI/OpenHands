@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.49.1"
+version = "0.50.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -84,9 +84,7 @@ bashlex = "^0.18"
 
 # TODO: These are integrations that should probably be optional
 redis = ">=5.2,<7.0"
-minio = "^7.2.8"
 
-stripe = ">=11.5,<13.0"
 google-cloud-aiplatform = "*"
 anthropic = { extras = [ "vertex" ], version = "*" }
 boto3 = "*"
@@ -108,7 +106,7 @@ third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
 optional = true
 
 [tool.poetry.group.dev.dependencies]
-ruff = "0.12.4"
+ruff = "0.12.5"
 mypy = "1.17.0"
 pre-commit = "4.2.0"
 build = "*"

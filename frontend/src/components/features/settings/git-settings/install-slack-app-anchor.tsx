@@ -8,7 +8,7 @@ export function InstallSlackAppAnchor() {
   return (
     <a
       data-testid="install-slack-app-button"
-      href="https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,chat:write,users:read,channels:history,groups:history,mpim:history,im:history&user_scope=channels:history,groups:history,im:history,mpim:history"
+      href="https://slack.com/oauth/v2/authorize?client_id=7477886716822.8729519890534&scope=app_mentions:read,channels:history,chat:write,groups:history,im:history,mpim:history,users:read&user_scope="
       target="_blank"
       rel="noreferrer noopener"
       className="py-9"
