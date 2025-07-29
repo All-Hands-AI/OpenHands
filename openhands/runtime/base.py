@@ -131,6 +131,8 @@ class Runtime(FileEditRuntimeMixin):
         headless_mode: bool = False,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        user_email: str | None = None,
+        user_name: str | None = None,
     ):
         self.git_handler = GitHandler(
             execute_shell_fn=self._execute_shell_fn_git_handler
@@ -180,6 +182,8 @@ class Runtime(FileEditRuntimeMixin):
 
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
+        self.user_email = user_email
+        self.user_name = user_name
         self.runtime_status = None
 
     @property
@@ -193,6 +197,9 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+
+        # Set up git configuration with user coauthor information
+        self.setup_git_config()
 
     def close(self) -> None:
         """
@@ -1025,6 +1032,114 @@ fi
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
+
+    def setup_git_config(self) -> None:
+        """Set up git configuration with OpenHands defaults and user coauthor information."""
+        import os
+        import sys
+
+        INIT_COMMANDS = []
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = sys.platform == 'win32'
+
+        # Determine git config commands based on platform and runtime mode
+        if is_local_runtime:
+            if is_windows:
+                # Windows, local - split into separate commands
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.name "openhands"'
+                )
+                INIT_COMMANDS.append(
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
+                )
+                INIT_COMMANDS.append(
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                )
+            else:
+                # Linux/macOS, local
+                base_git_config = (
+                    'git config --file ./.git_config user.name "openhands" && '
+                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                )
+                INIT_COMMANDS.append(base_git_config)
+        else:
+            # Non-local (implies Linux/macOS)
+            base_git_config = (
+                'git config --global user.name "openhands" && '
+                'git config --global user.email "openhands@all-hands.dev"'
+            )
+            INIT_COMMANDS.append(base_git_config)
+
+        # Set up coauthor information if user credentials are available
+        if self.user_email and self.user_name:
+            coauthor_line = f'Co-authored-by: {self.user_name} <{self.user_email}>'
+
+            # Create a commit template with coauthor information
+            template_content = f"""
+
+
+{coauthor_line}
+"""
+
+            # Write the commit template to a file
+            template_cmd = f'echo {json.dumps(template_content)} > ~/.gitmessage'
+            INIT_COMMANDS.append(template_cmd)
+
+            # Set the commit template
+            if is_local_runtime:
+                if is_windows:
+                    # Windows, local
+                    INIT_COMMANDS.append(
+                        'git config --file ./.git_config commit.template ~/.gitmessage'
+                    )
+                else:
+                    # Linux/macOS, local
+                    INIT_COMMANDS.append(
+                        'git config --file ./.git_config commit.template ~/.gitmessage'
+                    )
+            else:
+                # Non-local (implies Linux/macOS)
+                INIT_COMMANDS.append(
+                    'git config --global commit.template ~/.gitmessage'
+                )
+
+        # Determine no-pager command
+        if is_windows:
+            no_pager_cmd = 'function git { git.exe --no-pager $args }'
+        else:
+            no_pager_cmd = 'alias git="git --no-pager"'
+
+        INIT_COMMANDS.append(no_pager_cmd)
+
+        logger.info(
+            f'Setting up git configuration with {len(INIT_COMMANDS)} commands...'
+        )
+        for command in INIT_COMMANDS:
+            action = CmdRunAction(command=command)
+            action.set_hard_timeout(300)
+            logger.debug(f'Executing git config command: {command}')
+            obs = self.run(action)
+            if isinstance(obs, CmdOutputObservation):
+                logger.debug(
+                    f'Git config command outputs (exit code: {obs.exit_code}): {obs.content}'
+                )
+                if obs.exit_code != 0:
+                    logger.warning(
+                        f'Git config command failed with exit code {obs.exit_code}: {obs.content}'
+                    )
+            else:
+                logger.warning(
+                    f'Unexpected observation type from git config command: {type(obs)}'
+                )
+
+        if self.user_email and self.user_name:
+            logger.info(
+                f'Git configuration completed with coauthor: {self.user_name} <{self.user_email}>'
+            )
+        else:
+            logger.info('Git configuration completed')
+        logger.debug('Git configuration setup completed')
 
     @property
     def additional_agent_instructions(self) -> str:

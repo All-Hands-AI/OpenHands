@@ -192,6 +192,8 @@ class Session:
         selected_branch = None
         custom_secrets = None
         conversation_instructions = None
+        user_email = settings.email
+        user_name = settings.name
         if isinstance(settings, ConversationInitData):
             git_provider_tokens = settings.git_provider_tokens
             selected_repository = settings.selected_repository
@@ -215,6 +217,8 @@ class Session:
                 initial_message=initial_message,
                 conversation_instructions=conversation_instructions,
                 replay_json=replay_json,
+                user_email=user_email,
+                user_name=user_name,
             )
         except MicroagentValidationError as e:
             self.logger.exception(f'Error creating agent_session: {e}')

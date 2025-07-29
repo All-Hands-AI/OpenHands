@@ -98,6 +98,8 @@ class AgentSession:
         initial_message: MessageAction | None = None,
         conversation_instructions: str | None = None,
         replay_json: str | None = None,
+        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> None:
         """Starts the Agent session
         Parameters:
@@ -136,6 +138,8 @@ class AgentSession:
                 custom_secrets=custom_secrets,
                 selected_repository=selected_repository,
                 selected_branch=selected_branch,
+                user_email=user_email,
+                user_name=user_name,
             )
 
             repo_directory = None
@@ -313,6 +317,8 @@ class AgentSession:
         custom_secrets: CUSTOM_SECRETS_TYPE | None = None,
         selected_repository: str | None = None,
         selected_branch: str | None = None,
+        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> bool:
         """Creates a runtime instance
 
@@ -351,6 +357,8 @@ class AgentSession:
                 git_provider_tokens=overrided_tokens,
                 env_vars=env_vars,
                 user_id=self.user_id,
+                user_email=user_email,
+                user_name=user_name,
             )
         else:
             provider_handler = ProviderHandler(
@@ -370,6 +378,9 @@ class AgentSession:
                 attach_to_existing=False,
                 env_vars=env_vars,
                 git_provider_tokens=git_provider_tokens,
+                user_id=self.user_id,
+                user_email=user_email,
+                user_name=user_name,
             )
 
         # FIXME: this sleep is a terrible hack.

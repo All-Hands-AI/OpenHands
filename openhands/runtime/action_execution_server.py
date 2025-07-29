@@ -341,59 +341,9 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
-        INIT_COMMANDS = []
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
-        is_windows = sys.platform == 'win32'
-
-        # Determine git config commands based on platform and runtime mode
-        if is_local_runtime:
-            if is_windows:
-                # Windows, local - split into separate commands
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.name "openhands"'
-                )
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
-                )
-                INIT_COMMANDS.append(
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                )
-            else:
-                # Linux/macOS, local
-                base_git_config = (
-                    'git config --file ./.git_config user.name "openhands" && '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
-                    'export GIT_CONFIG=$(pwd)/.git_config'
-                )
-                INIT_COMMANDS.append(base_git_config)
-        else:
-            # Non-local (implies Linux/macOS)
-            base_git_config = (
-                'git config --global user.name "openhands" && '
-                'git config --global user.email "openhands@all-hands.dev"'
-            )
-            INIT_COMMANDS.append(base_git_config)
-
-        # Determine no-pager command
-        if is_windows:
-            no_pager_cmd = 'function git { git.exe --no-pager $args }'
-        else:
-            no_pager_cmd = 'alias git="git --no-pager"'
-
-        INIT_COMMANDS.append(no_pager_cmd)
-
-        logger.info(f'Initializing by running {len(INIT_COMMANDS)} bash commands...')
-        for command in INIT_COMMANDS:
-            action = CmdRunAction(command=command)
-            action.set_hard_timeout(300)
-            logger.debug(f'Executing init command: {command}')
-            obs = await self.run(action)
-            assert isinstance(obs, CmdOutputObservation)
-            logger.debug(
-                f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
-            )
-            assert obs.exit_code == 0
-        logger.debug('Bash init commands completed')
+        # Git configuration is now handled by the runtime base class in setup_git_config()
+        # This method is kept for any future bash initialization commands that may be needed
+        logger.debug('Bash init commands completed (git config handled by runtime)')
 
     async def run_action(self, action) -> Observation:
         async with self.lock:
