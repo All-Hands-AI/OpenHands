@@ -11,7 +11,7 @@ import { I18nKey } from "#/i18n/declaration";
 import i18n from "#/i18n";
 import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { useConfig } from "#/hooks/query/use-config";
+import { CONFIG_STALE_TIME, useConfig } from "#/hooks/query/use-config";
 import { Sidebar } from "#/components/features/sidebar/sidebar";
 import { AuthModal } from "#/components/features/waitlist/auth-modal";
 import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
@@ -86,7 +86,7 @@ export default function MainApp() {
   React.useEffect(() => {
     if (!config.data?.MAINTENANCE) {
       setIsMaintenanceActive(false);
-      return undefined;
+      return;
     }
 
     const now = new Date();
@@ -103,20 +103,22 @@ export default function MainApp() {
     // Check if maintenance has already started
     if (now >= maintenanceStartTime) {
       setIsMaintenanceActive(true);
-      return undefined;
+      return;
     }
 
     // Calculate time until maintenance starts
     const timeUntilMaintenance = maintenanceStartTime.getTime() - now.getTime();
+    if (timeUntilMaintenance < CONFIG_STALE_TIME) {
+      // Schedule maintenance activation when its close
+      // We need this so that users are actively using the app redirect as soon as the maintenance window starts
+      // Otherwise users will continue to use the FE for up to CONFIG_STALE_TIME even though maintenance has started
+      const timeoutId = setTimeout(() => {
+        setIsMaintenanceActive(true);
+      }, timeUntilMaintenance);
 
-    // Schedule maintenance activation
-    const timeoutId = setTimeout(() => {
-      setIsMaintenanceActive(true);
-    }, timeUntilMaintenance);
-
-    // Cleanup timeout on unmount or config change
-    return () => clearTimeout(timeoutId);
-  }, [config.data?.MAINTENANCE]);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [config.data?.MAINTENANCE, config.dataUpdatedAt]);
 
   // Handle maintenance mode - logout users when maintenance becomes active
   React.useEffect(() => {
