@@ -275,7 +275,7 @@ def complete_runtime(
 
     test_dir = instance['test']['test_dir']
     action = CmdRunAction(
-        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1; echo "JSON report generation completed"'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -321,6 +321,13 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     test_ids = obs.content.strip().split('\n')
 
+    # Check if report.json exists and read it
+    action = CmdRunAction(command='ls -la report.json')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    
     # Read the test report
     action = CmdRunAction(command='cat report.json')
     action.set_hard_timeout(600)
@@ -364,8 +371,9 @@ def complete_runtime(
             'num_tests': len(test_ids),
         }
 
-    except json.JSONDecodeError:
-        logger.error('Failed to parse test report JSON')
+    except json.JSONDecodeError as e:
+        logger.error(f'Failed to parse test report JSON: {e}')
+        logger.error(f'JSON report content (first 500 chars): {json_report[:500]}')
         eval_result = {
             'name': workspace_dir_name,
             'sum': 0,
