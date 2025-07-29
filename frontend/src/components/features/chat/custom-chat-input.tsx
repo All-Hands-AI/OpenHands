@@ -39,6 +39,22 @@ export function CustomChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Helper function to check if contentEditable is truly empty
+  const isContentEmpty = useCallback((): boolean => {
+    if (!chatInputRef.current) return true;
+    const text =
+      chatInputRef.current.innerText || chatInputRef.current.textContent || "";
+    return text.trim() === "";
+  }, []);
+
+  // Helper function to properly clear contentEditable for placeholder display
+  const clearEmptyContent = useCallback((): void => {
+    if (chatInputRef.current && isContentEmpty()) {
+      chatInputRef.current.innerHTML = "";
+      chatInputRef.current.textContent = "";
+    }
+  }, [isContentEmpty]);
+
   // Auto-resize functionality for contenteditable div
   const autoResize = useCallback(() => {
     if (!chatInputRef.current) return;
@@ -148,6 +164,11 @@ export function CustomChatInput({
   const handleInput = () => {
     autoResize();
 
+    // Clear empty content to ensure placeholder shows
+    if (chatInputRef.current) {
+      clearEmptyContent();
+    }
+
     // Ensure cursor stays visible when content is scrollable
     if (!chatInputRef.current) {
       return;
@@ -238,6 +259,19 @@ export function CustomChatInput({
     }, 0);
   };
 
+  // Handle blur events to ensure placeholder shows when empty
+  const handleBlur = () => {
+    // Clear empty content to ensure placeholder shows
+    if (chatInputRef.current) {
+      clearEmptyContent();
+    }
+
+    // Call the original onBlur callback if provided
+    if (onBlur) {
+      onBlur();
+    }
+  };
+
   // Initialize value when prop changes
   useEffect(() => {
     if (chatInputRef.current && value !== undefined) {
@@ -294,7 +328,7 @@ export function CustomChatInput({
                   onPaste={handlePaste}
                   onKeyDown={handleKeyDown}
                   onFocus={onFocus}
-                  onBlur={onBlur}
+                  onBlur={handleBlur}
                 />
               </div>
             </div>
