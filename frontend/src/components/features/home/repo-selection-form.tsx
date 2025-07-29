@@ -22,6 +22,7 @@ import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { GIT_PROVIDER_OPTIONS } from "#/utils/constants";
 import { IOption } from "#/api/open-hands.types";
+import { GitProviderDropdown } from "./repository-selection/git-provider-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -140,41 +141,53 @@ export function RepositorySelectionForm({
       (provider) => provider.value === key,
     );
     setSelectedGitProvider(currentGitProvider || null);
-    onRepoSelection(null);
-    setSelectedRepository(null);
-    setSelectedBranch(null); // Reset branch selection when repo changes
-    branchManuallyClearedRef.current = false; // Reset the flag when repo changes
+    if (
+      currentGitProvider &&
+      currentGitProvider.value !== selectedRepository?.git_provider
+    ) {
+      onRepoSelection(null);
+      setSelectedRepository(null);
+      setSelectedBranch(null); // Reset branch selection when repo changes
+      branchManuallyClearedRef.current = false; // Reset the flag when repo changes
+    }
   };
 
   const handleGitProviderInputChange = (value: string) => {
     if (value === "") {
-      setSelectedRepository(null);
-      setSelectedBranch(null);
-      onRepoSelection(null);
+      setSelectedGitProvider(null);
     }
   };
 
   // Render the git provider selector UI based on the loading/error state
-  const renderGitProviderSelector = () => (
-    <RepositoryDropdown
-      items={GIT_PROVIDER_OPTIONS.map((provider) => ({
-        key: provider.value,
-        label: provider.label,
-      }))}
-      placeholder={t(I18nKey.COMMON$SELECT_GIT_PROVIDER)}
-      onSelectionChange={handleGitProviderSelection}
-      onInputChange={handleGitProviderInputChange}
-      defaultFilter={(textValue, inputValue) => {
-        if (!inputValue) return true;
+  const renderGitProviderSelector = () => {
+    if (isLoadingRepositories) {
+      return <RepositoryLoadingState />;
+    }
 
-        const gitProvider = GIT_PROVIDER_OPTIONS.find(
-          (provider) => provider.label === textValue,
-        );
+    if (isRepositoriesError) {
+      return <RepositoryErrorState />;
+    }
 
-        return !!gitProvider;
-      }}
-    />
-  );
+    return (
+      <GitProviderDropdown
+        items={GIT_PROVIDER_OPTIONS.map((provider) => ({
+          key: provider.value,
+          label: provider.label,
+        }))}
+        onSelectionChange={handleGitProviderSelection}
+        onInputChange={handleGitProviderInputChange}
+        defaultFilter={(textValue, inputValue) => {
+          if (!inputValue) return true;
+
+          const gitProvider = GIT_PROVIDER_OPTIONS.find(
+            (provider) => provider.label === textValue,
+          );
+
+          return !!gitProvider;
+        }}
+      />
+    );
+  };
 
   const repositoriesItems = useMemo(() => {
     if (!allRepositories) {
@@ -208,6 +221,7 @@ export function RepositorySelectionForm({
 
     return (
       <RepositoryDropdown
+        key={selectedGitProvider?.value || "no-provider"} // avoid the dropdown keeps the internal state when the git provider is changed
         items={repositoriesItems || []}
         onSelectionChange={handleRepoSelection}
         onInputChange={handleRepoInputChange}
@@ -226,6 +240,14 @@ export function RepositorySelectionForm({
 
   // Render the appropriate UI for branch selector based on the loading/error state
   const renderBranchSelector = () => {
+    if (isLoadingRepositories) {
+      return <RepositoryLoadingState />;
+    }
+
+    if (isRepositoriesError) {
+      return <RepositoryErrorState />;
+    }
+
     if (!selectedRepository) {
       return (
         <BranchDropdown

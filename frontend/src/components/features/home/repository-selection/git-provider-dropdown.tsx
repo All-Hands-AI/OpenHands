@@ -3,26 +3,26 @@ import { useTranslation } from "react-i18next";
 import { SettingsDropdownInput } from "../../settings/settings-dropdown-input";
 import { I18nKey } from "#/i18n/declaration";
 
-export interface RepositoryDropdownProps {
+export interface GitProviderDropdownProps {
   items: { key: React.Key; label: string }[];
   onSelectionChange: (key: React.Key | null) => void;
   onInputChange: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
 }
 
-export function RepositoryDropdown({
+export function GitProviderDropdown({
   items,
   onSelectionChange,
   onInputChange,
   defaultFilter,
-}: RepositoryDropdownProps) {
+}: GitProviderDropdownProps) {
   const { t } = useTranslation();
 
   return (
     <SettingsDropdownInput
-      testId="repo-dropdown"
-      name="repo-dropdown"
-      placeholder={t(I18nKey.REPOSITORY$SELECT_REPO)}
+      testId="git-provider-dropdown"
+      name="git-provider-dropdown"
+      placeholder={t(I18nKey.COMMON$SELECT_GIT_PROVIDER)}
       items={items}
       wrapperClassName="max-w-[500px]"
       onSelectionChange={onSelectionChange}
