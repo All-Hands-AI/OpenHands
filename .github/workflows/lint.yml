@@ -9,6 +9,12 @@ on:
     branches:
       - main
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/*.md'
+      - 'LICENSE'
+      - 'CITATION.cff'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -20,6 +26,8 @@ jobs:
   lint-frontend:
     name: Lint frontend
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    # Only run if frontend files have changed
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'frontend/') }}
     steps:
       - uses: actions/checkout@v4
       - name: Install Node.js 22
@@ -41,6 +49,8 @@ jobs:
   lint-python:
     name: Lint python
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    # Only run if Python files have changed
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'openhands/') || contains(toJSON(github.event.pull_request.files.*.filename), 'tests/') || contains(toJSON(github.event.pull_request.files.*.filename), 'evaluation/') || contains(toJSON(github.event.pull_request.files.*.filename), 'pyproject.toml') || contains(toJSON(github.event.pull_request.files.*.filename), 'poetry.lock') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,6 +69,8 @@ jobs:
   check-version-consistency:
     name: Check version consistency
     runs-on: blacksmith-4vcpu-ubuntu-2204
+    # Only run if version-related files have changed
+    if: ${{ github.event_name == 'push' || contains(github.event.pull_request.base.ref, 'main') || contains(toJSON(github.event.pull_request.files.*.filename), 'pyproject.toml') || contains(toJSON(github.event.pull_request.files.*.filename), 'package.json') || contains(toJSON(github.event.pull_request.files.*.filename), 'CITATION.cff') }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up python

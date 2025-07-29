@@ -186,6 +186,28 @@ install-pre-commit-hooks:
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@# Install the selective pre-commit hook
+	@if [ -f ".openhands/pre-commit.sh" ]; then \
+		chmod +x .openhands/pre-commit.sh; \
+		cp .git/hooks/pre-commit .git/hooks/pre-commit.local 2>/dev/null || true; \
+		cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+# This hook was installed by OpenHands
+# It calls the pre-commit script in the .openhands directory
+
+if [ -x ".openhands/pre-commit.sh" ]; then
+    source ".openhands/pre-commit.sh"
+    exit $?
+else
+    echo "Warning: .openhands/pre-commit.sh not found or not executable"
+    exit 0
+fi
+EOF
+		chmod +x .git/hooks/pre-commit; \
+		echo "$(BLUE)Selective pre-commit hook installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Warning: .openhands/pre-commit.sh not found. Only standard pre-commit hooks installed.$(RESET)"; \
+	fi
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend:

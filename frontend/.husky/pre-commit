@@ -1,11 +1,41 @@
-# Run frontend checks
-echo "Running frontend checks..."
-cd frontend
-npm run lint
-npm run check-translation-completeness
-npx lint-staged
+#!/bin/bash
 
-# Run backend pre-commit
-echo "Running backend pre-commit..."
-cd ..
-poetry run pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+# Get the list of staged files
+STAGED_FILES=$(git diff --cached --name-only)
+
+# Check if any files match specific patterns
+has_frontend_changes=false
+has_backend_changes=false
+
+# Check each file individually to avoid issues with grep
+for file in $STAGED_FILES; do
+    if [[ $file == frontend/* ]]; then
+        has_frontend_changes=true
+    elif [[ $file == openhands/* || $file == evaluation/* || $file == tests/* ]]; then
+        has_backend_changes=true
+    fi
+done
+
+echo "Analyzing changes..."
+echo "- Frontend changes: $has_frontend_changes"
+echo "- Backend changes: $has_backend_changes"
+
+# Run frontend checks only if frontend files have changed
+if [ "$has_frontend_changes" = true ]; then
+    echo "Running frontend checks..."
+    cd frontend
+    npm run lint
+    npm run check-translation-completeness
+    npx lint-staged
+    cd ..
+else
+    echo "Skipping frontend checks (no frontend changes detected)."
+fi
+
+# Run backend pre-commit only if backend files have changed
+if [ "$has_backend_changes" = true ]; then
+    echo "Running backend pre-commit..."
+    poetry run pre-commit run --files openhands/**/* evaluation/**/* tests/**/* --show-diff-on-failure --config ./dev_config/python/.pre-commit-config.yaml
+else
+    echo "Skipping backend checks (no backend changes detected)."
+fi
