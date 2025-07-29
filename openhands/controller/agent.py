@@ -43,14 +43,8 @@ class Agent(ABC):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        requested_service: str | None = None,
     ):
-        if requested_service:
-            self.llm = llm_registry.request_existing_service(
-                requested_service, llm_config
-            )
-        else:
-            self.llm = llm_registry.register_llm('agent_llm', llm_config)
+        self.llm = llm_registry.register_llm('agent_llm', llm_config)
 
         self.config = config
         self._complete = False

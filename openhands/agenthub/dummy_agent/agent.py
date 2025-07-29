@@ -48,9 +48,8 @@ class DummyAgent(Agent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        requested_service: str | None = None,
     ):
-        super().__init__(config, llm_config, llm_registry, requested_service)
+        super().__init__(config, llm_config, llm_registry)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),

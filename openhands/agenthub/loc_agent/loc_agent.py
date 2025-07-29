@@ -20,7 +20,6 @@ class LocAgent(CodeActAgent):
         config: AgentConfig,
         llm_config: LLMConfig,
         llm_registry: LLMRegistry,
-        requested_service: str | None = None,
     ) -> None:
         """Initializes a new instance of the LocAgent class.
 
@@ -29,7 +28,7 @@ class LocAgent(CodeActAgent):
         - config (AgentConfig): The configuration for the agent
         """
 
-        super().__init__(config, llm_config, llm_registry, requested_service)
+        super().__init__(config, llm_config, llm_registry)
 
         self.tools = locagent_function_calling.get_tools()
         logger.debug(

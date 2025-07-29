@@ -63,9 +63,6 @@ class LLMRegistry:
             f'[LLM registry {self.metrics_id}]: Registering service for {service_id}'
         )
 
-        if service_id in self.service_to_llm:
-            raise Exception(f'Registering duplicate LLM: {service_id}')
-
         # We're restoring an existing registry, we should use the existing metrics
         if service_id in self.restored_llm:
             llm = LLM(
@@ -75,30 +72,19 @@ class LLMRegistry:
                 metrics=self.restored_llm[service_id],
             )
             del self.restored_llm[service_id]
-        else:
-            llm = LLM(
-                config=config, service_id=service_id, retry_listener=self.retry_listner
-            )
+            return llm
+
+        # Resuse existing llm
+        if service_id in self.service_to_llm:
+            return self.service_to_llm[service_id]
+
+        # Create new llm
+        llm = LLM(
+            config=config, service_id=service_id, retry_listener=self.retry_listner
+        )
 
         self.service_to_llm[service_id] = llm
         return llm
-
-    def request_existing_service(
-        self,
-        service_id: str,
-        config: LLMConfig,
-        retry_listener: Callable[[int, int], None] | None = None,
-    ):
-        if service_id not in self.service_to_llm:
-            raise Exception(f'LLM service does not exist {service_id}')
-        existing_llm = self.service_to_llm[service_id]
-
-        return LLM(
-            config=config,
-            service_id=service_id,
-            metrics=existing_llm.metrics,
-            retry_listener=retry_listener,
-        )
 
     def get_combined_metrics(self) -> Metrics:
         all_metrics = {}

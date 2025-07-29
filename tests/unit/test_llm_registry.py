@@ -240,33 +240,6 @@ class TestLLMRegistry(unittest.TestCase):
                 # Verify that save_registry was called
                 mock_save_registry.assert_called_once()
 
-    def test_request_existing_service(self):
-        """Test that requesting an existing service returns a new LLM with the same metrics."""
-        service_id = 'existing-service'
-
-        # Register an LLM and add some metrics
-        llm1 = self.registry.register_llm(service_id, self.llm_config)
-        llm1.metrics.add_cost(15.0)
-
-        # Request the existing service
-        llm2 = self.registry.request_existing_service(service_id, self.llm_config)
-
-        # Verify that a new LLM was created with the same metrics
-        self.assertIsNot(llm1, llm2)
-        self.assertEqual(llm2.metrics.accumulated_cost, 15.0)
-
-        # Verify that changes to the new LLM's metrics affect the original
-        llm2.metrics.add_cost(5.0)
-        self.assertEqual(llm1.metrics.accumulated_cost, 20.0)
-
-        # Verify that requesting a non-existent service raises an exception
-        with self.assertRaises(Exception) as context:
-            self.registry.request_existing_service(
-                'non-existent-service', self.llm_config
-            )
-
-        self.assertIn('LLM service does not exist', str(context.exception))
-
 
 if __name__ == '__main__':
     unittest.main()

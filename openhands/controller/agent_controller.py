@@ -649,7 +649,6 @@ class AgentController:
             config=agent_config,
             llm_config=llm_config,
             llm_registry=self.llm_registry,
-            requested_service=self.agent.llm.service_id,
         )
 
         # Take a snapshot of the current metrics before starting the delegate

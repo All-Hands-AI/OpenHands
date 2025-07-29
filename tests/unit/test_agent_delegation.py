@@ -96,18 +96,11 @@ def mock_child_agent():
 def create_mock_agent_factory(mock_child_agent, llm_registry):
     """Helper function to create a mock agent factory with proper LLM registration."""
 
-    def create_mock_agent(
-        config, llm_config, llm_registry, retry_listener=None, requested_service=None
-    ):
+    def create_mock_agent(config, llm_config, llm_registry, retry_listener=None):
         # Register the mock agent's LLM in the registry so get_combined_metrics() can find it
-        if requested_service:
-            mock_child_agent.llm = llm_registry.request_existing_service(
-                requested_service, llm_config, retry_listener
-            )
-        else:
-            mock_child_agent.llm = llm_registry.register_llm(
-                'agent_llm', llm_config, retry_listener
-            )
+        mock_child_agent.llm = llm_registry.register_llm(
+            'agent_llm', llm_config, retry_listener
+        )
         return mock_child_agent
 
     return create_mock_agent

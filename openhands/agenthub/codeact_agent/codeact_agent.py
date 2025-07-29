@@ -74,18 +74,14 @@ class CodeActAgent(Agent):
     ]
 
     def __init__(
-        self,
-        config: AgentConfig,
-        llm_config: LLMConfig,
-        llm_registry: LLMRegistry,
-        requested_service: str | None = None,
+        self, config: AgentConfig, llm_config: LLMConfig, llm_registry: LLMRegistry
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(config, llm_config, llm_registry, requested_service)
+        super().__init__(config, llm_config, llm_registry)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
