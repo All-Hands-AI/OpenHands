@@ -2,6 +2,7 @@ import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
@@ -39,6 +40,7 @@ function AppContent() {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
@@ -68,6 +70,15 @@ function AppContent() {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
   });
+
+  // Clear conversation query cache when route loads to ensure fresh data
+  React.useEffect(() => {
+    if (conversationId) {
+      queryClient.invalidateQueries({
+        queryKey: ["user", "conversation", conversationId],
+      });
+    }
+  }, [conversationId, queryClient]);
 
   function handleResize() {
     setWidth(window.innerWidth);
