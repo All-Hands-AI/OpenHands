@@ -63,23 +63,18 @@ export function EventMessage({
 
   const { data: config } = useConfig();
 
+  // Only fetch feedback data if we're actually going to show the LikertScale
+  const shouldShowFeedback =
+    config?.APP_MODE === "saas" &&
+    (isErrorObservation(event) ? isInLast10Actions : isLastMessage);
+
   const {
     data: feedbackData = { exists: false },
     isLoading: isCheckingFeedback,
-  } = useFeedbackExists(event.id);
+  } = useFeedbackExists(shouldShowFeedback ? event.id : undefined);
 
   const renderLikertScale = () => {
-    if (config?.APP_MODE !== "saas" || isCheckingFeedback) {
-      return null;
-    }
-
-    // For error observations, show if in last 10 actions
-    // For other events, show only if it's the last message
-    const shouldShow = isErrorObservation(event)
-      ? isInLast10Actions
-      : isLastMessage;
-
-    if (!shouldShow) {
+    if (!shouldShowFeedback || isCheckingFeedback) {
       return null;
     }
 

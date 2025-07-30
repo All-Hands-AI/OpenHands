@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
+import { FeedbackData } from "../query/use-feedback-exists";
 
 type SubmitConversationFeedbackArgs = {
   rating: number;
@@ -22,12 +23,29 @@ export const useSubmitConversationFeedback = () => {
         eventId,
         reason,
       ),
-    onSuccess: (_, { eventId }) => {
-      // Invalidate the feedback existence query to trigger a refetch
+    onSuccess: (_, { eventId, rating, reason }) => {
       if (eventId) {
-        queryClient.invalidateQueries({
-          queryKey: ["feedback", "exists", conversationId, eventId],
+        // Update the cache directly instead of invalidating to prevent refetch
+        const queryKey = ["feedback", "exists", conversationId, eventId];
+
+        // Update the React Query cache
+        queryClient.setQueryData<FeedbackData>(queryKey, {
+          exists: true,
+          rating,
+          reason,
         });
+
+        // Also update the sessionStorage cache
+        try {
+          const cacheKey = `feedback_${conversationId}_${eventId}`;
+          sessionStorage.setItem(
+            cacheKey,
+            JSON.stringify({ exists: true, rating, reason })
+          );
+        } catch (e) {
+          // Ignore storage errors
+          console.warn("Failed to update feedback cache", e);
+        }
       }
     },
     onError: (error) => {

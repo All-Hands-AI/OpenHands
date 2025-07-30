@@ -153,15 +153,44 @@ class OpenHands {
     eventId: number,
   ): Promise<{ exists: boolean; rating?: number; reason?: string }> {
     try {
+      // Use a cache to prevent duplicate requests for the same data
+      const cacheKey = `feedback_${conversationId}_${eventId}`;
+      const cachedData = sessionStorage.getItem(cacheKey);
+
+      if (cachedData) {
+        try {
+          const parsedData = JSON.parse(cachedData);
+          // Only use cached data if feedback exists
+          if (parsedData.exists) {
+            return parsedData;
+          }
+        } catch (e) {
+          // Invalid JSON in cache, ignore and proceed with request
+          console.warn("Invalid cached feedback data", e);
+        }
+      }
+
       const url = `/feedback/conversation/${conversationId}/${eventId}`;
       const { data } = await openHands.get<{
         exists: boolean;
         rating?: number;
         reason?: string;
       }>(url);
+
+      // Cache the response if feedback exists
+      if (data.exists) {
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        } catch (e) {
+          // Ignore storage errors
+          console.warn("Failed to cache feedback data", e);
+        }
+      }
+
       return data;
     } catch (error) {
       // Error checking if feedback exists
+      console.warn("Error checking feedback existence:", error);
       return { exists: false };
     }
   }
