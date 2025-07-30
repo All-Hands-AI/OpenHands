@@ -1520,4 +1520,3 @@ def test_gemini_performance_optimization_end_to_end(mock_completion):
     # Verify temperature and top_p were removed for reasoning models
     assert 'temperature' not in call_kwargs
     assert 'top_p' not in call_kwargs
-
