@@ -26,9 +26,10 @@ export function ChatActions() {
         <BlockDrawerLeftIcon
           width={18}
           height={18}
-          className={
-            isRightPanelShown ? "text-white" : "text-[#9299AA] hover:text-white"
-          }
+          className={cn(
+            "text-white",
+            !isRightPanelShown && "text-[#9299AA] hover:text-white",
+          )}
         />
       </button>
     </div>
