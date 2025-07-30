@@ -136,6 +136,7 @@ class Repository(BaseModel):
     owner_type: OwnerType | None = (
         None  # Whether the repository is owned by a user or organization
     )
+    main_branch: str | None = None  # The main/default branch of the repository
 
 
 class AuthenticationError(ValueError):
@@ -152,6 +153,18 @@ class UnknownException(ValueError):
 
 class RateLimitError(ValueError):
     """Raised when the git provider's API rate limits are exceeded."""
+
+    pass
+
+
+class ResourceNotFoundError(ValueError):
+    """Raised when a requested resource (file, directory, etc.) is not found."""
+
+    pass
+
+
+class MicroagentParseError(ValueError):
+    """Raised when there is an error parsing a microagent file."""
 
     pass
 
@@ -189,9 +202,15 @@ class BaseGitService(ABC):
 
     def handle_http_status_error(
         self, e: HTTPStatusError
-    ) -> AuthenticationError | RateLimitError | UnknownException:
+    ) -> (
+        AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
+    ):
         if e.response.status_code == 401:
             return AuthenticationError(f'Invalid {self.provider} token')
+        elif e.response.status_code == 404:
+            return ResourceNotFoundError(
+                f'Resource not found on {self.provider} API: {e}'
+            )
         elif e.response.status_code == 429:
             logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
             return RateLimitError('GitHub API rate limit exceeded')
@@ -239,6 +258,9 @@ class BaseGitService(ABC):
 
         Returns:
             MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            MicroagentParseError: If the microagent file cannot be parsed
         """
         try:
             # Use BaseMicroagent.load to properly parse the content
@@ -257,12 +279,9 @@ class BaseGitService(ABC):
             )
 
         except Exception as e:
-            logger.warning(
-                f'Error parsing microagent content for {file_path}: {str(e)}'
-            )
-            # Return response with original content and empty triggers list on parsing error
-            return MicroagentContentResponse(
-                content=content, path=file_path, triggers=[]
+            logger.error(f'Error parsing microagent content for {file_path}: {str(e)}')
+            raise MicroagentParseError(
+                f'Failed to parse microagent file {file_path}: {str(e)}'
             )
 
 

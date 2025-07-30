@@ -10,11 +10,14 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
+    ResourceNotFoundError,
     SuggestedTask,
+    UnknownException,
     User,
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
@@ -288,6 +291,8 @@ class BitBucketService(BaseGitService, GitService):
         data, _ = await self._make_request(url)
 
         uuid = data.get('uuid', '')
+        main_branch = data.get('mainbranch', {}).get('name')
+
         return Repository(
             id=uuid,
             full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
@@ -300,6 +305,7 @@ class BitBucketService(BaseGitService, GitService):
                 if data.get('workspace', {}).get('is_private') is False
                 else OwnerType.USER
             ),
+            main_branch=main_branch,
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:
@@ -400,62 +406,64 @@ class BitBucketService(BaseGitService, GitService):
         microagents = []
 
         try:
-            # Step 1: Get repository info to determine the main branch
-            repo_info_url = f'{self.BASE_URL}/repositories/{repository}'
-            repo_data, _ = await self._make_request(repo_info_url)
+            # Step 1: Get repository details using existing method
+            repo_details = await self.get_repository_details_from_repo_name(repository)
 
-            # Extract main branch name from repository info
-            main_branch = repo_data.get('mainbranch', {}).get('name')
-            if not main_branch:
+            if not repo_details.main_branch:
                 logger.warning(
                     f'No main branch found in repository info for {repository}. '
-                    f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                    f'Repository response: mainbranch field missing'
                 )
                 return []
 
-            # Step 2: Get microagents directory listing using the main branch
-            src_url = f'{self.BASE_URL}/repositories/{repository}/src/{main_branch}/{microagents_path}'
-            directory_data, _ = await self._make_request(src_url)
-
-            # Process .cursorrules if it exists
+            # Step 2: Check for .cursorrules file
             try:
-                cursorrules_url = f'{self.BASE_URL}/repositories/{repository}/src/{main_branch}/.cursorrules'
+                cursorrules_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
                 cursorrules_response, _ = await self._make_request(cursorrules_url)
                 if cursorrules_response:
                     microagents.append(
                         self._create_microagent_response('.cursorrules', '.cursorrules')
                     )
+            except ResourceNotFoundError:
+                logger.debug(f'No .cursorrules file found in {repository}')
             except Exception as e:
-                logger.debug(f'No .cursorrules file found in {repository}: {e}')
+                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
 
-            # Process .md files in the directory
-            if 'values' in directory_data:
-                for item in directory_data['values']:
-                    if (
-                        item['type'] == 'commit_file'
-                        and item['path'].endswith('.md')
-                        and not item['path'].endswith('README.md')
-                    ):
-                        try:
-                            # Extract file name from path
-                            file_name = item['path'].split('/')[-1]
-                            microagents.append(
-                                self._create_microagent_response(
-                                    file_name, item['path']
+            # Step 3: Check for microagents directory and process .md files
+            try:
+                src_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
+                directory_data, _ = await self._make_request(src_url)
+
+                if 'values' in directory_data:
+                    for item in directory_data['values']:
+                        if (
+                            item['type'] == 'commit_file'
+                            and item['path'].endswith('.md')
+                            and not item['path'].endswith('README.md')
+                        ):
+                            try:
+                                # Extract file name from path
+                                file_name = item['path'].split('/')[-1]
+                                microagents.append(
+                                    self._create_microagent_response(
+                                        file_name, item['path']
+                                    )
                                 )
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f'Error processing microagent {item["path"]}: {str(e)}'
-                            )
-
-        except Exception as e:
-            if '404' in str(e).lower():
+                            except Exception as e:
+                                logger.warning(
+                                    f'Error processing microagent {item["path"]}: {str(e)}'
+                                )
+            except ResourceNotFoundError:
                 logger.info(
                     f'No microagents directory found in {repository} at {microagents_path}'
                 )
-                return []
-            raise RuntimeError(f'Error fetching microagents from Bitbucket: {str(e)}')
+            except Exception as e:
+                logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        except Exception as e:
+            raise UnknownException(
+                f'Error fetching microagents from Bitbucket: {str(e)}'
+            )
 
         return microagents
 
@@ -475,34 +483,35 @@ class BitBucketService(BaseGitService, GitService):
             RuntimeError: If file cannot be fetched or doesn't exist
         """
         try:
-            # Step 1: Get repository info to determine the main branch
-            repo_info_url = f'{self.BASE_URL}/repositories/{repository}'
-            repo_data, _ = await self._make_request(repo_info_url)
+            # Step 1: Get repository details using existing method
+            repo_details = await self.get_repository_details_from_repo_name(repository)
 
-            # Extract main branch name from repository info
-            main_branch = repo_data.get('mainbranch', {}).get('name')
-            if not main_branch:
+            if not repo_details.main_branch:
                 logger.warning(
                     f'No main branch found in repository info for {repository}. '
-                    f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                    f'Repository response: mainbranch field missing'
                 )
                 return MicroagentContentResponse(
                     content='', path=file_path, triggers=[]
                 )
 
             # Step 2: Get file content using the main branch
-            file_url = f'{self.BASE_URL}/repositories/{repository}/src/{main_branch}/{file_path}'
+            file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
             response, _ = await self._make_request(file_url)
 
             # Parse the content to extract triggers from frontmatter
             return self._parse_microagent_content(response, file_path)
 
+        except ResourceNotFoundError:
+            raise ResourceNotFoundError(
+                f'File not found: {file_path} in repository {repository}'
+            )
+        except MicroagentParseError as e:
+            raise MicroagentParseError(
+                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
+            )
         except Exception as e:
-            if '404' in str(e).lower():
-                raise RuntimeError(
-                    f'File not found: {file_path} in repository {repository}'
-                )
-            raise RuntimeError(f'Error fetching file from Bitbucket: {str(e)}')
+            raise UnknownException(f'Error fetching file from Bitbucket: {str(e)}')
 
 
 bitbucket_service_cls = os.environ.get(

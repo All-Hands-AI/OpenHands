@@ -16,10 +16,12 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
+    ResourceNotFoundError,
     SuggestedTask,
     TaskType,
     UnknownException,
@@ -553,10 +555,7 @@ class GitHubService(BaseGitService, GitService):
         microagents = []
 
         try:
-            # Get microagents directory contents
-            response, _ = await self._make_request(f'{base_url}/{microagents_path}')
-
-            # Process .cursorrules if it exists
+            # Step 1: Check for .cursorrules file
             try:
                 cursorrules_response, _ = await self._make_request(
                     f'{base_url}/.cursorrules'
@@ -565,35 +564,41 @@ class GitHubService(BaseGitService, GitService):
                     microagents.append(
                         self._create_microagent_response('.cursorrules', '.cursorrules')
                     )
+            except ResourceNotFoundError:
+                logger.debug(f'No .cursorrules file found in {repository}')
             except Exception as e:
-                logger.debug(f'No .cursorrules file found in {repository}: {e}')
+                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
 
-            # Process .md files in microagents directory
-            for item in response:
-                if (
-                    item['type'] == 'file'
-                    and item['name'].endswith('.md')
-                    and item['name'] != 'README.md'
-                ):
-                    try:
-                        microagents.append(
-                            self._create_microagent_response(
-                                item['name'],
-                                f'{microagents_path}/{item["name"]}',
+            # Step 2: Check for microagents directory and process .md files
+            try:
+                response, _ = await self._make_request(f'{base_url}/{microagents_path}')
+
+                for item in response:
+                    if (
+                        item['type'] == 'file'
+                        and item['name'].endswith('.md')
+                        and item['name'] != 'README.md'
+                    ):
+                        try:
+                            microagents.append(
+                                self._create_microagent_response(
+                                    item['name'],
+                                    f'{microagents_path}/{item["name"]}',
+                                )
                             )
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f'Error processing microagent {item["name"]}: {str(e)}'
-                        )
-
-        except Exception as e:
-            if '404' in str(e).lower():
+                        except Exception as e:
+                            logger.warning(
+                                f'Error processing microagent {item["name"]}: {str(e)}'
+                            )
+            except ResourceNotFoundError:
                 logger.info(
                     f'No microagents directory found in {repository} at {microagents_path}'
                 )
-                return []
-            raise RuntimeError(f'Error fetching microagents from GitHub: {str(e)}')
+            except Exception as e:
+                logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        except Exception as e:
+            raise UnknownException(f'Error fetching microagents from GitHub: {str(e)}')
 
         return microagents
 
@@ -621,12 +626,16 @@ class GitHubService(BaseGitService, GitService):
             # Parse the content to extract triggers from frontmatter
             return self._parse_microagent_content(file_content, file_path)
 
+        except ResourceNotFoundError:
+            raise ResourceNotFoundError(
+                f'File not found: {file_path} in repository {repository}'
+            )
+        except MicroagentParseError as e:
+            raise MicroagentParseError(
+                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
+            )
         except Exception as e:
-            if '404' in str(e).lower():
-                raise RuntimeError(
-                    f'File not found: {file_path} in repository {repository}'
-                )
-            raise RuntimeError(f'Error fetching file from GitHub: {str(e)}')
+            raise UnknownException(f'Error fetching file from GitHub: {str(e)}')
 
 
 github_service_cls = os.environ.get(

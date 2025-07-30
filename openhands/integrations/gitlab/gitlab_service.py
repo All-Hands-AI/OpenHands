@@ -9,10 +9,12 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
+    ResourceNotFoundError,
     SuggestedTask,
     TaskType,
     UnknownException,
@@ -569,13 +571,7 @@ class GitLabService(BaseGitService, GitService):
         microagents = []
 
         try:
-            # Get repository tree for microagents directory
-            tree_response, _ = await self._make_request(
-                f'{base_url}/repository/tree',
-                params={'path': microagents_path, 'recursive': 'true'},
-            )
-
-            # Process .cursorrules if it exists
+            # Step 1: Check for .cursorrules file
             try:
                 cursorrules_response, _ = await self._make_request(
                     f'{base_url}/repository/files/.cursorrules/raw',
@@ -585,32 +581,43 @@ class GitLabService(BaseGitService, GitService):
                     microagents.append(
                         self._create_microagent_response('.cursorrules', '.cursorrules')
                     )
+            except ResourceNotFoundError:
+                logger.debug(f'No .cursorrules file found in {repository}')
             except Exception as e:
-                logger.debug(f'No .cursorrules file found in {repository}: {e}')
+                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
 
-            # Process .md files
-            for item in tree_response:
-                if (
-                    item['type'] == 'blob'
-                    and item['name'].endswith('.md')
-                    and item['name'] != 'README.md'
-                ):
-                    try:
-                        microagents.append(
-                            self._create_microagent_response(item['name'], item['path'])
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f'Error processing microagent {item["name"]}: {str(e)}'
-                        )
+            # Step 2: Check for microagents directory and process .md files
+            try:
+                tree_response, _ = await self._make_request(
+                    f'{base_url}/repository/tree',
+                    params={'path': microagents_path, 'recursive': 'true'},
+                )
 
-        except Exception as e:
-            if '404' in str(e).lower():
+                for item in tree_response:
+                    if (
+                        item['type'] == 'blob'
+                        and item['name'].endswith('.md')
+                        and item['name'] != 'README.md'
+                    ):
+                        try:
+                            microagents.append(
+                                self._create_microagent_response(
+                                    item['name'], item['path']
+                                )
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f'Error processing microagent {item["name"]}: {str(e)}'
+                            )
+            except ResourceNotFoundError:
                 logger.info(
                     f'No microagents directory found in {repository} at {microagents_path}'
                 )
-                return []
-            raise RuntimeError(f'Error fetching microagents from GitLab: {str(e)}')
+            except Exception as e:
+                logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        except Exception as e:
+            raise UnknownException(f'Error fetching microagents from GitLab: {str(e)}')
 
         return microagents
 
@@ -642,12 +649,16 @@ class GitLabService(BaseGitService, GitService):
             # Parse the content to extract triggers from frontmatter
             return self._parse_microagent_content(response, file_path)
 
+        except ResourceNotFoundError:
+            raise ResourceNotFoundError(
+                f'File not found: {file_path} in repository {repository}'
+            )
+        except MicroagentParseError as e:
+            raise MicroagentParseError(
+                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
+            )
         except Exception as e:
-            if '404' in str(e).lower():
-                raise RuntimeError(
-                    f'File not found: {file_path} in repository {repository}'
-                )
-            raise RuntimeError(f'Error fetching file from GitLab: {str(e)}')
+            raise UnknownException(f'Error fetching file from GitLab: {str(e)}')
 
 
 gitlab_service_cls = os.environ.get(
