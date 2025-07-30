@@ -29,7 +29,6 @@ export function RepositorySelector({
   };
 
   const handleRepoInputChange = (value: string) => {
-    console.log("handleRepoInputChange", value);
     if (value === "") {
       onRepositoryChange(null);
       onSearchQueryChange?.("");
