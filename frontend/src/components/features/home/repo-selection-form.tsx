@@ -161,11 +161,11 @@ export function RepositorySelectionForm({
   // Render the git provider selector UI based on the loading/error state
   const renderGitProviderSelector = () => {
     if (isLoadingRepositories) {
-      return <RepositoryLoadingState />;
+      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
     }
 
     if (isRepositoriesError) {
-      return <RepositoryErrorState />;
+      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
     }
 
     return (
@@ -185,6 +185,8 @@ export function RepositorySelectionForm({
 
           return !!gitProvider;
         }}
+        selectedKey={selectedGitProvider?.value}
+        wrapperClassName="max-w-auto"
       />
     );
   };
@@ -212,11 +214,11 @@ export function RepositorySelectionForm({
   // Render the appropriate UI based on the loading/error state
   const renderRepositorySelector = () => {
     if (isLoadingRepositories) {
-      return <RepositoryLoadingState />;
+      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
     }
 
     if (isRepositoriesError) {
-      return <RepositoryErrorState />;
+      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
     }
 
     return (
@@ -234,6 +236,7 @@ export function RepositorySelectionForm({
           const sanitizedInput = sanitizeQuery(inputValue);
           return sanitizeQuery(textValue).includes(sanitizedInput);
         }}
+        wrapperClassName="max-w-auto"
       />
     );
   };
@@ -241,11 +244,11 @@ export function RepositorySelectionForm({
   // Render the appropriate UI for branch selector based on the loading/error state
   const renderBranchSelector = () => {
     if (isLoadingRepositories) {
-      return <RepositoryLoadingState />;
+      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
     }
 
     if (isRepositoriesError) {
-      return <RepositoryErrorState />;
+      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
     }
 
     if (!selectedRepository) {
@@ -255,16 +258,17 @@ export function RepositorySelectionForm({
           onSelectionChange={() => {}}
           onInputChange={() => {}}
           isDisabled
+          wrapperClassName="max-w-auto"
         />
       );
     }
 
     if (isLoadingBranches) {
-      return <BranchLoadingState />;
+      return <BranchLoadingState wrapperClassName="max-w-auto" />;
     }
 
     if (isBranchesError) {
-      return <BranchErrorState />;
+      return <BranchErrorState wrapperClassName="max-w-auto" />;
     }
 
     return (
@@ -274,6 +278,7 @@ export function RepositorySelectionForm({
         onInputChange={handleBranchInputChange}
         isDisabled={false}
         selectedKey={selectedBranch?.name}
+        wrapperClassName="max-w-auto"
       />
     );
   };
@@ -320,6 +325,7 @@ export function RepositorySelectionForm({
             },
           )
         }
+        className="w-full font-semibold"
       >
         {!isCreatingConversation && "Launch"}
         {isCreatingConversation && t("HOME$LOADING")}

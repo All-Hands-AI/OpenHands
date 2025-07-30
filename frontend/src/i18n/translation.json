@@ -11456,20 +11456,20 @@
         "uk": "Виберіть постачальника Git"
     },
     "HOME$NEW_PROJECT_DESCRIPTION": {
-        "en": "Start a new conversation and connect to an existing repo or create a new repo.",
-        "ja": "新しい会話を開始し、既存のリポジトリに接続するか、新しいリポジトリを作成します。",
-        "zh-CN": "开始新的对话，并连接到现有仓库或创建新仓库。",
-        "zh-TW": "開始新的對話，並連接到現有的儲存庫或建立新儲存庫。",
-        "ko-KR": "새 대화를 시작하고 기존 저장소에 연결하거나 새 저장소를 만듭니다.",
-        "no": "Start en ny samtale og koble til et eksisterende repo eller opprett et nytt repo.",
-        "it": "Avvia una nuova conversazione e connettiti a un repository esistente o creane uno nuovo.",
-        "pt": "Inicie uma nova conversa e conecte-se a um repositório existente ou crie um novo repositório.",
-        "es": "Inicia una nueva conversación y conéctate a un repositorio existente o crea uno nuevo.",
-        "ar": "ابدأ محادثة جديدة واتصل بمستودع موجود أو أنشئ مستودعًا جديدًا.",
-        "fr": "Démarrez une nouvelle conversation et connectez-vous à un dépôt existant ou créez-en un nouveau.",
-        "tr": "Yeni bir konuşma başlatın ve mevcut bir depoya bağlanın veya yeni bir depo oluşturun.",
-        "de": "Beginnen Sie ein neues Gespräch und verbinden Sie sich mit einem bestehenden Repository oder erstellen Sie ein neues.",
-        "uk": "Почніть нову розмову та підключіться до існуючого репозиторію або створіть новий."
+        "en": "Start a new conversation that is not connected to an existing repository.",
+        "ja": "既存のリポジトリに接続されていない新しい会話を開始します。",
+        "zh-CN": "开始一个未连接到现有仓库的新对话。",
+        "zh-TW": "開始一個未連接到現有存儲庫的新對話。",
+        "ko-KR": "기존 저장소와 연결되지 않은 새 대화를 시작합니다.",
+        "no": "Start en ny samtale som ikke er koblet til et eksisterende repository.",
+        "it": "Avvia una nuova conversazione non collegata a un repository esistente.",
+        "pt": "Inicie uma nova conversa que não está conectada a um repositório existente.",
+        "es": "Inicia una nueva conversación que no está conectada a un repositorio existente.",
+        "ar": "ابدأ محادثة جديدة غير مرتبطة بمستودع موجود.",
+        "fr": "Démarrez une nouvelle conversation qui n'est pas connectée à un dépôt existant.",
+        "tr": "Mevcut bir depoya bağlı olmayan yeni bir konuşma başlatın.",
+        "de": "Beginnen Sie ein neues Gespräch, das nicht mit einem bestehenden Repository verbunden ist.",
+        "uk": "Почніть нову розмову, яка не пов'язана з існуючим репозиторієм."
     },
     "COMMON$NEW_CONVERSATION": {
         "en": "New Conversation",
@@ -11502,5 +11502,21 @@
         "tr": "Son Projeler",
         "de": "Kürzliche Projekte",
         "uk": "Останні проєкти"
+    },
+    "COMMON$START_FROM_SCRATCH": {
+        "en": "Start from Scratch",
+        "ja": "最初から始める",
+        "zh-CN": "从头开始",
+        "zh-TW": "從頭開始",
+        "ko-KR": "처음부터 시작",
+        "no": "Start fra bunnen",
+        "it": "Inizia da zero",
+        "pt": "Começar do zero",
+        "es": "Empezar desde cero",
+        "ar": "ابدأ من الصفر",
+        "fr": "Commencer de zéro",
+        "tr": "Sıfırdan Başla",
+        "de": "Von vorne beginnen",
+        "uk": "Почати з нуля"
     }
 }

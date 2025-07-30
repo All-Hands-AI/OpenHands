@@ -8,9 +8,9 @@ export function HomeHeader() {
   return (
     <header className="flex flex-col items-center">
       <GuideMessage />
-      <div className="mt-[95px] pt-[46px] flex flex-col gap-[27px] items-center">
-        <YellowHand />
-        <span className="text-[32px] text-[#D0D9FA] font-normal">
+      <div className="mt-[192px] flex flex-col gap-4 items-center">
+        <YellowHand className="w-[77px] h-[94px]" />
+        <span className="text-[32px] text-white font-bold leading-5">
           {t("HOME$LETS_START_BUILDING")}
         </span>
       </div>

@@ -20,19 +20,19 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-[#2F3137] h-full flex flex-col pt-[47px] overflow-y-auto"
+      className="bg-[#26282D] h-full flex flex-col pt-[35px] overflow-y-auto"
     >
       <HomeHeader />
 
-      <div className="pt-[70px] flex justify-center">
-        <div className="flex gap-[20px] sm:flex-col md:flex-row sm:max-w-full sm:min-w-full lg:max-w-[703px] lg:min-w-[703px]">
+      <div className="pt-[25px] flex justify-center">
+        <div className="flex flex-col gap-5 px-6 sm:max-w-full sm:min-w-full md:flex-row lg:px-0 lg:max-w-[703px] lg:min-w-[703px]">
           <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
           <NewConversation />
         </div>
       </div>
 
       <div className="pt-[12px] flex justify-center mb-[262px]">
-        <div className="flex gap-[20px] sm:flex-col md:flex-row md:max-w-full md:min-w-full lg:max-w-[703px] lg:min-w-[703px]">
+        <div className="flex flex-col gap-5 px-6 md:flex-row md:max-w-full md:min-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]">
           {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
         </div>
       </div>

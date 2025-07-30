@@ -22,6 +22,7 @@ interface SettingsDropdownInputProps {
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
+  startContent?: ReactNode;
 }
 
 export function SettingsDropdownInput({
@@ -42,6 +43,7 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
+  startContent,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
   return (
@@ -78,6 +80,7 @@ export function SettingsDropdownInput({
           },
         }}
         defaultFilter={defaultFilter}
+        startContent={startContent || null}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>

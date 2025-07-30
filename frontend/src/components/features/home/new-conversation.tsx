@@ -23,12 +23,12 @@ export function NewConversation() {
     isPending || isSuccess || isCreatingConversationElsewhere;
 
   return (
-    <section className="w-full flex flex-col bg-[#363940] rounded-[15px] p-[20px] gap-[10px]">
+    <section className="w-full min-h-[286px] md:min-h-auto flex flex-col rounded-[12px] p-[20px] gap-[10px] border border-[#727987] relative">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-[10px]">
           <PlusIcon width={17} height={14} />
           <span className="leading-5 font-bold text-base text-white">
-            {t(I18nKey.COMMON$NEW_CONVERSATION)}
+            {t(I18nKey.COMMON$START_FROM_SCRATCH)}
           </span>
         </div>
       </div>
@@ -51,6 +51,7 @@ export function NewConversation() {
           )
         }
         isDisabled={isCreatingConversation}
+        className="w-auto absolute bottom-5 left-5 right-5 font-semibold"
       >
         {!isCreatingConversation && t("COMMON$NEW_CONVERSATION")}
         {isCreatingConversation && t("HOME$LOADING")}
