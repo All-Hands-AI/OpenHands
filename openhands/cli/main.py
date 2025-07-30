@@ -417,6 +417,19 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
 
+    # Ask if user wants to configure search API settings
+    print_formatted_text('')
+    setup_search = cli_confirm(
+        config,
+        'Would you like to configure Search API settings (optional)?',
+        ['Yes', 'No'],
+    )
+
+    if setup_search == 0:  # Yes
+        from openhands.cli.settings import modify_search_api_settings
+
+        await modify_search_api_settings(config, settings_store)
+
 
 def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     """Run the alias setup flow to configure shell aliases.
@@ -589,6 +602,11 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
         )
+
+        # Load search API key from settings if available
+        if settings.search_api_key:
+            config.search_api_key = settings.search_api_key
+            logger.debug('Using search API key from settings.json')
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
