@@ -30,6 +30,7 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
 import { ChatActions } from "#/components/features/chat/chat-actions";
 import { RootState } from "#/store";
+import { cn } from "#/utils/utils";
 
 function AppContent() {
   useConversationConfig();
@@ -96,7 +97,12 @@ function AppContent() {
     if (width <= 1024) {
       return (
         <div className="flex flex-col gap-3 overflow-auto w-full">
-          <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]">
+          <div
+            className={cn(
+              "rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]",
+              !isRightPanelShown && "h-full",
+            )}
+          >
             <ChatInterface />
           </div>
           {isRightPanelShown && (
