@@ -194,7 +194,6 @@ class Session:
         agent = Agent.get_cls(agent_cls)(
             llm=llm,
             config=agent_config,
-            model_routing_config=self.config.model_routing,
             routing_llms=routing_llms,
         )
 

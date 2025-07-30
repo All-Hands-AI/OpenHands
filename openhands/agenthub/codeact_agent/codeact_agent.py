@@ -76,7 +76,6 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        model_routing_config: ModelRoutingConfig | None = None,
         routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
@@ -84,7 +83,6 @@ class CodeActAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
-        - model_routing_config (ModelRoutingConfig | None): The model routing configuration to use
         - routing_llms (dict[str, LLM]): The LLMs to be selected for routing
         """
         super().__init__(llm, config)
@@ -98,7 +96,7 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
-        model_routing_config = model_routing_config or ModelRoutingConfig()
+        model_routing_config = self.config.model_routing
         router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
         if router_cls is None:
             raise ValueError(

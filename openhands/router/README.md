@@ -24,7 +24,7 @@ model = "gpt-4o"
 api_key = "your-api-key"
 
 # Secondary model for routing
-[llm._model]
+[llm.secondary_model]
 model = "gpt-4o-mini"
 api_key = "your-api-key"
 for_routing = true

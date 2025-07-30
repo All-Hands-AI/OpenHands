@@ -15,7 +15,6 @@ from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
 
@@ -32,7 +31,6 @@ class OpenHandsConfig(BaseModel):
         default_agent: Name of the default agent to use.
         sandbox: Sandbox configuration settings.
         security: Security configuration settings.
-        model_routing: Model routing configuration settings.
         runtime: Runtime environment identifier.
         file_store: Type of file store to use.
         file_store_path: Path to the file store.
@@ -68,7 +66,6 @@ class OpenHandsConfig(BaseModel):
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
-    model_routing: ModelRoutingConfig = Field(default_factory=ModelRoutingConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     runtime: str = Field(default='docker')
     file_store: str = Field(default='local')
