@@ -581,9 +581,15 @@ def is_fatal_runtime_error(error: str | None) -> bool:
 
 def get_metrics(state: State) -> dict[str, Any]:
     """Extract metrics from the state."""
-    metrics = state.metrics.get() if state.metrics else {}
-    metrics['condenser'] = get_condensation_metadata(state)
-    return metrics
+    metrics = state.metrics
+    if metrics:
+        # Merge routing LLM metrics
+        for routing_llm_metrics in state.routing_metrics:
+            metrics.merge(routing_llm_metrics)
+
+    metrics_dict = metrics.get() if metrics else {}
+    metrics_dict['condenser'] = get_condensation_metadata(state)
+    return metrics_dict
 
 
 def get_default_sandbox_config_for_eval() -> SandboxConfig:

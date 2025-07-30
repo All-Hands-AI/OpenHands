@@ -253,6 +253,7 @@ def get_config(
     )
     config.set_agent_config(agent_config)
     config.model_routing = config_copy.model_routing
+    config.routing_llms = config_copy.routing_llms
 
     # Set log_completions to True for all routing LLMs
     for llm_cfg in config.routing_llms.values():

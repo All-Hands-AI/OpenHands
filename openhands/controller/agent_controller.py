@@ -1008,6 +1008,7 @@ class AgentController:
         if hasattr(self.agent, 'router'):
             for routing_llm in list(self.agent.router.routing_llms.values()):
                 routing_llms_metrics.append(routing_llm.metrics)
+        self.state.routing_metrics = routing_llms_metrics
 
         # Create a new minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=agent_metrics.model_name)
