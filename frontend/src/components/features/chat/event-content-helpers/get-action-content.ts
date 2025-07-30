@@ -78,7 +78,6 @@ const getThinkActionContent = (event: ThinkAction): string =>
   event.args.thought;
 
 const getFinishActionContent = (event: FinishAction): string =>
-  // Return only the final thought without appending the task completion status message
   event.args.final_thought.trim();
 const getNoContentActionContent = (): string => "";
 
