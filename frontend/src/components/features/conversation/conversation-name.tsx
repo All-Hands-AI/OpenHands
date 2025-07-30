@@ -1,0 +1,94 @@
+import React from "react";
+import { useParams } from "react-router";
+import { useTranslation } from "react-i18next";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
+import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { I18nKey } from "#/i18n/declaration";
+
+export function ConversationName() {
+  const { t } = useTranslation();
+  const { conversationId } = useParams<{ conversationId: string }>();
+  const { data: conversation } = useActiveConversation();
+  const { mutate: updateConversation } = useUpdateConversation();
+
+  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDoubleClick = () => {
+    setTitleMode("edit");
+  };
+
+  const handleBlur = () => {
+    if (inputRef.current?.value && conversationId) {
+      const trimmed = inputRef.current.value.trim();
+      if (trimmed !== conversation?.title) {
+        updateConversation(
+          { conversationId, newTitle: trimmed },
+          {
+            onSuccess: () => {
+              displaySuccessToast(t(I18nKey.CONVERSATION$TITLE_UPDATED));
+            },
+          },
+        );
+      }
+      inputRef.current.value = trimmed;
+    } else if (inputRef.current) {
+      // reset the value if it's empty
+      inputRef.current.value = conversation?.title ?? "";
+    }
+
+    setTitleMode("view");
+  };
+
+  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter") {
+      event.currentTarget.blur();
+    }
+  };
+
+  const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
+    if (titleMode === "edit") {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
+
+  React.useEffect(() => {
+    if (titleMode === "edit") {
+      inputRef.current?.focus();
+    }
+  }, [titleMode]);
+
+  if (!conversation) {
+    return null;
+  }
+
+  return (
+    <div
+      className="flex items-center gap-6 h-[22px] font-['Outfit',_sans-serif] text-xs text-left"
+      data-testid="conversation-name"
+    >
+      {titleMode === "edit" ? (
+        <input
+          ref={inputRef}
+          data-testid="conversation-name-input"
+          onClick={handleInputClick}
+          onBlur={handleBlur}
+          onKeyUp={handleKeyUp}
+          type="text"
+          defaultValue={conversation.title}
+          className="text-white leading-5 bg-transparent border-none outline-none font-['Outfit',_sans-serif] text-xs"
+        />
+      ) : (
+        <div
+          className="text-white leading-5 cursor-pointer"
+          data-testid="conversation-name-title"
+          onDoubleClick={handleDoubleClick}
+        >
+          {conversation.title}
+        </div>
+      )}
+    </div>
+  );
+}
