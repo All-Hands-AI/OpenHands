@@ -4,9 +4,9 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
 from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
-from openhands.core.config.model_routing_config import ModelRoutingConfig
 
 
 class AgentConfig(BaseModel):

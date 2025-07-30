@@ -24,7 +24,7 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
-from openhands.core.config import AgentConfig, ModelRoutingConfig
+from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction

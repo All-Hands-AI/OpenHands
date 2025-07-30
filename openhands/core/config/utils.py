@@ -208,7 +208,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             # We only use the base model routing config for now
             if 'model_routing' in model_routing_mapping:
                 default_agent_config = cfg.get_agent_config()
-                default_agent_config.model_routing = model_routing_mapping['model_routing']
+                default_agent_config.model_routing = model_routing_mapping[
+                    'model_routing'
+                ]
                 logger.openhands_logger.debug(
                     'Default model routing configuration loaded from config toml and assigned to default agent'
                 )
