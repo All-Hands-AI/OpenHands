@@ -268,14 +268,15 @@ async def modify_llm_settings_basic(
 
         # For OpenHands provider, directly show all verified models without the "use default" option
         if provider == 'openhands':
-            print_formatted_text(HTML('\n<grey>Available OpenHands models:</grey>'))
-
             # Create a list of models for the cli_confirm function
             model_choices = VERIFIED_OPENHANDS_MODELS
 
             model_choice = cli_confirm(
                 config,
-                '(Step 2/3) Select LLM Model:',
+                (
+                    '(Step 2/3) Select Available OpenHands Model:\n'
+                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
+                ),
                 model_choices,
             )
 
