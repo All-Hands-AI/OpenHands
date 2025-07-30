@@ -1,4 +1,5 @@
 import json
+import shutil
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -91,6 +92,14 @@ async def create_mcp_clients(
 
     for server in servers:
         if isinstance(server, MCPStdioServerConfig):
+            # Validate that the command exists before connecting
+            if not shutil.which(server.command):
+                logger.warning(
+                    f'Skipping MCP stdio server "{server.name}": command "{server.command}" not found. '
+                    f'Please install {server.command} or remove this server from your configuration.'
+                )
+                continue
+
             logger.info(f'Initializing MCP agent for {server} with stdio connection...')
             client = MCPClient()
             try:
