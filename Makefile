@@ -189,12 +189,13 @@ install-pre-commit-hooks: check-python check-poetry install-python-dependencies
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend: install-pre-commit-hooks
-	@echo "$(YELLOW)Running linters...$(RESET)"
+	@echo "$(YELLOW)Running linters for backend...$(RESET)"
 	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend: install-frontend-dependencies
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
-	@cd frontend && npm run lint
+	@cd frontend && npm run lint && npm run make-i18n && npm run typecheck && npm run check-translation-completeness
+	@cd frontend
 
 lint:
 	@$(MAKE) -s lint-frontend
@@ -210,7 +211,9 @@ check-all:
 	@echo "$(BLUE)╚══════════════════════════════════════════════════════════════════════════════╝$(RESET)"
 	@echo "$(YELLOW)Starting comprehensive static analysis of entire codebase...$(RESET)"
 	@echo "$(GREEN)✓ CHECK-ALL mode initialized$(RESET)"
-	@echo "$(YELLOW)TODO: Implement comprehensive checks$(RESET)"
+	@$(MAKE) -s lint
+	@python .github/scripts/check_version_consistency.py
+	@echo "$(GREEN)✓ CHECK-ALL COMPLETE$(RESET)"
 
 check-pre-commit:
 	@echo "$(BLUE)╔══════════════════════════════════════════════════════════════════════════════╗$(RESET)"
