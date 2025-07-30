@@ -27,7 +27,7 @@ from openhands.integrations.service_types import (
     SuggestedTask,
     User,
 )
-from openhands.microagent.types import MicroagentResponse
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -449,7 +449,9 @@ class ProviderHandler:
         # All providers returned empty arrays
         return []
 
-    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
         """Get content of a specific microagent file from a repository.
 
         Args:
@@ -457,7 +459,7 @@ class ProviderHandler:
             file_path: Path to the microagent file within the repository
 
         Returns:
-            File content as string
+            MicroagentContentResponse with parsed content and triggers
 
         Raises:
             AuthenticationError: If authentication fails

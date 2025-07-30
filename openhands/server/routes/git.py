@@ -357,7 +357,7 @@ async def get_repository_microagent_content(
         )
 
         # Fetch file content using the provider handler
-        file_content = await provider_handler.get_microagent_content(
+        response = await provider_handler.get_microagent_content(
             repository_name, file_path
         )
 
@@ -365,10 +365,7 @@ async def get_repository_microagent_content(
             f'Retrieved content for microagent {file_path} from {repository_name}'
         )
 
-        return MicroagentContentResponse(
-            content=file_content,
-            path=file_path,
-        )
+        return response
 
     except AuthenticationError as e:
         logger.info(

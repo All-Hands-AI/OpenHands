@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 from typing import Any
 
 import httpx
@@ -19,7 +18,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.microagent.types import MicroagentResponse
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -530,17 +529,6 @@ class GitLabService(BaseGitService, GitService):
 
         return response['web_url']
 
-    def _determine_microagents_path(self, repository_name: str) -> str:
-        """Determine the microagents directory path based on repository name."""
-        actual_repo_name = repository_name.split('/')[-1]
-
-        if actual_repo_name == 'openhands-config':
-            # For GitLab with repository name "openhands-config", scan "microagents" folder
-            return 'microagents'
-        else:
-            # Default behavior: look for .openhands/microagents directory
-            return '.openhands/microagents'
-
     def _extract_project_id(self, repository: str) -> str:
         """Extract project_id from repository name for GitLab API calls.
 
@@ -562,19 +550,6 @@ class GitLabService(BaseGitService, GitService):
             project_id = repository
 
         return project_id
-
-    def _create_microagent_response(
-        self, file_name: str, path: str
-    ) -> MicroagentResponse:
-        """Create a microagent response from basic file information."""
-        # Extract name without extension
-        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
-
-        return MicroagentResponse(
-            name=name,
-            path=path,
-            created_at=datetime.now(),
-        )
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Fetch microagents from GitLab repository using GitLab API.
@@ -639,7 +614,9 @@ class GitLabService(BaseGitService, GitService):
 
         return microagents
 
-    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
         """Fetch individual file content from GitLab repository.
 
         Args:
@@ -647,7 +624,7 @@ class GitLabService(BaseGitService, GitService):
             file_path: Path to the file within the repository
 
         Returns:
-            File content as string
+            MicroagentContentResponse with parsed content and triggers
 
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
@@ -661,7 +638,9 @@ class GitLabService(BaseGitService, GitService):
 
         try:
             response, _ = await self._make_request(file_url, is_json_response=False)
-            return response
+
+            # Parse the content to extract triggers from frontmatter
+            return self._parse_microagent_content(response, file_path)
 
         except Exception as e:
             if '404' in str(e).lower():

@@ -55,3 +55,4 @@ class MicroagentContentResponse(BaseModel):
 
     content: str
     path: str
+    triggers: list[str] = []

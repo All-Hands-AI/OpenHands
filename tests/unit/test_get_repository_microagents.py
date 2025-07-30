@@ -12,6 +12,7 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Repository,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.routes.git import app as git_app
 from openhands.server.user_auth import (
     get_access_token,
@@ -306,7 +307,11 @@ class TestGetRepositoryMicroagentContent:
 
         # Mock the get_microagent_content method
         mock_provider_handler.get_microagent_content.return_value = (
-            sample_microagent_content
+            MicroagentContentResponse(
+                content=sample_microagent_content,
+                path='.openhands/microagents/test_agent.md',
+                triggers=['test', 'agent'],
+            )
         )
 
         # Execute test
@@ -321,6 +326,8 @@ class TestGetRepositoryMicroagentContent:
         assert 'content' in data
         assert data['content'] == sample_microagent_content
         assert data['path'] == file_path
+        assert 'triggers' in data
+        assert data['triggers'] == ['test', 'agent']
 
     @pytest.mark.asyncio
     @patch('openhands.server.routes.git.ProviderHandler')
@@ -337,7 +344,11 @@ class TestGetRepositoryMicroagentContent:
 
         # Mock the get_microagent_content method
         mock_provider_handler.get_microagent_content.return_value = (
-            sample_microagent_content
+            MicroagentContentResponse(
+                content=sample_microagent_content,
+                path='.openhands/microagents/test_agent.md',
+                triggers=['test', 'agent'],
+            )
         )
 
         # Execute test
@@ -351,6 +362,8 @@ class TestGetRepositoryMicroagentContent:
         data = response.json()
         assert data['content'] == sample_microagent_content
         assert data['path'] == file_path
+        assert 'triggers' in data
+        assert data['triggers'] == ['test', 'agent']
 
     @pytest.mark.asyncio
     @patch('openhands.server.routes.git.ProviderHandler')
@@ -367,7 +380,11 @@ class TestGetRepositoryMicroagentContent:
 
         # Mock the get_microagent_content method
         mock_provider_handler.get_microagent_content.return_value = (
-            sample_microagent_content
+            MicroagentContentResponse(
+                content=sample_microagent_content,
+                path='.openhands/microagents/test_agent.md',
+                triggers=['test', 'agent'],
+            )
         )
 
         # Execute test
@@ -381,6 +398,8 @@ class TestGetRepositoryMicroagentContent:
         data = response.json()
         assert data['content'] == sample_microagent_content
         assert data['path'] == file_path
+        assert 'triggers' in data
+        assert data['triggers'] == ['test', 'agent']
 
     @pytest.mark.asyncio
     @patch('openhands.server.routes.git.ProviderHandler')
@@ -452,7 +471,11 @@ class TestGetRepositoryMicroagentContent:
 
         # Mock the get_microagent_content method
         mock_provider_handler.get_microagent_content.return_value = (
-            sample_cursorrules_content
+            MicroagentContentResponse(
+                content=sample_cursorrules_content,
+                path='.cursorrules',
+                triggers=['cursor', 'rules'],
+            )
         )
 
         # Execute test
@@ -466,6 +489,8 @@ class TestGetRepositoryMicroagentContent:
         data = response.json()
         assert data['content'] == sample_cursorrules_content
         assert data['path'] == file_path
+        assert 'triggers' in data
+        assert data['triggers'] == ['cursor', 'rules']
 
 
 class TestSpecialRepositoryStructures:

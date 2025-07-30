@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
 from enum import Enum
+from pathlib import Path
 from typing import Any, Protocol
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError
@@ -7,7 +9,8 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.types import MicroagentResponse
+from openhands.microagent.microagent import BaseMicroagent
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -200,6 +203,68 @@ class BaseGitService(ABC):
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
+    def _determine_microagents_path(self, repository_name: str) -> str:
+        """Determine the microagents directory path based on repository name."""
+        actual_repo_name = repository_name.split('/')[-1]
+
+        # Check for special repository names that use a different structure
+        if actual_repo_name == '.openhands' or actual_repo_name == 'openhands-config':
+            # For repository name ".openhands", scan "microagents" folder
+            return 'microagents'
+        else:
+            # Default behavior: look for .openhands/microagents directory
+            return '.openhands/microagents'
+
+    def _create_microagent_response(
+        self, file_name: str, path: str
+    ) -> MicroagentResponse:
+        """Create a microagent response from basic file information."""
+        # Extract name without extension
+        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
+
+        return MicroagentResponse(
+            name=name,
+            path=path,
+            created_at=datetime.now(),
+        )
+
+    def _parse_microagent_content(
+        self, content: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Parse microagent content and extract triggers using BaseMicroagent.load.
+
+        Args:
+            content: Raw microagent file content
+            file_path: Path to the file (used for microagent loading)
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+        """
+        try:
+            # Use BaseMicroagent.load to properly parse the content
+            # Create a temporary path object for the file
+            temp_path = Path(file_path)
+
+            # Load the microagent using the existing infrastructure
+            microagent = BaseMicroagent.load(path=temp_path, file_content=content)
+
+            # Extract triggers from the microagent's metadata
+            triggers = microagent.metadata.triggers
+
+            # Return the MicroagentContentResponse
+            return MicroagentContentResponse(
+                content=microagent.content, path=file_path, triggers=triggers
+            )
+
+        except Exception as e:
+            logger.warning(
+                f'Error parsing microagent content for {file_path}: {str(e)}'
+            )
+            # Return response with original content and empty triggers list on parsing error
+            return MicroagentContentResponse(
+                content=content, path=file_path, triggers=[]
+            )
+
 
 class GitService(Protocol):
     """Protocol defining the interface for Git service providers"""
@@ -254,6 +319,12 @@ class GitService(Protocol):
         """Get microagents from a repository"""
         ...
 
-    async def get_microagent_content(self, repository: str, file_path: str) -> str:
-        """Get content of a specific microagent file"""
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Get content of a specific microagent file
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+        """
         ...

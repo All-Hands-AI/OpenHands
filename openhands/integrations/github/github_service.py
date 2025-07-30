@@ -25,7 +25,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.microagent.types import MicroagentResponse
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -539,30 +539,6 @@ class GitHubService(BaseGitService, GitService):
         # Return the HTML URL of the created PR
         return response['html_url']
 
-    def _determine_microagents_path(self, repository_name: str) -> str:
-        """Determine the microagents directory path based on repository name."""
-        actual_repo_name = repository_name.split('/')[-1]
-
-        if actual_repo_name == '.openhands':
-            # For repository name ".openhands", scan "microagents" folder
-            return 'microagents'
-        else:
-            # Default behavior: look for .openhands/microagents directory
-            return '.openhands/microagents'
-
-    def _create_microagent_response(
-        self, file_name: str, path: str
-    ) -> MicroagentResponse:
-        """Create a microagent response from basic file information."""
-        # Extract name without extension
-        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
-
-        return MicroagentResponse(
-            name=name,
-            path=path,
-            created_at=datetime.now(),
-        )
-
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Fetch microagents from GitHub repository using GitHub Contents API.
 
@@ -621,7 +597,9 @@ class GitHubService(BaseGitService, GitService):
 
         return microagents
 
-    async def get_microagent_content(self, repository: str, file_path: str) -> str:
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
         """Fetch individual file content from GitHub repository.
 
         Args:
@@ -629,7 +607,7 @@ class GitHubService(BaseGitService, GitService):
             file_path: Path to the file within the repository
 
         Returns:
-            File content as string
+            MicroagentContentResponse with parsed content and triggers
 
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
@@ -639,7 +617,9 @@ class GitHubService(BaseGitService, GitService):
         try:
             file_data, _ = await self._make_request(file_url)
             file_content = base64.b64decode(file_data['content']).decode('utf-8')
-            return file_content
+
+            # Parse the content to extract triggers from frontmatter
+            return self._parse_microagent_content(file_content, file_path)
 
         except Exception as e:
             if '404' in str(e).lower():
