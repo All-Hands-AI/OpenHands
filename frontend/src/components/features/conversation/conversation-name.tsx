@@ -66,7 +66,7 @@ export function ConversationName() {
 
   return (
     <div
-      className="flex items-center gap-6 h-[22px] font-['Outfit',_sans-serif] text-xs text-left"
+      className="flex items-center gap-6 h-[22px] text-base font-normal text-left"
       data-testid="conversation-name"
     >
       {titleMode === "edit" ? (
@@ -78,13 +78,14 @@ export function ConversationName() {
           onKeyUp={handleKeyUp}
           type="text"
           defaultValue={conversation.title}
-          className="text-white leading-5 bg-transparent border-none outline-none font-['Outfit',_sans-serif] text-xs"
+          className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal"
         />
       ) : (
         <div
-          className="text-white leading-5 cursor-pointer"
+          className="text-white leading-5 cursor-pointer max-w-full truncate"
           data-testid="conversation-name-title"
           onDoubleClick={handleDoubleClick}
+          title={conversation.title}
         >
           {conversation.title}
         </div>
