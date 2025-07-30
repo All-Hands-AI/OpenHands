@@ -11390,5 +11390,21 @@
         "tr": "Depo ara",
         "de": "Repositorys durchsuchen",
         "uk": "Пошук репозиторіїв"
+    },
+    "CHAT_INTERFACE$TOGGLE_RIGHT_PANEL": {
+        "en": "Toggle right panel",
+        "ja": "右パネルの切り替え",
+        "zh-CN": "切换右侧面板",
+        "zh-TW": "切換右側面板",
+        "ko-KR": "오른쪽 패널 전환",
+        "no": "Bytt høyre panel",
+        "it": "Attiva/disattiva il pannello destro",
+        "pt": "Alternar painel direito",
+        "es": "Alternar panel derecho",
+        "ar": "تبديل اللوحة اليمنى",
+        "fr": "Basculer le panneau de droite",
+        "tr": "Sağ paneli aç/kapat",
+        "de": "Rechtes Panel umschalten",
+        "uk": "Перемкнути праву панель"
     }
 }

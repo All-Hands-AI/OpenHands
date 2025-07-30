@@ -1,7 +1,7 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { Controls } from "#/components/features/controls/controls";
@@ -28,6 +28,8 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
+import { ChatActions } from "#/components/features/chat/chat-actions";
+import { RootState } from "#/store";
 
 function AppContent() {
   useConversationConfig();
@@ -44,6 +46,10 @@ function AppContent() {
   useDocumentTitleFromState();
 
   const [width, setWidth] = React.useState(window.innerWidth);
+
+  const isRightPanelShown = useSelector(
+    (state: RootState) => state.conversation.isRightPanelShown,
+  );
 
   React.useEffect(() => {
     if (isFetched && !conversation && isAuthed) {
@@ -93,22 +99,33 @@ function AppContent() {
           <div className="rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]">
             <ChatInterface />
           </div>
-          <div className="h-full w-full min-h-[494px]">
-            <ConversationTabs />
-          </div>
+          {isRightPanelShown && (
+            <div className="h-full w-full min-h-[494px]">
+              <ConversationTabs />
+            </div>
+          )}
         </div>
       );
     }
+    if (isRightPanelShown) {
+      return (
+        <ResizablePanel
+          orientation={Orientation.HORIZONTAL}
+          className="grow h-full min-h-0 min-w-0"
+          initialSize={500}
+          firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+          secondClassName="flex flex-col overflow-hidden"
+          firstChild={<ChatInterface />}
+          secondChild={<ConversationTabs />}
+        />
+      );
+    }
     return (
-      <ResizablePanel
-        orientation={Orientation.HORIZONTAL}
-        className="grow h-full min-h-0 min-w-0"
-        initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
-        secondClassName="flex flex-col overflow-hidden"
-        firstChild={<ChatInterface />}
-        secondChild={<ConversationTabs />}
-      />
+      <div className="flex flex-col gap-3 overflow-auto w-full h-full">
+        <div className="rounded-xl overflow-hidden border border-neutral-600 w-full h-full bg-base-secondary">
+          <ChatInterface />
+        </div>
+      </div>
     );
   }
 
@@ -117,6 +134,8 @@ function AppContent() {
       <ConversationSubscriptionsProvider>
         <EventHandler>
           <div data-testid="app-route" className="flex flex-col h-full gap-3">
+            <ChatActions />
+
             <div className="flex h-full overflow-auto">{renderMain()}</div>
 
             <Controls
