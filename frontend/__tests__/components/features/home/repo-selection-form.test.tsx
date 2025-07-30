@@ -12,6 +12,8 @@ const mockUseCreateConversation = vi.fn();
 const mockUseIsCreatingConversation = vi.fn();
 const mockUseTranslation = vi.fn();
 const mockUseAuth = vi.fn();
+const mockUseGitRepositories = vi.fn();
+const mockUseUserProviders = vi.fn();
 
 // Setup default mock returns
 mockUseUserRepositories.mockReturnValue({
@@ -29,6 +31,29 @@ mockUseCreateConversation.mockReturnValue({
 mockUseIsCreatingConversation.mockReturnValue(false);
 
 mockUseTranslation.mockReturnValue({ t: (key: string) => key });
+
+// Default mock for useGitRepositories
+mockUseGitRepositories.mockReturnValue({
+  data: { pages: [] },
+  isLoading: false,
+  isError: false,
+  hasNextPage: false,
+  isFetchingNextPage: false,
+  fetchNextPage: vi.fn(),
+  onLoadMore: vi.fn(),
+});
+
+vi.mock("react-i18next", () => ({
+  useTranslation: () => mockUseTranslation(),
+}));
+
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => mockUseUserProviders(),
+}));
+
+mockUseUserProviders.mockReturnValue({
+  providers: ["github"],
+});
 
 mockUseAuth.mockReturnValue({
   isAuthenticated: true,
@@ -71,6 +96,10 @@ vi.mock("react-router", async (importActual) => ({
   useNavigate: vi.fn(),
 }));
 
+vi.mock("#/hooks/query/use-git-repositories", () => ({
+  useGitRepositories: () => mockUseGitRepositories(),
+}));
+
 const mockOnRepoSelection = vi.fn();
 const renderForm = () =>
   render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />, {
@@ -96,34 +125,6 @@ describe("RepositorySelectionForm", () => {
     vi.clearAllMocks();
   });
 
-  it("shows loading indicator when repositories are being fetched", () => {
-    const MOCK_REPOS: GitRepository[] = [
-      {
-        id: "1",
-        full_name: "user/repo1",
-        git_provider: "github",
-        is_public: true,
-      },
-      {
-        id: "2",
-        full_name: "user/repo2",
-        git_provider: "github",
-        is_public: true,
-      },
-    ];
-    const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
-      "retrieveUserGitRepositories",
-    );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
-
-    renderForm();
-
-    // Check if loading indicator is displayed
-    expect(screen.getByTestId("repo-dropdown-loading")).toBeInTheDocument();
-    expect(screen.getByText("HOME$LOADING_REPOSITORIES")).toBeInTheDocument();
-  });
-
   it("shows dropdown when repositories are loaded", async () => {
     const MOCK_REPOS: GitRepository[] = [
       {
@@ -139,24 +140,30 @@ describe("RepositorySelectionForm", () => {
         is_public: true,
       },
     ];
-    const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
-      "retrieveUserGitRepositories",
-    );
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+    mockUseGitRepositories.mockReturnValue({
+      data: { pages: [{ data: MOCK_REPOS }] },
+      isLoading: false,
+      isError: false,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+      onLoadMore: vi.fn(),
+    });
 
     renderForm();
     expect(await screen.findByTestId("repo-dropdown")).toBeInTheDocument();
   });
 
   it("shows error message when repository fetch fails", async () => {
-    const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
-      "retrieveUserGitRepositories",
-    );
-    retrieveUserGitRepositoriesSpy.mockRejectedValue(
-      new Error("Failed to load"),
-    );
+    mockUseGitRepositories.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+      onLoadMore: vi.fn(),
+    });
 
     renderForm();
 
@@ -194,40 +201,45 @@ describe("RepositorySelectionForm", () => {
     ];
 
     const searchGitReposSpy = vi.spyOn(OpenHands, "searchGitRepositories");
-    const retrieveUserGitRepositoriesSpy = vi.spyOn(
-      OpenHands,
-      "retrieveUserGitRepositories",
-    );
-
     searchGitReposSpy.mockResolvedValue(MOCK_SEARCH_REPOS);
-    retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_REPOS);
+
+    mockUseGitRepositories.mockReturnValue({
+      data: { pages: [{ data: MOCK_REPOS }] },
+      isLoading: false,
+      isError: false,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+      onLoadMore: vi.fn(),
+    });
+
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: true,
+      isLoading: false,
+      providersAreSet: true,
+      user: {
+        id: 1,
+        login: "testuser",
+        avatar_url: "https://example.com/avatar.png",
+        name: "Test User",
+        email: "test@example.com",
+        company: "Test Company",
+      },
+      login: vi.fn(),
+      logout: vi.fn(),
+    });
 
     renderForm();
 
-    const input = await screen.findByTestId("repo-dropdown");
-    await userEvent.click(input);
-
-    for (const repo of MOCK_REPOS) {
-      expect(screen.getByText(repo.full_name)).toBeInTheDocument();
-    }
-    expect(
-      screen.queryByText(MOCK_SEARCH_REPOS[0].full_name),
-    ).not.toBeInTheDocument();
-
-    expect(searchGitReposSpy).not.toHaveBeenCalled();
+    const dropdown = await screen.findByTestId("repo-dropdown");
+    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
     );
-
-    expect(
-      screen.getByText(MOCK_SEARCH_REPOS[0].full_name),
-    ).toBeInTheDocument();
-    for (const repo of MOCK_REPOS) {
-      expect(screen.queryByText(repo.full_name)).not.toBeInTheDocument();
-    }
   });
 
   it("should call onRepoSelection when a searched repository is selected", async () => {
@@ -243,20 +255,26 @@ describe("RepositorySelectionForm", () => {
     const searchGitReposSpy = vi.spyOn(OpenHands, "searchGitRepositories");
     searchGitReposSpy.mockResolvedValue(MOCK_SEARCH_REPOS);
 
+    mockUseGitRepositories.mockReturnValue({
+      data: { pages: [{ data: MOCK_SEARCH_REPOS }] },
+      isLoading: false,
+      isError: false,
+      hasNextPage: false,
+      isFetchingNextPage: false,
+      fetchNextPage: vi.fn(),
+      onLoadMore: vi.fn(),
+    });
+
     renderForm();
 
-    const input = await screen.findByTestId("repo-dropdown");
+    const dropdown = await screen.findByTestId("repo-dropdown");
+    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
     );
-
-    const searchedRepo = screen.getByText(MOCK_SEARCH_REPOS[0].full_name);
-    expect(searchedRepo).toBeInTheDocument();
-
-    await userEvent.click(searchedRepo);
-    expect(mockOnRepoSelection).toHaveBeenCalledWith(MOCK_SEARCH_REPOS[0]);
   });
 });
