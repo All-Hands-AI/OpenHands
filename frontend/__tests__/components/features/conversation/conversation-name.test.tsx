@@ -5,6 +5,8 @@ import { renderWithProviders } from "test-utils";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 // Mock the hooks and utilities
+const mockMutate = vi.fn();
+
 vi.mock("#/hooks/query/use-active-conversation", () => ({
   useActiveConversation: () => ({
     data: {
@@ -17,7 +19,7 @@ vi.mock("#/hooks/query/use-active-conversation", () => ({
 
 vi.mock("#/hooks/mutation/use-update-conversation", () => ({
   useUpdateConversation: () => ({
-    mutate: vi.fn(),
+    mutate: mockMutate,
   }),
 }));
 
@@ -106,9 +108,14 @@ describe("ConversationName", () => {
     await user.type(inputElement, "New Conversation Title");
     await user.tab(); // Trigger blur event
 
-    // Verify that the update function was called (we can't access the mock directly)
-    // but we can verify the component behavior
-    expect(inputElement).toHaveValue("New Conversation Title");
+    // Verify that the update function was called
+    expect(mockMutate).toHaveBeenCalledWith(
+      {
+        conversationId: "test-conversation-id",
+        newTitle: "New Conversation Title",
+      },
+      expect.any(Object),
+    );
   });
 
   it("should not update conversation when title is unchanged", async () => {
@@ -124,6 +131,25 @@ describe("ConversationName", () => {
 
     // Should still have the original title
     expect(inputElement).toHaveValue("Test Conversation");
+  });
+
+  it("should not call the API if user attempts to save an unchanged title", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<ConversationName />);
+
+    const titleElement = screen.getByTestId("conversation-name-title");
+    await user.dblClick(titleElement);
+
+    const inputElement = screen.getByTestId("conversation-name-input");
+
+    // Verify the input has the original title
+    expect(inputElement).toHaveValue("Test Conversation");
+
+    // Trigger blur without changing the title
+    await user.tab();
+
+    // Verify that the API was NOT called
+    expect(mockMutate).not.toHaveBeenCalled();
   });
 
   it("should reset input value when title is empty and blur", async () => {
