@@ -11,7 +11,7 @@ DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
 PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
-PYTHON_VERSION = 3.12
+PYTHON_VERSION = 3
 KIND_CLUSTER_NAME = "local-hands"
 
 # ANSI color codes
@@ -64,10 +64,17 @@ check-system:
 check-python:
 	@echo "$(YELLOW)Checking Python installation...$(RESET)"
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
-		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
+		PYTHON_INSTALLED_VERSION=$(shell python$(PYTHON_VERSION) --version | sed -E 's/Python 3\.//g'); \
+		IFS='.' read -r -a PYTHON_INSTALLED_VERSION_ARRAY <<< "$$PYTHON_INSTALLED_VERSION"; \
+		if [ "$${PYTHON_INSTALLED_VERSION_ARRAY[0]}" -ge 12 ]; then \
+			echo "$(BLUE)Python 3.$$PYTHON_INSTALLED_VERSION is aleady installed.$(RESET)"; \
+		else \
+			echo "$(RED)Python 3.12 or later is required. Please install Python 3.12 or later to continue.$(RESET)"; \
+			exit 1; \
+		fi; \
 	else \
-		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
-		exit 1; \
+		echo "$(RED)Python$(PYTHON_VERSION) is not installed. Please install Python$(PYTHON_VERSION) to continue.$(RESET)"; \
+		eixt 1; \
 	fi
 
 check-npm:
