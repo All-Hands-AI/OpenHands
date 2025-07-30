@@ -270,6 +270,7 @@ class State:
         metadata = {
             'session_id': self.session_id,
             'trace_version': openhands.__version__,
+            'trace_user_id': self.user_id,
             'tags': [
                 f'model:{model_name}',
                 f'agent:{agent_name}',
@@ -277,8 +278,6 @@ class State:
                 f'openhands_version:{openhands.__version__}',
             ],
         }
-        if self.user_id:
-            metadata['trace_user_id'] = self.user_id
         return metadata
 
     def get_local_step(self):
