@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
@@ -9,20 +9,14 @@ import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { useDebounce } from "#/hooks/use-debounce";
-import { sanitizeQuery } from "#/utils/sanitize-query";
 import {
-  RepositoryDropdown,
-  RepositoryLoadingState,
-  RepositoryErrorState,
-  BranchDropdown,
-  BranchLoadingState,
-  BranchErrorState,
+  GitProviderSelector,
+  RepositorySelector,
+  BranchSelector,
 } from "./repository-selection";
 import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import { I18nKey } from "#/i18n/declaration";
-import { GIT_PROVIDER_OPTIONS } from "#/utils/constants";
 import { IOption } from "#/api/open-hands.types";
-import { GitProviderDropdown } from "./repository-selection/git-provider-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -92,195 +86,26 @@ export function RepositorySelectionForm({
 
   const allRepositories = repositories?.concat(searchedRepos || []);
 
-  const branchesItems = branches?.map((branch) => ({
-    key: branch.name,
-    label: branch.name,
-  }));
+  const handleGitProviderChange = (provider: IOption<string> | null) => {
+    setSelectedGitProvider(provider);
+    // Clear repository and branch selection when git provider changes
+    onRepoSelection(null);
+    setSelectedRepository(null);
+    setSelectedBranch(null);
+    branchManuallyClearedRef.current = false;
+  };
 
-  const handleRepoSelection = (key: React.Key | null) => {
-    const selectedRepo = allRepositories?.find((repo) => repo.id === key);
-    if (selectedRepo) onRepoSelection(selectedRepo);
-    setSelectedRepository(selectedRepo || null);
+  const handleRepositoryChange = (repo: GitRepository | null) => {
+    setSelectedRepository(repo);
+    onRepoSelection(repo);
     setSelectedBranch(null); // Reset branch selection when repo changes
     branchManuallyClearedRef.current = false; // Reset the flag when repo changes
   };
 
-  const handleBranchSelection = (key: React.Key | null) => {
-    const selectedBranchObj = branches?.find((branch) => branch.name === key);
-    setSelectedBranch(selectedBranchObj || null);
+  const handleBranchChange = (branch: Branch | null) => {
+    setSelectedBranch(branch);
     // Reset the manually cleared flag when a branch is explicitly selected
     branchManuallyClearedRef.current = false;
-  };
-
-  const handleRepoInputChange = (value: string) => {
-    if (value === "") {
-      setSelectedRepository(null);
-      setSelectedBranch(null);
-      onRepoSelection(null);
-    } else if (value.startsWith("https://")) {
-      const repoName = sanitizeQuery(value);
-      setSearchQuery(repoName);
-    }
-  };
-
-  const handleBranchInputChange = (value: string) => {
-    // Clear the selected branch if the input is empty or contains only whitespace
-    // This fixes the issue where users can't delete the entire default branch name
-    if (value === "" || value.trim() === "") {
-      setSelectedBranch(null);
-      // Set the flag to indicate that the branch was manually cleared
-      branchManuallyClearedRef.current = true;
-    } else {
-      // Reset the flag when the user starts typing again
-      branchManuallyClearedRef.current = false;
-    }
-  };
-
-  const handleGitProviderSelection = (key: React.Key | null) => {
-    const currentGitProvider = GIT_PROVIDER_OPTIONS.find(
-      (provider) => provider.value === key,
-    );
-    setSelectedGitProvider(currentGitProvider || null);
-    if (
-      currentGitProvider &&
-      currentGitProvider.value !== selectedRepository?.git_provider
-    ) {
-      onRepoSelection(null);
-      setSelectedRepository(null);
-      setSelectedBranch(null); // Reset branch selection when repo changes
-      branchManuallyClearedRef.current = false; // Reset the flag when repo changes
-    }
-  };
-
-  const handleGitProviderInputChange = (value: string) => {
-    if (value === "") {
-      setSelectedGitProvider(null);
-    }
-  };
-
-  // Render the git provider selector UI based on the loading/error state
-  const renderGitProviderSelector = () => {
-    if (isLoadingRepositories) {
-      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
-    }
-
-    if (isRepositoriesError) {
-      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
-    }
-
-    return (
-      <GitProviderDropdown
-        items={GIT_PROVIDER_OPTIONS.map((provider) => ({
-          key: provider.value,
-          label: provider.label,
-        }))}
-        onSelectionChange={handleGitProviderSelection}
-        onInputChange={handleGitProviderInputChange}
-        defaultFilter={(textValue, inputValue) => {
-          if (!inputValue) return true;
-
-          const gitProvider = GIT_PROVIDER_OPTIONS.find(
-            (provider) => provider.label === textValue,
-          );
-
-          return !!gitProvider;
-        }}
-        selectedKey={selectedGitProvider?.value}
-        wrapperClassName="max-w-auto"
-      />
-    );
-  };
-
-  const repositoriesItems = useMemo(() => {
-    if (!allRepositories) {
-      return [];
-    }
-
-    if (selectedGitProvider) {
-      return allRepositories
-        .filter((repo) => repo.git_provider === selectedGitProvider.value)
-        .map((repo) => ({
-          key: repo.id,
-          label: decodeURIComponent(repo.full_name),
-        }));
-    }
-
-    return allRepositories.map((repo) => ({
-      key: repo.id,
-      label: decodeURIComponent(repo.full_name),
-    }));
-  }, [allRepositories, selectedGitProvider]);
-
-  // Render the appropriate UI based on the loading/error state
-  const renderRepositorySelector = () => {
-    if (isLoadingRepositories) {
-      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
-    }
-
-    if (isRepositoriesError) {
-      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
-    }
-
-    return (
-      <RepositoryDropdown
-        key={selectedGitProvider?.value || "no-provider"} // avoid the dropdown keeps the internal state when the git provider is changed
-        items={repositoriesItems || []}
-        onSelectionChange={handleRepoSelection}
-        onInputChange={handleRepoInputChange}
-        defaultFilter={(textValue, inputValue) => {
-          if (!inputValue) return true;
-
-          const repo = allRepositories?.find((r) => r.full_name === textValue);
-          if (!repo) return false;
-
-          const sanitizedInput = sanitizeQuery(inputValue);
-          return sanitizeQuery(textValue).includes(sanitizedInput);
-        }}
-        wrapperClassName="max-w-auto"
-      />
-    );
-  };
-
-  // Render the appropriate UI for branch selector based on the loading/error state
-  const renderBranchSelector = () => {
-    if (isLoadingRepositories) {
-      return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
-    }
-
-    if (isRepositoriesError) {
-      return <RepositoryErrorState wrapperClassName="max-w-auto" />;
-    }
-
-    if (!selectedRepository) {
-      return (
-        <BranchDropdown
-          items={[]}
-          onSelectionChange={() => {}}
-          onInputChange={() => {}}
-          isDisabled
-          wrapperClassName="max-w-auto"
-        />
-      );
-    }
-
-    if (isLoadingBranches) {
-      return <BranchLoadingState wrapperClassName="max-w-auto" />;
-    }
-
-    if (isBranchesError) {
-      return <BranchErrorState wrapperClassName="max-w-auto" />;
-    }
-
-    return (
-      <BranchDropdown
-        items={branchesItems || []}
-        onSelectionChange={handleBranchSelection}
-        onInputChange={handleBranchInputChange}
-        isDisabled={false}
-        selectedKey={selectedBranch?.name}
-        wrapperClassName="max-w-auto"
-      />
-    );
   };
 
   return (
@@ -294,11 +119,32 @@ export function RepositorySelectionForm({
         </div>
       </div>
 
-      {renderGitProviderSelector()}
+      <GitProviderSelector
+        selectedGitProvider={selectedGitProvider}
+        onGitProviderChange={handleGitProviderChange}
+        isLoadingRepositories={isLoadingRepositories}
+        isRepositoriesError={isRepositoriesError}
+      />
 
-      {renderRepositorySelector()}
+      <RepositorySelector
+        selectedGitProvider={selectedGitProvider}
+        allRepositories={allRepositories}
+        onRepositoryChange={handleRepositoryChange}
+        onSearchQueryChange={setSearchQuery}
+        isLoadingRepositories={isLoadingRepositories}
+        isRepositoriesError={isRepositoriesError}
+      />
 
-      {renderBranchSelector()}
+      <BranchSelector
+        selectedRepository={selectedRepository}
+        selectedBranch={selectedBranch}
+        branches={branches}
+        onBranchChange={handleBranchChange}
+        isLoadingRepositories={isLoadingRepositories}
+        isRepositoriesError={isRepositoriesError}
+        isLoadingBranches={isLoadingBranches}
+        isBranchesError={isBranchesError}
+      />
 
       <BrandButton
         testId="repo-launch-button"
