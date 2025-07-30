@@ -11,7 +11,6 @@ import sys
 import threading
 import time
 from typing import Generator
-import markdown  # type: ignore
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
@@ -310,19 +309,19 @@ def process_markdown_for_terminal(text: str) -> str:
     """
     if not text:
         return text
-        
+
     # Process bold text (**text**)
     text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
-    
+
     # Process italic text (*text*)
     text = re.sub(r'\*(.*?)\*', r'\1', text)
-    
+
     # Process inline code (`code`)
     text = re.sub(r'`(.*?)`', r'\1', text)
-    
+
     # Process code blocks
     text = re.sub(r'```(?:\w+)?\n(.*?)\n```', r'\1', text, flags=re.DOTALL)
-    
+
     return text
 
 
@@ -345,7 +344,7 @@ def display_agent_message(message: str) -> None:
         except Exception:
             # If markdown processing fails, use the original message
             processed_message = message
-            
+
         container = Frame(
             TextArea(
                 text=processed_message,
@@ -380,7 +379,7 @@ def display_agent_finish(event: AgentFinishAction) -> None:
         status_text = status_map.get(event.task_completed.value, '')
         if status_text:
             message = f'{status_text}\n\n{message}'
-    
+
     # Process markdown in the message
     try:
         # Process markdown for terminal display

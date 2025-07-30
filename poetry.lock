@@ -10450,6 +10450,18 @@ files = [
 markers = {main = "extra == \"third-party-runtimes\""}
 
 [[package]]
+name = "types-markdown"
+version = "3.8.0.20250708"
+description = "Typing stubs for Markdown"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "types_markdown-3.8.0.20250708-py3-none-any.whl", hash = "sha256:d1f634931b463adf7603c012724b7e9e5eff976eb517dc700ebece2d6189b1ce"},
+    {file = "types_markdown-3.8.0.20250708.tar.gz", hash = "sha256:28690251fe90757f5a99cd671c79502bc2de07aef2d35fe54117c3b1c799804a"},
+]
+
+[[package]]
 name = "types-python-dateutil"
 version = "2.9.0.20250516"
 description = "Typing stubs for python-dateutil"
@@ -11769,4 +11781,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "4e02b50ec7979b31be927d7e80a031b3b4b05b20b6f66c7df3ee7f4022aeb631"
+content-hash = "40c0c127d6546f01b827f18ba088edd0e658b17e635f48a034edd12df55e143f"
