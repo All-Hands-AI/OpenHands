@@ -360,19 +360,17 @@ class ActionExecutor:
                 )
             else:
                 # Linux/macOS, local
-                base_git_config = (
-                    'git config --file ./.git_config user.name "openhands" && '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
-                    'export GIT_CONFIG=$(pwd)/.git_config'
+                INIT_COMMANDS.append('git config --global user.name "openhands"')
+                INIT_COMMANDS.append(
+                    'git config --global user.email "openhands@all-hands.dev"'
                 )
-                INIT_COMMANDS.append(base_git_config)
+                INIT_COMMANDS.append('export GIT_CONFIG=$(pwd)/.git_config')
         else:
             # Non-local (implies Linux/macOS)
-            base_git_config = (
-                'git config --global user.name "openhands" && '
+            INIT_COMMANDS.append('git config --global user.name "openhands"')
+            INIT_COMMANDS.append(
                 'git config --global user.email "openhands@all-hands.dev"'
             )
-            INIT_COMMANDS.append(base_git_config)
 
         # Determine no-pager command
         if is_windows:
