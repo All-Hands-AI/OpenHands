@@ -265,11 +265,12 @@ class State:
                 return event
         return None
 
-    def to_llm_metadata(self, agent_name: str) -> dict:
+    def to_llm_metadata(self, model_name: str, agent_name: str) -> dict:
         return {
             'session_id': self.session_id,
             'trace_version': openhands.__version__,
             'tags': [
+                f'model:{model_name}',
                 f'agent:{agent_name}',
                 f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
                 f'openhands_version:{openhands.__version__}',
