@@ -98,7 +98,7 @@ def test_agent_finish_action_legacy_task_completed_serialization():
     assert isinstance(event, AgentFinishAction)
     assert event.final_thought == 'Task completed'
     assert event.task_completed is None  # Should be None since it's not set
-    
+
     # When serialized back, task_completed should not be present
     event_dict = event_to_dict(event)
     assert 'task_completed' not in event_dict['args']
