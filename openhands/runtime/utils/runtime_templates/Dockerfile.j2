@@ -193,9 +193,7 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 {% endif %}
 
-{% if install_docker %}
 {{ setup_docker() }}
-{% endif %}
 
 {{ setup_vscode_server() }}
 
@@ -216,9 +214,7 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py
 {% if build_from_versioned %}
 {{ install_dependencies() }}
 {{ install_vscode_extensions() }}
-{% if install_docker %}
 {{ setup_docker() }}
-{% endif %}
 {% endif %}
 
 # Install extra dependencies if specified
