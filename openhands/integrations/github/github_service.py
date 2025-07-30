@@ -16,7 +16,6 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
-    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
@@ -615,23 +614,11 @@ class GitHubService(BaseGitService, GitService):
         """
         file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
 
-        try:
-            file_data, _ = await self._make_request(file_url)
-            file_content = base64.b64decode(file_data['content']).decode('utf-8')
+        file_data, _ = await self._make_request(file_url)
+        file_content = base64.b64decode(file_data['content']).decode('utf-8')
 
-            # Parse the content to extract triggers from frontmatter
-            return self._parse_microagent_content(file_content, file_path)
-
-        except ResourceNotFoundError:
-            raise ResourceNotFoundError(
-                f'File not found: {file_path} in repository {repository}'
-            )
-        except MicroagentParseError as e:
-            raise MicroagentParseError(
-                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
-            )
-        except Exception as e:
-            raise UnknownException(f'Error fetching file from GitHub: {str(e)}')
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(file_content, file_path)
 
 
 github_service_cls = os.environ.get(

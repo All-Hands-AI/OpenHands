@@ -9,7 +9,6 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
-    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
@@ -637,22 +636,10 @@ class GitLabService(BaseGitService, GitService):
         base_url = f'{self.BASE_URL}/projects/{project_id}'
         file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
 
-        try:
-            response, _ = await self._make_request(file_url, is_json_response=False)
+        response, _ = await self._make_request(file_url, is_json_response=False)
 
-            # Parse the content to extract triggers from frontmatter
-            return self._parse_microagent_content(response, file_path)
-
-        except ResourceNotFoundError:
-            raise ResourceNotFoundError(
-                f'File not found: {file_path} in repository {repository}'
-            )
-        except MicroagentParseError as e:
-            raise MicroagentParseError(
-                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
-            )
-        except Exception as e:
-            raise UnknownException(f'Error fetching file from GitLab: {str(e)}')
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(response, file_path)
 
 
 gitlab_service_cls = os.environ.get(

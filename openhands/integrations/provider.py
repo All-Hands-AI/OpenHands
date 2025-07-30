@@ -22,8 +22,10 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
+    MicroagentParseError,
     ProviderType,
     Repository,
+    ResourceNotFoundError,
     SuggestedTask,
     User,
 )
@@ -477,22 +479,18 @@ class ProviderHandler:
                 logger.debug(
                     f'No content found on {provider} for {repository}/{file_path}, trying other providers'
                 )
+            except ResourceNotFoundError:
+                logger.debug(
+                    f'File not found on {provider} for {repository}/{file_path}, trying other providers'
+                )
+                continue
+            except MicroagentParseError as e:
+                # Parsing errors are specific to the provider, add to errors list
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error parsing microagent content from {provider} for {repository}: {e}'
+                )
             except Exception as e:
-                error_msg = str(e).lower()
-                # If it's a "not found" error, continue to other providers
-                if any(
-                    phrase in error_msg
-                    for phrase in [
-                        'not found',
-                        '404',
-                        'file not found',
-                        'repository not found',
-                    ]
-                ):
-                    logger.debug(
-                        f'File not found on {provider} for {repository}/{file_path}, trying other providers'
-                    )
-                    continue
                 # For other errors (auth, rate limit, etc.), add to errors list
                 errors.append(f'{provider.value}: {str(e)}')
                 logger.warning(
@@ -503,9 +501,6 @@ class ProviderHandler:
         if errors:
             logger.error(
                 f'Failed to fetch microagent content for {repository} with all available providers. Errors: {"; ".join(errors)}'
-            )
-            raise AuthenticationError(
-                f'Unable to fetch microagent content for {repository}'
             )
 
         # All providers returned empty content or file not found

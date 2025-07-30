@@ -10,7 +10,6 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
-    MicroagentParseError,
     OwnerType,
     ProviderType,
     Repository,
@@ -478,35 +477,25 @@ class BitBucketService(BaseGitService, GitService):
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
         """
-        try:
-            # Step 1: Get repository details using existing method
-            repo_details = await self.get_repository_details_from_repo_name(repository)
+        # Step 1: Get repository details using existing method
+        repo_details = await self.get_repository_details_from_repo_name(repository)
 
-            if not repo_details.main_branch:
-                logger.warning(
-                    f'No main branch found in repository info for {repository}. '
-                    f'Repository response: mainbranch field missing'
-                )
-                raise ResourceNotFoundError(
-                    f'Main branch not found for repository {repository}. '
-                    f'This repository may be empty or have no default branch configured.'
-                )
-
-            # Step 2: Get file content using the main branch
-            file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
-            response, _ = await self._make_request(file_url)
-
-            # Parse the content to extract triggers from frontmatter
-            return self._parse_microagent_content(response, file_path)
-
-        except ResourceNotFoundError:
+        if not repo_details.main_branch:
+            logger.warning(
+                f'No main branch found in repository info for {repository}. '
+                f'Repository response: mainbranch field missing'
+            )
             raise ResourceNotFoundError(
-                f'File not found: {file_path} in repository {repository}'
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
             )
-        except MicroagentParseError as e:
-            raise MicroagentParseError(
-                f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
-            )
+
+        # Step 2: Get file content using the main branch
+        file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
+        response, _ = await self._make_request(file_url)
+
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(response, file_path)
 
 
 bitbucket_service_cls = os.environ.get(
