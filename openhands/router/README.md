@@ -4,27 +4,27 @@
 
 ## Overview
 
-Model routing enables OpenHands to switch between different LLM models during a conversation for cost optimization. The primary use case is routing between a strong (expensive, multimodal) model and a weak (cheaper, text-only) model.
+Model routing enables OpenHands to switch between different LLM models during a conversation. An example use case is routing between a primary (expensive, multimodal) model and a secondary (cheaper, text-only) model.
 
 ## Available Routers
 
 - **`noop_router`** (default): No routing, always uses main LLM
 - **`rule_based_cv_router`**: Cost-saving router that switches based on:
-  - Routes to strong model for images or when weak model's context limit is exceeded
-  - Uses weak model for text-only requests within limits
+  - Routes to primary model for images or when secondary model's context limit is exceeded
+  - Uses secondary model for text-only requests within limits
 
 ## Configuration
 
 Add to your `config.toml`:
 
 ```toml
-# Main LLM (strong model)
+# Main LLM (primary model)
 [llm]
 model = "gpt-4o"
 api_key = "your-api-key"
 
-# Weak model for routing
-[llm.weak_model]
+# Secondary model for routing
+[llm._model]
 model = "gpt-4o-mini"
 api_key = "your-api-key"
 for_routing = true

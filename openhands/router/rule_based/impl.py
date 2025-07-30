@@ -8,7 +8,7 @@ from openhands.router.base import ROUTER_REGISTRY, BaseRouter
 
 
 class RuleBasedCostSavingRouter(BaseRouter):
-    WEAK_MODEL_CONFIG_NAME = 'weak_model'
+    SECONDARY_MODEL_CONFIG_NAME = 'secondary_model'
     ROUTER_NAME = 'rule_based_cv_router'
 
     def __init__(
@@ -21,11 +21,11 @@ class RuleBasedCostSavingRouter(BaseRouter):
 
         self._validate_model_routing_config(routing_llms)
 
-        self.weak_llm = routing_llms[self.WEAK_MODEL_CONFIG_NAME]
+        self.secondary_llm = routing_llms[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
-        route_to_strong = False
+        route_to_primary = False
         # Handle multimodal input
         for event in events:
             if (
@@ -33,37 +33,40 @@ class RuleBasedCostSavingRouter(BaseRouter):
                 and event.source == 'user'
                 and event.image_urls
             ):
-                logger.info('Image content detected. Routing to the strong model.')
-                route_to_strong = True
+                logger.info('Image content detected. Routing to the primary model.')
+                route_to_primary = True
                 break
 
-        if not route_to_strong and self.max_token_exceeded:
-            route_to_strong = True
+        if not route_to_primary and self.max_token_exceeded:
+            route_to_primary = True
 
-        # Check if `messages` exceeds context window of the weak model
-        # Assuming the weak model has a lower context window limit compared to the strong model
+        # Check if `messages` exceeds context window of the secondary model
+        # Assuming the secondary model has a lower context window limit compared to the primary model
         if (
-            self.weak_llm.config.max_input_tokens
-            and self.weak_llm.get_token_count(messages)
-            > self.weak_llm.config.max_input_tokens
+            self.secondary_llm.config.max_input_tokens
+            and self.secondary_llm.get_token_count(messages)
+            > self.secondary_llm.config.max_input_tokens
         ):
             logger.warning(
-                f"Messages having {self.weak_llm.get_token_count(messages)}, exceed weak model's max input tokens ({self.weak_llm.config.max_input_tokens} tokens). "
-                'Routing to the strong model.'
+                f"Messages having {self.secondary_llm.get_token_count(messages)}, exceed secondary model's max input tokens ({self.secondary_llm.config.max_input_tokens} tokens). "
+                'Routing to the primary model.'
             )
             self.max_token_exceeded = True
-            route_to_strong = True
+            route_to_primary = True
 
-        if route_to_strong:
+        if route_to_primary:
+            logger.warning(
+                'Routing to the primary model...'
+            )
             self.active_llm = self.llm
             self.routing_history.append(0)
         else:
-            self.active_llm = self.weak_llm
+            self.active_llm = self.secondary_llm
             self.routing_history.append(1)
 
     def _validate_model_routing_config(self, routing_llms: dict[str, LLM]):
-        if self.WEAK_MODEL_CONFIG_NAME not in routing_llms:
-            raise ValueError(f'Weak LLM config {self.WEAK_MODEL_CONFIG_NAME} not found')
+        if self.SECONDARY_MODEL_CONFIG_NAME not in routing_llms:
+            raise ValueError(f'Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found')
 
 
 # Register the router

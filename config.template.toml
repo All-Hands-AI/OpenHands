@@ -221,7 +221,7 @@ model = "gpt-4o"
 
 # Example routing LLM configuration for cost-saving model routing
 # Uncomment and configure to enable model routing with a cheaper model
-#[llm.weak_model]
+#[llm.secondary_model]
 #model = "gpt-4o-mini"
 #api_key = ""
 #for_routing = true
@@ -496,7 +496,7 @@ type = "noop"
 # Router to use for model selection
 # Available options:
 # - "noop_router" (default): No routing, always uses main LLM
-# - "rule_based_cv_router": Cost-saving router that switches between strong and weak models
+# - "rule_based_cv_router": Cost-saving router that switches between primary and secondary models
 #router_name = "noop_router"
 
 # Probability threshold for routing decisions (used by threshold-based routers)
