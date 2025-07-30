@@ -68,6 +68,23 @@ RUN mkdir -p /openhands && \
 
 {% endmacro %}
 
+{% macro setup_docker() %}
+# Install Docker
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        apt-transport-https ca-certificates curl gnupg lsb-release && \
+    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure Docker daemon with MTU 1450 to prevent packet fragmentation issues
+RUN mkdir -p /etc/docker && \
+    echo '{"mtu": 1450}' > /etc/docker/daemon.json
+{% endmacro %}
+
 {% macro setup_vscode_server() %}
 # Reference:
 # 1. https://github.com/gitpod-io/openvscode-server
@@ -176,6 +193,10 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 {% endif %}
 
+{% if install_docker %}
+{{ setup_docker() }}
+{% endif %}
+
 {{ setup_vscode_server() }}
 
 # ================================================================
@@ -195,6 +216,9 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py
 {% if build_from_versioned %}
 {{ install_dependencies() }}
 {{ install_vscode_extensions() }}
+{% if install_docker %}
+{{ setup_docker() }}
+{% endif %}
 {% endif %}
 
 # Install extra dependencies if specified
