@@ -6192,7 +6192,7 @@
         "uk": "Ви можете знайти свій ключ API OpenHands у"
     },
     "SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX": {
-        "en": "tab of OpenHands Cloud.",
+        "en": "tab of OpenHands Cloud. LLM usage is billed at the providers' rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms",
         "ja": "タブで確認できます。",
         "zh-CN": "标签页中找到您的OpenHands API密钥。",
         "zh-TW": "標籤頁中找到您的OpenHands API密鑰。",
