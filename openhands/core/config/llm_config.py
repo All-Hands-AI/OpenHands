@@ -47,7 +47,6 @@ class LLMConfig(BaseModel):
         seed: The seed to use for the LLM.
         safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
         for_routing: Whether this LLM is used for routing. This is set to True for models used in conjunction with the main LLM in the model routing feature.
-        routing_llms: Dictionary mapping LLM for routing' names to their configurations.
     """
 
     model: str = Field(default='claude-sonnet-4-20250514')

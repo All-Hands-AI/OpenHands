@@ -45,7 +45,7 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig, **kwargs):
+    def __init__(self, llm: LLM, config: AgentConfig):
         super().__init__(llm, config)
         self.steps: list[ActionObs] = [
             {
