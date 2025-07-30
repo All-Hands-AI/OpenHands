@@ -12,12 +12,17 @@ class BaseRouter(ABC):
     def __init__(
         self,
         llm: LLM,
-        routing_llms: dict[str, LLM],
         model_routing_config: ModelRoutingConfig,
     ):
         self.llm = llm
-        self.routing_llms = routing_llms
         self.model_routing_config = model_routing_config
+
+        # Instantiate all the routing LLM instances
+        routing_llms_config = model_routing_config.routing_llms
+        self.routing_llms = {
+            llm_name: LLM(config=llm_config)
+            for llm_name, llm_config in routing_llms_config.items()
+        }
 
         # The active LLM for the current turn
         self.active_llm = llm

@@ -76,14 +76,12 @@ class CodeActAgent(Agent):
         self,
         llm: LLM,
         config: AgentConfig,
-        routing_llms: dict[str, LLM] | None = None,
     ) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
-        - routing_llms (dict[str, LLM]): The LLMs to be selected for routing
         """
         super().__init__(llm, config)
         self.pending_actions: deque['Action'] = deque()
@@ -104,7 +102,6 @@ class CodeActAgent(Agent):
             )
         self.router = router_cls(
             llm=self.llm,
-            routing_llms=routing_llms or dict(),
             model_routing_config=model_routing_config,
         )
 

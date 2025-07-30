@@ -155,11 +155,6 @@ class Session:
         # TODO: override other LLM config & agent config groups (#2075)
 
         llm = self._create_llm(agent_cls)
-        routing_llms = {}
-        for config_name, routing_llm_config in self.config.routing_llms.items():
-            routing_llms[config_name] = LLM(
-                config=routing_llm_config,
-            )
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
@@ -194,7 +189,6 @@ class Session:
         agent = Agent.get_cls(agent_cls)(
             llm=llm,
             config=agent_config,
-            routing_llms=routing_llms,
         )
 
         git_provider_tokens = None

@@ -25,7 +25,6 @@ class OpenHandsConfig(BaseModel):
     Attributes:
         llms: Dictionary mapping LLM names to their configurations.
             The default configuration is stored under the 'llm' key.
-        routing_llms: Dictionary mapping LLM for routing' names to their configurations.
         agents: Dictionary mapping agent names to their configurations.
             The default configuration is stored under the 'agent' key.
         default_agent: Name of the default agent to use.
@@ -61,7 +60,6 @@ class OpenHandsConfig(BaseModel):
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
-    routing_llms: dict[str, LLMConfig] = Field(default_factory=dict)
     agents: dict[str, AgentConfig] = Field(default_factory=dict)
     default_agent: str = Field(default=OH_DEFAULT_AGENT)
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
@@ -129,10 +127,7 @@ class OpenHandsConfig(BaseModel):
         return self.llms['llm']
 
     def set_llm_config(self, value: LLMConfig, name: str = 'llm') -> None:
-        if value.for_routing:
-            self.routing_llms[name] = value
-        else:
-            self.llms[name] = value
+        self.llms[name] = value
 
     def get_agent_config(self, name: str = 'agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""

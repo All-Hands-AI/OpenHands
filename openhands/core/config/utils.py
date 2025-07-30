@@ -211,6 +211,14 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
                 default_agent_config.model_routing = model_routing_mapping[
                     'model_routing'
                 ]
+
+                # Construct the routing_llms by filtering llms with for_routing = True
+                routing_llms_dict = {}
+                for llm_name, llm_config in cfg.llms.items():
+                    if llm_config.for_routing:
+                        routing_llms_dict[llm_name] = llm_config
+                default_agent_config.model_routing.routing_llms = routing_llms_dict
+
                 logger.openhands_logger.debug(
                     'Default model routing configuration loaded from config toml and assigned to default agent'
                 )

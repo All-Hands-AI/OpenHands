@@ -180,17 +180,10 @@ def create_agent(config: OpenHandsConfig) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     llm_config = config.get_llm_config_from_agent(config.default_agent)
-    routing_llms_config = config.routing_llms
-    routing_llms = {}
-    for config_name, routing_llm_config in routing_llms_config.items():
-        routing_llms[config_name] = LLM(
-            config=routing_llm_config,
-        )
 
     agent = agent_cls(
         llm=LLM(config=llm_config),
         config=agent_config,
-        routing_llms=routing_llms,
     )
 
     return agent

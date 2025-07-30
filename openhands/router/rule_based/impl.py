@@ -14,14 +14,13 @@ class RuleBasedCostSavingRouter(BaseRouter):
     def __init__(
         self,
         llm: LLM,
-        routing_llms: dict[str, LLM],
         model_routing_config: ModelRoutingConfig,
     ):
-        super().__init__(llm, routing_llms, model_routing_config)
+        super().__init__(llm, model_routing_config)
 
-        self._validate_model_routing_config(routing_llms)
+        self._validate_model_routing_config(self.routing_llms)
 
-        self.secondary_llm = routing_llms[self.SECONDARY_MODEL_CONFIG_NAME]
+        self.secondary_llm = self.routing_llms[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
