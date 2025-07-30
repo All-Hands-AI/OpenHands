@@ -275,7 +275,10 @@ class BaseGitService(ABC):
 
             # Return the MicroagentContentResponse
             return MicroagentContentResponse(
-                content=microagent.content, path=file_path, triggers=triggers
+                content=microagent.content,
+                path=file_path,
+                triggers=triggers,
+                git_provider=self.provider,
             )
 
         except Exception as e:
