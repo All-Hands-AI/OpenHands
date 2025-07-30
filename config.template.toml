@@ -490,7 +490,7 @@ type = "noop"
 
 #################################### Model Routing ############################
 # Configuration for experimental model routing feature
-# Enables intelligent switching between different LLM models for cost optimization
+# Enables intelligent switching between different LLM models for specific purposes
 ##############################################################################
 [model_routing]
 # Router to use for model selection

@@ -34,7 +34,7 @@ from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
-from openhands.router import ROUTER_REGISTRY
+from openhands.router import BaseRouter
 from openhands.runtime.plugins import (
     AgentSkillsRequirement,
     JupyterRequirement,
@@ -94,15 +94,10 @@ class CodeActAgent(Agent):
         self.condenser = Condenser.from_config(self.config.condenser)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
-        model_routing_config = self.config.model_routing
-        router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name, None)
-        if router_cls is None:
-            raise ValueError(
-                f'Router {model_routing_config.router_name} not found in registry.'
-            )
-        self.router = router_cls(
+        # Initialize the router
+        self.router = BaseRouter.from_config(
             llm=self.llm,
-            model_routing_config=model_routing_config,
+            model_routing_config=self.config.model_routing,
         )
 
     @property
@@ -205,17 +200,18 @@ class CodeActAgent(Agent):
             condensed_history, initial_user_message
         )
         self.router.set_active_llm(messages_for_routing_decision, condensed_history)
-        logger.debug(f'Active LLM set to: {self.router.active_llm.config.model}')
+        logger.debug(f'Active LLM set to: {self.router.config.model}')
 
+        # Update the state with the routing history from the router
         state.routing_history = self.router.routing_history
 
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': self.router.active_llm.format_messages_for_llm(messages),
+            'messages': self.router.format_messages_for_llm(messages),
         }
-        params['tools'] = check_tools(self.tools, self.router.active_llm.config)
+        params['tools'] = check_tools(self.tools, self.router.config)
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
-        response = self.router.active_llm.completion(**params)
+        response = self.router.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
@@ -283,11 +279,11 @@ class CodeActAgent(Agent):
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_user_action=initial_user_message,
-            max_message_chars=self.router.active_llm.config.max_message_chars,
-            vision_is_active=self.router.active_llm.vision_is_active(),
+            max_message_chars=self.router.config.max_message_chars,
+            vision_is_active=self.router.vision_is_active(),
         )
 
-        if self.router.active_llm.is_caching_prompt_active():
+        if self.router.is_caching_prompt_active():
             self.conversation_memory.apply_prompt_caching(messages)
 
         return messages

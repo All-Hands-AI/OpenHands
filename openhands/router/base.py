@@ -34,3 +34,17 @@ class BaseRouter(ABC):
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
         """Configure the active LLM for the current turn based on the messages and events."""
         pass
+
+    def __getattr__(self, name):
+        """Delegate other attributes/methods to the active LLM."""
+        return getattr(self.active_llm, name)
+
+    @classmethod
+    def from_config(
+        cls, llm: LLM, model_routing_config: ModelRoutingConfig
+    ) -> 'BaseRouter':
+        """Factory method to create a router instance from configuration."""
+        router_cls = ROUTER_REGISTRY.get(model_routing_config.router_name)
+        if not router_cls:
+            raise ValueError(f'Router {model_routing_config.router_name} not found.')
+        return router_cls(llm, model_routing_config)
