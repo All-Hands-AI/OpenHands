@@ -55,6 +55,9 @@ export interface GetConfigResponse {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
   };
+  MAINTENANCE?: {
+    startTime: string;
+  };
 }
 
 export interface GetVSCodeUrlResponse {

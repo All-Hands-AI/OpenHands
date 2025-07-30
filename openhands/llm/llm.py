@@ -194,7 +194,24 @@ class LLM(RetryMixin, DebugMixin):
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
         ):
-            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            # For Gemini models, only map 'low' to optimized thinking budget
+            # Let other reasoning_effort values pass through to API as-is
+            if 'gemini-2.5-pro' in self.config.model:
+                logger.debug(
+                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
+                )
+                if self.config.reasoning_effort in {None, 'low', 'none'}:
+                    kwargs['thinking'] = {'budget_tokens': 128}
+                    kwargs['allowed_openai_params'] = ['thinking']
+                    kwargs.pop('reasoning_effort', None)
+                else:
+                    kwargs['reasoning_effort'] = self.config.reasoning_effort
+                logger.debug(
+                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
+                )
+
+            else:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
