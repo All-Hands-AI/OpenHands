@@ -406,12 +406,7 @@ class BitBucketService(BaseGitService, GitService):
         microagents = []
 
         # Step 1: Get repository details - return early if not found
-        try:
-            repo_details = await self.get_repository_details_from_repo_name(repository)
-        except Exception as e:
-            raise UnknownException(
-                f'Error fetching repository details from Bitbucket: {str(e)}'
-            )
+        repo_details = await self.get_repository_details_from_repo_name(repository)
 
         if not repo_details.main_branch:
             logger.warning(
@@ -513,8 +508,6 @@ class BitBucketService(BaseGitService, GitService):
             raise MicroagentParseError(
                 f'Failed to parse microagent {file_path} in repository {repository}: {str(e)}'
             )
-        except Exception as e:
-            raise UnknownException(f'Error fetching file from Bitbucket: {str(e)}')
 
 
 bitbucket_service_cls = os.environ.get(
