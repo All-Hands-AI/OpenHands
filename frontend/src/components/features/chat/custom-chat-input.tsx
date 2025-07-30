@@ -4,11 +4,10 @@ import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
-import { ChatStopButton } from "./chat-stop-button";
+import { cn } from "#/utils/utils";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
-  button?: "submit" | "stop";
   showButton?: boolean;
   value?: string;
   conversationStatus?: ConversationStatus | null;
@@ -23,7 +22,6 @@ export interface CustomChatInputProps {
 
 export function CustomChatInput({
   disabled = false,
-  button = "submit",
   showButton = true,
   value = "",
   conversationStatus = null,
@@ -151,6 +149,24 @@ export function CustomChatInput({
       // Reset height
       autoResize();
     }
+  };
+
+  // Resume agent button click handler
+  const handleResumeAgent = () => {
+    const message = chatInputRef.current?.innerText || "continue";
+
+    onSubmit(message.trim());
+
+    // Clear the input
+    if (chatInputRef.current) {
+      chatInputRef.current.textContent = "";
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+
+    // Reset height
+    autoResize();
   };
 
   // Handle stop button click
@@ -301,7 +317,7 @@ export function CustomChatInput({
       {/* Chat Input Component */}
       <div
         ref={chatContainerRef}
-        className="bg-[rgba(208,217,250,0.15)] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full"
+        className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -309,7 +325,10 @@ export function CustomChatInput({
         {/* Main Input Row */}
         <div className="box-border content-stretch flex flex-row items-center justify-between p-0 relative shrink-0 w-full pb-[18px]">
           <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-center justify-start min-h-px min-w-px p-0 relative shrink-0">
-            <ChatAddFileButton handleFileIconClick={handleFileIconClick} />
+            <ChatAddFileButton
+              disabled={disabled}
+              handleFileIconClick={handleFileIconClick}
+            />
 
             {/* Chat Input Area */}
             <div
@@ -319,7 +338,10 @@ export function CustomChatInput({
               <div className="basis-0 flex flex-col font-['Outfit:Regular',_sans-serif] font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                 <div
                   ref={chatInputRef}
-                  className="chat-input bg-transparent text-[#d0d9fa] text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[120px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap"
+                  className={cn(
+                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[120px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    disabled && "cursor-not-allowed",
+                  )}
                   contentEditable={!disabled}
                   data-placeholder="What do you want to build?"
                   data-testid="chat-input"
@@ -346,10 +368,10 @@ export function CustomChatInput({
 
         <div className="w-full flex items-center justify-between">
           <ServerStatus conversationStatus={conversationStatus} />
-          <div className="flex items-center gap-1">
-            <AgentStatus />
-            {button === "stop" && <ChatStopButton handleStop={handleStop} />}
-          </div>
+          <AgentStatus
+            handleStop={handleStop}
+            handleResumeAgent={handleResumeAgent}
+          />
         </div>
       </div>
     </div>

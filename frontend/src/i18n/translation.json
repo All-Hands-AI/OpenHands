@@ -11454,5 +11454,37 @@
         "tr": "Bilinmiyor",
         "de": "Unbekannt",
         "uk": "Невідомо"
+    },
+    "COMMON$SERVER_STOPPED": {
+        "en": "Server Stopped",
+        "ja": "サーバーが停止しました",
+        "zh-CN": "服务器已停止",
+        "zh-TW": "伺服器已停止",
+        "ko-KR": "서버가 중지되었습니다",
+        "no": "Server stoppet",
+        "it": "Server arrestato",
+        "pt": "Servidor parado",
+        "es": "Servidor detenido",
+        "ar": "تم إيقاف الخادم",
+        "fr": "Serveur arrêté",
+        "tr": "Sunucu durdu",
+        "de": "Server gestoppt",
+        "uk": "Сервер зупинено"
+    },
+    "COMMON$ERROR": {
+        "en": "Error",
+        "ja": "エラー",
+        "zh-CN": "错误",
+        "zh-TW": "錯誤",
+        "ko-KR": "오류",
+        "no": "Feil",
+        "it": "Errore",
+        "pt": "Erro",
+        "es": "Error",
+        "ar": "خطأ",
+        "fr": "Erreur",
+        "tr": "Hata",
+        "de": "Fehler",
+        "uk": "Помилка"
     }
 }

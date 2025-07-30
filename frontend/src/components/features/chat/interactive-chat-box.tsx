@@ -69,8 +69,6 @@ export function InteractiveChatBox({
     curAgentState === AgentState.LOADING ||
     curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
 
-  const mode = curAgentState === AgentState.RUNNING ? "stop" : "submit";
-
   return (
     <div data-testid="interactive-chat-box">
       {images.length > 0 && (
@@ -88,7 +86,6 @@ export function InteractiveChatBox({
       )}
       <CustomChatInput
         disabled={isDisabled}
-        button={mode}
         onSubmit={handleSubmit}
         onStop={onStop}
         onFilesPaste={handleUpload}
