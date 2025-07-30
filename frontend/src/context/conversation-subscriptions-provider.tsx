@@ -14,6 +14,7 @@ import {
   isStatusUpdate,
 } from "#/types/core/guards";
 import { AgentState } from "#/types/agent-state";
+import { logger } from "#/utils/logger";
 import {
   renderConversationErroredToast,
   renderConversationCreatedToast,
@@ -226,14 +227,16 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
-          console.warn(
+          // Using logger instead of console.warn
+          logger.warn(
             `Socket for conversation ${conversationId} CONNECTION ERROR:`,
             error,
           );
         });
 
         socket.on("disconnect", (reason) => {
-          console.warn(
+          // Using logger instead of console.warn
+          logger.warn(
             `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
             reason,
           );

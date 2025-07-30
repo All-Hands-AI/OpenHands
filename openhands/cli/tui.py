@@ -6,10 +6,12 @@ import asyncio
 import contextlib
 import datetime
 import json
+import re
 import sys
 import threading
 import time
 from typing import Generator
+import markdown
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
@@ -301,6 +303,29 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
+def process_markdown_for_terminal(text: str) -> str:
+    """
+    Process markdown syntax for terminal display.
+    This function handles common markdown patterns like bold, italic, code blocks, etc.
+    """
+    if not text:
+        return text
+        
+    # Process bold text (**text**)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    
+    # Process italic text (*text*)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    
+    # Process inline code (`code`)
+    text = re.sub(r'`(.*?)`', r'\1', text)
+    
+    # Process code blocks
+    text = re.sub(r'```(?:\w+)?\n(.*?)\n```', r'\1', text, flags=re.DOTALL)
+    
+    return text
+
+
 def display_message(message: str) -> None:
     message = message.strip()
 
@@ -309,13 +334,21 @@ def display_message(message: str) -> None:
 
 
 def display_agent_message(message: str) -> None:
-    """Display a message from the agent with distinctive styling."""
+    """Display a message from the agent with distinctive styling and markdown rendering."""
     message = message.strip()
 
     if message:
+        # Process markdown in the message
+        try:
+            # Process markdown for terminal display
+            processed_message = process_markdown_for_terminal(message)
+        except Exception:
+            # If markdown processing fails, use the original message
+            processed_message = message
+            
         container = Frame(
             TextArea(
-                text=message,
+                text=processed_message,
                 read_only=True,
                 style=COLOR_AGENT_BLUE,
                 wrap_lines=True,
@@ -328,7 +361,7 @@ def display_agent_message(message: str) -> None:
 
 
 def display_agent_finish(event: AgentFinishAction) -> None:
-    """Display an agent finish action with distinctive styling."""
+    """Display an agent finish action with distinctive styling and markdown rendering."""
     # Determine the message to display
     if event.final_thought:
         message = event.final_thought
@@ -347,10 +380,18 @@ def display_agent_finish(event: AgentFinishAction) -> None:
         status_text = status_map.get(event.task_completed.value, '')
         if status_text:
             message = f'{status_text}\n\n{message}'
+    
+    # Process markdown in the message
+    try:
+        # Process markdown for terminal display
+        processed_message = process_markdown_for_terminal(message)
+    except Exception:
+        # If markdown processing fails, use the original message
+        processed_message = message
 
     container = Frame(
         TextArea(
-            text=message,
+            text=processed_message,
             read_only=True,
             style=COLOR_SUCCESS_GREEN,
             wrap_lines=True,

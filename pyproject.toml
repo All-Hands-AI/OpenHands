@@ -41,6 +41,7 @@ numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"              # integrate browsergym-core as the browsing interface
 html2text = "*"
+markdown = "*"                          # For markdown processing in CLI
 
 pexpect = "*"
 jinja2 = "^3.1.3"
