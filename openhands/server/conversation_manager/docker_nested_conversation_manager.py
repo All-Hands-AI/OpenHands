@@ -20,6 +20,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
@@ -469,24 +470,30 @@ class DockerNestedConversationManager(ConversationManager):
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
+
+        # Run experiment manager variant test before creating session
+        modified_config = ExperimentManagerImpl.run_agent_config_variant_test(
+            user_id, sid, self.config
+        )
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=modified_config,
             sio=self.sio,
             user_id=user_id,
         )
-        agent_cls = settings.agent or self.config.default_agent
+        agent_cls = settings.agent or modified_config.default_agent
         agent_name = agent_cls if agent_cls is not None else 'agent'
         llm = LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
+            config=modified_config.get_llm_config_from_agent(agent_name),
             retry_listener=session._notify_on_llm_retry,
         )
         llm = session._create_llm(agent_cls)
-        agent_config = self.config.get_agent_config(agent_cls)
+        agent_config = modified_config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
-        config = self.config.model_copy(deep=True)
+        config = modified_config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars
         env_vars['CONVERSATION_MANAGER_CLASS'] = (
             'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'

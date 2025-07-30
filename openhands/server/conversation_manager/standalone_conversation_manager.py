@@ -12,6 +12,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -331,10 +332,15 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        # Run experiment manager variant test before creating session
+        modified_config = ExperimentManagerImpl.run_agent_config_variant_test(
+            user_id, sid, self.config
+        )
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=modified_config,
             sio=self.sio,
             user_id=user_id,
         )
