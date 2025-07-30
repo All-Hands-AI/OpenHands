@@ -405,65 +405,64 @@ class BitBucketService(BaseGitService, GitService):
         microagents_path = self._determine_microagents_path(repository)
         microagents = []
 
+        # Step 1: Get repository details - return early if not found
         try:
-            # Step 1: Get repository details using existing method
             repo_details = await self.get_repository_details_from_repo_name(repository)
-
-            if not repo_details.main_branch:
-                logger.warning(
-                    f'No main branch found in repository info for {repository}. '
-                    f'Repository response: mainbranch field missing'
-                )
-                return []
-
-            # Step 2: Check for .cursorrules file
-            try:
-                cursorrules_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
-                cursorrules_response, _ = await self._make_request(cursorrules_url)
-                if cursorrules_response:
-                    microagents.append(
-                        self._create_microagent_response('.cursorrules', '.cursorrules')
-                    )
-            except ResourceNotFoundError:
-                logger.debug(f'No .cursorrules file found in {repository}')
-            except Exception as e:
-                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
-
-            # Step 3: Check for microagents directory and process .md files
-            try:
-                src_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
-                directory_data, _ = await self._make_request(src_url)
-
-                if 'values' in directory_data:
-                    for item in directory_data['values']:
-                        if (
-                            item['type'] == 'commit_file'
-                            and item['path'].endswith('.md')
-                            and not item['path'].endswith('README.md')
-                        ):
-                            try:
-                                # Extract file name from path
-                                file_name = item['path'].split('/')[-1]
-                                microagents.append(
-                                    self._create_microagent_response(
-                                        file_name, item['path']
-                                    )
-                                )
-                            except Exception as e:
-                                logger.warning(
-                                    f'Error processing microagent {item["path"]}: {str(e)}'
-                                )
-            except ResourceNotFoundError:
-                logger.info(
-                    f'No microagents directory found in {repository} at {microagents_path}'
-                )
-            except Exception as e:
-                logger.warning(f'Error fetching microagents directory: {str(e)}')
-
         except Exception as e:
             raise UnknownException(
-                f'Error fetching microagents from Bitbucket: {str(e)}'
+                f'Error fetching repository details from Bitbucket: {str(e)}'
             )
+
+        if not repo_details.main_branch:
+            logger.warning(
+                f'No main branch found in repository info for {repository}. '
+                f'Repository response: mainbranch field missing'
+            )
+            return []
+
+        # Step 2: Check for .cursorrules file
+        try:
+            cursorrules_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
+            cursorrules_response, _ = await self._make_request(cursorrules_url)
+            if cursorrules_response:
+                microagents.append(
+                    self._create_microagent_response('.cursorrules', '.cursorrules')
+                )
+        except ResourceNotFoundError:
+            logger.debug(f'No .cursorrules file found in {repository}')
+        except Exception as e:
+            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
+
+        # Step 3: Check for microagents directory and process .md files
+        try:
+            src_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
+            directory_data, _ = await self._make_request(src_url)
+
+            if 'values' in directory_data:
+                for item in directory_data['values']:
+                    if (
+                        item['type'] == 'commit_file'
+                        and item['path'].endswith('.md')
+                        and not item['path'].endswith('README.md')
+                    ):
+                        try:
+                            # Extract file name from path
+                            file_name = item['path'].split('/')[-1]
+                            microagents.append(
+                                self._create_microagent_response(
+                                    file_name, item['path']
+                                )
+                            )
+                        except Exception as e:
+                            logger.warning(
+                                f'Error processing microagent {item["path"]}: {str(e)}'
+                            )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
 
         return microagents
 

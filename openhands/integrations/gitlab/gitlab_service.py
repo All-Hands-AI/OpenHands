@@ -570,54 +570,48 @@ class GitLabService(BaseGitService, GitService):
         base_url = f'{self.BASE_URL}/projects/{project_id}'
         microagents = []
 
+        # Step 1: Check for .cursorrules file
         try:
-            # Step 1: Check for .cursorrules file
-            try:
-                cursorrules_response, _ = await self._make_request(
-                    f'{base_url}/repository/files/.cursorrules/raw',
-                    is_json_response=False,
+            cursorrules_response, _ = await self._make_request(
+                f'{base_url}/repository/files/.cursorrules/raw',
+                is_json_response=False,
+            )
+            if cursorrules_response:
+                microagents.append(
+                    self._create_microagent_response('.cursorrules', '.cursorrules')
                 )
-                if cursorrules_response:
-                    microagents.append(
-                        self._create_microagent_response('.cursorrules', '.cursorrules')
-                    )
-            except ResourceNotFoundError:
-                logger.debug(f'No .cursorrules file found in {repository}')
-            except Exception as e:
-                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
-
-            # Step 2: Check for microagents directory and process .md files
-            try:
-                tree_response, _ = await self._make_request(
-                    f'{base_url}/repository/tree',
-                    params={'path': microagents_path, 'recursive': 'true'},
-                )
-
-                for item in tree_response:
-                    if (
-                        item['type'] == 'blob'
-                        and item['name'].endswith('.md')
-                        and item['name'] != 'README.md'
-                    ):
-                        try:
-                            microagents.append(
-                                self._create_microagent_response(
-                                    item['name'], item['path']
-                                )
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f'Error processing microagent {item["name"]}: {str(e)}'
-                            )
-            except ResourceNotFoundError:
-                logger.info(
-                    f'No microagents directory found in {repository} at {microagents_path}'
-                )
-            except Exception as e:
-                logger.warning(f'Error fetching microagents directory: {str(e)}')
-
+        except ResourceNotFoundError:
+            logger.debug(f'No .cursorrules file found in {repository}')
         except Exception as e:
-            raise UnknownException(f'Error fetching microagents from GitLab: {str(e)}')
+            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
+
+        # Step 2: Check for microagents directory and process .md files
+        try:
+            tree_response, _ = await self._make_request(
+                f'{base_url}/repository/tree',
+                params={'path': microagents_path, 'recursive': 'true'},
+            )
+
+            for item in tree_response:
+                if (
+                    item['type'] == 'blob'
+                    and item['name'].endswith('.md')
+                    and item['name'] != 'README.md'
+                ):
+                    try:
+                        microagents.append(
+                            self._create_microagent_response(item['name'], item['path'])
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item["name"]}: {str(e)}'
+                        )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
 
         return microagents
 

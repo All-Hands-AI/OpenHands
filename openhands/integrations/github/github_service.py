@@ -554,51 +554,47 @@ class GitHubService(BaseGitService, GitService):
         base_url = f'{self.BASE_URL}/repos/{repository}/contents'
         microagents = []
 
+        # Step 1: Check for .cursorrules file
         try:
-            # Step 1: Check for .cursorrules file
-            try:
-                cursorrules_response, _ = await self._make_request(
-                    f'{base_url}/.cursorrules'
+            cursorrules_response, _ = await self._make_request(
+                f'{base_url}/.cursorrules'
+            )
+            if cursorrules_response:
+                microagents.append(
+                    self._create_microagent_response('.cursorrules', '.cursorrules')
                 )
-                if cursorrules_response:
-                    microagents.append(
-                        self._create_microagent_response('.cursorrules', '.cursorrules')
-                    )
-            except ResourceNotFoundError:
-                logger.debug(f'No .cursorrules file found in {repository}')
-            except Exception as e:
-                logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
-
-            # Step 2: Check for microagents directory and process .md files
-            try:
-                response, _ = await self._make_request(f'{base_url}/{microagents_path}')
-
-                for item in response:
-                    if (
-                        item['type'] == 'file'
-                        and item['name'].endswith('.md')
-                        and item['name'] != 'README.md'
-                    ):
-                        try:
-                            microagents.append(
-                                self._create_microagent_response(
-                                    item['name'],
-                                    f'{microagents_path}/{item["name"]}',
-                                )
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f'Error processing microagent {item["name"]}: {str(e)}'
-                            )
-            except ResourceNotFoundError:
-                logger.info(
-                    f'No microagents directory found in {repository} at {microagents_path}'
-                )
-            except Exception as e:
-                logger.warning(f'Error fetching microagents directory: {str(e)}')
-
+        except ResourceNotFoundError:
+            logger.debug(f'No .cursorrules file found in {repository}')
         except Exception as e:
-            raise UnknownException(f'Error fetching microagents from GitHub: {str(e)}')
+            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
+
+        # Step 2: Check for microagents directory and process .md files
+        try:
+            response, _ = await self._make_request(f'{base_url}/{microagents_path}')
+
+            for item in response:
+                if (
+                    item['type'] == 'file'
+                    and item['name'].endswith('.md')
+                    and item['name'] != 'README.md'
+                ):
+                    try:
+                        microagents.append(
+                            self._create_microagent_response(
+                                item['name'],
+                                f'{microagents_path}/{item["name"]}',
+                            )
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item["name"]}: {str(e)}'
+                        )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
 
         return microagents
 
