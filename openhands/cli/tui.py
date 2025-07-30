@@ -11,7 +11,7 @@ import sys
 import threading
 import time
 from typing import Generator
-import markdown
+import markdown  # type: ignore
 
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
