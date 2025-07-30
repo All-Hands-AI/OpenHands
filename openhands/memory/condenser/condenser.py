@@ -8,9 +8,9 @@ from pydantic import BaseModel
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction
 from openhands.memory.view import View
-from openhands.core.logger import openhands_logger as logger
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
 """Key identifying where metadata is stored in a `State` object's `extra_data` field."""
@@ -107,7 +107,9 @@ class Condenser(ABC):
         else:
             model_name = 'unknown'
 
-        self._llm_metadata = state.to_llm_metadata(model_name=model_name, agent_name='condenser')
+        self._llm_metadata = state.to_llm_metadata(
+            model_name=model_name, agent_name='condenser'
+        )
         with self.metadata_batch(state):
             return self.condense(state.view)
 
