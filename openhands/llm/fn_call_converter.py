@@ -306,7 +306,7 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 """,
     },
     'finish': {
-        'task_completed': """
+        'example': """
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 <function=finish>
@@ -372,7 +372,7 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
         example += TOOL_EXAMPLES['execute_bash']['run_server_again']
 
     if 'finish' in available_tools:
-        example += TOOL_EXAMPLES['finish']['task_completed']
+        example += TOOL_EXAMPLES['finish']['example']
 
     example += """
 --------------------- END OF EXAMPLE ---------------------
