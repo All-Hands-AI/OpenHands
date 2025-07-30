@@ -494,9 +494,10 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     print_formatted_text('')
 
 
-async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
+async def main_with_loop(loop: asyncio.AbstractEventLoop, args=None) -> None:
     """Runs the agent in CLI mode."""
-    args = parse_arguments()
+    if args is None:
+        args = parse_arguments()
 
     # Set log level from command line argument if provided
     if args.log_level and isinstance(args.log_level, str):

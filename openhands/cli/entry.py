@@ -43,19 +43,22 @@ def run_cli_command(args):
 
 def main():
     """Main entry point with subcommand support and backward compatibility."""
-    # Check if we're being called with subcommands or legacy arguments
-    if len(sys.argv) > 1 and sys.argv[1] in ['serve', 'cli']:
+    # Handle version flag early
+    if '--version' in sys.argv or '-v' in sys.argv:
+        print(f'OpenHands version: {__version__}')
+        sys.exit(0)
+
+    # Check if we're being called with subcommands or help
+    if len(sys.argv) > 1 and (
+        sys.argv[1] in ['serve', 'cli'] or sys.argv[1] in ['--help', '-h']
+    ):
         # New subcommand interface
         parser = create_subcommand_parser()
         args = parser.parse_args()
 
-        if args.version:
-            print(f'OpenHands version: {__version__}')
-            sys.exit(0)
-
-        if args.command == 'serve':
+        if hasattr(args, 'command') and args.command == 'serve':
             handle_serve_command(args)
-        elif args.command == 'cli':
+        elif hasattr(args, 'command') and args.command == 'cli':
             run_cli_command(args)
         else:
             parser.print_help()
@@ -92,10 +95,6 @@ def main():
         _add_cli_arguments(parser)
 
         args = parser.parse_args()
-
-        if args.version:
-            print(f'OpenHands version: {__version__}')
-            sys.exit(0)
 
         if hasattr(args, 'commands') and args.commands:
             print('OpenHands supports two main commands:')

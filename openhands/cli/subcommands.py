@@ -14,23 +14,8 @@ def handle_serve_command(args: argparse.Namespace) -> None:
 
 async def handle_cli_command(args: argparse.Namespace) -> None:
     """Handle the 'cli' subcommand to run CLI mode."""
-    # Set the args in a way that main_with_loop can access them
-    # We need to monkey-patch the parse_arguments function temporarily
-    import openhands.core.config.utils as config_utils
-
-    original_parse_arguments = config_utils.parse_arguments
-
-    def mock_parse_arguments():
-        return args
-
-    config_utils.parse_arguments = mock_parse_arguments
-
-    try:
-        loop = asyncio.get_event_loop()
-        await main_with_loop(loop)
-    finally:
-        # Restore original function
-        config_utils.parse_arguments = original_parse_arguments
+    loop = asyncio.get_event_loop()
+    await main_with_loop(loop, args)
 
 
 def create_subcommand_parser() -> argparse.ArgumentParser:

@@ -1,5 +1,6 @@
 """GUI launcher for OpenHands CLI."""
 
+import os
 import shutil
 import subprocess
 import sys
@@ -67,13 +68,10 @@ def ensure_config_dir_exists() -> None:
     config_dir.mkdir(exist_ok=True)
 
 
-def launch_gui_server(
-    dry_run: bool = False, mount_cwd: bool = False, gpu: bool = False
-) -> None:
+def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
     """Launch the OpenHands GUI server using Docker.
 
     Args:
-        dry_run: If True, only show what would be executed without running it.
         mount_cwd: If True, mount the current working directory into the container.
         gpu: If True, enable GPU support by mounting all GPUs into the container via nvidia-docker.
     """
@@ -95,37 +93,26 @@ def launch_gui_server(
     runtime_image = f'docker.all-hands.dev/all-hands-ai/runtime:{version}-nikolaik'
     app_image = f'docker.all-hands.dev/all-hands-ai/openhands:{version}'
 
-    if dry_run:
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>🧪 DRY RUN MODE - Commands will not be executed</ansiyellow>'
-            )
-        )
-        print_formatted_text('')
-
     print_formatted_text(HTML('<grey>Pulling required Docker images...</grey>'))
 
     # Pull the runtime image first
     pull_cmd = ['docker', 'pull', runtime_image]
-    if dry_run:
-        print_formatted_text(HTML(f'<grey>Would run: {" ".join(pull_cmd)}</grey>'))
-    else:
-        try:
-            subprocess.run(
-                pull_cmd,
-                check=True,
-                timeout=300,  # 5 minutes timeout
-            )
-        except subprocess.CalledProcessError:
-            print_formatted_text(
-                HTML('<ansired>❌ Failed to pull runtime image.</ansired>')
-            )
-            sys.exit(1)
-        except subprocess.TimeoutExpired:
-            print_formatted_text(
-                HTML('<ansired>❌ Timeout while pulling runtime image.</ansired>')
-            )
-            sys.exit(1)
+    try:
+        subprocess.run(
+            pull_cmd,
+            check=True,
+            timeout=300,  # 5 minutes timeout
+        )
+    except subprocess.CalledProcessError:
+        print_formatted_text(
+            HTML('<ansired>❌ Failed to pull runtime image.</ansired>')
+        )
+        sys.exit(1)
+    except subprocess.TimeoutExpired:
+        print_formatted_text(
+            HTML('<ansired>❌ Timeout while pulling runtime image.</ansired>')
+        )
+        sys.exit(1)
 
     print_formatted_text('')
     print_formatted_text(
@@ -178,10 +165,17 @@ def launch_gui_server(
             [
                 '-e',
                 f'SANDBOX_VOLUMES={cwd}:/workspace:rw',
-                '-e',
-                f'SANDBOX_USER_ID={subprocess.check_output(["id", "-u"], text=True).strip()}',
             ]
         )
+
+        # Set user ID for Unix-like systems only
+        if os.name != 'nt':  # Not Windows
+            try:
+                user_id = subprocess.check_output(['id', '-u'], text=True).strip()
+                docker_cmd.extend(['-e', f'SANDBOX_USER_ID={user_id}'])
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                # If 'id' command fails or doesn't exist, skip setting user ID
+                pass
         # Print the folder that will be mounted to inform the user
         print_formatted_text(
             HTML(
@@ -200,14 +194,6 @@ def launch_gui_server(
             app_image,
         ]
     )
-
-    if dry_run:
-        print_formatted_text(HTML(f'<grey>Would run: {" ".join(docker_cmd)}</grey>'))
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<ansigreen>✅ Dry run completed successfully!</ansigreen>')
-        )
-        return
 
     try:
         # Run the Docker command
