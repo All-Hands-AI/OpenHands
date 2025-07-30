@@ -603,8 +603,8 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             settings.confirmation_mode if settings.confirmation_mode else False
         )
 
-        # Load search API key from settings if available
-        if settings.search_api_key:
+        # Load search API key from settings if available and not already set from config.toml
+        if settings.search_api_key and not config.search_api_key:
             config.search_api_key = settings.search_api_key
             logger.debug('Using search API key from settings.json')
 
