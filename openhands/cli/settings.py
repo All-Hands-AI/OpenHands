@@ -531,7 +531,7 @@ async def modify_search_api_settings(
         if modify_key == 0:  # Set/Update API Key
             search_api_key = await get_validated_input(
                 session,
-                'Enter Tavily Search API Key (starts with tvly-, CTRL-c to cancel): ',
+                'Enter Tavily Search API Key. You can get it from https://www.tavily.com/ (starts with tvly-, CTRL-c to cancel): ',
                 validator=lambda x: x.startswith('tvly-') if x.strip() else False,
                 error_message='Search API Key must start with "tvly-"',
             )
