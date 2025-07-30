@@ -50,6 +50,9 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
+  // Check if repository has no branches (empty array after loading completes)
+  const hasNoBranches = !isLoadingBranches && branches && branches.length === 0;
+
   const handleProviderSelection = (provider: Provider | null) => {
     setSelectedProvider(provider);
     setSelectedRepository(null); // Reset repository selection when provider changes
@@ -145,7 +148,7 @@ export function RepositorySelectionForm({
         type="button"
         isDisabled={
           !selectedRepository ||
-          !selectedBranch ||
+          (!selectedBranch && !hasNoBranches) ||
           isLoadingBranches ||
           isCreatingConversation ||
           (providers.length > 1 && !selectedProvider)
@@ -156,7 +159,7 @@ export function RepositorySelectionForm({
               repository: {
                 name: selectedRepository?.full_name || "",
                 gitProvider: selectedRepository?.git_provider || "github",
-                branch: selectedBranch?.name || "main",
+                branch: selectedBranch?.name || (hasNoBranches ? "" : "main"),
               },
             },
             {

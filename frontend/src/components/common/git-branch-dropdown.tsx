@@ -34,6 +34,8 @@ export function GitBranchDropdown({
     [branches],
   );
 
+  const hasNoBranches = !isLoading && branches && branches.length === 0;
+
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value) || null,
     [options, value],
@@ -43,15 +45,20 @@ export function GitBranchDropdown({
     onChange?.(option?.value || null);
   };
 
-  const isDisabled = disabled || !repositoryName || isLoading;
+  const isDisabled = disabled || !repositoryName || isLoading || hasNoBranches;
+
+  const displayPlaceholder = hasNoBranches ? "No branches found" : placeholder;
+  const displayErrorMessage = hasNoBranches
+    ? "This repository has no branches"
+    : errorMessage;
 
   return (
     <ReactSelectDropdown
       options={options}
       value={selectedOption}
-      placeholder={placeholder}
+      placeholder={displayPlaceholder}
       className={className}
-      errorMessage={errorMessage}
+      errorMessage={displayErrorMessage}
       disabled={isDisabled}
       isClearable={false}
       isSearchable
