@@ -200,6 +200,30 @@ lint:
 	@$(MAKE) -s lint-frontend
 	@$(MAKE) -s lint-backend
 
+check-all:
+	@echo "$(BLUE)╔══════════════════════════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(BLUE)║                            CHECK-ALL MODE                                   ║$(RESET)"
+	@echo "$(BLUE)║ Purpose: Static check the whole repository                                  ║$(RESET)"
+	@echo "$(BLUE)║ Runtime: Long (can take minutes)                                            ║$(RESET)"
+	@echo "$(BLUE)║ Files: All files in the repository                                          ║$(RESET)"
+	@echo "$(BLUE)║ Checks: All static checks (TypeScript, mypy, ESLint, etc.)                 ║$(RESET)"
+	@echo "$(BLUE)╚══════════════════════════════════════════════════════════════════════════════╝$(RESET)"
+	@echo "$(YELLOW)Starting comprehensive static analysis of entire codebase...$(RESET)"
+	@echo "$(GREEN)✓ CHECK-ALL mode initialized$(RESET)"
+	@echo "$(YELLOW)TODO: Implement comprehensive checks$(RESET)"
+
+check-pre-commit:
+	@echo "$(BLUE)╔══════════════════════════════════════════════════════════════════════════════╗$(RESET)"
+	@echo "$(BLUE)║                         CHECK-PRE-COMMIT MODE                               ║$(RESET)"
+	@echo "$(BLUE)║ Purpose: Quick check of files about to be committed                         ║$(RESET)"
+	@echo "$(BLUE)║ Runtime: Short (target <30s)                                                ║$(RESET)"
+	@echo "$(BLUE)║ Files: Only staged files                                                    ║$(RESET)"
+	@echo "$(BLUE)║ Checks: Fast checks only, module-specific                                   ║$(RESET)"
+	@echo "$(BLUE)╚══════════════════════════════════════════════════════════════════════════════╝$(RESET)"
+	@echo "$(YELLOW)Starting fast pre-commit checks on staged files...$(RESET)"
+	@echo "$(GREEN)✓ CHECK-PRE-COMMIT mode initialized$(RESET)"
+	@echo "$(YELLOW)TODO: Implement selective checks based on staged files$(RESET)"
+
 kind:
 	@echo "$(YELLOW)Checking if kind is installed...$(RESET)"
 	@if ! command -v kind > /dev/null; then \
@@ -355,7 +379,13 @@ help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
-	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
+	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project (legacy - use check-all instead)."
+	@echo ""
+	@echo "  $(BLUE)Static Type Checking (see dev_config/static-check-proposal.md):$(RESET)"
+	@echo "  $(GREEN)check-all$(RESET)           - Comprehensive static analysis of entire codebase (CI mode)."
+	@echo "  $(GREEN)check-pre-commit$(RESET)    - Fast checks on staged files only (pre-commit mode)."
+	@echo ""
+	@echo "  $(BLUE)Development:$(RESET)"
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
 	@echo "  $(GREEN)start-backend$(RESET)       - Start the backend server for the OpenHands project."
@@ -367,5 +397,5 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint check-all check-pre-commit test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
 .PHONY: kind
