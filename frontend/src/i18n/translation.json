@@ -1,4 +1,20 @@
 {
+    "MAINTENANCE$SCHEDULED_MESSAGE": {
+        "en": "Scheduled maintenance will begin at {{time}}",
+        "ja": "予定されたメンテナンスは{{time}}に開始されます",
+        "zh-CN": "计划维护将于{{time}}开始",
+        "zh-TW": "計劃維護將於{{time}}開始",
+        "ko-KR": "예정된 유지보수가 {{time}}에 시작됩니다",
+        "no": "Planlagt vedlikehold starter {{time}}",
+        "it": "La manutenzione programmata inizierà alle {{time}}",
+        "pt": "A manutenção programada começará às {{time}}",
+        "es": "El mantenimiento programado comenzará a las {{time}}",
+        "ar": "ستبدأ الصيانة المجدولة في {{time}}",
+        "fr": "La maintenance programmée commencera à {{time}}",
+        "tr": "Planlı bakım {{time}} tarihinde başlayacak",
+        "de": "Die geplante Wartung beginnt um {{time}}",
+        "uk": "Планове технічне обслуговування розпочнеться о {{time}}"
+    },
     "MICROAGENT$NO_REPOSITORY_FOUND": {
         "en": "No repository found to launch microagent",
         "ja": "マイクロエージェントを起動するためのリポジトリが見つかりません",
