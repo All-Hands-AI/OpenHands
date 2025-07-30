@@ -1,29 +1,52 @@
-import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { RootState } from "#/store";
-import { I18nKey } from "#/i18n/declaration";
+import { MicroagentManagementDefault } from "./microagent-management-default";
+import { MicroagentManagementOpeningPr } from "./microagent-management-opening-pr";
+import { MicroagentManagementReviewPr } from "./microagent-management-review-pr";
+import { MicroagentManagementViewMicroagent } from "./microagent-management-view-microagent";
+import { MicroagentManagementError } from "./microagent-management-error";
+import { MicroagentManagementConversationStopped } from "./microagent-management-conversation-stopped";
 
 export function MicroagentManagementMain() {
-  const { t } = useTranslation();
-
-  const { selectedMicroagent } = useSelector(
+  const { selectedMicroagentItem } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
 
-  if (!selectedMicroagent) {
-    return (
-      <div className="flex-1 flex flex-col h-full items-center justify-center">
-        <div className="text-[#F9FBFE] text-[20px] font-bold pb-4">
-          {t(I18nKey.MICROAGENT_MANAGEMENT$READY_TO_ADD_MICROAGENT)}
-        </div>
-        <div className="text-white text-[14px] font-normal text-center max-w-[455px]">
-          {t(
-            I18nKey.MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES,
-          )}
-        </div>
-      </div>
-    );
+  const { microagent, conversation } = selectedMicroagentItem ?? {};
+
+  if (microagent) {
+    return <MicroagentManagementViewMicroagent />;
   }
 
-  return null;
+  if (conversation) {
+    if (conversation.pr_number && conversation.pr_number.length > 0) {
+      return <MicroagentManagementReviewPr />;
+    }
+
+    const isConversationStarting =
+      conversation.status === "STARTING" ||
+      conversation.runtime_status === "STATUS$STARTING_RUNTIME";
+    const isConversationOpeningPr =
+      conversation.status === "RUNNING" &&
+      conversation.runtime_status === "STATUS$READY";
+
+    if (isConversationStarting || isConversationOpeningPr) {
+      return <MicroagentManagementOpeningPr />;
+    }
+
+    if (conversation.runtime_status === "STATUS$ERROR") {
+      return <MicroagentManagementError />;
+    }
+
+    if (
+      conversation.status === "STOPPED" ||
+      conversation.runtime_status === "STATUS$STOPPED"
+    ) {
+      return <MicroagentManagementConversationStopped />;
+    }
+
+    return <MicroagentManagementDefault />;
+  }
+
+  return <MicroagentManagementDefault />;
 }

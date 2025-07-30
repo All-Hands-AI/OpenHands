@@ -102,7 +102,7 @@ def mock_repo_microagent():
                 ]
             ),
         ),
-        source='test_source',
+        source='.openhands/microagents/test_repo_agent.md',
         type=MicroagentType.REPO_KNOWLEDGE,
     )
 
@@ -128,7 +128,7 @@ def mock_knowledge_microagent():
                 ]
             ),
         ),
-        source='test_source',
+        source='.openhands/microagents/test_knowledge_agent.md',
         type=MicroagentType.KNOWLEDGE,
         triggers=['test', 'knowledge', 'search'],
     )
@@ -283,7 +283,72 @@ class TestGetRepositoryMicroagents:
         mock_result.stderr = ''
         mock_subprocess_run.return_value = mock_result
 
-        mock_load_microagents.return_value = mock_microagents_data
+        # Create mock microagents with proper absolute paths
+        repo_agent_with_path = RepoMicroagent(
+            name='test_repo_agent',
+            content='This is a test repository microagent for testing purposes.',
+            metadata=MicroagentMetadata(
+                name='test_repo_agent',
+                type=MicroagentType.REPO_KNOWLEDGE,
+                inputs=[
+                    InputMetadata(
+                        name='query',
+                        type='str',
+                        description='Search query for the repository',
+                    )
+                ],
+                mcp_tools=MCPConfig(
+                    stdio_servers=[
+                        MCPStdioServerConfig(name='git', command='git'),
+                        MCPStdioServerConfig(name='file_editor', command='editor'),
+                    ]
+                ),
+            ),
+            source=str(
+                Path(temp_microagents_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'test_repo_agent.md'
+            ),
+            type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        knowledge_agent_with_path = KnowledgeMicroagent(
+            name='test_knowledge_agent',
+            content='This is a test knowledge microagent for testing purposes.',
+            metadata=MicroagentMetadata(
+                name='test_knowledge_agent',
+                type=MicroagentType.KNOWLEDGE,
+                inputs=[
+                    InputMetadata(
+                        name='topic', type='str', description='Topic to search for'
+                    )
+                ],
+                mcp_tools=MCPConfig(
+                    stdio_servers=[
+                        MCPStdioServerConfig(name='search', command='search'),
+                        MCPStdioServerConfig(name='fetch', command='fetch'),
+                    ]
+                ),
+            ),
+            source=str(
+                Path(temp_microagents_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'test_knowledge_agent.md'
+            ),
+            type=MicroagentType.KNOWLEDGE,
+            triggers=['test', 'knowledge', 'search'],
+        )
+
+        mock_microagents_data_with_paths = (
+            {'test_repo_agent': repo_agent_with_path},
+            {'test_knowledge_agent': knowledge_agent_with_path},
+        )
+
+        mock_load_microagents.return_value = mock_microagents_data_with_paths
         mock_mkdtemp.return_value = temp_microagents_dir
 
         # Execute test
@@ -308,6 +373,8 @@ class TestGetRepositoryMicroagents:
         assert 'created_at' in repo_agent
         assert 'git_provider' in repo_agent
         assert repo_agent['git_provider'] == 'github'
+        assert 'path' in repo_agent
+        assert repo_agent['path'] == '.openhands/microagents/test_repo_agent.md'
 
         # Check knowledge microagent
         knowledge_agent = next(m for m in data if m['name'] == 'test_knowledge_agent')
@@ -323,6 +390,10 @@ class TestGetRepositoryMicroagents:
         assert 'created_at' in knowledge_agent
         assert 'git_provider' in knowledge_agent
         assert knowledge_agent['git_provider'] == 'github'
+        assert 'path' in knowledge_agent
+        assert (
+            knowledge_agent['path'] == '.openhands/microagents/test_knowledge_agent.md'
+        )
 
     @pytest.mark.asyncio
     @patch('openhands.server.routes.git.ProviderHandler')
@@ -555,8 +626,38 @@ class TestGetRepositoryMicroagents:
         microagents_dir = Path(temp_dir) / 'repo' / '.openhands' / 'microagents'
         microagents_dir.mkdir(parents=True, exist_ok=True)
 
-        # Mock load_microagents_from_dir
-        mock_repo_agents = {'test_repo_agent': mock_repo_microagent}
+        # Create mock microagents with proper absolute paths
+        repo_agent_with_path = RepoMicroagent(
+            name='test_repo_agent',
+            content='This is a test repository microagent for testing purposes.',
+            metadata=MicroagentMetadata(
+                name='test_repo_agent',
+                type=MicroagentType.REPO_KNOWLEDGE,
+                inputs=[
+                    InputMetadata(
+                        name='query',
+                        type='str',
+                        description='Search query for the repository',
+                    )
+                ],
+                mcp_tools=MCPConfig(
+                    stdio_servers=[
+                        MCPStdioServerConfig(name='git', command='git'),
+                        MCPStdioServerConfig(name='file_editor', command='editor'),
+                    ]
+                ),
+            ),
+            source=str(
+                Path(temp_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'test_repo_agent.md'
+            ),
+            type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        mock_repo_agents = {'test_repo_agent': repo_agent_with_path}
         mock_knowledge_agents = {}
         mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
         mock_mkdtemp.return_value = temp_dir
@@ -574,6 +675,8 @@ class TestGetRepositoryMicroagents:
             assert 'created_at' in data[0]
             assert 'git_provider' in data[0]
             assert data[0]['git_provider'] == 'github'
+            assert 'path' in data[0]
+            assert data[0]['path'] == '.openhands/microagents/test_repo_agent.md'
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -634,8 +737,38 @@ class TestGetRepositoryMicroagents:
         microagents_dir = Path(temp_dir) / 'repo' / '.openhands' / 'microagents'
         microagents_dir.mkdir(parents=True, exist_ok=True)
 
-        # Mock load_microagents_from_dir
-        mock_repo_agents = {'test_repo_agent': mock_repo_microagent}
+        # Create mock microagents with proper absolute paths
+        repo_agent_with_path = RepoMicroagent(
+            name='test_repo_agent',
+            content='This is a test repository microagent for testing purposes.',
+            metadata=MicroagentMetadata(
+                name='test_repo_agent',
+                type=MicroagentType.REPO_KNOWLEDGE,
+                inputs=[
+                    InputMetadata(
+                        name='query',
+                        type='str',
+                        description='Search query for the repository',
+                    )
+                ],
+                mcp_tools=MCPConfig(
+                    stdio_servers=[
+                        MCPStdioServerConfig(name='git', command='git'),
+                        MCPStdioServerConfig(name='file_editor', command='editor'),
+                    ]
+                ),
+            ),
+            source=str(
+                Path(temp_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'test_repo_agent.md'
+            ),
+            type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        mock_repo_agents = {'test_repo_agent': repo_agent_with_path}
         mock_knowledge_agents = {}
         mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
         mock_mkdtemp.return_value = temp_dir
@@ -652,6 +785,8 @@ class TestGetRepositoryMicroagents:
             assert 'created_at' in data[0]
             assert 'git_provider' in data[0]
             assert data[0]['git_provider'] == 'github'
+            assert 'path' in data[0]
+            assert data[0]['path'] == '.openhands/microagents/test_repo_agent.md'
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
@@ -748,6 +883,33 @@ class TestGetRepositoryMicroagents:
             lambda: mock_provider_tokens
         )
 
+        mock_provider_handler = MagicMock()
+        mock_repository = Repository(
+            id='123456',
+            full_name='test/repo',
+            git_provider=ProviderType.GITHUB,
+            is_public=True,
+            stargazers_count=100,
+        )
+        mock_provider_handler.verify_repo_provider = AsyncMock(
+            return_value=mock_repository
+        )
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://ghp_test_token@github.com/test/repo.git'
+        )
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Mock subprocess.run for successful clone
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
+
+        # Create temporary directory with microagents
+        temp_dir = tempfile.mkdtemp()
+        microagents_dir = Path(temp_dir) / 'repo' / '.openhands' / 'microagents'
+        microagents_dir.mkdir(parents=True, exist_ok=True)
+
         # Create microagent without MCP tools
         repo_microagent = RepoMicroagent(
             name='simple_agent',
@@ -758,8 +920,63 @@ class TestGetRepositoryMicroagents:
                 inputs=[],
                 mcp_tools=None,
             ),
-            source='test_source',
+            source=str(
+                Path(temp_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'simple_agent.md'
+            ),
             type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        # Mock load_microagents_from_dir
+        mock_repo_agents = {'simple_agent': repo_microagent}
+        mock_knowledge_agents = {}
+        mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
+        mock_mkdtemp.return_value = temp_dir
+
+        try:
+            # Execute test
+            response = test_client.get('/api/user/repository/test/repo/microagents')
+
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
+            assert len(data) == 1
+            assert data[0]['name'] == 'simple_agent'
+            assert data[0]['tools'] == []
+            assert 'created_at' in data[0]
+            assert 'git_provider' in data[0]
+            assert data[0]['git_provider'] == 'github'
+            assert 'path' in data[0]
+            assert data[0]['path'] == '.openhands/microagents/simple_agent.md'
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
+    async def test_get_microagents_path_field_variations(
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
+        test_client,
+        mock_provider_tokens,
+    ):
+        """Test path field with different microagent file locations and structures."""
+        # Setup mocks
+        test_client.app.dependency_overrides[get_provider_tokens] = (
+            lambda: mock_provider_tokens
         )
 
         mock_provider_handler = MagicMock()
@@ -789,9 +1006,46 @@ class TestGetRepositoryMicroagents:
         microagents_dir = Path(temp_dir) / 'repo' / '.openhands' / 'microagents'
         microagents_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create microagents with different source paths
+        repo_microagent_deep = RepoMicroagent(
+            name='deep_agent',
+            content='Agent in nested directory',
+            metadata=MicroagentMetadata(
+                name='deep_agent',
+                type=MicroagentType.REPO_KNOWLEDGE,
+                inputs=[],
+                mcp_tools=None,
+            ),
+            source=str(
+                Path(temp_dir)
+                / 'repo'
+                / '.openhands'
+                / 'microagents'
+                / 'nested'
+                / 'deep_agent.md'
+            ),
+            type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        knowledge_microagent_root = KnowledgeMicroagent(
+            name='root_agent',
+            content='Agent in root microagents directory',
+            metadata=MicroagentMetadata(
+                name='root_agent',
+                type=MicroagentType.KNOWLEDGE,
+                inputs=[],
+                mcp_tools=None,
+            ),
+            source=str(
+                Path(temp_dir) / 'repo' / '.openhands' / 'microagents' / 'root_agent.md'
+            ),
+            type=MicroagentType.KNOWLEDGE,
+            triggers=[],
+        )
+
         # Mock load_microagents_from_dir
-        mock_repo_agents = {'simple_agent': repo_microagent}
-        mock_knowledge_agents = {}
+        mock_repo_agents = {'deep_agent': repo_microagent_deep}
+        mock_knowledge_agents = {'root_agent': knowledge_microagent_root}
         mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
         mock_mkdtemp.return_value = temp_dir
 
@@ -802,11 +1056,118 @@ class TestGetRepositoryMicroagents:
             # Assertions
             assert response.status_code == 200
             data = response.json()
+            assert len(data) == 2
+
+            # Check repo microagent with nested path
+            repo_agent = next(m for m in data if m['name'] == 'deep_agent')
+            assert repo_agent['type'] == 'repo'
+            assert 'path' in repo_agent
+            assert repo_agent['path'] == '.openhands/microagents/nested/deep_agent.md'
+
+            # Check knowledge microagent with root path
+            knowledge_agent = next(m for m in data if m['name'] == 'root_agent')
+            assert knowledge_agent['type'] == 'knowledge'
+            assert 'path' in knowledge_agent
+            assert knowledge_agent['path'] == '.openhands/microagents/root_agent.md'
+
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @pytest.mark.asyncio
+    @patch(
+        'openhands.server.routes.git._get_file_creation_time',
+        return_value=datetime.now(),
+    )
+    @patch('openhands.server.routes.git.tempfile.mkdtemp')
+    @patch('openhands.server.routes.git.load_microagents_from_dir')
+    @patch('openhands.server.routes.git.subprocess.run')
+    @patch('openhands.server.routes.git.ProviderHandler')
+    async def test_get_microagents_path_field_gitlab_structure(
+        self,
+        mock_provider_handler_class,
+        mock_subprocess_run,
+        mock_load_microagents,
+        mock_mkdtemp,
+        mock_get_file_creation_time,
+        test_client,
+        mock_provider_tokens,
+    ):
+        """Test path field with GitLab repository structure (openhands-config)."""
+        # Setup mocks with GitLab provider
+        provider_tokens = MappingProxyType(
+            {
+                ProviderType.GITLAB: ProviderToken(
+                    token=SecretStr('glpat_test_token'), host='gitlab.com'
+                )
+            }
+        )
+        test_client.app.dependency_overrides[get_provider_tokens] = (
+            lambda: provider_tokens
+        )
+
+        mock_provider_handler = MagicMock()
+        mock_repository = Repository(
+            id='123456',
+            full_name='test/openhands-config',
+            git_provider=ProviderType.GITLAB,
+            is_public=True,
+            stargazers_count=100,
+        )
+        mock_provider_handler.verify_repo_provider = AsyncMock(
+            return_value=mock_repository
+        )
+        mock_provider_handler.get_authenticated_git_url = AsyncMock(
+            return_value='https://glpat_test_token@gitlab.com/test/openhands-config.git'
+        )
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Mock subprocess.run for successful clone
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = ''
+        mock_subprocess_run.return_value = mock_result
+
+        # Create temporary directory with GitLab structure
+        temp_dir = tempfile.mkdtemp()
+        microagents_dir = Path(temp_dir) / 'repo' / 'microagents'
+        microagents_dir.mkdir(parents=True, exist_ok=True)
+
+        # Create microagent for GitLab structure
+        repo_microagent = RepoMicroagent(
+            name='gitlab_agent',
+            content='Agent in GitLab repository',
+            metadata=MicroagentMetadata(
+                name='gitlab_agent',
+                type=MicroagentType.REPO_KNOWLEDGE,
+                inputs=[],
+                mcp_tools=None,
+            ),
+            source=str(Path(temp_dir) / 'repo' / 'microagents' / 'gitlab_agent.md'),
+            type=MicroagentType.REPO_KNOWLEDGE,
+        )
+
+        # Mock load_microagents_from_dir
+        mock_repo_agents = {'gitlab_agent': repo_microagent}
+        mock_knowledge_agents = {}
+        mock_load_microagents.return_value = (mock_repo_agents, mock_knowledge_agents)
+        mock_mkdtemp.return_value = temp_dir
+
+        try:
+            # Execute test
+            response = test_client.get(
+                '/api/user/repository/test/openhands-config/microagents'
+            )
+
+            # Assertions
+            assert response.status_code == 200
+            data = response.json()
             assert len(data) == 1
-            assert data[0]['name'] == 'simple_agent'
-            assert data[0]['tools'] == []
-            assert 'created_at' in data[0]
+            assert data[0]['name'] == 'gitlab_agent'
+            assert data[0]['type'] == 'repo'
+            assert 'path' in data[0]
+            assert data[0]['path'] == 'microagents/gitlab_agent.md'
             assert 'git_provider' in data[0]
-            assert data[0]['git_provider'] == 'github'
+            assert data[0]['git_provider'] == 'gitlab'
+
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)

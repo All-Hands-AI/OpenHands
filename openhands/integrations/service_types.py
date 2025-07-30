@@ -22,6 +22,7 @@ class TaskType(str, Enum):
     UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
     OPEN_ISSUE = 'OPEN_ISSUE'
     OPEN_PR = 'OPEN_PR'
+    CREATE_MICROAGENT = 'CREATE_MICROAGENT'
 
 
 class OwnerType(str, Enum):
@@ -96,6 +97,12 @@ class SuggestedTask(BaseModel):
         terms = self.get_provider_terms()
 
         return template.render(issue_number=issue_number, repo=repo, **terms)
+
+
+class CreateMicroagent(BaseModel):
+    repo: str
+    git_provider: ProviderType | None = None
+    title: str | None = None
 
 
 class User(BaseModel):

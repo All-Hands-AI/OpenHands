@@ -575,25 +575,30 @@ class LocalRuntime(ActionExecutionClient):
         # Fallback to localhost
         return self.config.sandbox.local_runtime_url
 
+    def _create_url(self, prefix: str, port: int) -> str:
+        runtime_url = self.runtime_url
+        if 'localhost' in runtime_url:
+            url = f'{self.runtime_url}:{self._vscode_port}'
+        else:
+            # Similar to remote runtime...
+            parsed_url = urlparse(runtime_url)
+            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+        return url
+
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         if not token:
             return None
-        runtime_url = self.runtime_url
-        if 'localhost' in runtime_url:
-            vscode_url = f'{self.runtime_url}:{self._vscode_port}'
-        else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}'
+        vscode_url = self._create_url('vscode', self._vscode_port)
         return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
-        for port in self._app_ports:
-            hosts[f'{self.runtime_url}:{port}'] = port
+        for index, port in enumerate(self._app_ports):
+            url = self._create_url(f'work-{index + 1}', port)
+            hosts[url] = port
         return hosts
 
 
@@ -623,8 +628,16 @@ def _create_server(
         os.getenv('VSCODE_PORT') or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
     )
     app_ports = [
-        int(os.getenv('APP_PORT_1') or str(find_available_tcp_port(*APP_PORT_RANGE_1))),
-        int(os.getenv('APP_PORT_2') or str(find_available_tcp_port(*APP_PORT_RANGE_2))),
+        int(
+            os.getenv('WORK_PORT_1')
+            or os.getenv('APP_PORT_1')
+            or str(find_available_tcp_port(*APP_PORT_RANGE_1))
+        ),
+        int(
+            os.getenv('WORK_PORT_2')
+            or os.getenv('APP_PORT_2')
+            or str(find_available_tcp_port(*APP_PORT_RANGE_2))
+        ),
     ]
 
     # Get user info
@@ -635,7 +648,8 @@ def _create_server(
         server_port=execution_server_port,
         plugins=plugins,
         app_config=config,
-        python_prefix=['poetry', 'run'],
+        python_prefix=[],
+        python_executable=sys.executable,
         override_user_id=user_id,
         override_username=username,
     )
