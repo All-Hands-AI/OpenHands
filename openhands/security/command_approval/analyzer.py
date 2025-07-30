@@ -38,24 +38,31 @@ class CommandApprovalAnalyzer(SecurityAnalyzer):
         but we set the confirmation_state based on whether the command is approved.
         """
         # Get the security config from the global config
-        from openhands.core.config import get_config
+        import toml
 
-        config = get_config()
+        from openhands.core.config import SecurityConfig
+
+        # Load security config from the config file
+        config = SecurityConfig()
+        try:
+            with open('config.toml', 'r', encoding='utf-8') as f:
+                config_data = toml.load(f)
+                if 'security' in config_data:
+                    config = SecurityConfig.model_validate(config_data['security'])
+        except Exception:
+            # If loading fails, use default config
+            pass
 
         # Only process CmdRunAction and IPythonRunCellAction
-        if isinstance(event, CmdRunAction) and hasattr(
-            config.security, 'is_command_approved'
-        ):
+        if isinstance(event, CmdRunAction):
             command = event.command
-            if config.security.is_command_approved(command):
+            if config.is_command_approved(command):
                 event.confirmation_state = ActionConfirmationStatus.CONFIRMED
                 logger.info(f'Command automatically approved: {command}')
 
-        elif isinstance(event, IPythonRunCellAction) and hasattr(
-            config.security, 'is_command_approved'
-        ):
+        elif isinstance(event, IPythonRunCellAction):
             code = event.code
-            if config.security.is_command_approved(code):
+            if config.is_command_approved(code):
                 event.confirmation_state = ActionConfirmationStatus.CONFIRMED
                 logger.info(f'Python code automatically approved: {code}')
 

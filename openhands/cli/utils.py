@@ -242,7 +242,7 @@ def write_to_file(file_path: str | Path, content: str) -> None:
 
 
 def save_approved_command_to_config(
-    command: str, pattern: str = None, description: str = None
+    command: str, pattern: str | None = None, description: str | None = None
 ) -> None:
     """Save an approved command or pattern to the config file.
 

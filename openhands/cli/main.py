@@ -234,7 +234,7 @@ async def run_session(
                     return
 
                 # Get the pending action from the agent controller
-                pending_action = agent_controller._pending_action
+                pending_action = controller._pending_action
                 command = ''
                 if pending_action:
                     if hasattr(pending_action, 'command'):
