@@ -17,7 +17,6 @@ from openhands.integrations.service_types import (
     RequestMethod,
     ResourceNotFoundError,
     SuggestedTask,
-    UnknownException,
     User,
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
