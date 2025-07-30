@@ -861,9 +861,29 @@ class AgentController:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                # Check if the command is already approved
+                command = (
+                    action.command if type(action) is CmdRunAction else action.code
                 )
+
+                # Get the security config from the global config
+                from openhands.core.config import get_config
+
+                config = get_config()
+
+                # Check if the command is approved
+                if (
+                    hasattr(config, 'security')
+                    and hasattr(config.security, 'is_command_approved')
+                    and config.security.is_command_approved(command)
+                ):
+                    # Command is already approved, no need for confirmation
+                    action.confirmation_state = ActionConfirmationStatus.CONFIRMED
+                else:
+                    # Command needs confirmation
+                    action.confirmation_state = (
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
             self._pending_action = action
 
         if not isinstance(action, NullAction):

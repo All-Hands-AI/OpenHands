@@ -239,3 +239,79 @@ def read_file(file_path: str | Path) -> str:
 def write_to_file(file_path: str | Path, content: str) -> None:
     with open(file_path, 'w') as f:
         f.write(content)
+
+
+def save_approved_command_to_config(
+    command: str, pattern: str = None, description: str = None
+) -> None:
+    """Save an approved command or pattern to the config file.
+
+    Args:
+        command: The command to save as approved.
+        pattern: Optional regex pattern to save instead of exact command.
+        description: Optional description for the pattern.
+    """
+    config_path = _LOCAL_CONFIG_FILE_PATH
+
+    # Load existing config or create a new one
+    if config_path.exists():
+        try:
+            with open(config_path, 'r') as f:
+                config_data = toml.load(f)
+        except Exception as e:
+            from openhands.core.logger import openhands_logger
+
+            openhands_logger.warning(f'Error loading config file: {e}')
+            config_data = {}
+    else:
+        config_data = {}
+        config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Ensure security section exists
+    if 'security' not in config_data:
+        config_data['security'] = {}
+
+    if pattern and description:
+        # Save as a pattern
+        if 'approved_command_patterns' not in config_data['security']:
+            config_data['security']['approved_command_patterns'] = []
+
+        # Check if pattern already exists
+        pattern_exists = any(
+            p.get('pattern') == pattern
+            for p in config_data['security']['approved_command_patterns']
+            if isinstance(p, dict)
+        )
+
+        if not pattern_exists:
+            config_data['security']['approved_command_patterns'].append(
+                {'pattern': pattern, 'description': description}
+            )
+
+        from openhands.core.logger import openhands_logger
+
+        openhands_logger.info(
+            f"Pattern '{pattern}' saved to approved command patterns in {config_path}"
+        )
+    else:
+        # Save as exact command
+        if 'approved_commands' not in config_data['security']:
+            config_data['security']['approved_commands'] = {}
+
+        # Add the command to the approved commands
+        config_data['security']['approved_commands'][command] = True
+
+        from openhands.core.logger import openhands_logger
+
+        openhands_logger.info(
+            f"Command '{command}' saved to approved commands in {config_path}"
+        )
+
+    # Write the updated config back to the file
+    try:
+        with open(config_path, 'w') as f:
+            toml.dump(config_data, f)
+    except Exception as e:
+        from openhands.core.logger import openhands_logger
+
+        openhands_logger.error(f'Error saving approved command to config: {e}')

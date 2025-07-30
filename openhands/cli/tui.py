@@ -700,12 +700,75 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+def _generate_command_pattern(command: str) -> str:
+    """Generate a regex pattern for a command that can match similar commands.
+
+    Args:
+        command: The command to generate a pattern for.
+
+    Returns:
+        str: A regex pattern that matches similar commands.
+    """
+    import re
+
+    # Split command into parts
+    parts = command.split()
+    if not parts:
+        return f'^{re.escape(command)}$'
+
+    # First part is the command itself (keep exact)
+    pattern_parts = [re.escape(parts[0])]
+
+    # Process remaining parts
+    for part in parts[1:]:
+        escaped_part = re.escape(part)
+
+        # Replace file extensions with generic patterns
+        extensions = [
+            'py',
+            'js',
+            'ts',
+            'txt',
+            'md',
+            'json',
+            'yaml',
+            'yml',
+            'toml',
+            'html',
+            'css',
+        ]
+        for ext in extensions:
+            if escaped_part.endswith(f'\\.{ext}'):
+                # Replace filename.ext with any filename with extension
+                escaped_part = '[^\\s]+\\.[a-zA-Z0-9]+'
+                break
+
+        # Replace numbers with flexible number patterns
+        escaped_part = re.sub(r'\\\d+', r'\\d+', escaped_part)
+
+        pattern_parts.append(escaped_part)
+
+    # Join with flexible whitespace
+    pattern = '\\s+'.join(pattern_parts)
+
+    # Make the pattern match from start to end
+    return f'^{pattern}$'
+
+
+async def read_confirmation_input(
+    config: OpenHandsConfig, command: str = '', pending_action=None
+) -> str:
     try:
+        # Generate a pattern for similar commands
+        pattern = _generate_command_pattern(command) if command else ''
+
         choices = [
             'Yes, proceed',
             'No (and allow to enter instructions)',
-            "Always proceed (don't ask again)",
+            'Always proceed (skip all confirmations)',
+            f"Yes, and don't ask again for similar commands (pattern: {pattern})"
+            if pattern
+            else "Yes, and don't ask again for this exact command",
         ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
@@ -713,7 +776,19 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
             cli_confirm, config, 'Choose an option:', choices
         )
 
-        return {0: 'yes', 1: 'no', 2: 'always'}.get(index, 'no')
+        result = {0: 'yes', 1: 'no', 2: 'always', 3: 'remember'}.get(index, 'no')
+
+        # If the user chose "remember", store the approval information
+        if result == 'remember':
+            print_formatted_text(
+                'Command pattern will be added to approved commands list.'
+            )
+            # Return the pattern and description along with the result
+            return (
+                f'remember:{pattern}:{f"Auto-generated pattern for command: {command}"}'
+            )
+
+        return result
 
     except (KeyboardInterrupt, EOFError):
         return 'no'

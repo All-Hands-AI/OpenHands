@@ -233,8 +233,43 @@ async def run_session(
                     )
                     return
 
-                confirmation_status = await read_confirmation_input(config)
-                if confirmation_status in ('yes', 'always'):
+                # Get the pending action from the agent controller
+                pending_action = agent_controller._pending_action
+                command = ''
+                if pending_action:
+                    if hasattr(pending_action, 'command'):
+                        command = pending_action.command
+                    elif hasattr(pending_action, 'code'):
+                        command = pending_action.code
+
+                confirmation_status = await read_confirmation_input(
+                    config, command, pending_action
+                )
+
+                # Handle different confirmation responses
+                if confirmation_status == 'always':
+                    # Set always confirm mode to skip future confirmations
+                    always_confirm_mode = True
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                elif confirmation_status.startswith('remember:'):
+                    # Parse the remember response: remember:pattern:description
+                    parts = confirmation_status.split(':', 2)
+                    if len(parts) == 3:
+                        _, pattern, description = parts
+                        # Save the command pattern to config
+                        from openhands.cli.utils import save_approved_command_to_config
+
+                        save_approved_command_to_config(
+                            command, pattern=pattern, description=description
+                        )
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                elif confirmation_status == 'yes':
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
