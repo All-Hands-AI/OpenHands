@@ -243,7 +243,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run prepare && npm run build
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
@@ -355,6 +355,7 @@ help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
+	@echo "  $(GREEN)install-pre-commit-hooks$(RESET) - Install pre-commit hooks."
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
