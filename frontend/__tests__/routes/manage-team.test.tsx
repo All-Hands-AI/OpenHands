@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, test, beforeEach, afterEach } from "vitest";
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, within, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { createRoutesStub } from "react-router";
@@ -244,6 +244,51 @@ describe("Manage Team Route", () => {
     expect(
       within(currentUserMember).queryByTestId("role-dropdown"),
     ).not.toBeInTheDocument();
+  });
+
+  it("should show a remove option in the role dropdown and remove the user from the list", async () => {
+    const removeMemberSpy = vi.spyOn(organizationService, "removeMember");
+
+    renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
+
+    await selectOrganization({ orgIndex: 0 });
+
+    // Get initial member count
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const initialMemberCount = memberListItems.length;
+
+    const userRoleMember = memberListItems[2]; // third member is "user"
+    const userEmail = within(userRoleMember).getByText("charlie@acme.org");
+    expect(userEmail).toBeInTheDocument();
+
+    const userCombobox = within(userRoleMember).getByText(/user/i);
+    await userEvent.click(userCombobox);
+
+    const dropdown = within(userRoleMember).getByTestId("role-dropdown");
+
+    // Check that remove option exists
+    const removeOption = within(dropdown).getByText(/remove/i);
+    expect(removeOption).toBeInTheDocument();
+
+    // Check that remove option has danger styling (red color)
+    expect(removeOption).toHaveClass("text-red-500"); // or whatever danger class is used
+
+    await userEvent.click(removeOption);
+
+    expect(removeMemberSpy).toHaveBeenCalledExactlyOnceWith({
+      orgId: "1",
+      userId: "3",
+    });
+
+    // Verify the user is no longer in the list
+    await waitFor(() => {
+      const updatedMemberListItems = screen.getAllByTestId("member-item");
+      expect(updatedMemberListItems).toHaveLength(initialMemberCount - 1);
+    });
+
+    // Verify the specific user email is no longer present
+    expect(screen.queryByText("charlie@acme.org")).not.toBeInTheDocument();
   });
 
   it.todo(

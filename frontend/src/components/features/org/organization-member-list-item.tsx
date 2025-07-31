@@ -10,6 +10,7 @@ interface OrganizationMemberListItemProps {
   hasPermissionToChangeRole: boolean;
 
   onRoleChange: (role: OrganizationUserRole) => void;
+  onRemove?: () => void;
 }
 
 export function OrganizationMemberListItem({
@@ -18,6 +19,7 @@ export function OrganizationMemberListItem({
   status,
   hasPermissionToChangeRole,
   onRoleChange,
+  onRemove,
 }: OrganizationMemberListItemProps) {
   const [roleSelectionOpen, setRoleSelectionOpen] = React.useState(false);
 
@@ -64,6 +66,17 @@ export function OrganizationMemberListItem({
           </li>
           <li>
             <span onClick={() => handleRoleSelectionClick("user")}>user</span>
+          </li>
+          <li>
+            <span 
+              className="text-red-500 cursor-pointer" 
+              onClick={() => {
+                onRemove?.();
+                setRoleSelectionOpen(false);
+              }}
+            >
+              remove
+            </span>
           </li>
         </ul>
       )}

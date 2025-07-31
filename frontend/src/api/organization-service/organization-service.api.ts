@@ -97,4 +97,14 @@ export const organizationService = {
 
     return data;
   },
+
+  removeMember: async ({
+    orgId,
+    userId,
+  }: {
+    orgId: string;
+    userId: string;
+  }) => {
+    await openHands.delete(`/api/organizations/${orgId}/members/${userId}`);
+  },
 };

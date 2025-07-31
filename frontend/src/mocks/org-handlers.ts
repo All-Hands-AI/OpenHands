@@ -324,4 +324,22 @@ export const ORG_HANDLERS = [
       return HttpResponse.json(member, { status: 200 });
     },
   ),
+
+  http.delete("/api/organizations/:orgId/members/:userId", ({ params }) => {
+    const { orgId, userId } = params;
+
+    if (!orgId || !userId || !ORGS_AND_MEMBERS[orgId as string]) {
+      return HttpResponse.json(
+        { error: "Organization or member not found" },
+        { status: 404 },
+      );
+    }
+
+    // Remove member from organization
+    const members = ORGS_AND_MEMBERS[orgId as string];
+    const updatedMembers = members.filter((member) => member.id !== userId);
+    ORGS_AND_MEMBERS[orgId as string] = updatedMembers;
+
+    return HttpResponse.json({ message: "Member removed" }, { status: 200 });
+  }),
 ];

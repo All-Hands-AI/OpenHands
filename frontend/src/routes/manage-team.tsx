@@ -7,6 +7,7 @@ import { useOrganizationMembers } from "#/hooks/query/use-organization-members";
 import { OrganizationUserRole } from "#/types/org";
 import { OrganizationMemberListItem } from "#/components/features/org/organization-member-list-item";
 import { useUpdateMemberRole } from "#/hooks/mutation/use-update-member-role";
+import { useRemoveMember } from "#/hooks/mutation/use-remove-member";
 import { useMe } from "#/hooks/query/use-me";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { rolePermissions } from "#/utils/org/permissions";
@@ -38,6 +39,7 @@ function ManageTeam() {
   const { data: organizationMembers } = useOrganizationMembers();
   const { data: user } = useMe();
   const { mutate: updateMemberRole } = useUpdateMemberRole();
+  const { mutate: removeMember } = useRemoveMember();
 
   const [inviteModalOpen, setInviteModalOpen] = React.useState(false);
 
@@ -48,6 +50,10 @@ function ManageTeam() {
 
   const handleRoleSelectionClick = (id: string, role: OrganizationUserRole) => {
     updateMemberRole({ userId: id, role });
+  };
+
+  const handleRemoveMember = (userId: string) => {
+    removeMember({ userId });
   };
 
   const checkIfUserHasPermissionToChangeRole = (
@@ -107,6 +113,7 @@ function ManageTeam() {
                 onRoleChange={(role) =>
                   handleRoleSelectionClick(member.id, role)
                 }
+                onRemove={() => handleRemoveMember(member.id)}
               />
             </li>
           ))}
