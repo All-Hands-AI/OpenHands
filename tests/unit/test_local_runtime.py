@@ -50,7 +50,7 @@ def local_runtime(config, event_stream):
     return runtime
 
 
-class TestLocalRuntimeUrlMethods:
+class TestLocalRuntime:
     """Tests for LocalRuntime's URL-related methods."""
 
     def test_runtime_url_with_env_var(self):
