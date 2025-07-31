@@ -319,32 +319,43 @@ class BaseGitService(ABC):
                 f'Failed to parse microagent file {file_path}: {str(e)}'
             )
 
-    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
-        """Generic implementation of get_microagents that works across all providers.
+    async def _check_cursorrules_file(
+        self, repository: str
+    ) -> MicroagentResponse | None:
+        """Check for .cursorrules file in the repository and return microagent response if found.
 
         Args:
             repository: Repository name in format specific to the provider
 
         Returns:
-            List of microagents found in the repository (without content for performance)
+            MicroagentResponse for .cursorrules file if found, None otherwise
         """
-        microagents_path = self._determine_microagents_path(repository)
-        microagents = []
-
-        # Step 1: Check for .cursorrules file
         try:
             cursorrules_url = await self._get_cursorrules_url(repository)
             cursorrules_response, _ = await self._make_request(cursorrules_url)
             if cursorrules_response:
-                microagents.append(
-                    self._create_microagent_response('.cursorrules', '.cursorrules')
-                )
+                return self._create_microagent_response('.cursorrules', '.cursorrules')
         except ResourceNotFoundError:
             logger.debug(f'No .cursorrules file found in {repository}')
         except Exception as e:
             logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
 
-        # Step 2: Check for microagents directory and process .md files
+        return None
+
+    async def _process_microagents_directory(
+        self, repository: str, microagents_path: str
+    ) -> list[MicroagentResponse]:
+        """Process microagents directory and return list of microagent responses.
+
+        Args:
+            repository: Repository name in format specific to the provider
+            microagents_path: Path to the microagents directory
+
+        Returns:
+            List of MicroagentResponse objects found in the directory
+        """
+        microagents = []
+
         try:
             directory_url = await self._get_microagents_directory_url(
                 repository, microagents_path
@@ -381,6 +392,31 @@ class BaseGitService(ABC):
             )
         except Exception as e:
             logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        return microagents
+
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
+        """Generic implementation of get_microagents that works across all providers.
+
+        Args:
+            repository: Repository name in format specific to the provider
+
+        Returns:
+            List of microagents found in the repository (without content for performance)
+        """
+        microagents_path = self._determine_microagents_path(repository)
+        microagents = []
+
+        # Step 1: Check for .cursorrules file
+        cursorrules_microagent = await self._check_cursorrules_file(repository)
+        if cursorrules_microagent:
+            microagents.append(cursorrules_microagent)
+
+        # Step 2: Check for microagents directory and process .md files
+        directory_microagents = await self._process_microagents_directory(
+            repository, microagents_path
+        )
+        microagents.extend(directory_microagents)
 
         return microagents
 
