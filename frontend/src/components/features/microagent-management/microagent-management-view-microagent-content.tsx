@@ -11,6 +11,7 @@ import { anchor } from "../markdown/anchor";
 import { RootState } from "#/store";
 import { useRepositoryMicroagentContent } from "#/hooks/query/use-repository-microagent-content";
 import { I18nKey } from "#/i18n/declaration";
+import { extractRepositoryInfo } from "#/utils/utils";
 
 export function MicroagentManagementViewMicroagentContent() {
   const { t } = useTranslation();
@@ -25,8 +26,10 @@ export function MicroagentManagementViewMicroagentContent() {
   const { microagent } = selectedMicroagentItem ?? {};
 
   // Extract owner and repo from full_name (e.g., "owner/repo")
-  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
-  const filePath = microagent?.path || "";
+  const { owner, repo, filePath } = extractRepositoryInfo(
+    selectedRepository,
+    microagent,
+  );
 
   // Fetch microagent content using the new API
   const {

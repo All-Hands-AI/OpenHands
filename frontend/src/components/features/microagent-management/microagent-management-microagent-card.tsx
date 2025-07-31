@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { formatDateMMDDYYYY } from "#/utils/format-time-delta";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { Conversation } from "#/api/open-hands.types";
 import {
@@ -37,17 +36,6 @@ export function MicroagentManagementMicroagentCard({
     runtime_status: runtimeStatus,
     pr_number: prNumber,
   } = conversation ?? {};
-
-  // Format the createdAt date using MM/DD/YYYY format
-  const formattedCreatedAt = useMemo(() => {
-    if (microagent) {
-      return formatDateMMDDYYYY(new Date(microagent.created_at));
-    }
-    if (conversation) {
-      return formatDateMMDDYYYY(new Date(conversation.created_at));
-    }
-    return "";
-  }, [microagent, conversation]);
 
   const hasPr = !!(prNumber && prNumber.length > 0);
 
@@ -129,9 +117,6 @@ export function MicroagentManagementMicroagentCard({
             {microagent.path}
           </div>
         )}
-        <div className="text-white text-sm font-normal">
-          {t(I18nKey.COMMON$CREATED_ON)} {formattedCreatedAt}
-        </div>
       </div>
     </div>
   );

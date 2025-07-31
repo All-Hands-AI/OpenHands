@@ -8,7 +8,7 @@ import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import XIcon from "#/icons/x.svg?react";
-import { cn } from "#/utils/utils";
+import { cn, extractRepositoryInfo } from "#/utils/utils";
 import { BadgeInput } from "#/components/shared/inputs/badge-input";
 import { MicroagentFormData } from "#/types/microagent-management";
 import { Branch, GitRepository } from "#/types/git";
@@ -53,8 +53,10 @@ export function MicroagentManagementUpsertMicroagentModal({
   const branchManuallyClearedRef = useRef<boolean>(false);
 
   // Extract owner and repo from full_name for content API
-  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
-  const filePath = microagent?.path || "";
+  const { owner, repo, filePath } = extractRepositoryInfo(
+    selectedRepository,
+    microagent,
+  );
 
   // Fetch microagent content when updating
   const { data: microagentContentData, isLoading: isLoadingContent } =
