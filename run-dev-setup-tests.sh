@@ -126,52 +126,80 @@ run_test_scenario() {
         echo -e "$test_content" > "$test_file"
     fi
 
-    # Add files to git and commit with timing
+    # Add files to git and check if there are changes to commit
     print_status "Adding files and committing..."
     git add .
 
-    commit_start=$(date +%s.%N)
-
-    # Redirect commit output to log file if available
-    if [[ -n "$COMMIT_LOG_FILE" ]]; then
-        echo "=== Commit: $setup_name - $scenario ===" >> "$COMMIT_LOG_FILE"
-        echo "Timestamp: $(date)" >> "$COMMIT_LOG_FILE"
-        echo "Command: git commit -m \"Test commit for $setup_name - $scenario\"" >> "$COMMIT_LOG_FILE"
-        echo "--- Output ---" >> "$COMMIT_LOG_FILE"
-
-        if git commit -m "Test commit for $setup_name - $scenario" >> "$COMMIT_LOG_FILE" 2>&1; then
-            commit_end=$(date +%s.%N)
-            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
-            commit_times["${setup_name}_${scenario}"]=$commit_duration
+    # Check if there are any changes to commit
+    if git diff --cached --quiet; then
+        # No changes to commit - this is expected for "no-change" scenario
+        if [[ "$scenario" == "no-change" ]]; then
+            print_success "No changes to commit (expected for no-change scenario)"
             test_results["${setup_name}_${scenario}"]="SUCCESS"
-            echo "--- End Output (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
-            echo "" >> "$COMMIT_LOG_FILE"
-            print_success "Commit completed in ${commit_duration}s (output logged to commit log)"
+            commit_times["${setup_name}_${scenario}"]="0.0"
+
+            # Log this to commit log if available
+            if [[ -n "$COMMIT_LOG_FILE" ]]; then
+                echo "=== Commit: $setup_name - $scenario ===" >> "$COMMIT_LOG_FILE"
+                echo "Timestamp: $(date)" >> "$COMMIT_LOG_FILE"
+                echo "Command: git status --porcelain (checking for changes)" >> "$COMMIT_LOG_FILE"
+                echo "--- Output ---" >> "$COMMIT_LOG_FILE"
+                echo "No changes to commit (expected for no-change scenario)" >> "$COMMIT_LOG_FILE"
+                echo "--- End Output (Duration: 0.0s) ---" >> "$COMMIT_LOG_FILE"
+                echo "" >> "$COMMIT_LOG_FILE"
+            fi
         else
-            commit_end=$(date +%s.%N)
-            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
-            commit_times["${setup_name}_${scenario}"]=$commit_duration
-            echo "--- Commit Failed (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
-            echo "" >> "$COMMIT_LOG_FILE"
-            print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario (check commit log for details)"
-            test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
+            # Changes were expected but none found
+            print_error "No changes to commit, but changes were expected for $scenario scenario"
+            test_results["${setup_name}_${scenario}"]="NO_CHANGES"
+            commit_times["${setup_name}_${scenario}"]="0.0"
             return 1
         fi
     else
-        # Fallback to original behavior if no log file specified
-        if git commit -m "Test commit for $setup_name - $scenario"; then
-            commit_end=$(date +%s.%N)
-            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
-            commit_times["${setup_name}_${scenario}"]=$commit_duration
-            test_results["${setup_name}_${scenario}"]="SUCCESS"
-            print_success "Commit completed in ${commit_duration}s"
+        # There are changes to commit
+        commit_start=$(date +%s.%N)
+
+        # Redirect commit output to log file if available
+        if [[ -n "$COMMIT_LOG_FILE" ]]; then
+            echo "=== Commit: $setup_name - $scenario ===" >> "$COMMIT_LOG_FILE"
+            echo "Timestamp: $(date)" >> "$COMMIT_LOG_FILE"
+            echo "Command: git commit -m \"Test commit for $setup_name - $scenario\"" >> "$COMMIT_LOG_FILE"
+            echo "--- Output ---" >> "$COMMIT_LOG_FILE"
+
+            if git commit -m "Test commit for $setup_name - $scenario" >> "$COMMIT_LOG_FILE" 2>&1; then
+                commit_end=$(date +%s.%N)
+                commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+                commit_times["${setup_name}_${scenario}"]=$commit_duration
+                test_results["${setup_name}_${scenario}"]="SUCCESS"
+                echo "--- End Output (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
+                echo "" >> "$COMMIT_LOG_FILE"
+                print_success "Commit completed in ${commit_duration}s (output logged to commit log)"
+            else
+                commit_end=$(date +%s.%N)
+                commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+                commit_times["${setup_name}_${scenario}"]=$commit_duration
+                echo "--- Commit Failed (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
+                echo "" >> "$COMMIT_LOG_FILE"
+                print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario (check commit log for details)"
+                test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
+                return 1
+            fi
         else
-            commit_end=$(date +%s.%N)
-            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
-            commit_times["${setup_name}_${scenario}"]=$commit_duration
-            print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario"
-            test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
-            return 1
+            # Fallback to original behavior if no log file specified
+            if git commit -m "Test commit for $setup_name - $scenario"; then
+                commit_end=$(date +%s.%N)
+                commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+                commit_times["${setup_name}_${scenario}"]=$commit_duration
+                test_results["${setup_name}_${scenario}"]="SUCCESS"
+                print_success "Commit completed in ${commit_duration}s"
+            else
+                commit_end=$(date +%s.%N)
+                commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+                commit_times["${setup_name}_${scenario}"]=$commit_duration
+                print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario"
+                test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
+                return 1
+            fi
         fi
     fi
 
