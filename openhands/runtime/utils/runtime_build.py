@@ -235,9 +235,7 @@ def build_runtime_image_in_folder(
     else:
         logger.debug(f'Build [{hash_image_name}] from scratch')
 
-    prep_build_folder(
-        build_folder, base_image, build_from, extra_deps, enable_browser
-    )
+    prep_build_folder(build_folder, base_image, build_from, extra_deps, enable_browser)
     if not dry_run:
         _build_sandbox_image(
             build_folder,
