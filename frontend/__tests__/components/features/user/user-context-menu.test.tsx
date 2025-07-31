@@ -234,7 +234,7 @@ describe("UserContextMenu", () => {
   });
 
   it("should render the invite user modal when Invite Team is clicked", async () => {
-    const inviteMemberSpy = vi.spyOn(organizationService, "inviteMember");
+    const inviteMembersBatchSpy = vi.spyOn(organizationService, "inviteMembers");
     const onCloseMock = vi.fn();
     renderUserContextMenu({ type: "admin", onClose: onCloseMock });
 
@@ -247,7 +247,7 @@ describe("UserContextMenu", () => {
     await userEvent.click(
       within(portalRoot).getByRole("button", { name: /skip/i }),
     );
-    expect(inviteMemberSpy).not.toHaveBeenCalled();
+    expect(inviteMembersBatchSpy).not.toHaveBeenCalled();
   });
 
   test("the user can change orgs", async () => {

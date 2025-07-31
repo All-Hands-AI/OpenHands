@@ -66,16 +66,6 @@ export const organizationService = {
     return data;
   },
 
-  inviteMember: async ({ orgId, email }: { orgId: string; email: string }) => {
-    const { data } = await openHands.post<OrganizationMember>(
-      `/api/organizations/${orgId}/invite`,
-      {
-        email,
-      },
-    );
-
-    return data;
-  },
 
   updateMemberRole: async ({
     orgId,
@@ -106,5 +96,22 @@ export const organizationService = {
     userId: string;
   }) => {
     await openHands.delete(`/api/organizations/${orgId}/members/${userId}`);
+  },
+
+  inviteMembers: async ({
+    orgId,
+    emails,
+  }: {
+    orgId: string;
+    emails: string[];
+  }) => {
+    const { data } = await openHands.post<OrganizationMember[]>(
+      `/api/organizations/${orgId}/invite/batch`,
+      {
+        emails,
+      },
+    );
+
+    return data;
   },
 };

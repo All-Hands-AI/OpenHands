@@ -258,34 +258,6 @@ export const ORG_HANDLERS = [
     );
   }),
 
-  http.post("/api/organizations/:orgId/invite", async ({ request, params }) => {
-    const { email } = (await request.json()) as { email: string };
-    const orgId = params.orgId?.toString();
-
-    if (!email) {
-      return HttpResponse.json({ error: "Email is required" }, { status: 400 });
-    }
-
-    if (!orgId || !ORGS_AND_MEMBERS[orgId]) {
-      return HttpResponse.json(
-        { error: "Organization not found" },
-        { status: 404 },
-      );
-    }
-
-    const members = Array.from(ORGS_AND_MEMBERS[orgId]);
-    const newMember: OrganizationMember = {
-      id: String(members.length + 1),
-      email,
-      role: "user",
-      status: "invited",
-    };
-
-    const newMembers = [...members, newMember];
-    ORGS_AND_MEMBERS[orgId] = newMembers;
-
-    return HttpResponse.json(newMember, { status: 201 });
-  }),
 
   http.patch(
     "/api/organizations/:orgId/members",
@@ -341,5 +313,33 @@ export const ORG_HANDLERS = [
     ORGS_AND_MEMBERS[orgId as string] = updatedMembers;
 
     return HttpResponse.json({ message: "Member removed" }, { status: 200 });
+  }),
+
+  http.post("/api/organizations/:orgId/invite/batch", async ({ request, params }) => {
+    const { emails } = (await request.json()) as { emails: string[] };
+    const orgId = params.orgId?.toString();
+
+    if (!emails || emails.length === 0) {
+      return HttpResponse.json({ error: "Emails are required" }, { status: 400 });
+    }
+
+    if (!orgId || !ORGS_AND_MEMBERS[orgId]) {
+      return HttpResponse.json(
+        { error: "Organization not found" },
+        { status: 404 },
+      );
+    }
+
+    const members = Array.from(ORGS_AND_MEMBERS[orgId]);
+    const newMembers = emails.map((email, index) => ({
+      id: String(members.length + index + 1),
+      email,
+      role: "user" as const,
+      status: "invited" as const,
+    }));
+
+    ORGS_AND_MEMBERS[orgId] = [...members, ...newMembers];
+
+    return HttpResponse.json(newMembers, { status: 201 });
   }),
 ];
