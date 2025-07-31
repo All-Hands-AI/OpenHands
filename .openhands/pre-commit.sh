@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Running OpenHands pre-commit hook..."
-echo "This hook runs 'make lint' to ensure code quality before committing."
+echo "This hook runs selective linting based on changed files."
 
 # Store the exit code to return at the end
 # This allows us to be additive to existing pre-commit hooks

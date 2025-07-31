@@ -5,6 +5,7 @@ import { Typography } from "../typography/Typography";
 import { toastStyles } from "./utils";
 import type { JSX } from "react";
 import { invariant } from "../../shared/utils/invariant";
+import type { BaseProps } from "../../shared/types";
 
 type RenderContentProps = {
   onDismiss: () => void;

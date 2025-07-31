@@ -1,12 +1,11 @@
 export type BaseProps = {
   className?: string;
-  style?: React.CSSProperties;
   testId?: string;
 };
 
 export type HTMLProps<T extends React.ElementType> = Omit<
   React.ComponentPropsWithoutRef<T>,
-  "children"
+  "children" | "style" | "className"
 >;
 
 export type ComponentVariant = "primary" | "secondary" | "tertiary";

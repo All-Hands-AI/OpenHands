@@ -34,6 +34,7 @@ export const Checkbox = ({
         disabled && "cursor-not-allowed",
         className
       )}
+      data-testid={testId}
     >
       <input
         id={id}
@@ -42,7 +43,6 @@ export const Checkbox = ({
         onChange={onChange}
         disabled={disabled}
         className="sr-only peer"
-        data-testid={testId}
         {...props}
       />
       <div

@@ -4,7 +4,11 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import type { ComponentVariant, HTMLProps } from "../../shared/types";
+import type {
+  BaseProps,
+  ComponentVariant,
+  HTMLProps,
+} from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { buttonStyles, useAndApplyBoldTextWidth } from "./utils";
 import { cloneIcon } from "../../shared/utils/clone-icon";
@@ -15,7 +19,7 @@ export type ButtonProps = Omit<HTMLProps<"button">, "aria-disabled"> & {
   variant?: ComponentVariant;
   start?: ReactElement<HTMLProps<"svg">>;
   end?: ReactElement<HTMLProps<"svg">>;
-};
+} & BaseProps;
 
 export const Button = ({
   size = "small",
@@ -24,6 +28,7 @@ export const Button = ({
   children,
   start,
   end,
+  testId,
   ...props
 }: PropsWithChildren<ButtonProps>) => {
   const buttonClassNames = buttonStyles[variant];
@@ -35,6 +40,7 @@ export const Button = ({
     <button
       {...props}
       aria-disabled={props.disabled ? "true" : "false"}
+      data-testid={testId}
       className={cn(
         size === "small" ? "px-2 py-3 min-w-32" : "px-3 py-4 min-w-64",
         "flex flex-row items-center gap-x-8",
