@@ -105,6 +105,7 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
         ReactDOM.createPortal(
           <CreateNewOrganizationModal
             onClose={() => setOrgModalIsOpen(false)}
+            onSuccess={() => setInviteMemberModalIsOpen(true)}
           />,
           document.getElementById("portal-root") || document.body,
         )}

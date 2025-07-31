@@ -147,8 +147,8 @@ describe("UserContextMenu", () => {
       expect(screen.getByTestId("create-org-modal")).toBeInTheDocument();
 
       // Simulate closing the modal
-      const cancelButton = screen.getByRole("button", { name: /cancel/i });
-      await userEvent.click(cancelButton);
+      const skipButton = screen.getByRole("button", { name: /skip/i });
+      await userEvent.click(skipButton);
 
       expect(screen.queryByTestId("create-org-modal")).not.toBeInTheDocument();
     });
@@ -165,8 +165,8 @@ describe("UserContextMenu", () => {
       const orgNameInput = screen.getByTestId("org-name-input");
       await userEvent.type(orgNameInput, "New Organization");
 
-      const saveButton = screen.getByRole("button", { name: /save/i });
-      await userEvent.click(saveButton);
+      const nextButton = screen.getByRole("button", { name: /next/i });
+      await userEvent.click(nextButton);
 
       expect(createOrgSpy).toHaveBeenCalledExactlyOnceWith({
         name: "New Organization",
@@ -184,8 +184,8 @@ describe("UserContextMenu", () => {
       const orgNameInput = screen.getByTestId("org-name-input");
       await userEvent.type(orgNameInput, "New Organization");
 
-      const saveButton = screen.getByRole("button", { name: /save/i });
-      await userEvent.click(saveButton);
+      const nextButton = screen.getByRole("button", { name: /next/i });
+      await userEvent.click(nextButton);
 
       expect(createOrgSpy).toHaveBeenCalledExactlyOnceWith({
         name: "New Organization",
@@ -194,6 +194,36 @@ describe("UserContextMenu", () => {
       // Verify the organization selector now shows the newly created organization
       const orgSelector = screen.getByTestId("org-selector");
       expect(orgSelector.getAttribute("value")).toBe("New Organization");
+    });
+
+    it("should show invite modal immediately after creating an organization", async () => {
+      const createOrgSpy = vi.spyOn(organizationService, "createOrganization");
+      renderUserContextMenu({ type: "superadmin", onClose: vi.fn });
+
+      // Verify invite modal is not visible initially
+      expect(screen.queryByTestId("invite-modal")).not.toBeInTheDocument();
+
+      const createOrgButton = screen.getByText("Create New Organization");
+      await userEvent.click(createOrgButton);
+
+      const orgNameInput = screen.getByTestId("org-name-input");
+      await userEvent.type(orgNameInput, "New Organization");
+
+      const nextButton = screen.getByRole("button", { name: /next/i });
+      await userEvent.click(nextButton);
+
+      expect(createOrgSpy).toHaveBeenCalledExactlyOnceWith({
+        name: "New Organization",
+      });
+
+      // Verify the create org modal is closed
+      expect(screen.queryByTestId("create-org-modal")).not.toBeInTheDocument();
+
+      // Verify the invite modal appears immediately
+      const portalRoot = screen.getByTestId("portal-root");
+      expect(
+        within(portalRoot).getByTestId("invite-modal"),
+      ).toBeInTheDocument();
     });
   });
 
@@ -234,7 +264,10 @@ describe("UserContextMenu", () => {
   });
 
   it("should render the invite user modal when Invite Team is clicked", async () => {
-    const inviteMembersBatchSpy = vi.spyOn(organizationService, "inviteMembers");
+    const inviteMembersBatchSpy = vi.spyOn(
+      organizationService,
+      "inviteMembers",
+    );
     const onCloseMock = vi.fn();
     renderUserContextMenu({ type: "admin", onClose: onCloseMock });
 
@@ -263,7 +296,7 @@ describe("UserContextMenu", () => {
     await userEvent.click(orgOption);
 
     expect(onCloseMock).not.toHaveBeenCalled();
-    
+
     // Verify that the dropdown shows the selected organization
     // The dropdown should now display the selected org name
     expect(orgSelector).toHaveValue(INITIAL_MOCK_ORGS[1].name);

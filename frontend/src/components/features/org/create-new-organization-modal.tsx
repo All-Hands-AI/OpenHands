@@ -4,10 +4,12 @@ import { useSelectedOrganizationId } from "#/context/use-selected-organization";
 
 interface CreateNewOrganizationModalProps {
   onClose: () => void;
+  onSuccess?: () => void;
 }
 
 export function CreateNewOrganizationModal({
   onClose,
+  onSuccess,
 }: CreateNewOrganizationModalProps) {
   const { mutate: createOrganization } = useCreateOrganization();
   const { setOrgId } = useSelectedOrganizationId();
@@ -21,6 +23,7 @@ export function CreateNewOrganizationModal({
           onSuccess: (newOrg) => {
             setOrgId(newOrg.id);
             onClose();
+            onSuccess?.();
           },
         }
       );
@@ -40,9 +43,9 @@ export function CreateNewOrganizationModal({
             <input data-testid="org-name-input" name="org-name" type="text" />
           </label>
 
-          <button type="submit">Save</button>
+          <button type="submit">Next</button>
           <button type="button" onClick={onClose}>
-            Cancel
+            Skip
           </button>
         </form>
       </div>
