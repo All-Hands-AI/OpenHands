@@ -3,9 +3,12 @@ import { describe, expect, it, test, vi, afterEach, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { UserActions } from "#/components/features/sidebar/user-actions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactElement } from "react";
 
 // Create a mock for useIsAuthed that we can control per test
-const useIsAuthedMock = vi.fn().mockReturnValue({ data: true, isLoading: false });
+const useIsAuthedMock = vi
+  .fn()
+  .mockReturnValue({ data: true, isLoading: false });
 
 // Mock the useIsAuthed hook
 vi.mock("#/hooks/query/use-is-authed", () => ({
@@ -18,7 +21,7 @@ describe("UserActions", () => {
   const onLogoutMock = vi.fn();
 
   // Create a wrapper with QueryClientProvider
-  const renderWithQueryClient = (ui) => {
+  const renderWithQueryClient = (ui: ReactElement) => {
     const queryClient = new QueryClient({
       defaultOptions: {
         queries: {
@@ -112,7 +115,9 @@ describe("UserActions", () => {
   });
 
   it("should show context menu even when user has no avatar_url", async () => {
-    renderWithQueryClient(<UserActions onLogout={onLogoutMock} user={{ avatar_url: "" }} />);
+    renderWithQueryClient(
+      <UserActions onLogout={onLogoutMock} user={{ avatar_url: "" }} />,
+    );
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
@@ -143,7 +148,9 @@ describe("UserActions", () => {
     // Start with no authentication
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
 
-    const { rerender } = renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
+    const { rerender } = renderWithQueryClient(
+      <UserActions onLogout={onLogoutMock} />,
+    );
 
     // Initially no user - context menu shouldn't work
     expect(
@@ -160,7 +167,7 @@ describe("UserActions", () => {
           onLogout={onLogoutMock}
           user={{ avatar_url: "https://example.com/avatar.png" }}
         />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     // Component should still render correctly
@@ -190,7 +197,7 @@ describe("UserActions", () => {
     rerender(
       <QueryClientProvider client={new QueryClient()}>
         <UserActions onLogout={onLogoutMock} />
-      </QueryClientProvider>
+      </QueryClientProvider>,
     );
 
     expect(
