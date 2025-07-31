@@ -215,7 +215,7 @@ generate_report() {
     printf "%-20s %-20s %-15s %-15s %-10s\n" "SETUP" "SCENARIO" "SETUP_TIME(s)" "COMMIT_TIME(s)" "STATUS"
     printf "%-20s %-20s %-15s %-15s %-10s\n" "----" "--------" "-----------" "------------" "------"
 
-    for setup in "dev-proper" "dev-min" "openhands-agent"; do
+    for setup in "dev-proper" "dev-max" "openhands-agent"; do
         for scenario in "no-change" "toplevel-change" "frontend-change"; do
             key="${setup}_${scenario}"
             setup_time=${setup_times[$key]:-"N/A"}
@@ -242,7 +242,7 @@ main() {
     echo
 
     # Make scripts executable
-    chmod +x test-dev-proper.sh test-dev-min.sh test-openhands-agent.sh
+    chmod +x test-dev-proper.sh test-dev-max.sh test-openhands-agent.sh
 
     # Test scenarios
     declare -A scenarios=(
@@ -252,7 +252,7 @@ main() {
     )
 
     # Run all combinations of setups and scenarios
-    for setup in "dev-proper" "dev-min" "openhands-agent"; do
+    for setup in "dev-proper" "dev-max" "openhands-agent"; do
         setup_script="test-${setup}.sh"
 
         for scenario_key in "no-change" "toplevel-change" "frontend-change"; do
