@@ -1,10 +1,36 @@
 [build-system]
 build-backend = "poetry.core.masonry.api"
+# This file uses both the modern PEP 621 format ([project]) and the Poetry-specific format ([tool.poetry])
+# for backward compatibility. The warnings from `poetry check` about duplicate fields are expected and can be ignored.
+# The [project] section is the primary configuration, and the [tool.poetry] section is kept for compatibility.
+
 requires = [
   "poetry-core",
 ]
 
+[project]
+name = "openhands-ai"
+description = "OpenHands: Code Less, Make More"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+  { name = "OpenHands" },
+]
+requires-python = ">=3.12,<3.14"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dynamic = [ "dependencies", "version" ]
+
+optional-dependencies.third_party_runtimes = [ "daytona", "e2b", "modal", "runloop-api-client" ]
+urls.repository = "https://github.com/All-Hands-AI/OpenHands"
+scripts.openhands = "openhands.cli.main:main"
+
 [tool.poetry]
+# This section is kept for backward compatibility with Poetry
+# The primary configuration is in the [project] section above
 name = "openhands-ai"
 version = "0.51.0"
 description = "OpenHands: Code Less, Make More"
@@ -24,7 +50,7 @@ include = [
 build = "build_vscode.py" # Build VSCode extension during Poetry build
 
 [tool.poetry.dependencies]
-python = "^3.12,<3.14"
+python = ">=3.12,<3.14"
 litellm = "^1.74.3, !=1.64.4, !=1.67.*"            # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
 aiohttp = ">=3.9.0,!=3.11.13"                      # Pin to avoid yanked version 3.11.13
 google-generativeai = "*"                          # To use litellm with Gemini Pro API
