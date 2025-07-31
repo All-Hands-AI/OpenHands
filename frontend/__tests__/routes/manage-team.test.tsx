@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, test, beforeEach } from "vitest";
+import { describe, expect, it, vi, test, beforeEach, afterEach } from "vitest";
 import { render, screen, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
@@ -51,6 +51,10 @@ describe("Manage Team Route", () => {
     });
 
     queryClient = new QueryClient();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   const renderManageTeam = () =>
@@ -196,7 +200,7 @@ describe("Manage Team Route", () => {
     ).not.toBeInTheDocument();
   });
 
-  it.only("should not allow an admin to change another admin's role", async () => {
+  it("should not allow an admin to change another admin's role", async () => {
     renderManageTeam();
     await screen.findByTestId("manage-team-settings");
 
@@ -212,6 +216,33 @@ describe("Manage Team Route", () => {
     // Verify that the dropdown does not open for the other admin
     expect(
       within(adminMember).queryByTestId("role-dropdown"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("should not allow a user to change their own role", async () => {
+    // Mock the /me endpoint to return a user ID that matches one of the members
+    const getMeSpy = vi.spyOn(organizationService, "getMe");
+    getMeSpy.mockResolvedValue({
+      id: "1", // Same as Alice from org 1
+      email: "alice@acme.org",
+      role: "superadmin",
+      status: "active",
+    });
+
+    renderManageTeam();
+    await screen.findByTestId("manage-team-settings");
+
+    await selectOrganization({ orgIndex: 0 });
+
+    const memberListItems = await screen.findAllByTestId("member-item");
+    const currentUserMember = memberListItems[0]; // First member is Alice (id: "1")
+
+    const roleText = within(currentUserMember).getByText(/superadmin/i);
+    await userEvent.click(roleText);
+
+    // Verify that the dropdown does not open for the current user's own role
+    expect(
+      within(currentUserMember).queryByTestId("role-dropdown"),
     ).not.toBeInTheDocument();
   });
 

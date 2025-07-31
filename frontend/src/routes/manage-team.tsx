@@ -51,9 +51,13 @@ function ManageTeam() {
   };
 
   const checkIfUserHasPermissionToChangeRole = (
+    memberId: string,
     memberRole: OrganizationUserRole,
   ) => {
     if (!user) return false;
+
+    // Users cannot change their own role
+    if (memberId === user.id) return false;
 
     const userPermissions = rolePermissions[user.role];
     return userPermissions.includes(`change_user_role:${memberRole}`);
@@ -97,6 +101,7 @@ function ManageTeam() {
                 role={member.role}
                 status={member.status}
                 hasPermissionToChangeRole={checkIfUserHasPermissionToChangeRole(
+                  member.id,
                   member.role,
                 )}
                 onRoleChange={(role) =>
