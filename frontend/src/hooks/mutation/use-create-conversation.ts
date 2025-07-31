@@ -3,6 +3,7 @@ import posthog from "posthog-js";
 import OpenHands from "#/api/open-hands";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { Provider } from "#/types/settings";
+import { CreateMicroagent } from "#/api/open-hands.types";
 
 interface CreateConversationVariables {
   query?: string;
@@ -13,6 +14,7 @@ interface CreateConversationVariables {
   };
   suggestedTask?: SuggestedTask;
   conversationInstructions?: string;
+  createMicroagent?: CreateMicroagent;
 }
 
 export const useCreateConversation = () => {
@@ -21,8 +23,13 @@ export const useCreateConversation = () => {
   return useMutation({
     mutationKey: ["create-conversation"],
     mutationFn: async (variables: CreateConversationVariables) => {
-      const { query, repository, suggestedTask, conversationInstructions } =
-        variables;
+      const {
+        query,
+        repository,
+        suggestedTask,
+        conversationInstructions,
+        createMicroagent,
+      } = variables;
 
       return OpenHands.createConversation(
         repository?.name,
@@ -31,6 +38,7 @@ export const useCreateConversation = () => {
         suggestedTask,
         repository?.branch,
         conversationInstructions,
+        createMicroagent,
       );
     },
     onSuccess: async (_, { query, repository }) => {

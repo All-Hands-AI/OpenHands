@@ -5,16 +5,20 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
+    ResourceNotFoundError,
     SuggestedTask,
     User,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -62,6 +66,50 @@ class BitBucketService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
         return self.token
+
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        # Get repository details to get the main branch
+        repo_details = await self.get_repository_details_from_repo_name(repository)
+        if not repo_details.main_branch:
+            raise ResourceNotFoundError(
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
+            )
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        # Get repository details to get the main branch
+        repo_details = await self.get_repository_details_from_repo_name(repository)
+        if not repo_details.main_branch:
+            raise ResourceNotFoundError(
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
+            )
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'commit_file'
+            and item['path'].endswith('.md')
+            and not item['path'].endswith('README.md')
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['path'].split('/')[-1]
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return item['path']
 
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
@@ -246,6 +294,11 @@ class BitBucketService(BaseGitService, GitService):
                         is_public=repo.get('is_private', True) is False,
                         stargazers_count=None,  # Bitbucket doesn't have stars
                         pushed_at=repo.get('updated_on'),
+                        owner_type=(
+                            OwnerType.ORGANIZATION
+                            if repo.get('workspace', {}).get('is_private') is False
+                            else OwnerType.USER
+                        ),
                     )
                 )
 
@@ -280,6 +333,8 @@ class BitBucketService(BaseGitService, GitService):
         data, _ = await self._make_request(url)
 
         uuid = data.get('uuid', '')
+        main_branch = data.get('mainbranch', {}).get('name')
+
         return Repository(
             id=uuid,
             full_name=f'{data.get("workspace", {}).get("slug", "")}/{data.get("slug", "")}',
@@ -287,6 +342,12 @@ class BitBucketService(BaseGitService, GitService):
             is_public=data.get('is_private', True) is False,
             stargazers_count=None,  # Bitbucket doesn't have stars
             pushed_at=data.get('updated_on'),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if data.get('workspace', {}).get('is_private') is False
+                else OwnerType.USER
+            ),
+            main_branch=main_branch,
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:
@@ -373,6 +434,41 @@ class BitBucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
+
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Fetch individual file content from Bitbucket repository.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+            file_path: Path to the file within the repository
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        # Step 1: Get repository details using existing method
+        repo_details = await self.get_repository_details_from_repo_name(repository)
+
+        if not repo_details.main_branch:
+            logger.warning(
+                f'No main branch found in repository info for {repository}. '
+                f'Repository response: mainbranch field missing'
+            )
+            raise ResourceNotFoundError(
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
+            )
+
+        # Step 2: Get file content using the main branch
+        file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
+        response, _ = await self._make_request(file_url)
+
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(response, file_path)
 
 
 bitbucket_service_cls = os.environ.get(

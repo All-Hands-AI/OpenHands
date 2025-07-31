@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from datetime import datetime
@@ -15,6 +16,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -23,6 +25,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -86,6 +89,36 @@ class GitHubService(BaseGitService, GitService):
 
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
+
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'file'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['name']
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return f'{microagents_path}/{item["name"]}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
 
     async def _make_request(
         self,
@@ -236,6 +269,11 @@ class GitHubService(BaseGitService, GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=not repo.get('private', True),
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
             )
             for repo in all_repos
         ]
@@ -269,6 +307,11 @@ class GitHubService(BaseGitService, GitService):
                 stargazers_count=repo.get('stargazers_count'),
                 git_provider=ProviderType.GITHUB,
                 is_public=True,
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('owner', {}).get('type') == 'Organization'
+                    else OwnerType.USER
+                ),
             )
             for repo in repo_items
         ]
@@ -414,6 +457,11 @@ class GitHubService(BaseGitService, GitService):
             stargazers_count=repo.get('stargazers_count'),
             git_provider=ProviderType.GITHUB,
             is_public=not repo.get('private', True),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('owner', {}).get('type') == 'Organization'
+                else OwnerType.USER
+            ),
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:
@@ -520,6 +568,29 @@ class GitHubService(BaseGitService, GitService):
 
         # Return the HTML URL of the created PR
         return response['html_url']
+
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Fetch individual file content from GitHub repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            file_path: Path to the file within the repository
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
+
+        file_data, _ = await self._make_request(file_url)
+        file_content = base64.b64decode(file_data['content']).decode('utf-8')
+
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(file_content, file_path)
 
 
 github_service_cls = os.environ.get(
