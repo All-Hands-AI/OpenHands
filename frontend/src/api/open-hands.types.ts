@@ -56,6 +56,9 @@ export interface GetConfigResponse {
     HIDE_LLM_SETTINGS: boolean;
     HIDE_MICROAGENT_MANAGEMENT?: boolean;
   };
+  MAINTENANCE?: {
+    startTime: string;
+  };
 }
 
 export interface GetVSCodeUrlResponse {
