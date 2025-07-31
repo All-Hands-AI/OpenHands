@@ -8911,6 +8911,22 @@
         "tr": "Bitbucket'a bağlan",
         "uk": "Увійти за допомогою Bitbucket"
     },
+    "ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO": {
+        "en": "Login with Enterprise SSO",
+        "ja": "エンタープライズSSOでログイン",
+        "zh-CN": "使用企业SSO登录",
+        "zh-TW": "使用企業SSO登入",
+        "ko-KR": "엔터프라이즈 SSO로 로그인",
+        "de": "Mit Enterprise SSO anmelden",
+        "no": "Logg inn med Enterprise SSO",
+        "it": "Accedi con Enterprise SSO",
+        "pt": "Entrar com Enterprise SSO",
+        "es": "Iniciar sesión con Enterprise SSO",
+        "ar": "تسجيل الدخول باستخدام Enterprise SSO",
+        "fr": "Se connecter avec Enterprise SSO",
+        "tr": "Enterprise SSO ile giriş yap",
+        "uk": "Увійти за допомогою Enterprise SSO"
+    },
     "AUTH$SIGN_IN_WITH_IDENTITY_PROVIDER": {
         "en": "Log in to OpenHands",
         "ja": "IDプロバイダーでサインイン",

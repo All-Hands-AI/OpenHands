@@ -150,7 +150,7 @@ export function AuthModal({
                   onClick={handleEnterpriseSsoAuth}
                   className="w-full"
                 >
-                  {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                  {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
                 </BrandButton>
               )}
             </>
