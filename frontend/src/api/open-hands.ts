@@ -20,6 +20,7 @@ import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { RepositoryMicroagent } from "#/types/microagent-management";
+import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -164,6 +165,38 @@ class OpenHands {
       // Error checking if feedback exists
       return { exists: false };
     }
+  }
+
+  /**
+   * Get feedback for multiple events in a conversation
+   * @param conversationId The conversation ID
+   * @returns Map of event IDs to feedback data including existence, rating, reason and metadata
+   */
+  static async getBatchFeedback(conversationId: string): Promise<
+    Record<
+      string,
+      {
+        exists: boolean;
+        rating?: number;
+        reason?: string;
+        metadata?: Record<string, BatchFeedbackData>;
+      }
+    >
+  > {
+    const url = `/feedback/conversation/${conversationId}/batch`;
+    const { data } = await openHands.get<
+      Record<
+        string,
+        {
+          exists: boolean;
+          rating?: number;
+          reason?: string;
+          metadata?: Record<string, BatchFeedbackData>;
+        }
+      >
+    >(url);
+
+    return data;
   }
 
   /**
