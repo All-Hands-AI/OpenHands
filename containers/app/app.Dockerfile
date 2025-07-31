@@ -56,7 +56,7 @@ COPY --chown=openhands:app --chmod=770 ./openhands/agenthub ./openhands/agenthub
 COPY --chown=openhands:app ./pyproject.toml ./pyproject.toml
 COPY --chown=openhands:app ./poetry.lock ./poetry.lock
 # This is run as "openhands" user, and will create **pycache** with openhands:openhands ownership
-RUN python openhands/core/download.py # No-op to download assets
+# RUN python openhands/core/download.py # No-op to download assets
 # Add this line to set group ownership of all files/directories not already in "app" group
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} +

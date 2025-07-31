@@ -5,6 +5,8 @@ from typing import Iterable
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
 from openhands.events.serialization.event import event_from_dict, event_to_dict
+from openhands.shared import config as shared_config
+from openhands.storage.database import db_file_store
 from openhands.storage.files import FileStore
 from openhands.storage.locations import (
     get_conversation_dir,
@@ -51,14 +53,9 @@ class EventStore:
     cache_size: int = 25
 
     def __post_init__(self) -> None:
-        from openhands.core.config import load_app_config
-        from openhands.storage.database import db_file_store
-
-        config_app = load_app_config()
-
         if self.cur_id >= 0:
             return
-        if config_app.file_store == 'database':
+        if shared_config.file_store == 'database':
             self.cur_id = db_file_store._get_latest_event_id(self.sid)
         else:
             events = []
@@ -109,10 +106,6 @@ class EventStore:
         Yields:
             Events from the stream that match the criteria.
         """
-        from openhands.core.config import load_app_config
-        from openhands.storage.database import db_file_store
-
-        config_app = load_app_config()
 
         def should_filter(event: Event) -> bool:
             if filter_hidden and hasattr(event, 'hidden') and event.hidden:
@@ -126,7 +119,7 @@ class EventStore:
         else:
             end_id += 1  # From inclusive to exclusive
 
-        if config_app.file_store == 'database':
+        if shared_config.file_store == 'database':
             events = db_file_store._get_events_from_start_id(self.sid, start_id)
             for event_dict in events:
                 parsed_event = event_from_dict(event_dict)

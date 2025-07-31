@@ -4,7 +4,6 @@ from functools import lru_cache
 import socketio
 from dotenv import load_dotenv
 
-from openhands.core.config import load_app_config
 from openhands.core.database import DBConnectionPool
 from openhands.server.config.server_config import load_server_config
 from openhands.server.conversation_manager.conversation_manager import (
@@ -13,6 +12,7 @@ from openhands.server.conversation_manager.conversation_manager import (
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.utils.imagen import Imagen
 from openhands.server.utils.s3_utils import S3Handler
+from openhands.shared import config as shared_config
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.settings.settings_store import SettingsStore
@@ -20,7 +20,7 @@ from openhands.utils.import_utils import get_impl
 
 load_dotenv()
 
-config = load_app_config()
+config = shared_config
 server_config = load_server_config()
 file_store = get_file_store(config.file_store, config.file_store_path)
 imagen = Imagen()

@@ -26,7 +26,7 @@ from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State, TrafficControlState
 from openhands.controller.stuck import StuckDetector
-from openhands.core.config import AgentConfig, LLMConfig, load_app_config
+from openhands.core.config import AgentConfig, LLMConfig
 from openhands.core.exceptions import (
     AgentStuckInLoopError,
     FunctionCallNotExistsError,
@@ -98,6 +98,7 @@ from openhands.server.thesis_auth import (
     search_knowledge,
     webhook_rag_conversation,
 )
+from openhands.shared import config as shared_config
 from openhands.storage import get_file_store
 
 # Remove database imports from module level to avoid circular imports
@@ -573,8 +574,9 @@ class AgentController:
                 if conn:
                     _db_pool_instance.release_connection(conn)
 
-            config = load_app_config()
-            file_store = get_file_store(config.file_store, config.file_store_path)
+            file_store = get_file_store(
+                shared_config.file_store, shared_config.file_store_path
+            )
 
             event_store = EventStore(
                 self.raw_followup_conversation_id,
@@ -1024,8 +1026,9 @@ class AgentController:
                     raise LLMNoActionError(NO_ACTION_WAS_RETURN)
                 action = step_result
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
-                config = load_app_config()
-                if config.enable_evaluation and isinstance(action, AgentFinishAction):
+                if shared_config.enable_evaluation and isinstance(
+                    action, AgentFinishAction
+                ):
                     print('AgentFinishAction', action)
                     finish_message = action.final_thought
                     await self.set_agent_state_to(AgentState.RUNNING)

@@ -9,7 +9,6 @@ from typing import Any
 
 import openhands
 from openhands.controller.state.task import RootTask
-from openhands.core.config import load_app_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema import AgentState
 from openhands.events.action import (
@@ -19,19 +18,10 @@ from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
+from openhands.shared import config as shared_config
 from openhands.storage.files import FileStore
 from openhands.storage.local import LocalFileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
-
-_config_app = None
-
-
-def get_config_app():
-    """Lazy loading of app config to prevent JWT secret creation during module import."""
-    global _config_app
-    if _config_app is None:
-        _config_app = load_app_config()
-    return _config_app
 
 
 class TrafficControlState(str, Enum):
@@ -121,11 +111,11 @@ class State:
 
     def save_to_session(self, sid: str, file_store: FileStore, user_id: str | None):
         # Check if we're using DatabaseFileStore
-        if get_config_app().file_store == 'database':
+        if shared_config.file_store == 'database':
             # Use JSON format for database storage
             self.save_to_session_json(sid, file_store, user_id)
-            if get_config_app().enable_write_to_local:
-                local_file_store = LocalFileStore(get_config_app().file_store_path)
+            if shared_config.enable_write_to_local:
+                local_file_store = LocalFileStore(shared_config.file_store_path)
                 pickled = pickle.dumps(self)
                 encoded = base64.b64encode(pickled).decode('utf-8')
                 local_file_store.write(
@@ -161,7 +151,7 @@ class State:
         Restores the state from the previously saved session.
         """
         # Check if we're using DatabaseFileStore
-        if get_config_app().file_store == 'database':
+        if shared_config.file_store == 'database':
             # Use JSON format for database storage
             return State.restore_from_session_json(sid, file_store, user_id)
         else:
@@ -583,10 +573,7 @@ class State:
             )
 
             # see if state is in the old directory on saas/remote use cases and delete it.
-            if (
-                get_config_app().file_store != 'database'
-                and get_config_app().file_store_path
-            ):
+            if shared_config.file_store != 'database' and shared_config.file_store_path:
                 if user_id:
                     filename = get_conversation_agent_state_filename(sid)
                     try:

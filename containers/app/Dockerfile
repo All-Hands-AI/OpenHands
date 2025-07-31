@@ -1,14 +1,14 @@
 ARG OPENHANDS_BUILD_VERSION=dev
-FROM node:21.7.2-bookworm-slim AS frontend-builder
+# FROM node:21.7.2-bookworm-slim AS frontend-builder
 
-WORKDIR /app
+# WORKDIR /app
 
-COPY ./frontend/package.json frontend/package-lock.json ./
-RUN npm install -g npm@10.5.1
-RUN npm ci
+# COPY ./frontend/package.json frontend/package-lock.json ./
+# RUN npm install -g npm@10.5.1
+# RUN npm ci
 
-COPY ./frontend ./
-RUN npm run build
+# COPY ./frontend ./
+# RUN npm run build
 
 FROM python:3.12.3-slim AS backend-builder
 
@@ -83,12 +83,12 @@ COPY --chown=openhands:app ./MANIFEST.in ./MANIFEST.in
 COPY --chown=openhands:app ./LICENSE ./LICENSE
 
 # This is run as "openhands" user, and will create __pycache__ with openhands:openhands ownership
-RUN python openhands/core/download.py # No-op to download assets
+# RUN python openhands/core/download.py # No-op to download assets
 # Add this line to set group ownership of all files/directories not already in "app" group
 # openhands:openhands -> openhands:app
 RUN find /app \! -group app -exec chgrp app {} +
 
-COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
+# COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
 COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 COPY --chown=openhands:app --chmod=770 ./containers/app/config.toml /app/config.toml
 

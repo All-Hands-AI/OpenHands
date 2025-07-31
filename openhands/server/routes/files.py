@@ -9,7 +9,6 @@ from pathspec.patterns import GitWildMatchPattern
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 
-from openhands.core.config import load_app_config
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import FileReadAction
@@ -19,6 +18,7 @@ from openhands.server.file_config import (
     FILES_TO_IGNORE,
 )
 from openhands.server.shared import imagen, s3_handler
+from openhands.shared import config as shared_config
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -42,7 +42,6 @@ def safe_base64_encode(data: bytes) -> str:
 
 
 app = APIRouter(prefix='/api/conversations/{conversation_id}')
-config_app = load_app_config()
 
 
 class UploadFileRequest(BaseModel):
@@ -164,7 +163,7 @@ async def select_file(file: str, request: Request):
 
         if 'ERROR_BINARY_FILE' in observation.message:
             try:
-                workspace_base = config_app.workspace_base or ''
+                workspace_base = shared_config.workspace_base or ''
                 openhand_file_path = os.path.join(
                     workspace_base + '/' + runtime.sid, raw_file
                 )
@@ -251,7 +250,7 @@ async def uploadImageFile(request: Request, data: UploadFileRequest):
 
         if 'ERROR_BINARY_FILE' in observation.message:
             try:
-                workspace_base = config_app.workspace_base or ''
+                workspace_base = shared_config.workspace_base or ''
                 openhand_file_path = os.path.join(
                     workspace_base + '/' + runtime.sid, file
                 )
