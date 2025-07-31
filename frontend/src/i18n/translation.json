@@ -4432,20 +4432,20 @@
         "uk": "Від'єднано"
     },
     "CHAT_INTERFACE$CONNECTING": {
-        "en": "Connecting",
-        "ja": "接続中",
-        "zh-CN": "正在连接",
-        "zh-TW": "正在連接",
-        "ko-KR": "연결 중",
-        "no": "Kobler til",
-        "it": "Connessione in corso",
-        "pt": "Conectando",
-        "es": "Conectando",
-        "ar": "جاري الاتصال",
-        "fr": "Connexion en cours",
-        "tr": "Bağlanıyor",
-        "de": "Verbindung wird hergestellt",
-        "uk": "З'єднання"
+        "en": "Connecting... (this may take 1-2 minutes)",
+        "ja": "接続中...（1-2分かかる場合があります）",
+        "zh-CN": "正在连接...（这可能需要1-2分钟）",
+        "zh-TW": "正在連接...（這可能需要1-2分鐘）",
+        "ko-KR": "연결 중... (1-2분 정도 걸릴 수 있습니다)",
+        "no": "Kobler til... (dette kan ta 1-2 minutter)",
+        "it": "Connessione in corso... (potrebbe richiedere 1-2 minuti)",
+        "pt": "Conectando... (isso pode levar 1-2 minutos)",
+        "es": "Conectando... (esto puede tomar 1-2 minutos)",
+        "ar": "جاري الاتصال... (قد يستغرق هذا 1-2 دقيقة)",
+        "fr": "Connexion en cours... (cela peut prendre 1-2 minutes)",
+        "tr": "Bağlanıyor... (bu 1-2 dakika sürebilir)",
+        "de": "Verbindung wird hergestellt... (dies kann 1-2 Minuten dauern)",
+        "uk": "З'єднання... (це може зайняти 1-2 хвилини)"
     },
     "CHAT_INTERFACE$STOPPED": {
         "en": "Stopped",
@@ -6640,20 +6640,20 @@
         "uk": "Підключення до середовища виконання..."
     },
     "STATUS$STARTING_RUNTIME": {
-        "en": "Starting runtime...",
-        "zh-CN": "启动运行时...",
-        "zh-TW": "啟動執行時...",
-        "de": "Laufzeitumgebung wird gestartet...",
-        "ko-KR": "런타임 시작 중...",
-        "no": "Starter kjøretidsmiljø...",
-        "it": "Avvio dell'ambiente di esecuzione...",
-        "pt": "Iniciando o ambiente de execução...",
-        "es": "Iniciando el entorno de ejecución...",
-        "ar": "جارٍ بدء بيئة التشغيل...",
-        "fr": "Démarrage de l'environnement d'exécution...",
-        "tr": "Çalışma zamanı başlatılıyor...",
-        "ja": "ランタイムを開始中",
-        "uk": "Запуск середовища виконання..."
+        "en": "Starting runtime... (this may take 1-2 minutes)",
+        "zh-CN": "启动运行时...（这可能需要1-2分钟）",
+        "zh-TW": "啟動執行時...（這可能需要1-2分鐘）",
+        "de": "Laufzeitumgebung wird gestartet... (dies kann 1-2 Minuten dauern)",
+        "ko-KR": "런타임 시작 중... (1-2분 정도 걸릴 수 있습니다)",
+        "no": "Starter kjøretidsmiljø... (dette kan ta 1-2 minutter)",
+        "it": "Avvio dell'ambiente di esecuzione... (potrebbe richiedere 1-2 minuti)",
+        "pt": "Iniciando o ambiente de execução... (isso pode levar 1-2 minutos)",
+        "es": "Iniciando el entorno de ejecución... (esto puede tomar 1-2 minutos)",
+        "ar": "جارٍ بدء بيئة التشغيل... (قد يستغرق هذا 1-2 دقيقة)",
+        "fr": "Démarrage de l'environnement d'exécution... (cela peut prendre 1-2 minutes)",
+        "tr": "Çalışma zamanı başlatılıyor... (bu 1-2 dakika sürebilir)",
+        "ja": "ランタイムを開始中...（1-2分かかる場合があります）",
+        "uk": "Запуск середовища виконання... (це може зайняти 1-2 хвилини)"
     },
     "STATUS$SETTING_UP_WORKSPACE": {
         "en": "Setting up workspace...",
@@ -11758,5 +11758,21 @@
         "tr": "OpenHands, talimatlarınıza göre mikro ajanı güncelleyecektir.",
         "de": "OpenHands aktualisiert den Microagenten basierend auf Ihren Anweisungen.",
         "uk": "OpenHands оновить мікроагента відповідно до ваших інструкцій."
+    },
+    "MICROAGENT_MANAGEMENT$ERROR_LOADING_MICROAGENT_CONTENT": {
+        "en": "Error loading microagent content.",
+        "ja": "マイクロエージェントのコンテンツの読み込み中にエラーが発生しました。",
+        "zh-CN": "加载微代理内容时出错。",
+        "zh-TW": "載入微代理內容時發生錯誤。",
+        "ko-KR": "마이크로에이전트 콘텐츠를 불러오는 중 오류가 발생했습니다.",
+        "no": "Feil ved lasting av mikroagent-innhold.",
+        "it": "Errore durante il caricamento del contenuto del microagente.",
+        "pt": "Erro ao carregar o conteúdo do microagente.",
+        "es": "Error al cargar el contenido del microagente.",
+        "ar": "حدث خطأ أثناء تحميل محتوى الوكيل الدقيق.",
+        "fr": "Erreur lors du chargement du contenu du microagent.",
+        "tr": "Mikro ajan içeriği yüklenirken hata oluştu.",
+        "de": "Fehler beim Laden des Microagent-Inhalts.",
+        "uk": "Помилка під час завантаження вмісту мікроагента."
     }
 }
