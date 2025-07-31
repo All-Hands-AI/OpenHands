@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import type { HTMLProps, IOption } from "../../shared/types";
+import type { BaseProps, HTMLProps, IOption } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import ReactSelect, { createFilter } from "react-select";
 import { Typography } from "../typography/Typography";
@@ -16,7 +16,7 @@ export type SelectProps<T> = Omit<HTMLProps<"input">, "value" | "onChange"> & {
   options: IOption<T>[];
   noOptionsText?: string;
   onChange(value: IOption<T> | null): void;
-};
+} & BaseProps;
 
 export const Select = <T extends string>(props: SelectProps<T>) => {
   const {
@@ -32,6 +32,8 @@ export const Select = <T extends string>(props: SelectProps<T>) => {
     onChange,
     readOnly,
     noOptionsText,
+    className,
+    testId,
   } = props;
   const [inputValue, setInputValue] = useState("");
   const generatedId = useId();
@@ -50,10 +52,12 @@ export const Select = <T extends string>(props: SelectProps<T>) => {
 
   return (
     <label
+      data-testid={testId}
       htmlFor={id}
       className={cn(
         "flex flex-col gap-y-2",
-        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer",
+        className
       )}
     >
       <Typography.Text fontSize="s" className="text-light-neutral-200">

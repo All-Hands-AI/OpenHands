@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
 import OpenHands from "#/api/open-hands";
 import { useConversationId } from "#/hooks/use-conversation-id";
+import {
+  BatchFeedbackData,
+  getFeedbackQueryKey,
+} from "../query/use-batch-feedback";
 
 type SubmitConversationFeedbackArgs = {
   rating: number;
@@ -12,7 +15,6 @@ type SubmitConversationFeedbackArgs = {
 export const useSubmitConversationFeedback = () => {
   const { conversationId } = useConversationId();
   const queryClient = useQueryClient();
-  const { t } = useTranslation();
 
   return useMutation({
     mutationFn: ({ rating, eventId, reason }: SubmitConversationFeedbackArgs) =>
@@ -22,18 +24,56 @@ export const useSubmitConversationFeedback = () => {
         eventId,
         reason,
       ),
-    onSuccess: (_, { eventId }) => {
-      // Invalidate the feedback existence query to trigger a refetch
-      if (eventId) {
-        queryClient.invalidateQueries({
-          queryKey: ["feedback", "exists", conversationId, eventId],
-        });
-      }
+    onMutate: async ({ rating, eventId, reason }) => {
+      if (!eventId) return { previousFeedback: null };
+
+      // Get the query key for the feedback data
+      const queryKey = getFeedbackQueryKey(conversationId);
+
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey });
+
+      // Snapshot the previous value
+      const previousFeedback =
+        queryClient.getQueryData<Record<string, BatchFeedbackData>>(queryKey);
+
+      // Optimistically update the cache
+      queryClient.setQueryData<Record<string, BatchFeedbackData>>(
+        queryKey,
+        (old = {}) => {
+          const newData = { ...old };
+          newData[eventId.toString()] = {
+            exists: true,
+            rating,
+            reason,
+            metadata: { source: "likert-scale" },
+          };
+          return newData;
+        },
+      );
+
+      // Return a context object with the snapshotted value
+      return { previousFeedback };
     },
-    onError: (error) => {
+    onError: (error, { eventId }, context) => {
+      // Roll back to the previous value on error
+      if (context?.previousFeedback && eventId) {
+        queryClient.setQueryData(
+          getFeedbackQueryKey(conversationId),
+          context.previousFeedback,
+        );
+      }
       // Log error but don't show toast - user will just see the UI stay in unsubmitted state
       // eslint-disable-next-line no-console
-      console.error(t("FEEDBACK$FAILED_TO_SUBMIT"), error);
+      console.error(error);
+    },
+    onSettled: (_, __, { eventId }) => {
+      if (eventId) {
+        // Invalidate both the old and new query keys to ensure consistency
+        queryClient.invalidateQueries({
+          queryKey: getFeedbackQueryKey(conversationId),
+        });
+      }
     },
   });
 };
