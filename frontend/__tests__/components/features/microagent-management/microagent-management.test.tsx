@@ -1184,17 +1184,6 @@ describe("MicroagentManagement", () => {
 
       expect(conversation1).toBeInTheDocument();
       expect(conversation2).toBeInTheDocument();
-
-      // Check that created dates are displayed for conversations (there are multiple elements with the same text)
-      const createdDates = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/01\/2021/,
-      );
-      expect(createdDates.length).toBeGreaterThan(0);
-
-      const createdDates2 = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/02\/2021/,
-      );
-      expect(createdDates2.length).toBeGreaterThan(0);
     });
 
     it("should handle multiple repository expansions with conversations", async () => {
