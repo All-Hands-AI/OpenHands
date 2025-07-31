@@ -56,6 +56,9 @@ export interface GetConfigResponse {
     HIDE_LLM_SETTINGS: boolean;
     HIDE_MICROAGENT_MANAGEMENT?: boolean;
   };
+  MAINTENANCE?: {
+    startTime: string;
+  };
 }
 
 export interface GetVSCodeUrlResponse {
@@ -143,4 +146,11 @@ export interface CreateMicroagent {
   repo: string;
   git_provider?: Provider;
   title?: string;
+}
+
+export interface MicroagentContentResponse {
+  content: string;
+  path: string;
+  git_provider: Provider;
+  triggers: string[];
 }
