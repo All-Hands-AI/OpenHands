@@ -23,7 +23,6 @@ from openhands.server.user_auth import (
 # Mock MicroagentContentResponse for testing
 class MicroagentContentResponse(BaseModel):
     """Response model for individual microagent content endpoint."""
-
     content: str
     path: str
     triggers: list[str] = []
