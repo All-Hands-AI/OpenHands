@@ -112,12 +112,6 @@ def event_to_dict(event: 'Event') -> dict:
                 d['timestamp'] = d['timestamp'].isoformat()
         if key == 'source' and 'source' in d:
             d['source'] = d['source'].value
-        if (
-            key == 'observation'
-            and 'observation' in d
-            and isinstance(d['observation'], Enum)
-        ):
-            d['observation'] = d['observation'].value
         if key == 'recall_type' and 'recall_type' in d:
             d['recall_type'] = d['recall_type'].value
         if key == 'tool_call_metadata' and 'tool_call_metadata' in d:
@@ -127,6 +121,9 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
+    # Remove task_completed from serialization when it's None (backward compatibility)
+    if 'task_completed' in props and props['task_completed'] is None:
+        props.pop('task_completed')
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
