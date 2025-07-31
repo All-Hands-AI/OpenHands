@@ -47,6 +47,16 @@ reset_state() {
     # Remove only the specific test files we create, not our scripts
     rm -f test_file_toplevel.py frontend/test_file_frontend.js
 
+    # Remove test commits by resetting to the original commit
+    # This removes any commits made during testing
+    if [[ -n "$ORIGINAL_COMMIT" ]]; then
+        current_commit=$(git rev-parse HEAD)
+        if [[ "$current_commit" != "$ORIGINAL_COMMIT" ]]; then
+            print_status "Removing test commits (resetting to $ORIGINAL_COMMIT)"
+            git reset --hard "$ORIGINAL_COMMIT" 2>/dev/null || true
+        fi
+    fi
+
     print_success "State reset complete"
 }
 
@@ -67,15 +77,45 @@ run_test_scenario() {
     print_status "Running setup: $setup_script"
     setup_start=$(date +%s.%N)
 
-    if bash "$setup_script"; then
-        setup_end=$(date +%s.%N)
-        setup_duration=$(echo "$setup_end - $setup_start" | bc -l)
-        setup_times["${setup_name}_${scenario}"]=$setup_duration
-        print_success "Setup completed in ${setup_duration}s"
+    # Redirect setup output to log file if available
+    if [[ -n "$SETUP_LOG_FILE" ]]; then
+        echo "=== Setup: $setup_name - $scenario ===" >> "$SETUP_LOG_FILE"
+        echo "Timestamp: $(date)" >> "$SETUP_LOG_FILE"
+        echo "Command: bash $setup_script" >> "$SETUP_LOG_FILE"
+        echo "--- Output ---" >> "$SETUP_LOG_FILE"
+
+        if bash "$setup_script" >> "$SETUP_LOG_FILE" 2>&1; then
+            setup_end=$(date +%s.%N)
+            setup_duration=$(echo "$setup_end - $setup_start" | bc -l)
+            setup_times["${setup_name}_${scenario}"]=$setup_duration
+            echo "--- End Output (Duration: ${setup_duration}s) ---" >> "$SETUP_LOG_FILE"
+            echo "" >> "$SETUP_LOG_FILE"
+            print_success "Setup completed in ${setup_duration}s (output logged to setup log)"
+        else
+            setup_end=$(date +%s.%N)
+            setup_duration=$(echo "$setup_end - $setup_start" | bc -l)
+            setup_times["${setup_name}_${scenario}"]=$setup_duration
+            echo "--- Setup Failed (Duration: ${setup_duration}s) ---" >> "$SETUP_LOG_FILE"
+            echo "" >> "$SETUP_LOG_FILE"
+            print_error "Setup failed in ${setup_duration}s for $setup_name (check setup log for details)"
+            test_results["${setup_name}_${scenario}"]="SETUP_FAILED"
+            return 1
+        fi
     else
-        print_error "Setup failed for $setup_name"
-        test_results["${setup_name}_${scenario}"]="SETUP_FAILED"
-        return 1
+        # Fallback to original behavior if no log file specified
+        if bash "$setup_script"; then
+            setup_end=$(date +%s.%N)
+            setup_duration=$(echo "$setup_end - $setup_start" | bc -l)
+            setup_times["${setup_name}_${scenario}"]=$setup_duration
+            print_success "Setup completed in ${setup_duration}s"
+        else
+            setup_end=$(date +%s.%N)
+            setup_duration=$(echo "$setup_end - $setup_start" | bc -l)
+            setup_times["${setup_name}_${scenario}"]=$setup_duration
+            print_error "Setup failed in ${setup_duration}s for $setup_name"
+            test_results["${setup_name}_${scenario}"]="SETUP_FAILED"
+            return 1
+        fi
     fi
 
     # Create test file if specified
@@ -92,16 +132,47 @@ run_test_scenario() {
 
     commit_start=$(date +%s.%N)
 
-    if git commit -m "Test commit for $setup_name - $scenario"; then
-        commit_end=$(date +%s.%N)
-        commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
-        commit_times["${setup_name}_${scenario}"]=$commit_duration
-        test_results["${setup_name}_${scenario}"]="SUCCESS"
-        print_success "Commit completed in ${commit_duration}s"
+    # Redirect commit output to log file if available
+    if [[ -n "$COMMIT_LOG_FILE" ]]; then
+        echo "=== Commit: $setup_name - $scenario ===" >> "$COMMIT_LOG_FILE"
+        echo "Timestamp: $(date)" >> "$COMMIT_LOG_FILE"
+        echo "Command: git commit -m \"Test commit for $setup_name - $scenario\"" >> "$COMMIT_LOG_FILE"
+        echo "--- Output ---" >> "$COMMIT_LOG_FILE"
+
+        if git commit -m "Test commit for $setup_name - $scenario" >> "$COMMIT_LOG_FILE" 2>&1; then
+            commit_end=$(date +%s.%N)
+            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+            commit_times["${setup_name}_${scenario}"]=$commit_duration
+            test_results["${setup_name}_${scenario}"]="SUCCESS"
+            echo "--- End Output (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
+            echo "" >> "$COMMIT_LOG_FILE"
+            print_success "Commit completed in ${commit_duration}s (output logged to commit log)"
+        else
+            commit_end=$(date +%s.%N)
+            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+            commit_times["${setup_name}_${scenario}"]=$commit_duration
+            echo "--- Commit Failed (Duration: ${commit_duration}s) ---" >> "$COMMIT_LOG_FILE"
+            echo "" >> "$COMMIT_LOG_FILE"
+            print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario (check commit log for details)"
+            test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
+            return 1
+        fi
     else
-        print_error "Commit failed for $setup_name - $scenario"
-        test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
-        return 1
+        # Fallback to original behavior if no log file specified
+        if git commit -m "Test commit for $setup_name - $scenario"; then
+            commit_end=$(date +%s.%N)
+            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+            commit_times["${setup_name}_${scenario}"]=$commit_duration
+            test_results["${setup_name}_${scenario}"]="SUCCESS"
+            print_success "Commit completed in ${commit_duration}s"
+        else
+            commit_end=$(date +%s.%N)
+            commit_duration=$(echo "$commit_end - $commit_start" | bc -l)
+            commit_times["${setup_name}_${scenario}"]=$commit_duration
+            print_error "Commit failed in ${commit_duration}s for $setup_name - $scenario"
+            test_results["${setup_name}_${scenario}"]="COMMIT_FAILED"
+            return 1
+        fi
     fi
 
     print_success "=== $setup_name with $scenario completed ==="
@@ -133,6 +204,10 @@ generate_report() {
 
 # Main execution
 main() {
+    # Store the original commit to reset to after each test
+    ORIGINAL_COMMIT=$(git rev-parse HEAD)
+    export ORIGINAL_COMMIT
+
     print_status "Starting OpenHands Development Setup Testing"
     print_status "Current branch: $(git branch --show-current)"
     print_status "Current commit: $(git rev-parse --short HEAD)"
