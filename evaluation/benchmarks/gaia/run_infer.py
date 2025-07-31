@@ -23,6 +23,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -84,7 +85,9 @@ def get_config(
     # Set log_completions to True for all routing LLMs
     for llm_cfg in model_routing_config.routing_llms.values():
         llm_cfg.log_completions = True
-        update_llm_config_for_completions_logging(llm_cfg, metadata.eval_output_dir, instance['instance_id'])
+        update_llm_config_for_completions_logging(
+            llm_cfg, metadata.eval_output_dir, instance['instance_id']
+        )
 
     if config_copy.search_api_key:
         config.search_api_key = SecretStr(config_copy.search_api_key)
@@ -287,7 +290,7 @@ Here is the task:
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -304,7 +307,6 @@ Here is the task:
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result=test_result,
-        routing_history=state.routing_history,
     )
     runtime.close()
     return output
