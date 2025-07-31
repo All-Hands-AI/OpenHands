@@ -9,6 +9,7 @@ from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
+    modify_search_api_settings,
 )
 from openhands.cli.tui import UserCancelledError
 from openhands.core.config import OpenHandsConfig
@@ -46,6 +47,7 @@ class TestDisplaySettings:
         config.security = security_mock
 
         config.enable_default_condenser = True
+        config.search_api_key = SecretStr('tvly-test-key')
         return config
 
     @pytest.fixture
@@ -65,6 +67,7 @@ class TestDisplaySettings:
         config.security = security_mock
 
         config.enable_default_condenser = True
+        config.search_api_key = SecretStr('tvly-test-key')
         return config
 
     @patch('openhands.cli.settings.print_container')
@@ -90,6 +93,8 @@ class TestDisplaySettings:
         assert 'Enabled' in settings_text
         assert 'Memory Condensation:' in settings_text
         assert 'Enabled' in settings_text
+        assert 'Search API Key:' in settings_text
+        assert '********' in settings_text  # Search API key should be masked
         assert 'Configuration File' in settings_text
         assert str(Path(app_config.file_store_path)) in settings_text
 
@@ -624,4 +629,92 @@ class TestModifyLLMSettingsAdvanced:
 
         # Verify settings were not changed
         app_config.set_llm_config.assert_not_called()
+        settings_store.store.assert_not_called()
+
+
+class TestModifySearchApiSettings:
+    @pytest.fixture
+    def app_config(self):
+        config = MagicMock(spec=OpenHandsConfig)
+        config.search_api_key = SecretStr('tvly-existing-key')
+        return config
+
+    @pytest.fixture
+    def settings_store(self):
+        store = MagicMock(spec=FileSettingsStore)
+        store.load = AsyncMock(return_value=Settings())
+        store.store = AsyncMock()
+        return store
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    async def test_modify_search_api_settings_set_new_key(
+        self, mock_print, mock_confirm, mock_session, app_config, settings_store
+    ):
+        # Setup mocks
+        session_instance = MagicMock()
+        session_instance.prompt_async = AsyncMock(return_value='tvly-new-key')
+        mock_session.return_value = session_instance
+
+        # Mock user confirmations: Set/Update API Key, then Save
+        mock_confirm.side_effect = [0, 0]
+
+        # Call the function
+        await modify_search_api_settings(app_config, settings_store)
+
+        # Verify config was updated
+        assert app_config.search_api_key.get_secret_value() == 'tvly-new-key'
+
+        # Verify settings were saved
+        settings_store.store.assert_called_once()
+        args, kwargs = settings_store.store.call_args
+        settings = args[0]
+        assert settings.search_api_key.get_secret_value() == 'tvly-new-key'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    async def test_modify_search_api_settings_remove_key(
+        self, mock_print, mock_confirm, mock_session, app_config, settings_store
+    ):
+        # Setup mocks
+        session_instance = MagicMock()
+        mock_session.return_value = session_instance
+
+        # Mock user confirmations: Remove API Key, then Save
+        mock_confirm.side_effect = [1, 0]
+
+        # Call the function
+        await modify_search_api_settings(app_config, settings_store)
+
+        # Verify config was updated to None
+        assert app_config.search_api_key is None
+
+        # Verify settings were saved
+        settings_store.store.assert_called_once()
+        args, kwargs = settings_store.store.call_args
+        settings = args[0]
+        assert settings.search_api_key is None
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.settings.PromptSession')
+    @patch('openhands.cli.settings.cli_confirm')
+    @patch('openhands.cli.settings.print_formatted_text')
+    async def test_modify_search_api_settings_keep_current(
+        self, mock_print, mock_confirm, mock_session, app_config, settings_store
+    ):
+        # Setup mocks
+        session_instance = MagicMock()
+        mock_session.return_value = session_instance
+
+        # Mock user confirmation: Keep current setting
+        mock_confirm.return_value = 2
+
+        # Call the function
+        await modify_search_api_settings(app_config, settings_store)
+
+        # Verify settings were not changed
         settings_store.store.assert_not_called()
