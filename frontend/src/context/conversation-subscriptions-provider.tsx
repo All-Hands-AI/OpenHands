@@ -31,7 +31,7 @@ interface ConversationSubscriptionsContextType {
   subscribeToConversation: (options: {
     conversationId: string;
     sessionApiKey: string | null;
-    providersSet: ("github" | "gitlab" | "bitbucket")[];
+    providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
     baseUrl: string;
     onEvent?: (event: unknown, conversationId: string) => void;
   }) => void;
