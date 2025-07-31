@@ -25,7 +25,8 @@ class Test(BaseIntegrationTest):
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
         # git add
-        action = CmdRunAction(command='git add hello.py .vscode/')
+        cmd_str = 'git add hello.py'
+        action = CmdRunAction(command=cmd_str)
         obs = runtime.run_action(action)
         assert_and_raise(obs.exit_code == 0, f'Failed to run command: {obs.content}')
 
@@ -38,15 +39,6 @@ class Test(BaseIntegrationTest):
             return TestResult(
                 success=False,
                 reason=f'Failed to cat /workspace/hello.py: {obs.content}.',
-            )
-
-        # check if the file /workspace/.vscode/settings.json exists
-        action = CmdRunAction(command='cat /workspace/.vscode/settings.json')
-        obs = runtime.run_action(action)
-        if obs.exit_code != 0:
-            return TestResult(
-                success=False,
-                reason=f'Failed to cat /workspace/.vscode/settings.json: {obs.content}.',
             )
 
         # check if the staging area is empty

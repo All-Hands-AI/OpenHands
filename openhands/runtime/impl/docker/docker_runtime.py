@@ -31,6 +31,7 @@ from openhands.runtime.utils.command import (
     get_action_execution_server_startup_command,
 )
 from openhands.runtime.utils.log_streamer import LogStreamer
+from openhands.runtime.utils.port_lock import PortLock, find_available_port_with_lock
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
@@ -103,6 +104,11 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        # Port locks to prevent race conditions
+        self._host_port_lock: PortLock | None = None
+        self._vscode_port_lock: PortLock | None = None
+        self._app_port_locks: list[PortLock] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
@@ -221,6 +227,7 @@ class DockerRuntime(ActionExecutionClient):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 extra_build_args=self.config.sandbox.runtime_extra_build_args,
+                enable_browser=self.config.enable_browser,
             )
 
     @staticmethod
@@ -272,7 +279,8 @@ class DockerRuntime(ActionExecutionClient):
             mount_mode = 'rw'  # Default mode
 
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes[self.config.workspace_mount_path] = {
+            # Add os.path.abspath() here so that relative paths can be used when workspace_mount_path is configured in config.toml
+            volumes[os.path.abspath(self.config.workspace_mount_path)] = {
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
@@ -285,17 +293,31 @@ class DockerRuntime(ActionExecutionClient):
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._container_port = self._host_port
-        # Use the configured vscode_port if provided, otherwise find an available port
-        self._vscode_port = (
-            self.config.sandbox.vscode_port
-            or self._find_available_port(VSCODE_PORT_RANGE)
+
+        # Allocate host port with locking to prevent race conditions
+        self._host_port, self._host_port_lock = self._find_available_port_with_lock(
+            EXECUTION_SERVER_PORT_RANGE
         )
-        self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
+        self._container_port = self._host_port
+
+        # Use the configured vscode_port if provided, otherwise find an available port
+        if self.config.sandbox.vscode_port:
+            self._vscode_port = self.config.sandbox.vscode_port
+            self._vscode_port_lock = None  # No lock needed for configured port
+        else:
+            self._vscode_port, self._vscode_port_lock = (
+                self._find_available_port_with_lock(VSCODE_PORT_RANGE)
+            )
+
+        # Allocate app ports with locking
+        app_port_1, app_lock_1 = self._find_available_port_with_lock(APP_PORT_RANGE_1)
+        app_port_2, app_lock_2 = self._find_available_port_with_lock(APP_PORT_RANGE_2)
+
+        self._app_ports = [app_port_1, app_port_2]
+        self._app_port_locks = [
+            lock for lock in [app_lock_1, app_lock_2] if lock is not None
         ]
+
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
@@ -485,6 +507,28 @@ class DockerRuntime(ActionExecutionClient):
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
         stop_all_containers(close_prefix)
+        self._release_port_locks()
+
+    def _release_port_locks(self) -> None:
+        """Release all acquired port locks."""
+        if self._host_port_lock:
+            self._host_port_lock.release()
+            self._host_port_lock = None
+            logger.debug(f'Released host port lock for port {self._host_port}')
+
+        if self._vscode_port_lock:
+            self._vscode_port_lock.release()
+            self._vscode_port_lock = None
+            logger.debug(f'Released VSCode port lock for port {self._vscode_port}')
+
+        for i, lock in enumerate(self._app_port_locks):
+            if lock:
+                lock.release()
+                logger.debug(
+                    f'Released app port lock for port {self._app_ports[i] if i < len(self._app_ports) else "unknown"}'
+                )
+
+        self._app_port_locks.clear()
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
@@ -494,15 +538,58 @@ class DockerRuntime(ActionExecutionClient):
                 return True
         return False
 
+    def _find_available_port_with_lock(
+        self, port_range: tuple[int, int], max_attempts: int = 5
+    ) -> tuple[int, PortLock | None]:
+        """Find an available port with race condition protection.
+
+        This method uses file-based locking to prevent multiple workers
+        from allocating the same port simultaneously.
+
+        Args:
+            port_range: Tuple of (min_port, max_port)
+            max_attempts: Maximum number of attempts to find a port
+
+        Returns:
+            Tuple of (port_number, port_lock) where port_lock may be None if locking failed
+        """
+        # Try to find and lock an available port
+        result = find_available_port_with_lock(
+            min_port=port_range[0],
+            max_port=port_range[1],
+            max_attempts=max_attempts,
+            bind_address='0.0.0.0',
+            lock_timeout=1.0,
+        )
+
+        if result is None:
+            # Fallback to original method if port locking fails
+            logger.warning(
+                f'Port locking failed for range {port_range}, falling back to original method'
+            )
+            port = port_range[1]
+            for _ in range(max_attempts):
+                port = find_available_tcp_port(port_range[0], port_range[1])
+                if not self._is_port_in_use_docker(port):
+                    return port, None
+            return port, None
+
+        port, port_lock = result
+
+        # Additional check with Docker to ensure port is not in use
+        if self._is_port_in_use_docker(port):
+            port_lock.release()
+            # Try again with a different port
+            logger.debug(f'Port {port} is in use by Docker, trying again')
+            return self._find_available_port_with_lock(port_range, max_attempts - 1)
+
+        return port, port_lock
+
     def _find_available_port(
         self, port_range: tuple[int, int], max_attempts: int = 5
     ) -> int:
-        port = port_range[1]
-        for _ in range(max_attempts):
-            port = find_available_tcp_port(port_range[0], port_range[1])
-            if not self._is_port_in_use_docker(port):
-                return port
-        # If no port is found after max_attempts, return the last tried port
+        """Find an available port (legacy method for backward compatibility)."""
+        port, _ = self._find_available_port_with_lock(port_range, max_attempts)
         return port
 
     @property

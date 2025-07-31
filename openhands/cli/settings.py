@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -15,6 +17,7 @@ from openhands.cli.utils import (
     VERIFIED_ANTHROPIC_MODELS,
     VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
+    VERIFIED_OPENHANDS_MODELS,
     VERIFIED_PROVIDERS,
     organize_models_and_providers,
 )
@@ -70,6 +73,14 @@ def display_settings(config: OpenHandsConfig) -> None:
             (
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
+            ),
+            (
+                '   Search API Key',
+                '********' if config.search_api_key else 'Not Set',
+            ),
+            (
+                '   Configuration File',
+                str(Path(config.file_store_path) / 'settings.json'),
             ),
         ]
     )
@@ -234,6 +245,11 @@ async def modify_llm_settings_basic(
                 m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS
             ]
             provider_models = VERIFIED_MISTRAL_MODELS + provider_models
+        if provider == 'openhands':
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_OPENHANDS_MODELS
+            ]
+            provider_models = VERIFIED_OPENHANDS_MODELS + provider_models
 
         # Set default model to the best verified model for the provider
         if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
@@ -245,54 +261,82 @@ async def modify_llm_settings_basic(
         elif provider == 'mistral' and VERIFIED_MISTRAL_MODELS:
             # Use the first model in the VERIFIED_MISTRAL_MODELS list as it's the best/newest
             default_model = VERIFIED_MISTRAL_MODELS[0]
+        elif provider == 'openhands' and VERIFIED_OPENHANDS_MODELS:
+            # Use the first model in the VERIFIED_OPENHANDS_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENHANDS_MODELS[0]
         else:
             # For other providers, use the first model in the list
             default_model = (
                 provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
             )
 
-        # Show the default model but allow changing it
-        print_formatted_text(
-            HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
-        )
-        change_model = (
-            cli_confirm(
+        # For OpenHands provider, directly show all verified models without the "use default" option
+        if provider == 'openhands':
+            # Create a list of models for the cli_confirm function
+            model_choices = VERIFIED_OPENHANDS_MODELS
+
+            model_choice = cli_confirm(
                 config,
-                'Do you want to use a different model?',
-                [f'Use {default_model}', 'Select another model'],
+                (
+                    '(Step 2/3) Select Available OpenHands Model:\n'
+                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
+                ),
+                model_choices,
             )
-            == 1
-        )
 
-        if change_model:
-            model_completer = FuzzyWordCompleter(provider_models)
+            # Get the selected model from the list
+            model = model_choices[model_choice]
 
-            # Define a validator function that allows custom models but shows a warning
-            def model_validator(x):
-                # Allow any non-empty model name
-                if not x.strip():
-                    return False
-
-                # Show a warning for models not in the predefined list, but still allow them
-                if x not in provider_models:
-                    print_formatted_text(
-                        HTML(
-                            f'<yellow>Warning: {x} is not in the predefined list for provider {provider}. '
-                            f'Make sure this model name is correct.</yellow>'
-                        )
-                    )
-                return True
-
-            model = await get_validated_input(
-                session,
-                '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
-                completer=model_completer,
-                validator=model_validator,
-                error_message='Model name cannot be empty',
-            )
         else:
-            # Use the default model
-            model = default_model
+            # For other providers, show the default model but allow changing it
+            print_formatted_text(
+                HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
+            )
+            change_model = (
+                cli_confirm(
+                    config,
+                    'Do you want to use a different model?',
+                    [f'Use {default_model}', 'Select another model'],
+                )
+                == 1
+            )
+
+            if change_model:
+                model_completer = FuzzyWordCompleter(provider_models)
+
+                # Define a validator function that allows custom models but shows a warning
+                def model_validator(x):
+                    # Allow any non-empty model name
+                    if not x.strip():
+                        return False
+
+                    # Show a warning for models not in the predefined list, but still allow them
+                    if x not in provider_models:
+                        print_formatted_text(
+                            HTML(
+                                f'<yellow>Warning: {x} is not in the predefined list for provider {provider}. '
+                                f'Make sure this model name is correct.</yellow>'
+                            )
+                        )
+                    return True
+
+                model = await get_validated_input(
+                    session,
+                    '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
+                    completer=model_completer,
+                    validator=model_validator,
+                    error_message='Model name cannot be empty',
+                )
+            else:
+                # Use the default model
+                model = default_model
+
+        if provider == 'openhands':
+            print_formatted_text(
+                HTML(
+                    '\nYou can find your OpenHands LLM API Key in the <a href="https://app.all-hands.dev/settings/api-keys">API Keys</a> tab of OpenHands Cloud: https://app.all-hands.dev/settings/api-keys'
+                )
+            )
 
         api_key = await get_validated_input(
             session,
@@ -446,5 +490,77 @@ async def modify_llm_settings_advanced(
     settings.agent = agent
     settings.confirmation_mode = enable_confirmation_mode
     settings.enable_default_condenser = enable_memory_condensation
+
+    await settings_store.store(settings)
+
+
+async def modify_search_api_settings(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Modify search API settings."""
+    session = PromptSession(key_bindings=kb_cancel())
+
+    search_api_key = None
+
+    try:
+        print_formatted_text(
+            HTML(
+                '\n<grey>Configure Search API Key for enhanced search capabilities.</grey>'
+            )
+        )
+        print_formatted_text(
+            HTML('<grey>You can get a Tavily API key from: https://tavily.com/</grey>')
+        )
+        print_formatted_text('')
+
+        # Show current status
+        current_key_status = '********' if config.search_api_key else 'Not Set'
+        print_formatted_text(
+            HTML(
+                f'<grey>Current Search API Key: </grey><green>{current_key_status}</green>'
+            )
+        )
+        print_formatted_text('')
+
+        # Ask if user wants to modify
+        modify_key = cli_confirm(
+            config,
+            'Do you want to modify the Search API Key?',
+            ['Set/Update API Key', 'Remove API Key', 'Keep current setting'],
+        )
+
+        if modify_key == 0:  # Set/Update API Key
+            search_api_key = await get_validated_input(
+                session,
+                'Enter Tavily Search API Key. You can get it from https://www.tavily.com/ (starts with tvly-, CTRL-c to cancel): ',
+                validator=lambda x: x.startswith('tvly-') if x.strip() else False,
+                error_message='Search API Key must start with "tvly-"',
+            )
+        elif modify_key == 1:  # Remove API Key
+            search_api_key = ''  # Empty string to remove the key
+        else:  # Keep current setting
+            return
+
+    except (
+        UserCancelledError,
+        KeyboardInterrupt,
+        EOFError,
+    ):
+        return  # Return on exception
+
+    save_settings = save_settings_confirmation(config)
+
+    if not save_settings:
+        return
+
+    # Update config
+    config.search_api_key = SecretStr(search_api_key) if search_api_key else None
+
+    # Update settings store
+    settings = await settings_store.load()
+    if not settings:
+        settings = Settings()
+
+    settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     await settings_store.store(settings)
