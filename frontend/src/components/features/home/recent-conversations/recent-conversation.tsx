@@ -21,7 +21,8 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
   };
 
   return (
-    <div
+    <button
+      type="button"
       className="flex flex-col gap-1 py-[14px] cursor-pointer"
       onClick={handleConversationClick}
     >
@@ -37,11 +38,19 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
             <GitProviderIcon
               gitProvider={conversation.git_provider as Provider}
             />
-            <span className="">{conversation.selected_repository}</span>
+            <span
+              className="max-w-[124px] truncate"
+              title={conversation.selected_repository}
+            >
+              {conversation.selected_repository}
+            </span>
           </div>
           <div className="flex items-center gap-1">
             <CodeBranchIcon width={12} height={12} color="#A3A3A3" />
-            <span className="max-w-[124px] truncate">
+            <span
+              className="max-w-[124px] truncate"
+              title={conversation.selected_branch}
+            >
               {conversation.selected_branch}
             </span>
           </div>
@@ -53,6 +62,6 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
           </span>
         </div>
       )}
-    </div>
+    </button>
   );
 }
