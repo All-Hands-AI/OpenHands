@@ -9,7 +9,6 @@ interface ConversationStatusIndicatorProps {
 export function ConversationStatusIndicator({
   conversationStatus,
 }: ConversationStatusIndicatorProps) {
-  console.log("conversationStatus", conversationStatus);
   const conversationStatusBackgroundColor = useMemo(() => {
     switch (conversationStatus) {
       case "STOPPED":
@@ -22,11 +21,6 @@ export function ConversationStatusIndicator({
         return "bg-[#ffffff]";
     }
   }, [conversationStatus]);
-
-  console.log(
-    "conversationStatusBackgroundColor",
-    conversationStatusBackgroundColor,
-  );
 
   return (
     <div
