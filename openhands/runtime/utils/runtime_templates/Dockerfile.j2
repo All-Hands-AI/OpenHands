@@ -23,7 +23,9 @@ RUN apt-get update && \
         {%- else %}
         libgl1-mesa-glx \
         {% endif -%}
-        libasound2-plugins libatomic1 && \
+        libasound2-plugins libatomic1 \
+        # Install Docker dependencies
+        apt-transport-https ca-certificates curl gnupg lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
         {%- if ('mswebench' in base_image) -%}
@@ -40,7 +42,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
         libgl1-mesa-glx \
-        libasound2-plugins libatomic1 && \
+        libasound2-plugins libatomic1 \
+        # Install Docker dependencies
+        apt-transport-https ca-certificates curl gnupg lsb-release && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 {% endif %}
@@ -70,11 +74,17 @@ RUN mkdir -p /openhands && \
 
 {% macro setup_docker() %}
 # Install Docker
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        apt-transport-https ca-certificates curl gnupg lsb-release && \
-    curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-    echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null && \
+RUN \
+    # Determine OS type and install accordingly
+    if [[ "{{ base_image }}" == *"ubuntu"* ]] || [[ "{{ base_image }}" == *"mswebench"* ]]; then \
+        # Handle Ubuntu (including noble)
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    else \
+        # Handle Debian
+        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+        echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    fi && \
     apt-get update && \
     apt-get install -y docker-ce docker-ce-cli containerd.io && \
     apt-get clean && \
