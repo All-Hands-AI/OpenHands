@@ -5,28 +5,20 @@ from urllib.parse import quote
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from pydantic import BaseModel, SecretStr
+from pydantic import SecretStr
 
 from openhands.integrations.provider import ProviderToken, ProviderType
 from openhands.integrations.service_types import (
     AuthenticationError,
     Repository,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.routes.git import app as git_app
 from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
     get_user_id,
 )
-
-
-# Mock MicroagentContentResponse for testing
-class MicroagentContentResponse(BaseModel):
-    """Response model for individual microagent content endpoint."""
-    content: str
-    path: str
-    triggers: list[str] = []
-    git_provider: str | None = None
 
 
 @pytest.fixture
@@ -133,7 +125,6 @@ type: repo
 These are cursor rules for the repository."""
 
 
-@pytest.mark.skip(reason='API routes have changed, tests need to be updated')
 class TestGetRepositoryMicroagents:
     """Test cases for the get_repository_microagents API endpoint."""
 
@@ -167,7 +158,7 @@ class TestGetRepositoryMicroagents:
         ]
 
         # Execute test
-        response = test_client.get('/repository/test/repo/microagents')
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
         # Assertions
         assert response.status_code == 200
@@ -210,7 +201,7 @@ class TestGetRepositoryMicroagents:
         ]
 
         # Execute test
-        response = test_client.get('/repository/test/repo/microagents')
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
         # Assertions
         assert response.status_code == 200
@@ -241,7 +232,7 @@ class TestGetRepositoryMicroagents:
         ]
 
         # Execute test
-        response = test_client.get('/repository/test/repo/microagents')
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
         # Assertions
         assert response.status_code == 200
@@ -266,7 +257,7 @@ class TestGetRepositoryMicroagents:
         mock_provider_handler.get_microagents.return_value = []
 
         # Execute test
-        response = test_client.get('/repository/test/repo/microagents')
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
         # Assertions
         assert response.status_code == 200
@@ -291,14 +282,13 @@ class TestGetRepositoryMicroagents:
         )
 
         # Execute test
-        response = test_client.get('/repository/test/repo/microagents')
+        response = test_client.get('/api/user/repository/test/repo/microagents')
 
         # Assertions
         assert response.status_code == 401
         assert response.json() == 'Invalid credentials'
 
 
-@pytest.mark.skip(reason='API routes have changed, tests need to be updated')
 class TestGetRepositoryMicroagentContent:
     """Test cases for the get_repository_microagent_content API endpoint."""
 
@@ -327,7 +317,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.openhands/microagents/test_agent.md'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -364,7 +354,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.openhands/microagents/test_agent.md'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -400,7 +390,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.openhands/microagents/test_agent.md'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -432,7 +422,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.openhands/microagents/nonexistent.md'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -459,7 +449,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.openhands/microagents/test_agent.md'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -491,7 +481,7 @@ class TestGetRepositoryMicroagentContent:
         # Execute test
         file_path = '.cursorrules'
         response = test_client.get(
-            f'/repository/test/repo/microagents/content?file_path={quote(file_path)}'
+            f'/api/user/repository/test/repo/microagents/content?file_path={quote(file_path)}'
         )
 
         # Assertions
@@ -503,7 +493,6 @@ class TestGetRepositoryMicroagentContent:
         assert data['triggers'] == ['cursor', 'rules']
 
 
-@pytest.mark.skip(reason='API routes have changed, tests need to be updated')
 class TestSpecialRepositoryStructures:
     """Test cases for special repository structures."""
 
@@ -529,7 +518,7 @@ class TestSpecialRepositoryStructures:
         ]
 
         # Execute test
-        response = test_client.get('/repository/test/.openhands/microagents')
+        response = test_client.get('/api/user/repository/test/.openhands/microagents')
 
         # Assertions
         assert response.status_code == 200
@@ -561,7 +550,9 @@ class TestSpecialRepositoryStructures:
         ]
 
         # Execute test
-        response = test_client.get('/repository/test/openhands-config/microagents')
+        response = test_client.get(
+            '/api/user/repository/test/openhands-config/microagents'
+        )
 
         # Assertions
         assert response.status_code == 200
