@@ -64,6 +64,14 @@
   outline: none;
 }
 
+.chat-input {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
 /* Drag and drop styles */
 .drag-over {
   background-color: rgba(208, 217, 250, 0.25) !important;

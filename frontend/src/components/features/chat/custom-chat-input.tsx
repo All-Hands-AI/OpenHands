@@ -227,17 +227,16 @@ export function CustomChatInput({
               className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
               data-name="Text & caret"
             >
-              <div className="basis-0 flex flex-col font-['Outfit:Regular',_sans-serif] font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
+              <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px relative shrink-0 text-[#A1A1A1] text-[16px] text-left">
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[120px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[98px] w-full break-words overflow-wrap-anywhere",
                     disabled && "cursor-not-allowed",
                   )}
                   contentEditable={!disabled}
                   data-placeholder="What do you want to build?"
                   data-testid="chat-input"
-                  style={{ fontFamily: "'Outfit', sans-serif" }}
                   onInput={handleInput}
                   onPaste={handlePaste}
                   onKeyDown={handleKeyDown}
