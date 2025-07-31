@@ -1,6 +1,7 @@
 import React from "react";
 import { UserAvatar } from "./user-avatar";
 import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -9,6 +10,7 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
+  const { data: isAuthed } = useIsAuthed();
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -33,7 +35,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      {accountContextMenuIsVisible && !!user && (
+      {accountContextMenuIsVisible && isAuthed && (
         <AccountSettingsContextMenu
           onLogout={handleLogout}
           onClose={closeAccountMenu}
