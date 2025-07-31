@@ -140,7 +140,7 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
         analyzer = InvariantAnalyzer(event_stream, policy)
         data = [
             (MessageAction('Hello world!'), EventSource.USER),
-            (CmdRunAction(command=cmd, reset_terminal=False), EventSource.USER),
+            (CmdRunAction(cmd), EventSource.USER),
         ]
 
         # Call on_event directly for each event
@@ -286,7 +286,7 @@ async def test_unsafe_bash_command(temp_dir: str):
         analyzer = InvariantAnalyzer(event_stream)
         data = [
             (MessageAction('Hello world!'), EventSource.USER),
-            (CmdRunAction(command=code, reset_terminal=False), EventSource.AGENT),
+            (CmdRunAction(code), EventSource.AGENT),
         ]
 
         # Call on_event directly for each event
