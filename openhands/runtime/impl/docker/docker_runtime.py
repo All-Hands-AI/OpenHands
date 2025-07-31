@@ -203,7 +203,7 @@ class DockerRuntime(ActionExecutionClient):
             except Exception as e:
                 self.log(
                     'error',
-                    f'Error: Failed to connect instance {self.container_name} to network {network_name}'
+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}',
                 )
                 self.log('error', str(e))
 
