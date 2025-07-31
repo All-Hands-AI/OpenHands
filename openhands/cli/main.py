@@ -352,10 +352,23 @@ async def run_session(
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
-            initial_message = (
-                'NOTE: the last session ended with an error.'
-                "Let's get back on track. Do NOT resume your task. Ask me about it."
-            )
+            error_message = initial_state.last_error
+
+            # Check if it's an authentication error
+            if 'ERROR_LLM_AUTHENTICATION' in error_message:
+                # Start with base authentication error message
+                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+
+                # Add OpenHands-specific guidance if using an OpenHands model
+                llm_config = config.get_llm_config()
+                if llm_config.model.startswith('openhands/'):
+                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+            else:
+                # For other errors, use the standard message
+                initial_message = (
+                    'NOTE: the last session ended with an error.'
+                    "Let's get back on track. Do NOT resume your task. Ask me about it."
+                )
         else:
             # If we are resuming, we already have a task
             initial_message = ''
@@ -403,6 +416,19 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
+
+    # Ask if user wants to configure search API settings
+    print_formatted_text('')
+    setup_search = cli_confirm(
+        config,
+        'Would you like to configure Search API settings (optional)?',
+        ['Yes', 'No'],
+    )
+
+    if setup_search == 0:  # Yes
+        from openhands.cli.settings import modify_search_api_settings
+
+        await modify_search_api_settings(config, settings_store)
 
 
 def run_alias_setup_flow(config: OpenHandsConfig) -> None:
@@ -576,6 +602,11 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
         )
+
+        # Load search API key from settings if available and not already set from config.toml
+        if settings.search_api_key and not config.search_api_key:
+            config.search_api_key = settings.search_api_key
+            logger.debug('Using search API key from settings.json')
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
