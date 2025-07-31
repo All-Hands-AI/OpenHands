@@ -319,6 +319,19 @@ class BaseGitService(ABC):
                 f'Failed to parse microagent file {file_path}: {str(e)}'
             )
 
+    async def _fetch_cursorrules_content(self, repository: str) -> Any | None:
+        """Fetch .cursorrules file content from the repository via API.
+
+        Args:
+            repository: Repository name in format specific to the provider
+
+        Returns:
+            Raw API response content if .cursorrules file exists, None otherwise
+        """
+        cursorrules_url = await self._get_cursorrules_url(repository)
+        cursorrules_response, _ = await self._make_request(cursorrules_url)
+        return cursorrules_response
+
     async def _check_cursorrules_file(
         self, repository: str
     ) -> MicroagentResponse | None:
@@ -331,9 +344,8 @@ class BaseGitService(ABC):
             MicroagentResponse for .cursorrules file if found, None otherwise
         """
         try:
-            cursorrules_url = await self._get_cursorrules_url(repository)
-            cursorrules_response, _ = await self._make_request(cursorrules_url)
-            if cursorrules_response:
+            cursorrules_content = await self._fetch_cursorrules_content(repository)
+            if cursorrules_content:
                 return self._create_microagent_response('.cursorrules', '.cursorrules')
         except ResourceNotFoundError:
             logger.debug(f'No .cursorrules file found in {repository}')
