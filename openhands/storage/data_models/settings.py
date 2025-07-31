@@ -137,3 +137,33 @@ class Settings(BaseModel):
             max_budget_per_task=app_config.max_budget_per_task,
         )
         return settings
+
+    def merge_with_config_settings(self) -> 'Settings':
+        """Merge config.toml settings with stored settings.
+
+        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
+        This method can be used by both server mode and CLI mode.
+        """
+        # Get config.toml settings
+        config_settings = Settings.from_config()
+        if not config_settings or not config_settings.mcp_config:
+            return self
+
+        # If stored settings don't have MCP config, use config.toml MCP config
+        if not self.mcp_config:
+            self.mcp_config = config_settings.mcp_config
+            return self
+
+        # Both have MCP config - merge them with config.toml taking priority
+        merged_mcp = MCPConfig(
+            sse_servers=list(config_settings.mcp_config.sse_servers)
+            + list(self.mcp_config.sse_servers),
+            stdio_servers=list(config_settings.mcp_config.stdio_servers)
+            + list(self.mcp_config.stdio_servers),
+            shttp_servers=list(config_settings.mcp_config.shttp_servers)
+            + list(self.mcp_config.shttp_servers),
+        )
+
+        # Create new settings with merged MCP config
+        self.mcp_config = merged_mcp
+        return self

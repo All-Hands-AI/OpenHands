@@ -15,6 +15,7 @@ from openhands.cli.settings import (
     display_settings,
     modify_llm_settings_advanced,
     modify_llm_settings_basic,
+    modify_search_api_settings,
 )
 from openhands.cli.tui import (
     COLOR_GREY,
@@ -271,8 +272,9 @@ async def handle_settings_command(
         config,
         '\nWhich settings would you like to modify?',
         [
-            'Basic',
-            'Advanced',
+            'LLM (Basic)',
+            'LLM (Advanced)',
+            'Search API (Optional)',
             'Go back',
         ],
     )
@@ -281,6 +283,8 @@ async def handle_settings_command(
         await modify_llm_settings_basic(config, settings_store)
     elif modify_settings == 1:
         await modify_llm_settings_advanced(config, settings_store)
+    elif modify_settings == 2:
+        await modify_search_api_settings(config, settings_store)
 
 
 # FIXME: Currently there's an issue with the actual 'resume' behavior.
