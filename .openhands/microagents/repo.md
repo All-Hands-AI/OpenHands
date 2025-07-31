@@ -17,8 +17,6 @@ IMPORTANT: Before making any changes to the codebase, ALWAYS run `make install-p
 
 Before pushing any changes, you MUST ensure that any lint errors or simple test errors have been fixed.
 
-* If you've made changes to the backend, you should run `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml` (this will run on staged files).
-* If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
 * If you've made changes to the VSCode extension, you should run `cd openhands/integrations/vscode && npm run lint:fix && npm run compile ; cd ../../..`
 
 The pre-commit hooks MUST pass successfully before pushing any changes to the repository. This is a mandatory requirement to maintain code quality and consistency.
@@ -173,7 +171,7 @@ To add a new LLM model to OpenHands, you need to update multiple files across bo
      - `MODELS_WITHOUT_STOP_WORDS` if the model doesn't support stop words
 
 5. **Validation**:
-   - Run backend linting: `pre-commit run --config ./dev_config/python/.pre-commit-config.yaml`
+   - Run backend linting: `pre-commit run --config ./dev_config/pre-commit-config.yaml`
    - Run frontend linting: `cd frontend && npm run lint:fix`
    - Run frontend build: `cd frontend && npm run build`
 
