@@ -12,7 +12,6 @@ import docker
 import httpx
 import socketio
 from docker.models.containers import Container
-from fastapi import status
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -204,11 +203,11 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json.pop('git_provider_tokens', None)
                 if settings_json.get('git_provider'):
                     settings_json['git_provider'] = settings_json['git_provider'].value
-                secrets_store = settings_json.pop('secrets_store', None) or {}
+                settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
 
                 # Setup provider tokens
                 provider_handler = self._get_provider_handler(settings)
@@ -229,21 +228,21 @@ class DockerNestedConversationManager(ConversationManager):
                             'provider_tokens': provider_tokens_json,
                         },
                     )
-                    assert response.status_code == status.HTTP_200_OK
+                    response.raise_for_status()
 
                 # Setup custom secrets
-                custom_secrets = secrets_store.get('custom_secrets') or {}
+                custom_secrets = settings.custom_secrets  # type: ignore
                 if custom_secrets:
-                    for key, value in custom_secrets.items():
+                    for key, secret in custom_secrets.items():
                         response = await client.post(
                             f'{api_url}/api/secrets',
                             json={
                                 'name': key,
-                                'description': value.description,
-                                'value': value.value,
+                                'description': secret.description,
+                                'value': secret.secret.get_secret_value(),
                             },
                         )
-                        assert response.status_code == status.HTTP_200_OK
+                        response.raise_for_status()
 
                 init_conversation: dict[str, Any] = {
                     'initial_user_msg': initial_user_msg,
@@ -266,7 +265,7 @@ class DockerNestedConversationManager(ConversationManager):
                 logger.info(
                     f'_start_agent_loop:{response.status_code}:{response.json()}'
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
         finally:
             self._starting_conversation_ids.discard(sid)
 

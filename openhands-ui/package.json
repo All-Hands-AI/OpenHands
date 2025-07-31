@@ -14,7 +14,7 @@
       "email": "stephan@all-hands.dev"
     }
   ],
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.9",
   "description": "OpenHands UI Components",
   "keywords": [
     "openhands",
@@ -60,6 +60,7 @@
     "@storybook/react-vite": "^9.0.12",
     "@tailwindcss/vite": "^4.1.10",
     "@types/bun": "latest",
+    "@types/deep-equal": "^1.0.4",
     "@vitejs/plugin-react": "^4.5.2",
     "@vitest/browser": "^3.2.4",
     "@vitest/coverage-v8": "^3.2.4",
@@ -70,19 +71,22 @@
     "vitest": "^3.2.4"
   },
   "peerDependencies": {
-    "react": ">=18.0.0",
-    "react-dom": ">=18.0.0"
+    "react": ">=19.1.0",
+    "react-dom": ">=19.1.0",
+    "tailwind-merge": "^3.3.1",
+    "tailwindcss": "^4.1.10",
+    "tailwind-scrollbar": "^4.0.2"
+
   },
   "dependencies": {
     "@floating-ui/react": "^0.27.12",
     "clsx": "^2.1.1",
+    "deep-equal": "^2.2.3",
     "focus-trap-react": "^11.0.4",
     "react-bootstrap-icons": "^1.11.6",
     "react-select": "^5.10.2",
     "sonner": "^2.0.6",
-    "tailwind-merge": "^3.3.1",
-    "tailwind-scrollbar": "^4.0.2",
-    "tailwindcss": "^4.1.10"
+    "tailwind-scrollbar": "^4.0.2"
   },
   "scripts": {
     "dev": "storybook dev -p 6006",
