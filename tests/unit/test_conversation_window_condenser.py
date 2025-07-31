@@ -415,17 +415,17 @@ def test_dangling_observations_at_cut_point(condenser_fixture):
     # num_recent_to_keep = max(1, 6 // 2) = 3
     # slice_start_index = 10 - 3 = 7
     # recent_events_slice = history[7:] = [obs1(8), cmd2(9), obs2(10)]
-    # Validation: remove leading obs1(8). validated_slice = [cmd2(9), obs2(10)]
-    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd2(9), obs2(10)]
-    # Expected kept IDs: [1, 2, 3, 4, 9, 10]. Length 6.
-    # Forgotten IDs: [5, 6, 7, 8]
+    # Validation: obs1(8) is kept because it has a matching action (cmd1(7)) in the slice
+    # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4), cmd1(7), obs1(8), cmd2(9), obs2(10)]
+    # Expected kept IDs: [1, 2, 3, 4, 7, 8, 9, 10]. Length 8.
+    # Forgotten IDs: [5, 6]
     condensation = condenser.get_condensation(view)
 
     assert isinstance(condensation, Condensation)
     assert isinstance(condensation.action, CondensationAction)
 
     forgotten_ids = condensation.action.forgotten
-    expected_forgotten = [5, 6, 7, 8]
+    expected_forgotten = [5, 6]  # Only dangling observations are forgotten
     assert sorted(forgotten_ids) == expected_forgotten
 
 
@@ -464,7 +464,7 @@ def test_only_dangling_observations_in_recent_slice(condenser_fixture):
     # num_recent_to_keep = max(1, 2 // 2) = 1
     # slice_start_index = 6 - 1 = 5
     # recent_events_slice = history[5:] = [dangle2(6)]
-    # Validation: remove leading dangle2(6). validated_slice = [] (Corrected based on user feedback/bugfix)
+    # Validation: dangle2(6) is removed because it has no matching action in the slice
     # Final = essentials + validated_slice = [sys(1), user(2), recall_act(3), recall_obs(4)]
     # Expected kept IDs: [1, 2, 3, 4]. Length 4.
     # Forgotten IDs: [5, 6]
