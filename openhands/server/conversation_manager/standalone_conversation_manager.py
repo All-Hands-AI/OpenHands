@@ -332,15 +332,10 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-        # Run experiment manager variant test before creating session
-        modified_config = ExperimentManagerImpl.run_agent_config_variant_test(
-            user_id, sid, self.config
-        )
-
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=modified_config,
+            config=self.config,
             sio=self.sio,
             user_id=user_id,
         )
