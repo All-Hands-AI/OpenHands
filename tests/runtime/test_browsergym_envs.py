@@ -36,6 +36,7 @@ def test_browsergym_eval_env(runtime_cls, temp_dir):
         base_container_image='xingyaoww/od-eval-miniwob:v1.0',
         browsergym_eval_env='browsergym/miniwob.choose-list',
         force_rebuild_runtime=True,
+        enable_browser=True,
     )
     from openhands.runtime.browser.browser_env import (
         BROWSER_EVAL_GET_GOAL_ACTION,

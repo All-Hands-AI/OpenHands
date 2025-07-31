@@ -1,6 +1,7 @@
 import React from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { useTranslation } from "react-i18next";
 import { code } from "../markdown/code";
 import { ol, ul } from "../markdown/list";
@@ -46,7 +47,7 @@ export function ErrorMessage({ errorId, defaultMessage }: ErrorMessageProps) {
             ul,
             ol,
           }}
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
         >
           {defaultMessage}
         </Markdown>

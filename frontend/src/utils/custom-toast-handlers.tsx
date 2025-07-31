@@ -9,7 +9,7 @@ const TOAST_STYLE: CSSProperties = {
   borderRadius: "4px",
 };
 
-const TOAST_OPTIONS: ToastOptions = {
+export const TOAST_OPTIONS: ToastOptions = {
   position: "top-right",
   style: TOAST_STYLE,
 };

@@ -6,6 +6,7 @@ from pydantic.fields import FieldInfo
 
 OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 500
+DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX = '/workspace'
 
 
 def get_field_info(field: FieldInfo) -> dict[str, Any]:

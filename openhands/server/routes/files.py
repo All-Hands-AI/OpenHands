@@ -234,11 +234,7 @@ async def git_changes(
 ) -> list[dict[str, str]] | JSONResponse:
     runtime: Runtime = conversation.runtime
 
-    cwd = await get_cwd(
-        conversation_store,
-        conversation.sid,
-        runtime.config.workspace_mount_path_in_sandbox,
-    )
+    cwd = runtime.config.workspace_mount_path_in_sandbox
     logger.info(f'Getting git changes in {cwd}')
 
     try:
@@ -275,11 +271,7 @@ async def git_diff(
 ) -> dict[str, Any] | JSONResponse:
     runtime: Runtime = conversation.runtime
 
-    cwd = await get_cwd(
-        conversation_store,
-        conversation.sid,
-        runtime.config.workspace_mount_path_in_sandbox,
-    )
+    cwd = runtime.config.workspace_mount_path_in_sandbox
 
     try:
         diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
@@ -290,20 +282,6 @@ async def git_diff(
             status_code=500,
             content={'error': f'Error getting diff: {e}'},
         )
-
-
-async def get_cwd(
-    conversation_store: ConversationStore,
-    conversation_id: str,
-    workspace_mount_path_in_sandbox: str,
-) -> str:
-    metadata = await conversation_store.get_metadata(conversation_id)
-    cwd = workspace_mount_path_in_sandbox
-    if metadata and metadata.selected_repository:
-        repo_dir = metadata.selected_repository.split('/')[-1]
-        cwd = os.path.join(cwd, repo_dir)
-
-    return cwd
 
 
 @app.post('/upload-files', response_model=POSTUploadFilesModel)

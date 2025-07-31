@@ -3,9 +3,16 @@ interface HelpLinkProps {
   text: string;
   linkText: string;
   href: string;
+  suffix?: string;
 }
 
-export function HelpLink({ testId, text, linkText, href }: HelpLinkProps) {
+export function HelpLink({
+  testId,
+  text,
+  linkText,
+  href,
+  suffix,
+}: HelpLinkProps) {
   return (
     <p data-testid={testId} className="text-xs">
       {text}{" "}
@@ -17,6 +24,7 @@ export function HelpLink({ testId, text, linkText, href }: HelpLinkProps) {
       >
         {linkText}
       </a>
+      {suffix && ` ${suffix}`}
     </p>
   );
 }

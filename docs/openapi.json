@@ -1827,6 +1827,11 @@
           "updated_at": {
             "type": "string",
             "format": "date-time"
+          },
+          "owner_type": {
+            "type": "string",
+            "enum": ["user", "organization"],
+            "nullable": true
           }
         }
       },

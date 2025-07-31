@@ -36,7 +36,7 @@ In-memory storage keeps files in memory, which is useful for testing or temporar
 S3 storage uses Amazon S3 or compatible services for file storage.
 
 **Environment Variables:**
-- The bucket name is specified by `file_store_path` in the configuration with a fallback to the `AWS_S3_BUCKET` enviroment variable.
+- The bucket name is specified by `file_store_path` in the configuration with a fallback to the `AWS_S3_BUCKET` environment variable.
 - `AWS_ACCESS_KEY_ID`: Your AWS access key
 - `AWS_SECRET_ACCESS_KEY`: Your AWS secret key
 - `AWS_S3_ENDPOINT`: Optional custom endpoint for S3-compatible services (Allows overriding the default)
@@ -47,7 +47,7 @@ S3 storage uses Amazon S3 or compatible services for file storage.
 Google Cloud Storage uses Google Cloud Storage buckets for file storage.
 
 **Environment Variables:**
-- The bucket name is specified by `file_store_path` in the configuration with a fallback to the `GOOGLE_CLOUD_BUCKET_NAME` enviroment variable.
+- The bucket name is specified by `file_store_path` in the configuration with a fallback to the `GOOGLE_CLOUD_BUCKET_NAME` environment variable.
 - `GOOGLE_APPLICATION_CREDENTIALS`: Path to Google Cloud credentials JSON file
 
 ## Webhook Protocol

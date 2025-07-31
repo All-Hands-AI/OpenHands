@@ -4,6 +4,25 @@ import time
 
 import psutil
 
+_start_time = time.time()
+_last_execution_time = time.time()
+
+
+def get_system_info() -> dict[str, object]:
+    current_time = time.time()
+    uptime = current_time - _start_time
+    idle_time = current_time - _last_execution_time
+    return {
+        'uptime': uptime,
+        'idle_time': idle_time,
+        'resources': get_system_stats(),
+    }
+
+
+def update_last_execution_time():
+    global _last_execution_time
+    _last_execution_time = time.time()
+
 
 def get_system_stats() -> dict[str, object]:
     """Get current system resource statistics.

@@ -1,9 +1,9 @@
 import { cloneElement, isValidElement, type ReactElement } from "react";
-import type { ComponentVariant, HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 
 export const cloneIcon = (
-  icon?: ReactElement<HTMLProps<"svg">>,
-  props?: HTMLProps<"svg">
+  icon?: ReactElement<HTMLProps<"svg"> & BaseProps>,
+  props?: HTMLProps<"svg"> & BaseProps
 ) => {
   if (!icon) {
     return null;

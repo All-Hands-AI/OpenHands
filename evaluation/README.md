@@ -101,13 +101,14 @@ The OpenHands evaluation harness supports a wide variety of benchmarks across [s
 - SWE-Bench: [`evaluation/benchmarks/swe_bench`](./benchmarks/swe_bench)
 - HumanEvalFix: [`evaluation/benchmarks/humanevalfix`](./benchmarks/humanevalfix)
 - BIRD: [`evaluation/benchmarks/bird`](./benchmarks/bird)
-- BioCoder: [`evaluation/benchmarks/ml_bench`](./benchmarks/ml_bench)
+- BioCoder: [`evaluation/benchmarks/biocoder`](./benchmarks/biocoder)
 - ML-Bench: [`evaluation/benchmarks/ml_bench`](./benchmarks/ml_bench)
 - APIBench: [`evaluation/benchmarks/gorilla`](./benchmarks/gorilla/)
 - ToolQA: [`evaluation/benchmarks/toolqa`](./benchmarks/toolqa/)
 - AiderBench: [`evaluation/benchmarks/aider_bench`](./benchmarks/aider_bench/)
 - Commit0: [`evaluation/benchmarks/commit0_bench`](./benchmarks/commit0_bench/)
 - DiscoveryBench: [`evaluation/benchmarks/discoverybench`](./benchmarks/discoverybench/)
+- TerminalBench: [`evaluation/benchmarks/terminal_bench`](./benchmarks/terminal_bench)
 
 ### Web Browsing
 

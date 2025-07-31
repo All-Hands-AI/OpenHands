@@ -44,6 +44,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -229,12 +230,15 @@ async def test_react_to_content_policy_violation(
     # Verify the status callback was called with correct parameters
     mock_status_callback.assert_called_once_with(
         'error',
-        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
-        'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION',
+        RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION,
+        RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION.value,
     )
 
     # Verify the state was updated correctly
-    assert controller.state.last_error == 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
+    assert (
+        controller.state.last_error
+        == RuntimeStatus.ERROR_LLM_CONTENT_POLICY_VIOLATION.value
+    )
     assert controller.state.agent_state == AgentState.ERROR
 
     await controller.close()
@@ -829,13 +833,15 @@ async def test_notify_on_llm_retry(mock_agent, mock_event_stream, mock_status_ca
     )
 
     def notify_on_llm_retry(attempt, max_attempts):
-        controller.status_callback('info', 'STATUS$LLM_RETRY', ANY)
+        controller.status_callback('info', RuntimeStatus.LLM_RETRY, ANY)
 
     # Attach the retry listener to the agent's LLM
     controller.agent.llm.retry_listener = notify_on_llm_retry
 
     controller.agent.llm.retry_listener(1, 2)
-    controller.status_callback.assert_called_once_with('info', 'STATUS$LLM_RETRY', ANY)
+    controller.status_callback.assert_called_once_with(
+        'info', RuntimeStatus.LLM_RETRY, ANY
+    )
     await controller.close()
 
 

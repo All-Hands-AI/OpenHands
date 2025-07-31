@@ -1,30 +1,98 @@
+import { useEffect, useRef, type ReactNode } from "react";
 import { cn } from "../../shared/utils/cn";
-
 export type InteractiveChipType = "elevated" | "filled";
 
-export const interactiveChipStyles: Record<InteractiveChipType, string> = {
-  elevated: cn([
-    // base
-    "data-[disabled=false]:border-1 border-light-neutral-400 text-light-neutral-400 bg-light-neutral-950 font-normal",
-    // hover modifier
-    "hover:border-light-neutral-100 hover:data-[disabled=false]:text-light-neutral-100 hover:data-[disabled=false]:font-semibold hover:data-[disabled=false]:bg-light-neutral-800",
-    // focus modifier
-    "focus:border-light-neutral-100 focus:text-light-neutral-100 focus:font-semibold focus:bg-light-neutral-800",
-    // active modifier
-    "active:data-[disabled=false]:border-primary-500 active:data-[disabled=false]:text-primary-500",
-    // disabled modifier
-    "data-[disabled=true]:opacity-50 data-[disabled=true]:bg-light-neutral-900",
-  ]),
-  filled: cn([
-    // base
-    "text-grey-985 bg-light-neutral-600 font-normal",
-    // hover modifier
-    "hover:data-[disabled=false]:font-semibold hover:data-[disabled=false]:bg-light-neutral-300",
-    // focus modifier
-    "focus:data-[disabled=false]:font-semibold focus:data-[disabled=false]:bg-light-neutral-300",
-    // active modifier
-    "active:data-[disabled=false]:bg-primary-100",
-    // disabled modifier
-    "data-[disabled=true]:opacity-40 data-[disabled=true]:bg-light-neutral-400",
-  ]),
+type ButtonStyle = {
+  button: string;
+  icon: string;
+  text: string;
+};
+
+export const buttonStyles: Record<InteractiveChipType, ButtonStyle> = {
+  elevated: {
+    button: cn([
+      "ring-1 ring-solid ring-light-neutral-400 rounded-xl bg-light-neutral-950 transition-scale duration-200",
+      // hover modifier
+      "enabled:hover:bg-light-neutral-800 enabled:hover:ring-light-neutral-15",
+      // focus modifier
+      "enabled:focus:bg-light-neutral-800 enabled:focus:ring-light-neutral-15",
+      // active modifier
+      "enabled:active:ring-primary-500 enabled:active:scale-90 enabled:active:bg-light-neutral-900",
+      // disabled modifier
+      "disabled:opacity-40 disabled:bg-light-neutral-900 disabled:ring-0 disabled:font-medium",
+    ]),
+    icon: cn([
+      "text-light-neutral-400",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold group-enabled:group-hover:text-light-neutral-15",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold group-enabled:group-focus:text-light-neutral-15",
+      // active modifier
+      "group-enabled:group-active:text-primary-500",
+    ]),
+    text: cn([
+      "text-light-neutral-400",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold group-enabled:group-hover:text-light-neutral-15",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold group-enabled:group-focus:text-light-neutral-15",
+      // active modifier
+      "group-enabled:group-active:text-primary-500",
+    ]),
+  },
+  filled: {
+    button: cn([
+      "rounded-xl bg-light-neutral-600 transition-scale duration-200",
+      // hover modifier
+      "enabled:hover:bg-light-neutral-300",
+      // focus modifier
+      "enabled:focus:bg-light-neutral-300",
+      // active modifier
+      "enabled:active:scale-90 enabled:active:bg-primary-100",
+      // disabled modifier
+      "disabled:opacity-40 disabled:bg-light-neutral-400 disabled:font-medium",
+    ]),
+    icon: cn([
+      "text-light-neutral-985",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+      // active modifier
+      "group-enabled:group-active:text-light-neutral-970",
+    ]),
+    text: cn([
+      "text-light-neutral-985",
+      // hover modifier
+      "group-enabled:group-hover:font-semibold",
+      // focus modifier
+      "group-enabled:group-focus:font-semibold",
+      // active modifier
+      "group-enabled:group-active:text-light-neutral-970",
+    ]),
+  },
+};
+
+/**
+ * Custom hook that calculates and applies a CSS custom property (variable)
+ * based on the length of a text node. Useful for adjusting spacing or layout
+ * to account for changes in font weight, such as bold text rendering wider.
+ */
+const BOLD_TEXT_INCREASE = 0.15;
+export const useAndApplyBoldTextWidth = (
+  textNode: ReactNode,
+  varName: string
+) => {
+  const textRef = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    if (textRef) {
+      const charCount =
+        typeof textNode === "string" ? (textNode as string).length : 0;
+      const textIncrease = charCount * BOLD_TEXT_INCREASE;
+      textRef.current!.style.setProperty(`--${varName}`, `${textIncrease}px`);
+    }
+  }, [textRef.current]);
+
+  return textRef;
 };

@@ -17,8 +17,12 @@ export function BudgetUsageText({
   return (
     <div className="flex justify-end">
       <span className="text-xs text-neutral-400">
-        ${currentCost.toFixed(4)} / ${maxBudget.toFixed(4)} (
-        {usagePercentage.toFixed(2)}% {t(I18nKey.CONVERSATION$USED)})
+        {t(I18nKey.CONVERSATION$BUDGET_USAGE_FORMAT, {
+          currentCost: `$${currentCost.toFixed(4)}`,
+          maxBudget: `$${maxBudget.toFixed(4)}`,
+          usagePercentage: usagePercentage.toFixed(2),
+          used: t(I18nKey.CONVERSATION$USED),
+        })}
       </span>
     </div>
   );

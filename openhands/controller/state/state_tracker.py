@@ -73,6 +73,7 @@ class StateTracker:
         if state is None:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
+                user_id=self.user_id,
                 inputs={},
                 iteration_flag=IterationControlFlag(
                     limit_increase_amount=max_iterations,

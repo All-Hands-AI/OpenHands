@@ -32,25 +32,26 @@ export function SecretListItem({
   return (
     <tr
       data-testid="secret-item"
-      className="border-t border-[#717888] last-of-type:border-b max-w-[830px] py-[13px] flex w-full items-center"
+      className="flex w-full items-center border-t border-tertiary"
     >
-      <td className="w-1/4 text-sm text-content-2 truncate" title={title}>
+      <td className="p-3 w-1/4 text-sm text-content-2 truncate" title={title}>
         {title}
       </td>
 
       <td
-        className="w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
+        className="p-3 w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
         title={description || ""}
       >
         {description || ""}
       </td>
 
-      <td className="w-1/4 flex items-center justify-end gap-4">
+      <td className="p-3 w-1/4 flex items-center justify-end gap-4">
         <button
           data-testid="edit-secret-button"
           type="button"
           onClick={onEdit}
           aria-label={`Edit ${title}`}
+          className="cursor-pointer"
         >
           <FaPencil size={16} />
         </button>
@@ -59,6 +60,7 @@ export function SecretListItem({
           type="button"
           onClick={onDelete}
           aria-label={`Delete ${title}`}
+          className="cursor-pointer"
         >
           <FaTrash size={16} />
         </button>

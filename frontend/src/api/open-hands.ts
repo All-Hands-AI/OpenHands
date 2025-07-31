@@ -13,11 +13,15 @@ import {
   GitChange,
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
+  CreateMicroagent,
+  MicroagentContentResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { RepositoryMicroagent } from "#/types/microagent-management";
+import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -165,6 +169,38 @@ class OpenHands {
   }
 
   /**
+   * Get feedback for multiple events in a conversation
+   * @param conversationId The conversation ID
+   * @returns Map of event IDs to feedback data including existence, rating, reason and metadata
+   */
+  static async getBatchFeedback(conversationId: string): Promise<
+    Record<
+      string,
+      {
+        exists: boolean;
+        rating?: number;
+        reason?: string;
+        metadata?: Record<string, BatchFeedbackData>;
+      }
+    >
+  > {
+    const url = `/feedback/conversation/${conversationId}/batch`;
+    const { data } = await openHands.get<
+      Record<
+        string,
+        {
+          exists: boolean;
+          rating?: number;
+          reason?: string;
+          metadata?: Record<string, BatchFeedbackData>;
+        }
+      >
+    >(url);
+
+    return data;
+  }
+
+  /**
    * Authenticate with GitHub token
    * @returns Response with authentication status and user info if successful
    */
@@ -250,6 +286,28 @@ class OpenHands {
     return data.results;
   }
 
+  static async searchConversations(
+    selectedRepository?: string,
+    conversationTrigger?: string,
+    limit: number = 20,
+  ): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append("limit", limit.toString());
+
+    if (selectedRepository) {
+      params.append("selected_repository", selectedRepository);
+    }
+
+    if (conversationTrigger) {
+      params.append("conversation_trigger", conversationTrigger);
+    }
+
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      `/api/conversations?${params.toString()}`,
+    );
+    return data.results;
+  }
+
   static async deleteUserConversation(conversationId: string): Promise<void> {
     await openHands.delete(`/api/conversations/${conversationId}`);
   }
@@ -258,19 +316,19 @@ class OpenHands {
     selectedRepository?: string,
     git_provider?: Provider,
     initialUserMsg?: string,
-    imageUrls?: string[],
-    replayJson?: string,
     suggested_task?: SuggestedTask,
     selected_branch?: string,
+    conversationInstructions?: string,
+    createMicroagent?: CreateMicroagent,
   ): Promise<Conversation> {
     const body = {
       repository: selectedRepository,
       git_provider,
       selected_branch,
       initial_user_msg: initialUserMsg,
-      image_urls: imageUrls,
-      replay_json: replayJson,
       suggested_task,
+      conversation_instructions: conversationInstructions,
+      create_microagent: createMicroagent,
     };
 
     const { data } = await openHands.post<Conversation>(
@@ -466,6 +524,43 @@ class OpenHands {
     return data;
   }
 
+  /**
+   * Get the available microagents for a repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @returns The available microagents for the repository
+   */
+  static async getRepositoryMicroagents(
+    owner: string,
+    repo: string,
+  ): Promise<RepositoryMicroagent[]> {
+    const { data } = await openHands.get<RepositoryMicroagent[]>(
+      `/api/user/repository/${owner}/${repo}/microagents`,
+    );
+    return data;
+  }
+
+  /**
+   * Get the content of a specific microagent from a repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @param filePath The path to the microagent file within the repository
+   * @returns The microagent content and metadata
+   */
+  static async getRepositoryMicroagentContent(
+    owner: string,
+    repo: string,
+    filePath: string,
+  ): Promise<MicroagentContentResponse> {
+    const { data } = await openHands.get<MicroagentContentResponse>(
+      `/api/user/repository/${owner}/${repo}/microagents/content`,
+      {
+        params: { file_path: filePath },
+      },
+    );
+    return data;
+  }
+
   static async getMicroagentPrompt(
     conversationId: string,
     eventId: number,
@@ -478,6 +573,18 @@ class OpenHands {
     );
 
     return data.prompt;
+  }
+
+  static async updateConversation(
+    conversationId: string,
+    updates: { title: string },
+  ): Promise<boolean> {
+    const { data } = await openHands.patch<boolean>(
+      `/api/conversations/${conversationId}`,
+      updates,
+    );
+
+    return data;
   }
 }
 

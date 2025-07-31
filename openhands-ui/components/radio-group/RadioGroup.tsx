@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { HTMLProps, IOption } from "../../shared/types";
+import type { BaseProps, HTMLProps, IOption } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { RadioOption } from "./RadioOption";
 
@@ -11,7 +11,7 @@ export type RadioGroupProps<T extends string> = Omit<
   value: T;
   onChange: (option: IOption<T>) => void;
   labelClassName?: string;
-};
+} & BaseProps;
 
 export const RadioGroup = <T extends string>({
   value,
@@ -21,13 +21,17 @@ export const RadioGroup = <T extends string>({
   labelClassName,
   disabled,
   id: propId,
+  testId,
   ...props
 }: RadioGroupProps<T>) => {
   const generatedId = useId();
   const id = propId ?? generatedId;
 
   return (
-    <div className={cn("flex flex-col gap-y-1", className)}>
+    <div
+      data-testid={testId}
+      className={cn("flex flex-col gap-y-1", className)}
+    >
       {options.map((o) => (
         <RadioOption
           {...props}

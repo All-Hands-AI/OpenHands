@@ -22,7 +22,14 @@ function Terminal() {
           {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
         </div>
       )}
-      <div ref={ref} className="h-full w-full" />
+      <div
+        ref={ref}
+        className={
+          isRuntimeInactive
+            ? "w-0 h-0 opacity-0 overflow-hidden"
+            : "h-full w-full"
+        }
+      />
     </div>
   );
 }

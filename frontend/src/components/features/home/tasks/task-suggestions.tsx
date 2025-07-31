@@ -6,16 +6,24 @@ import { TaskSuggestionsSkeleton } from "./task-suggestions-skeleton";
 import { cn } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { GitRepository } from "#/types/git";
 
 interface TaskSuggestionsProps {
-  filterFor?: string | null;
+  filterFor?: GitRepository | null;
 }
 
 export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const { t } = useTranslation();
   const { data: tasks, isLoading } = useSuggestedTasks();
+
   const suggestedTasks = filterFor
-    ? tasks?.filter((task) => task.title === filterFor)
+    ? tasks?.filter(
+        (element) =>
+          element.title === filterFor.full_name &&
+          !!element.tasks.find(
+            (task) => task.git_provider === filterFor.git_provider,
+          ),
+      )
     : tasks;
 
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;

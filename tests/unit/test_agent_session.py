@@ -8,6 +8,7 @@ from openhands.controller.state.state import State
 from openhands.core.config import LLMConfig, OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
 from openhands.events import EventStream, EventStreamSubscriber
+from openhands.integrations.service_types import ProviderType
 from openhands.llm import LLM
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
@@ -402,3 +403,45 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent):
 
         # Budget control flag should still reflect the accumulated cost after reset
         assert session.controller.state.budget_flag.current_value == test_cost + 0.1
+
+
+def test_override_provider_tokens_with_custom_secret():
+    """Test that override_provider_tokens_with_custom_secret works correctly.
+
+    This test verifies that the method properly removes provider tokens when
+    corresponding custom secrets exist, without causing the 'dictionary changed
+    size during iteration' error that occurred before the fix.
+    """
+    # Setup
+    file_store = InMemoryFileStore({})
+    session = AgentSession(
+        sid='test-session',
+        file_store=file_store,
+    )
+
+    # Create test data
+    git_provider_tokens = {
+        ProviderType.GITHUB: 'github_token_123',
+        ProviderType.GITLAB: 'gitlab_token_456',
+        ProviderType.BITBUCKET: 'bitbucket_token_789',
+    }
+
+    # Custom secrets that will cause some providers to be removed
+    # Tests both lowercase and uppercase variants to ensure comprehensive coverage
+    custom_secrets = {
+        'github_token': 'custom_github_token',
+        'GITLAB_TOKEN': 'custom_gitlab_token',
+    }
+
+    # This should work without raising RuntimeError: dictionary changed size during iteration
+    result = session.override_provider_tokens_with_custom_secret(
+        git_provider_tokens, custom_secrets
+    )
+
+    # Verify that GitHub and GitLab tokens were removed (they have custom secrets)
+    assert ProviderType.GITHUB not in result
+    assert ProviderType.GITLAB not in result
+
+    # Verify that Bitbucket token remains (no custom secret for it)
+    assert ProviderType.BITBUCKET in result
+    assert result[ProviderType.BITBUCKET] == 'bitbucket_token_789'

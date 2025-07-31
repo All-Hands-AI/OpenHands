@@ -13,13 +13,9 @@ import { BrandButton } from "../settings/brand-button";
 
 interface MicroagentsModalProps {
   onClose: () => void;
-  conversationId: string | undefined;
 }
 
-export function MicroagentsModal({
-  onClose,
-  conversationId,
-}: MicroagentsModalProps) {
+export function MicroagentsModal({ onClose }: MicroagentsModalProps) {
   const { t } = useTranslation();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const [expandedAgents, setExpandedAgents] = useState<Record<string, boolean>>(
@@ -31,11 +27,7 @@ export function MicroagentsModal({
     isError,
     refetch,
     isRefetching,
-  } = useConversationMicroagents({
-    agentState: curAgentState,
-    conversationId,
-    enabled: true,
-  });
+  } = useConversationMicroagents();
 
   const toggleAgent = (agentName: string) => {
     setExpandedAgents((prev) => ({

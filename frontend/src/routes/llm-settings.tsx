@@ -24,6 +24,7 @@ import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-se
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { getProviderId } from "#/utils/map-provider";
+import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 
 function LlmSettingsScreen() {
   const { t } = useTranslation();
@@ -49,6 +50,11 @@ function LlmSettingsScreen() {
     securityAnalyzer: false,
   });
 
+  // Track the currently selected model to show help text
+  const [currentSelectedModel, setCurrentSelectedModel] = React.useState<
+    string | null
+  >(null);
+
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
   );
@@ -73,6 +79,13 @@ function LlmSettingsScreen() {
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
   }, [settings, resources]);
+
+  // Initialize currentSelectedModel with the current settings
+  React.useEffect(() => {
+    if (settings?.LLM_MODEL) {
+      setCurrentSelectedModel(settings.LLM_MODEL);
+    }
+  }, [settings?.LLM_MODEL]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
@@ -184,6 +197,9 @@ function LlmSettingsScreen() {
       ...prev,
       model: modelIsDirty,
     }));
+
+    // Track the currently selected model for help text display
+    setCurrentSelectedModel(model);
   };
 
   const handleApiKeyIsDirty = (apiKey: string) => {
@@ -208,6 +224,9 @@ function LlmSettingsScreen() {
       ...prev,
       model: modelIsDirty,
     }));
+
+    // Track the currently selected model for help text display
+    setCurrentSelectedModel(model);
   };
 
   const handleBaseUrlIsDirty = (baseUrl: string) => {
@@ -279,13 +298,23 @@ function LlmSettingsScreen() {
               className="flex flex-col gap-6"
             >
               {!isLoading && !isFetching && (
-                <ModelSelector
-                  models={modelsAndProviders}
-                  currentModel={
-                    settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
-                  }
-                  onChange={handleModelIsDirty}
-                />
+                <>
+                  <ModelSelector
+                    models={modelsAndProviders}
+                    currentModel={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
+                    onChange={handleModelIsDirty}
+                  />
+                  {(settings.LLM_MODEL?.startsWith("openhands/") ||
+                    currentSelectedModel?.startsWith("openhands/")) && (
+                    <HelpLink
+                      testId="openhands-api-key-help"
+                      text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+                      linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+                      href="https://app.all-hands.dev/settings/api-keys"
+                      suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                    />
+                  )}
+                </>
               )}
 
               <SettingsInput
@@ -344,14 +373,22 @@ function LlmSettingsScreen() {
                 testId="llm-custom-model-input"
                 name="llm-custom-model-input"
                 label={t(I18nKey.SETTINGS$CUSTOM_MODEL)}
-                defaultValue={
-                  settings.LLM_MODEL || "anthropic/claude-sonnet-4-20250514"
-                }
-                placeholder="anthropic/claude-sonnet-4-20250514"
+                defaultValue={settings.LLM_MODEL || DEFAULT_OPENHANDS_MODEL}
+                placeholder={DEFAULT_OPENHANDS_MODEL}
                 type="text"
                 className="w-full max-w-[680px]"
                 onChange={handleCustomModelIsDirty}
               />
+              {(settings.LLM_MODEL?.startsWith("openhands/") ||
+                currentSelectedModel?.startsWith("openhands/")) && (
+                <HelpLink
+                  testId="openhands-api-key-help-2"
+                  text={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_TEXT)}
+                  linkText={t(I18nKey.SETTINGS$NAV_API_KEYS)}
+                  href="https://app.all-hands.dev/settings/api-keys"
+                  suffix={t(I18nKey.SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX)}
+                />
+              )}
 
               <SettingsInput
                 testId="base-url-input"

@@ -334,7 +334,9 @@ async def test_run_session_with_initial_action(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 async def test_main_without_task(
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -347,6 +349,9 @@ async def test_main_without_task(
 ):
     """Test main function without a task."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -420,7 +425,9 @@ async def test_main_without_task(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 async def test_main_with_task(
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -433,6 +440,9 @@ async def test_main_with_task(
 ):
     """Test main function with a task."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -517,7 +527,9 @@ async def test_main_with_task(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 async def test_main_with_session_name_passes_name_to_run_session(
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -531,6 +543,9 @@ async def test_main_with_session_name_passes_name_to_run_session(
     """Test main function with a session name passes it to run_session."""
     loop = asyncio.get_running_loop()
     test_session_name = 'my_named_session'
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -703,7 +718,9 @@ async def test_run_session_with_name_attempts_state_restore(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 async def test_main_security_check_fails(
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -716,6 +733,9 @@ async def test_main_security_check_fails(
 ):
     """Test main function when security check fails."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()
@@ -764,7 +784,9 @@ async def test_main_security_check_fails(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 async def test_config_loading_order(
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -784,12 +806,16 @@ async def test_config_loading_order(
     """
     loop = asyncio.get_running_loop()
 
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
+
     # Mock arguments with specific agent but no LLM config
     mock_args = MagicMock()
     mock_args.agent_cls = 'cmd-line-agent'  # This should override settings
     mock_args.llm_config = None  # This should allow settings to be used
     # Add a file property to avoid file I/O errors
     mock_args.file = None
+    mock_args.log_level = 'INFO'
     mock_parse_args.return_value = mock_args
 
     # Mock read_task to return a dummy task
@@ -799,7 +825,14 @@ async def test_config_loading_order(
     mock_config = MagicMock()
     mock_config.workspace_base = '/test/dir'
     mock_config.cli_multiline_input = False
-    mock_config.get_llm_config = MagicMock(return_value=MagicMock())
+
+    # Create a mock LLM config that has no model or API key set
+    # This simulates the case where config.toml doesn't have LLM settings
+    mock_llm_config = MagicMock()
+    mock_llm_config.model = None
+    mock_llm_config.api_key = None
+
+    mock_config.get_llm_config = MagicMock(return_value=mock_llm_config)
     mock_config.set_llm_config = MagicMock()
     mock_config.get_agent_config = MagicMock(return_value=MagicMock())
     mock_config.set_agent_config = MagicMock()
@@ -868,9 +901,11 @@ async def test_config_loading_order(
 @patch('openhands.cli.main.LLMSummarizingCondenserConfig')
 @patch('openhands.cli.main.NoOpCondenserConfig')
 @patch('openhands.cli.main.finalize_config')
+@patch('openhands.cli.main.aliases_exist_in_shell_config')
 @patch('builtins.open', new_callable=MagicMock)
 async def test_main_with_file_option(
     mock_open,
+    mock_aliases_exist,
     mock_finalize_config,
     mock_noop_condenser,
     mock_llm_condenser,
@@ -883,6 +918,9 @@ async def test_main_with_file_option(
 ):
     """Test main function with a file option."""
     loop = asyncio.get_running_loop()
+
+    # Mock alias setup functions to prevent the alias setup flow
+    mock_aliases_exist.return_value = True
 
     # Mock arguments
     mock_args = MagicMock()

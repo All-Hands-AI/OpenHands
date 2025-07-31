@@ -33,7 +33,7 @@ class FileSettingsStore(SettingsStore):
     async def get_instance(
         cls, config: OpenHandsConfig, user_id: str | None
     ) -> FileSettingsStore:
-        file_store = file_store = get_file_store(
+        file_store = get_file_store(
             config.file_store,
             config.file_store_path,
             config.file_store_web_hook_url,

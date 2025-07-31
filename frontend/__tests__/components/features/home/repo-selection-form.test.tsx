@@ -66,6 +66,11 @@ vi.mock("#/hooks/use-debounce", () => ({
   useDebounce: (value: string) => value,
 }));
 
+vi.mock("react-router", async (importActual) => ({
+  ...(await importActual()),
+  useNavigate: vi.fn(),
+}));
+
 const mockOnRepoSelection = vi.fn();
 const renderForm = () =>
   render(<RepositorySelectionForm onRepoSelection={mockOnRepoSelection} />, {
@@ -252,8 +257,6 @@ describe("RepositorySelectionForm", () => {
     expect(searchedRepo).toBeInTheDocument();
 
     await userEvent.click(searchedRepo);
-    expect(mockOnRepoSelection).toHaveBeenCalledWith(
-      MOCK_SEARCH_REPOS[0].full_name,
-    );
+    expect(mockOnRepoSelection).toHaveBeenCalledWith(MOCK_SEARCH_REPOS[0]);
   });
 });

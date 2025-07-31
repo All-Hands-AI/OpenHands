@@ -1,13 +1,17 @@
 import { useId } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 import { Icon } from "../icon/Icon";
 
-export type CheckboxProps = HTMLProps<"input"> & {
+export type CheckboxProps = Omit<
+  HTMLProps<"input">,
+  "checked" | "defaultChecked"
+> & {
   label: React.ReactNode;
   labelClassName?: string;
-};
+  checked: boolean;
+} & BaseProps;
 
 export const Checkbox = ({
   className,
@@ -17,6 +21,7 @@ export const Checkbox = ({
   disabled,
   checked,
   onChange,
+  testId,
   ...props
 }: CheckboxProps) => {
   const generatedId = useId();
@@ -26,8 +31,10 @@ export const Checkbox = ({
       htmlFor={id}
       className={cn(
         "flex items-center gap-2 cursor-pointer",
-        disabled && "cursor-not-allowed"
+        disabled && "cursor-not-allowed",
+        className
       )}
+      data-testid={testId}
     >
       <input
         id={id}

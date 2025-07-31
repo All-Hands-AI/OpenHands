@@ -183,7 +183,7 @@ def test_get_example_for_tools_single_tool():
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
     assert TOOL_EXAMPLES['browser']['view_page'] not in example
-    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+    assert TOOL_EXAMPLES['finish']['example'] not in example
 
 
 def test_get_example_for_tools_single_tool_is_finish():
@@ -205,7 +205,7 @@ def test_get_example_for_tools_single_tool_is_finish():
         'USER: Create a list of numbers from 1 to 10, and display them in a web page at port 5000.'
         in example
     )
-    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['finish']['example'] in example
     assert TOOL_EXAMPLES['execute_bash']['check_dir'] not in example
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] not in example
     assert TOOL_EXAMPLES['browser']['view_page'] not in example
@@ -274,7 +274,7 @@ def test_get_example_for_tools_multiple_tools():
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
     assert TOOL_EXAMPLES['browser']['view_page'] not in example
-    assert TOOL_EXAMPLES['finish']['task_completed'] not in example
+    assert TOOL_EXAMPLES['finish']['example'] not in example
 
 
 def test_get_example_for_tools_multiple_tools_with_finish():
@@ -374,7 +374,7 @@ def test_get_example_for_tools_multiple_tools_with_finish():
     assert TOOL_EXAMPLES['browser']['view_page'] in example
 
     # Check for finish part
-    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['finish']['example'] in example
 
 
 def test_get_example_for_tools_all_tools():
@@ -393,7 +393,7 @@ def test_get_example_for_tools_all_tools():
     assert TOOL_EXAMPLES['execute_bash']['kill_server'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['create_file'] in example
     assert TOOL_EXAMPLES['str_replace_editor']['edit_file'] in example
-    assert TOOL_EXAMPLES['finish']['task_completed'] in example
+    assert TOOL_EXAMPLES['finish']['example'] in example
 
     # These are not in global FNCALL_TOOLS
     # assert TOOL_EXAMPLES['web_read']['read_docs'] not in example # web_read is removed

@@ -29,6 +29,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
@@ -249,9 +250,8 @@ class Session:
         )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        msg_id = 'STATUS$LLM_RETRY'
         self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            'info', RuntimeStatus.LLM_RETRY, f'Retrying LLM request, {retries} / {max}'
         )
 
     def on_event(self, event: Event) -> None:
@@ -337,7 +337,9 @@ class Session:
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str) -> None:
+    async def _send_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Sends a status message to the client."""
         if msg_type == 'error':
             agent_session = self.agent_session
@@ -349,11 +351,18 @@ class Session:
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(
-            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
+            {
+                'status_update': True,
+                'type': msg_type,
+                'id': runtime_status.value,
+                'message': message,
+            }
         )
 
-    def queue_status_message(self, msg_type: str, id: str, message: str) -> None:
+    def queue_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Queues a status message to be sent asynchronously."""
         asyncio.run_coroutine_threadsafe(
-            self._send_status_message(msg_type, id, message), self.loop
+            self._send_status_message(msg_type, runtime_status, message), self.loop
         )

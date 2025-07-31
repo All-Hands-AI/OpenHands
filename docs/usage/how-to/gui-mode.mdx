@@ -25,7 +25,8 @@ You can use the Settings page at any time to:
 - Setup the LLM provider and model for OpenHands.
 - [Setup the search engine](/usage/search-engine-setup).
 - [Configure MCP servers](/usage/mcp).
-- [Connect to GitHub](/usage/how-to/gui-mode#github-setup) and [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup).
+- [Connect to GitHub](/usage/how-to/gui-mode#github-setup), [connect to GitLab](/usage/how-to/gui-mode#gitlab-setup)
+  and [connect to Bitbucket](/usage/how-to/gui-mode#bitbucket-setup).
 - Set application settings like your preferred language, notifications and other preferences.
 - [Manage custom secrets](/usage/common-settings#secrets-management).
 
@@ -128,11 +129,9 @@ OpenHands automatically exports a `GITLAB_TOKEN` to the shell environment if pro
 1. **Generate an App Password**:
    - On BitBucket, go to Personal Settings > App Password.
    - Create a new password with the following scopes:
-     - `repository: read`
+     - `account`: `read`
      - `repository: write`
-     - `pull requests: read`
      - `pull requests: write`
-     - `issues: read`
      - `issues: write`
    - App passwords are non-expiring token. OpenHands will migrate to using API tokens in the future.
   2. **Enter Token in OpenHands**:

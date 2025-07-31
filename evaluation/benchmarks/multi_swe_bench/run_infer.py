@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -344,6 +345,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
+        enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
         # do not mount workspace
@@ -843,3 +845,5 @@ if __name__ == '__main__':
         timeout_seconds=120 * 60,  # 2 hour PER instance should be more than enough
         max_retries=5,
     )
+    # Check if any instances reached maximum retries
+    check_maximum_retries_exceeded(metadata.eval_output_dir)

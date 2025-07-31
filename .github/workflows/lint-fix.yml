@@ -21,10 +21,10 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node.js 20
+      - name: Install Node.js 22
         uses: useblacksmith/setup-node@v5
         with:
-          node-version: 20
+          node-version: 22
       - name: Install frontend dependencies
         run: |
           cd frontend
@@ -68,7 +68,7 @@ jobs:
         uses: useblacksmith/setup-python@v6
         with:
           python-version: 3.12
-          cache: 'pip'
+          cache: "pip"
       - name: Install pre-commit
         run: pip install pre-commit==3.7.0
       - name: Fix python lint issues

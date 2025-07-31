@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 
 export type ScrollableMode = "auto" | "scroll";
@@ -8,7 +8,7 @@ export type ScrollableType = "horizontal" | "vertical";
 export type ScrollableProps = HTMLProps<"div"> & {
   mode?: ScrollableMode;
   type?: ScrollableType;
-};
+} & BaseProps;
 
 const scrollableStyles: Record<
   ScrollableType,
@@ -30,11 +30,13 @@ export const Scrollable = ({
   tabIndex,
   mode = "auto",
   type = "vertical",
+  testId,
   ...props
 }: PropsWithChildren<ScrollableProps>) => {
   const style = scrollableStyles[type][mode];
   return (
     <div
+      data-testid={testId}
       tabIndex={tabIndex ?? 0}
       {...props}
       className={cn(

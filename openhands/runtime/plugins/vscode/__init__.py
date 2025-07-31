@@ -62,10 +62,11 @@ class VSCodePlugin(Plugin):
                 f'Port {self.vscode_port} is not available. VSCode plugin will be disabled.'
             )
             return
+        workspace_path = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace')
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
-            'cd /workspace\n'
+            f'cd {workspace_path}\n'
             f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust\n'
             'EOF'
         )

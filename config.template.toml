@@ -18,9 +18,6 @@
 # Cache directory path
 #cache_dir = "/tmp/cache"
 
-# Reasoning effort for o1 models (low, medium, high, or not set)
-#reasoning_effort = "medium"
-
 # Debugging enabled
 #debug = false
 
@@ -118,6 +115,9 @@ api_key = ""
 
 # API version
 #api_version = ""
+
+# Reasoning effort for OpenAI o-series models (low, medium, high, or not set)
+#reasoning_effort = "medium"
 
 # Cost per input token
 #input_cost_per_token = 0.0
