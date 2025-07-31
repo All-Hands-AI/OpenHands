@@ -40,6 +40,7 @@ export function ResizablePanel({
 }: ResizablePanelProps): JSX.Element {
   const [firstSize, setFirstSize] = useState<number>(initialSize);
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
+  const [isResizing, setIsResizing] = useState<boolean>(false);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
   const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
@@ -49,6 +50,7 @@ export function ResizablePanel({
     if (dividerPosition == null || !firstRef.current) {
       return undefined;
     }
+    setIsResizing(true);
     const getFirstSizeFromEvent = (e: MouseEvent) => {
       const position = isHorizontal ? e.clientX : e.clientY;
       return firstSize + position - dividerPosition;
@@ -69,6 +71,7 @@ export function ResizablePanel({
     };
     const onMouseUp = (e: MouseEvent) => {
       e.preventDefault();
+      setIsResizing(false);
       if (firstRef.current) {
         firstRef.current.style.transition = "";
       }
@@ -85,6 +88,7 @@ export function ResizablePanel({
     return () => {
       document.removeEventListener("mousemove", onMouseMove);
       document.removeEventListener("mouseup", onMouseUp);
+      setIsResizing(false);
     };
   }, [dividerPosition, firstSize, orientation]);
 
@@ -102,6 +106,9 @@ export function ResizablePanel({
 
   const getStyleForFirst = () => {
     const style: CSSProperties = { overflow: "hidden" };
+    if (isResizing) {
+      style.pointerEvents = "none";
+    }
     if (collapse === Collapse.COLLAPSED) {
       style.opacity = 0;
       style.width = 0;
@@ -125,6 +132,9 @@ export function ResizablePanel({
 
   const getStyleForSecond = () => {
     const style: CSSProperties = { overflow: "hidden" };
+    if (isResizing) {
+      style.pointerEvents = "none";
+    }
     if (collapse === Collapse.FILLED) {
       style.opacity = 0;
       style.width = 0;
