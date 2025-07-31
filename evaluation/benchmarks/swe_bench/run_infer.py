@@ -249,6 +249,7 @@ def get_config(
     # Set log_completions to True for all routing LLMs
     for llm_cfg in model_routing_config.routing_llms.values():
         llm_cfg.log_completions = True
+        update_llm_config_for_completions_logging(llm_cfg, metadata.eval_output_dir, instance['instance_id'])
 
     agent_config = AgentConfig(
         enable_jupyter=False,
