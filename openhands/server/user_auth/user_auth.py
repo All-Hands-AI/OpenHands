@@ -47,6 +47,10 @@ class UserAuth(ABC):
         """Get the access token for the current user"""
 
     @abstractmethod
+    async def get_user_info(self) -> dict | None:
+        """Get the keycloak user_info for the current user"""
+
+    @abstractmethod
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
         """Get the provider tokens for the current user."""
 

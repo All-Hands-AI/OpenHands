@@ -21,6 +21,12 @@ async def get_access_token(request: Request) -> SecretStr | None:
     return access_token
 
 
+async def get_user_info(request: Request) -> dict | None:
+    user_auth = await get_user_auth(request)
+    user_info = await user_auth.get_user_info()
+    return user_info
+
+
 async def get_user_id(request: Request) -> str | None:
     user_auth = await get_user_auth(request)
     user_id = await user_auth.get_user_id()
