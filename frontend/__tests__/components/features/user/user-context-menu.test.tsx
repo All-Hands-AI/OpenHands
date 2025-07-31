@@ -173,6 +173,28 @@ describe("UserContextMenu", () => {
       });
       expect(screen.queryByTestId("create-org-modal")).not.toBeInTheDocument();
     });
+
+    it("should automatically select the newly created organization", async () => {
+      const createOrgSpy = vi.spyOn(organizationService, "createOrganization");
+      renderUserContextMenu({ type: "superadmin", onClose: vi.fn });
+
+      const createOrgButton = screen.getByText("Create New Organization");
+      await userEvent.click(createOrgButton);
+
+      const orgNameInput = screen.getByTestId("org-name-input");
+      await userEvent.type(orgNameInput, "New Organization");
+
+      const saveButton = screen.getByRole("button", { name: /save/i });
+      await userEvent.click(saveButton);
+
+      expect(createOrgSpy).toHaveBeenCalledExactlyOnceWith({
+        name: "New Organization",
+      });
+
+      // Verify the organization selector now shows the newly created organization
+      const orgSelector = screen.getByTestId("org-selector");
+      expect(orgSelector.getAttribute("value")).toBe("New Organization");
+    });
   });
 
   it("should call the onClose handler when clicking outside the context menu", async () => {

@@ -1,5 +1,6 @@
 import { ModalBackdrop } from "#/components/shared/modals/modal-backdrop";
 import { useCreateOrganization } from "#/hooks/mutation/use-create-organization";
+import { useSelectedOrganizationId } from "#/context/use-selected-organization";
 
 interface CreateNewOrganizationModalProps {
   onClose: () => void;
@@ -9,10 +10,21 @@ export function CreateNewOrganizationModal({
   onClose,
 }: CreateNewOrganizationModalProps) {
   const { mutate: createOrganization } = useCreateOrganization();
+  const { setOrgId } = useSelectedOrganizationId();
 
   const formAction = (formData: FormData) => {
     const orgName = formData.get("org-name")?.toString();
-    if (orgName) createOrganization({ name: orgName }, { onSuccess: onClose });
+    if (orgName) {
+      createOrganization(
+        { name: orgName },
+        {
+          onSuccess: (newOrg) => {
+            setOrgId(newOrg.id);
+            onClose();
+          },
+        }
+      );
+    }
   };
 
   return (

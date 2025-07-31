@@ -15,7 +15,7 @@ export const organizationService = {
   },
 
   createOrganization: async ({ name }: { name: string }) => {
-    const { data } = await openHands.post("/api/organizations", {
+    const { data } = await openHands.post<Organization>("/api/organizations", {
       name,
     });
 
