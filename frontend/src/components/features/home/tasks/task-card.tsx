@@ -61,11 +61,11 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center pr-6 last:border-b-0">
+    <li className="py-3 border-b border-[#717888] flex items-center gap-3 last:border-b-0">
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
-      <div className="w-full pl-8">
-        <span className="text-xs text-white leading-6 font-semibold">
+      <div className="w-full flex flex-col gap-1">
+        <span className="text-xs text-white leading-6 font-normal">
           {getTaskTypeMap(t)[task.task_type]}
         </span>
         <span className="text-xs text-[#A3A3A3] leading-4 font-normal">

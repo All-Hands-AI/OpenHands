@@ -23,6 +23,8 @@ interface SettingsDropdownInputProps {
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   startContent?: ReactNode;
+  inputWrapperClassName?: string;
+  inputClassName?: string;
 }
 
 export function SettingsDropdownInput({
@@ -44,6 +46,8 @@ export function SettingsDropdownInput({
   onInputChange,
   defaultFilter,
   startContent,
+  inputWrapperClassName,
+  inputClassName,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
   return (
@@ -75,8 +79,11 @@ export function SettingsDropdownInput({
         }}
         inputProps={{
           classNames: {
-            inputWrapper:
+            inputWrapper: cn(
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
+              inputWrapperClassName,
+            ),
+            input: inputClassName,
           },
         }}
         defaultFilter={defaultFilter}

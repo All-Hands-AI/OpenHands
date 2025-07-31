@@ -11518,5 +11518,21 @@
         "tr": "Sıfırdan Başla",
         "de": "Von vorne beginnen",
         "uk": "Почати з нуля"
+    },
+    "COMMON$RECENT_CONVERSATIONS": {
+        "en": "Recent Conversations",
+        "ja": "最近の会話",
+        "zh-CN": "最近的对话",
+        "zh-TW": "最近的對話",
+        "ko-KR": "최근 대화",
+        "no": "Nylige samtaler",
+        "it": "Conversazioni recenti",
+        "pt": "Conversas recentes",
+        "es": "Conversaciones recientes",
+        "ar": "المحادثات الأخيرة",
+        "fr": "Conversations récentes",
+        "tr": "Son Konuşmalar",
+        "de": "Kürzliche Gespräche",
+        "uk": "Останні розмови"
     }
 }

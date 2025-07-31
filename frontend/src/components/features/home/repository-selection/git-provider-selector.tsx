@@ -2,8 +2,6 @@ import React from "react";
 import { GIT_PROVIDER_OPTIONS } from "#/utils/constants";
 import { IOption } from "#/api/open-hands.types";
 import { GitProviderDropdown } from "./git-provider-dropdown";
-import { RepositoryLoadingState } from "./repository-loading-state";
-import { RepositoryErrorState } from "./repository-error-state";
 
 interface GitProviderSelectorProps {
   selectedGitProvider: IOption<string> | null;
@@ -31,14 +29,6 @@ export function GitProviderSelector({
     }
   };
 
-  if (isLoadingRepositories) {
-    return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
-  }
-
-  if (isRepositoriesError) {
-    return <RepositoryErrorState wrapperClassName="max-w-auto" />;
-  }
-
   return (
     <GitProviderDropdown
       items={GIT_PROVIDER_OPTIONS.map((provider) => ({
@@ -57,7 +47,11 @@ export function GitProviderSelector({
         return !!gitProvider;
       }}
       selectedKey={selectedGitProvider?.value}
-      wrapperClassName="max-w-auto"
+      wrapperClassName="max-w-[124px]"
+      inputWrapperClassName="h-6 min-h-6 max-h-6 py-0"
+      inputClassName="text-xs font-normal leading-5 pr-0"
+      isClearable={false}
+      isDisabled={isLoadingRepositories || isRepositoriesError}
     />
   );
 }

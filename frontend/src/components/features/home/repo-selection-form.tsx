@@ -17,6 +17,7 @@ import {
 import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { IOption } from "#/api/open-hands.types";
+import { GIT_PROVIDER_OPTIONS } from "#/utils/constants";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -31,8 +32,9 @@ export function RepositorySelectionForm({
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
     null,
   );
-  const [selectedGitProvider, setSelectedGitProvider] =
-    React.useState<IOption<string> | null>(null);
+  const [selectedGitProvider, setSelectedGitProvider] = React.useState<
+    IOption<string>
+  >(GIT_PROVIDER_OPTIONS[0]);
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = React.useRef<boolean>(false);
   const {
@@ -87,7 +89,7 @@ export function RepositorySelectionForm({
   const allRepositories = repositories?.concat(searchedRepos || []);
 
   const handleGitProviderChange = (provider: IOption<string> | null) => {
-    setSelectedGitProvider(provider);
+    setSelectedGitProvider(provider || GIT_PROVIDER_OPTIONS[0]);
     // Clear repository and branch selection when git provider changes
     onRepoSelection(null);
     setSelectedRepository(null);
@@ -117,22 +119,23 @@ export function RepositorySelectionForm({
             {t(I18nKey.COMMON$OPEN_REPOSITORY)}
           </span>
         </div>
+        <GitProviderSelector
+          selectedGitProvider={selectedGitProvider}
+          onGitProviderChange={handleGitProviderChange}
+          isLoadingRepositories={isLoadingRepositories}
+          isRepositoriesError={isRepositoriesError}
+        />
       </div>
 
-      <GitProviderSelector
-        selectedGitProvider={selectedGitProvider}
-        onGitProviderChange={handleGitProviderChange}
-        isLoadingRepositories={isLoadingRepositories}
-        isRepositoriesError={isRepositoriesError}
-      />
-
       <RepositorySelector
+        key={`${selectedGitProvider.value}-${selectedRepository?.id}`}
         selectedGitProvider={selectedGitProvider}
         allRepositories={allRepositories}
         onRepositoryChange={handleRepositoryChange}
         onSearchQueryChange={setSearchQuery}
         isLoadingRepositories={isLoadingRepositories}
         isRepositoriesError={isRepositoriesError}
+        selectedKey={selectedRepository?.id}
       />
 
       <BranchSelector

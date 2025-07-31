@@ -66,7 +66,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="h-[40px] md:h-auto flex flex-row md:flex-col gap-1 bg-base md:w-[75px] md:min-w-[75px] sm:pt-0 sm:px-2 md:pt-[22px] md:px-0">
+      <aside className="h-[40px] md:h-auto flex flex-row md:flex-col gap-1 bg-base md:w-[75px] md:min-w-[75px] sm:pt-0 sm:px-2 md:pt-[14px] md:px-0">
         <nav className="flex flex-row md:flex-col items-center justify-between w-full h-auto md:w-auto md:h-full">
           <div className="flex flex-row md:flex-col items-center gap-[26px]">
             <div className="flex items-center justify-center">

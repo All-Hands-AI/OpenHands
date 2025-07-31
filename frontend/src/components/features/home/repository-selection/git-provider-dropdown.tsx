@@ -13,6 +13,10 @@ export interface GitProviderDropdownProps {
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   selectedKey?: string;
   wrapperClassName?: string;
+  inputWrapperClassName?: string;
+  inputClassName?: string;
+  isClearable?: boolean;
+  isDisabled?: boolean;
 }
 
 export function GitProviderDropdown({
@@ -22,6 +26,10 @@ export function GitProviderDropdown({
   defaultFilter,
   selectedKey,
   wrapperClassName,
+  inputWrapperClassName,
+  inputClassName,
+  isClearable,
+  isDisabled,
 }: GitProviderDropdownProps) {
   const { t } = useTranslation();
 
@@ -39,10 +47,15 @@ export function GitProviderDropdown({
         selectedKey && (
           <GitProviderIcon
             gitProvider={selectedKey as Provider}
-            className="w-[14px] h-[14px]"
+            className="min-w-[14px] min-h-[14px] w-[14px] h-[14px]"
           />
         )
       }
+      inputWrapperClassName={inputWrapperClassName}
+      inputClassName={inputClassName}
+      isClearable={isClearable}
+      isDisabled={isDisabled}
+      defaultSelectedKey={selectedKey}
     />
   );
 }

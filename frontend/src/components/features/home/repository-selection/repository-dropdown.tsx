@@ -10,6 +10,8 @@ export interface RepositoryDropdownProps {
   onInputChange: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
   wrapperClassName?: string;
+  defaultSelectedKey?: string;
+  selectedKey?: string;
 }
 
 export function RepositoryDropdown({
@@ -18,6 +20,8 @@ export function RepositoryDropdown({
   onInputChange,
   defaultFilter,
   wrapperClassName,
+  defaultSelectedKey,
+  selectedKey,
 }: RepositoryDropdownProps) {
   const { t } = useTranslation();
 
@@ -31,6 +35,8 @@ export function RepositoryDropdown({
       onSelectionChange={onSelectionChange}
       onInputChange={onInputChange}
       defaultFilter={defaultFilter}
+      defaultSelectedKey={defaultSelectedKey}
+      selectedKey={selectedKey}
     />
   );
 }

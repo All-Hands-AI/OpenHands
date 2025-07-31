@@ -13,6 +13,7 @@ interface RepositorySelectorProps {
   onSearchQueryChange?: (query: string) => void;
   isLoadingRepositories: boolean;
   isRepositoriesError: boolean;
+  selectedKey?: string;
 }
 
 export function RepositorySelector({
@@ -22,6 +23,7 @@ export function RepositorySelector({
   onSearchQueryChange,
   isLoadingRepositories,
   isRepositoriesError,
+  selectedKey,
 }: RepositorySelectorProps) {
   const handleRepoSelection = (key: React.Key | null) => {
     const selectedRepo = allRepositories?.find((repo) => repo.id === key);
@@ -84,6 +86,8 @@ export function RepositorySelector({
         return sanitizeQuery(textValue).includes(sanitizedInput);
       }}
       wrapperClassName="max-w-auto"
+      defaultSelectedKey={selectedKey}
+      selectedKey={selectedKey}
     />
   );
 }

@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import AllHandsLogoWhite from "#/assets/branding/all-hands-logo-white.svg?react";
+import AllHandsLogo from "#/assets/branding/all-hands-logo.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
 
@@ -12,7 +12,7 @@ export function AllHandsLogoButton() {
       ariaLabel={t(I18nKey.BRANDING$ALL_HANDS_LOGO)}
       navLinkTo="/"
     >
-      <AllHandsLogoWhite width={45.71} height={30} />
+      <AllHandsLogo width={46} height={30} />
     </TooltipButton>
   );
 }

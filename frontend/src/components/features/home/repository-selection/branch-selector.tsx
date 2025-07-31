@@ -1,7 +1,5 @@
 import React from "react";
 import { Branch, GitRepository } from "#/types/git";
-import { RepositoryLoadingState } from "./repository-loading-state";
-import { RepositoryErrorState } from "./repository-error-state";
 import { BranchDropdown } from "./branch-dropdown";
 import { BranchLoadingState } from "./branch-loading-state";
 import { BranchErrorState } from "./branch-error-state";
@@ -40,14 +38,6 @@ export function BranchSelector({
     }
   };
 
-  if (isLoadingRepositories) {
-    return <RepositoryLoadingState wrapperClassName="max-w-auto" />;
-  }
-
-  if (isRepositoriesError) {
-    return <RepositoryErrorState wrapperClassName="max-w-auto" />;
-  }
-
   if (!selectedRepository) {
     return (
       <BranchDropdown
@@ -78,7 +68,7 @@ export function BranchSelector({
       items={branchesItems || []}
       onSelectionChange={handleBranchSelection}
       onInputChange={handleBranchInputChange}
-      isDisabled={false}
+      isDisabled={isLoadingRepositories || isRepositoriesError}
       selectedKey={selectedBranch?.name}
       wrapperClassName="max-w-auto"
     />

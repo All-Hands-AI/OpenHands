@@ -6,6 +6,7 @@ import { TaskSuggestions } from "#/components/features/home/tasks/task-suggestio
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
 import { NewConversation } from "#/components/features/home/new-conversation";
+import { RecentConversations } from "#/components/features/home/recent-conversations/recent-conversations";
 
 <PrefetchPageLinks page="/conversations/:conversationId" />;
 
@@ -20,7 +21,7 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-[#26282D] h-full flex flex-col pt-[35px] overflow-y-auto"
+      className="bg-[#26282D] h-full flex flex-col pt-[35px] overflow-y-auto rounded-xl px-[42px] pt-[42px]"
     >
       <HomeHeader />
 
@@ -31,8 +32,9 @@ function HomeScreen() {
         </div>
       </div>
 
-      <div className="pt-[12px] flex justify-center mb-[262px]">
+      <div className="pt-4 flex justify-center mb-[262px]">
         <div className="flex flex-col gap-5 px-6 md:flex-row md:max-w-full md:min-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]">
+          <RecentConversations />
           {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
         </div>
       </div>
