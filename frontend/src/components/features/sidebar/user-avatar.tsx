@@ -15,9 +15,6 @@ interface UserAvatarProps {
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
   const { t } = useTranslation();
 
-  // Debug
-  console.log("UserAvatar props:", { avatarUrl, isLoading });
-
   return (
     <TooltipButton
       testId="user-avatar"

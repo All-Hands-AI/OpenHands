@@ -16,9 +16,6 @@ export function AccountSettingsContextMenu({
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { t } = useTranslation();
 
-  // Debug
-  console.log("AccountSettingsContextMenu rendered");
-
   return (
     <ContextMenu
       testId="account-settings-context-menu"
