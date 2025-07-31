@@ -54,6 +54,7 @@ class MCPStdioServerConfig(BaseModel):
             and set(self.env.items()) == set(other.env.items())
         )
 
+
 class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
@@ -201,7 +202,7 @@ class OpenHandsMCPConfig:
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
 
-        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp', api_key=None)
+        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
         return shttp_servers, stdio_servers
 
 
