@@ -4,7 +4,7 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import React from "react";
 import {
@@ -16,13 +16,13 @@ import { useElementOverflow } from "./hooks/use-element-overflow";
 import { useElementScroll } from "./hooks/use-element-scroll";
 import { TabScroller } from "./components/TabScroller";
 
-export type TabsProps = HTMLProps<"div">;
+export type TabsProps = HTMLProps<"div"> & BaseProps;
 
 type TabsType = React.FC<PropsWithChildren<TabsProps>> & {
   Item: React.FC<PropsWithChildren<TabItemPropsPublic>>;
 };
 
-const Tabs: TabsType = ({ children, ...props }) => {
+const Tabs: TabsType = ({ children, className, testId, ...props }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const tabListRef = useRef<HTMLDivElement>(null);
@@ -55,7 +55,7 @@ const Tabs: TabsType = ({ children, ...props }) => {
     }) ?? [];
 
   return (
-    <div className={cn("w-full")}>
+    <div data-testid={testId} className={cn("w-full", className)}>
       <div className={cn("flex flex-row items-stretch")} ref={containerRef}>
         {canScrollLeft && isOverflowing && (
           <TabScroller onScroll={scrollLeft} position="left" />
