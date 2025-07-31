@@ -301,4 +301,38 @@ describe("UserContextMenu", () => {
     // The dropdown should now display the selected org name
     expect(orgSelector).toHaveValue(INITIAL_MOCK_ORGS[1].name);
   });
+
+  it("should have Personal Account as the default selected option with null value", async () => {
+    const onCloseMock = vi.fn();
+    renderUserContextMenu({ type: "user", onClose: onCloseMock });
+
+    const orgSelector = screen.getByTestId("org-selector");
+
+    // Should default to "Personal Account" when orgId is null
+    expect(orgSelector).toHaveValue("Personal Account");
+
+    // Click to open dropdown
+    await userEvent.click(orgSelector);
+
+    // Should have "Personal Account" as an option
+    const personalAccountOption = screen.getByText("Personal Account");
+    expect(personalAccountOption).toBeInTheDocument();
+
+    // Select an organization
+    const orgOption = screen.getByText(INITIAL_MOCK_ORGS[1].name);
+    await userEvent.click(orgOption);
+
+    // Should now show the selected organization
+    expect(orgSelector).toHaveValue(INITIAL_MOCK_ORGS[1].name);
+
+    // Click to open dropdown again
+    await userEvent.click(orgSelector);
+
+    // Click on Personal Account to go back
+    const personalAccountOptionAgain = screen.getByText("Personal Account");
+    await userEvent.click(personalAccountOptionAgain);
+
+    // Should show "Personal Account" after going back
+    expect(orgSelector).toHaveValue("Personal Account");
+  });
 });

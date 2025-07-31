@@ -124,15 +124,18 @@ export function UserContextMenu({ type, onClose }: UserContextMenuProps) {
           testId="org-selector"
           name="organization"
           placeholder="Please select an organization"
-          selectedKey={orgId || "default"}
-          items={
-            organizations?.map((org) => ({
+          selectedKey={orgId || "personal"}
+          items={[
+            { key: "personal", label: "Personal Account" },
+            ...(organizations?.map((org) => ({
               key: org.id,
               label: org.name,
-            })) || []
-          }
+            })) || [])
+          ]}
           onSelectionChange={(org) => {
-            if (org) {
+            if (org === "personal") {
+              setOrgId(null);
+            } else if (org) {
               setOrgId(org.toString());
             } else {
               setOrgId(null);
