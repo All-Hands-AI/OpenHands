@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { Spinner } from "@heroui/react";
 import { useSelector } from "react-redux";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -7,8 +9,11 @@ import { ul, ol } from "../markdown/list";
 import { paragraph } from "../markdown/paragraph";
 import { anchor } from "../markdown/anchor";
 import { RootState } from "#/store";
+import { useRepositoryMicroagentContent } from "#/hooks/query/use-repository-microagent-content";
+import { I18nKey } from "#/i18n/declaration";
 
 export function MicroagentManagementViewMicroagentContent() {
+  const { t } = useTranslation();
   const { selectedMicroagentItem } = useSelector(
     (state: RootState) => state.microagentManagement,
   );
@@ -19,55 +24,47 @@ export function MicroagentManagementViewMicroagentContent() {
 
   const { microagent } = selectedMicroagentItem ?? {};
 
-  const transformMicroagentContent = (): string => {
-    if (!microagent) {
-      return "";
-    }
+  // Extract owner and repo from full_name (e.g., "owner/repo")
+  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
+  const filePath = microagent?.path || "";
 
-    // If no triggers exist, return the content as-is
-    if (!microagent.triggers || microagent.triggers.length === 0) {
-      return microagent.content;
-    }
-
-    // Create the triggers frontmatter
-    const triggersFrontmatter = `
-  ---
-
-  triggers:
-  ${microagent.triggers.map((trigger) => ` - ${trigger}`).join("\n")}
-
-  ---
-  `;
-
-    // Prepend the frontmatter to the content
-    return `
-  ${triggersFrontmatter}
-
-  ${microagent.content}
-  `;
-  };
+  // Fetch microagent content using the new API
+  const {
+    data: microagentData,
+    isLoading,
+    error,
+  } = useRepositoryMicroagentContent(owner, repo, filePath, true);
 
   if (!microagent || !selectedRepository) {
     return null;
   }
 
-  // Transform the content to include triggers frontmatter if applicable
-  const transformedContent = transformMicroagentContent();
-
   return (
     <div className="w-full h-full p-6 bg-[#ffffff1a] rounded-2xl text-white text-sm">
-      <Markdown
-        components={{
-          code,
-          ul,
-          ol,
-          a: anchor,
-          p: paragraph,
-        }}
-        remarkPlugins={[remarkGfm, remarkBreaks]}
-      >
-        {transformedContent}
-      </Markdown>
+      {isLoading && (
+        <div className="flex items-center justify-center w-full h-full">
+          <Spinner size="lg" data-testid="loading-microagent-content-spinner" />
+        </div>
+      )}
+      {error && (
+        <div className="flex items-center justify-center w-full h-full">
+          {t(I18nKey.MICROAGENT_MANAGEMENT$ERROR_LOADING_MICROAGENT_CONTENT)}
+        </div>
+      )}
+      {microagentData && !isLoading && !error && (
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+            a: anchor,
+            p: paragraph,
+          }}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
+        >
+          {microagentData.content}
+        </Markdown>
+      )}
     </div>
   );
 }

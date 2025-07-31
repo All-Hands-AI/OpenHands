@@ -1,13 +1,11 @@
-import os
-import shutil
-import subprocess
-import tempfile
+import base64
 from datetime import datetime
 from pathlib import Path
 from types import MappingProxyType
 from typing import cast
 
-from fastapi import APIRouter, Depends, status
+import httpx
+from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, SecretStr
 
@@ -25,8 +23,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
-from openhands.microagent import load_microagents_from_dir
-from openhands.microagent.types import InputMetadata
+from openhands.microagent.microagent import BaseMicroagent
 from openhands.server.dependencies import get_dependencies
 from openhands.server.shared import server_config
 from openhands.server.user_auth import (
@@ -244,67 +241,750 @@ async def get_repository_branches(
 
 
 class MicroagentResponse(BaseModel):
-    """Response model for microagents endpoint."""
+    """Response model for microagents endpoint.
 
-    name: str
-    type: str
-    content: str
-    triggers: list[str] = []
-    inputs: list[InputMetadata] = []
-    tools: list[str] = []
-    created_at: datetime
+    Note: This model only includes basic metadata that can be determined
+    without parsing microagent content. Use the separate content API
+    to get detailed microagent information.
+    """
+
+    name: str  # File name without extension
     git_provider: ProviderType
-    path: str  # Path to the microagent in the Git provider (e.g., ".openhands/microagents/tell-me-a-joke")
+    path: str  # Path to the microagent in the Git provider (e.g., ".openhands/microagents/tell-me-a-joke.md")
+    created_at: datetime
 
 
-def _get_file_creation_time(repo_dir: Path, file_path: Path) -> datetime:
-    """Get the creation time of a file from Git history.
+class MicroagentContentResponse(BaseModel):
+    """Response model for individual microagent content endpoint."""
+
+    content: str
+    path: str
+    git_provider: ProviderType
+    triggers: list[str] = []  # List of trigger keywords for the microagent
+
+
+def _determine_microagents_path(
+    repository_name: str, git_provider: ProviderType
+) -> str:
+    """Determine the microagents directory path based on git provider and repository name.
 
     Args:
-        repo_dir: The root directory of the Git repository
-        file_path: The path to the file relative to the repository root
+        repository_name: Repository name in format 'owner/repo' or 'domain/owner/repo'
+        git_provider: Git provider type
 
     Returns:
-        datetime: The timestamp when the file was first added to the repository
+        The relative path to the microagents directory
     """
+    actual_repo_name = _extract_repo_name(repository_name)
+
+    if git_provider != ProviderType.GITLAB and actual_repo_name == '.openhands':
+        # For non-GitLab providers with repository name ".openhands", scan "microagents" folder
+        return 'microagents'
+    elif git_provider == ProviderType.GITLAB and actual_repo_name == 'openhands-config':
+        # For GitLab with repository name "openhands-config", scan "microagents" folder
+        return 'microagents'
+    else:
+        # Default behavior: look for .openhands/microagents directory
+        return '.openhands/microagents'
+
+
+def _get_github_headers(github_token: str | None) -> dict[str, str]:
+    """Get headers for GitHub API requests."""
+    headers = {'Accept': 'application/vnd.github+json'}
+    if github_token:
+        headers['Authorization'] = f'Bearer {github_token}'
+        headers['X-GitHub-Api-Version'] = '2022-11-28'
+    return headers
+
+
+def _get_gitlab_headers(gitlab_token: str | None) -> dict[str, str]:
+    """Get headers for GitLab API requests."""
+    headers = {}
+    if gitlab_token:
+        headers['Authorization'] = f'Bearer {gitlab_token}'
+    return headers
+
+
+def _get_bitbucket_headers(bitbucket_token: str | None) -> dict[str, str]:
+    """Get headers for Bitbucket API requests."""
+    headers = {}
+    if bitbucket_token:
+        headers['Authorization'] = f'Bearer {bitbucket_token}'
+    return headers
+
+
+def _create_microagent_response(
+    file_name: str,
+    git_provider: ProviderType,
+    path: str,
+) -> MicroagentResponse:
+    """Create a MicroagentResponse from basic file information.
+
+    Note: Content parsing is excluded from the listing API for performance optimization.
+    Use the separate content API to fetch and parse individual microagent content.
+    """
+    # Extract name without extension
+    name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
+
+    return MicroagentResponse(
+        name=name,
+        git_provider=git_provider,
+        path=path,
+        created_at=datetime.now(),  # Fallback to current time
+    )
+
+
+async def _process_cursorrules_file(
+    client: httpx.AsyncClient,
+    cursorrules_url: str,
+    headers: dict[str, str],
+    microagents_path: str,
+    git_provider: ProviderType,
+    decode_base64: bool = False,
+) -> MicroagentResponse | None:
+    """Check if .cursorrules file exists and return basic metadata."""
     try:
-        # Get the relative path from the repository root
-        relative_path = file_path.relative_to(repo_dir)
+        # Just check if the file exists with a HEAD request (or GET with minimal processing)
+        cursorrules_response = await client.get(cursorrules_url, headers=headers)
+        if cursorrules_response.status_code == 200:
+            # File exists, return basic metadata without parsing content
+            return _create_microagent_response(
+                '.cursorrules', git_provider, '.cursorrules'
+            )
+    except Exception as e:
+        logger.warning(f'Error checking .cursorrules: {str(e)}')
+    return None
 
-        # Use git log to get the first commit that added this file
-        # --follow: follow renames and moves
-        # --reverse: show commits in reverse chronological order (oldest first)
-        # --format=%ct: show commit timestamp in Unix format
-        # -1: limit to 1 result (the first commit)
-        cmd = [
-            'git',
-            'log',
-            '--follow',
-            '--reverse',
-            '--format=%ct',
-            '-1',
-            str(relative_path),
-        ]
 
-        result = subprocess.run(
-            cmd, cwd=repo_dir, capture_output=True, text=True, timeout=10
+async def _process_github_md_files(
+    client: httpx.AsyncClient,
+    directory_contents: list,
+    headers: dict[str, str],
+    microagents_path: str,
+) -> list[MicroagentResponse]:
+    """Process .md files from GitHub directory contents without fetching content."""
+    microagents = []
+
+    for item in directory_contents:
+        if (
+            item['type'] == 'file'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        ):
+            try:
+                # Just create response from file metadata without fetching content
+                microagents.append(
+                    _create_microagent_response(
+                        item['name'],
+                        ProviderType.GITHUB,
+                        f'{microagents_path}/{item["name"]}',
+                    )
+                )
+            except Exception as e:
+                logger.warning(f'Error processing microagent {item["name"]}: {str(e)}')
+
+    return microagents
+
+
+async def _process_gitlab_md_files(
+    client: httpx.AsyncClient,
+    tree_items: list,
+    base_url: str,
+    headers: dict[str, str],
+    microagents_path: str,
+) -> list[MicroagentResponse]:
+    """Process .md files from GitLab tree items without fetching content."""
+    microagents = []
+
+    for item in tree_items:
+        if (
+            item['type'] == 'blob'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        ):
+            try:
+                # Just create response from file metadata without fetching content
+                microagents.append(
+                    _create_microagent_response(
+                        item['name'], ProviderType.GITLAB, item['path']
+                    )
+                )
+            except Exception as e:
+                logger.warning(f'Error processing microagent {item["name"]}: {str(e)}')
+
+    return microagents
+
+
+async def _process_bitbucket_md_files(
+    client: httpx.AsyncClient,
+    directory_data: dict,
+    repository_name: str,
+    main_branch: str,
+    headers: dict[str, str],
+    microagents_path: str,
+) -> list[MicroagentResponse]:
+    """Process .md files from Bitbucket directory data without fetching content."""
+    microagents = []
+
+    if 'values' in directory_data:
+        for item in directory_data['values']:
+            if (
+                item['type'] == 'commit_file'
+                and item['path'].endswith('.md')
+                and not item['path'].endswith('README.md')
+            ):
+                try:
+                    # Extract file name from path
+                    file_name = item['path'].split('/')[-1]
+
+                    # Just create response from file metadata without fetching content
+                    microagents.append(
+                        _create_microagent_response(
+                            file_name, ProviderType.BITBUCKET, item['path']
+                        )
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f'Error processing microagent {item["path"]}: {str(e)}'
+                    )
+
+    return microagents
+
+
+async def _fetch_github_file_content(
+    repository_name: str,
+    file_path: str,
+    provider_handler: ProviderHandler,
+) -> str:
+    """Fetch individual file content from GitHub repository.
+
+    Args:
+        repository_name: Repository name in format 'owner/repo'
+        file_path: Path to the file within the repository
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        File content as string
+
+    Raises:
+        RuntimeError: If file cannot be fetched or doesn't exist
+    """
+    github_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.GITHUB in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.GITHUB].token
+        if token is not None:
+            github_token = token.get_secret_value()
+
+    headers = _get_github_headers(github_token)
+    file_url = f'https://api.github.com/repos/{repository_name}/contents/{file_path}'
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(file_url, headers=headers)
+
+            if response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+
+            response.raise_for_status()
+            file_data = response.json()
+
+            # Decode base64 content
+            file_content = base64.b64decode(file_data['content']).decode('utf-8')
+            return file_content
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+            raise RuntimeError(
+                f'Failed to fetch file from GitHub: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching file from GitHub: {str(e)}')
+
+
+async def _fetch_gitlab_file_content(
+    repository_name: str,
+    file_path: str,
+    provider_handler: ProviderHandler,
+) -> str:
+    """Fetch individual file content from GitLab repository.
+
+    Args:
+        repository_name: Repository name in format 'owner/repo' or 'domain/owner/repo'
+        file_path: Path to the file within the repository
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        File content as string
+
+    Raises:
+        RuntimeError: If file cannot be fetched or doesn't exist
+    """
+    gitlab_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.GITLAB in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.GITLAB].token
+        if token is not None:
+            gitlab_token = token.get_secret_value()
+
+    headers = _get_gitlab_headers(gitlab_token)
+
+    # URL encode the repository name and file path for GitLab API
+    project_id = repository_name.replace('/', '%2F')
+    encoded_file_path = file_path.replace('/', '%2F')
+
+    # Determine base URL - check if it's a self-hosted GitLab instance
+    if '/' in repository_name and not repository_name.startswith('gitlab.com/'):
+        # Handle self-hosted GitLab (e.g., 'gitlab.example.com/owner/repo')
+        parts = repository_name.split('/')
+        if len(parts) >= 3:
+            domain = parts[0]
+            project_id = '/'.join(parts[1:]).replace('/', '%2F')
+            base_url = f'https://{domain}/api/v4/projects/{project_id}'
+        else:
+            base_url = f'https://gitlab.com/api/v4/projects/{project_id}'
+    else:
+        base_url = f'https://gitlab.com/api/v4/projects/{project_id}'
+
+    file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(file_url, headers=headers)
+
+            if response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+
+            response.raise_for_status()
+            return response.text
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+            raise RuntimeError(
+                f'Failed to fetch file from GitLab: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching file from GitLab: {str(e)}')
+
+
+async def _fetch_bitbucket_file_content(
+    repository_name: str,
+    file_path: str,
+    provider_handler: ProviderHandler,
+) -> str:
+    """Fetch individual file content from Bitbucket repository.
+
+    Args:
+        repository_name: Repository name in format 'workspace/repo_slug'
+        file_path: Path to the file within the repository
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        File content as string
+
+    Raises:
+        RuntimeError: If file cannot be fetched or doesn't exist
+    """
+    bitbucket_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.BITBUCKET in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.BITBUCKET].token
+        if token is not None:
+            bitbucket_token = token.get_secret_value()
+
+    headers = _get_bitbucket_headers(bitbucket_token)
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Step 1: Get repository info to determine the main branch
+            repo_info_url = (
+                f'https://api.bitbucket.org/2.0/repositories/{repository_name}'
+            )
+            repo_response = await client.get(repo_info_url, headers=headers)
+            repo_response.raise_for_status()
+            repo_data = repo_response.json()
+
+            # Extract main branch name from repository info
+            main_branch = repo_data.get('mainbranch', {}).get('name')
+            if not main_branch:
+                raise RuntimeError(
+                    f'No main branch found in repository info for {repository_name}. '
+                    f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                )
+
+            # Step 2: Get file content using the main branch
+            file_url = f'https://api.bitbucket.org/2.0/repositories/{repository_name}/src/{main_branch}/{file_path}'
+            file_response = await client.get(file_url, headers=headers)
+
+            if file_response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+
+            file_response.raise_for_status()
+            return file_response.text
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                raise RuntimeError(
+                    f'File not found: {file_path} in repository {repository_name}'
+                )
+            raise RuntimeError(
+                f'Failed to fetch file from Bitbucket: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching file from Bitbucket: {str(e)}')
+
+
+async def _fetch_file_content_via_api(
+    repository_name: str,
+    file_path: str,
+    git_provider: ProviderType,
+    provider_handler: ProviderHandler,
+) -> str:
+    """Fetch individual file content from repository using appropriate API.
+
+    Args:
+        repository_name: Repository name
+        file_path: Path to the file within the repository
+        git_provider: Git provider type
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        File content as string
+
+    Raises:
+        RuntimeError: If provider is unsupported or file cannot be fetched
+    """
+    if git_provider == ProviderType.GITHUB:
+        return await _fetch_github_file_content(
+            repository_name, file_path, provider_handler
+        )
+    elif git_provider == ProviderType.GITLAB:
+        return await _fetch_gitlab_file_content(
+            repository_name, file_path, provider_handler
+        )
+    elif git_provider == ProviderType.BITBUCKET:
+        return await _fetch_bitbucket_file_content(
+            repository_name, file_path, provider_handler
         )
 
-        if result.returncode == 0 and result.stdout.strip():
-            # Parse Unix timestamp and convert to datetime
-            timestamp = int(result.stdout.strip())
-            return datetime.fromtimestamp(timestamp)
-        else:
-            logger.warning(
-                f'Failed to get creation time for {relative_path}: {result.stderr}'
-            )
-            # Fallback to current time if git log fails
-            return datetime.now()
 
-    except Exception as e:
-        logger.warning(f'Error getting creation time for {file_path}: {str(e)}')
-        # Fallback to current time if there's any error
-        return datetime.now()
+async def _fetch_github_microagents(
+    repository_name: str,
+    microagents_path: str,
+    provider_handler: ProviderHandler,
+) -> list[MicroagentResponse]:
+    """Fetch microagents from GitHub repository using GitHub Contents API.
+
+    Args:
+        repository_name: Repository name in format 'owner/repo'
+        microagents_path: Path to microagents directory
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        List of microagents found in the repository (without content for performance)
+    """
+    github_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.GITHUB in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.GITHUB].token
+        if token is not None:
+            github_token = token.get_secret_value()
+
+    headers = _get_github_headers(github_token)
+    base_url = f'https://api.github.com/repos/{repository_name}/contents'
+    microagents = []
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Use repository's default branch (no ref parameter)
+            # According to GitHub API docs, this automatically uses the repository's default branch
+            response = await client.get(
+                f'{base_url}/{microagents_path}', headers=headers
+            )
+
+            if response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+
+            response.raise_for_status()
+            directory_contents = response.json()
+
+            # Process .cursorrules if it exists
+            cursorrules_response = await _process_cursorrules_file(
+                client,
+                f'{base_url}/.cursorrules',
+                headers,
+                microagents_path,
+                ProviderType.GITHUB,
+                decode_base64=True,
+            )
+            if cursorrules_response:
+                microagents.append(cursorrules_response)
+
+            # Process .md files in microagents directory
+            md_microagents = await _process_github_md_files(
+                client, directory_contents, headers, microagents_path
+            )
+            microagents.extend(md_microagents)
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+            raise RuntimeError(
+                f'Failed to fetch microagents from GitHub: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching microagents from GitHub: {str(e)}')
+
+    return microagents
+
+
+async def _fetch_gitlab_microagents(
+    repository_name: str,
+    microagents_path: str,
+    provider_handler: ProviderHandler,
+) -> list[MicroagentResponse]:
+    """Fetch microagents from GitLab repository using GitLab API.
+
+    Args:
+        repository_name: Repository name in format 'owner/repo' or 'domain/owner/repo'
+        microagents_path: Path to microagents directory
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        List of microagents found in the repository (without content for performance)
+    """
+    gitlab_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.GITLAB in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.GITLAB].token
+        if token is not None:
+            gitlab_token = token.get_secret_value()
+
+    headers = _get_gitlab_headers(gitlab_token)
+
+    # URL encode the repository name for GitLab API
+    project_id = repository_name.replace('/', '%2F')
+
+    # Determine base URL - check if it's a self-hosted GitLab instance
+    if '/' in repository_name and not repository_name.startswith('gitlab.com/'):
+        # Handle self-hosted GitLab (e.g., 'gitlab.example.com/owner/repo')
+        parts = repository_name.split('/')
+        if len(parts) >= 3:
+            domain = parts[0]
+            project_id = '/'.join(parts[1:]).replace('/', '%2F')
+            base_url = f'https://{domain}/api/v4/projects/{project_id}'
+        else:
+            base_url = f'https://gitlab.com/api/v4/projects/{project_id}'
+    else:
+        base_url = f'https://gitlab.com/api/v4/projects/{project_id}'
+
+    microagents = []
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Use repository's default branch (no ref parameter)
+            # According to GitLab API docs, this automatically uses the repository's default branch
+            tree_response = await client.get(
+                f'{base_url}/repository/tree',
+                headers=headers,
+                params={'path': microagents_path, 'recursive': 'true'},
+            )
+
+            if tree_response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+
+            tree_response.raise_for_status()
+            tree_items = tree_response.json()
+
+            # Process .cursorrules if it exists
+            cursorrules_response = await _process_cursorrules_file(
+                client,
+                f'{base_url}/repository/files/.cursorrules/raw',
+                headers,
+                microagents_path,
+                ProviderType.GITLAB,
+                decode_base64=False,
+            )
+            if cursorrules_response:
+                microagents.append(cursorrules_response)
+
+            # Process .md files
+            md_microagents = await _process_gitlab_md_files(
+                client, tree_items, base_url, headers, microagents_path
+            )
+            microagents.extend(md_microagents)
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+            raise RuntimeError(
+                f'Failed to fetch microagents from GitLab: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching microagents from GitLab: {str(e)}')
+
+    return microagents
+
+
+async def _fetch_bitbucket_microagents(
+    repository_name: str,
+    microagents_path: str,
+    provider_handler: ProviderHandler,
+) -> list[MicroagentResponse]:
+    """Fetch microagents from Bitbucket repository using Bitbucket API.
+
+    Args:
+        repository_name: Repository name in format 'workspace/repo_slug'
+        microagents_path: Path to microagents directory
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        List of microagents found in the repository (without content for performance)
+    """
+    bitbucket_token = None
+    if (
+        provider_handler.provider_tokens
+        and ProviderType.BITBUCKET in provider_handler.provider_tokens
+    ):
+        token = provider_handler.provider_tokens[ProviderType.BITBUCKET].token
+        if token is not None:
+            bitbucket_token = token.get_secret_value()
+
+    headers = _get_bitbucket_headers(bitbucket_token)
+    microagents = []
+
+    async with httpx.AsyncClient() as client:
+        try:
+            # Step 1: Get repository info to determine the main branch
+            repo_info_url = (
+                f'https://api.bitbucket.org/2.0/repositories/{repository_name}'
+            )
+            repo_response = await client.get(repo_info_url, headers=headers)
+            repo_response.raise_for_status()
+            repo_data = repo_response.json()
+
+            # Extract main branch name from repository info
+            main_branch = repo_data.get('mainbranch', {}).get('name')
+            if not main_branch:
+                raise RuntimeError(
+                    f'No main branch found in repository info for {repository_name}. '
+                    f'Repository response: {repo_data.get("mainbranch", "mainbranch field missing")}'
+                )
+
+            # Step 2: Get microagents directory listing using the main branch
+            src_url = f'https://api.bitbucket.org/2.0/repositories/{repository_name}/src/{main_branch}/{microagents_path}'
+            directory_response = await client.get(src_url, headers=headers)
+
+            if directory_response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+
+            directory_response.raise_for_status()
+            directory_data = directory_response.json()
+
+            # Process .cursorrules if it exists
+            cursorrules_response = await _process_cursorrules_file(
+                client,
+                f'https://api.bitbucket.org/2.0/repositories/{repository_name}/src/{main_branch}/.cursorrules',
+                headers,
+                microagents_path,
+                ProviderType.BITBUCKET,
+                decode_base64=False,
+            )
+            if cursorrules_response:
+                microagents.append(cursorrules_response)
+
+            # Process .md files in the directory
+            md_microagents = await _process_bitbucket_md_files(
+                client,
+                directory_data,
+                repository_name,
+                main_branch,
+                headers,
+                microagents_path,
+            )
+            microagents.extend(md_microagents)
+
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 404:
+                logger.info(
+                    f'No microagents directory found in {repository_name} at {microagents_path}'
+                )
+                return []
+            raise RuntimeError(
+                f'Failed to fetch microagents from Bitbucket: {e.response.status_code} {e.response.text}'
+            )
+        except Exception as e:
+            raise RuntimeError(f'Error fetching microagents from Bitbucket: {str(e)}')
+
+    return microagents
+
+
+async def _fetch_microagents_via_api(
+    repository_name: str,
+    git_provider: ProviderType,
+    provider_handler: ProviderHandler,
+) -> list[MicroagentResponse]:
+    """Fetch microagents from repository using API calls instead of cloning.
+
+    Args:
+        repository_name: Repository name
+        git_provider: Git provider type
+        provider_handler: Provider handler for authentication
+
+    Returns:
+        List of microagents found in the repository (without content for performance)
+    """
+    microagents_path = _determine_microagents_path(repository_name, git_provider)
+
+    if git_provider == ProviderType.GITHUB:
+        return await _fetch_github_microagents(
+            repository_name, microagents_path, provider_handler
+        )
+    elif git_provider == ProviderType.GITLAB:
+        return await _fetch_gitlab_microagents(
+            repository_name, microagents_path, provider_handler
+        )
+    elif git_provider == ProviderType.BITBUCKET:
+        return await _fetch_bitbucket_microagents(
+            repository_name, microagents_path, provider_handler
+        )
 
 
 async def _verify_repository_access(
@@ -341,46 +1021,6 @@ async def _verify_repository_access(
     return repository
 
 
-def _clone_repository(remote_url: str, repository_name: str) -> Path:
-    """Clone repository to temporary directory.
-
-    Args:
-        remote_url: Authenticated git URL for cloning
-        repository_name: Repository name for error messages
-
-    Returns:
-        Path to the cloned repository directory
-
-    Raises:
-        RuntimeError: If cloning fails
-    """
-    temp_dir = tempfile.mkdtemp()
-    repo_dir = Path(temp_dir) / 'repo'
-
-    clone_cmd = ['git', 'clone', '--depth', '1', remote_url, str(repo_dir)]
-
-    # Set environment variable to avoid interactive prompts
-    env = os.environ.copy()
-    env['GIT_TERMINAL_PROMPT'] = '0'
-
-    result = subprocess.run(
-        clone_cmd,
-        capture_output=True,
-        text=True,
-        env=env,
-        timeout=30,  # 30 second timeout
-    )
-
-    if result.returncode != 0:
-        # Clean up on failure
-        shutil.rmtree(temp_dir, ignore_errors=True)
-        error_msg = f'Failed to clone repository: {result.stderr}'
-        logger.error(f'Failed to clone repository {repository_name}: {result.stderr}')
-        raise RuntimeError(error_msg)
-
-    return repo_dir
-
-
 def _extract_repo_name(repository_name: str) -> str:
     """Extract the actual repository name from the full repository path.
 
@@ -393,97 +1033,29 @@ def _extract_repo_name(repository_name: str) -> str:
     return repository_name.split('/')[-1]
 
 
-def _process_microagents(
-    repo_dir: Path,
-    repository_name: str,
-    git_provider: ProviderType,
-) -> list[MicroagentResponse]:
-    """Process microagents from the cloned repository.
+def _parse_microagent_content(file_content: str, file_path: str) -> list[str]:
+    """Parse microagent content and extract triggers from frontmatter.
 
     Args:
-        repo_dir: Path to the cloned repository directory
-        repository_name: Repository name for logging
-        git_provider: Git provider type
+        file_content: The raw content of the microagent file
+        file_path: Path to the microagent file
 
     Returns:
-        List of microagents found in the repository
+        List of trigger keywords, empty list if no triggers or parsing fails
     """
-    # Extract the actual repository name from the full path
-    actual_repo_name = _extract_repo_name(repository_name)
-
-    # Determine the microagents directory based on git provider and repository name
-    if git_provider != ProviderType.GITLAB and actual_repo_name == '.openhands':
-        # For non-GitLab providers with repository name ".openhands", scan "microagents" folder
-        microagents_dir = repo_dir / 'microagents'
-    elif git_provider == ProviderType.GITLAB and actual_repo_name == 'openhands-config':
-        # For GitLab with repository name "openhands-config", scan "microagents" folder
-        microagents_dir = repo_dir / 'microagents'
-    else:
-        # Default behavior: look for .openhands/microagents directory
-        microagents_dir = repo_dir / '.openhands' / 'microagents'
-
-    if not microagents_dir.exists():
-        logger.info(
-            f'No microagents directory found in {repository_name} at {microagents_dir}'
+    try:
+        # Parse the microagent content using BaseMicroagent.load()
+        microagent = BaseMicroagent.load(
+            Path(file_path),
+            microagent_dir=Path(file_path).parent,
+            file_content=file_content,
         )
+
+        # Extract triggers from the parsed microagent
+        return getattr(microagent, 'triggers', [])
+    except Exception as e:
+        logger.warning(f'Error parsing microagent content for {file_path}: {str(e)}')
         return []
-
-    # Load microagents from the directory
-    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
-
-    # Prepare response
-    microagents = []
-
-    # Add repo microagents
-    for name, r_agent in repo_agents.items():
-        # Get the actual creation time from Git
-        agent_file_path = Path(r_agent.source)
-        created_at = _get_file_creation_time(repo_dir, agent_file_path)
-
-        microagents.append(
-            MicroagentResponse(
-                name=name,
-                type='repo',
-                content=r_agent.content,
-                triggers=[],
-                inputs=r_agent.metadata.inputs,
-                tools=(
-                    [server.name for server in r_agent.metadata.mcp_tools.stdio_servers]
-                    if r_agent.metadata.mcp_tools
-                    else []
-                ),
-                created_at=created_at,
-                git_provider=git_provider,
-                path=str(agent_file_path.relative_to(repo_dir)),
-            )
-        )
-
-    # Add knowledge microagents
-    for name, k_agent in knowledge_agents.items():
-        # Get the actual creation time from Git
-        agent_file_path = Path(k_agent.source)
-        created_at = _get_file_creation_time(repo_dir, agent_file_path)
-
-        microagents.append(
-            MicroagentResponse(
-                name=name,
-                type='knowledge',
-                content=k_agent.content,
-                triggers=k_agent.triggers,
-                inputs=k_agent.metadata.inputs,
-                tools=(
-                    [server.name for server in k_agent.metadata.mcp_tools.stdio_servers]
-                    if k_agent.metadata.mcp_tools
-                    else []
-                ),
-                created_at=created_at,
-                git_provider=git_provider,
-                path=str(agent_file_path.relative_to(repo_dir)),
-            )
-        )
-
-    logger.info(f'Found {len(microagents)} microagents in {repository_name}')
-    return microagents
 
 
 @app.get(
@@ -503,6 +1075,9 @@ async def get_repository_microagents(
     - If git provider is GitLab and actual repository name is "openhands-config": scans "microagents" folder
     - Otherwise: scans ".openhands/microagents" folder
 
+    Note: This API returns microagent metadata without content for performance.
+    Use the separate content API to fetch individual microagent content.
+
     Args:
         repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'
         provider_tokens: Provider tokens for authentication
@@ -510,33 +1085,28 @@ async def get_repository_microagents(
         user_id: User ID for authentication
 
     Returns:
-        List of microagents found in the repository's microagents directory
+        List of microagents found in the repository's microagents directory (without content)
     """
-    repo_dir = None
-
     try:
         # Verify repository access and get provider information
         repository = await _verify_repository_access(
             repository_name, provider_tokens, access_token, user_id
         )
 
-        # Construct authenticated git URL using provider handler
+        # Create provider handler for API authentication
         provider_handler = ProviderHandler(
             provider_tokens=provider_tokens
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_token=access_token,
             external_auth_id=user_id,
         )
-        remote_url = await provider_handler.get_authenticated_git_url(repository_name)
 
-        # Clone repository
-        repo_dir = _clone_repository(remote_url, repository_name)
-
-        # Process microagents
-        microagents = _process_microagents(
-            repo_dir, repository_name, repository.git_provider
+        # Fetch microagents using API calls instead of cloning
+        microagents = await _fetch_microagents_via_api(
+            repository_name, repository.git_provider, provider_handler
         )
 
+        logger.info(f'Found {len(microagents)} microagents in {repository_name}')
         return microagents
 
     except AuthenticationError as e:
@@ -563,7 +1133,89 @@ async def get_repository_microagents(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-    finally:
-        # Clean up temporary directory
-        if repo_dir and repo_dir.parent.exists():
-            shutil.rmtree(repo_dir.parent, ignore_errors=True)
+
+@app.get(
+    '/repository/{repository_name:path}/microagents/content',
+    response_model=MicroagentContentResponse,
+)
+async def get_repository_microagent_content(
+    repository_name: str,
+    file_path: str = Query(
+        ..., description='Path to the microagent file within the repository'
+    ),
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+) -> MicroagentContentResponse | JSONResponse:
+    """Fetch the content of a specific microagent file from a repository.
+
+    Args:
+        repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'
+        file_path: Query parameter - Path to the microagent file within the repository
+        provider_tokens: Provider tokens for authentication
+        access_token: Access token for external authentication
+        user_id: User ID for authentication
+
+    Returns:
+        Microagent file content and metadata
+
+    Example:
+        GET /api/user/repository/owner/repo/microagents/content?file_path=.openhands/microagents/my-agent.md
+    """
+    try:
+        # Verify repository access and get provider information
+        repository = await _verify_repository_access(
+            repository_name, provider_tokens, access_token, user_id
+        )
+
+        # Create provider handler for API authentication
+        provider_handler = ProviderHandler(
+            provider_tokens=provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+        )
+
+        # Fetch file content using appropriate API
+        file_content = await _fetch_file_content_via_api(
+            repository_name, file_path, repository.git_provider, provider_handler
+        )
+
+        # Parse content to extract triggers
+        triggers = _parse_microagent_content(file_content, file_path)
+
+        logger.info(
+            f'Retrieved content for microagent {file_path} from {repository_name}'
+        )
+
+        return MicroagentContentResponse(
+            content=file_content,
+            path=file_path,
+            git_provider=repository.git_provider,
+            triggers=triggers,
+        )
+
+    except AuthenticationError as e:
+        logger.info(
+            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
+        )
+        return JSONResponse(
+            content=str(e),
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    except RuntimeError as e:
+        return JSONResponse(
+            content=str(e),
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    except Exception as e:
+        logger.error(
+            f'Error fetching microagent content from {repository_name}/{file_path}: {str(e)}',
+            exc_info=True,
+        )
+        return JSONResponse(
+            content=f'Error fetching microagent content: {str(e)}',
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

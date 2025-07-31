@@ -38,11 +38,6 @@ export function MicroagentManagementMicroagentCard({
     pr_number: prNumber,
   } = conversation ?? {};
 
-  // Format the repository URL to point to the microagent file
-  const microagentFilePath = microagent
-    ? `.openhands/microagents/${microagent.name}`
-    : "";
-
   // Format the createdAt date using MM/DD/YYYY format
   const formattedCreatedAt = useMemo(() => {
     if (microagent) {
@@ -131,7 +126,7 @@ export function MicroagentManagementMicroagentCard({
         <div className="text-white text-[16px] font-semibold">{cardTitle}</div>
         {!!microagent && (
           <div className="text-white text-sm font-normal">
-            {microagentFilePath}
+            {microagent.path}
           </div>
         )}
         <div className="text-white text-sm font-normal">

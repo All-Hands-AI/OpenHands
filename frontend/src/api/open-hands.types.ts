@@ -144,3 +144,10 @@ export interface CreateMicroagent {
   git_provider?: Provider;
   title?: string;
 }
+
+export interface MicroagentContentResponse {
+  content: string;
+  path: string;
+  git_provider: Provider;
+  triggers: string[];
+}

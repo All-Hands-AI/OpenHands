@@ -13,6 +13,7 @@ import { BadgeInput } from "#/components/shared/inputs/badge-input";
 import { MicroagentFormData } from "#/types/microagent-management";
 import { Branch, GitRepository } from "#/types/git";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
+import { useRepositoryMicroagentContent } from "#/hooks/query/use-repository-microagent-content";
 import {
   BranchDropdown,
   BranchLoadingState,
@@ -51,13 +52,21 @@ export function MicroagentManagementUpsertMicroagentModal({
   // Add a ref to track if the branch was manually cleared by the user
   const branchManuallyClearedRef = useRef<boolean>(false);
 
+  // Extract owner and repo from full_name for content API
+  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
+  const filePath = microagent?.path || "";
+
+  // Fetch microagent content when updating
+  const { data: microagentContentData, isLoading: isLoadingContent } =
+    useRepositoryMicroagentContent(owner, repo, filePath, true);
+
   // Populate form fields with existing microagent data when updating
   useEffect(() => {
-    if (isUpdate && microagent) {
-      setQuery(microagent.content);
-      setTriggers(microagent.triggers || []);
+    if (isUpdate && microagentContentData) {
+      setQuery(microagentContentData.content);
+      setTriggers(microagentContentData.triggers || []);
     }
-  }, [isUpdate, microagent]);
+  }, [isUpdate, microagentContentData]);
 
   const {
     data: branches,
@@ -294,10 +303,11 @@ export function MicroagentManagementUpsertMicroagentModal({
               isLoading ||
               isLoadingBranches ||
               !selectedBranch ||
-              isBranchesError
+              isBranchesError ||
+              (isUpdate && isLoadingContent) // Disable while loading content for updates
             }
           >
-            {isLoading || isLoadingBranches
+            {isLoading || isLoadingBranches || (isUpdate && isLoadingContent)
               ? t(I18nKey.HOME$LOADING)
               : t(I18nKey.MICROAGENT$LAUNCH)}
           </BrandButton>

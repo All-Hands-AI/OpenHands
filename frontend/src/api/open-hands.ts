@@ -14,6 +14,7 @@ import {
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
   CreateMicroagent,
+  MicroagentContentResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -491,7 +492,7 @@ class OpenHands {
   }
 
   /**
-   * Get the available microagents for a specific repository
+   * Get the available microagents for a repository
    * @param owner The repository owner
    * @param repo The repository name
    * @returns The available microagents for the repository
@@ -502,6 +503,27 @@ class OpenHands {
   ): Promise<RepositoryMicroagent[]> {
     const { data } = await openHands.get<RepositoryMicroagent[]>(
       `/api/user/repository/${owner}/${repo}/microagents`,
+    );
+    return data;
+  }
+
+  /**
+   * Get the content of a specific microagent from a repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @param filePath The path to the microagent file within the repository
+   * @returns The microagent content and metadata
+   */
+  static async getRepositoryMicroagentContent(
+    owner: string,
+    repo: string,
+    filePath: string,
+  ): Promise<MicroagentContentResponse> {
+    const { data } = await openHands.get<MicroagentContentResponse>(
+      `/api/user/repository/${owner}/${repo}/microagents/content`,
+      {
+        params: { file_path: filePath },
+      },
     );
     return data;
   }
