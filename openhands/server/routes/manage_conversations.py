@@ -604,6 +604,17 @@ async def update_conversation(
         )
 
 
+@app.get('/conversations/{conversation_id}/final-result')
+async def get_final_result(conversation_id: str, request: Request) -> str | None:
+    try:
+        conversation = await conversation_module._get_conversation_by_id(
+            conversation_id
+        )
+        return conversation.final_result
+    except Exception:
+        return None
+
+
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
     conversation_id: str,
