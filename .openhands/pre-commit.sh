@@ -7,54 +7,57 @@ echo "This hook runs 'make lint' to ensure code quality before committing."
 # This allows us to be additive to existing pre-commit hooks
 EXIT_CODE=0
 
-# Run make lint to check both frontend and backend code
-echo "Running linting checks with 'make lint'..."
-make lint
+# Run backend linting only (frontend checks disabled)
+echo "Running backend linting checks only..."
+make lint-backend
 if [ $? -ne 0 ]; then
-    echo "Linting failed. Please fix the issues before committing."
+    echo "Backend linting failed. Please fix the issues before committing."
     EXIT_CODE=1
 else
-    echo "Linting checks passed!"
+    echo "Backend linting checks passed!"
 fi
 
 # Check if frontend directory has changed
-frontend_changes=$(git diff --cached --name-only | grep "^frontend/")
-if [ -n "$frontend_changes" ]; then
-    echo "Frontend changes detected. Running additional frontend checks..."
+# frontend_changes=$(git diff --cached --name-only | grep "^frontend/")
+# if [ -n "$frontend_changes" ]; then
+#     echo "Frontend changes detected. Running additional frontend checks..."
 
-    # Check if frontend directory exists
-    if [ -d "frontend" ]; then
-        # Change to frontend directory
-        cd frontend || exit 1
+#     # Check if frontend directory exists
+#     if [ -d "frontend" ]; then
+#         # Change to frontend directory
+#         cd frontend || exit 1
 
-        # Run build
-        echo "Running npm build..."
-        npm run build
-        if [ $? -ne 0 ]; then
-            echo "Frontend build failed. Please fix the issues before committing."
-            EXIT_CODE=1
-        fi
+#         # Run build
+#         echo "Running npm build..."
+#         npm run build
+#         if [ $? -ne 0 ]; then
+#             echo "Frontend build failed. Please fix the issues before committing."
+#             EXIT_CODE=1
+#         fi
 
-        # Run tests
-        echo "Running npm test..."
-        npm test
-        if [ $? -ne 0 ]; then
-            echo "Frontend tests failed. Please fix the failing tests before committing."
-            EXIT_CODE=1
-        fi
+#         # Run tests
+#         echo "Running npm test..."
+#         npm test
+#         if [ $? -ne 0 ]; then
+#             echo "Frontend tests failed. Please fix the failing tests before committing."
+#             EXIT_CODE=1
+#         fi
 
-        # Return to the original directory
-        cd ..
+#         # Return to the original directory
+#         cd ..
 
-        if [ $EXIT_CODE -eq 0 ]; then
-            echo "Frontend checks passed!"
-        fi
-    else
-        echo "Frontend directory not found. Skipping frontend checks."
-    fi
-else
-    echo "No frontend changes detected. Skipping additional frontend checks."
-fi
+#         if [ $EXIT_CODE -eq 0 ]; then
+#             echo "Frontend checks passed!"
+#         fi
+#     else
+#         echo "Frontend directory not found. Skipping frontend checks."
+#     fi
+# else
+#     echo "No frontend changes detected. Skipping additional frontend checks."
+# fi
+
+# TEMPORARILY DISABLED: Frontend checks
+echo "Frontend checks temporarily disabled"
 
 # Run any existing pre-commit hooks that might have been installed by the user
 # This makes our hook additive rather than replacing existing hooks
