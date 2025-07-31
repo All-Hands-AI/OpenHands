@@ -84,6 +84,15 @@ from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
+def _set_git_behavior_config_in_agent(agent, memory) -> None:
+    """Set the Git behavior configuration from memory to the agent's ConversationMemory."""
+    # Check if the agent has a ConversationMemory (like CodeActAgent)
+    if hasattr(agent, 'conversation_memory') and hasattr(
+        agent.conversation_memory, 'set_git_behavior_config'
+    ):
+        agent.conversation_memory.set_git_behavior_config(memory.git_behavior_config)
+
+
 async def cleanup_session(
     loop: asyncio.AbstractEventLoop,
     agent: Agent,
@@ -306,6 +315,9 @@ async def run_session(
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
+
+        # Set Git behavior configuration in the agent's ConversationMemory
+        _set_git_behavior_config_in_agent(agent, memory)
 
         # Disable collection after startup
         mcp_error_collector.disable_collection()

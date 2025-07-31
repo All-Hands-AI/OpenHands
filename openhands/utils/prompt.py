@@ -40,6 +40,19 @@ class ConversationInstructions:
     content: str = ''
 
 
+@dataclass
+class GitBehaviorConfig:
+    """
+    Configuration for Git behavior based on the interface trigger type.
+
+    This standardizes Git commit, push, and PR/MR behavior across different OpenHands interfaces.
+    """
+
+    trigger_type: str  # "gui", "github_resolver", "slack", "cli", etc.
+    auto_push: bool = False  # Whether to automatically push commits
+    auto_pr: str | bool = False  # Whether to auto-create PRs ("ask_user", True, False)
+
+
 class PromptManager:
     """
     Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
@@ -111,6 +124,7 @@ class PromptManager:
         runtime_info: RuntimeInfo | None,
         conversation_instructions: ConversationInstructions | None,
         repo_instructions: str = '',
+        git_behavior_config: GitBehaviorConfig | None = None,
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
         return self.additional_info_template.render(
@@ -118,6 +132,7 @@ class PromptManager:
             repository_instructions=repo_instructions,
             runtime_info=runtime_info,
             conversation_instructions=conversation_instructions,
+            git_behavior_config=git_behavior_config,
         ).strip()
 
     def build_microagent_info(

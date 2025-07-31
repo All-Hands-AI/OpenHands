@@ -1,6 +1,6 @@
 # Git Actions in OpenHands
 
-This document describes the new git commit and push actions that provide better control over git operations in OpenHands.
+This document describes the git commit and push actions that provide better control over git operations in OpenHands, along with the standardized Git behavior across different interfaces.
 
 ## Overview
 
@@ -160,3 +160,43 @@ push_action = GitPushAction(
 ```
 
 This separation allows for better error handling, more granular control, and improved workflow flexibility.
+
+## Standardized Git Behavior Across Interfaces
+
+OpenHands now provides consistent Git behavior across different interfaces through a standardized configuration system. The behavior is automatically configured based on how the conversation was initiated.
+
+### Interface-Specific Behaviors
+
+#### GUI Mode
+- **Behavior**: Conservative approach - never push or create PRs unless explicitly requested
+- **Rationale**: Users have full control and can see what's happening in the interface
+- **Configuration**: `auto_push: false`, `auto_pr: false`
+
+#### GitHub Resolver
+- **Behavior**: Automatic push to the same branch when work is complete
+- **Rationale**: Used for automated issue resolution where the expectation is that work will be committed
+- **Configuration**: `auto_push: true`, `auto_pr: false`
+- **Note**: Respects repository permissions and branch protection rules
+
+#### Slack Integration
+- **Behavior**: Always ask for user confirmation before creating PRs
+- **Rationale**: Users may not have immediate visibility into changes and should have explicit control
+- **Configuration**: `auto_push: false`, `auto_pr: "ask_user"`
+
+#### CLI Mode
+- **Behavior**: Conservative approach similar to GUI mode
+- **Rationale**: Command-line users typically want explicit control over Git operations
+- **Configuration**: `auto_push: false`, `auto_pr: false`
+
+### How It Works
+
+The Git behavior configuration is automatically set when a conversation is initialized based on the trigger type. This information is passed to the agent through the workspace context, providing clear guidelines on when to commit, push, and create pull requests.
+
+The agent receives these guidelines in its prompt and follows them consistently, eliminating the previous unpredictable behavior where Git operations varied depending on the interface being used.
+
+### Benefits
+
+1. **Predictable Behavior**: Users know what to expect from Git operations regardless of the interface
+2. **Interface-Appropriate Actions**: Each interface gets behavior that matches user expectations
+3. **Centralized Configuration**: All Git behavior logic is managed in one place
+4. **Clear Guidelines**: Agents receive explicit instructions about when to perform Git operations

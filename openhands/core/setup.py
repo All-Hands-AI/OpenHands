@@ -142,6 +142,7 @@ def create_memory(
     status_callback: Callable | None = None,
     conversation_instructions: str | None = None,
     working_dir: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
+    trigger_type: str = 'gui',
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -153,6 +154,8 @@ def create_memory(
         repo_directory: The repository directory, if any.
         status_callback: Optional callback function to handle status updates.
         conversation_instructions: Optional instructions that are passed to the agent
+        working_dir: The working directory path in the sandbox.
+        trigger_type: The interface trigger type ("gui", "github_resolver", "slack", "cli")
     """
     memory = Memory(
         event_stream=event_stream,
@@ -161,6 +164,17 @@ def create_memory(
     )
 
     memory.set_conversation_instructions(conversation_instructions)
+
+    # Set Git behavior configuration based on trigger type
+    if trigger_type == 'gui':
+        memory.set_git_behavior_config('gui', auto_push=False, auto_pr=False)
+    elif trigger_type == 'github_resolver':
+        memory.set_git_behavior_config('github_resolver', auto_push=True, auto_pr=False)
+    elif trigger_type == 'slack':
+        memory.set_git_behavior_config('slack', auto_push=False, auto_pr='ask_user')
+    else:
+        # Default to GUI behavior for CLI and other interfaces
+        memory.set_git_behavior_config(trigger_type, auto_push=False, auto_pr=False)
 
     if runtime:
         # sets available hosts

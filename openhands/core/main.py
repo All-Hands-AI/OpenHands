@@ -38,6 +38,15 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 
+def _set_git_behavior_config_in_agent(agent: Agent, memory: Memory) -> None:
+    """Set the Git behavior configuration from memory to the agent's ConversationMemory."""
+    # Check if the agent has a ConversationMemory (like CodeActAgent)
+    if hasattr(agent, 'conversation_memory') and hasattr(
+        agent.conversation_memory, 'set_git_behavior_config'
+    ):
+        agent.conversation_memory.set_git_behavior_config(memory.git_behavior_config)
+
+
 class FakeUserResponseFunc(Protocol):
     def __call__(
         self,
@@ -58,6 +67,7 @@ async def run_controller(
     headless_mode: bool = True,
     memory: Memory | None = None,
     conversation_instructions: str | None = None,
+    trigger_type: str = 'cli',
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -131,6 +141,7 @@ async def run_controller(
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
             working_dir=config.workspace_mount_path_in_sandbox,
+            trigger_type=trigger_type,
         )
 
     # Add MCP tools to the agent
@@ -144,6 +155,9 @@ async def run_controller(
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
+
+    # Set Git behavior configuration in the agent's ConversationMemory
+    _set_git_behavior_config_in_agent(agent, memory)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:

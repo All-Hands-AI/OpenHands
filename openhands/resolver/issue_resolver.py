@@ -442,6 +442,7 @@ class IssueResolver:
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
                 conversation_instructions=conversation_instructions,
+                trigger_type='github_resolver',
             )
             if state is None:
                 raise RuntimeError('Failed to run the agent.')
