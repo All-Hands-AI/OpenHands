@@ -3,10 +3,8 @@ import React from "react";
 import posthog from "posthog-js";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
-import { useUserProviders } from "../use-user-providers";
 
 export const useGitUser = () => {
-  const { providers } = useUserProviders();
   const { data: config } = useConfig();
 
   const user = useQuery({
