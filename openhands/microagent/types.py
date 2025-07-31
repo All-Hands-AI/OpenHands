@@ -1,3 +1,4 @@
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -34,3 +35,25 @@ class MicroagentMetadata(BaseModel):
     mcp_tools: MCPConfig | None = (
         None  # optional, for microagents that provide additional MCP tools
     )
+
+
+class MicroagentResponse(BaseModel):
+    """Response model for microagents endpoint.
+
+    Note: This model only includes basic metadata that can be determined
+    without parsing microagent content. Use the separate content API
+    to get detailed microagent information.
+    """
+
+    name: str
+    path: str
+    created_at: datetime
+
+
+class MicroagentContentResponse(BaseModel):
+    """Response model for individual microagent content endpoint."""
+
+    content: str
+    path: str
+    triggers: list[str] = []
+    git_provider: str | None = None

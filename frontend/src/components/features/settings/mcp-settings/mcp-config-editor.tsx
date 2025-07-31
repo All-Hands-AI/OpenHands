@@ -32,32 +32,26 @@ export function MCPConfigEditor({ mcpConfig, onChange }: MCPConfigEditorProps) {
           {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
         </p>
       </div>
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center">
-          <a
-            href="https://docs.all-hands.dev/usage/mcp"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-400 hover:underline mr-3"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {t(I18nKey.COMMON$DOCUMENTATION)}
-          </a>
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={() => setIsEditing(!isEditing)}
-          >
-            {isEditing
-              ? t(I18nKey.SETTINGS$MCP_CANCEL)
-              : t(I18nKey.SETTINGS$MCP_EDIT_CONFIGURATION)}
-          </BrandButton>
+      {!isEditing && (
+        <div className="flex justify-between items-center mb-4">
+          <div className="flex items-center">
+            <BrandButton
+              type="button"
+              variant="primary"
+              onClick={() => setIsEditing(true)}
+            >
+              {t(I18nKey.SETTINGS$MCP_EDIT_CONFIGURATION)}
+            </BrandButton>
+          </div>
         </div>
-      </div>
-
+      )}
       <div>
         {isEditing ? (
-          <MCPJsonEditor mcpConfig={mcpConfig} onChange={handleConfigChange} />
+          <MCPJsonEditor
+            mcpConfig={mcpConfig}
+            onChange={handleConfigChange}
+            onCancel={() => setIsEditing(false)}
+          />
         ) : (
           <>
             <div className="flex flex-col gap-6">

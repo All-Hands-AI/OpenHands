@@ -1,22 +1,47 @@
 import { useTranslation } from "react-i18next";
+import { useDispatch, useSelector } from "react-redux";
 import { I18nKey } from "#/i18n/declaration";
+import {
+  setAddMicroagentModalVisible,
+  setSelectedRepository,
+} from "#/state/microagent-management-slice";
+import { RootState } from "#/store";
+import { GitRepository } from "#/types/git";
+import PlusIcon from "#/icons/plus.svg?react";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface MicroagentManagementAddMicroagentButtonProps {
-  onClick: () => void;
+  repository: GitRepository;
 }
 
 export function MicroagentManagementAddMicroagentButton({
-  onClick,
+  repository,
 }: MicroagentManagementAddMicroagentButtonProps) {
   const { t } = useTranslation();
 
+  const { addMicroagentModalVisible } = useSelector(
+    (state: RootState) => state.microagentManagement,
+  );
+
+  const dispatch = useDispatch();
+
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    dispatch(setAddMicroagentModalVisible(!addMicroagentModalVisible));
+    dispatch(setSelectedRepository(repository));
+  };
+
   return (
-    <button
-      type="button"
-      className="text-sm font-normal text-[#8480FF] cursor-pointer outline-none border-none"
-      onClick={onClick}
-    >
-      {t(I18nKey.COMMON$ADD_MICROAGENT)}
-    </button>
+    <div onClick={handleClick}>
+      <TooltipButton
+        tooltip={t(I18nKey.COMMON$ADD_MICROAGENT)}
+        ariaLabel={t(I18nKey.COMMON$ADD_MICROAGENT)}
+        className="p-0 min-w-0 h-6 w-6 flex items-center justify-center bg-transparent cursor-pointer"
+        testId="add-microagent-button"
+        placement="bottom"
+      >
+        <PlusIcon width={22} height={22} />
+      </TooltipButton>
+    </div>
   );
 }
