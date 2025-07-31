@@ -278,15 +278,18 @@ def save_approved_command_to_config(
 
         # Check if pattern already exists
         pattern_exists = any(
+            p == pattern
+            for p in config_data['security']['approved_command_patterns']
+            if isinstance(p, str)
+        ) or any(
             p.get('pattern') == pattern
             for p in config_data['security']['approved_command_patterns']
             if isinstance(p, dict)
         )
 
         if not pattern_exists:
-            config_data['security']['approved_command_patterns'].append(
-                {'pattern': pattern, 'description': description}
-            )
+            # Just save the pattern string directly
+            config_data['security']['approved_command_patterns'].append(pattern)
 
         from openhands.core.logger import openhands_logger
 

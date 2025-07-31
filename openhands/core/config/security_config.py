@@ -1,16 +1,7 @@
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-
-class ApprovedCommandPattern(BaseModel):
-    """Configuration for an approved command pattern.
-
-    Attributes:
-        pattern: The regex pattern to match commands against.
-        description: A human-readable description of what this pattern matches.
-    """
-
-    pattern: str
-    description: str
+# ApprovedCommandPattern is now just a string containing the regex pattern
+ApprovedCommandPattern = str
 
 
 class SecurityConfig(BaseModel):
@@ -19,7 +10,7 @@ class SecurityConfig(BaseModel):
     Attributes:
         confirmation_mode: Whether to enable confirmation mode.
         security_analyzer: The security analyzer to use.
-        approved_command_patterns: List of approved command patterns that don't require confirmation.
+        approved_command_patterns: List of regex patterns for commands that don't require confirmation.
         approved_commands: Dictionary of exact commands that have been approved.
     """
 
@@ -31,16 +22,16 @@ class SecurityConfig(BaseModel):
     approved_commands: dict[str, bool] = Field(default_factory=dict)
 
     model_config = ConfigDict(extra='forbid')
-    
+
     def is_command_approved(self, command: str) -> bool:
         """Check if a command is approved.
-        
+
         This is a stub method that always returns False.
         The actual implementation is in CommandApprovalAnalyzer.
-        
+
         Args:
             command: The command to check.
-            
+
         Returns:
             bool: Always False in this stub implementation.
         """
@@ -66,17 +57,12 @@ class SecurityConfig(BaseModel):
             patterns_data = data.pop('approved_command_patterns')
             if isinstance(patterns_data, list):
                 for pattern_data in patterns_data:
-                    if (
-                        isinstance(pattern_data, dict)
-                        and 'pattern' in pattern_data
-                        and 'description' in pattern_data
-                    ):
-                        approved_patterns.append(
-                            ApprovedCommandPattern(
-                                pattern=pattern_data['pattern'],
-                                description=pattern_data['description'],
-                            )
-                        )
+                    # Handle the new format (just a string pattern)
+                    if isinstance(pattern_data, str):
+                        approved_patterns.append(pattern_data)
+                    # Handle the old format (dict with pattern and description)
+                    elif isinstance(pattern_data, dict) and 'pattern' in pattern_data:
+                        approved_patterns.append(pattern_data['pattern'])
 
         # Extract approved commands if present
         approved_commands = {}

@@ -1,7 +1,7 @@
 """Command approval analyzer for security."""
 
 import re
-from typing import Any, Dict, List
+from typing import Any
 
 import bashlex
 from fastapi import Request
@@ -23,7 +23,7 @@ class CommandPattern:
 
     def __init__(self, pattern: str, description: str):
         """Initialize a new command pattern.
-        
+
         Args:
             pattern: The regex pattern to match commands against.
             description: A human-readable description of what this pattern matches.
@@ -31,13 +31,13 @@ class CommandPattern:
         self.pattern = pattern
         self.description = description
         self._compiled_pattern = re.compile(pattern)
-        
+
     def matches(self, command: str) -> bool:
         """Check if the command matches this pattern.
-        
+
         Args:
             command: The command to check.
-            
+
         Returns:
             bool: True if the command matches, False otherwise.
         """
@@ -46,19 +46,19 @@ class CommandPattern:
 
 class CommandParser:
     """Parser for bash commands using bashlex."""
-    
+
     def is_piped_command(self, command: str) -> bool:
         """Check if a command contains pipes.
-        
+
         Args:
             command: The command to check.
-            
+
         Returns:
             bool: True if the command contains pipes, False otherwise.
         """
         if not command or not command.strip():
             return False
-            
+
         try:
             parts = bashlex.parse(command)
             for part in parts:
@@ -66,7 +66,7 @@ class CommandParser:
                     return True
             return False
         except Exception as e:
-            logger.warning(f"Error parsing command with bashlex: {e}")
+            logger.warning(f'Error parsing command with bashlex: {e}')
             # Fallback: check for pipe character not in quotes
             # This is a simple heuristic and not as accurate as bashlex parsing
             in_single_quote = False
@@ -79,23 +79,23 @@ class CommandParser:
                 elif char == '|' and not in_single_quote and not in_double_quote:
                     return True
             return False
-    
-    def parse_command(self, command: str) -> List[str]:
+
+    def parse_command(self, command: str) -> list[str]:
         """Parse a command into individual parts, handling pipes.
-        
+
         Args:
             command: The command to parse.
-            
+
         Returns:
             List[str]: List of individual commands.
         """
         if not command or not command.strip():
             return []
-            
+
         try:
             parts = bashlex.parse(command)
             commands = []
-            
+
             # Helper function to extract command from a node
             def extract_command(node):
                 if node.kind == 'command':
@@ -106,7 +106,7 @@ class CommandParser:
                     if cmd_parts:
                         return ' '.join(cmd_parts)
                 return None
-            
+
             # Process the AST
             for part in parts:
                 if part.kind == 'pipeline':
@@ -133,10 +133,10 @@ class CommandParser:
                         elif subpart.kind == 'operator':
                             # Stop at the first operator
                             break
-                    
+
             return commands
         except Exception as e:
-            logger.warning(f"Error parsing command with bashlex: {e}")
+            logger.warning(f'Error parsing command with bashlex: {e}')
             # Fallback: simple split by pipe
             # This is a simple heuristic and not as accurate as bashlex parsing
             if '|' in command:
@@ -157,52 +157,50 @@ class CommandApprovalAnalyzer(SecurityAnalyzer):
         """Initializes a new instance of the CommandApprovalAnalyzer class."""
         super().__init__(event_stream)
         self.parser = CommandParser()
-        self.approved_commands: Dict[str, bool] = {}  # Dict of exact commands that have been approved
-        self.approved_patterns: List[CommandPattern] = []  # List of regex patterns for approved commands
-        
+        self.approved_commands: dict[
+            str, bool
+        ] = {}  # Dict of exact commands that have been approved
+        self.approved_patterns: list[
+            CommandPattern
+        ] = []  # List of regex patterns for approved commands
+        self.compiled_patterns: dict[
+            str, re.Pattern
+        ] = {}  # Cache of compiled regex patterns
+
         # Add some default patterns
         self._add_default_patterns()
-    
+
     def _add_default_patterns(self) -> None:
         """Add default command patterns that are always approved."""
         # Simple, safe commands
         self.approved_patterns.append(
             CommandPattern(
-                pattern=r"^ls(\s+-[a-zA-Z]+)*(\s+\S+)*$",
-                description="List directory contents"
+                pattern=r'^ls(\s+-[a-zA-Z]+)*(\s+\S+)*$',
+                description='List directory contents',
             )
         )
         self.approved_patterns.append(
-            CommandPattern(
-                pattern=r"^cd(\s+\S+)?$",
-                description="Change directory"
-            )
+            CommandPattern(pattern=r'^cd(\s+\S+)?$', description='Change directory')
         )
         self.approved_patterns.append(
-            CommandPattern(
-                pattern=r"^pwd$",
-                description="Print working directory"
-            )
+            CommandPattern(pattern=r'^pwd$', description='Print working directory')
         )
         self.approved_patterns.append(
-            CommandPattern(
-                pattern=r"^echo\s+.*$",
-                description="Echo text"
-            )
+            CommandPattern(pattern=r'^echo\s+.*$', description='Echo text')
         )
-    
+
     def is_command_approved(self, command: str) -> bool:
         """Check if a command is approved and doesn't need confirmation.
-        
+
         Args:
             command: The command to check.
-            
+
         Returns:
             bool: True if the command is approved, False otherwise.
         """
         if not command or not command.strip():
             return False
-            
+
         # Check if this is a piped command
         if self.parser.is_piped_command(command):
             # For piped commands, all parts must be approved
@@ -211,37 +209,63 @@ class CommandApprovalAnalyzer(SecurityAnalyzer):
         else:
             # For single commands, just check directly
             return self._is_single_command_approved(command)
-    
+
     def _is_single_command_approved(self, command: str) -> bool:
         """Check if a single (non-piped) command is approved.
-        
+
         Args:
             command: The command to check.
-            
+
         Returns:
             bool: True if the command is approved, False otherwise.
         """
         command = command.strip()
-        
+
         # Check exact matches first
         if command in self.approved_commands:
             return self.approved_commands[command]
-            
-        # Then check patterns
+
+        # Then check patterns from CommandPattern objects
         for pattern in self.approved_patterns:
             if pattern.matches(command):
                 return True
-                
+
+        # Then check string patterns from the config
+        from openhands.core.config import load_openhands_config
+
+        try:
+            config = load_openhands_config()
+            if hasattr(config, 'security') and hasattr(
+                config.security, 'approved_command_patterns'
+            ):
+                for pattern_str in config.security.approved_command_patterns:
+                    # Compile the pattern if not already compiled
+                    if pattern_str not in self.compiled_patterns:
+                        try:
+                            self.compiled_patterns[pattern_str] = re.compile(
+                                pattern_str
+                            )
+                        except re.error:
+                            # Skip invalid patterns
+                            continue
+
+                    # Check if the command matches the pattern
+                    if self.compiled_patterns[pattern_str].match(command):
+                        return True
+        except Exception:
+            # If there's any error loading the config, just continue without checking patterns
+            pass
+
         return False
-    
+
     def approve_command(self, command: str) -> None:
         """Add a command to the approved commands list.
-        
+
         Args:
             command: The command to approve.
         """
         self.approved_commands[command] = True
-        
+
         # In a real implementation, we would save this to config.toml
         logger.info(f"Command '{command}' approved for future use")
 
