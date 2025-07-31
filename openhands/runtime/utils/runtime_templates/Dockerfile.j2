@@ -187,13 +187,12 @@ RUN \
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 {{ install_dependencies() }}
+{{ setup_docker() }}
 
 # ================================================================
 # END: Build Runtime Image from Scratch
 # ================================================================
 {% endif %}
-
-{{ setup_docker() }}
 
 {{ setup_vscode_server() }}
 
@@ -214,7 +213,6 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py
 {% if build_from_versioned %}
 {{ install_dependencies() }}
 {{ install_vscode_extensions() }}
-{{ setup_docker() }}
 {% endif %}
 
 # Install extra dependencies if specified
