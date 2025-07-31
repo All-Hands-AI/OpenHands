@@ -162,6 +162,9 @@ class AgentSession:
             if self.runtime and runtime_connected and agent.config.enable_mcp:
                 await add_mcp_tools_to_agent(agent, self.runtime, self.memory)
 
+            # Set Git behavior configuration in the agent's ConversationMemory
+            self._set_git_behavior_config_in_agent(agent, self.memory)
+
             if replay_json:
                 initial_message = self._run_replay(
                     initial_message,
@@ -480,6 +483,9 @@ class AgentSession:
             )
             memory.set_conversation_instructions(conversation_instructions)
 
+            # Set Git behavior configuration for GUI interface
+            memory.set_git_behavior_config('gui', auto_push=False, auto_pr=False)
+
             # loads microagents from repo/.openhands/microagents
             microagents: list[BaseMicroagent] = await call_sync_from_async(
                 self.runtime.get_microagents_from_selected_repo,
@@ -490,6 +496,16 @@ class AgentSession:
             if selected_repository and repo_directory:
                 memory.set_repository_info(selected_repository, repo_directory)
         return memory
+
+    def _set_git_behavior_config_in_agent(self, agent, memory) -> None:
+        """Set the Git behavior configuration from memory to the agent's ConversationMemory."""
+        # Check if the agent has a ConversationMemory (like CodeActAgent)
+        if hasattr(agent, 'conversation_memory') and hasattr(
+            agent.conversation_memory, 'set_git_behavior_config'
+        ):
+            agent.conversation_memory.set_git_behavior_config(
+                memory.git_behavior_config
+            )
 
     def _maybe_restore_state(self) -> State | None:
         """Helper method to handle state restore logic."""

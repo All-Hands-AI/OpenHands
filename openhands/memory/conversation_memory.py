@@ -44,6 +44,7 @@ from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import (
     ConversationInstructions,
+    GitBehaviorConfig,
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
@@ -56,6 +57,13 @@ class ConversationMemory:
     def __init__(self, config: AgentConfig, prompt_manager: PromptManager):
         self.agent_config = config
         self.prompt_manager = prompt_manager
+        self.git_behavior_config: GitBehaviorConfig | None = None
+
+    def set_git_behavior_config(
+        self, git_behavior_config: GitBehaviorConfig | None
+    ) -> None:
+        """Set the Git behavior configuration for this conversation."""
+        self.git_behavior_config = git_behavior_config
 
     @staticmethod
     def _is_valid_image_url(url: str | None) -> bool:
@@ -582,6 +590,7 @@ class ConversationMemory:
                             runtime_info=runtime_info,
                             conversation_instructions=conversation_instructions,
                             repo_instructions=repo_instructions,
+                            git_behavior_config=self.git_behavior_config,
                         )
                     )
                     message_content.append(TextContent(text=formatted_workspace_text))

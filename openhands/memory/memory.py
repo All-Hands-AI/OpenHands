@@ -26,6 +26,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.utils.prompt import (
     ConversationInstructions,
+    GitBehaviorConfig,
     RepositoryInfo,
     RuntimeInfo,
 )
@@ -76,6 +77,7 @@ class Memory:
         self.repository_info: RepositoryInfo | None = None
         self.runtime_info: RuntimeInfo | None = None
         self.conversation_instructions: ConversationInstructions | None = None
+        self.git_behavior_config: GitBehaviorConfig | None = None
 
         # Load global microagents (Knowledge + Repo)
         # from typically OpenHands/microagents (i.e., the PUBLIC microagents)
@@ -364,6 +366,23 @@ class Memory:
         """
         self.conversation_instructions = ConversationInstructions(
             content=conversation_instructions or ''
+        )
+
+    def set_git_behavior_config(
+        self, trigger_type: str, auto_push: bool = False, auto_pr: str | bool = False
+    ) -> None:
+        """
+        Set Git behavior configuration based on the interface trigger type.
+
+        Args:
+            trigger_type: The interface type ("gui", "github_resolver", "slack", "cli")
+            auto_push: Whether to automatically push commits
+            auto_pr: Whether to auto-create PRs ("ask_user", True, False)
+        """
+        self.git_behavior_config = GitBehaviorConfig(
+            trigger_type=trigger_type,
+            auto_push=auto_push,
+            auto_pr=auto_pr,
         )
 
     def set_runtime_status(self, status: RuntimeStatus, message: str):

@@ -44,4 +44,29 @@ Today's date is {{ runtime_info.date }} (UTC).
 {{ conversation_instructions.content }}
 </CONVERSATION_INSTRUCTIONS>
 {% endif %}
+{% if git_behavior_config -%}
+<GIT_BEHAVIOR_CONFIGURATION>
+Interface Type: {{ git_behavior_config.trigger_type }}
+Auto Push: {{ git_behavior_config.auto_push }}
+Auto PR: {{ git_behavior_config.auto_pr }}
+
+{% if git_behavior_config.trigger_type == "gui" -%}
+Git Behavior Guidelines:
+- Conservative approach: Never push or create PRs unless explicitly requested by the user
+- Users have full control and can see what's happening in the interface
+- Always ask for confirmation before performing any remote Git operations
+{% elif git_behavior_config.trigger_type == "github_resolver" -%}
+Git Behavior Guidelines:
+- Automatic push to the same branch when work is complete
+- This is used for automated issue resolution where the expectation is that work will be committed
+- Respect repository permissions and branch protection rules
+- Do not create PRs automatically - focus on pushing commits to the working branch
+{% elif git_behavior_config.trigger_type == "slack" -%}
+Git Behavior Guidelines:
+- Always ask for user confirmation before creating PRs
+- Users may not have immediate visibility into changes and should have explicit control
+- Commit and push changes as needed, but always confirm before creating pull requests
+{% endif -%}
+</GIT_BEHAVIOR_CONFIGURATION>
+{% endif %}
 {% endif %}
