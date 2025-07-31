@@ -11742,5 +11742,21 @@
         "tr": "OpenHands, talimatlarınıza göre mikro ajanı güncelleyecektir.",
         "de": "OpenHands aktualisiert den Microagenten basierend auf Ihren Anweisungen.",
         "uk": "OpenHands оновить мікроагента відповідно до ваших інструкцій."
+    },
+    "MICROAGENT_MANAGEMENT$ERROR_LOADING_MICROAGENT_CONTENT": {
+        "en": "Error loading microagent content.",
+        "ja": "マイクロエージェントのコンテンツの読み込み中にエラーが発生しました。",
+        "zh-CN": "加载微代理内容时出错。",
+        "zh-TW": "載入微代理內容時發生錯誤。",
+        "ko-KR": "마이크로에이전트 콘텐츠를 불러오는 중 오류가 발생했습니다.",
+        "no": "Feil ved lasting av mikroagent-innhold.",
+        "it": "Errore durante il caricamento del contenuto del microagente.",
+        "pt": "Erro ao carregar o conteúdo do microagente.",
+        "es": "Error al cargar el contenido del microagente.",
+        "ar": "حدث خطأ أثناء تحميل محتوى الوكيل الدقيق.",
+        "fr": "Erreur lors du chargement du contenu du microagent.",
+        "tr": "Mikro ajan içeriği yüklenirken hata oluştu.",
+        "de": "Fehler beim Laden des Microagent-Inhalts.",
+        "uk": "Помилка під час завантаження вмісту мікроагента."
     }
 }
