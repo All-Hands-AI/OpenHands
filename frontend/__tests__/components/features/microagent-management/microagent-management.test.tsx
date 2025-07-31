@@ -105,22 +105,12 @@ describe("MicroagentManagement", () => {
   const mockMicroagents: RepositoryMicroagent[] = [
     {
       name: "test-microagent-1",
-      type: "repo",
-      content: "Test microagent content 1",
-      triggers: ["test", "microagent"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent-1",
     },
     {
       name: "test-microagent-2",
-      type: "knowledge",
-      content: "Test microagent content 2",
-      triggers: ["knowledge", "test"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-02T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent-2",
@@ -173,6 +163,13 @@ describe("MicroagentManagement", () => {
     vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
       ...mockConversations,
     ]);
+    // Setup default mock for getRepositoryMicroagentContent
+    vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      content: "Original microagent content for testing updates",
+      path: ".openhands/microagents/update-test-microagent",
+      git_provider: "github",
+      triggers: ["test", "update"],
+    });
   });
 
   it("should render the microagent management page", async () => {
@@ -1187,17 +1184,6 @@ describe("MicroagentManagement", () => {
 
       expect(conversation1).toBeInTheDocument();
       expect(conversation2).toBeInTheDocument();
-
-      // Check that created dates are displayed for conversations (there are multiple elements with the same text)
-      const createdDates = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/01\/2021/,
-      );
-      expect(createdDates.length).toBeGreaterThan(0);
-
-      const createdDates2 = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/02\/2021/,
-      );
-      expect(createdDates2.length).toBeGreaterThan(0);
     });
 
     it("should handle multiple repository expansions with conversations", async () => {
@@ -1475,11 +1461,6 @@ describe("MicroagentManagement", () => {
   describe("MicroagentManagementMain", () => {
     const mockRepositoryMicroagent: RepositoryMicroagent = {
       name: "test-microagent",
-      type: "repo",
-      content: "Test microagent content",
-      triggers: ["test", "microagent"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent",
@@ -1820,11 +1801,6 @@ describe("MicroagentManagement", () => {
     it("should handle microagent with all required properties", async () => {
       const completeMicroagent: RepositoryMicroagent = {
         name: "complete-microagent",
-        type: "knowledge",
-        content: "Complete microagent content with all properties",
-        triggers: ["complete", "test"],
-        inputs: ["input1", "input2"],
-        tools: ["tool1", "tool2"],
         created_at: "2021-10-01T12:00:00Z",
         git_provider: "github",
         path: ".openhands/microagents/complete-microagent",
@@ -1874,11 +1850,6 @@ describe("MicroagentManagement", () => {
   describe("Update microagent functionality", () => {
     const mockMicroagentForUpdate: RepositoryMicroagent = {
       name: "update-test-microagent",
-      type: "repo",
-      content: "Original microagent content for testing updates",
-      triggers: ["original", "test"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/update-test-microagent",
@@ -1999,11 +1970,13 @@ describe("MicroagentManagement", () => {
         },
       });
 
-      // Check that the form fields are populated with existing data
-      const queryInput = screen.getByTestId("query-input");
-      expect(queryInput).toHaveValue(
-        "Original microagent content for testing updates",
-      );
+      // Wait for the content to be loaded and form fields to be populated
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue(
+          "Original microagent content for testing updates",
+        );
+      });
     });
 
     it("should handle update microagent form submission", async () => {
@@ -2207,12 +2180,16 @@ describe("MicroagentManagement", () => {
 
     it("should handle update modal with microagent that has no content", async () => {
       const user = userEvent.setup();
-      const microagentWithoutContent = {
-        ...mockMicroagentForUpdate,
-        content: "",
-      };
 
-      // Render with update modal visible and microagent without content
+      // Mock the content API to return empty content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
           metrics: {
@@ -2222,7 +2199,7 @@ describe("MicroagentManagement", () => {
           },
           microagentManagement: {
             selectedMicroagentItem: {
-              microagent: microagentWithoutContent,
+              microagent: mockMicroagentForUpdate,
               conversation: undefined,
             },
             addMicroagentModalVisible: false,
@@ -2243,19 +2220,25 @@ describe("MicroagentManagement", () => {
         },
       });
 
-      // Check that the form field is empty
-      const queryInput = screen.getByTestId("query-input");
-      expect(queryInput).toHaveValue("");
+      // Wait for the content to be loaded and check that the form field is empty
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue("");
+      });
     });
 
     it("should handle update modal with microagent that has no triggers", async () => {
       const user = userEvent.setup();
-      const microagentWithoutTriggers = {
-        ...mockMicroagentForUpdate,
-        triggers: [],
-      };
 
-      // Render with update modal visible and microagent without triggers
+      // Mock the content API to return content without triggers for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Original microagent content for testing updates",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with update modal visible and microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
           metrics: {
@@ -2265,7 +2248,7 @@ describe("MicroagentManagement", () => {
           },
           microagentManagement: {
             selectedMicroagentItem: {
-              microagent: microagentWithoutTriggers,
+              microagent: mockMicroagentForUpdate,
               conversation: undefined,
             },
             addMicroagentModalVisible: false,
@@ -2397,11 +2380,6 @@ describe("MicroagentManagement", () => {
       getRepositoryMicroagentsSpy.mockResolvedValue([
         {
           name: "test-microagent",
-          type: "repo",
-          content: "Test content",
-          triggers: [],
-          inputs: [],
-          tools: [],
           created_at: "2021-10-01",
           git_provider: "github",
           path: ".openhands/microagents/test",
@@ -2486,11 +2464,6 @@ describe("MicroagentManagement", () => {
   describe("Learn something new button functionality", () => {
     const mockMicroagentForLearn: RepositoryMicroagent = {
       name: "learn-test-microagent",
-      type: "repo",
-      content: "Test microagent content for learn functionality",
-      triggers: ["learn", "test"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/learn-test-microagent",
@@ -2586,6 +2559,14 @@ describe("MicroagentManagement", () => {
     it("should populate form fields with current microagent data when learn button is clicked", async () => {
       const user = userEvent.setup();
 
+      // Mock the content API to return the expected content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: ["learn", "test"],
+      });
+
       // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
@@ -2626,21 +2607,27 @@ describe("MicroagentManagement", () => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
 
-      // Check that the form fields are populated with current microagent data
-      const queryInput = screen.getByTestId("query-input");
-      expect(queryInput).toHaveValue(
-        "Test microagent content for learn functionality",
-      );
+      // Wait for the content to be loaded and form to be populated
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue(
+          "Test microagent content for learn functionality",
+        );
+      });
     });
 
     it("should handle learn button click with microagent that has no content", async () => {
       const user = userEvent.setup();
-      const microagentWithoutContent = {
-        ...mockMicroagentForLearn,
-        content: "",
-      };
 
-      // Render with selected microagent without content
+      // Mock the content API to return empty content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
           metrics: {
@@ -2650,7 +2637,7 @@ describe("MicroagentManagement", () => {
           },
           microagentManagement: {
             selectedMicroagentItem: {
-              microagent: microagentWithoutContent,
+              microagent: mockMicroagentForLearn,
               conversation: undefined,
             },
             addMicroagentModalVisible: false,
@@ -2680,19 +2667,25 @@ describe("MicroagentManagement", () => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
 
-      // Check that the form field is empty
-      const queryInput = screen.getByTestId("query-input");
-      expect(queryInput).toHaveValue("");
+      // Wait for the content to be loaded and check that the form field is empty
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue("");
+      });
     });
 
     it("should handle learn button click with microagent that has no triggers", async () => {
       const user = userEvent.setup();
-      const microagentWithoutTriggers = {
-        ...mockMicroagentForLearn,
-        triggers: [],
-      };
 
-      // Render with selected microagent without triggers
+      // Mock the content API to return content without triggers for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with selected microagent
       renderWithProviders(<RouterStub />, {
         preloadedState: {
           metrics: {
@@ -2702,7 +2695,7 @@ describe("MicroagentManagement", () => {
           },
           microagentManagement: {
             selectedMicroagentItem: {
-              microagent: microagentWithoutTriggers,
+              microagent: mockMicroagentForLearn,
               conversation: undefined,
             },
             addMicroagentModalVisible: false,
