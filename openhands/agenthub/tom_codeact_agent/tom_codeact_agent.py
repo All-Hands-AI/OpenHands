@@ -9,10 +9,6 @@ if TYPE_CHECKING:
     from openhands.events.action import Action
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.tom_codeact_agent.tom_actions import (
-    TomInstructionAction,
-    TomSuggestionAction,
-)
 from openhands.agenthub.tom_codeact_agent.tom_config import TomCodeActAgentConfig
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -51,24 +47,37 @@ class TomCodeActAgent(CodeActAgent):
 
         # Convert config to TomCodeActAgentConfig if it's not already
         if not isinstance(config, TomCodeActAgentConfig):
-            # Create TomCodeActAgentConfig with defaults
-            tom_config = TomCodeActAgentConfig(
-                **config.model_dump(),
-                enable_tom_integration=False,  # Default to disabled
-                tom_processed_data_dir="./data/processed_data",
-                tom_user_model_dir="./data/user_model",
-                tom_enable_rag=True,
-                tom_user_id=None,
-                tom_fallback_on_error=True,
-                tom_min_instruction_length=5
-            )
+            # Get base config dict and add Tom-specific defaults only if not present
+            base_config = config.model_dump()
+            tom_defaults = {
+                'enable_tom_integration': True,
+                'tom_processed_data_dir': "./data/processed_data",
+                'tom_user_model_dir': "./data/user_model",
+                'tom_enable_rag': False,
+                'tom_user_id': None,
+                'tom_fallback_on_error': True,
+                'tom_min_instruction_length': 5
+            }
+            # Only add Tom config if not already present
+            for key, value in tom_defaults.items():
+                if key not in base_config:
+                    base_config[key] = value
+
+            tom_config = TomCodeActAgentConfig(**base_config)
         else:
             tom_config = config
 
         # Tom integration components
-        self.tom_agent = None  # Will be initialized lazily
-        self.tom_enabled = tom_config.enable_tom_integration
         self.tom_config = tom_config
+        self.tom_agent = create_tom_agent(
+            processed_data_dir=self.tom_config.tom_processed_data_dir,
+            user_model_dir=self.tom_config.tom_user_model_dir,
+            enable_rag=self.tom_config.tom_enable_rag,
+            llm_model=llm.config.model,
+            api_key=llm.config.api_key.get_secret_value() if llm.config.api_key else None,
+            api_base=llm.config.base_url,
+        )
+        self.tom_enabled = tom_config.enable_tom_integration
         self._last_processed_user_message_id: Optional[int] = None
 
         logger.info(f"TomCodeActAgent initialized with Tom integration: {self.tom_enabled}")
@@ -86,25 +95,6 @@ class TomCodeActAgent(CodeActAgent):
             )
         return self._prompt_manager
 
-    async def _ensure_tom_agent_initialized(self) -> None:
-        """Ensure Tom agent is initialized."""
-        if self.tom_agent is None and self.tom_enabled:
-            try:
-                logger.info("🔄 Tom: Initializing Tom agent...")
-                self.tom_agent = await create_tom_agent(
-                    processed_data_dir=self.tom_config.tom_processed_data_dir,
-                    user_model_dir=self.tom_config.tom_user_model_dir,
-                    enable_rag=self.tom_config.tom_enable_rag,
-                )
-                logger.info("✅ Tom: Agent initialized successfully")
-            except Exception as e:
-                logger.error(f"❌ Tom: Failed to initialize Tom agent: {e}")
-                if not self.tom_config.tom_fallback_on_error:
-                    raise
-                else:
-                    logger.warning("🔄 Tom: Disabling Tom integration due to initialization error")
-                    self.tom_enabled = False
-
     def step(self, state: State) -> 'Action':
         """Enhanced step method with Tom integration at two key points.
 
@@ -121,7 +111,6 @@ class TomCodeActAgent(CodeActAgent):
         # Continue with pending actions first
         if self.pending_actions:
             return self.pending_actions.popleft()
-
         # Handle exit command
         latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/exit':
@@ -151,31 +140,24 @@ class TomCodeActAgent(CodeActAgent):
 
             logger.info(f"🚀 Tom: Integration Point 1 triggered - improving user instruction")
             try:
-                # Create a new event loop for the async call
-                import concurrent.futures
-                with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(self._run_tom_instruction_sync, latest_user_message, formatted_messages, state)
-                    tom_action = future.result(timeout=30)
+                enhanced_instruction = self._improve_instruction_with_tom(latest_user_message, formatted_messages, state)
+                if enhanced_instruction:
+                    logger.info(f"✅ Tom: Using Tom's enhanced instruction")
+                    # Update the formatted messages with the enhanced instruction
+                    formatted_messages = self._update_messages_with_enhanced_understanding(formatted_messages, enhanced_instruction)
+                    # Mark this message as processed
+                    self._last_processed_user_message_id = id(latest_user_message)
+                else:
+                    logger.info(f"➡️ Tom: No improvement provided, continuing with original instruction")
             except Exception as e:
                 logger.error(f"❌ Tom: Error in instruction improvement: {e}")
-                tom_action = None
-            if tom_action:
-                logger.info(f"✅ Tom: Using Tom's suggestions to improve agent understanding")
-                # Use Tom's suggestions to enhance the user message understanding
-                enhanced_message = self._enhance_user_message_with_tom(tom_action, latest_user_message)
-                # Update the formatted messages with the enhanced understanding
-                formatted_messages = self._update_messages_with_enhanced_understanding(formatted_messages, enhanced_message)
-                # Mark this message as processed
-                self._last_processed_user_message_id = id(latest_user_message)
-            else:
-                logger.info(f"➡️ Tom: No improvement provided, continuing with original instruction")
-
+                logger.info(f"➡️ Tom: Falling back to original instruction due to error")
         # Continue with normal CodeAct processing
         params: dict = {
             'messages': formatted_messages,
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        params['extra_body'] = {'metadata': state.to_llm_metadata(model_name=self.llm.config.model, agent_name=self.name)}
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)
@@ -207,46 +189,7 @@ class TomCodeActAgent(CodeActAgent):
 
         return source_check and id_check and length_check
 
-    def _run_tom_instruction_sync(self, user_message, formatted_messages, state):
-        """Synchronous wrapper for async Tom instruction improvement."""
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            return loop.run_until_complete(self._improve_instruction_with_tom(user_message, formatted_messages, state))
-        finally:
-            loop.close()
 
-
-    def _enhance_user_message_with_tom(self, tom_action: TomInstructionAction, user_message: MessageAction) -> str:
-        """Enhance user message understanding using Tom's suggestions.
-
-        Args:
-            tom_action: The Tom action containing suggestions
-            user_message: The original user message
-
-        Returns:
-            Enhanced instruction text based on Tom's suggestions
-        """
-        # Extract Tom's suggestions
-        suggestions = tom_action.improved_instructions
-
-        if not suggestions:
-            logger.warning("🔄 Tom: No suggestions found in Tom action")
-            return user_message.content
-
-        # Get the best suggestion (first one, or highest confidence)
-        best_suggestion = suggestions[0]
-        if len(suggestions) > 1:
-            # Find highest confidence suggestion
-            best_suggestion = max(suggestions, key=lambda x: x.get('confidence_score', 0))
-
-        improved_instruction = best_suggestion.get('improved_instruction', '')
-        confidence = best_suggestion.get('confidence_score', 0)
-        clarity = best_suggestion.get('clarity_score', 1.0)  # Default to 1.0 (clear) if not provided
-
-        logger.info(f"🎯 Tom: Using suggestion - clarity: {clarity*100:.0f}%, confidence: {confidence*100:.0f}%")
-        logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
-        return improved_instruction
 
     def _update_messages_with_enhanced_understanding(self, formatted_messages: list, enhanced_message: str) -> list:
         """Update the formatted messages with enhanced user message understanding.
@@ -279,9 +222,9 @@ class TomCodeActAgent(CodeActAgent):
 
         return updated_messages
 
-    async def _improve_instruction_with_tom(
+    def _improve_instruction_with_tom(
         self, user_message: MessageAction, formatted_messages: list, state: State
-    ) -> Optional[TomInstructionAction]:
+    ) -> Optional[str]:
         """INTEGRATION POINT 1: Get instruction improvements from Tom.
 
         Args:
@@ -290,46 +233,26 @@ class TomCodeActAgent(CodeActAgent):
             state: Current agent state
 
         Returns:
-            TomInstructionAction if improvements are available, None otherwise
+            Enhanced instruction string if improvements are available, None otherwise
         """
         try:
-            # Ensure Tom agent is initialized
-            await self._ensure_tom_agent_initialized()
-
-            if not self.tom_agent:
-                logger.warning("⚠️ Tom: Tom agent not available, skipping instruction improvement")
-                return None
-
-            user_id = self._get_user_id(state)
+            user_id = state.user_id or 'default_user'
             context = self._extract_context_from_messages(formatted_messages)
 
             logger.info(f"🔄 Tom: Requesting instruction improvement for user: {user_id}")
             logger.info(f"📝 Tom: Original instruction: {user_message.content}")
             logger.info(f"📋 Tom: Context length: {len(context)} characters")
 
-            # Step 1: Analyze user context
-            user_context = await self.tom_agent.analyze_user_context(user_id, user_message.content)
-            logger.info(f"🔍 Tom: Analyzed user context: {user_context}")
-
-            # Step 2: Get improved instructions
-            recommendations = await self.tom_agent.propose_instructions(
-                user_context=user_context,
+            # Single synchronous call that includes user context analysis
+            improved_instruction = self.tom_agent.propose_instructions(
+                user_id=user_id,
                 original_instruction=user_message.content,
                 user_msg_context=context,
             )
-
-            logger.info(f"✅ Tom: Received {len(recommendations)} recommendations")
-
-            if recommendations:
-                logger.info(f"🎯 Tom: Provided instruction improvements")
-                for i, rec in enumerate(recommendations):
-                    logger.info(f"💡 Tom: Recommendation {i+1}: {rec}")
-
-                return TomInstructionAction(
-                    content="",  # Will be set in __post_init__
-                    original_instruction=user_message.content,
-                    improved_instructions=recommendations
-                )
+            if improved_instruction:
+                logger.info(f"✅ Tom: Received improved instruction")
+                logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
+                return improved_instruction.improved_instruction
             else:
                 logger.warning(f"⚠️ Tom: No instruction improvements provided")
 
@@ -383,22 +306,6 @@ class TomCodeActAgent(CodeActAgent):
 
         return '\n'.join(context_parts)
 
-    def _get_user_id(self, state: State) -> str:
-        """Get or generate user ID for Tom API calls.
-
-        Args:
-            state: Current agent state
-
-        Returns:
-            User ID string
-        """
-        # Use configured user ID if available
-        if self.config.tom_user_id:
-            return self.config.tom_user_id
-
-        # Try to get from session or use default
-        session_id = getattr(state, 'session_id', None) or 'default_user'
-        return str(session_id)
 
     async def __aenter__(self):
         """Async context manager entry."""
