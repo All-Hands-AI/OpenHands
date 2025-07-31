@@ -580,31 +580,9 @@ class CodeActAgent(Agent):
 
         messages = self._get_messages(condensed_history, research_mode=research_mode)
         formatted_messages = self.llm.format_messages_for_llm(messages)
-        convert_knowledge_to_list = [
-            self.knowledge_base[k] for k in self.knowledge_base
-        ]
         # NOTE: This is user's dynamic knowledge base. Do not cache this message, as it will be updated frequently.
         # NOTE: Only cache static large knowledge base that is uploaded by the user (changed rarely).
-        if len(convert_knowledge_to_list) > 0:
-            formatted_messages.append(
-                {
-                    'role': 'assistant',
-                    'content': [
-                        {
-                            'type': 'text',
-                            'text': "User's Knowledge base is in <knowledge_base></knowledge_base> tag\n",
-                        },
-                        {
-                            'type': 'text',
-                            'text': f'<knowledge_base>{json.dumps(convert_knowledge_to_list)}</knowledge_base>',
-                        },
-                        {
-                            'type': 'text',
-                            'text': "Use it for user info's reference if needed.",
-                        },
-                    ],
-                }
-            )
+
         current_date = datetime.now().strftime('%Y-%m-%d')
         formatted_messages.append(
             {
@@ -759,6 +737,7 @@ class CodeActAgent(Agent):
             with_caching=self.llm.is_caching_prompt_active(),
             agent_infos=agent_infos,
         )
+
         if research_mode == ResearchMode.FOLLOW_UP:
             messages = self.conversation_memory.process_initial_followup_message(
                 with_caching=self.llm.is_caching_prompt_active(),
@@ -774,7 +753,20 @@ class CodeActAgent(Agent):
                     for tool in self.search_tools
                 ],
             )
-        # Use ConversationMemory to process events
+
+        # Use ConversationMemory to process events first (static cached content)
+
+        knowledge_base = self._handle_knowledge_base()
+        if knowledge_base:
+            messages.append(
+                Message(role='user', content=[TextContent(text=knowledge_base)])
+            )
+
+        user_context = self._handle_format_output()
+        if user_context:
+            messages.append(
+                Message(role='user', content=[TextContent(text=user_context)])
+            )
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_messages=messages,
@@ -826,3 +818,80 @@ class CodeActAgent(Agent):
             prev_role = msg.role
 
         return results
+
+    def _handle_format_output(self) -> str:
+        if self.output_config:
+            # if 'output_type' in self.output_config:
+            #     if self.output_config['output_type'] == 'json':
+            #         return f"Please return final output in json format: {self.output_config['output_schema'] if 'output_schema' in self.output_config else ''}. Don't try to write the report, just give me the json format."
+            #     elif self.output_config['output_type'] == 'text':
+            #         return f"Please return final output in text format: {self.output_config['output_schema'] if 'output_schema' in self.output_config else ''}."
+
+            if 'prompt' in self.output_config:
+                return f"""***REQUIRED OUTPUT STRUCTURE\n{self.output_config['prompt']}***"""
+        return ''
+
+    def _handle_knowledge_base(self) -> str:
+        knowledge_content = []
+        # Handle x_results
+        if (
+            'x_results' in self.knowledge_base
+            and len(self.knowledge_base['x_results']) > 0
+        ):
+            x_results = [
+                self.knowledge_base['x_results'][k]
+                for k in self.knowledge_base['x_results']
+            ]
+            if x_results:
+                knowledge_content.append(f"""<XResult>
+Description: Here is the tweets that are related to the task, we can consider it is also the knowledge base.
+{json.dumps(x_results, ensure_ascii=False, indent=2)}
+</XResult>""")
+        # Handle knowledge_base_results
+        if (
+            'knowledge_base_results' in self.knowledge_base
+            and len(self.knowledge_base['knowledge_base_results']) > 0
+        ):
+            kb_results = [
+                self.knowledge_base['knowledge_base_results'][k]
+                for k in self.knowledge_base['knowledge_base_results']
+            ]
+            if kb_results:
+                knowledge_content.append(f"""<KnowledgeBase>
+{json.dumps(kb_results, ensure_ascii=False, indent=2)}
+</KnowledgeBase>""")
+
+        if len(knowledge_content) > 0:
+            return f"""
+**KNOWLEDGE BASE EVALUATION PROTOCOL**
+
+Before proceeding with any task, analyze the provided knowledge base using this framework:
+
+1. **Relevance Assessment**:
+   - Identify which information from the knowledge base relates to the current query
+   - Quote relevant sections and explain their connection to the task
+
+2. **Completeness Analysis**:
+   - Determine whether the knowledge base provides all required information to fully answer the query
+   - Explicitly **identify any gaps, ambiguities, or missing elements**
+   - If any information is missing or insufficient, you **must** clearly specify:
+     - What specific data is missing
+     - Why it is necessary
+     - Where it might be found or how to obtain it
+     - If tools (e.g., web access, APIs, plugins) are available, you **must use them to retrieve the missing information**
+
+3. **Strategic Decision**:
+   - **If the knowledge is fully sufficient**: Proceed with the task using only the knowledge base
+   - **If there is a partial gap**: You **must use available tools to perform targeted external research** and integrate the results before continuing
+   - **If the knowledge is insufficient overall**: Clearly explain what critical information is missing and **trigger a tool-based search to obtain it**, or state that the task cannot proceed until such data is acquired
+
+**Strict Requirement**: Missing or incomplete data **must never be ignored or bypassed**. You are required to either:
+- Retrieve the needed data using the available tools (e.g., `web`, APIs, file access), or
+- Explicitly declare the task blocked and explain why tool-based retrieval failed or is not possible
+
+**Knowledge Base:**
+{knowledge_content}
+
+**Note**: This evaluation enforces precise, tool-assisted reasoning with no tolerance for silent failure due to missing data.
+"""
+        return ''

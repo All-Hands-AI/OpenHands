@@ -55,6 +55,7 @@ class AgentSession:
     config: AppConfig
     space_id: int | None = None
     thread_follow_up: int | None = None
+    space_section_id: int | None = None
 
     def __init__(
         self,
@@ -65,6 +66,7 @@ class AgentSession:
         space_id: int | None = None,
         thread_follow_up: int | None = None,
         raw_followup_conversation_id: str | None = None,
+        space_section_id: int | None = None,
     ):
         """Initializes a new instance of the Session class
 
@@ -84,6 +86,7 @@ class AgentSession:
         self.space_id = space_id
         self.thread_follow_up = thread_follow_up
         self.raw_followup_conversation_id = raw_followup_conversation_id
+        self.space_section_id = space_section_id
 
     async def start(
         self,
@@ -438,6 +441,7 @@ class AgentSession:
             space_id=self.space_id,
             thread_follow_up=self.thread_follow_up,
             raw_followup_conversation_id=self.raw_followup_conversation_id,
+            space_section_id=self.space_section_id,
         )
 
         return controller

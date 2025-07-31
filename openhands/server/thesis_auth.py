@@ -99,6 +99,50 @@ async def get_user_detail_from_thesis_auth_server(
     return ThesisUser(**user_data)
 
 
+async def get_system_prompt_from_thesis_auth_server(
+    conversation_id: str,
+    bearer_token: str,
+    x_device_id: str | None = None,
+) -> str | None:
+    url = f'/api/spaces/{conversation_id}/system-prompt'
+    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
+    try:
+        response = await thesis_auth_client.get(url, headers=headers)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to get system prompt: {response.status_code} - {response.text}'
+            )
+            return None
+        return response.json()['data']
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while getting system prompt: {str(exc)}')
+        return None
+
+
+async def get_system_prompt_by_space_id_from_thesis_auth_server(
+    space_id: int,
+    bearer_token: str,
+    x_device_id: str | None = None,
+) -> str | None:
+    url = f'/api/spaces/{space_id}/system-prompt-by-space'
+    headers = {'Content-Type': 'application/json', 'Authorization': bearer_token}
+    if x_device_id:
+        headers['x-device-id'] = x_device_id
+    try:
+        response = await thesis_auth_client.get(url, headers=headers)
+        if response.status_code != 200:
+            logger.error(
+                f'Failed to get system prompt: {response.status_code} - {response.text}'
+            )
+            return None
+        return response.json()['data']
+    except httpx.RequestError as exc:
+        logger.error(f'Request error while getting system prompt: {str(exc)}')
+        return None
+
+
 async def add_invite_code_to_user(
     code: str, bearer_token: str, x_device_id: str | None = None
 ) -> dict | None:
@@ -219,6 +263,7 @@ async def create_thread(
     x_device_id: str | None = None,
     followup_discover_id: str | None = None,
     research_mode: str | None = None,
+    space_section_id: int | None = None,
 ) -> dict | None:
     url = '/api/threads'
     payload = {'conversationId': conversation_id, 'prompt': initial_user_msg}
@@ -228,7 +273,8 @@ async def create_thread(
         headers['x-device-id'] = x_device_id
     if space_id is not None:
         payload['spaceId'] = str(space_id)
-
+    if space_section_id is not None:
+        payload['spaceSectionId'] = str(space_section_id)
     if follow_up_id is not None:
         payload['forkById'] = str(follow_up_id)
     if followup_discover_id is not None:
@@ -252,11 +298,38 @@ async def create_thread(
         )
 
 
+async def space_get_config_section(
+    section_id: int,
+) -> dict | None:
+    url = f'/api/spaces/section/get-config-section/{section_id}'
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    try:
+        response = await thesis_auth_client.get(url, headers=headers)
+        await handle_api_response(response, 'Get config section')
+        data = response.json()['data']
+        return data
+    except httpx.RequestError as exc:
+        logger.error(f'Connection error getting config section: {str(exc)}')
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail='Could not connect to section server',
+        )
+    except Exception as e:
+        logger.exception('Unexpected error getting config section')
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)
+        )
+
+
 async def search_knowledge(
     question: str | None = None,
     space_id: int | None = None,
     thread_follow_up: int | None = None,
     user_id: str | None = None,
+    space_section_id: int | None = None,
 ) -> list[dict] | None:
     url = '/api/knowledge/search'
     payload = {'question': question}
@@ -266,7 +339,8 @@ async def search_knowledge(
         payload['threadId'] = str(thread_follow_up)
     if user_id:
         payload['publicAddress'] = user_id
-
+    if space_section_id:
+        payload['spaceSectionId'] = str(space_section_id)
     headers = {
         'Content-Type': 'application/json',
         'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
@@ -288,7 +362,7 @@ async def search_knowledge(
         data = response.json()['data']
         print(f'Data search knowledge: {data}')
         if data:
-            return data['knowledge']
+            return data
         else:
             return None
     except httpx.RequestError as exc:

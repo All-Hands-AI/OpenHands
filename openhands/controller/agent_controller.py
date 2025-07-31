@@ -1,9 +1,10 @@
 import asyncio
 import copy
+import json
 import os
 import traceback
 import uuid
-from typing import Callable, ClassVar, Type
+from typing import Any, Callable, ClassVar, Type
 
 import litellm  # noqa
 from litellm.exceptions import (  # noqa
@@ -80,6 +81,11 @@ from openhands.events.observation.a2a import (
 )
 from openhands.events.observation.credit import CreditErrorObservation
 from openhands.events.serialization.event import (
+    _extract_content_from_event,
+    _extract_file_text_from_tool_call,
+    _extract_from_finish_event,
+    _extract_from_message_event,
+    _extract_from_read_event,
     event_to_dict,
     event_to_trajectory,
     truncate_content,
@@ -91,8 +97,6 @@ from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
 from openhands.server.mem0 import (
     _db_pool_instance,
-    _extract_content_from_event,
-    _extract_file_text_from_tool_call,
     process_single_event_for_mem0,
     search_knowledge_mem0,
 )
@@ -140,6 +144,7 @@ class AgentController:
     user_id: str | None = None
     raw_followup_conversation_id: str | None = None
     followup_conversation_events: list[dict] = []
+    space_section_id: int | None = None
 
     def __init__(
         self,
@@ -161,6 +166,7 @@ class AgentController:
         thread_follow_up: int | None = None,
         user_id: str | None = None,
         raw_followup_conversation_id: str | None = None,
+        space_section_id: int | None = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -221,6 +227,7 @@ class AgentController:
         self.user_id = user_id
         self.raw_followup_conversation_id = raw_followup_conversation_id
         self.followup_conversation_events = []
+        self.space_section_id = space_section_id
         print(f'raw_followup_conversation_id: {self.raw_followup_conversation_id}')
 
     async def close(self, set_stop_state=True) -> None:
@@ -319,12 +326,21 @@ class AgentController:
                 err_id = 'STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION'
                 self.state.last_error = err_id
             elif isinstance(e, RateLimitError):
-                await self.set_agent_state_to(AgentState.RATE_LIMITED)
+                await self._handle_error_state(AgentState.RATE_LIMITED)
                 return
             self.status_callback('error', err_id, self.state.last_error)
 
         # Set the agent state to ERROR after storing the reason
-        await self.set_agent_state_to(AgentState.ERROR)
+        await self._handle_error_state(AgentState.ERROR)
+
+    async def _handle_error_state(self, state: AgentState) -> None:
+        """Handle error state by saving error result and setting agent state."""
+        error_result = json.dumps({'error': self.state.last_error})
+        # Execute both operations concurrently
+        await asyncio.gather(
+            self._save_final_result_to_database(self.id, error_result),
+            self.set_agent_state_to(state),
+        )
 
     def step(self):
         asyncio.create_task(self._step_with_exception_handling())
@@ -332,6 +348,7 @@ class AgentController:
     async def _step_with_exception_handling(self):
         try:
             await self._step()
+
         except Exception as e:
             self.log(
                 'error',
@@ -655,6 +672,7 @@ class AgentController:
             return []
 
     async def _search_knowledge(self, query: str):
+        print(f'self.space_section_id--->laal: {self.space_section_id}')
         if self.user_id and (self.space_id or self.thread_follow_up):
             knowledge_base = await search_knowledge_mem0(
                 query,
@@ -663,20 +681,31 @@ class AgentController:
                 self.user_id,
             )
             if knowledge_base and len(knowledge_base) > 0:
-                self.agent.update_agent_knowledge_base(knowledge_base)
+                self.agent.update_agent_knowledge_base(
+                    {
+                        'knowledge_base_results': knowledge_base,
+                        'x_results': [],
+                    }
+                )
             else:
                 knowledge_base = await search_knowledge(
                     query,
                     self.space_id,
                     self.thread_follow_up,
                     self.user_id,
+                    self.space_section_id,
                 )
                 if knowledge_base and len(knowledge_base) > 0:
                     self.agent.update_agent_knowledge_base(knowledge_base)
                 else:
                     events = await self._get_followup_conversation_events()
                     if events and len(events) > 0:
-                        self.agent.update_agent_knowledge_base(events)
+                        self.agent.update_agent_knowledge_base(
+                            {
+                                'knowledge_base_results': events,
+                                'x_results': [],
+                            }
+                        )
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -860,6 +889,10 @@ class AgentController:
             AgentStateChangedObservation('', self.state.agent_state, reason),
             EventSource.ENVIRONMENT,
         )
+
+        # Extract and save final JSON result when agent finishes or awaits user input
+        if new_state in (AgentState.FINISHED, AgentState.AWAITING_USER_INPUT):
+            await self._extract_and_save_final_result(self.id)
 
     def get_agent_state(self) -> AgentState:
         """Returns the current state of the agent.
@@ -1228,6 +1261,254 @@ class AgentController:
             stop_step = True
 
         return stop_step
+
+    async def _extract_and_save_final_result(self, session_id: str) -> None:
+        """
+        Extract final result from the conversation and save it to database.
+        Called when agent state changes to FINISHED or AWAITING_USER_INPUT.
+        Uses similar logic to process_single_event_for_mem0 to extract content.
+        """
+        try:
+            # Get recent events from the event stream to find the final result
+            recent_events = list(
+                self.event_stream.get_events_by_action(
+                    actions=['edit', 'finish', 'message'],
+                    observations=['read'],
+                    limit=20,
+                    reverse=True,
+                )
+            )
+
+            final_result = None
+
+            # Try to reconstruct final file content first
+
+            finish_events = []
+            edit_events = []
+            message_events = []
+            read_events = []
+            for event in recent_events:
+                event_dict = None
+                try:
+                    event_dict = event_to_dict(event)
+                except Exception:
+                    continue
+
+                source = event_dict.get('source')
+                action = event_dict.get('action')
+                observation = event_dict.get('observation')
+
+                if source == 'agent':
+                    if action == 'finish':
+                        finish_events.append(event_dict)
+                    elif action == 'edit':
+                        edit_events.append(event_dict)
+                    elif observation == 'read':
+                        read_events.append(event_dict)
+                    elif _extract_content_from_event(event_dict):
+                        message_events.append(event_dict)
+
+            if edit_events:
+                self.log('info', 'Prioritizing edit events for final result extraction')
+                final_file_content = self._reconstruct_final_file_content(recent_events)
+
+                if final_file_content:
+                    final_result = final_file_content
+                # If no edit events or couldn't extract from edit, try read events for .md/.txt files
+            if not final_result and read_events:
+                self.log(
+                    'info',
+                    'Trying read events for final result extraction (.md/.txt files)',
+                )
+                for event_dict in read_events:
+                    result = _extract_from_read_event(event_dict)
+                    if result:
+                        final_result = result
+                        break
+            if not final_result and finish_events:
+                self.log('info', 'Trying finish events for final result extraction')
+                for event_dict in finish_events:
+                    result = _extract_from_finish_event(event_dict)
+                    if result:
+                        final_result = result
+                        break
+
+                # If still no result, try message events
+            if not final_result and message_events:
+                self.log('info', 'Trying message events for final result extraction')
+                for event_dict in message_events:
+                    result = _extract_from_message_event(event_dict)
+                    if result:
+                        final_result = result
+                        break
+
+            # Save the final result to database
+            if final_result:
+                await self._save_final_result_to_database(session_id, final_result)
+            else:
+                self.log('debug', 'No final result found in recent messages')
+
+        except Exception as e:
+            self.log('error', f'Error extracting final result: {str(e)}')
+
+    def _reconstruct_final_file_content(self, events: list[Event]) -> str | None:
+        """
+        Reconstruct final file content by tracking file operations (create/edit).
+        Prioritizes markdown files and returns the final content after all edits.
+        """
+        try:
+            # Track file operations by path
+            file_operations: dict[str, Any] = {}  # path -> list of operations
+
+            for event in reversed(events):  # Process in chronological order
+                try:
+                    event_dict = event_to_dict(event)
+                    source = event_dict.get('source')
+                    action = event_dict.get('action')
+
+                    if source != 'agent' or action != 'edit':
+                        continue
+
+                    # Extract file operation details
+                    tool_call_metadata = event_dict.get('tool_call_metadata', {})
+                    model_response = tool_call_metadata.get('model_response', {})
+                    choices = model_response.get('choices', [])
+
+                    if not choices or 'message' not in choices[0]:
+                        continue
+
+                    message_obj = choices[0]['message']
+                    tool_calls = message_obj.get('tool_calls', [])
+
+                    if not tool_calls or 'function' not in tool_calls[0]:
+                        continue
+
+                    arguments_str = tool_calls[0]['function'].get('arguments')
+                    if not arguments_str:
+                        continue
+
+                    arguments_json = json.loads(arguments_str)
+                    path = arguments_json.get('path')
+                    command = arguments_json.get('command')
+
+                    if not path:
+                        continue
+
+                    # Initialize file operations for this path
+                    if path not in file_operations:
+                        file_operations[path] = []
+
+                    operation = {
+                        'command': command,
+                        'file_text': arguments_json.get('file_text'),
+                        'old_str': arguments_json.get('old_str'),
+                        'new_str': arguments_json.get('new_str'),
+                        'timestamp': event_dict.get('timestamp'),
+                    }
+                    file_operations[path].append(operation)
+
+                except Exception:
+                    continue
+
+            # Find the most likely result file (prioritize .md files)
+            target_path = None
+            max_operations = 0
+
+            for path, operations in file_operations.items():
+                if not path.endswith(('.md', '.txt')):
+                    continue
+
+                if len(operations) > max_operations:
+                    max_operations = len(operations)
+                    target_path = path
+
+            if not target_path or target_path not in file_operations:
+                return None
+
+            operations = file_operations[target_path]
+            final_content = None
+
+            # Reconstruct final content
+            for op in operations:
+                if op['command'] == 'create' and op['file_text']:
+                    final_content = op['file_text']
+                elif (
+                    op['command'] == 'str_replace'
+                    and final_content
+                    and op['old_str']
+                    and op['new_str']
+                ):
+                    # Apply string replacement
+                    if op['old_str'] in final_content:
+                        final_content = final_content.replace(
+                            op['old_str'], op['new_str'], 1
+                        )
+
+            if final_content and len(final_content.strip()) > 50:
+                self.log(
+                    'info',
+                    f'Reconstructed final content from {target_path} ({len(operations)} operations)',
+                )
+                return final_content
+
+        except Exception as e:
+            self.log('error', f'Error reconstructing file content: {str(e)}')
+
+        return None
+
+    async def _save_final_result_to_database(
+        self, session_id: str, final_result: str
+    ) -> None:
+        """
+        Save the final result directly to the database as a new column.
+        """
+        try:
+            # Use the existing _db_pool_instance pattern from mem0 integration
+            conn = None
+            try:
+                conn = _db_pool_instance.get_connection()
+                if not conn:
+                    self.log('error', 'Failed to get database connection from pool')
+                    return
+
+                cursor = conn.cursor()
+
+                # Update the conversations table with final_result
+                cursor.execute(
+                    """
+                    UPDATE conversations
+                    SET final_result = %s, updated_at = CURRENT_TIMESTAMP
+                    WHERE conversation_id = %s
+                    """,
+                    (final_result, session_id),
+                )
+
+                # If no rows were updated, log a warning but don't create new record
+                if cursor.rowcount == 0:
+                    self.log(
+                        'warning',
+                        f'No conversation found to update with session_id: {session_id}',
+                    )
+                else:
+                    self.log(
+                        'info',
+                        f'Successfully saved final result to database for session {session_id}',
+                    )
+
+                cursor.close()
+                conn.commit()
+
+            except Exception as e:
+                self.log('error', f'Error saving final result to database: {str(e)}')
+                if conn:
+                    conn.rollback()
+            finally:
+                # Always release the connection back to the pool
+                if conn:
+                    _db_pool_instance.release_connection(conn)
+
+        except Exception as e:
+            self.log('error', f'Error getting database connection: {str(e)}')
 
     async def force_finish(self, finish_reason: str) -> None:
         """

@@ -6,7 +6,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import Event, EventSource
 from openhands.events.event_filter import EventFilter
 from openhands.events.event_store_abc import EventStoreABC
-from openhands.events.serialization.event import event_from_dict
+from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.shared import config as shared_config
 from openhands.storage.database import db_file_store
 from openhands.storage.files import FileStore
@@ -175,6 +175,150 @@ class EventStore(EventStoreABC):
         for event in self.get_events():
             if event.source == source:
                 yield event
+
+    def _should_filter_event(
+        self,
+        event: Event,
+        query: str | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
+        source: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+    ) -> bool:
+        """Check if an event should be filtered out based on the given criteria.
+
+        Args:
+            event: The event to check
+            query: Text to search for in event content
+            event_type: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
+
+        Returns:
+            bool: True if the event should be filtered out, False if it matches all criteria
+        """
+        if event_types and not isinstance(event, event_types):
+            return True
+
+        if source:
+            if event.source is None or event.source.value != source:
+                return True
+
+        if start_date and event.timestamp is not None and event.timestamp < start_date:
+            return True
+
+        if end_date and event.timestamp is not None and event.timestamp > end_date:
+            return True
+
+        # Text search in event content if query provided
+        if query:
+            event_dict = event_to_dict(event)
+            event_str = json.dumps(event_dict).lower()
+            if query.lower() not in event_str:
+                return True
+
+        return False
+
+    def get_matching_events(
+        self,
+        query: str | None = None,
+        event_types: tuple[type[Event], ...] | None = None,
+        source: str | None = None,
+        start_date: str | None = None,
+        end_date: str | None = None,
+        start_id: int = 0,
+        limit: int = 100,
+        reverse: bool = False,
+    ) -> list[Event]:
+        """Get matching events from the event stream based on filters.
+
+        Args:
+            query: Text to search for in event content
+            event_types: Filter by event type classes (e.g., (FileReadAction, ) ).
+            source: Filter by event source
+            start_date: Filter events after this date (ISO format)
+            end_date: Filter events before this date (ISO format)
+            start_id: Starting ID in the event stream. Defaults to 0
+            limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order. Defaults to False.
+
+        Returns:
+            list: List of matching events (as dicts)
+
+        Raises:
+            ValueError: If limit is less than 1 or greater than 100
+        """
+        if limit < 1 or limit > 100:
+            raise ValueError('Limit must be between 1 and 100')
+
+        matching_events: list = []
+
+        for event in self.get_events(start_id=start_id, reverse=reverse):
+            if self._should_filter_event(
+                event, query, event_types, source, start_date, end_date
+            ):
+                continue
+
+            matching_events.append(event)
+
+            # Stop if we have enough events
+            if len(matching_events) >= limit:
+                break
+
+        return matching_events
+
+    def get_events_by_action(
+        self,
+        actions: list[str],
+        observations: list[str] | None = None,
+        limit: int = 100,
+        reverse: bool = True,
+    ) -> list[Event]:
+        """Get events filtered by specific actions with limit and sorting by created_at.
+
+        Args:
+            actions: List of action names to filter by (e.g., ['edit', 'finish'])
+            limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 100
+            reverse: Whether to retrieve events in reverse order (newest first). Defaults to True
+
+        Returns:
+            list: List of matching events
+
+        Raises:
+            ValueError: If limit is less than 1 or greater than 100
+        """
+        if limit < 1 or limit > 100:
+            raise ValueError('Limit must be between 1 and 100')
+
+        from openhands.core.config import load_app_config
+        from openhands.storage.database import db_file_store
+
+        config_app = load_app_config()
+
+        if config_app.file_store == 'database':
+            # Use database-specific filtering for better performance
+            order_by = 'created_at DESC' if reverse else 'created_at ASC'
+            events = db_file_store._get_events_by_action(
+                self.sid, actions, limit, order_by, observations
+            )
+            return [event_from_dict(event_dict) for event_dict in events if event_dict]
+        else:
+            # Fallback to file-based filtering
+            matching_events: list[Event] = []
+
+            for event in self.get_events(reverse=reverse):
+                event_dict = event_to_dict(event)
+                event_action = event_dict.get('action')
+
+                if event_action in actions:
+                    matching_events.append(event)
+
+                    # Stop if we have enough events
+                    if len(matching_events) >= limit:
+                        break
+
+            return matching_events
 
     def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
         return get_conversation_event_filename(self.sid, id, user_id)

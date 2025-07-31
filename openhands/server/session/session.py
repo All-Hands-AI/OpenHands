@@ -49,6 +49,7 @@ class Session:
     logger: LoggerAdapter
     space_id: int | None
     thread_follow_up: int | None
+    space_section_id: int | None
 
     def __init__(
         self,
@@ -60,6 +61,7 @@ class Session:
         space_id: int | None = None,
         thread_follow_up: int | None = None,
         raw_followup_conversation_id: str | None = None,
+        space_section_id: int | None = None,
     ):
         self.sid = sid
         self.sio = sio
@@ -74,6 +76,7 @@ class Session:
             space_id=space_id,
             thread_follow_up=thread_follow_up,
             raw_followup_conversation_id=raw_followup_conversation_id,
+            space_section_id=space_section_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
@@ -85,6 +88,7 @@ class Session:
         self.space_id = space_id
         self.thread_follow_up = thread_follow_up
         self.raw_followup_conversation_id = raw_followup_conversation_id
+        self.space_section_id = space_section_id
 
     async def close(self):
         if self.sio:
@@ -109,6 +113,7 @@ class Session:
         mcp_disable: dict[str, bool] | None = None,
         knowledge_base: list[dict] | None = None,
         research_mode: str | None = None,
+        output_config: dict | None = None,
     ):
         # Lazy import to avoid circular import
 
@@ -234,6 +239,9 @@ class Session:
 
         if user_prompt:
             agent.set_user_prompt(user_prompt)
+
+        if output_config:
+            agent.set_output_config(output_config)
 
         git_provider_tokens = None
         selected_repository = None

@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime
 
-from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy import and_, desc, func, not_, or_, select
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.db import database
@@ -416,6 +416,7 @@ class ConversationModule:
         page: int = 1,
         limit: int = 10,
         keyword: str | None = None,
+        show_section_conversations: bool = False,
     ):
         if not user_id:
             return []
@@ -429,6 +430,12 @@ class ConversationModule:
             if keyword:
                 base_filter = and_(
                     base_filter, Conversation.c.title.ilike(f'%{keyword}%')
+                )
+            if not show_section_conversations:
+                # Filter out conversations that have space_section_id in configs
+                base_filter = and_(
+                    base_filter,
+                    not_(Conversation.c.configs.op('?')('space_section_id')),
                 )
 
             query = (

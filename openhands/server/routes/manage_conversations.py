@@ -44,7 +44,9 @@ from openhands.server.thesis_auth import (
     change_thread_visibility,
     create_thread,
     delete_thread,
+    get_system_prompt_by_space_id_from_thesis_auth_server,
     get_thread_by_id,
+    space_get_config_section,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -69,6 +71,7 @@ class InitSessionRequest(BaseModel):
     space_id: int | None = None
     thread_follow_up: int | None = None
     followup_discover_id: str | None = None
+    space_section_id: int | None = None
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -99,6 +102,8 @@ async def _create_new_conversation(
     space_id: int | None = None,
     thread_follow_up: int | None = None,
     raw_followup_conversation_id: str | None = None,
+    space_section_id: int | None = None,
+    output_config: dict | None = None,
 ):
     logger.info(
         'Creating conversation',
@@ -204,6 +209,8 @@ async def _create_new_conversation(
         thread_follow_up=thread_follow_up,
         research_mode=research_mode,
         raw_followup_conversation_id=raw_followup_conversation_id,
+        space_section_id=space_section_id,
+        output_config=output_config,
     )
     logger.info(f'Finished initializing conversation {conversation_id}')
 
@@ -233,10 +240,35 @@ async def new_conversation(request: Request, data: InitSessionRequest):
     bearer_token = request.headers.get('Authorization')
     x_device_id = request.headers.get('x-device-id')
     followup_discover_id = data.followup_discover_id
+    space_section_id = data.space_section_id
+    mcp_disable = data.mcp_disable
+    output_config: dict | None = None
+
+    if space_id is not None:
+        # get system prompt from thesis auth server
+        system_prompt = await get_system_prompt_by_space_id_from_thesis_auth_server(
+            int(space_id), bearer_token, x_device_id
+        )
 
     try:
         knowledge_base = None
         raw_followup_conversation_id = None
+        if space_section_id:
+            section_config = await space_get_config_section(space_section_id)
+            if section_config:
+                # if initial_user_msg is None:
+                #     initial_user_msg = section_config['chartPrompt']
+                # else:
+                #     initial_user_msg = (
+                #         initial_user_msg + '\n\n' + section_config['chartPrompt']
+                #     )
+                mcp_disable = section_config['mcpDisable']
+                if 'chartPrompt' in section_config:
+                    output_config = {
+                        'prompt': section_config['chartPrompt'],
+                        'output': section_config['outputConfig'],
+                    }
+
         # if space_id or thread_follow_up:
         #     knowledge_base = await search_knowledge(
         #         initial_user_msg, space_id, thread_follow_up, user_id
@@ -262,12 +294,14 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             mnemonic=mnemonic,
-            mcp_disable=data.mcp_disable,
+            mcp_disable=mcp_disable,
             research_mode=data.research_mode,
             knowledge_base=knowledge_base,
             space_id=space_id,
             thread_follow_up=thread_follow_up,
             raw_followup_conversation_id=raw_followup_conversation_id,
+            space_section_id=space_section_id,
+            output_config=output_config,
         )
 
         end_time = time.time()
@@ -285,6 +319,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 x_device_id,
                 followup_discover_id,
                 data.research_mode,
+                space_section_id,
             )
             end_time = time.time()
             logger.info(f'Time taken to create thread: {end_time - start_time} seconds')
@@ -298,6 +333,8 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 metadata['raw_followup_conversation_id'] = raw_followup_conversation_id
             if data.research_mode and data.research_mode == ResearchMode.FOLLOW_UP:
                 metadata['research_mode'] = ResearchMode.FOLLOW_UP
+            if data.space_section_id:
+                metadata['space_section_id'] = data.space_section_id
             start_time = time.time()
             await conversation_module._update_conversation_visibility(
                 conversation_id,
@@ -357,7 +394,7 @@ async def search_conversations(
     # get conversation visibility by user id
     visible_conversations = (
         await conversation_module._get_conversation_visibility_by_user_id(
-            user_id, page, limit, keyword
+            user_id, page, limit, keyword, show_section_conversations=False
         )
     )
     if len(visible_conversations['items']) == 0:

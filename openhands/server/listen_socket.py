@@ -32,6 +32,7 @@ from openhands.server.shared import (
 )
 from openhands.server.thesis_auth import (
     ThesisUser,
+    get_system_prompt_from_thesis_auth_server,
     get_user_detail_from_thesis_auth_server,
 )
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -65,12 +66,20 @@ async def connect(connection_id: str, environ):
     except (ValueError, AttributeError):
         latest_event_id = -1
     conversation_id = query_params.get('conversation_id', [None])[0]
-    system_prompt = query_params.get('system_prompt', [None])[0]
     user_prompt = query_params.get('user_prompt', [None])[0]
     mcp_disable = query_params.get('mcp_disable', [None])[0]
     x_device_id = query_params.get('x-device-id', [None])[0]
+    jwt_token = query_params.get('auth', [None])[0]
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
+
+    if conversation_id is not None and jwt_token is not None:
+        # get system prompt from thesis auth server
+        system_prompt = await get_system_prompt_from_thesis_auth_server(
+            conversation_id, 'Bearer ' + (jwt_token or ''), x_device_id
+        )
+    else:
+        system_prompt = None
 
     user_id = None
     mnemonic = None

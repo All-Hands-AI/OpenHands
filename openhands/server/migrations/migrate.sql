@@ -122,5 +122,25 @@ BEGIN
         ALTER TABLE conversations
         ADD COLUMN metadata JSONB NOT NULL DEFAULT '{}';
     END IF;
+
+    -- Add final_result column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
+        AND column_name = 'final_result'
+    ) THEN
+        ALTER TABLE conversations
+        ADD COLUMN final_result TEXT;
+    END IF;
+
+    -- Add updated_at column if it doesn't exist
+    IF NOT EXISTS (
+        SELECT FROM information_schema.columns
+        WHERE table_name = 'conversations'
+        AND column_name = 'updated_at'
+    ) THEN
+        ALTER TABLE conversations
+        ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+    END IF;
 END;
 $$;

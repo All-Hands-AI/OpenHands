@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Any, Optional, Type
 
 from openhands.llm.streaming_llm import StreamingLLM
 
@@ -53,11 +53,12 @@ class Agent(ABC):
         self.a2a_manager = a2a_manager
         self.system_prompt: str = ''
         self.user_prompt: str = ''
-        self.knowledge_base: dict[str, dict] = {}
+        self.knowledge_base: dict[str, Any] = {}
         self.event_stream: 'EventStream' | None = None
         self.session_id: str | None = kwargs.get('session_id', None)
         self.enable_streaming: bool = kwargs.get('enable_streaming', False)
         self.streaming_llm: StreamingLLM | None = None
+        self.output_config: dict | None = kwargs.get('output_config', None)
 
     @property
     def complete(self) -> bool:
@@ -165,20 +166,38 @@ class Agent(ABC):
         """
         self.user_prompt = user_prompt
 
-    def update_agent_knowledge_base(
-        self, knowledge_base: list[dict] | None = None
-    ) -> None:
-        """Update the knowledge base for the agent.
+    def set_output_config(self, output_config: dict) -> None:
+        """Set the output config for the agent.
 
         Args:
-        - knowledge_base (list[dict]): The knowledge base.
+        - output_config (dict): The output config.
         """
-        print(f'Update agent knowledge base: {knowledge_base}')
-        # update
-        if knowledge_base:
-            for k in knowledge_base:
-                if k.get('chunkId', None):
-                    self.knowledge_base[k['chunkId']] = k
+        self.output_config = output_config
+
+    def update_agent_knowledge_base(self, knowledge_base: Any | None = None) -> None:
+        """Update the knowledge base for the agent."""
+        # Initialize structure
+        if 'knowledge_base_results' not in self.knowledge_base:
+            self.knowledge_base['knowledge_base_results'] = {}
+        if 'x_results' not in self.knowledge_base:
+            self.knowledge_base['x_results'] = {}
+
+        if not knowledge_base:
+            return
+
+        # Update knowledge_base_results
+        if 'knowledge_base_results' in knowledge_base:
+            for item in knowledge_base['knowledge_base_results']:
+                if item.get('chunkId'):
+                    self.knowledge_base['knowledge_base_results'][item['chunkId']] = (
+                        item
+                    )
+
+        # Update x_results
+        if 'x_results' in knowledge_base:
+            for item in knowledge_base['x_results']:
+                if item.get('chunkId'):
+                    self.knowledge_base['x_results'][item['chunkId']] = item
 
     def set_event_stream(self, event_stream) -> None:
         self.event_stream = event_stream

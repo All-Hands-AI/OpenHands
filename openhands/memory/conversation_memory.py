@@ -158,7 +158,8 @@ class ConversationMemory:
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_followup_mode_message(
+                        text=self.prompt_manager.system_prompt
+                        or self.prompt_manager.get_followup_mode_message(
                             **kwargs,
                         ),
                         cache_prompt=with_caching,
@@ -175,7 +176,8 @@ class ConversationMemory:
                 role='system',
                 content=[
                     TextContent(
-                        text=self.prompt_manager.get_chat_mode_message(
+                        text=self.prompt_manager.system_prompt
+                        or self.prompt_manager.get_chat_mode_message(
                             **kwargs,
                         ),
                         cache_prompt=with_caching,
@@ -317,7 +319,7 @@ class ConversationMemory:
             ]
         elif isinstance(action, MessageAction):
             role = 'user' if action.source == 'user' else 'assistant'
-            content = [TextContent(text=action.content or '')]
+            content = [TextContent(text=f"""{action.content}""")]
             if vision_is_active and action.image_urls:
                 content.append(ImageContent(image_urls=action.image_urls))
             if role not in ('user', 'system', 'assistant', 'tool'):
