@@ -131,17 +131,6 @@ export function AuthModal({
                 </BrandButton>
               )}
 
-              {showEnterpriseSso && (
-                <BrandButton
-                  type="button"
-                  variant="primary"
-                  onClick={handleEnterpriseSsoAuth}
-                  className="w-full"
-                >
-                  {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
-                </BrandButton>
-              )}
-
               {showBitbucket && (
                 <BrandButton
                   type="button"
@@ -149,6 +138,17 @@ export function AuthModal({
                   onClick={handleBitbucketAuth}
                   className="w-full"
                   startContent={<BitbucketLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                </BrandButton>
+              )}
+
+              {showEnterpriseSso && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleEnterpriseSsoAuth}
+                  className="w-full"
                 >
                   {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
                 </BrandButton>
