@@ -8,7 +8,7 @@ class NoOpRouter(BaseRouter):
 
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
         """No-op router does not change the active LLM."""
-        pass
+        self.routing_history.append(0)
 
 
 # Register the router

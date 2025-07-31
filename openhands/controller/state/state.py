@@ -94,8 +94,6 @@ class State:
     resume_state: AgentState | None = None
     # global metrics for the current task
     metrics: Metrics = field(default_factory=Metrics)
-    # routing LLM metrics for the current task
-    routing_metrics: list[Metrics] = field(default_factory=list)
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history

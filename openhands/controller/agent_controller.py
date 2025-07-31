@@ -811,10 +811,40 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
+                # Take snapshots of all LLM metrics before the step
+                llm_metrics_before = {}
+                if hasattr(self.agent, 'router'):
+                    # Primary LLM
+                    llm_metrics_before['primary'] = self.agent.router.llm.metrics.copy()
+                    # All routing LLMs
+                    for llm_name, llm in self.agent.router.routing_llms.items():
+                        llm_metrics_before[llm_name] = llm.metrics.copy()
+
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
+
+                # Identify which LLM was used and merge its incremental metrics
+                if llm_metrics_before and hasattr(self.agent, 'router'):
+                    # The active LLM after the step is the one that was used
+                    used_llm = self.agent.router.active_llm
+
+                    # Find the corresponding baseline metrics
+                    baseline_metrics = None
+                    if used_llm == self.agent.router.llm:
+                        # Primary LLM was used
+                        baseline_metrics = llm_metrics_before['primary']
+                    else:
+                        # A routing LLM was used - find which one
+                        for llm_name, llm in self.agent.router.routing_llms.items():
+                            if llm == used_llm:
+                                baseline_metrics = llm_metrics_before[llm_name]
+                                break
+
+                    if baseline_metrics is not None:
+                        incremental_metrics = used_llm.metrics.diff(baseline_metrics)
+                        self.state_tracker.merge_metrics(incremental_metrics)
             except (
                 LLMMalformedActionError,
                 LLMNoActionError,
@@ -991,7 +1021,7 @@ class AgentController:
         - accumulated_token_usage: Accumulated token statistics across all API calls
         - max_budget_per_task: The maximum budget allowed for the task
 
-        This includes metrics from both the agent's LLM, the condenser's LLM and the routing LLMs if it exists.
+        This includes metrics from both the agent's LLM and the condenser's LLM if it exists.
 
         Args:
             action: The action to attach metrics to
@@ -1004,13 +1034,6 @@ class AgentController:
         if hasattr(self.agent, 'condenser') and hasattr(self.agent.condenser, 'llm'):
             condenser_metrics = self.agent.condenser.llm.metrics
 
-        routing_llms_metrics: list[Metrics] = []
-        # Get metrics from routing LLMs if they exist
-        if hasattr(self.agent, 'router'):
-            for routing_llm in list(self.agent.router.routing_llms.values()):
-                routing_llms_metrics.append(routing_llm.metrics)
-        self.state.routing_metrics = routing_llms_metrics
-
         # Create a new minimal metrics object with just what the frontend needs
         metrics = Metrics(model_name=agent_metrics.model_name)
 
@@ -1018,8 +1041,6 @@ class AgentController:
         metrics.accumulated_cost = agent_metrics.accumulated_cost
         if condenser_metrics:
             metrics.accumulated_cost += condenser_metrics.accumulated_cost
-        for routing_llm_metrics in routing_llms_metrics:
-            metrics.accumulated_cost += routing_llm_metrics.accumulated_cost
 
         # Add max_budget_per_task to metrics
         if self.state.budget_flag:
@@ -1034,11 +1055,6 @@ class AgentController:
             metrics._accumulated_token_usage = (
                 metrics._accumulated_token_usage
                 + condenser_metrics.accumulated_token_usage
-            )
-        for routing_llm_metrics in routing_llms_metrics:
-            metrics._accumulated_token_usage = (
-                metrics._accumulated_token_usage
-                + routing_llm_metrics.accumulated_token_usage
             )
 
         action.llm_metrics = metrics
