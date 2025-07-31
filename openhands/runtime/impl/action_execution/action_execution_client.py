@@ -46,6 +46,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.runtime.utils.system_stats import update_last_execution_time
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -328,6 +329,8 @@ class ActionExecutionClient(Runtime):
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
+            finally:
+                update_last_execution_time()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:

@@ -8,6 +8,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -16,6 +17,7 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -80,6 +82,40 @@ class GitLabService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        project_id = self._extract_project_id(repository)
+        return (
+            f'{self.BASE_URL}/projects/{project_id}/repository/files/.cursorrules/raw'
+        )
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        project_id = self._extract_project_id(repository)
+        return f'{self.BASE_URL}/projects/{project_id}/repository/tree'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict:
+        """Get parameters for the microagents directory request."""
+        return {'path': microagents_path, 'recursive': 'true'}
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'blob'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['name']
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return item['path']
+
     async def _make_request(
         self,
         url: str,
@@ -116,7 +152,11 @@ class GitLabService(BaseGitService, GitService):
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
-                return response.json(), headers
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/json' in content_type:
+                    return response.json(), headers
+                else:
+                    return response.text, headers
 
         except httpx.HTTPStatusError as e:
             raise self.handle_http_status_error(e)
@@ -214,6 +254,11 @@ class GitLabService(BaseGitService, GitService):
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=True,
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('namespace', {}).get('kind') == 'group'
+                    else OwnerType.USER
+                ),
             )
             for repo in response
         ]
@@ -265,6 +310,11 @@ class GitLabService(BaseGitService, GitService):
                 stargazers_count=repo.get('star_count'),
                 git_provider=ProviderType.GITLAB,
                 is_public=repo.get('visibility') == 'public',
+                owner_type=(
+                    OwnerType.ORGANIZATION
+                    if repo.get('namespace', {}).get('kind') == 'group'
+                    else OwnerType.USER
+                ),
             )
             for repo in all_repos
         ]
@@ -415,6 +465,11 @@ class GitLabService(BaseGitService, GitService):
             stargazers_count=repo.get('star_count'),
             git_provider=ProviderType.GITLAB,
             is_public=repo.get('visibility') == 'public',
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('namespace', {}).get('kind') == 'group'
+                else OwnerType.USER
+            ),
         )
 
     async def get_branches(self, repository: str) -> list[Branch]:
@@ -506,6 +561,55 @@ class GitLabService(BaseGitService, GitService):
         )
 
         return response['web_url']
+
+    def _extract_project_id(self, repository: str) -> str:
+        """Extract project_id from repository name for GitLab API calls.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+
+        Returns:
+            URL-encoded project ID for GitLab API
+        """
+        if '/' in repository:
+            parts = repository.split('/')
+            if len(parts) >= 3 and '.' in parts[0]:
+                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
+                project_id = '/'.join(parts[1:]).replace('/', '%2F')
+            else:
+                # Regular GitLab: 'owner/repo' -> 'owner/repo'
+                project_id = repository.replace('/', '%2F')
+        else:
+            project_id = repository
+
+        return project_id
+
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Fetch individual file content from GitLab repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            file_path: Path to the file within the repository
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        # Extract project_id from repository name
+        project_id = self._extract_project_id(repository)
+
+        encoded_file_path = file_path.replace('/', '%2F')
+        base_url = f'{self.BASE_URL}/projects/{project_id}'
+        file_url = f'{base_url}/repository/files/{encoded_file_path}/raw'
+
+        response, _ = await self._make_request(file_url)
+
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(response, file_path)
 
 
 gitlab_service_cls = os.environ.get(

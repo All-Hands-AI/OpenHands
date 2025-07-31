@@ -17,7 +17,9 @@ from openhands.cli.settings import modify_llm_settings_basic
 from openhands.cli.shell_config import (
     ShellConfigManager,
     add_aliases_to_shell_config,
+    alias_setup_declined,
     aliases_exist_in_shell_config,
+    mark_alias_setup_declined,
 )
 from openhands.cli.tui import (
     UsageMetrics,
@@ -72,6 +74,7 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.mcp import add_mcp_tools_to_agent
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -231,15 +234,22 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                else:  # 'no' or alternative instructions
+                    # Tell the agent the proposed action was rejected
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do next/instead.</skyblue>'
+                        )
                     )
 
                 # Set the always_confirm_mode flag if the user wants to always confirm
@@ -277,10 +287,15 @@ async def run_session(
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
+        working_dir=os.getcwd(),
     )
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
+        # Clear any previous errors and enable collection
+        mcp_error_collector.clear_errors()
+        mcp_error_collector.enable_collection()
+
         # Add OpenHands' MCP server by default
         _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
@@ -292,6 +307,9 @@ async def run_session(
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
 
+        # Disable collection after startup
+        mcp_error_collector.disable_collection()
+
     # Clear loading animation
     is_loaded.set()
 
@@ -302,7 +320,27 @@ async def run_session(
     if not skip_banner:
         display_banner(session_id=sid)
 
-    welcome_message = 'What do you want to build?'  # from the application
+    welcome_message = ''
+
+    # Display number of MCP servers configured
+    if agent.config.enable_mcp:
+        total_mcp_servers = (
+            len(runtime.config.mcp.stdio_servers)
+            + len(runtime.config.mcp.sse_servers)
+            + len(runtime.config.mcp.shttp_servers)
+        )
+        if total_mcp_servers > 0:
+            mcp_line = f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.'
+
+            # Check for MCP errors and add indicator to the same line
+            if agent.config.enable_mcp and mcp_error_collector.has_errors():
+                mcp_line += (
+                    ' ✗ MCP errors detected (type /mcp → select View errors to view)'
+                )
+
+            welcome_message += mcp_line + '\n\n'
+
+    welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
 
     if task_content:
@@ -314,10 +352,23 @@ async def run_session(
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
-            initial_message = (
-                'NOTE: the last session ended with an error.'
-                "Let's get back on track. Do NOT resume your task. Ask me about it."
-            )
+            error_message = initial_state.last_error
+
+            # Check if it's an authentication error
+            if 'ERROR_LLM_AUTHENTICATION' in error_message:
+                # Start with base authentication error message
+                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+
+                # Add OpenHands-specific guidance if using an OpenHands model
+                llm_config = config.get_llm_config()
+                if llm_config.model.startswith('openhands/'):
+                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+            else:
+                # For other errors, use the standard message
+                initial_message = (
+                    'NOTE: the last session ended with an error.'
+                    "Let's get back on track. Do NOT resume your task. Ask me about it."
+                )
         else:
             # If we are resuming, we already have a task
             initial_message = ''
@@ -366,112 +417,105 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
 
+    # Ask if user wants to configure search API settings
+    print_formatted_text('')
+    setup_search = cli_confirm(
+        config,
+        'Would you like to configure Search API settings (optional)?',
+        ['Yes', 'No'],
+    )
+
+    if setup_search == 0:  # Yes
+        from openhands.cli.settings import modify_search_api_settings
+
+        await modify_search_api_settings(config, settings_store)
+
 
 def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     """Run the alias setup flow to configure shell aliases.
 
     Prompts the user to set up aliases for 'openhands' and 'oh' commands.
     Handles existing aliases by offering to keep or remove them.
+
+    Args:
+        config: OpenHands configuration
     """
     print_formatted_text('')
     print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
     print_formatted_text('')
 
-    # Check if aliases already exist
-    if aliases_exist_in_shell_config():
-        print_formatted_text(
-            HTML(
-                '<grey>We detected existing OpenHands aliases in your shell configuration.</grey>'
-            )
+    # Show the normal setup flow
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
         )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
         )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML('<ansigreen>✅ Aliases are already configured.</ansigreen>')
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
         )
-        return  # Exit early since aliases already exist
-    else:
-        # No existing aliases, show the normal setup flow
-        print_formatted_text(
-            HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<grey>This will add the following aliases to your shell profile:</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
-            )
-        )
-        print_formatted_text('')
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
-            )
-        )
-        print_formatted_text(
-            HTML(
-                '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
-            )
-        )
-        print_formatted_text('')
+    )
+    print_formatted_text('')
 
-        # Use cli_confirm to get user choice
-        choice = cli_confirm(
-            config,
-            'Set up shell aliases?',
-            ['Yes, set up aliases', 'No, skip this step'],
-        )
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config,
+        'Set up shell aliases?',
+        ['Yes, set up aliases', 'No, skip this step'],
+    )
 
-        if choice == 0:  # User chose "Yes"
-            success = add_aliases_to_shell_config()
-            if success:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_shell_config()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
+
+            # Get the appropriate reload command using the shell config manager
+            shell_manager = ShellConfigManager()
+            reload_cmd = shell_manager.get_reload_command()
+
+            print_formatted_text(
+                HTML(
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
                 )
-
-                # Get the appropriate reload command using the shell config manager
-                shell_manager = ShellConfigManager()
-                reload_cmd = shell_manager.get_reload_command()
-
-                print_formatted_text(
-                    HTML(
-                        f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
-                    )
-                )
-            else:
-                print_formatted_text('')
-                print_formatted_text(
-                    HTML(
-                        '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
-                    )
-                )
-        else:  # User chose "No"
+            )
+        else:
             print_formatted_text('')
             print_formatted_text(
                 HTML(
-                    '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
                 )
             )
+    else:  # User chose "No"
+        # Mark that the user has declined alias setup
+        mark_alias_setup_declined()
+
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
 
     print_formatted_text('')
 
@@ -490,6 +534,16 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         env_log_level = os.getenv('LOG_LEVEL')
         if not env_log_level:
             logger.setLevel(logging.WARNING)
+
+    # If `config.toml` does not exist in current directory, use the file under home directory
+    if not os.path.exists(args.config_file):
+        home_config_file = os.path.join(
+            os.path.expanduser('~'), '.openhands', 'config.toml'
+        )
+        logger.info(
+            f'Config file {args.config_file} does not exist, using default config file in home directory: {home_config_file}.'
+        )
+        args.config_file = home_config_file
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
@@ -517,14 +571,30 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
+        # Handle agent configuration
         if args.agent_cls:
             config.default_agent = str(args.agent_cls)
         else:
             # settings.agent is not None because we check for it in setup_config_from_args
             assert settings.agent is not None
             config.default_agent = settings.agent
-        if not args.llm_config and settings.llm_model and settings.llm_api_key:
-            llm_config = config.get_llm_config()
+
+        # Handle LLM configuration with proper precedence:
+        # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
+        # 2. config.toml in current directory has next highest precedence (already loaded)
+        # 3. ~/.openhands/settings.json has lowest precedence (handled here)
+
+        # Only apply settings from settings.json if:
+        # - No LLM config was specified via CLI arguments (-l)
+        # - The current LLM config doesn't have model or API key set (indicating it wasn't loaded from config.toml)
+        llm_config = config.get_llm_config()
+        if (
+            not args.llm_config
+            and (not llm_config.model or not llm_config.api_key)
+            and settings.llm_model
+            and settings.llm_api_key
+        ):
+            logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
@@ -532,6 +602,11 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
         )
+
+        # Load search API key from settings if available and not already set from config.toml
+        if settings.search_api_key and not config.search_api_key:
+            config.search_api_key = settings.search_api_key
+            logger.debug('Using search API key from settings.json')
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
@@ -568,15 +643,23 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         finalize_config(config)
 
     # Check if we should show the alias setup flow
-    # Only show it if aliases don't exist in the shell configuration
-    # and we're in an interactive environment (not during tests or CI)
-    if not aliases_exist_in_shell_config() and sys.stdin.isatty():
-        # Clear the terminal if we haven't shown a banner yet
+    # Only show it if:
+    # 1. Aliases don't exist in the shell configuration
+    # 2. User hasn't previously declined alias setup
+    # 3. We're in an interactive environment (not during tests or CI)
+    should_show_alias_setup = (
+        not aliases_exist_in_shell_config()
+        and not alias_setup_declined()
+        and sys.stdin.isatty()
+    )
+
+    if should_show_alias_setup:
+        # Clear the terminal if we haven't shown a banner yet (i.e., setup flow didn't run)
         if not banner_shown:
             clear()
 
         run_alias_setup_flow(config)
-        banner_shown = True
+        # Don't set banner_shown = True here, so the ASCII art banner will still be shown
 
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base

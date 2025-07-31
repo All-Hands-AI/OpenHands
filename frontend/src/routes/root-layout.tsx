@@ -26,6 +26,7 @@ import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
+import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -205,6 +206,9 @@ export default function MainApp() {
         id="root-outlet"
         className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
       >
+        {config.data?.MAINTENANCE && (
+          <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
+        )}
         <EmailVerificationGuard>
           <Outlet />
         </EmailVerificationGuard>
@@ -214,6 +218,7 @@ export default function MainApp() {
         <AuthModal
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
+          providersConfigured={config.data?.PROVIDERS_CONFIGURED}
         />
       )}
       {renderReAuthModal && <ReauthModal />}

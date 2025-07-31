@@ -34,6 +34,7 @@
               {
                 "group": "Integrations",
                 "pages": [
+                  "usage/cloud/bitbucket-installation",
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation",
                   "usage/cloud/slack-installation"
@@ -66,7 +67,9 @@
                         "usage/llms/groq",
                         "usage/llms/local-llms",
                         "usage/llms/litellm-proxy",
+                        "usage/llms/moonshot",
                         "usage/llms/openai-llms",
+                        "usage/llms/openhands-llms",
                         "usage/llms/openrouter"
                       ]
                     }

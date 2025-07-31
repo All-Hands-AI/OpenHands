@@ -43,7 +43,7 @@ class LLMConfig(BaseModel):
         log_completions_folder: The folder to log LLM completions to. Required if log_completions is True.
         custom_tokenizer: A custom tokenizer to use for token counting.
         native_tool_calling: Whether to use native tool calling if supported by the model. Can be True, False, or not set.
-        reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Exclusive for o1 models.
+        reasoning_effort: The effort to put into reasoning. This is a string that can be one of 'low', 'medium', 'high', or 'none'. Can apply to all reasoning models.
         seed: The seed to use for the LLM.
         safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
         for_routing: Whether this LLM is used for routing. This is set to True for models used in conjunction with the main LLM in the model routing feature.
@@ -58,11 +58,11 @@ class LLMConfig(BaseModel):
     aws_region_name: str | None = Field(default=None)
     openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
-    # total wait time: 5 + 10 + 20 + 30 = 65 seconds
-    num_retries: int = Field(default=4)
-    retry_multiplier: float = Field(default=2)
-    retry_min_wait: int = Field(default=5)
-    retry_max_wait: int = Field(default=30)
+    # total wait time: 8 + 16 + 32 + 64 = 120 seconds
+    num_retries: int = Field(default=5)
+    retry_multiplier: float = Field(default=8)
+    retry_min_wait: int = Field(default=8)
+    retry_max_wait: int = Field(default=64)
     timeout: int | None = Field(default=None)
     max_message_chars: int = Field(
         default=30_000
@@ -86,7 +86,7 @@ class LLMConfig(BaseModel):
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
-    reasoning_effort: str | None = Field(default='high')
+    reasoning_effort: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
@@ -172,6 +172,14 @@ class LLMConfig(BaseModel):
             os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
             os.environ['OR_APP_NAME'] = self.openrouter_app_name
+
+        # Set reasoning_effort to 'high' by default for non-Gemini models
+        # Gemini models use optimized thinking budget when reasoning_effort is None
+        logger.debug(
+            f'Setting reasoning_effort for model {self.model} with reasoning_effort {self.reasoning_effort}'
+        )
+        if self.reasoning_effort is None and 'gemini-2.5-pro' not in self.model:
+            self.reasoning_effort = 'high'
 
         # Set an API version by default for Azure models
         # Required for newer models.
