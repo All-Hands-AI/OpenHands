@@ -91,6 +91,36 @@ class GitHubService(BaseGitService, GitService):
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'file'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['name']
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return f'{microagents_path}/{item["name"]}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
+
     async def _make_request(
         self,
         url: str,
@@ -539,63 +569,6 @@ class GitHubService(BaseGitService, GitService):
 
         # Return the HTML URL of the created PR
         return response['html_url']
-
-    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
-        """Fetch microagents from GitHub repository using GitHub Contents API.
-
-        Args:
-            repository: Repository name in format 'owner/repo'
-
-        Returns:
-            List of microagents found in the repository (without content for performance)
-        """
-        microagents_path = self._determine_microagents_path(repository)
-        base_url = f'{self.BASE_URL}/repos/{repository}/contents'
-        microagents = []
-
-        # Step 1: Check for .cursorrules file
-        try:
-            cursorrules_response, _ = await self._make_request(
-                f'{base_url}/.cursorrules'
-            )
-            if cursorrules_response:
-                microagents.append(
-                    self._create_microagent_response('.cursorrules', '.cursorrules')
-                )
-        except ResourceNotFoundError:
-            logger.debug(f'No .cursorrules file found in {repository}')
-        except Exception as e:
-            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
-
-        # Step 2: Check for microagents directory and process .md files
-        try:
-            response, _ = await self._make_request(f'{base_url}/{microagents_path}')
-
-            for item in response:
-                if (
-                    item['type'] == 'file'
-                    and item['name'].endswith('.md')
-                    and item['name'] != 'README.md'
-                ):
-                    try:
-                        microagents.append(
-                            self._create_microagent_response(
-                                item['name'],
-                                f'{microagents_path}/{item["name"]}',
-                            )
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f'Error processing microagent {item["name"]}: {str(e)}'
-                        )
-        except ResourceNotFoundError:
-            logger.info(
-                f'No microagents directory found in {repository} at {microagents_path}'
-            )
-        except Exception as e:
-            logger.warning(f'Error fetching microagents directory: {str(e)}')
-
-        return microagents
 
     async def get_microagent_content(
         self, repository: str, file_path: str

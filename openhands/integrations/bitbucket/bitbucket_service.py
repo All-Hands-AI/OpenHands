@@ -67,6 +67,50 @@ class BitBucketService(BaseGitService, GitService):
         """Get latest working token of the user."""
         return self.token
 
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        # Get repository details to get the main branch
+        repo_details = await self.get_repository_details_from_repo_name(repository)
+        if not repo_details.main_branch:
+            raise ResourceNotFoundError(
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
+            )
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        # Get repository details to get the main branch
+        repo_details = await self.get_repository_details_from_repo_name(repository)
+        if not repo_details.main_branch:
+            raise ResourceNotFoundError(
+                f'Main branch not found for repository {repository}. '
+                f'This repository may be empty or have no default branch configured.'
+            )
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'commit_file'
+            and item['path'].endswith('.md')
+            and not item['path'].endswith('README.md')
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['path'].split('/')[-1]
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return item['path']
+
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
@@ -390,77 +434,6 @@ class BitBucketService(BaseGitService, GitService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
-
-    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
-        """Fetch microagents from Bitbucket repository using Bitbucket API.
-
-        Args:
-            repository: Repository name in format 'workspace/repo_slug'
-
-        Returns:
-            List of microagents found in the repository (without content for performance)
-        """
-        microagents_path = self._determine_microagents_path(repository)
-        microagents = []
-
-        # Step 1: Get repository details - return early if not found
-        repo_details = await self.get_repository_details_from_repo_name(repository)
-
-        if not repo_details.main_branch:
-            logger.warning(
-                f'No main branch found in repository info for {repository}. '
-                f'Repository response: mainbranch field missing'
-            )
-            raise ResourceNotFoundError(
-                f'Main branch not found for repository {repository}. '
-                f'This repository may be empty or have no default branch configured.'
-            )
-
-        # Step 2: Check for .cursorrules file
-        try:
-            cursorrules_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
-            cursorrules_response, _ = await self._make_request(cursorrules_url)
-            if cursorrules_response:
-                microagents.append(
-                    self._create_microagent_response('.cursorrules', '.cursorrules')
-                )
-        except ResourceNotFoundError:
-            logger.debug(f'No .cursorrules file found in {repository}')
-        except Exception as e:
-            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
-
-        # Step 3: Check for microagents directory and process .md files
-        try:
-            src_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
-            directory_data, _ = await self._make_request(src_url)
-
-            if 'values' in directory_data:
-                for item in directory_data['values']:
-                    if (
-                        item['type'] == 'commit_file'
-                        and item['path'].endswith('.md')
-                        and not item['path'].endswith('README.md')
-                    ):
-                        try:
-                            # Extract file name from path
-                            file_name = item['path'].split('/')[-1]
-                            microagents.append(
-                                self._create_microagent_response(
-                                    file_name, item['path']
-                                )
-                            )
-                        except Exception as e:
-                            logger.warning(
-                                f'Error processing microagent {item["path"]}: {str(e)}'
-                            )
-        except ResourceNotFoundError:
-            logger.info(
-                f'No microagents directory found in {repository} at {microagents_path}'
-            )
-        except Exception as e:
-            logger.warning(f'Error fetching microagents directory: {str(e)}')
-
-        return microagents
 
     async def get_microagent_content(
         self, repository: str, file_path: str

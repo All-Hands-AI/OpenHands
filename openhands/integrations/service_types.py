@@ -188,6 +188,38 @@ class BaseGitService(ABC):
         method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]: ...
 
+    @abstractmethod
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        ...
+
+    @abstractmethod
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        ...
+
+    @abstractmethod
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        ...
+
+    @abstractmethod
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        ...
+
+    @abstractmethod
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        ...
+
+    @abstractmethod
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        ...
+
     async def execute_request(
         self,
         client: AsyncClient,
@@ -286,6 +318,71 @@ class BaseGitService(ABC):
             raise MicroagentParseError(
                 f'Failed to parse microagent file {file_path}: {str(e)}'
             )
+
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
+        """Generic implementation of get_microagents that works across all providers.
+
+        Args:
+            repository: Repository name in format specific to the provider
+
+        Returns:
+            List of microagents found in the repository (without content for performance)
+        """
+        microagents_path = self._determine_microagents_path(repository)
+        microagents = []
+
+        # Step 1: Check for .cursorrules file
+        try:
+            cursorrules_url = await self._get_cursorrules_url(repository)
+            cursorrules_response, _ = await self._make_request(cursorrules_url)
+            if cursorrules_response:
+                microagents.append(
+                    self._create_microagent_response('.cursorrules', '.cursorrules')
+                )
+        except ResourceNotFoundError:
+            logger.debug(f'No .cursorrules file found in {repository}')
+        except Exception as e:
+            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
+
+        # Step 2: Check for microagents directory and process .md files
+        try:
+            directory_url = await self._get_microagents_directory_url(
+                repository, microagents_path
+            )
+            directory_params = self._get_microagents_directory_params(microagents_path)
+            response, _ = await self._make_request(directory_url, directory_params)
+
+            # Handle different response structures
+            items = response
+            if isinstance(response, dict) and 'values' in response:
+                # Bitbucket format
+                items = response['values']
+            elif isinstance(response, dict) and 'nodes' in response:
+                # GraphQL format (if used)
+                items = response['nodes']
+
+            for item in items:
+                if self._is_valid_microagent_file(item):
+                    try:
+                        file_name = self._get_file_name_from_item(item)
+                        file_path = self._get_file_path_from_item(
+                            item, microagents_path
+                        )
+                        microagents.append(
+                            self._create_microagent_response(file_name, file_path)
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item.get("name", "unknown")}: {str(e)}'
+                        )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        return microagents
 
 
 class GitService(Protocol):
