@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from typing import cast
+from typing import Any, cast
 
 from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse
@@ -43,21 +43,11 @@ async def get_user_repositories(
     user_id: str | None = Depends(get_user_id),
     user_info: dict | None = Depends(get_user_info),
 ) -> list[Repository] | JSONResponse:
-    if not user_info:
-        return JSONResponse(
-            content=f'No user_info found for user {user_id}.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    idp = user_info.get('identity_provider')
-    if not idp:
-        return JSONResponse(
-            content='IDP not found.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    # Enterprise SSO provider has no provider tokens
-    if idp == ProviderType.ENTERPRISE_SSO.value:
-        all_repos: list[Repository] = []
-        return all_repos
+    retval = _check_idp_type(
+        user_info=user_info, default_value=cast(list[Repository], [])
+    )
+    if retval is not None:
+        return retval
 
     if provider_tokens:
         client = ProviderHandler(
@@ -100,25 +90,17 @@ async def get_user(
     user_id: str | None = Depends(get_user_id),
     user_info: dict | None = Depends(get_user_info),
 ) -> User | JSONResponse:
-    if not user_info:
-        return JSONResponse(
-            content=f'No user_info found for user {user_id}.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    idp = user_info.get('identity_provider')
-    if not idp:
-        return JSONResponse(
-            content='IDP not found.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    # Enterprise SSO provider has no provider tokens
-    if idp == ProviderType.ENTERPRISE_SSO.value:
-        return User(
-            id=user_info.get('sub') or '',
-            login=user_info.get('preferred_username') or '',
+    retval = _check_idp_type(
+        user_info=user_info,
+        default_value=User(
+            id=(user_info.get('sub') if user_info else '') or '',
+            login=(user_info.get('preferred_username') if user_info else '') or '',
             avatar_url='',
-            email=user_info.get('email'),
-        )
+            email=user_info.get('email') if user_info else None,
+        ),
+    )
+    if retval is not None:
+        return retval
 
     if provider_tokens:
         client = ProviderHandler(
@@ -164,21 +146,11 @@ async def search_repositories(
     user_id: str | None = Depends(get_user_id),
     user_info: dict | None = Depends(get_user_info),
 ) -> list[Repository] | JSONResponse:
-    if not user_info:
-        return JSONResponse(
-            content=f'No user_info found for user {user_id}.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    idp = user_info.get('identity_provider')
-    if not idp:
-        return JSONResponse(
-            content='IDP not found.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    # Enterprise SSO provider has no provider tokens
-    if idp == ProviderType.ENTERPRISE_SSO.value:
-        no_repos: list[Repository] = []
-        return no_repos
+    retval = _check_idp_type(
+        user_info=user_info, default_value=cast(list[Repository], [])
+    )
+    if retval is not None:
+        return retval
 
     if provider_tokens:
         client = ProviderHandler(
@@ -224,21 +196,11 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
-    if not user_info:
-        return JSONResponse(
-            content=f'No user_info found for user {user_id}.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    idp = user_info.get('identity_provider')
-    if not idp:
-        return JSONResponse(
-            content='IDP not found.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    # Enterprise SSO provider has no provider tokens
-    if idp == ProviderType.ENTERPRISE_SSO.value:
-        no_tasks: list[SuggestedTask] = []
-        return no_tasks
+    retval = _check_idp_type(
+        user_info=user_info, default_value=cast(list[SuggestedTask], [])
+    )
+    if retval is not None:
+        return retval
 
     if provider_tokens:
         client = ProviderHandler(
@@ -283,21 +245,9 @@ async def get_repository_branches(
     Returns:
         A list of branches for the repository
     """
-    if not user_info:
-        return JSONResponse(
-            content=f'No user_info found for user {user_id}.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    idp = user_info.get('identity_provider')
-    if not idp:
-        return JSONResponse(
-            content='IDP not found.',
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-    # Enterprise SSO provider has no provider tokens
-    if idp == ProviderType.ENTERPRISE_SSO.value:
-        no_branches: list[Branch] = []
-        return no_branches
+    retval = _check_idp_type(user_info=user_info, default_value=cast(list[Branch], []))
+    if retval is not None:
+        return retval
 
     if provider_tokens:
         client = ProviderHandler(
@@ -482,3 +432,21 @@ async def get_repository_microagent_content(
             content=f'Error fetching microagent content: {str(e)}',
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+def _check_idp_type(user_info: dict | None, default_value: Any):
+    if not user_info:
+        return JSONResponse(
+            content='No user_info found for user.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    idp = user_info.get('identity_provider')
+    if not idp:
+        return JSONResponse(
+            content='IDP not found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    # Enterprise SSO provider has no provider tokens
+    if ProviderType(idp) == ProviderType.ENTERPRISE_SSO:
+        return default_value
+    return None
