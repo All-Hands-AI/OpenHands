@@ -188,6 +188,14 @@ install-pre-commit-hooks: check-python check-poetry install-python-dependencies
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
+install-full-pre-commit-hooks:
+	@echo "$(YELLOW)Installing full pre-commit hooks (includes frontend checks)...$(RESET)"
+	@git config --unset-all core.hooksPath || true
+	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@cd frontend && npm run setup-husky
+	@echo "$(GREEN)Full pre-commit hooks installed successfully.$(RESET)"
+	@echo "$(YELLOW)WARNING: Commits will now run both frontend and backend checks, which may take 30+ seconds.$(RESET)"
+
 lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
 	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
@@ -243,7 +251,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run prepare && npm run build
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
@@ -355,6 +363,9 @@ help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
+	@echo "                        Uses fast pre-commit hooks (backend only, ~0.6s commits)."
+	@echo "  $(GREEN)install-pre-commit-hooks$(RESET) - Install fast pre-commit hooks (backend only, ~0.6s commits)."
+	@echo "  $(GREEN)install-full-pre-commit-hooks$(RESET) - Install comprehensive pre-commit hooks (frontend + backend, ~30s commits)."
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
@@ -367,5 +378,5 @@ help:
 	@echo "  $(GREEN)help$(RESET)                - Display this help message, providing information on available targets."
 
 # Phony targets
-.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
+.PHONY: build check-dependencies check-system check-python check-npm check-nodejs check-docker check-poetry install-python-dependencies install-frontend-dependencies install-pre-commit-hooks install-full-pre-commit-hooks lint-backend lint-frontend lint test-frontend test build-frontend start-backend start-frontend _run_setup run run-wsl setup-config setup-config-prompts setup-config-basic openhands-cloud-run docker-dev docker-run clean help
 .PHONY: kind

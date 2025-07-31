@@ -69,7 +69,7 @@
     "prelint": "npm run make-i18n",
     "lint": "npm run typecheck && eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
-    "prepare": "cd .. && husky frontend/.husky",
+    "setup-husky": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc",
     "check-translation-completeness": "node scripts/check-translation-completeness.cjs"
   },
