@@ -10,6 +10,7 @@ from typing import cast
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, SecretStr
+from server.auth.token_manager import TokenManager
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
@@ -36,6 +37,7 @@ from openhands.server.user_auth import (
 )
 
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
+token_manager = TokenManager()
 
 
 @app.get('/repositories', response_model=list[Repository])
@@ -45,6 +47,24 @@ async def get_user_repositories(
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
+    if not access_token:
+        return JSONResponse(
+            content='No access token found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    user_info = await token_manager.get_user_info(access_token.get_secret_value())
+    idp = user_info.get('identity_provider')
+    if not idp:
+        return JSONResponse(
+            content='IDP not found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # Enterprise SSO provider has no provider tokens
+    if idp == ProviderType.ENTERPRISE_SSO.value:
+        all_repos: list[Repository] = []
+        return all_repos
+
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens,
@@ -85,6 +105,28 @@ async def get_user(
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> User | JSONResponse:
+    if not access_token:
+        return JSONResponse(
+            content='No access token found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    user_info = await token_manager.get_user_info(access_token.get_secret_value())
+    idp = user_info.get('identity_provider')
+    if not idp:
+        return JSONResponse(
+            content='IDP not found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # Enterprise SSO provider has no provider tokens
+    if idp == ProviderType.ENTERPRISE_SSO.value:
+        return User(
+            id=user_info.get('sub'),
+            login=user_info.get('preferred_username'),
+            avatar_url='',
+            email=user_info.get('email'),
+        )
+
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
@@ -171,6 +213,24 @@ async def get_suggested_tasks(
     - PRs owned by the user
     - Issues assigned to the user.
     """
+    if not access_token:
+        return JSONResponse(
+            content='No access token found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+    user_info = await token_manager.get_user_info(access_token.get_secret_value())
+    idp = user_info.get('identity_provider')
+    if not idp:
+        return JSONResponse(
+            content='IDP not found.',
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    # Enterprise SSO provider has no provider tokens
+    if idp == ProviderType.ENTERPRISE_SSO.value:
+        no_tasks: list[SuggestedTask] = []
+        return no_tasks
+
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
