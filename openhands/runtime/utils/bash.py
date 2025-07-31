@@ -271,6 +271,14 @@ class BashSession:
         self.session.kill()
         self._closed = True
 
+    def reset(self) -> None:
+        """Reset the terminal session by closing the current session and initializing a new one."""
+        if not self._closed:
+            self.close()
+        self._closed = False
+        self._initialized = False
+        self.initialize()
+
     @property
     def cwd(self) -> str:
         return self._cwd
@@ -479,6 +487,16 @@ class BashSession:
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
         is_input: bool = action.is_input
+
+        # Check if we need to reset the terminal
+        if action.reset_terminal:
+            logger.info('Resetting terminal session as requested')
+            self.reset()
+            return CmdOutputObservation(
+                content='Terminal session has been reset. All running processes have been terminated and a fresh session has been created.',
+                command='',
+                metadata=CmdOutputMetadata(),
+            )
 
         # If the previous command is not completed, we need to check if the command is empty
         if self.prev_status not in {
