@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import shutil
 import sys
 
 from prompt_toolkit import print_formatted_text
@@ -308,20 +307,14 @@ async def run_session(
         )
 
         runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
-        # Add `fetch` MCP server by default if not already present and `uvx` is available
-        if shutil.which('uvx') is not None:
-            fetch_mcp_config = MCPStdioServerConfig(
-                name='fetch',
-                command='uvx',
-                args=['mcp-server-fetch'],
-            )
-            if fetch_mcp_config not in runtime.config.mcp.stdio_servers:
-                runtime.config.mcp.stdio_servers.append(fetch_mcp_config)
-        else:
-            logger.warning(
-                'uvx is not installed or not found in PATH. '
-                'The fetch MCP server will be disabled.'
-            )
+        # Add `fetch` MCP server by default if not already present
+        fetch_mcp_config = MCPStdioServerConfig(
+            name='fetch',
+            command='test-cmd',
+            args=['mcp-server-fetch'],
+        )
+        if fetch_mcp_config not in runtime.config.mcp.stdio_servers:
+            runtime.config.mcp.stdio_servers.append(fetch_mcp_config)
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
 

@@ -94,7 +94,7 @@ async def create_mcp_clients(
         if isinstance(server, MCPStdioServerConfig):
             # Validate that the command exists before connecting
             if not shutil.which(server.command):
-                logger.warning(
+                logger.error(
                     f'Skipping MCP stdio server "{server.name}": command "{server.command}" not found. '
                     f'Please install {server.command} or remove this server from your configuration.'
                 )

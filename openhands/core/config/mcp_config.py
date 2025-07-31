@@ -178,7 +178,8 @@ class MCPStdioServerConfig(BaseModel):
         if not isinstance(other, MCPStdioServerConfig):
             return False
         return (
-            self.command == other.command
+            self.name == other.name
+            and self.command == other.command
             and self.args == other.args
             and set(self.env.items()) == set(other.env.items())
         )
