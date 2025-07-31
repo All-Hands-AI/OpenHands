@@ -49,6 +49,8 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  TEMPERATURE?: number;
+  TOP_P?: number;
 };
 
 export type ApiSettings = {
@@ -75,6 +77,8 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
+  temperature?: number;
+  top_p?: number;
 };
 
 export type PostSettings = Settings & {
@@ -82,6 +86,8 @@ export type PostSettings = Settings & {
   llm_api_key?: string | null;
   search_api_key?: string;
   mcp_config?: MCPConfig;
+  temperature?: number;
+  top_p?: number;
 };
 
 export type PostApiSettings = ApiSettings & {

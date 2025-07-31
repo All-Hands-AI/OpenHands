@@ -8,6 +8,7 @@ from openhands.events.serialization.event import (
 )
 from openhands.events.serialization.observation import (
     observation_from_dict,
+    observation_to_dict,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     'event_to_dict',
     'event_to_trajectory',
     'observation_from_dict',
+    'observation_to_dict',
 ]
