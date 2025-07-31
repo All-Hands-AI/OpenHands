@@ -8,7 +8,7 @@ const getRandomWidth = () =>
 const getRandomNumber = (from = 3, to = 5) =>
   Math.floor(Math.random() * (to - from + 1)) + from;
 
-function TaskCardSkeleton() {
+function ConversationSkeleton() {
   return (
     <li className="py-3 border-b border-[#717888] flex items-center pr-6">
       <div className="h-5 w-8 skeleton" />
@@ -38,7 +38,7 @@ function RecentConversationSkeleton({
 
       <ul>
         {Array.from({ length: items }).map((_, index) => (
-          <TaskCardSkeleton key={index} />
+          <ConversationSkeleton key={index} />
         ))}
       </ul>
     </div>
