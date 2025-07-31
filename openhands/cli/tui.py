@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import datetime
 import json
+import re
 import sys
 import threading
 import time
@@ -36,6 +37,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentFinishAction,
     ChangeAgentStateAction,
     CmdRunAction,
     MCPAction,
@@ -65,10 +67,16 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
+COLOR_SUCCESS_GREEN = '#00D787'  # Bright green for finish actions
+COLOR_AGENT_BLUE = '#5FAFFF'  # Soft blue for agent messages
+COLOR_FINISH_FRAME = '#00AF87'  # Darker green for finish action frames
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
         'grey': COLOR_GREY,
+        'success-green': COLOR_SUCCESS_GREEN,
+        'agent-blue': COLOR_AGENT_BLUE,
+        'finish-frame': COLOR_FINISH_FRAME,
         'prompt': f'{COLOR_GOLD} bold',
     }
 )
@@ -252,7 +260,10 @@ def display_thought_if_new(thought: str) -> None:
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, CmdRunAction):
+        if isinstance(event, AgentFinishAction):
+            # Handle agent finish actions with special styling
+            display_agent_finish(event)
+        elif isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
                 display_message(event.thought)
@@ -275,8 +286,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Check if this message content is a duplicate thought
-                display_thought_if_new(event.content)
+                # Display agent messages with distinctive styling
+                display_agent_message(event.content)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -291,11 +302,104 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
+def process_markdown_for_terminal(text: str) -> str:
+    """
+    Process markdown syntax for terminal display.
+    This function handles common markdown patterns like bold, italic, code blocks, etc.
+    """
+    if not text:
+        return text
+
+    # Process bold text (**text**)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+
+    # Process italic text (*text*)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+
+    # Process inline code (`code`)
+    text = re.sub(r'`(.*?)`', r'\1', text)
+
+    # Process code blocks
+    text = re.sub(r'```(?:\w+)?\n(.*?)\n```', r'\1', text, flags=re.DOTALL)
+
+    return text
+
+
 def display_message(message: str) -> None:
     message = message.strip()
 
     if message:
         print_formatted_text(f'\n{message}')
+
+
+def display_agent_message(message: str) -> None:
+    """Display a message from the agent with distinctive styling and markdown rendering."""
+    message = message.strip()
+
+    if message:
+        # Process markdown in the message
+        try:
+            # Process markdown for terminal display
+            processed_message = process_markdown_for_terminal(message)
+        except Exception:
+            # If markdown processing fails, use the original message
+            processed_message = message
+
+        container = Frame(
+            TextArea(
+                text=processed_message,
+                read_only=True,
+                style=COLOR_AGENT_BLUE,
+                wrap_lines=True,
+            ),
+            title='Agent Message',
+            style=f'fg:{COLOR_AGENT_BLUE}',
+        )
+        print_formatted_text('')
+        print_container(container)
+
+
+def display_agent_finish(event: AgentFinishAction) -> None:
+    """Display an agent finish action with distinctive styling and markdown rendering."""
+    # Determine the message to display
+    if event.final_thought:
+        message = event.final_thought
+    elif event.thought:
+        message = event.thought
+    else:
+        message = "All done! What's next on the agenda?"
+
+    # Add task completion status if available
+    if event.task_completed:
+        status_map = {
+            'true': '✅ Task completed successfully',
+            'partial': '⚠️ Task partially completed',
+            'false': '❌ Task could not be completed',
+        }
+        status_text = status_map.get(event.task_completed.value, '')
+        if status_text:
+            message = f'{status_text}\n\n{message}'
+
+    # Process markdown in the message
+    try:
+        # Process markdown for terminal display
+        processed_message = process_markdown_for_terminal(message)
+    except Exception:
+        # If markdown processing fails, use the original message
+        processed_message = message
+
+    container = Frame(
+        TextArea(
+            text=processed_message,
+            read_only=True,
+            style=COLOR_SUCCESS_GREEN,
+            wrap_lines=True,
+        ),
+        title='🎯 Agent Finished',
+        style=f'fg:{COLOR_FINISH_FRAME}',
+    )
+    print_formatted_text('')
+    print_container(container)
 
 
 def display_error(error: str) -> None:
