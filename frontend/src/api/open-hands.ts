@@ -166,7 +166,6 @@ class OpenHands {
           }
         } catch (e) {
           // Invalid JSON in cache, ignore and proceed with request
-          console.warn("Invalid cached feedback data", e);
         }
       }
 
@@ -183,14 +182,12 @@ class OpenHands {
           sessionStorage.setItem(cacheKey, JSON.stringify(data));
         } catch (e) {
           // Ignore storage errors
-          console.warn("Failed to cache feedback data", e);
         }
       }
 
       return data;
     } catch (error) {
       // Error checking if feedback exists
-      console.warn("Error checking feedback existence:", error);
       return { exists: false };
     }
   }

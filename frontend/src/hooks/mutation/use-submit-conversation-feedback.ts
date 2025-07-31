@@ -40,11 +40,10 @@ export const useSubmitConversationFeedback = () => {
           const cacheKey = `feedback_${conversationId}_${eventId}`;
           sessionStorage.setItem(
             cacheKey,
-            JSON.stringify({ exists: true, rating, reason })
+            JSON.stringify({ exists: true, rating, reason }),
           );
         } catch (e) {
           // Ignore storage errors
-          console.warn("Failed to update feedback cache", e);
         }
       }
     },
