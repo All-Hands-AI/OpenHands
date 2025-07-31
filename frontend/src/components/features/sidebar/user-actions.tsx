@@ -10,7 +10,7 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
-  const { data: isAuthed } = useIsAuthed();
+  const { data: isAuthed, isLoading: isAuthLoading } = useIsAuthed();
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -27,6 +27,17 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     closeAccountMenu();
   };
 
+  // For debugging - log authentication status
+  React.useEffect(() => {
+    console.log("Authentication status:", isAuthed);
+    console.log("Auth loading:", isAuthLoading);
+    console.log("User data:", user);
+    console.log("Menu visible:", accountContextMenuIsVisible);
+  }, [isAuthed, isAuthLoading, user, accountContextMenuIsVisible]);
+
+  // Always show the menu for authenticated users, even without user data
+  const showMenu = accountContextMenuIsVisible && isAuthed === true;
+
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
       <UserAvatar
@@ -35,7 +46,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      {accountContextMenuIsVisible && isAuthed && (
+      {showMenu && (
         <AccountSettingsContextMenu
           onLogout={handleLogout}
           onClose={closeAccountMenu}

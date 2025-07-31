@@ -28,6 +28,13 @@ export function Sidebar() {
   } = useSettings();
   const { mutate: logout } = useLogout();
 
+  // Debug user data
+  React.useEffect(() => {
+    console.log("User data in sidebar:", user.data);
+    console.log("User fetching status:", user.isFetching);
+    console.log("User error:", user.error);
+  }, [user.data, user.isFetching, user.error]);
+
   const [settingsModalIsOpen, setSettingsModalIsOpen] = React.useState(false);
 
   const [conversationPanelIsOpen, setConversationPanelIsOpen] =

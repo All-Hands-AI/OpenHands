@@ -16,13 +16,16 @@ export function AccountSettingsContextMenu({
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { t } = useTranslation();
 
+  // Debug
+  console.log("AccountSettingsContextMenu rendered");
+
   return (
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
       className="absolute right-full md:left-full -top-1 z-10 w-fit"
     >
-      <ContextMenuListItem onClick={onLogout}>
+      <ContextMenuListItem onClick={onLogout} data-testid="logout-button">
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}
       </ContextMenuListItem>
     </ContextMenu>
