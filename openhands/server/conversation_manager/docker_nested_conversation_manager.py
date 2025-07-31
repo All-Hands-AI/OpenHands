@@ -12,7 +12,6 @@ import docker
 import httpx
 import socketio
 from docker.models.containers import Container
-from fastapi import status
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
