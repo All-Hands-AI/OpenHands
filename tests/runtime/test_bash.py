@@ -38,7 +38,7 @@ def is_windows():
 
 
 def _run_cmd_action(runtime, custom_command: str):
-    action = CmdRunAction(command=custom_command, reset_terminal=False)
+    action = CmdRunAction(command=custom_command)
     logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert isinstance(obs, (CmdOutputObservation, ErrorObservation))

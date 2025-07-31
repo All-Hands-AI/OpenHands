@@ -598,7 +598,7 @@ def test_process_events_with_message_action_with_image(conversation_memory):
 
 
 def test_process_events_with_user_cmd_action(conversation_memory):
-    action = CmdRunAction(command='ls -l', reset_terminal=False)
+    action = CmdRunAction(command='ls -l')
     action._source = EventSource.USER
 
     # Define initial user action

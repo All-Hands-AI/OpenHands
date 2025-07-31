@@ -61,7 +61,7 @@ class TestThoughtDisplayOrder:
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a CmdRunAction without a thought
-        cmd_action = CmdRunAction(command='npm install', reset_terminal=False)
+        cmd_action = CmdRunAction(command='npm install')
         cmd_action.confirmation_state = ActionConfirmationStatus.AWAITING_CONFIRMATION
 
         display_event(cmd_action, config)

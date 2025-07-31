@@ -96,7 +96,7 @@ def test_long_running_command_follow_by_execute():
     assert obs.metadata.prefix == ''
 
     # Continue watching output
-    obs = session.execute(CmdRunAction(command='', is_input=True))
+    obs = session.execute(CmdRunAction('', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert '2' in obs.content
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
@@ -134,7 +134,7 @@ def test_interactive_command():
     # Test interactive command with blocking=True
     obs = session.execute(
         CmdRunAction(
-            command='read -p \'Enter name: \' name && echo "Hello $name"',
+            'read -p \'Enter name: \' name && echo "Hello $name"',
         )
     )
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
@@ -145,7 +145,7 @@ def test_interactive_command():
     assert obs.metadata.prefix == ''
 
     # Send input
-    obs = session.execute(CmdRunAction(command='John', is_input=True))
+    obs = session.execute(CmdRunAction('John', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Hello John' in obs.content
     assert obs.metadata.exit_code == 0
@@ -161,21 +161,21 @@ def test_interactive_command():
     assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == ''
 
-    obs = session.execute(CmdRunAction(command='line 1', is_input=True))
+    obs = session.execute(CmdRunAction('line 1', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
     assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
-    obs = session.execute(CmdRunAction(command='line 2', is_input=True))
+    obs = session.execute(CmdRunAction('line 2', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
     assert obs.metadata.suffix == get_no_change_timeout_suffix(3)
     assert obs.metadata.prefix == '[Below is the output of the previous command.]\n'
 
-    obs = session.execute(CmdRunAction(command='EOF', is_input=True))
+    obs = session.execute(CmdRunAction('EOF', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'line 1' in obs.content and 'line 2' in obs.content
     assert obs.metadata.exit_code == 0
@@ -201,7 +201,7 @@ def test_ctrl_c():
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Send Ctrl+C
-    obs = session.execute(CmdRunAction(command='C-c', is_input=True))
+    obs = session.execute(CmdRunAction('C-c', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     # Check that the process was interrupted (exit code can be 1 or 130 depending on the shell/OS)
     assert obs.metadata.exit_code in (
@@ -270,7 +270,7 @@ def test_command_output_continuation():
         while (
             len(numbers_seen) < 5 or session.prev_status != BashCommandStatus.COMPLETED
         ):
-            obs = session.execute(CmdRunAction(command='', is_input=True))
+            obs = session.execute(CmdRunAction('', is_input=True))
             logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
             # Check for numbers in the output
@@ -371,14 +371,14 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Send first input (name)
-    obs = session.execute(CmdRunAction(command='Alice', is_input=True))
+    obs = session.execute(CmdRunAction('Alice', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Enter your age:' in obs.content
     assert obs.metadata.exit_code == -1
     assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
 
     # Send second input (age)
-    obs = session.execute(CmdRunAction(command='25', is_input=True))
+    obs = session.execute(CmdRunAction('25', is_input=True))
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert 'Hello Alice, you are 25 years old' in obs.content
     assert obs.metadata.exit_code == 0
