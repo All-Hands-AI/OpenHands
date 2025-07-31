@@ -34,6 +34,13 @@ class MockUserAuth(UserAuth):
     async def get_access_token(self) -> SecretStr | None:
         return SecretStr('test-token')
 
+    async def get_user_info(self) -> dict | None:
+        return {
+            'identity_provider': 'test-idp',
+            'sub': 'test-sub',
+            'preferred_username': 'test-username',
+        }
+
     async def get_provider_tokens(self) -> dict[ProviderType, ProviderToken] | None:
         return None
 
