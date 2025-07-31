@@ -23,7 +23,7 @@ from openhands.cli.utils import (
 )
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.condenser_config import ConversationWindowCondenserConfig, CondenserPipelineConfig
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -472,12 +472,21 @@ async def modify_llm_settings_advanced(
 
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
-        agent_config.condenser = LLMSummarizingCondenserConfig(
-            llm_config=llm_config,
-            type='llm',
+        agent_config.condenser = CondenserPipelineConfig(
+            condensers=[
+                ConversationWindowCondenserConfig(),
+                # Use LLMSummarizingCondenserConfig with the custom llm_config
+                LLMSummarizingCondenserConfig(
+                    llm_config=llm_config,
+                    type='llm',
+                    keep_first=4,
+                    max_size=120
+                ),
+            ]
         )
+
     else:
-        agent_config.condenser = NoOpCondenserConfig(type='noop')
+        agent_config.condenser = ConversationWindowCondenserConfig()
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
