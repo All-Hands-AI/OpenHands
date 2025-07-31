@@ -8,7 +8,7 @@ echo "Verbose output will be redirected to log files."
 echo
 
 # Create logs directory if it doesn't exist
-LOGS_DIR="test-logs"
+LOGS_DIR="build/test-logs"
 mkdir -p "$LOGS_DIR"
 
 # Generate timestamp for this run
