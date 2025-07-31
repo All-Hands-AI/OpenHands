@@ -16,12 +16,9 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.research import ResearchMode
 from openhands.events.action.message import MessageAction
-from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
@@ -41,7 +38,6 @@ from openhands.server.shared import (
     ConversationStoreImpl,
     config,
     conversation_manager,
-    file_store,
     s3_handler,
 )
 from openhands.server.thesis_auth import (
@@ -54,7 +50,7 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
-from openhands.utils.conversation_summary import generate_conversation_title
+from openhands.utils.conversation_summary import get_default_conversation_title
 from openhands.utils.get_user_setting import get_user_setting
 
 app = APIRouter(prefix='/api')
@@ -166,9 +162,11 @@ async def _create_new_conversation(
             title=conversation_title,
             user_id=user_id,
             github_user_id=None,
-            selected_repository=selected_repository.full_name
-            if selected_repository
-            else selected_repository,
+            selected_repository=(
+                selected_repository.full_name
+                if selected_repository
+                else selected_repository
+            ),
             selected_branch=selected_branch,
         )
     )
@@ -459,13 +457,23 @@ async def search_conversations(
 async def get_conversation(
     conversation_id: str, request: Request
 ) -> ConversationInfo | None:
+    user_id = get_user_id(request)
     conversation_store = await ConversationStoreImpl.get_instance(
-        config, get_user_id(request), get_github_user_id(request)
+        config, user_id, get_github_user_id(request)
     )
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         is_running = await conversation_manager.is_agent_loop_running(conversation_id)
         conversation_info = await _get_conversation_info(metadata, is_running)
+        if not conversation_info:
+            logger.error(
+                f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f'Conversation {conversation_id} with user {user_id} not found',
+            )
         # existed_conversation = await conversation_module._get_conversation_by_id(
         #     conversation_id, str(get_user_id(request))
         # )
@@ -476,108 +484,87 @@ async def get_conversation(
         return None
 
 
-def get_default_conversation_title(conversation_id: str) -> str:
-    """
-    Generate a default title for a conversation based on its ID.
-
-    Args:
-        conversation_id: The ID of the conversation
-
-    Returns:
-        A default title string
-    """
-    return f'Research {conversation_id[:5]}'
-
-
-async def auto_generate_title(conversation_id: str, user_id: str | None) -> str:
-    """
-    Auto-generate a title for a conversation based on the first user message.
-    Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
-
-    Args:
-        conversation_id: The ID of the conversation
-        user_id: The ID of the user
-
-    Returns:
-        A generated title string
-    """
-    logger.info(f'Auto-generating title for conversation {conversation_id}')
-
-    try:
-        # Create an event stream for the conversation
-        event_stream = EventStream(conversation_id, file_store, user_id)
-
-        # Find the first user message
-        first_user_message = None
-        for event in event_stream.get_events():
-            if (
-                event.source == EventSource.USER
-                and isinstance(event, MessageAction)
-                and event.content
-                and event.content.strip()
-            ):
-                first_user_message = event.content
-                break
-
-        if first_user_message:
-            # Get LLM config from user settings
-            try:
-                settings = await get_user_setting(user_id)
-
-                if settings and settings.llm_model:
-                    # Create LLM config from settings
-                    llm_config = LLMConfig(
-                        model=settings.llm_model,
-                        api_key=settings.llm_api_key,
-                        base_url=settings.llm_base_url,
-                    )
-
-                    # Try to generate title using LLM
-                    llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
-                    )
-                    if llm_title:
-                        logger.info(f'Generated title using LLM: {llm_title}')
-                        return llm_title
-            except Exception as e:
-                logger.error(f'Error using LLM for title generation: {e}')
-
-            # Fall back to simple truncation if LLM generation fails or is unavailable
-            first_user_message = first_user_message.strip()
-            title = first_user_message[:30]
-            if len(first_user_message) > 30:
-                title += '...'
-            logger.info(f'Generated title using truncation: {title}')
-            return title
-    except Exception as e:
-        logger.error(f'Error generating title: {str(e)}')
-    return ''
-
-
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    request: Request, conversation_id: str, title: str = Body(embed=True)
+    request: Request, conversation_id: str, title: str | None = Body(embed=True)
 ) -> bool:
     user_id = get_user_id(request)
-    conversation_store = await ConversationStoreImpl.get_instance(
-        config, user_id, get_github_user_id(request)
+    logger.info(
+        f'Updating conversation {conversation_id} with title: {title}',
+        extra={'session_id': conversation_id, 'user_id': user_id},
     )
-    metadata = await conversation_store.get_metadata(conversation_id)
-    if not metadata:
-        return False
+    try:
+        conversation_store = await ConversationStoreImpl.get_instance(
+            config, user_id, get_github_user_id(request)
+        )
+        metadata = await conversation_store.get_metadata(conversation_id)
+        if not metadata:
+            logger.error(
+                f'Conversation {conversation_id} not found for update',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Conversation not found',
+                    'msg_id': 'CONVERSATION$NOT_FOUND',
+                },
+                status_code=status.HTTP_404_NOT_FOUND,
+            )
 
-    # If title is empty or unspecified, auto-generate it
-    if not title or title.isspace():
-        title = await auto_generate_title(conversation_id, user_id)
+        # Validate that the user owns this conversation
+        if user_id and metadata.user_id != user_id:
+            logger.warning(
+                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Permission denied: You can only update your own conversations',
+                    'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+                },
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
 
-        # If we still don't have a title, use the default
-        if not title or title.isspace():
-            title = get_default_conversation_title(conversation_id)
+        # current_metadata_title = metadata.title
+        # if not metadata.title:
+        #     metadata.title = get_default_conversation_title(conversation_id)
 
-    metadata.title = title
-    await conversation_store.save_metadata(metadata)
-    await conversation_module._update_title_conversation(conversation_id, title)
-    return True
+        # If title is empty or unspecified, auto-generate it
+        if title:
+            metadata.title = title
+            await conversation_store.save_metadata(metadata)
+            await conversation_module._update_title_conversation(
+                conversation_id, metadata.title
+            )
+        return True
+    except FileNotFoundError:
+        logger.warning(
+            f'Conversation {conversation_id} not found for update',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Conversation not found',
+                'msg_id': 'CONVERSATION$NOT_FOUND',
+            },
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error updating conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': f'Failed to update conversation: {str(e)}',
+                'msg_id': 'CONVERSATION$UPDATE_ERROR',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
 
 
 @app.delete('/conversations/{conversation_id}')

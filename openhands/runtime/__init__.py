@@ -1,7 +1,6 @@
 from typing import Type
 
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import (
     DockerRuntime,
 )
@@ -22,7 +21,6 @@ _DEFAULT_RUNTIME_CLASSES: dict[str, Type[Runtime]] = {
     'modal': ModalRuntime,
     'runloop': RunloopRuntime,
     'local': LocalRuntime,
-    'daytona': DaytonaRuntime,
     'pyodide': PyodideRuntime,
 }
 
@@ -51,7 +49,6 @@ __all__ = [
     'ModalRuntime',
     'RunloopRuntime',
     'DockerRuntime',
-    'DaytonaRuntime',
     'PyodideRuntime',
     'get_runtime_cls',
 ]

@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 import argparse
-import asyncio
 import sys
 from typing import List
 from unittest.mock import AsyncMock, patch
+
+import pytest
 
 from openhands.core.config.app_config import AppConfig
 from openhands.core.config.utils import get_parser, setup_config_from_args
@@ -46,7 +47,7 @@ class MCPRunner:
         logger.info(f'MCP tools: {mcp_tools}')
 
         for client in self.mcp_clients:
-            is_connected = await client.is_connected()
+            is_connected = client._is_connected()
             assert is_connected
             logger.info(f'Is connected: {is_connected}')
 
@@ -96,6 +97,7 @@ async def run_mcp() -> None:
 
 
 # Test the MCPRunner with mocked connect_sse and is_connected
+@pytest.mark.asyncio
 async def test_mcp_runner():
     """Test MCPRunner with mocked connect_sse and is_connected."""
     # Create a mock config
@@ -110,7 +112,7 @@ async def test_mcp_runner():
     with patch.object(
         MCPClient, 'connect_sse', new_callable=AsyncMock
     ) as mock_connect_sse, patch.object(
-        MCPClient, 'is_connected', new_callable=AsyncMock, return_value=True
+        MCPClient, '_is_connected', new_callable=AsyncMock, return_value=True
     ) as mock_is_connected:
         # Run initialization
         await runner.initialize()
@@ -123,10 +125,3 @@ async def test_mcp_runner():
 
         # Verify client was added to mcp_clients list
         assert len(runner.mcp_clients) == 1
-
-
-if __name__ == '__main__':
-    # Run the test if this file is executed directly
-    asyncio.run(test_mcp_runner())
-    # Otherwise run the normal MCP runner
-    # asyncio.run(run_mcp())

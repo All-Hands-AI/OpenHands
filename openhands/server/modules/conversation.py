@@ -47,7 +47,7 @@ class ConversationModule:
                 .values(title=title)
             )
         except Exception as e:
-            logger.error(f'Error updating title conversation: {str(e)}')
+            logger.error(f'Error updating title conversation: {e}')
 
     async def _update_research_view(self, conversation_id: str, ip_address: str = ''):
         try:

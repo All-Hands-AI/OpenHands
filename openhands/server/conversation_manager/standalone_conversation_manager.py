@@ -2,7 +2,7 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable
 
 import socketio
 
@@ -23,7 +23,15 @@ from openhands.server.settings import Settings
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.files import FileStore
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync, wait_all
+from openhands.utils.async_utils import (
+    GENERAL_TIMEOUT,
+    call_async_from_sync,
+    wait_all,
+)
+from openhands.utils.conversation_summary import (
+    auto_generate_title,
+    get_default_conversation_title,
+)
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
 
@@ -53,9 +61,12 @@ class StandaloneConversationManager(ConversationManager):
     )
     _conversations_lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _cleanup_task: asyncio.Task | None = None
-    _conversation_store_class: Type | None = None
+    _conversation_store_class: type[ConversationStore] | None = None
+    _loop: asyncio.AbstractEventLoop | None = None
 
     async def __aenter__(self):
+        # Grab a reference to the main event loop. This is the loop in which `await sio.emit` must be called
+        self._loop = asyncio.get_event_loop()
         self._cleanup_task = asyncio.create_task(self._cleanup_stale())
         return self
 
@@ -99,6 +110,14 @@ class StandaloneConversationManager(ConversationManager):
                 else None
             )
 
+            # Get the event stream for the conversation - required to keep the cur_id up to date
+            event_stream = None
+            runtime = None
+            session = self._local_agent_loops_by_sid.get(sid)
+            if session:
+                event_stream = session.agent_session.event_stream
+                runtime = session.agent_session.runtime
+
             # Create new conversation if none exists
             c = Conversation(
                 sid,
@@ -106,6 +125,8 @@ class StandaloneConversationManager(ConversationManager):
                 config=self.config,
                 user_id=user_id,
                 research_mode=research_mode,
+                event_stream=event_stream,
+                runtime=runtime,
             )
             try:
                 await c.connect()
@@ -362,7 +383,7 @@ class StandaloneConversationManager(ConversationManager):
                 session.agent_session.event_stream.subscribe(
                     EventStreamSubscriber.SERVER,
                     self._create_conversation_update_callback(
-                        user_id, github_user_id, sid
+                        user_id, github_user_id, sid, settings
                     ),
                     UPDATED_AT_CALLBACK_ID,
                 )
@@ -498,22 +519,32 @@ class StandaloneConversationManager(ConversationManager):
         )
 
     def _create_conversation_update_callback(
-        self, user_id: str | None, github_user_id: str | None, conversation_id: str
+        self,
+        user_id: str | None,
+        github_user_id: str | None,
+        conversation_id: str,
+        settings: Settings,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
                 self._update_conversation_for_event,
                 GENERAL_TIMEOUT,
                 user_id,
-                github_user_id,
                 conversation_id,
+                settings,
                 event,
+                github_user_id=github_user_id,
             )
 
         return callback
 
     async def _update_conversation_for_event(
-        self, user_id: str, github_user_id: str, conversation_id: str, event=None
+        self,
+        user_id: str,
+        conversation_id: str,
+        settings: Settings,
+        event=None,
+        github_user_id: str | None = None,
     ):
         conversation_store = await self._get_conversation_store(user_id, github_user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
@@ -535,6 +566,24 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.total_tokens = (
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
+
+        default_title = get_default_conversation_title(conversation_id)
+        if (
+            not conversation.title or conversation.title == default_title
+        ):  # attempt to autogenerate if default title is in use
+            title = await auto_generate_title(
+                conversation_id, user_id, self.file_store, settings
+            )
+            if title and not title.isspace():
+                conversation.title = title
+                try:
+                    await conversation_module._update_title_conversation(
+                        conversation_id, title
+                    )
+                except Exception as e:
+                    logger.error(f'Error emitting title update event: {e}')
+            else:
+                conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
 

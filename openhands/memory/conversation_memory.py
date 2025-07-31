@@ -277,8 +277,8 @@ class ConversationMemory:
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
-                content=[TextContent(text=assistant_msg.content or '')]
-                if assistant_msg.content is not None
+                content=[TextContent(text=assistant_msg.content)]
+                if assistant_msg.content and assistant_msg.content.strip()
                 else [],
                 tool_calls=assistant_msg.tool_calls,
             )

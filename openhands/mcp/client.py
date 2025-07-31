@@ -25,6 +25,9 @@ class MCPClient(BaseModel):
     tool_map: Dict[str, MCPClientTool] = Field(default_factory=dict)
     name: str = Field(default='')
 
+    def _is_connected(self) -> bool:
+        return self.session is not None
+
     class Config:
         arbitrary_types_allowed = True
 

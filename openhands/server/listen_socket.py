@@ -13,6 +13,7 @@ from openhands.events.action import (
 from openhands.events.action.agent import RecallAction
 from openhands.events.action.message import StreamingMessageAction
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     NullObservation,
 )
@@ -203,6 +204,27 @@ async def connect(connection_id: str, environ):
         if conversation_configs
         else None
     )
+
+    # initialize event stream first to avoid race condition. Sync all events before join conversation.
+    # ref: https://github.com/All-Hands-AI/OpenHands/pull/8818/
+
+    try:
+        event_store = EventStore(
+            sid=conversation_id,
+            file_store=conversation_manager.file_store,
+            user_id=user_id,
+        )
+    except FileNotFoundError as e:
+        logger.error(
+            f'Failed to create EventStore for conversation {conversation_id}: {e}'
+        )
+        raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
+
+    logger.info(
+        f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
+    )
+    async_store = AsyncEventStoreWrapper(event_store, latest_event_id + 1)
+
     event_stream = await conversation_manager.join_conversation(
         conversation_id,
         connection_id,
@@ -225,7 +247,7 @@ async def connect(connection_id: str, environ):
     agent_state_changed = None
     if event_stream is None:
         raise ConnectionRefusedError('Failed to join conversation')
-    async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
+    # async_store = AsyncEventStoreWrapper(event_stream, latest_event_id + 1)
     async for event in async_store:
         try:
             logger.debug(f'oh_event: {event.__class__.__name__}')

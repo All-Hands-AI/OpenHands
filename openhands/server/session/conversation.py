@@ -16,6 +16,7 @@ class Conversation:
     event_stream: EventStream
     runtime: Runtime | None
     user_id: str | None
+    _attach_to_existing: bool = False
 
     def __init__(
         self,
@@ -24,34 +25,47 @@ class Conversation:
         config: AppConfig,
         user_id: str | None,
         research_mode: str | None = None,
+        event_stream: EventStream | None = None,
+        runtime: Runtime | None = None,
     ):
         self.sid = sid
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
-        self.event_stream = EventStream(sid, file_store, user_id)
+
+        if event_stream is None:
+            event_stream = EventStream(sid, file_store, user_id)
+        self.event_stream = event_stream
+
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
-        runtime_cls = get_runtime_cls(self.config.runtime)
         if research_mode == ResearchMode.FOLLOW_UP:
-            self.runtime = None
+            runtime = None
+        if runtime:
+            self._attach_to_existing = True
         else:
-            self.runtime = runtime_cls(
+            runtime_cls = get_runtime_cls(self.config.runtime)
+            runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,
                 attach_to_existing=True,
                 headless_mode=False,
             )
+        self.runtime = runtime
 
-    async def connect(self):
-        if self.runtime:
+    async def connect(self) -> None:
+        if not self.runtime:
+            return
+        if not self._attach_to_existing:
             await self.runtime.connect()
 
-    async def disconnect(self):
+    async def disconnect(self) -> None:
+        if self._attach_to_existing:
+            return
         if self.event_stream:
             self.event_stream.close()
         if self.runtime:

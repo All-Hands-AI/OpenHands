@@ -8,7 +8,10 @@ import socketio
 from openhands.a2a.A2AManager import A2AManager
 from openhands.controller.agent import Agent
 from openhands.core.config import AppConfig
-from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserPipelineConfig,
+    LLMSummarizingCondenserConfig,
+)
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
 from openhands.core.schema.research import ResearchMode
@@ -156,8 +159,12 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
         self.logger.info(f'Enabling default condenser: {agent_config.condenser}')
         if settings.enable_default_condenser and agent_config.condenser.type == 'noop':
-            default_condenser_config = LLMSummarizingCondenserConfig(
-                llm_config=llm.config, keep_first=3, max_size=20
+            default_condenser_config = CondenserPipelineConfig(
+                condensers=[
+                    LLMSummarizingCondenserConfig(
+                        llm_config=llm.config, keep_first=3, max_size=20
+                    ),
+                ]
             )
 
             self.logger.info(f'Enabling default condenser: {default_condenser_config}')
