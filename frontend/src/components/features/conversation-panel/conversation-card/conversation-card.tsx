@@ -4,14 +4,12 @@ import posthog from "posthog-js";
 import { useTranslation } from "react-i18next";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationRepoLink } from "./conversation-repo-link";
-import { ConversationStateIndicator } from "./conversation-state-indicator";
-import { EllipsisButton } from "./ellipsis-button";
 import { ConversationCardContextMenu } from "./conversation-card-context-menu";
-import { SystemMessageModal } from "./system-message-modal";
-import { MicroagentsModal } from "./microagents-modal";
-import { BudgetDisplay } from "./budget-display";
+import { SystemMessageModal } from "../system-message-modal";
+import { MicroagentsModal } from "../microagents-modal";
+import { BudgetDisplay } from "../budget-display";
 import { cn } from "#/utils/utils";
-import { BaseModal } from "../../shared/modals/base-modal/base-modal";
+import { BaseModal } from "../../../shared/modals/base-modal/base-modal";
 import { RootState } from "#/store";
 import { I18nKey } from "#/i18n/declaration";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
@@ -20,6 +18,8 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { isSystemMessage } from "#/types/core/guards";
 import { ConversationStatus } from "#/types/conversation-status";
 import { RepositorySelection } from "#/api/open-hands.types";
+import EllipsisIcon from "#/icons/ellipsis.svg?react";
+import { ConversationCardTitle } from "./conversation-card-title";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -33,13 +33,10 @@ interface ConversationCardProps {
   lastUpdatedAt: string; // ISO 8601
   createdAt?: string; // ISO 8601
   conversationStatus?: ConversationStatus;
-  variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
   contextMenuOpen?: boolean;
   onContextMenuToggle?: (isOpen: boolean) => void;
 }
-
-const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
 
 export function ConversationCard({
   onClick,
@@ -54,9 +51,8 @@ export function ConversationCard({
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   lastUpdatedAt,
   createdAt,
-  conversationStatus = "STOPPED",
-  variant = "default",
   conversationId,
+  conversationStatus,
   contextMenuOpen = false,
   onContextMenuToggle,
 }: ConversationCardProps) {
@@ -67,37 +63,17 @@ export function ConversationCard({
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
   const [microagentsModalVisible, setMicroagentsModalVisible] =
     React.useState(false);
-  const inputRef = React.useRef<HTMLInputElement>(null);
 
   const systemMessage = parsedEvents.find(isSystemMessage);
 
   // Subscribe to metrics data from Redux store
   const metrics = useSelector((state: RootState) => state.metrics);
 
-  const handleBlur = () => {
-    if (inputRef.current?.value) {
-      const trimmed = inputRef.current.value.trim();
-      onChangeTitle?.(trimmed);
-      inputRef.current!.value = trimmed;
-    } else {
-      // reset the value if it's empty
-      inputRef.current!.value = title;
+  const onTitleSave = (newTitle: string) => {
+    if (newTitle !== "") {
+      onChangeTitle?.(newTitle);
     }
-
     setTitleMode("view");
-  };
-
-  const handleKeyUp = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      event.currentTarget.blur();
-    }
-  };
-
-  const handleInputClick = (event: React.MouseEvent<HTMLInputElement>) => {
-    if (titleMode === "edit") {
-      event.preventDefault();
-      event.stopPropagation();
-    }
   };
 
   const handleDelete = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -164,19 +140,7 @@ export function ConversationCard({
     setMicroagentsModalVisible(true);
   };
 
-  React.useEffect(() => {
-    if (titleMode === "edit") {
-      inputRef.current?.focus();
-    }
-  }, [titleMode]);
-
   const hasContextMenu = !!(onDelete || onChangeTitle || showOptions);
-  const timeBetweenUpdateAndCreation = createdAt
-    ? new Date(lastUpdatedAt).getTime() - new Date(createdAt).getTime()
-    : 0;
-  const showUpdateTime =
-    createdAt &&
-    timeBetweenUpdateAndCreation > MAX_TIME_BETWEEN_CREATION_AND_UPDATE;
 
   return (
     <>
@@ -184,115 +148,80 @@ export function ConversationCard({
         data-testid="conversation-card"
         onClick={onClick}
         className={cn(
-          "h-auto w-full px-[18px] py-4 border-b border-neutral-600 cursor-pointer",
-          variant === "compact" &&
-            "md:w-fit h-auto rounded-xl border border-[#525252]",
+          "relative h-auto w-full p-3.5 border-b border-neutral-600 cursor-pointer",
+          "hover:bg-[#454545]",
         )}
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
             {isActive && (
-              <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+              <span className="w-2 h-2 bg-[#1FBD53] rounded-full flex-shrink-0" />
             )}
-            {titleMode === "edit" && (
-              <input
-                ref={inputRef}
-                data-testid="conversation-card-title"
-                onClick={handleInputClick}
-                onBlur={handleBlur}
-                onKeyUp={handleKeyUp}
-                type="text"
-                defaultValue={title}
-                className="text-sm leading-6 font-semibold bg-transparent w-full"
-              />
-            )}
-            {titleMode === "view" && (
-              <p
-                data-testid="conversation-card-title"
-                className="text-sm leading-6 font-semibold bg-transparent truncate overflow-hidden"
-                title={title}
-              >
-                {title}
-              </p>
-            )}
+            <ConversationCardTitle
+              title={title}
+              titleMode={titleMode}
+              onSave={onTitleSave}
+            />
           </div>
 
-          <div className="flex items-center">
-            <ConversationStateIndicator
-              conversationStatus={conversationStatus}
-            />
-            {hasContextMenu && (
-              <div className="pl-2">
-                <EllipsisButton
-                  onClick={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onContextMenuToggle?.(!contextMenuOpen);
-                  }}
-                />
+          {hasContextMenu && (
+            <div className="absolute top-0 right-0">
+              <button
+                data-testid="ellipsis-button"
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onContextMenuToggle?.(!contextMenuOpen);
+                }}
+                className="cursor-pointer w-6 h-6 pt-2.25 pr-1 flex flex-row items-center justify-center"
+              >
+                <EllipsisIcon />
+              </button>
+              <div className="relative">
+                {contextMenuOpen && (
+                  <ConversationCardContextMenu
+                    onClose={() => onContextMenuToggle?.(false)}
+                    onDelete={onDelete && handleDelete}
+                    onStop={
+                      conversationStatus !== "STOPPED"
+                        ? onStop && handleStop
+                        : undefined
+                    }
+                    onEdit={onChangeTitle && handleEdit}
+                    onDownloadViaVSCode={
+                      conversationId && showOptions
+                        ? handleDownloadViaVSCode
+                        : undefined
+                    }
+                    onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                    onShowAgentTools={
+                      showOptions && systemMessage
+                        ? handleShowAgentTools
+                        : undefined
+                    }
+                    onShowMicroagents={
+                      showOptions && conversationId
+                        ? handleShowMicroagents
+                        : undefined
+                    }
+                    position="bottom"
+                  />
+                )}
               </div>
-            )}
-            <div className="relative">
-              {contextMenuOpen && (
-                <ConversationCardContextMenu
-                  onClose={() => onContextMenuToggle?.(false)}
-                  onDelete={onDelete && handleDelete}
-                  onStop={
-                    conversationStatus !== "STOPPED"
-                      ? onStop && handleStop
-                      : undefined
-                  }
-                  onEdit={onChangeTitle && handleEdit}
-                  onDownloadViaVSCode={
-                    conversationId && showOptions
-                      ? handleDownloadViaVSCode
-                      : undefined
-                  }
-                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
-                  onShowAgentTools={
-                    showOptions && systemMessage
-                      ? handleShowAgentTools
-                      : undefined
-                  }
-                  onShowMicroagents={
-                    showOptions && conversationId
-                      ? handleShowMicroagents
-                      : undefined
-                  }
-                  position={variant === "compact" ? "top" : "bottom"}
-                />
-              )}
             </div>
-          </div>
+          )}
         </div>
 
-        <div
-          className={cn(
-            variant === "compact" && "flex flex-col justify-between mt-1",
-          )}
-        >
+        <div className={cn("flex flex-row justify-between items-center mt-1")}>
           {selectedRepository?.selected_repository && (
-            <ConversationRepoLink
-              selectedRepository={selectedRepository}
-              variant={variant}
-            />
+            <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
-          {(createdAt || lastUpdatedAt) && (
-            <p className="text-xs text-neutral-400">
-              <span>{t(I18nKey.CONVERSATION$CREATED)} </span>
+          {(createdAt ?? lastUpdatedAt) && (
+            <p className="text-xs text-[#A3A3A3]">
               <time>
-                {formatTimeDelta(new Date(createdAt || lastUpdatedAt))}{" "}
-                {t(I18nKey.CONVERSATION$AGO)}
+                {`${formatTimeDelta(new Date(lastUpdatedAt ?? createdAt))} ${t(I18nKey.CONVERSATION$AGO)}`}
               </time>
-              {showUpdateTime && (
-                <>
-                  <span>{t(I18nKey.CONVERSATION$UPDATED)} </span>
-                  <time>
-                    {formatTimeDelta(new Date(lastUpdatedAt))}{" "}
-                    {t(I18nKey.CONVERSATION$AGO)}
-                  </time>
-                </>
-              )}
             </p>
           )}
         </div>

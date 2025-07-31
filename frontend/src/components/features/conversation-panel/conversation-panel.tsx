@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { ConversationCard } from "./conversation-card";
+import { ConversationCard } from "./conversation-card/conversation-card";
 import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
@@ -104,7 +104,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     <div
       ref={ref}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
+      className="w-[400px] h-full border border-[#525252] bg-[#25272D] rounded-lg overflow-y-auto absolute"
     >
       {isFetching && (
         <div className="w-full h-full absolute flex justify-center items-center">

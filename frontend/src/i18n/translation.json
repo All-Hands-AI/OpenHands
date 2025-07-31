@@ -1759,6 +1759,22 @@
         "de": "GitHub API",
         "uk": "GitHub API"
     },
+    "BUTTON$RENAME": {
+        "en": "Rename",
+        "ja": "名前を変更",
+        "zh-CN": "重命名",
+        "zh-TW": "重新命名",
+        "ko-KR": "이름 바꾸기",
+        "no": "Gi nytt navn",
+        "it": "Rinomina",
+        "pt": "Renomear",
+        "es": "Renombrar",
+        "ar": "إعادة التسمية",
+        "fr": "Renommer",
+        "tr": "Yeniden adlandır",
+        "de": "Umbenennen",
+        "uk": "Перейменувати"
+    },
     "BUTTON$COPY": {
         "en": "Copy to clipboard",
         "ja": "クリップボードにコピー",
@@ -5023,22 +5039,6 @@
         "tr": "Durdur",
         "uk": "Стоп"
     },
-    "BUTTON$EDIT_TITLE": {
-        "en": "Edit Title",
-        "ja": "タイトルを編集",
-        "zh-CN": "编辑标题",
-        "zh-TW": "編輯標題",
-        "ko-KR": "제목 편집",
-        "fr": "Modifier le titre",
-        "es": "Editar título",
-        "de": "Titel bearbeiten",
-        "it": "Modifica titolo",
-        "pt": "Editar título",
-        "ar": "تحرير العنوان",
-        "no": "Rediger tittel",
-        "tr": "Başlığı Düzenle",
-        "uk": "Редагувати заголовок"
-    },
     "BUTTON$DOWNLOAD_VIA_VSCODE": {
         "en": "Download via VS Code",
         "ja": "VS Code経由でダウンロード",
@@ -6478,6 +6478,22 @@
         "pt": "Excluir",
         "es": "Eliminar",
         "tr": "Sil"
+    },
+    "BUTTON$DELETE_CONVERSATION": {
+        "en": "Delete Conversation",
+        "uk": "Видалити розмову",
+        "ja": "会話を削除",
+        "zh-CN": "删除对话",
+        "zh-TW": "刪除對話",
+        "ko-KR": "대화 삭제",
+        "no": "Slett samtale",
+        "ar": "حذف المحادثة",
+        "de": "Konversation löschen",
+        "fr": "Supprimer la conversation",
+        "it": "Elimina conversazione",
+        "pt": "Excluir conversa",
+        "es": "Eliminar conversación",
+        "tr": "Sohbeti sil"
     },
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard",
