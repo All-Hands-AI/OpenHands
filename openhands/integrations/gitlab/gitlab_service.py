@@ -4,7 +4,6 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -13,13 +12,12 @@ from openhands.integrations.service_types import (
     ProviderType,
     Repository,
     RequestMethod,
-    ResourceNotFoundError,
     SuggestedTask,
     TaskType,
     UnknownException,
     User,
 )
-from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
@@ -154,8 +152,8 @@ class GitLabService(BaseGitService, GitService):
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
-                content_type = response.headers.get("Content-Type", "")
-                if "application/json" in content_type:
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/json' in content_type:
                     return response.json(), headers
                 else:
                     return response.text, headers

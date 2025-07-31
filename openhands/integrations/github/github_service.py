@@ -20,13 +20,12 @@ from openhands.integrations.service_types import (
     ProviderType,
     Repository,
     RequestMethod,
-    ResourceNotFoundError,
     SuggestedTask,
     TaskType,
     UnknownException,
     User,
 )
-from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
