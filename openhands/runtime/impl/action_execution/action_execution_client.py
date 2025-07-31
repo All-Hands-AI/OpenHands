@@ -28,6 +28,8 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     FileWriteAction,
+    GitCommitAction,
+    GitPushAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.action import Action
@@ -352,6 +354,12 @@ class ActionExecutionClient(Runtime):
         return self.send_action_for_execution(action)
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def commit(self, action: GitCommitAction) -> Observation:
+        return self.send_action_for_execution(action)
+
+    def push(self, action: GitPushAction) -> Observation:
         return self.send_action_for_execution(action)
 
     def get_mcp_config(

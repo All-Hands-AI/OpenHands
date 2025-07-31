@@ -22,6 +22,14 @@ class ObservationType(str, Enum):
     """Runs a IPython cell.
     """
 
+    COMMIT = 'commit'
+    """The result of a git commit operation.
+    """
+
+    PUSH = 'push'
+    """The result of a git push operation.
+    """
+
     CHAT = 'chat'
     """A message from the user
     """

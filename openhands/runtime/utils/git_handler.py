@@ -1,4 +1,5 @@
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -129,3 +130,189 @@ class GitHandler:
 
         # Try again with the new changes cmd
         return self.get_git_diff(file_path)
+
+    def commit_changes(
+        self,
+        message: str,
+        files: list[str] | None = None,
+        add_all: bool = False,
+    ) -> dict[str, str | list[str] | bool | None]:
+        """
+        Commits changes to the git repository.
+
+        Args:
+            message (str): Commit message
+            files (list[str] | None): Specific files to commit, if None commits all staged files
+            add_all (bool): If True, stages all changes before committing (git add -A)
+
+        Returns:
+            dict: A dictionary containing commit information including hash and files committed
+        """
+        if not self.cwd:
+            raise ValueError('no_dir_in_git_commit')
+
+        try:
+            # Stage files if needed
+            if add_all:
+                stage_result = self.execute('git add -A', self.cwd)
+                if stage_result.exit_code != 0:
+                    return {
+                        'success': False,
+                        'error': f'Failed to stage files: {stage_result.content}',
+                        'commit_hash': None,
+                        'files_committed': None,
+                    }
+            elif files:
+                # Stage specific files
+                for file in files:
+                    stage_result = self.execute(f'git add "{file}"', self.cwd)
+                    if stage_result.exit_code != 0:
+                        return {
+                            'success': False,
+                            'error': f'Failed to stage file {file}: {stage_result.content}',
+                            'commit_hash': None,
+                            'files_committed': None,
+                        }
+
+            # Check if there are any staged changes
+            status_result = self.execute('git status --porcelain --cached', self.cwd)
+            if status_result.exit_code != 0:
+                return {
+                    'success': False,
+                    'error': f'Failed to check git status: {status_result.content}',
+                    'commit_hash': None,
+                    'files_committed': None,
+                }
+
+            if not status_result.content.strip():
+                return {
+                    'success': False,
+                    'error': 'No staged changes to commit',
+                    'commit_hash': None,
+                    'files_committed': None,
+                }
+
+            # Get list of files to be committed
+            files_result = self.execute('git diff --cached --name-only', self.cwd)
+            files_committed = (
+                files_result.content.strip().split('\n')
+                if files_result.exit_code == 0 and files_result.content.strip()
+                else []
+            )
+
+            # Perform the commit
+            commit_result = self.execute(f'git commit -m "{message}"', self.cwd)
+            if commit_result.exit_code != 0:
+                return {
+                    'success': False,
+                    'error': f'Failed to commit: {commit_result.content}',
+                    'commit_hash': None,
+                    'files_committed': None,
+                }
+
+            # Get the commit hash
+            hash_result = self.execute('git rev-parse HEAD', self.cwd)
+            commit_hash = (
+                hash_result.content.strip() if hash_result.exit_code == 0 else None
+            )
+
+            return {
+                'success': True,
+                'commit_hash': commit_hash,
+                'files_committed': files_committed,
+                'output': commit_result.content,
+            }
+
+        except Exception as e:
+            logger.exception('GitHandler:commit_changes:error', extra={'error': str(e)})
+            return {
+                'success': False,
+                'error': f'Unexpected error during commit: {str(e)}',
+                'commit_hash': None,
+                'files_committed': None,
+            }
+
+    def push_changes(
+        self,
+        remote: str = 'origin',
+        branch: str | None = None,
+        force: bool = False,
+        set_upstream: bool = False,
+    ) -> dict[str, str | bool | None]:
+        """
+        Pushes commits to a remote git repository.
+
+        Args:
+            remote (str): Remote name to push to
+            branch (str | None): Branch to push, if None pushes current branch
+            force (bool): If True, performs a force push
+            set_upstream (bool): If True, sets upstream tracking
+
+        Returns:
+            dict: A dictionary containing push information and success status
+        """
+        if not self.cwd:
+            raise ValueError('no_dir_in_git_push')
+
+        try:
+            # Get current branch if not specified
+            if branch is None:
+                branch_result = self.execute('git branch --show-current', self.cwd)
+                if branch_result.exit_code != 0:
+                    return {
+                        'success': False,
+                        'error': f'Failed to get current branch: {branch_result.content}',
+                        'remote': remote,
+                        'branch': None,
+                    }
+                branch = branch_result.content.strip()
+
+            # Build push command
+            push_cmd = 'git push'
+            if set_upstream:
+                push_cmd += ' -u'
+            if force:
+                push_cmd += ' --force'
+            push_cmd += f' {remote} {branch}'
+
+            # Execute push
+            push_result = self.execute(push_cmd, self.cwd)
+
+            # Check for common error patterns
+            error_patterns = [
+                r'error:',
+                r'fatal:',
+                r'rejected',
+                r'failed to push',
+                r'permission denied',
+                r'authentication failed',
+            ]
+
+            has_error = any(
+                re.search(pattern, push_result.content, re.IGNORECASE)
+                for pattern in error_patterns
+            )
+
+            if push_result.exit_code != 0 or has_error:
+                return {
+                    'success': False,
+                    'error': push_result.content,
+                    'remote': remote,
+                    'branch': branch,
+                }
+
+            return {
+                'success': True,
+                'output': push_result.content,
+                'remote': remote,
+                'branch': branch,
+            }
+
+        except Exception as e:
+            logger.exception('GitHandler:push_changes:error', extra={'error': str(e)})
+            return {
+                'success': False,
+                'error': f'Unexpected error during push: {str(e)}',
+                'remote': remote,
+                'branch': branch,
+            }

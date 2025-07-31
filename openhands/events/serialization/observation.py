@@ -26,6 +26,7 @@ from openhands.events.observation.files import (
     FileReadObservation,
     FileWriteObservation,
 )
+from openhands.events.observation.git import GitCommitObservation, GitPushObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
@@ -39,6 +40,8 @@ observations = (
     FileReadObservation,
     FileWriteObservation,
     FileEditObservation,
+    GitCommitObservation,
+    GitPushObservation,
     AgentDelegateObservation,
     SuccessObservation,
     ErrorObservation,

@@ -46,6 +46,8 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     FileWriteAction,
+    GitCommitAction,
+    GitPushAction,
     IPythonRunCellAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
@@ -56,6 +58,8 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
+    GitCommitObservation,
+    GitPushObservation,
     IPythonRunCellObservation,
     Observation,
 )
@@ -660,6 +664,117 @@ class ActionExecutor:
                     file_path=tgt_path,
                 )
                 return file_download_obs
+
+    async def commit(self, action: GitCommitAction) -> Observation:
+        """Handle git commit action."""
+        try:
+            # Import git handler functionality
+            from openhands.runtime.utils.git_handler import GitHandler
+
+            # Create a git handler instance
+            git_handler = GitHandler(
+                execute_shell_fn=self._execute_shell_fn_git_handler,
+                create_file_fn=self._create_file_fn_git_handler,
+            )
+            git_handler.set_cwd(self.initial_cwd)
+
+            # Execute the commit
+            result = git_handler.commit_changes(
+                message=action.commit_message,
+                files=action.files,
+                add_all=action.add_all,
+            )
+
+            if result.get('success', False):
+                files_committed = result.get('files_committed')
+                return GitCommitObservation(
+                    content=str(result.get('output', '')),
+                    commit_hash=str(result.get('commit_hash'))
+                    if result.get('commit_hash')
+                    else None,
+                    files_committed=files_committed
+                    if isinstance(files_committed, list)
+                    else None,
+                )
+            else:
+                return ErrorObservation(
+                    content=str(result.get('error', 'Unknown error during git commit'))
+                )
+
+        except Exception as e:
+            logger.exception('Error during git commit')
+            return ErrorObservation(content=f'Error during git commit: {str(e)}')
+
+    async def push(self, action: GitPushAction) -> Observation:
+        """Handle git push action."""
+        try:
+            # Import git handler functionality
+            from openhands.runtime.utils.git_handler import GitHandler
+
+            # Create a git handler instance
+            git_handler = GitHandler(
+                execute_shell_fn=self._execute_shell_fn_git_handler,
+                create_file_fn=self._create_file_fn_git_handler,
+            )
+            git_handler.set_cwd(self.initial_cwd)
+
+            # Execute the push
+            result = git_handler.push_changes(
+                remote=action.remote,
+                branch=action.branch,
+                force=action.force,
+                set_upstream=action.set_upstream,
+            )
+
+            if result.get('success', False):
+                return GitPushObservation(
+                    content=str(result.get('output', '')),
+                    remote=str(result.get('remote')) if result.get('remote') else None,
+                    branch=str(result.get('branch')) if result.get('branch') else None,
+                )
+            else:
+                return ErrorObservation(
+                    content=str(result.get('error', 'Unknown error during git push'))
+                )
+
+        except Exception as e:
+            logger.exception('Error during git push')
+            return ErrorObservation(content=f'Error during git push: {str(e)}')
+
+    def _execute_shell_fn_git_handler(self, command: str, cwd: str | None = None):
+        """Execute shell command for git handler."""
+        from openhands.runtime.utils.git_handler import CommandResult
+
+        # Use the bash session to execute the command
+        if self.bash_session is None:
+            return CommandResult(content='Bash session not available', exit_code=1)
+
+        try:
+            # Change directory if needed
+            if cwd and cwd != self.initial_cwd:
+                cd_command = f'cd "{cwd}" && {command}'
+            else:
+                cd_command = command
+
+            # Create a CmdRunAction for the bash session
+            cmd_action = CmdRunAction(command=cd_command)
+            result = self.bash_session.execute(cmd_action)
+
+            if hasattr(result, 'exit_code') and hasattr(result, 'content'):
+                return CommandResult(content=result.content, exit_code=result.exit_code)
+            else:
+                return CommandResult(content=str(result), exit_code=1)
+        except Exception as e:
+            return CommandResult(content=str(e), exit_code=1)
+
+    def _create_file_fn_git_handler(self, path: str, content: str) -> int:
+        """Create file for git handler."""
+        try:
+            with open(path, 'w') as f:
+                f.write(content)
+            return 0
+        except Exception:
+            return 1
 
     def close(self):
         self.memory_monitor.stop_monitoring()

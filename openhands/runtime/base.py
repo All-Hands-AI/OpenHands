@@ -32,6 +32,8 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     FileWriteAction,
+    GitCommitAction,
+    GitPushAction,
     IPythonRunCellAction,
 )
 from openhands.events.action.mcp import MCPAction
@@ -949,6 +951,14 @@ fi
     async def call_tool_mcp(self, action: MCPAction) -> Observation:
         pass
 
+    @abstractmethod
+    def commit(self, action: GitCommitAction) -> Observation:
+        pass
+
+    @abstractmethod
+    def push(self, action: GitPushAction) -> Observation:
+        pass
+
     # ====================================================================
     # File operations
     # ====================================================================
@@ -1035,6 +1045,54 @@ fi
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
+
+    def git_commit(
+        self,
+        message: str,
+        files: list[str] | None = None,
+        add_all: bool = False,
+        cwd: str | None = None,
+    ) -> dict[str, str | list[str] | bool | None]:
+        """
+        Commits changes to the git repository.
+
+        Args:
+            message (str): Commit message
+            files (list[str] | None): Specific files to commit, if None commits all staged files
+            add_all (bool): If True, stages all changes before committing (git add -A)
+            cwd (str | None): Working directory, defaults to workspace root
+
+        Returns:
+            dict: A dictionary containing commit information including hash and files committed
+        """
+        working_dir = cwd or str(self.workspace_root)
+        self.git_handler.set_cwd(working_dir)
+        return self.git_handler.commit_changes(message, files, add_all)
+
+    def git_push(
+        self,
+        remote: str = 'origin',
+        branch: str | None = None,
+        force: bool = False,
+        set_upstream: bool = False,
+        cwd: str | None = None,
+    ) -> dict[str, str | bool | None]:
+        """
+        Pushes commits to a remote git repository.
+
+        Args:
+            remote (str): Remote name to push to
+            branch (str | None): Branch to push, if None pushes current branch
+            force (bool): If True, performs a force push
+            set_upstream (bool): If True, sets upstream tracking
+            cwd (str | None): Working directory, defaults to workspace root
+
+        Returns:
+            dict: A dictionary containing push information and success status
+        """
+        working_dir = cwd or str(self.workspace_root)
+        self.git_handler.set_cwd(working_dir)
+        return self.git_handler.push_changes(remote, branch, force, set_upstream)
 
     @property
     def additional_agent_instructions(self) -> str:

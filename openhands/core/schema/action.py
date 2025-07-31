@@ -80,6 +80,9 @@ class ActionType(str, Enum):
 
     CHANGE_AGENT_STATE = 'change_agent_state'
 
+    COMMIT = 'commit'
+    """Commit changes to the local git repository."""
+
     PUSH = 'push'
     """Push a branch to github."""
 
