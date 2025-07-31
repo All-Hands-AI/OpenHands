@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
 import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn } from "#/utils/utils";
+import { useAutoResize } from "#/hooks/use-auto-resize";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -37,6 +38,14 @@ export function CustomChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
+  // Use the auto-resize custom hook
+  const {
+    autoResize,
+    handleInput: handleAutoResizeInput,
+    handlePaste: handleAutoResizePaste,
+    handleKeyDown: handleAutoResizeKeyDown,
+  } = useAutoResize(chatInputRef as React.RefObject<HTMLDivElement>, { value });
+
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
     if (!chatInputRef.current) return true;
@@ -52,35 +61,6 @@ export function CustomChatInput({
       chatInputRef.current.textContent = "";
     }
   }, [isContentEmpty]);
-
-  // Auto-resize functionality for contenteditable div
-  const autoResize = useCallback(() => {
-    if (!chatInputRef.current) return;
-
-    // Reset height to auto to get the actual content height
-    chatInputRef.current.style.height = "auto";
-    chatInputRef.current.style.overflowY = "hidden";
-
-    // Set the height based on scroll height, with min and max constraints
-    const { scrollHeight } = chatInputRef.current;
-    const minHeight = 20; // minimum height in px
-    const maxHeight = 120; // maximum height in px
-
-    if (scrollHeight <= maxHeight) {
-      chatInputRef.current.style.height = `${Math.max(scrollHeight, minHeight)}px`;
-      chatInputRef.current.style.overflowY = "hidden";
-    } else {
-      chatInputRef.current.style.height = `${maxHeight}px`;
-      chatInputRef.current.style.overflowY = "auto";
-    }
-  }, []);
-
-  useEffect(() => {
-    if (chatInputRef.current && value !== undefined) {
-      chatInputRef.current.textContent = value;
-      autoResize();
-    }
-  }, [value, autoResize]);
 
   // Function to add files and notify parent
   const addFiles = useCallback(
@@ -178,53 +158,12 @@ export function CustomChatInput({
 
   // Handle input events
   const handleInput = () => {
-    autoResize();
-
-    // Clear empty content to ensure placeholder shows
-    if (chatInputRef.current) {
-      clearEmptyContent();
-    }
-
-    // Ensure cursor stays visible when content is scrollable
-    if (!chatInputRef.current) {
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      return;
-    }
-
-    const range = selection.getRangeAt(0);
-    if (
-      !range.getBoundingClientRect ||
-      !chatInputRef.current.getBoundingClientRect
-    ) {
-      return;
-    }
-
-    const rect = range.getBoundingClientRect();
-    const inputRect = chatInputRef.current.getBoundingClientRect();
-
-    // If cursor is below the visible area, scroll to show it
-    if (rect.bottom > inputRect.bottom) {
-      chatInputRef.current.scrollTop =
-        chatInputRef.current.scrollHeight - chatInputRef.current.clientHeight;
-    }
+    handleAutoResizeInput();
   };
 
   // Handle paste events to clean up formatting
   const handlePaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-
-    // Get plain text from clipboard
-    const text = e.clipboardData.getData("text/plain");
-
-    // Insert plain text
-    document.execCommand("insertText", false, text);
-
-    // Trigger resize
-    setTimeout(autoResize, 0);
+    handleAutoResizePaste(e);
   };
 
   // Handle key events
@@ -237,42 +176,8 @@ export function CustomChatInput({
       return;
     }
 
-    // Auto-resize on key events that might change content
-    setTimeout(() => {
-      autoResize();
-      // Ensure cursor stays visible after key navigation
-      if (!chatInputRef.current) {
-        return;
-      }
-
-      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
-      if (!isArrowKey) {
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      if (
-        !range.getBoundingClientRect ||
-        !chatInputRef.current.getBoundingClientRect
-      ) {
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      const inputRect = chatInputRef.current.getBoundingClientRect();
-
-      // Scroll to keep cursor visible
-      if (rect.top < inputRect.top) {
-        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-      } else if (rect.bottom > inputRect.bottom) {
-        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
-      }
-    }, 0);
+    // Use the auto-resize hook's key down handler
+    handleAutoResizeKeyDown(e);
   };
 
   // Handle blur events to ensure placeholder shows when empty
@@ -287,19 +192,6 @@ export function CustomChatInput({
       onBlur();
     }
   };
-
-  // Initialize value when prop changes
-  useEffect(() => {
-    if (chatInputRef.current && value !== undefined) {
-      chatInputRef.current.textContent = value;
-      autoResize();
-    }
-  }, [value, autoResize]);
-
-  // Initialize auto-resize on mount
-  useEffect(() => {
-    autoResize();
-  }, [autoResize]);
 
   return (
     <div className={`w-full ${className}`}>

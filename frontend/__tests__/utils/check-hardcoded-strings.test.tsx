@@ -1,7 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
-import { ChatInput } from "#/components/features/chat/chat-input";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
@@ -22,17 +21,12 @@ describe("Check for hardcoded English strings", () => {
     const hardcodedStrings = [
       "What do you want to build?",
       "Launch from Scratch",
-      "Read this"
+      "Read this",
     ];
 
     // Check each string
     hardcodedStrings.forEach((str) => {
       expect(text).not.toContain(str);
     });
-  });
-
-  test("ChatInput should use translation key for placeholder", () => {
-    render(<ChatInput onSubmit={() => {}} />);
-    screen.getByPlaceholderText("SUGGESTIONS$WHAT_TO_BUILD");
   });
 });

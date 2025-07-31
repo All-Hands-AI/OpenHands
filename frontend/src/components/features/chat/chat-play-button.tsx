@@ -8,8 +8,8 @@ export function ChatResumeAgentButton({
   onAgentResumed,
 }: ChatResumeAgentButtonProps) {
   return (
-    <div onClick={onAgentResumed} data-testid="play-button">
+    <button type="button" onClick={onAgentResumed} data-testid="play-button">
       <PlayIcon className="block max-w-none w-4 h-4" />
-    </div>
+    </button>
   );
 }

@@ -11,7 +11,8 @@ export function ChatAddFileButton({
   disabled = false,
 }: ChatAddFileButtonProps) {
   return (
-    <div
+    <button
+      type="button"
       className={cn(
         "h-[25px] relative shrink-0 w-[13px] cursor-pointer transition-all duration-200 hover:scale-110 active:scale-95",
         disabled && "cursor-not-allowed",
@@ -24,6 +25,6 @@ export function ChatAddFileButton({
         className="block max-w-none w-[13px] h-[25px]"
         color={disabled ? "#959CB2" : "white"}
       />
-    </div>
+    </button>
   );
 }
