@@ -36,6 +36,7 @@ from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
+from openhands.utils.term_color import TermColor, colorize
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
@@ -43,6 +44,106 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
+
+
+def _format_docker_run_command_for_logging(
+    image: str,
+    command: list[str] | str,
+    name: str,
+    ports: dict | None = None,
+    volumes: dict | None = None,
+    environment: dict | None = None,
+    network_mode: str | None = None,
+    working_dir: str | None = None,
+    device_requests: list | None = None,
+    **kwargs,
+) -> str:
+    """Format a Docker run command for logging with grey color.
+
+    Args:
+        image (str): The Docker image name
+        command: The command to run in the container
+        name (str): The container name
+        ports: Port mappings
+        volumes: Volume mounts
+        environment: Environment variables
+        network_mode: Network mode
+        working_dir: Working directory
+        device_requests: GPU device requests
+        **kwargs: Additional Docker run arguments
+
+    Returns:
+        str: The formatted docker run command string in grey color
+    """
+    cmd_parts = ['docker', 'run']
+
+    # Add detach flag (always used in our case)
+    cmd_parts.append('-d')
+
+    # Add name
+    if name:
+        cmd_parts.extend(['--name', name])
+
+    # Add working directory
+    if working_dir:
+        cmd_parts.extend(['-w', working_dir])
+
+    # Add network mode
+    if network_mode:
+        cmd_parts.extend(['--network', network_mode])
+
+    # Add port mappings
+    if ports:
+        for container_port, host_config in ports.items():
+            if isinstance(host_config, list) and host_config:
+                host_port = host_config[0].get('HostPort', '')
+                host_ip = host_config[0].get('HostIp', '0.0.0.0')
+                if host_ip != '0.0.0.0':
+                    cmd_parts.extend(
+                        ['-p', f'{host_ip}:{host_port}:{container_port.split("/")[0]}']
+                    )
+                else:
+                    cmd_parts.extend(
+                        ['-p', f'{host_port}:{container_port.split("/")[0]}']
+                    )
+
+    # Add volume mounts
+    if volumes:
+        for host_path, mount_config in volumes.items():
+            container_path = mount_config.get('bind', '')
+            mode = mount_config.get('mode', 'rw')
+            cmd_parts.extend(['-v', f'{host_path}:{container_path}:{mode}'])
+
+    # Add environment variables (show only a few key ones to avoid clutter)
+    if environment:
+        key_env_vars = ['port', 'VSCODE_PORT', 'APP_PORT_1', 'APP_PORT_2', 'DEBUG']
+        for key in key_env_vars:
+            if key in environment:
+                cmd_parts.extend(['-e', f'{key}={environment[key]}'])
+        # Show count of other env vars
+        other_env_count = len([k for k in environment.keys() if k not in key_env_vars])
+        if other_env_count > 0:
+            cmd_parts.append(f'[+{other_env_count} more env vars]')
+
+    # Add GPU support
+    if device_requests:
+        cmd_parts.append('--gpus')
+        if len(device_requests) == 1 and device_requests[0].get('count') == -1:
+            cmd_parts.append('all')
+        else:
+            cmd_parts.append('[gpu-config]')
+
+    # Add image
+    cmd_parts.append(image)
+
+    # Add command
+    if isinstance(command, list):
+        cmd_parts.extend(command)
+    else:
+        cmd_parts.append(command)
+
+    cmd_str = ' '.join(str(part) for part in cmd_parts)
+    return colorize(f'Running Docker command: {cmd_str}', TermColor.GREY)
 
 
 def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
@@ -402,6 +503,21 @@ class DockerRuntime(ActionExecutionClient):
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
+
+            # Log the Docker command that will be executed
+            docker_run_log = _format_docker_run_command_for_logging(
+                image=self.runtime_container_image,
+                command=command,
+                name=self.container_name,
+                ports=port_mapping,
+                volumes=volumes,
+                environment=environment,
+                network_mode=network_mode,
+                working_dir='/openhands/code/',
+                device_requests=device_requests,
+            )
+            logger.info(docker_run_log)
+
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,

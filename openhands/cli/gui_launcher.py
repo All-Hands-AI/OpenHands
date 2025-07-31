@@ -10,6 +10,20 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands import __version__
+from openhands.utils.term_color import TermColor, colorize
+
+
+def _format_docker_command_for_logging(cmd: list[str]) -> str:
+    """Format a Docker command for logging with grey color.
+
+    Args:
+        cmd (list[str]): The Docker command as a list of strings
+
+    Returns:
+        str: The formatted command string in grey color
+    """
+    cmd_str = ' '.join(cmd)
+    return colorize(f'Running Docker command: {cmd_str}', TermColor.GREY)
 
 
 def check_docker_requirements() -> bool:
@@ -97,6 +111,7 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
 
     # Pull the runtime image first
     pull_cmd = ['docker', 'pull', runtime_image]
+    print_formatted_text(HTML(_format_docker_command_for_logging(pull_cmd)))
     try:
         subprocess.run(
             pull_cmd,
@@ -196,7 +211,8 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
     )
 
     try:
-        # Run the Docker command
+        # Log and run the Docker command
+        print_formatted_text(HTML(_format_docker_command_for_logging(docker_cmd)))
         subprocess.run(docker_cmd, check=True)
     except subprocess.CalledProcessError as e:
         print_formatted_text('')
