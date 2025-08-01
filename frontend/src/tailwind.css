@@ -3,9 +3,6 @@
 @plugin '../hero.ts';
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-/* @import '../node_modules/@openhands/ui/dist/index.css'; */
-
-
 
 /* OLD TAILWIND STYLES */
 @theme {
@@ -21,9 +18,6 @@
   --color-content: #ECEDEE;
   --color-content-2: #F9FBFE;
 }
-
-
-
 
 .button-base {
   @apply bg-tertiary border border-neutral-600 rounded-xs;
