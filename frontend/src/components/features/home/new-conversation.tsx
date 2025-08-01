@@ -38,7 +38,7 @@ export function NewConversation() {
         </span>
       </div>
       <BrandButton
-        testId="header-launch-button"
+        testId="launch-new-conversation-button"
         variant="primary"
         type="button"
         onClick={() =>

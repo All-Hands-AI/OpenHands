@@ -26,14 +26,20 @@ function HomeScreen() {
       <HomeHeader />
 
       <div className="pt-[25px] flex justify-center">
-        <div className="flex flex-col gap-5 px-6 sm:max-w-full sm:min-w-full md:flex-row lg:px-0 lg:max-w-[703px] lg:min-w-[703px]">
+        <div
+          className="flex flex-col gap-5 px-6 sm:max-w-full sm:min-w-full md:flex-row lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
+          data-testid="home-screen-new-conversation-section"
+        >
           <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
           <NewConversation />
         </div>
       </div>
 
       <div className="pt-4 flex justify-center mb-[262px]">
-        <div className="flex flex-col gap-5 px-6 md:flex-row md:max-w-full md:min-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]">
+        <div
+          className="flex flex-col gap-5 px-6 md:flex-row md:max-w-full md:min-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
+          data-testid="home-screen-recent-conversations-section"
+        >
           <RecentConversations />
           {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
         </div>
