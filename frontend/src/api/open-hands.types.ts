@@ -59,6 +59,9 @@ export interface GetConfigResponse {
     ENABLE_JIRA_DC: boolean;
     ENABLE_LINEAR: boolean;
   };
+  MAINTENANCE?: {
+    startTime: string;
+  };
 }
 
 export interface GetVSCodeUrlResponse {
@@ -146,4 +149,11 @@ export interface CreateMicroagent {
   repo: string;
   git_provider?: Provider;
   title?: string;
+}
+
+export interface MicroagentContentResponse {
+  content: string;
+  path: string;
+  git_provider: Provider;
+  triggers: string[];
 }
