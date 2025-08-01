@@ -9,6 +9,8 @@ import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
 
+import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
+import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
@@ -32,6 +34,9 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+
+  // Fetch batch feedback data when conversation is loaded
+  useBatchFeedback();
 
   const dispatch = useDispatch();
   const navigate = useNavigate();

@@ -40,3 +40,27 @@
 .heading {
   @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
 }
+
+.loader {
+  background: #C9B974;
+  animation: l5 1s infinite linear alternate;
+}
+
+@keyframes l5 {
+  0% {
+    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
+    background: #C9B974;
+  }
+  33% {
+    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
+    background: rgba(201,185,116,0.1);
+  }
+  66% {
+    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
+    background: rgba(201,185,116,0.1);
+  }
+  100% {
+    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
+    background: #C9B974;
+  }
+}
