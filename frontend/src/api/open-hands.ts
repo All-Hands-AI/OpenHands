@@ -23,6 +23,20 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
+/**
+ * Utility function to check if the response data is an empty JSON object "{}"
+ * @param data The response data to check
+ * @returns true if the data is an empty object, false otherwise
+ */
+function isEmptyJsonResponse(data: unknown): boolean {
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    !Array.isArray(data) &&
+    Object.keys(data).length === 0
+  );
+}
+
 class OpenHands {
   private static currentConversation: Conversation | null = null;
 
@@ -414,10 +428,15 @@ class OpenHands {
     return data.credits;
   }
 
-  static async getGitUser(): Promise<GitUser> {
+  static async getGitUser(): Promise<GitUser | null> {
     const response = await openHands.get<GitUser>("/api/user/info");
 
     const { data } = response;
+
+    // Handle empty JSON response "{}" by returning null
+    if (isEmptyJsonResponse(data)) {
+      return null;
+    }
 
     const user: GitUser = {
       id: data.id,
@@ -444,6 +463,11 @@ class OpenHands {
         },
       },
     );
+
+    // Handle empty JSON response "{}" by returning empty array
+    if (isEmptyJsonResponse(response.data)) {
+      return [];
+    }
 
     return response.data;
   }
@@ -498,6 +522,11 @@ class OpenHands {
       },
     );
 
+    // Handle empty JSON response "{}" by returning empty array
+    if (isEmptyJsonResponse(data)) {
+      return [];
+    }
+
     return data;
   }
 
@@ -505,6 +534,11 @@ class OpenHands {
     const { data } = await openHands.get<Branch[]>(
       `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
     );
+
+    // Handle empty JSON response "{}" by returning empty array
+    if (isEmptyJsonResponse(data)) {
+      return [];
+    }
 
     return data;
   }
@@ -537,6 +571,12 @@ class OpenHands {
     const { data } = await openHands.get<RepositoryMicroagent[]>(
       `/api/user/repository/${owner}/${repo}/microagents`,
     );
+
+    // Handle empty JSON response "{}" by returning empty array
+    if (isEmptyJsonResponse(data)) {
+      return [];
+    }
+
     return data;
   }
 
@@ -551,13 +591,19 @@ class OpenHands {
     owner: string,
     repo: string,
     filePath: string,
-  ): Promise<MicroagentContentResponse> {
+  ): Promise<MicroagentContentResponse | null> {
     const { data } = await openHands.get<MicroagentContentResponse>(
       `/api/user/repository/${owner}/${repo}/microagents/content`,
       {
         params: { file_path: filePath },
       },
     );
+
+    // Handle empty JSON response "{}" by returning null
+    if (isEmptyJsonResponse(data)) {
+      return null;
+    }
+
     return data;
   }
 

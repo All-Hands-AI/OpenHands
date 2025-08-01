@@ -448,5 +448,9 @@ def _check_idp_type(user_info: dict | None, default_value: Any):
         )
     # Enterprise SSO provider has no provider tokens
     if ProviderType(idp) == ProviderType.ENTERPRISE_SSO:
-        return default_value
+        return JSONResponse(
+            content={},
+            status_code=status.HTTP_200_OK,
+        )
+
     return None
