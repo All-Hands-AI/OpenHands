@@ -483,11 +483,13 @@ async def modify_llm_settings_advanced(
                 LLMSummarizingCondenserConfig(
                     llm_config=llm_config, type='llm', keep_first=4, max_size=120
                 ),
-            ]
+            ],
         )
 
     else:
-        agent_config.condenser = ConversationWindowCondenserConfig(type='conversation_window')
+        agent_config.condenser = ConversationWindowCondenserConfig(
+            type='conversation_window'
+        )
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
