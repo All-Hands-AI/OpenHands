@@ -66,6 +66,8 @@ function SettingsScreen() {
   // this is used to determine which settings are available in the UI
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
+  // THIS IS A TEST
+
   return (
     <main
       data-testid="settings-screen"
