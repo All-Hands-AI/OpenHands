@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { SecurityLock } from "./security-lock";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { ConversationCard } from "../conversation-panel/conversation-card";
@@ -10,6 +11,7 @@ interface ControlsProps {
 
 export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
   const { data: conversation } = useActiveConversation();
+  const [contextMenuOpen, setContextMenuOpen] = useState(false);
 
   return (
     <div className="flex flex-col gap-2 md:items-center md:justify-between md:flex-row">
@@ -31,6 +33,8 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         }}
         conversationStatus={conversation?.status}
         conversationId={conversation?.conversation_id}
+        contextMenuOpen={contextMenuOpen}
+        onContextMenuToggle={setContextMenuOpen}
       />
     </div>
   );

@@ -38,14 +38,6 @@ export function CustomChatInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  // Use the auto-resize custom hook
-  const {
-    autoResize,
-    handleInput: handleAutoResizeInput,
-    handlePaste: handleAutoResizePaste,
-    handleKeyDown: handleAutoResizeKeyDown,
-  } = useAutoResize(chatInputRef as React.RefObject<HTMLDivElement>, { value });
-
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
     if (!chatInputRef.current) return true;
@@ -61,6 +53,13 @@ export function CustomChatInput({
       chatInputRef.current.textContent = "";
     }
   }, [isContentEmpty]);
+
+  // Use the auto-resize hook
+  const { autoResize } = useAutoResize(chatInputRef, {
+    minHeight: 20,
+    maxHeight: 120,
+    value,
+  });
 
   // Function to add files and notify parent
   const addFiles = useCallback(
@@ -158,12 +157,53 @@ export function CustomChatInput({
 
   // Handle input events
   const handleInput = () => {
-    handleAutoResizeInput();
+    autoResize();
+
+    // Clear empty content to ensure placeholder shows
+    if (chatInputRef.current) {
+      clearEmptyContent();
+    }
+
+    // Ensure cursor stays visible when content is scrollable
+    if (!chatInputRef.current) {
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (
+      !range.getBoundingClientRect ||
+      !chatInputRef.current.getBoundingClientRect
+    ) {
+      return;
+    }
+
+    const rect = range.getBoundingClientRect();
+    const inputRect = chatInputRef.current.getBoundingClientRect();
+
+    // If cursor is below the visible area, scroll to show it
+    if (rect.bottom > inputRect.bottom) {
+      chatInputRef.current.scrollTop =
+        chatInputRef.current.scrollHeight - chatInputRef.current.clientHeight;
+    }
   };
 
   // Handle paste events to clean up formatting
   const handlePaste = (e: React.ClipboardEvent) => {
-    handleAutoResizePaste(e);
+    e.preventDefault();
+
+    // Get plain text from clipboard
+    const text = e.clipboardData.getData("text/plain");
+
+    // Insert plain text
+    document.execCommand("insertText", false, text);
+
+    // Trigger resize
+    setTimeout(autoResize, 0);
   };
 
   // Handle key events
@@ -176,8 +216,42 @@ export function CustomChatInput({
       return;
     }
 
-    // Use the auto-resize hook's key down handler
-    handleAutoResizeKeyDown(e);
+    // Auto-resize on key events that might change content
+    setTimeout(() => {
+      autoResize();
+      // Ensure cursor stays visible after key navigation
+      if (!chatInputRef.current) {
+        return;
+      }
+
+      const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
+      if (!isArrowKey) {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      if (
+        !range.getBoundingClientRect ||
+        !chatInputRef.current.getBoundingClientRect
+      ) {
+        return;
+      }
+
+      const rect = range.getBoundingClientRect();
+      const inputRect = chatInputRef.current.getBoundingClientRect();
+
+      // Scroll to keep cursor visible
+      if (rect.top < inputRect.top) {
+        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
+      } else if (rect.bottom > inputRect.bottom) {
+        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
+      }
+    }, 0);
   };
 
   // Handle blur events to ensure placeholder shows when empty
@@ -215,8 +289,8 @@ export function CustomChatInput({
         onDrop={handleDrop}
       >
         {/* Main Input Row */}
-        <div className="box-border content-stretch flex flex-row items-center justify-between p-0 relative shrink-0 w-full pb-[18px]">
-          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-center justify-start min-h-px min-w-px p-0 relative shrink-0">
+        <div className="box-border content-stretch flex flex-row items-start justify-between p-0 relative shrink-0 w-full pb-[18px]">
+          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-start justify-start min-h-px min-w-px p-0 relative shrink-0 pt-1">
             <ChatAddFileButton
               disabled={disabled}
               handleFileIconClick={handleFileIconClick}
@@ -227,16 +301,17 @@ export function CustomChatInput({
               className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
               data-name="Text & caret"
             >
-              <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px relative shrink-0 text-[#A1A1A1] text-[16px] text-left">
+              <div className="basis-0 flex flex-col font-['Outfit:Regular',_sans-serif] font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[98px] w-full break-words overflow-wrap-anywhere",
+                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[80px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
                     disabled && "cursor-not-allowed",
                   )}
                   contentEditable={!disabled}
                   data-placeholder="What do you want to build?"
                   data-testid="chat-input"
+                  style={{ fontFamily: "'Outfit', sans-serif" }}
                   onInput={handleInput}
                   onPaste={handlePaste}
                   onKeyDown={handleKeyDown}

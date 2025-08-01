@@ -232,17 +232,16 @@ export function ChatInterface() {
 
         <div className="flex flex-col gap-[6px] px-4 pb-4">
           <div className="flex justify-between relative">
-            {config?.APP_MODE !== "saas" && (
-              <TrajectoryActions
-                onPositiveFeedback={() =>
-                  onClickShareFeedbackActionButton("positive")
-                }
-                onNegativeFeedback={() =>
-                  onClickShareFeedbackActionButton("negative")
-                }
-                onExportTrajectory={() => onClickExportTrajectoryButton()}
-              />
-            )}
+            <TrajectoryActions
+              onPositiveFeedback={() =>
+                onClickShareFeedbackActionButton("positive")
+              }
+              onNegativeFeedback={() =>
+                onClickShareFeedbackActionButton("negative")
+              }
+              onExportTrajectory={() => onClickExportTrajectoryButton()}
+              isSaasMode={config?.APP_MODE === "saas"}
+            />
 
             <div className="absolute left-1/2 transform -translate-x-1/2 bottom-0">
               {curAgentState === AgentState.RUNNING && <TypingIndicator />}
