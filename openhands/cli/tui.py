@@ -700,12 +700,187 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+def _generate_single_command_pattern(command: str) -> str:
+    """Generate a regex pattern for a single command that can match similar commands.
+
+    Args:
+        command: The single command to generate a pattern for.
+
+    Returns:
+        str: A regex pattern that matches similar commands.
+    """
+    import re
+
+    # Split command into parts
+    parts = command.split()
+    if not parts:
+        return f'^{re.escape(command)}$'
+
+    # First part is the command itself (keep exact)
+    pattern_parts = [re.escape(parts[0])]
+
+    # Process remaining parts
+    for part in parts[1:]:
+        escaped_part = re.escape(part)
+
+        # Replace file extensions with generic patterns
+        extensions = [
+            'py',
+            'js',
+            'ts',
+            'txt',
+            'md',
+            'json',
+            'yaml',
+            'yml',
+            'toml',
+            'html',
+            'css',
+        ]
+        for ext in extensions:
+            if escaped_part.endswith(f'\\.{ext}'):
+                # Replace filename.ext with any filename with extension
+                escaped_part = '[^\\s]+\\.[a-zA-Z0-9]+'
+                break
+
+        # Handle special cases like .py (starting with dot) - but only if it's a standalone extension
+        if (
+            escaped_part.startswith('\\.')
+            and len(escaped_part) > 2
+            and '/' not in escaped_part
+        ):
+            # Check if this looks like a file extension pattern (e.g., .py, .txt)
+            ext_part = escaped_part[2:]  # Remove the \.
+            if ext_part.isalpha() and len(ext_part) <= 5:  # Common extension length
+                escaped_part = '\\.[a-zA-Z0-9]+'
+
+        # Replace numbers with flexible number patterns
+        escaped_part = re.sub(r'\\\d+', r'\\d+', escaped_part)
+
+        pattern_parts.append(escaped_part)
+
+    # Join with flexible whitespace
+    pattern = '\\s+'.join(pattern_parts)
+
+    # Make the pattern match from start to end
+    return f'^{pattern}$'
+
+
+def _parse_piped_command(command: str) -> list[str]:
+    """Parse a command that may contain pipes into individual commands.
+
+    Args:
+        command: The command string to parse.
+
+    Returns:
+        list[str]: List of individual commands split by pipes.
+    """
+    import shlex
+
+    # Handle edge cases first
+    if not command or not command.strip():
+        return []
+
+    # Check for invalid pipe patterns
+    if command.strip().startswith('|') or command.strip().endswith('|'):
+        return []  # Invalid: starts or ends with pipe
+
+    if '||' in command:
+        return []  # Invalid: double pipes
+
+    # Split by pipe operator, handling quoted strings properly
+    parts = []
+    current_part: list[str] = []
+
+    # Use shlex to properly handle quoted strings and escapes
     try:
+        tokens = shlex.split(command, posix=True)
+    except ValueError:
+        # If shlex fails (e.g., unmatched quotes), fall back to simple split
+        tokens = command.split()
+
+    # Reconstruct the command while splitting on pipes
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        if token == '|':
+            if current_part:
+                parts.append(' '.join(current_part))
+                current_part = []
+            else:
+                # Empty part before pipe - invalid
+                return []
+        else:
+            current_part.append(token)
+        i += 1
+
+    # Add the last part if it exists
+    if current_part:
+        parts.append(' '.join(current_part))
+    elif parts:  # We had pipes but no final command
+        return []  # Invalid: ends with pipe
+
+    # If no pipes were found, fall back to simple pipe splitting
+    if len(parts) <= 1 and '|' in command:
+        simple_parts = [part.strip() for part in command.split('|')]
+        # Check for empty parts
+        if any(not part for part in simple_parts):
+            return []  # Invalid: empty parts
+        parts = simple_parts
+
+    return parts
+
+
+def _generate_command_pattern(command: str) -> str:
+    """Generate a regex pattern for a command that can match similar commands.
+
+    This function handles both simple commands and piped commands.
+    For piped commands, it generates patterns for each sub-command.
+
+    Args:
+        command: The command to generate a pattern for (may contain pipes).
+
+    Returns:
+        str: A regex pattern that matches similar commands.
+    """
+    # Parse the command to handle pipes
+    sub_commands = _parse_piped_command(command)
+
+    if len(sub_commands) == 1:
+        # Single command, use the original logic
+        return _generate_single_command_pattern(command)
+    else:
+        # Piped command, generate pattern for each sub-command
+        sub_patterns = []
+        for sub_command in sub_commands:
+            sub_pattern = _generate_single_command_pattern(sub_command.strip())
+            # Remove the ^ and $ anchors from sub-patterns
+            sub_pattern = (
+                sub_pattern[1:-1]
+                if sub_pattern.startswith('^') and sub_pattern.endswith('$')
+                else sub_pattern
+            )
+            sub_patterns.append(sub_pattern)
+
+        # Join sub-patterns with pipe separator (allowing flexible whitespace around pipes)
+        pattern = '\\s*\\|\\s*'.join(sub_patterns)
+        return f'^{pattern}$'
+
+
+async def read_confirmation_input(
+    config: OpenHandsConfig, command: str = '', pending_action=None
+) -> str:
+    try:
+        # Generate a pattern for similar commands
+        pattern = _generate_command_pattern(command) if command else ''
+
         choices = [
             'Yes, proceed',
             'No (and allow to enter instructions)',
-            "Always proceed (don't ask again)",
+            'Always proceed (skip all confirmations)',
+            f"Yes, and don't ask again for similar commands (pattern: {pattern})"
+            if pattern
+            else "Yes, and don't ask again for this exact command",
         ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
@@ -713,7 +888,19 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
             cli_confirm, config, 'Choose an option:', choices
         )
 
-        return {0: 'yes', 1: 'no', 2: 'always'}.get(index, 'no')
+        result = {0: 'yes', 1: 'no', 2: 'always', 3: 'remember'}.get(index, 'no')
+
+        # If the user chose "remember", store the approval information
+        if result == 'remember':
+            print_formatted_text(
+                'Command pattern will be added to approved commands list.'
+            )
+            # Return the pattern and description along with the result
+            return (
+                f'remember:{pattern}:{f"Auto-generated pattern for command: {command}"}'
+            )
+
+        return result
 
     except (KeyboardInterrupt, EOFError):
         return 'no'
