@@ -53,6 +53,18 @@ class AgentConfig(BaseModel):
 
     model_config = ConfigDict(extra='forbid')
 
+    @property
+    def resolved_system_prompt_filename(self) -> str:
+        """
+        Returns the appropriate system prompt filename based on the agent configuration.
+
+        When enable_plan_mode is True, automatically uses the long horizon system prompt
+        unless a custom system_prompt_filename was explicitly set (not the default).
+        """
+        if self.enable_plan_mode and self.system_prompt_filename == 'system_prompt.j2':
+            return 'system_prompt_long_horizon.j2'
+        return self.system_prompt_filename
+
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
         """Create a mapping of AgentConfig instances from a toml dictionary representing the [agent] section.
