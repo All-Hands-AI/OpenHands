@@ -87,10 +87,23 @@ describe("HomeScreen", () => {
   it("should have responsive layout for mobile and desktop screens", async () => {
     renderHomeScreen();
 
-    const mainContainer = screen
-      .getByTestId("home-screen")
-      .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
+    const homeScreenNewConversationSection = screen.getByTestId(
+      "home-screen-new-conversation-section",
+    );
+    expect(homeScreenNewConversationSection).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+    );
+
+    const homeScreenRecentConversationsSection = screen.getByTestId(
+      "home-screen-recent-conversations-section",
+    );
+    expect(homeScreenRecentConversationsSection).toHaveClass(
+      "flex",
+      "flex-col",
+      "md:flex-row",
+    );
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {
@@ -162,8 +175,12 @@ describe("HomeScreen", () => {
       ).not.toBeInTheDocument();
     });
 
-    // Clear the selected repository
-    await userEvent.clear(dropdown);
+    // Clear the selected repository by triggering the onInputChange handler directly
+    // This simulates what happens when the user clears the input
+    const inputElement = within(repoConnector).getByDisplayValue(
+      "octocat/hello-world",
+    );
+    await userEvent.clear(inputElement);
 
     // All tasks should be visible again
     await waitFor(() => {
@@ -174,7 +191,9 @@ describe("HomeScreen", () => {
 
   describe("launch buttons", () => {
     const setupLaunchButtons = async () => {
-      let headerLaunchButton = screen.getByTestId("header-launch-button");
+      let headerLaunchButton = screen.getByTestId(
+        "launch-new-conversation-button",
+      );
       let repoLaunchButton = await screen.findByTestId("repo-launch-button");
       let tasksLaunchButtons =
         await screen.findAllByTestId("task-launch-button");
@@ -192,7 +211,7 @@ describe("HomeScreen", () => {
         expect(button).not.toBeDisabled();
       });
 
-      headerLaunchButton = screen.getByTestId("header-launch-button");
+      headerLaunchButton = screen.getByTestId("launch-new-conversation-button");
       repoLaunchButton = screen.getByTestId("repo-launch-button");
       tasksLaunchButtons = await screen.findAllByTestId("task-launch-button");
 
