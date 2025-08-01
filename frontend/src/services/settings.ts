@@ -26,6 +26,8 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
+  GIT_USER_NAME: "openhands",
+  GIT_USER_EMAIL: "openhands@all-hands.dev",
 };
 
 /**
