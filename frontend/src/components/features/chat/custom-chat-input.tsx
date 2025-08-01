@@ -1,4 +1,5 @@
 import React, { useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
@@ -34,6 +35,7 @@ export function CustomChatInput({
   className = "",
   buttonClassName = "",
 }: CustomChatInputProps) {
+  const { t } = useTranslation();
   const chatInputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -309,7 +311,7 @@ export function CustomChatInput({
                     disabled && "cursor-not-allowed",
                   )}
                   contentEditable={!disabled}
-                  data-placeholder="What do you want to build?"
+                  data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                   data-testid="chat-input"
                   style={{ fontFamily: "'Outfit', sans-serif" }}
                   onInput={handleInput}
