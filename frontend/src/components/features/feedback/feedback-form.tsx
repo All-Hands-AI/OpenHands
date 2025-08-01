@@ -1,10 +1,11 @@
 import React from "react";
-import hotToast from "react-hot-toast";
+import { toasterMessages, Typography } from "@openhands/ui";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { Feedback } from "#/api/open-hands.types";
 import { useSubmitFeedback } from "#/hooks/mutation/use-submit-feedback";
 import { BrandButton } from "../settings/brand-button";
+import { displayInfoToast } from "#/utils/custom-toast-handlers";
 
 const FEEDBACK_VERSION = "1.0";
 const VIEWER_PAGE = "https://www.all-hands.dev/share";
@@ -18,10 +19,7 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
   const { t } = useTranslation();
 
   const copiedToClipboardToast = () => {
-    hotToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE), {
-      icon: "📋",
-      position: "bottom-right",
-    });
+    displayInfoToast(t(I18nKey.FEEDBACK$PASSWORD_COPIED_MESSAGE));
   };
 
   const onPressToast = (password: string) => {
@@ -34,27 +32,34 @@ export function FeedbackForm({ onClose, polarity }: FeedbackFormProps) {
     link: string,
     password: string,
   ) => {
-    hotToast(
-      <div className="flex flex-col gap-1">
-        <span>{message}</span>
-        <a
-          data-testid="toast-share-url"
-          className="text-blue-500 underline"
-          onClick={() => onPressToast(password)}
-          href={link}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t(I18nKey.FEEDBACK$GO_TO_FEEDBACK)}
-        </a>
-        <span onClick={() => onPressToast(password)} className="cursor-pointer">
-          {t(I18nKey.FEEDBACK$PASSWORD)}: {password}{" "}
-          <span className="text-gray-500">
-            ({t(I18nKey.FEEDBACK$COPY_LABEL)})
-          </span>
-        </span>
-      </div>,
-      { duration: 10000 },
+    toasterMessages.custom(
+      () => (
+        <div className="flex flex-col gap-1 px-2">
+          <Typography.H5>{message}</Typography.H5>
+          <Typography.Text>
+            <a
+              data-testid="toast-share-url"
+              className="text-blue-500 underline"
+              onClick={() => onPressToast(password)}
+              href={link}
+              target="_blank"
+              rel="noreferrer"
+            >
+              {t(I18nKey.FEEDBACK$GO_TO_FEEDBACK)}
+            </a>
+          </Typography.Text>
+          <Typography.Text
+            onClick={() => onPressToast(password)}
+            className="cursor-pointer"
+          >
+            {t(I18nKey.FEEDBACK$PASSWORD)}: {password}{" "}
+            <span className="text-gray-500">
+              ({t(I18nKey.FEEDBACK$COPY_LABEL)})
+            </span>
+          </Typography.Text>
+        </div>
+      ),
+      { duration: 10_000 },
     );
   };
 
