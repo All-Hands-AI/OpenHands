@@ -32,6 +32,7 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
@@ -56,6 +57,7 @@ class Session:
         sid: str,
         config: OpenHandsConfig,
         llm_registry: LLMRegistry,
+        convo_stats: ConversationStats,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -66,10 +68,12 @@ class Session:
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
         self.llm_registry = llm_registry
+        self.convo_stats = convo_stats
         self.agent_session = AgentSession(
             sid,
             file_store,
             llm_registry=self.llm_registry,
+            convo_stats=convo_stats,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )

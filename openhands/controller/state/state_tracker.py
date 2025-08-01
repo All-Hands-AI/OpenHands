@@ -13,7 +13,7 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
-from openhands.llm.llm_registry import LLMRegistry
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 
 
@@ -51,7 +51,7 @@ class StateTracker:
         self,
         id: str,
         state: State | None,
-        llm_registry: LLMRegistry,
+        convo_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -73,7 +73,7 @@ class StateTracker:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
                 inputs={},
-                llm_registry=llm_registry,
+                convo_stats=convo_stats,
                 iteration_flag=IterationControlFlag(
                     limit_increase_amount=max_iterations,
                     current_value=0,
@@ -98,7 +98,7 @@ class StateTracker:
             if self.state.start_id <= -1:
                 self.state.start_id = 0
 
-            state.llm_registry = llm_registry
+            state.convo_stats = convo_stats
 
     def _init_history(self, event_stream: EventStream) -> None:
         """Initializes the agent's history from the event stream.
@@ -251,9 +251,8 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
-        # if self.state.llm_registry:
-        #     self.state.llm_registry.save_registry()
-        # TODO: pass convo stats
+        if self.state.convo_stats:
+            self.state.convo_stats.save_metrics()
 
     def run_control_flags(self):
         """
@@ -269,9 +268,7 @@ class StateTracker:
         Budget flag will monitor for when budget is exceeded
         """
         # Sync cost across all llm services from llm registry
-        if self.state.budget_flag and self.state.llm_registry:
-            # self.state.budget_flag.current_value = (
-            #     self.state.llm_registry.get_combined_metrics().accumulated_cost
-            # )
-            # TODO: pass convo stats
-            pass
+        if self.state.budget_flag and self.state.convo_stats:
+            self.state.budget_flag.current_value = (
+                self.state.convo_stats.get_combined_metrics().accumulated_cost
+            )

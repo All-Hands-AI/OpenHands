@@ -20,6 +20,7 @@ from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.server.session.conversation import ServerConversation
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -335,11 +336,14 @@ class StandaloneConversationManager(ConversationManager):
 
         # Registry automatically restores state if it already exists for a conversation
         llm_registry = LLMRegistry(self.config, settings.agent)
+        convo_stats = ConversationStats(self.file_store, sid, user_id)
+        llm_registry.subscribe(convo_stats.register_llm)
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=self.config,
-            llm_registry=llm_registry,  # assign registry for session
+            llm_registry=llm_registry,
+            convo_stats=convo_stats,
             sio=self.sio,
             user_id=user_id,
         )

@@ -30,6 +30,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
@@ -66,6 +67,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         llm_registry: LLMRegistry,
+        convo_stats: ConversationStats,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -85,6 +87,7 @@ class AgentSession:
             extra={'session_id': sid, 'user_id': user_id}
         )
         self.llm_registry = llm_registry
+        self.convo_stats = convo_stats
 
     async def start(
         self,
@@ -451,7 +454,7 @@ class AgentSession:
             user_id=self.user_id,
             file_store=self.file_store,
             event_stream=self.event_stream,
-            llm_registry=self.llm_registry,
+            convo_stats=self.convo_stats,
             agent=agent,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,

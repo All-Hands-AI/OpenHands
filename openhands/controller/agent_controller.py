@@ -73,9 +73,9 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import truncate_content
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI
@@ -105,7 +105,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        llm_registry: LLMRegistry,
+        convo_stats: ConversationStats,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -146,7 +146,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
-        self.llm_registry = llm_registry
+        self.convo_stats = convo_stats
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -162,7 +162,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
-            llm_registry=llm_registry,
+            convo_stats=convo_stats,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -645,8 +645,7 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         # Make sure metrics are shared between parent and child for global accumulation
         delegate_agent = agent_cls(
-            config=agent_config,
-            llm_registry=self.llm_registry,
+            config=agent_config, llm_registry=self.agent.llm_registry
         )
 
         # Take a snapshot of the current metrics before starting the delegate
@@ -675,7 +674,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
-            llm_registry=self.llm_registry,
+            convo_stats=self.convo_stats,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -939,7 +938,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
-        llm_registry: LLMRegistry,
+        convo_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -947,7 +946,7 @@ class AgentController:
         self.state_tracker.set_initial_state(
             self.id,
             state,
-            llm_registry,
+            convo_stats,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,
@@ -988,7 +987,7 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        metrics = self.llm_registry.get_combined_metrics()
+        metrics = self.convo_stats.get_combined_metrics()
 
         # Create a clean copy with only the fields we want to keep
         clean_metrics = Metrics()

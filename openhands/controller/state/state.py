@@ -19,9 +19,9 @@ from openhands.events.action import (
 )
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -85,7 +85,7 @@ class State:
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
-    llm_registry: LLMRegistry | None = None
+    convo_stats: ConversationStats | None = None
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -122,8 +122,8 @@ class State:
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
-        llm_registry = self.llm_registry
-        self.llm_registry = None  # Don't save registry; registry handles itself
+        convo_stats = self.convo_stats
+        self.convo_stats = None  # Don't save convo stats, handles itself
 
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
@@ -144,7 +144,7 @@ class State:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
-        self.llm_registry = llm_registry  # restore reference to registry
+        self.convo_stats = convo_stats  # restore reference
 
     @staticmethod
     def restore_from_session(

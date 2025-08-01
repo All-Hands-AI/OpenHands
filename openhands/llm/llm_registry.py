@@ -1,11 +1,18 @@
 from typing import Any, Callable
 from uuid import uuid4
 
+from pydantic import BaseModel
+
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
+
+
+class RegistryEvent(BaseModel):
+    llm: LLM
+    service_id: str
 
 
 class LLMRegistry:
@@ -43,7 +50,7 @@ class LLMRegistry:
         else:
             llm = LLM(service_id=service_id, config=config)
         self.service_to_llm[service_id] = llm
-        self.notify({'event': 'register_llm', 'service_id': service_id, 'llm': llm})
+        self.notify(RegistryEvent(llm=llm, service_id=service_id))
         return llm
 
     def request_extraneous_completion(
@@ -104,9 +111,12 @@ class LLMRegistry:
             raise ValueError(f'Unrecognized service ID: {service_id}')
         self.active_agent_llm = self.service_to_llm[service_id]
 
-    def subscribe(self, callback: Callable[[Any], None]) -> None:
+    def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:
         self.subscriber = callback
 
-    def notify(self, event: dict):
+    def notify(self, event: RegistryEvent):
         if self.subscriber:
-            self.subscriber(event)
+            try:
+                self.subscriber(event)
+            except Exception as e:
+                logger.warning(f'Failed to emit event: {e}')

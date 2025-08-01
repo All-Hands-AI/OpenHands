@@ -33,6 +33,7 @@ from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.server.session.session import ROOM_KEY, Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
@@ -481,9 +482,12 @@ class DockerNestedConversationManager(ConversationManager):
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
         llm_registry = LLMRegistry(self.config, settings.agent)
+        convo_stats = ConversationStats(self.file_store, sid, user_id)
+        llm_registry.subscribe(convo_stats.register_llm)
         session = Session(
             sid=sid,
             llm_registry=llm_registry,
+            convo_stats=convo_stats,
             file_store=self.file_store,
             config=self.config,
             sio=self.sio,

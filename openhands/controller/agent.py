@@ -43,7 +43,7 @@ class Agent(ABC):
         llm_registry: LLMRegistry,
     ):
         self.llm = llm_registry.get_llm_from_agent_config('agent', config)
-
+        self.llm_registry = llm_registry
         self.config = config
         self._complete = False
         self._prompt_manager: 'PromptManager' | None = None
