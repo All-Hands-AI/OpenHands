@@ -1,25 +1,28 @@
-import { useQuery } from "@tanstack/react-query";
-import OpenHands from "#/api/open-hands";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useConfig } from "#/hooks/query/use-config";
+import { BatchFeedbackData, getFeedbackQueryKey } from "./use-batch-feedback";
 
-export interface FeedbackData {
-  exists: boolean;
-  rating?: number;
-  reason?: string;
-}
+export type FeedbackData = BatchFeedbackData;
 
 export const useFeedbackExists = (eventId?: number) => {
+  const queryClient = useQueryClient();
   const { conversationId } = useConversationId();
   const { data: config } = useConfig();
 
   return useQuery<FeedbackData>({
-    queryKey: ["feedback", "exists", conversationId, eventId],
+    queryKey: [...getFeedbackQueryKey(conversationId), eventId],
     queryFn: () => {
       if (!eventId) return { exists: false };
-      return OpenHands.checkFeedbackExists(conversationId, eventId);
+
+      // Try to get the data from the batch cache
+      const batchData = queryClient.getQueryData<
+        Record<string, BatchFeedbackData>
+      >(getFeedbackQueryKey(conversationId));
+
+      return batchData?.[eventId.toString()] ?? { exists: false };
     },
-    enabled: !!eventId && config?.APP_MODE === "saas",
+    enabled: !!eventId && !!conversationId && config?.APP_MODE === "saas",
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes
   });
