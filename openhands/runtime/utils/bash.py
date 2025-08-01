@@ -343,6 +343,15 @@ class BashSession:
             num_lines = len(raw_command_output.splitlines())
             metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
 
+        # Check for "command not found" error and ensure exit code is 127
+        if (
+            'command not found' in raw_command_output
+            and command != ''
+            and not is_special_key
+        ):
+            metadata.exit_code = 127
+            logger.debug(f'Setting exit code to 127 for command not found: {command}')
+
         metadata.suffix = (
             f'\n[The command completed with exit code {metadata.exit_code}.]'
             if not is_special_key

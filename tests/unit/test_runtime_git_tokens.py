@@ -74,6 +74,11 @@ class TestRuntime(Runtime):
     ):
         return MCPConfig()
 
+    @property
+    def action_execution_server_url(self) -> str:
+        """Return a mock action execution server URL."""
+        return 'http://localhost:8000'
+
 
 @pytest.fixture
 def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:

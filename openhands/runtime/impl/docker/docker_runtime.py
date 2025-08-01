@@ -90,6 +90,8 @@ class DockerRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         user_id: str | None = None,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
+        user_email: str | None = None,
+        user_name: str | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
         if not DockerRuntime._shutdown_listener_id:
@@ -143,6 +145,8 @@ class DockerRuntime(ActionExecutionClient):
             headless_mode,
             user_id,
             git_provider_tokens,
+            user_email,
+            user_name,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available

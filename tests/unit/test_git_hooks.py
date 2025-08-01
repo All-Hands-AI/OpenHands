@@ -156,3 +156,46 @@ class TestGitHooks:
         assert mock_runtime.log.call_args_list[-1] == call(
             'info', 'Git pre-commit hook installed successfully'
         )
+
+    def test_prepare_commit_msg_hook_setup(self):
+        # Test that the prepare-commit-msg hook is set up correctly when user info is available
+        # Create a mock runtime with user info
+        mock_runtime = MagicMock(spec=Runtime)
+        mock_runtime.user_name = 'Test User'
+        mock_runtime.user_email = 'test@example.com'
+
+        # Mock the run method to return success
+        mock_runtime.run.return_value = CmdOutputObservation(
+            content='', exit_code=0, command='test command'
+        )
+
+        # Get the setup_git_config method from the Runtime class
+        setup_git_config_method = Runtime.setup_git_config
+
+        # Call the method with our mock runtime
+        setup_git_config_method(mock_runtime)
+
+        # Get all the commands that were run
+        run_calls = [
+            call[0][0].command
+            for call in mock_runtime.run.call_args_list
+            if isinstance(call[0][0], CmdRunAction)
+        ]
+
+        # Check that the coauthor config was set
+        coauthor_calls = [cmd for cmd in run_calls if 'user.coauthor' in cmd]
+        assert len(coauthor_calls) > 0, 'No user.coauthor configuration was set'
+
+        # Check that the prepare-commit-msg hook was created
+        hook_creation_calls = [
+            cmd for cmd in run_calls if '.git/hooks/prepare-commit-msg' in cmd
+        ]
+        assert len(hook_creation_calls) > 0, 'No prepare-commit-msg hook was created'
+
+        # Check that the hook was made executable
+        chmod_calls = [
+            cmd
+            for cmd in run_calls
+            if 'chmod +x' in cmd and 'prepare-commit-msg' in cmd
+        ]
+        assert len(chmod_calls) > 0, 'prepare-commit-msg hook was not made executable'
