@@ -98,7 +98,7 @@ export function ConversationName() {
         />
       ) : (
         <div
-          className="text-white leading-5 cursor-pointer w-fit max-w-fit truncate"
+          className="text-white leading-5 w-fit max-w-fit truncate"
           data-testid="conversation-name-title"
           onDoubleClick={handleDoubleClick}
           title={conversation.title}
