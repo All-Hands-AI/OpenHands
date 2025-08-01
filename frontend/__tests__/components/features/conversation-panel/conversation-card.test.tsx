@@ -1,4 +1,4 @@
-import { prettyDOM, screen, within } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import {
   afterAll,
   afterEach,
