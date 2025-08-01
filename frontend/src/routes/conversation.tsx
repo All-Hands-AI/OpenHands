@@ -10,7 +10,6 @@ import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
-import { ChatInterface } from "../components/features/chat/chat-interface";
 import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
@@ -26,6 +25,7 @@ import { ConversationSubscriptionsProvider } from "#/context/conversation-subscr
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
+import { ConversationName } from "#/components/features/conversation/conversation-name";
 
 function AppContent() {
   useConversationConfig();
@@ -79,7 +79,10 @@ function AppContent() {
       <ConversationSubscriptionsProvider>
         <EventHandler>
           <div data-testid="app-route" className="flex flex-col h-full gap-3">
-            <ChatActions />
+            <div className="flex items-center justify-between">
+              <ConversationName />
+              <ChatActions />
+            </div>
 
             <div className="flex h-full overflow-auto">
               <ConversationMain />
