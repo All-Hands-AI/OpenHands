@@ -8,7 +8,7 @@ export function HomeHeader() {
   return (
     <header className="flex flex-col items-center">
       <GuideMessage />
-      <div className="mt-[192px] flex flex-col gap-4 items-center">
+      <div className="mt-[124px] flex flex-col gap-4 items-center">
         <YellowHand className="w-[77px] h-[94px]" />
         <span className="text-[32px] text-white font-bold leading-5">
           {t("HOME$LETS_START_BUILDING")}

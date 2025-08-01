@@ -1,25 +1,25 @@
-import { cn } from "#/utils/utils";
-
-const VALID_WIDTHS = ["w-1/4", "w-1/2", "w-3/4"];
-
-const getRandomWidth = () =>
-  VALID_WIDTHS[Math.floor(Math.random() * VALID_WIDTHS.length)];
-
 const getRandomNumber = (from = 3, to = 5) =>
   Math.floor(Math.random() * (to - from + 1)) + from;
 
 function ConversationSkeleton() {
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center pr-6">
-      <div className="h-5 w-8 skeleton" />
-
-      <div className="w-full pl-8">
-        <div className="h-5 w-24 skeleton mb-2" />
-        <div className={cn("h-5 skeleton", getRandomWidth())} />
+    <div className="flex flex-col gap-1 py-[14px]">
+      <div className="flex items-center gap-2">
+        <div className="w-3 h-3 rounded-full skeleton" />
+        <div className="w-20 h-3 skeleton" />
       </div>
-
-      <div className="h-5 w-16 skeleton" />
-    </li>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-3 h-3 skeleton rounded-sm" />
+          <div className="w-20 max-w-20 h-3 skeleton" />
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-3 skeleton rounded-sm" />
+          <div className="w-20 max-w-20 h-3 skeleton" />
+        </div>
+        <div className="w-8 h-3 skeleton" />
+      </div>
+    </div>
   );
 }
 
@@ -31,11 +31,7 @@ function RecentConversationSkeleton({
   items = 3,
 }: RecentConversationSkeletonProps) {
   return (
-    <div data-testid="task-group-skeleton">
-      <div className="py-3 border-b border-[#717888]">
-        <div className="h-6 w-40 skeleton" />
-      </div>
-
+    <div data-testid="recent-conversations-skeleton">
       <ul>
         {Array.from({ length: items }).map((_, index) => (
           <ConversationSkeleton key={index} />
