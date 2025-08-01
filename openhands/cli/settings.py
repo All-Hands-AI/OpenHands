@@ -476,8 +476,9 @@ async def modify_llm_settings_advanced(
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
         agent_config.condenser = CondenserPipelineConfig(
+            type='pipeline',
             condensers=[
-                ConversationWindowCondenserConfig(),
+                ConversationWindowCondenserConfig(type='conversation_window'),
                 # Use LLMSummarizingCondenserConfig with the custom llm_config
                 LLMSummarizingCondenserConfig(
                     llm_config=llm_config, type='llm', keep_first=4, max_size=120
@@ -486,7 +487,7 @@ async def modify_llm_settings_advanced(
         )
 
     else:
-        agent_config.condenser = ConversationWindowCondenserConfig()
+        agent_config.condenser = ConversationWindowCondenserConfig(type='conversation_window')
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
