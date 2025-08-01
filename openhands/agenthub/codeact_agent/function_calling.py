@@ -40,6 +40,7 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.llm import MODELS_WITH_EMPTY_REASONING_RESPONSES
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -245,10 +246,30 @@ def response_to_actions(
             )
             actions.append(action)
     else:
+        content = str(assistant_msg.content) if assistant_msg.content else ''
+
+        # Check if this is a model that may return empty responses while reasoning
+        model_name = str(getattr(response, 'model', ''))
+        is_reasoning_model = any(
+            model in model_name for model in MODELS_WITH_EMPTY_REASONING_RESPONSES
+        )
+
+        # Grok-4 can send the number of reasoning tokens, but NOT the reasoning content, nor content
+        # Ref: https://github.com/All-Hands-AI/OpenHands/pull/9809
+        # Don't wait for response if content is empty and it's Grok
+        # This prevents getting stuck when Grok models return empty content while thinking
+        wait_for_response = True
+        if is_reasoning_model and not content:
+            wait_for_response = False
+        elif content:
+            wait_for_response = True
+        else:  # For non-reasoning models with empty content, still wait (original behavior)
+            wait_for_response = True
+
         actions.append(
             MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else '',
-                wait_for_response=True,
+                content=content,
+                wait_for_response=wait_for_response,
             )
         )
 
