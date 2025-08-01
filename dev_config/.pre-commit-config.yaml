@@ -1,4 +1,26 @@
 repos:
+  # Frontend checks - only run when frontend files change
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: Frontend Lint
+        entry: bash -c 'cd frontend && npm run lint'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: frontend-translation-check
+        name: Frontend Translation Completeness Check
+        entry: bash -c 'cd frontend && npm run check-translation-completeness'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+      - id: frontend-lint-staged
+        name: Frontend Lint Staged
+        entry: bash -c 'cd frontend && npx lint-staged'
+        language: system
+        files: ^frontend/
+        pass_filenames: false
+
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
     hooks:

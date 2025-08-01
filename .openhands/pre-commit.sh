@@ -143,7 +143,7 @@ if [ "$has_frontend_changes" = false ] && [ "$has_backend_changes" = false ]; th
     echo "No specific code changes detected. Running basic checks..."
     if [ -n "$STAGED_FILES" ]; then
         # Run only basic pre-commit hooks for non-code files
-        poetry run pre-commit run --files $(echo "$STAGED_FILES" | tr '\n' ' ') --hook-stage commit --config ./dev_config/python/.pre-commit-config.yaml
+        poetry run pre-commit run --files $(echo "$STAGED_FILES" | tr '\n' ' ') --hook-stage commit --config ./dev_config/pre-commit-config.yaml
         if [ $? -ne 0 ]; then
             echo "Basic checks failed. Please fix the issues before committing."
             EXIT_CODE=1

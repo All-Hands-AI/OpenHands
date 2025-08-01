@@ -69,7 +69,6 @@
     "prelint": "npm run make-i18n",
     "lint": "npm run typecheck && eslint src --ext .ts,.tsx,.js && prettier --check src/**/*.{ts,tsx}",
     "lint:fix": "eslint src --ext .ts,.tsx,.js --fix && prettier --write src/**/*.{ts,tsx}",
-    "prepare": "cd .. && husky frontend/.husky",
     "typecheck": "react-router typegen && tsc",
     "check-translation-completeness": "node scripts/check-translation-completeness.cjs"
   },
@@ -114,7 +113,6 @@
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
     "eslint-plugin-unused-imports": "^4.1.4",
-    "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.2",
     "msw": "^2.6.6",
