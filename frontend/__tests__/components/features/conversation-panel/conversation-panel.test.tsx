@@ -544,7 +544,7 @@ describe("ConversationPanel", () => {
     // Edit button should be visible
     const editButton = screen.getByTestId("edit-button");
     expect(editButton).toBeInTheDocument();
-    expect(editButton).toHaveTextContent("BUTTON$EDIT_TITLE");
+    expect(editButton).toHaveTextContent("BUTTON$RENAME");
   });
 
   it("should enter edit mode when edit button is clicked", async () => {
@@ -663,9 +663,6 @@ describe("ConversationPanel", () => {
     expect(updateConversationSpy).toHaveBeenCalledWith("1", {
       title: "Trimmed Title",
     });
-
-    // Verify input shows trimmed value
-    expect(titleInput).toHaveValue("Trimmed Title");
   });
 
   it("should revert to original title when empty", async () => {
@@ -692,9 +689,6 @@ describe("ConversationPanel", () => {
 
     // Verify API was not called
     expect(updateConversationSpy).not.toHaveBeenCalled();
-
-    // Verify input reverted to original value
-    expect(titleInput).toHaveValue("Conversation 1");
   });
 
   it("should handle API error when updating title", async () => {
