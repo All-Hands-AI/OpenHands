@@ -20,7 +20,7 @@ for scripting.
 
 ### Running with Python
 
-**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported)
+**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported) and `uvx` for the default `fetch` MCP server (more details below).
 
 1. Install OpenHands using pip:
 ```bash
@@ -186,7 +186,7 @@ To configure Model Context Protocol (MCP) servers, you can refer to the document
 
 This command modifies your `~/.openhands/config.toml` file and will prompt you to restart OpenHands for changes to take effect.
 
-To enable the [Tavily MCP server](https://github.com/tavily-ai/tavily-mcp) search engine, you can set the `search_api_key` under the `[core]` section in the `~/.openhands/config.toml` file.
+By default, the [Fetch MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) will be automatically configured for OpenHands. You can also [enable search engine](../search-engine-setup) via the [Tavily MCP server](https://github.com/tavily-ai/tavily-mcp) by setting the `search_api_key` under the `[core]` section in the `~/.openhands/config.toml` file.
 
 ##### Example of the `config.toml` file with MCP server configuration:
 
