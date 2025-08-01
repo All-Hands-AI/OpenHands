@@ -111,30 +111,15 @@ class ConversationWindowCondenser(RollingCondenser):
         slice_start_index = max(0, slice_start_index)
 
         # 3. Handle dangling observations at the start of the slice
-        # Find the first event in the slice that is either:
-        # a) not an observation, or
-        # b) an observation with a cause_id that matches an action in the slice or before it
+        # Find the first non-observation event in the slice
         recent_events_slice = events[slice_start_index:]
         first_valid_event_index_in_slice = 0
-
-        # First, collect all action IDs in the slice and before it
-        action_ids = {
-            event.id for event in events[:slice_start_index + len(recent_events_slice)]
-            if not isinstance(event, Observation)
-        }
-
-        # Find the first valid event in the slice
         for i, event in enumerate(recent_events_slice):
             if not isinstance(event, Observation):
                 first_valid_event_index_in_slice = i
                 break
-            elif hasattr(event, 'cause') and event.cause in action_ids:
-                # Only keep observations whose actions are in the slice
-                if event.cause >= slice_start_index:
-                    first_valid_event_index_in_slice = i
-                    break
         else:
-            # All events in the slice are observations with no matching actions
+            # All events in the slice are observations
             first_valid_event_index_in_slice = len(recent_events_slice)
 
         # Check if all events in the recent slice are dangling observations
@@ -157,33 +142,11 @@ class ConversationWindowCondenser(RollingCondenser):
 
         # Add recent events starting from first_valid_event_index
         for i in range(first_valid_event_index, total_events):
-            event = events[i]
-            events_to_keep.add(event.id)
-            # If this is an observation with a cause, also keep its action
-            if isinstance(event, Observation) and hasattr(event, 'cause'):
-                # Only keep the action if it's in the recent slice
-                if event.cause >= slice_start_index:
-                    events_to_keep.add(event.cause)
-                    # Also keep any observations of this action that are in the slice
-                    for j in range(first_valid_event_index, total_events):
-                        other_event = events[j]
-                        if (
-                            isinstance(other_event, Observation)
-                            and hasattr(other_event, 'cause')
-                            and other_event.cause == event.cause
-                        ):
-                            events_to_keep.add(other_event.id)
+            events_to_keep.add(events[i].id)
 
         # Calculate which events to forget
         all_event_ids = {e.id for e in events}
         forgotten_event_ids = sorted(all_event_ids - events_to_keep)
-
-        # Ensure we're not keeping any events before slice_start_index except essentials
-        for event_id in list(events_to_keep):
-            if event_id < slice_start_index and event_id not in essential_events:
-                events_to_keep.remove(event_id)
-                forgotten_event_ids.append(event_id)
-        forgotten_event_ids = sorted(forgotten_event_ids)
 
         logger.info(
             f'ConversationWindowCondenser: Keeping {len(events_to_keep)} events, '
