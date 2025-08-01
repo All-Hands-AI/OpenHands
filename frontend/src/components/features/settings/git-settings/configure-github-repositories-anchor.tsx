@@ -12,16 +12,21 @@ export function ConfigureGitHubRepositoriesAnchor({
   const { t } = useTranslation();
 
   return (
-    <a
-      data-testid="configure-github-repositories-button"
-      href={`https://github.com/apps/${slug}/installations/new`}
-      target="_blank"
-      rel="noreferrer noopener"
-      className="py-9"
-    >
-      <BrandButton type="button" variant="secondary">
+    <div data-testid="configure-github-repositories-button" className="py-9">
+      <BrandButton
+        type="button"
+        variant="primary"
+        className="w-55"
+        onClick={() =>
+          window.open(
+            `https://github.com/apps/${slug}/installations/new`,
+            "_blank",
+            "noreferrer noopener",
+          )
+        }
+      >
         {t(I18nKey.GITHUB$CONFIGURE_REPOS)}
       </BrandButton>
-    </a>
+    </div>
   );
 }

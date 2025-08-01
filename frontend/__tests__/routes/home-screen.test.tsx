@@ -333,6 +333,9 @@ describe("Settings 404", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
@@ -355,6 +358,9 @@ describe("Setup Payment modal", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
