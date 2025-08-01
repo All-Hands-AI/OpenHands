@@ -1,9 +1,10 @@
 """Enhanced timeout management for OpenHands operations."""
 
 import asyncio
+import threading
 import time
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 from openhands.core.config.timeout_config import (
     TimeoutConfig,
@@ -19,6 +20,9 @@ class TimeoutManager:
     def __init__(self, timeout_config: Optional[TimeoutConfig] = None):
         self.timeout_config = timeout_config or TimeoutConfig()
         self._active_operations: dict[str, dict] = {}
+        self._operation_tasks: dict[str, asyncio.Task] = {}
+        self._operation_threads: dict[str, threading.Thread] = {}
+        self._cancellation_events: dict[str, Union[asyncio.Event, threading.Event]] = {}
 
     def get_timeout_context(
         self,
@@ -63,12 +67,17 @@ class TimeoutManager:
         operation_id = f'{operation_name}_{id(context)}'
         start_time = time.time()
 
+        # Create cancellation event for this operation
+        cancellation_event = threading.Event()
+        self._cancellation_events[operation_id] = cancellation_event
+
         # Track the operation
         self._active_operations[operation_id] = {
             'context': context,
             'start_time': start_time,
             'operation_name': operation_name,
             'timeout_type': timeout_type,
+            'cancellation_event': cancellation_event,
         }
 
         try:
@@ -84,6 +93,8 @@ class TimeoutManager:
         finally:
             # Clean up tracking
             self._active_operations.pop(operation_id, None)
+            self._cancellation_events.pop(operation_id, None)
+            self._operation_threads.pop(operation_id, None)
 
     @asynccontextmanager
     async def async_timeout_operation(
@@ -108,12 +119,17 @@ class TimeoutManager:
         operation_id = f'{operation_name}_{id(context)}'
         start_time = time.time()
 
+        # Create cancellation event for this operation
+        cancellation_event = asyncio.Event()
+        self._cancellation_events[operation_id] = cancellation_event
+
         # Track the operation
         self._active_operations[operation_id] = {
             'context': context,
             'start_time': start_time,
             'operation_name': operation_name,
             'timeout_type': timeout_type,
+            'cancellation_event': cancellation_event,
         }
 
         # Set up warning task if enabled
@@ -144,6 +160,8 @@ class TimeoutManager:
 
             # Clean up tracking
             self._active_operations.pop(operation_id, None)
+            self._cancellation_events.pop(operation_id, None)
+            self._operation_tasks.pop(operation_id, None)
 
     async def _warning_task(self, operation_id: str, warning_timeout: float):
         """Task to show warning when operation is taking too long."""
@@ -177,12 +195,20 @@ class TimeoutManager:
         async with self.async_timeout_operation(
             timeout_type, operation_name, attempt, complexity_factor, custom_timeout
         ) as context:
+            operation_id = f'{operation_name}_{id(context)}'
+            start_time = time.time()
+
+            # Create a task for the awaitable so we can cancel it
+            task = asyncio.create_task(awaitable)
+            self._operation_tasks[operation_id] = task
+
             try:
-                return await asyncio.wait_for(awaitable, timeout=context.timeout_value)
+                return await asyncio.wait_for(task, timeout=context.timeout_value)
             except asyncio.TimeoutError as e:
-                elapsed_time = (
-                    time.time() - time.time()
-                )  # This will be updated by context manager
+                elapsed_time = time.time() - start_time
+                # Cancel the task on timeout
+                if not task.done():
+                    task.cancel()
                 raise asyncio.TimeoutError(
                     context.get_timeout_message(elapsed_time)
                 ) from e
@@ -264,14 +290,75 @@ class TimeoutManager:
         return active_ops
 
     def cancel_operation(self, operation_id: str) -> bool:
-        """Cancel an active operation (if possible)."""
-        if operation_id in self._active_operations:
-            logger.info(f'Cancelling operation: {operation_id}')
-            # For now, just remove from tracking
-            # In a full implementation, this would need to actually cancel the operation
+        """Cancel an active operation."""
+        if operation_id not in self._active_operations:
+            logger.warning(f'Operation {operation_id} not found for cancellation')
+            return False
+
+        logger.info(f'Cancelling operation: {operation_id}')
+
+        try:
+            # Signal cancellation event
+            if operation_id in self._cancellation_events:
+                cancellation_event = self._cancellation_events[operation_id]
+                if isinstance(cancellation_event, asyncio.Event):
+                    # For async operations, set the event
+                    cancellation_event.set()
+                elif isinstance(cancellation_event, threading.Event):
+                    # For sync operations, set the event
+                    cancellation_event.set()
+
+            # Cancel async task if exists
+            if operation_id in self._operation_tasks:
+                task = self._operation_tasks[operation_id]
+                if not task.done():
+                    task.cancel()
+                    logger.debug(f'Cancelled async task for operation {operation_id}')
+
+            # For thread-based operations, we can't forcibly cancel them
+            # but we can signal them to stop via the cancellation event
+            if operation_id in self._operation_threads:
+                thread = self._operation_threads[operation_id]
+                if thread.is_alive():
+                    logger.debug(
+                        f'Signaled cancellation for thread operation {operation_id}'
+                    )
+                    # Note: Thread will need to check cancellation_event periodically
+
+            # Clean up tracking
             self._active_operations.pop(operation_id, None)
+            self._cancellation_events.pop(operation_id, None)
+            self._operation_tasks.pop(operation_id, None)
+            self._operation_threads.pop(operation_id, None)
+
+            logger.info(f'Successfully cancelled operation: {operation_id}')
             return True
-        return False
+
+        except Exception as e:
+            logger.error(f'Error cancelling operation {operation_id}: {e}')
+            return False
+
+    def cancel_all_operations(self) -> int:
+        """Cancel all active operations."""
+        operation_ids = list(self._active_operations.keys())
+        cancelled_count = 0
+
+        for operation_id in operation_ids:
+            if self.cancel_operation(operation_id):
+                cancelled_count += 1
+
+        logger.info(
+            f'Cancelled {cancelled_count} out of {len(operation_ids)} operations'
+        )
+        return cancelled_count
+
+    def is_operation_cancelled(self, operation_id: str) -> bool:
+        """Check if an operation has been cancelled."""
+        if operation_id not in self._cancellation_events:
+            return False
+
+        cancellation_event = self._cancellation_events[operation_id]
+        return cancellation_event.is_set()
 
 
 # Global timeout manager instance

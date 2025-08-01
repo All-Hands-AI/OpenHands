@@ -1,6 +1,7 @@
 """Tests for enhanced timeout handling system."""
 
 import asyncio
+import time
 from unittest.mock import Mock
 
 import pytest
@@ -242,6 +243,87 @@ class TestTimeoutManager:
         # Should be cleaned up after context exit
         active_ops = manager.get_active_operations()
         assert len(active_ops) == 0
+
+    def test_operation_cancellation(self):
+        """Test operation cancellation functionality."""
+        manager = TimeoutManager()
+
+        # Test cancelling non-existent operation
+        assert not manager.cancel_operation('non_existent')
+
+        # Test cancelling active operation
+        with manager.timeout_operation(
+            TimeoutType.COMMAND_DEFAULT, 'test_cancellation'
+        ):
+            active_ops = manager.get_active_operations()
+            assert len(active_ops) == 1
+
+            operation_id = list(active_ops.keys())[0]
+
+            # Cancel the operation
+            assert manager.cancel_operation(operation_id)
+
+            # Should be removed from active operations
+            active_ops = manager.get_active_operations()
+            assert len(active_ops) == 0
+
+    @pytest.mark.asyncio
+    async def test_async_operation_cancellation(self):
+        """Test async operation cancellation."""
+        manager = TimeoutManager()
+
+        async def long_running_operation():
+            await asyncio.sleep(10)  # Long operation
+            return 'completed'
+
+        # Start operation and cancel it
+        async with manager.async_timeout_operation(
+            TimeoutType.COMMAND_DEFAULT, 'async_cancellation_test'
+        ):
+            active_ops = manager.get_active_operations()
+            operation_id = list(active_ops.keys())[0]
+
+            # Start the operation in background
+            task = asyncio.create_task(long_running_operation())
+            manager._operation_tasks[operation_id] = task
+
+            # Cancel the operation
+            assert manager.cancel_operation(operation_id)
+
+            # Task should be cancelled
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+    def test_cancel_all_operations(self):
+        """Test cancelling all operations."""
+        manager = TimeoutManager()
+
+        # Create multiple operations
+        contexts = []
+        for i in range(3):
+            context = manager.get_timeout_context(
+                TimeoutType.COMMAND_DEFAULT, f'test_op_{i}'
+            )
+            contexts.append(context)
+
+            # Simulate active operation
+            operation_id = f'test_op_{i}_{id(context)}'
+            manager._active_operations[operation_id] = {
+                'context': context,
+                'start_time': time.time(),
+                'operation_name': f'test_op_{i}',
+                'timeout_type': TimeoutType.COMMAND_DEFAULT,
+            }
+
+        # Should have 3 active operations
+        assert len(manager.get_active_operations()) == 3
+
+        # Cancel all operations
+        cancelled_count = manager.cancel_all_operations()
+        assert cancelled_count == 3
+
+        # Should have no active operations
+        assert len(manager.get_active_operations()) == 0
 
 
 class TestRuntimeTimeoutIntegration:

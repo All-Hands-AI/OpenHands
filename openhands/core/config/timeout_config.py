@@ -187,6 +187,7 @@ class TimeoutContext:
         self.complexity_factor = complexity_factor
         self.custom_timeout = custom_timeout
         self.enable_warnings = enable_warnings
+        self._cancelled = False
 
         self.timeout_value = self.timeout_config.get_timeout(
             timeout_type, attempt, complexity_factor, custom_timeout
@@ -200,6 +201,14 @@ class TimeoutContext:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+    def cancel(self) -> None:
+        """Mark this context as cancelled."""
+        self._cancelled = True
+
+    def is_cancelled(self) -> bool:
+        """Check if this context has been cancelled."""
+        return self._cancelled
 
     def get_timeout_message(self, elapsed_time: float) -> str:
         """Generate an informative timeout message."""

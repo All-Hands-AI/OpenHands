@@ -88,7 +88,30 @@ complexity_factor = estimate_complexity_factor(
 # Results in timeout = base_timeout * complexity_factor
 ```
 
-### 4. Enhanced Error Messages
+### 4. Operation Cancellation
+
+Operations can be cancelled while they're running:
+
+```python
+from openhands.utils.timeout_manager import get_timeout_manager
+
+manager = get_timeout_manager()
+
+# Get active operations
+active_ops = manager.get_active_operations()
+for op_id, info in active_ops.items():
+    print(f"Operation: {info['operation_name']}")
+    print(f"Running for: {info['elapsed_time']:.1f}s")
+    
+    # Cancel specific operation
+    if info['elapsed_time'] > 60:  # Cancel if running > 1 minute
+        manager.cancel_operation(op_id)
+
+# Cancel all operations
+manager.cancel_all_operations()
+```
+
+### 5. Enhanced Error Messages
 
 When timeouts occur, you get detailed error messages with recovery suggestions:
 
