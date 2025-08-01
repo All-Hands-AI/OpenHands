@@ -149,6 +149,7 @@ class IssueResolver:
             args.base_container_image,
             args.runtime_container_image,
             args.is_experimental,
+            args.runtime,
         )
 
         self.owner = owner
@@ -182,9 +183,11 @@ class IssueResolver:
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
+        runtime: str | None = None,
     ) -> OpenHandsConfig:
         config.default_agent = 'CodeActAgent'
-        config.runtime = 'docker'
+        # Use provided runtime or fallback to config value or default to 'docker'
+        config.runtime = runtime or config.runtime or 'docker'
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
