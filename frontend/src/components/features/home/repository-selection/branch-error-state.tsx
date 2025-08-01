@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { cn } from "#/utils/utils";
 
-export interface BranchErrorStateProps {
+interface BranchErrorStateProps {
   wrapperClassName?: string;
 }
 

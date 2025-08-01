@@ -1,3 +1,4 @@
+import deepEqual from "deep-equal";
 import { useCallback, useState } from "react";
 
 type ArrayActions<T> = {
@@ -40,8 +41,8 @@ export function useArray<T>(initialValue: T | T[]): [T[], ArrayActions<T>] {
     setArray((prev) => {
       const index = prev.findIndex((item) =>
         compareBy
-          ? isEqual(item[compareBy], value[compareBy])
-          : isEqual(item, value)
+          ? deepEqual(item[compareBy], value[compareBy])
+          : deepEqual(item, value)
       );
       return index >= 0
         ? [...prev.slice(0, index), ...prev.slice(index + 1)]
