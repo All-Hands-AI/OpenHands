@@ -182,7 +182,6 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
-        self.llm_registry = llm_registry
 
     @property
     def runtime_initialized(self) -> bool:

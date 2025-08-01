@@ -35,7 +35,6 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
 
@@ -96,10 +95,6 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
-    if not llm_registry:
-        file_store = get_file_store(config.file_store, config.file_store_path)
-        llm_registry = LLMRegistry(file_store, sid, None)
-
     agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository

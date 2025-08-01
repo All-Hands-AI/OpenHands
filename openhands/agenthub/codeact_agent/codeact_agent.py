@@ -3,7 +3,6 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.llm.llm_registry import LLMRegistry
 
 if TYPE_CHECKING:
@@ -73,15 +72,13 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self, config: AgentConfig, llm_config: LLMConfig, llm_registry: LLMRegistry
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(config, llm_config, llm_registry)
+        super().__init__(config, llm_registry)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()

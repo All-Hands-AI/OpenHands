@@ -153,7 +153,7 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
             )
             draft_editor_config.caching_prompt = False
 
-        self.draft_editor_llm = llm_registry.register_llm(
+        self.draft_editor_llm = llm_registry.get_llm(
             'draft_editor_llm', draft_editor_config
         )
         logger.debug(

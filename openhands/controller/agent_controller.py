@@ -643,11 +643,9 @@ class AgentController:
         """
         agent_cls: type[Agent] = Agent.get_cls(action.agent)
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
-        llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         # Make sure metrics are shared between parent and child for global accumulation
         delegate_agent = agent_cls(
             config=agent_config,
-            llm_config=llm_config,
             llm_registry=self.llm_registry,
         )
 
@@ -670,7 +668,6 @@ class AgentController:
             f'start delegate, creating agent {delegate_agent.name}',
         )
 
-        print('setting delegate')
         # Create the delegate with is_delegate=True so it does NOT subscribe directly
         self.delegate = AgentController(
             sid=self.id + '-delegate',

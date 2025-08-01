@@ -20,7 +20,6 @@ class ServerConversation:
 
     def __init__(
         self,
-        llm_registry: LLMRegistry,
         sid: str,
         file_store: FileStore,
         config: OpenHandsConfig,
@@ -47,12 +46,12 @@ class ServerConversation:
         else:
             runtime_cls = get_runtime_cls(self.config.runtime)
             runtime = runtime_cls(
+                llm_registry=LLMRegistry(self.config),
                 config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,
                 attach_to_existing=True,
                 headless_mode=False,
-                llm_registry=llm_registry,
             )
         self.runtime = runtime
 

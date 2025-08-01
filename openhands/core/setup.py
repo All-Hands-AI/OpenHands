@@ -180,15 +180,13 @@ def create_memory(
     return memory
 
 
-def create_agent(config: OpenHandsConfig, llm_registry: LLMRegistry) -> Agent:
+def create_agent(
+    config: OpenHandsConfig, llm_registry: LLMRegistry | None = None
+) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
-    llm_config = config.get_llm_config_from_agent(config.default_agent)
-
-    agent = agent_cls(
-        config=agent_config, llm_config=llm_config, llm_registry=llm_registry
-    )
-
+    config.get_llm_config_from_agent(config.default_agent)
+    agent = agent_cls(config=agent_config, llm_registry=llm_registry)
     return agent
 
 

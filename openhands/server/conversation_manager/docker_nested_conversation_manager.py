@@ -480,7 +480,7 @@ class DockerNestedConversationManager(ConversationManager):
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
-        llm_registry = LLMRegistry(self.file_store, sid, user_id)
+        llm_registry = LLMRegistry(self.config, settings.agent)
         session = Session(
             sid=sid,
             llm_registry=llm_registry,
@@ -491,10 +491,8 @@ class DockerNestedConversationManager(ConversationManager):
         )
         llm_registry.retry_listner = session._notify_on_llm_retry
         agent_cls = settings.agent or self.config.default_agent
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        llm_config = self.config.get_llm_config_from_agent(agent_name)
         agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(agent_config, llm_config, llm_registry)
+        agent = Agent.get_cls(agent_cls)(agent_config, llm_registry)
 
         config = self.config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars

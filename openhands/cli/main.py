@@ -79,7 +79,6 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.storage import get_file_store
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -145,8 +144,7 @@ async def run_session(
     )
 
     # TODO: do we need to restore metrics for CLI?
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    llm_registry = LLMRegistry(file_store, sid, None)
+    llm_registry = LLMRegistry(config)
 
     agent = create_agent(config, llm_registry)
     runtime = create_runtime(

@@ -5,7 +5,6 @@ from openhands.agenthub.browsing_agent.response_parser import BrowsingResponsePa
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -128,15 +127,13 @@ class VisualBrowsingAgent(Agent):
     sandbox_plugins: list[PluginRequirement] = []
     response_parser = BrowsingResponseParser()
 
-    def __init__(
-        self, config: AgentConfig, llm_config: LLMConfig, llm_registry: LLMRegistry
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the VisualBrowsingAgent class.
 
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
-        super().__init__(config, llm_config, llm_registry)
+        super().__init__(config, llm_registry)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = [

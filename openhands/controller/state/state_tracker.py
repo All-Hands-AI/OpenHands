@@ -251,8 +251,9 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
-        if self.state.llm_registry:
-            self.state.llm_registry.save_registry()
+        # if self.state.llm_registry:
+        #     self.state.llm_registry.save_registry()
+        # TODO: pass convo stats
 
     def run_control_flags(self):
         """
@@ -269,6 +270,8 @@ class StateTracker:
         """
         # Sync cost across all llm services from llm registry
         if self.state.budget_flag and self.state.llm_registry:
-            self.state.budget_flag.current_value = (
-                self.state.llm_registry.get_combined_metrics().accumulated_cost
-            )
+            # self.state.budget_flag.current_value = (
+            #     self.state.llm_registry.get_combined_metrics().accumulated_cost
+            # )
+            # TODO: pass convo stats
+            pass

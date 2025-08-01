@@ -316,7 +316,7 @@ Capture all relevant information, especially:
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
-        llm = llm_registry.register_llm('condenser', llm_config)
+        llm = llm_registry.get_llm('condenser', llm_config)
 
         return StructuredSummaryCondenser(
             llm=llm,

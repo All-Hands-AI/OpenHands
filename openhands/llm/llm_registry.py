@@ -1,130 +1,112 @@
-import base64
-import pickle
-from threading import Lock
-from typing import Callable
+from typing import Any, Callable
 from uuid import uuid4
 
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm import LLM
-from openhands.llm.metrics import Metrics
-from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_llm_registry_filename
 
 
 class LLMRegistry:
     def __init__(
         self,
-        file_store: FileStore | None,
-        conversation_id: str,
-        user_id: str | None,
+        config: OpenHandsConfig,
+        agent_cls: str | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ):
-        self.conversation_id = conversation_id
-        self.user_id = user_id
-        self.file_store = file_store
+        self.registry_id = str(uuid4())
+        self.config = config
+
+        selected_agent_cls = self.config.default_agent
+        if agent_cls:
+            selected_agent_cls = agent_cls
+
+        agent_name = selected_agent_cls if selected_agent_cls is not None else 'agent'
+        llm_config = self.config.get_llm_config_from_agent(agent_name)
+        self.active_agent_llm: LLM = self.get_llm('agent', llm_config)
+
+        self.service_to_llm: dict[str, LLM] = {'agent': self.active_agent_llm}
+
+        self.subscriber: Callable[[Any], None] | None = None
         self.retry_listner = retry_listener
 
-        self.registry_path = get_conversation_llm_registry_filename(
-            self.conversation_id, self.user_id
-        )
+        self.agent_to_llm_config = self.config.get_agent_to_llm_config_map()
 
-        self._save_lock = Lock()
-
-        self.metrics_id = str(uuid4())
-        self.service_to_llm: dict[str, LLM] = {}
-        self.restored_llm: dict[str, Metrics] = {}
-
-        # Always attempt to restore registry if it exists
-        self.maybe_restore_registry()
+    def _create_new_llm(
+        self, service_id: str, config: LLMConfig, with_listener: bool = True
+    ) -> LLM:
+        if with_listener:
+            llm = LLM(
+                service_id=service_id, config=config, retry_listener=self.retry_listner
+            )
+        else:
+            llm = LLM(service_id=service_id, config=config)
+        self.service_to_llm[service_id] = llm
+        self.notify({'event': 'register_llm', 'service_id': service_id, 'llm': llm})
+        return llm
 
     def request_extraneous_completion(
         self, service_id: str, llm_config: LLMConfig, messages: list[dict[str, str]]
     ) -> str:
         logger.info(f'extraneous completion: {service_id}')
         if service_id not in self.service_to_llm:
-            llm = LLM(config=llm_config, service_id=service_id)
-            self.service_to_llm[service_id] = llm
+            self._create_new_llm(
+                config=llm_config, service_id=service_id, with_listener=False
+            )
 
         llm = self.service_to_llm[service_id]
         response = llm.completion(messages=messages)
-
-        # We always save the registry after extraneous completions as we cannot predict
-        # the next time the registry will be saved
-        self.save_registry()
         return response.choices[0].message.content.strip()
 
-    def register_llm(
+    def get_llm_from_agent_config(self, service_id: str, agent_config: AgentConfig):
+        llm_config = self.config.get_llm_config_from_agent_config(agent_config)
+        if service_id in self.service_to_llm:
+            if self.service_to_llm[service_id].config != llm_config:
+                # TODO: update llm config internally
+                # Done when agent delegates has different config, we should reuse the existing LLM
+                pass
+            return self.service_to_llm[service_id]
+
+        return self._create_new_llm(config=llm_config, service_id=service_id)
+
+    def get_llm(
         self,
         service_id: str,
-        config: LLMConfig,
+        config: LLMConfig | None = None,
     ):
         logger.info(
-            f'[LLM registry {self.metrics_id}]: Registering service for {service_id}'
+            f'[LLM registry {self.registry_id}]: Registering service for {service_id}'
         )
 
-        # We're restoring an existing registry, we should use the existing metrics
-        if service_id in self.restored_llm:
-            llm = LLM(
-                config=config,
-                service_id=service_id,
-                retry_listener=self.retry_listner,
-                metrics=self.restored_llm[service_id],
+        # Attempting to switch configs for existing LLM
+        if (
+            service_id in self.service_to_llm
+            and self.service_to_llm[service_id].config != config
+        ):
+            raise ValueError(
+                f'Requesting same service ID {service_id} with different config, use a new service ID'
             )
-            del self.restored_llm[service_id]
-            return llm
 
-        # Resuse existing llm
         if service_id in self.service_to_llm:
             return self.service_to_llm[service_id]
 
-        # Create new llm
-        llm = LLM(
-            config=config, service_id=service_id, retry_listener=self.retry_listner
-        )
+        if not config:
+            raise ValueError('Requesting new LLM without specifying LLM config')
 
-        self.service_to_llm[service_id] = llm
-        return llm
+        return self._create_new_llm(config=config, service_id=service_id)
 
-    def get_combined_metrics(self) -> Metrics:
-        all_metrics = {}
+    def get_active_llm(self) -> LLM:
+        return self.active_agent_llm
 
-        total_metrics = Metrics()
-        for service_id, llm in self.service_to_llm.items():
-            all_metrics[service_id] = llm.metrics
-            total_metrics.merge(llm.metrics)
-
-        logger.info(f'metrics by all services: {all_metrics}')
-        logger.info(f'combined metrics\n\n{total_metrics}')
-        return total_metrics
-
-    def get_metrics_for_service(self, service_id: str) -> Metrics:
+    def _set_active_llm(self, service_id) -> None:
         if service_id not in self.service_to_llm:
-            raise Exception(f'LLM service does not exist {service_id}')
+            raise ValueError(f'Unrecognized service ID: {service_id}')
+        self.active_agent_llm = self.service_to_llm[service_id]
 
-        return self.service_to_llm[service_id].metrics
+    def subscribe(self, callback: Callable[[Any], None]) -> None:
+        self.subscriber = callback
 
-    def save_registry(self):
-        if not self.file_store:
-            return
-
-        with self._save_lock:
-            metrics: dict[str, Metrics] = {}
-            for service_id, llm in self.service_to_llm.items():
-                metrics[service_id] = llm.metrics.copy()
-
-            pickled = pickle.dumps(metrics)
-            serialized_metrics = base64.b64encode(pickled).decode('utf-8')
-            self.file_store.write(self.registry_path, serialized_metrics)
-
-    def maybe_restore_registry(self):
-        if not self.file_store or not self.conversation_id:
-            return
-
-        try:
-            encoded = self.file_store.read(self.registry_path)
-            pickled = base64.b64decode(encoded)
-            self.restored_llm = pickle.loads(pickled)
-            logger.info(f'restored registry: {self.conversation_id}')
-        except FileNotFoundError:
-            pass
+    def notify(self, event: dict):
+        if self.subscriber:
+            self.subscriber(event)

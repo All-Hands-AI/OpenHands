@@ -120,7 +120,6 @@ class StandaloneConversationManager(ConversationManager):
 
             # Create new conversation if none exists
             c = ServerConversation(
-                LLMRegistry(None, sid, user_id),
                 sid,
                 file_store=self.file_store,
                 config=self.config,
@@ -335,7 +334,7 @@ class StandaloneConversationManager(ConversationManager):
                 await self.close_session(oldest_conversation_id)
 
         # Registry automatically restores state if it already exists for a conversation
-        llm_registry = LLMRegistry(self.file_store, sid, user_id)
+        llm_registry = LLMRegistry(self.config, settings.agent)
         session = Session(
             sid=sid,
             file_store=self.file_store,

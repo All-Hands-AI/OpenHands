@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.llm.llm_registry import LLMRegistry
 
 if TYPE_CHECKING:
@@ -41,10 +40,9 @@ class Agent(ABC):
     def __init__(
         self,
         config: AgentConfig,
-        llm_config: LLMConfig,
         llm_registry: LLMRegistry,
     ):
-        self.llm = llm_registry.register_llm('agent_llm', llm_config)
+        self.llm = llm_registry.get_llm_from_agent_config('agent', config)
 
         self.config = config
         self._complete = False

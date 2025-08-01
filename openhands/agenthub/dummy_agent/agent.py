@@ -3,7 +3,6 @@ from typing import TypedDict
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.schema import AgentState
 from openhands.events.action import (
     Action,
@@ -46,10 +45,9 @@ class DummyAgent(Agent):
     def __init__(
         self,
         config: AgentConfig,
-        llm_config: LLMConfig,
         llm_registry: LLMRegistry,
     ):
-        super().__init__(config, llm_config, llm_registry)
+        super().__init__(config, llm_registry)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),
