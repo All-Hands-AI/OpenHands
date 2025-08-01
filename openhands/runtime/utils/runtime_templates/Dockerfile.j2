@@ -184,7 +184,7 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 # Copy dependency files and install dependencies (changes less frequently than source code)
 # ================================================================
-{% if not build_from_scratch %}
+{% if build_from_versioned %}
 RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py
@@ -197,6 +197,15 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 # Copy Project source files (changes most frequently, should be last)
 # ================================================================
+{% if not build_from_scratch and not build_from_versioned %}
+{# This is the LOCK build case - only copy source files, no dependency installation #}
+RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
+    mkdir -p /openhands/code/openhands && \
+    touch /openhands/code/openhands/__init__.py
+
+COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+{% endif %}
+
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 
 COPY ./code/openhands /openhands/code/openhands
