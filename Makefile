@@ -28,8 +28,24 @@ build:
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-pre-commit-hooks
-	@$(MAKE) -s build-frontend
-	@echo "$(GREEN)Build completed successfully.$(RESET)"
+
+# Build and run webhook container
+build-webhook:
+	@echo "$(GREEN)Building webhook container...$(RESET)"
+	@cd containers/webhook && ./build.sh
+
+run-webhook:
+	@echo "$(GREEN)Running webhook container...$(RESET)"
+	@cd containers/webhook && docker-compose up -d
+
+stop-webhook:
+	@echo "$(YELLOW)Stopping webhook container...$(RESET)"
+	@cd containers/webhook && docker-compose down
+
+# Build complete project with webhook support
+build-with-webhooks: build build-webhook
+	@echo "$(GREEN)Built OpenHands with webhook support.$(RESET)"
+	@echo "$(BLUE)Run 'make run-webhook' to start the webhook server.$(RESET)"
 
 check-dependencies:
 	@echo "$(YELLOW)Checking dependencies...$(RESET)"

@@ -10,6 +10,7 @@ class ServerConfig(ServerConfigInterface):
     app_mode = AppMode.OSS
     posthog_client_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', '')
+    github_webhook_secret = os.environ.get('GITHUB_WEBHOOK_SECRET', '')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
     # This config is used to hide the microagent management page from the users for now. We will remove this once we release the new microagent management page.
@@ -40,6 +41,7 @@ class ServerConfig(ServerConfigInterface):
         config = {
             'APP_MODE': self.app_mode,
             'GITHUB_CLIENT_ID': self.github_client_id,
+            'GITHUB_WEBHOOK_SECRET': self.github_webhook_secret,
             'POSTHOG_CLIENT_KEY': self.posthog_client_key,
             'FEATURE_FLAGS': {
                 'ENABLE_BILLING': self.enable_billing,

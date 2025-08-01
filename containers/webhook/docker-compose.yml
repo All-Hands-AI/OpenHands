@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  openhands-webhook:
+    build:
+      context: ../../
+      dockerfile: containers/webhook/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET:-}
+      - RUNTIME=local
+      - INSTALL_DOCKER=0
+    volumes:
+      - openhands_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  openhands_data:
