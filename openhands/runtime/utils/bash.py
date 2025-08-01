@@ -362,6 +362,88 @@ class BashSession:
             metadata=metadata,
         )
 
+    def _get_timeout_suggestions(self, command: str, timeout_type: str) -> str:
+        """Get context-aware timeout suggestions based on the command and timeout type."""
+        suggestions = []
+        command_lower = command.lower().strip()
+
+        # General suggestions for all timeouts
+        if timeout_type == 'no_change':
+            suggestions.append('\n\nTimeout Recovery Options:')
+            suggestions.append("• Send empty command '' to wait for more output")
+            suggestions.append("• Send 'C-c' to interrupt the current process")
+            suggestions.append("• Send 'C-z' to suspend the process")
+        elif timeout_type == 'hard_timeout':
+            suggestions.append('\n\nTimeout Recovery Options:')
+            suggestions.append('• The process was forcibly terminated due to timeout')
+            suggestions.append('• Consider using a longer timeout for similar commands')
+            suggestions.append('• Check if the command requires user input')
+
+        # Command-specific suggestions
+        if any(
+            keyword in command_lower
+            for keyword in ['npm install', 'pip install', 'apt install', 'yum install']
+        ):
+            suggestions.append(
+                '• Package installation may be slow due to network or dependencies'
+            )
+            suggestions.append(
+                '• Try using --timeout flag or package manager specific timeout options'
+            )
+            suggestions.append('• Consider using a package cache or mirror')
+
+        elif any(
+            keyword in command_lower
+            for keyword in ['git clone', 'git push', 'git pull']
+        ):
+            suggestions.append(
+                '• Git operations may be slow due to repository size or network'
+            )
+            suggestions.append('• Try using --depth=1 for shallow clones')
+            suggestions.append(
+                '• Check network connectivity and repository accessibility'
+            )
+
+        elif any(
+            keyword in command_lower
+            for keyword in ['make', 'cmake', 'gcc', 'g++', 'javac']
+        ):
+            suggestions.append('• Compilation may be slow due to code complexity')
+            suggestions.append('• Try using parallel compilation (-j flag for make)')
+            suggestions.append('• Consider breaking large builds into smaller parts')
+
+        elif any(
+            keyword in command_lower for keyword in ['docker build', 'docker run']
+        ):
+            suggestions.append(
+                '• Docker operations may be slow due to image size or network'
+            )
+            suggestions.append('• Try using smaller base images or multi-stage builds')
+            suggestions.append('• Check Docker daemon status and available resources')
+
+        elif any(
+            keyword in command_lower for keyword in ['curl', 'wget', 'ssh', 'scp']
+        ):
+            suggestions.append('• Network operations may be slow due to connectivity')
+            suggestions.append('• Try using --timeout or --connect-timeout options')
+            suggestions.append('• Check network connectivity and target server status')
+
+        elif any(keyword in command_lower for keyword in ['find', 'grep', 'locate']):
+            suggestions.append('• Search operations may be slow on large filesystems')
+            suggestions.append(
+                '• Try limiting search scope or using more specific patterns'
+            )
+            suggestions.append("• Consider using faster alternatives like 'fd' or 'rg'")
+
+        elif any(
+            keyword in command_lower for keyword in ['tar', 'zip', 'unzip', 'gzip']
+        ):
+            suggestions.append('• Archive operations may be slow due to file size')
+            suggestions.append('• Try using compression level options')
+            suggestions.append('• Consider processing files in smaller batches')
+
+        return ''.join(suggestions) if suggestions else ''
+
     def _handle_nochange_timeout_command(
         self,
         command: str,
@@ -378,9 +460,12 @@ class BashSession:
             pane_content, ps1_matches
         )
         metadata = CmdOutputMetadata()  # No metadata available
+        # Enhanced timeout message with context-aware suggestions
+        timeout_suggestions = self._get_timeout_suggestions(command, 'no_change')
         metadata.suffix = (
             f'\n[The command has no new output after {self.NO_CHANGE_TIMEOUT_SECONDS} seconds. '
             f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+            f'{timeout_suggestions}'
         )
         command_output = self._get_command_output(
             command,
@@ -411,9 +496,12 @@ class BashSession:
             pane_content, ps1_matches
         )
         metadata = CmdOutputMetadata()  # No metadata available
+        # Enhanced timeout message with context-aware suggestions
+        timeout_suggestions = self._get_timeout_suggestions(command, 'hard_timeout')
         metadata.suffix = (
             f'\n[The command timed out after {timeout} seconds. '
             f'{TIMEOUT_MESSAGE_TEMPLATE}]'
+            f'{timeout_suggestions}'
         )
         command_output = self._get_command_output(
             command,

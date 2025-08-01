@@ -2,6 +2,8 @@ import os
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from openhands.core.config.timeout_config import TimeoutConfig
+
 
 class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
@@ -89,6 +91,10 @@ class SandboxConfig(BaseModel):
     )
 
     cuda_visible_devices: str | None = Field(default=None)
+
+    # Enhanced timeout configuration
+    timeout_config: TimeoutConfig = Field(default_factory=TimeoutConfig)
+
     model_config = ConfigDict(extra='forbid')
 
     @classmethod

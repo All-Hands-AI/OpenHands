@@ -50,9 +50,16 @@ def call_async_from_sync(
         return result
 
     future = EXECUTOR.submit(run)
-    futures.wait([future], timeout=timeout or None)
-    result = future.result()
-    return result
+    try:
+        futures.wait([future], timeout=timeout or None)
+        result = future.result()
+        return result
+    except futures.TimeoutError as e:
+        # Enhanced timeout error with context
+        from openhands.core.logger import openhands_logger as logger
+
+        logger.warning(f'Async operation timed out after {timeout}s')
+        raise asyncio.TimeoutError(f'Async operation timed out after {timeout}s') from e
 
 
 async def call_coro_in_bg_thread(

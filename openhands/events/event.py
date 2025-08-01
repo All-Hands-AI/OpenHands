@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Optional
 
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.metrics import Metrics
@@ -102,6 +103,64 @@ class Event:
         if hasattr(self, 'blocking'):
             # .blocking needs to be set to True if .timeout is set
             self.blocking = blocking
+
+    @property
+    def timeout_type(self) -> Optional[str]:
+        """Get the timeout type for this event."""
+        if hasattr(self, '_timeout_type'):
+            return getattr(self, '_timeout_type')
+        return None
+
+    @timeout_type.setter
+    def timeout_type(self, value: str) -> None:
+        """Set the timeout type for this event."""
+        self._timeout_type = value
+
+    @property
+    def timeout_attempt(self) -> int:
+        """Get the timeout attempt number for this event."""
+        if hasattr(self, '_timeout_attempt'):
+            return getattr(self, '_timeout_attempt', 1)
+        return 1
+
+    @timeout_attempt.setter
+    def timeout_attempt(self, value: int) -> None:
+        """Set the timeout attempt number for this event."""
+        self._timeout_attempt = value
+
+    @property
+    def timeout_complexity_factor(self) -> float:
+        """Get the timeout complexity factor for this event."""
+        if hasattr(self, '_timeout_complexity_factor'):
+            return getattr(self, '_timeout_complexity_factor', 1.0)
+        return 1.0
+
+    @timeout_complexity_factor.setter
+    def timeout_complexity_factor(self, value: float) -> None:
+        """Set the timeout complexity factor for this event."""
+        self._timeout_complexity_factor = value
+
+    def set_enhanced_timeout(
+        self,
+        timeout_value: float,
+        timeout_type: str,
+        attempt: int = 1,
+        complexity_factor: float = 1.0,
+        blocking: bool = True,
+    ) -> None:
+        """Set enhanced timeout with additional metadata.
+
+        Args:
+            timeout_value: The timeout value in seconds
+            timeout_type: The type of timeout (from TimeoutType enum)
+            attempt: The attempt number for progressive timeout
+            complexity_factor: Factor for adaptive timeout
+            blocking: Whether the operation should block
+        """
+        self.set_hard_timeout(timeout_value, blocking)
+        self.timeout_type = timeout_type
+        self.timeout_attempt = attempt
+        self.timeout_complexity_factor = complexity_factor
 
     # optional metadata, LLM call cost of the edit
     @property

@@ -17,6 +17,7 @@ import httpx
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
+from openhands.core.config.timeout_config import TimeoutType
 from openhands.core.exceptions import (
     AgentRuntimeDisconnectedError,
 )
@@ -69,6 +70,7 @@ from openhands.utils.async_utils import (
     call_async_from_sync,
     call_sync_from_async,
 )
+from openhands.utils.timeout_manager import TimeoutManager
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -182,6 +184,107 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
+
+        # Initialize timeout manager with sandbox timeout config
+        self.timeout_manager = TimeoutManager(config.sandbox.timeout_config)
+
+    def _get_timeout_type_for_action(self, action: Action) -> TimeoutType:
+        """Determine the appropriate timeout type for an action."""
+        from openhands.events.action import (
+            BrowseInteractiveAction,
+            BrowseURLAction,
+            CmdRunAction,
+            FileEditAction,
+            FileReadAction,
+            FileWriteAction,
+            IPythonRunCellAction,
+        )
+
+        if isinstance(action, CmdRunAction):
+            # Analyze command to determine timeout type
+            command = action.command.lower().strip()
+
+            # Network-related commands
+            if any(
+                keyword in command
+                for keyword in [
+                    'curl',
+                    'wget',
+                    'git clone',
+                    'git push',
+                    'git pull',
+                    'ssh',
+                    'scp',
+                    'rsync',
+                ]
+            ):
+                return TimeoutType.COMMAND_NETWORK
+
+            # Long-running commands
+            if any(
+                keyword in command
+                for keyword in [
+                    'make',
+                    'cmake',
+                    'npm install',
+                    'pip install',
+                    'docker build',
+                    'compile',
+                    'build',
+                ]
+            ):
+                return TimeoutType.COMMAND_LONG_RUNNING
+
+            # Interactive commands
+            if action.is_input or any(
+                keyword in command
+                for keyword in ['vi', 'vim', 'nano', 'emacs', 'less', 'more']
+            ):
+                return TimeoutType.COMMAND_INTERACTIVE
+
+            return TimeoutType.COMMAND_DEFAULT
+
+        elif isinstance(action, IPythonRunCellAction):
+            # Analyze Python code to determine complexity
+            code = action.code.lower()
+
+            # Network operations
+            if any(
+                keyword in code
+                for keyword in ['requests.', 'urllib', 'http', 'download', 'fetch']
+            ):
+                return TimeoutType.COMMAND_NETWORK
+
+            # CPU-intensive operations
+            if any(
+                keyword in code
+                for keyword in [
+                    'numpy',
+                    'scipy',
+                    'sklearn',
+                    'tensorflow',
+                    'torch',
+                    'for i in range',
+                ]
+            ):
+                return TimeoutType.COMMAND_LONG_RUNNING
+
+            return TimeoutType.COMMAND_DEFAULT
+
+        elif isinstance(action, (BrowseURLAction, BrowseInteractiveAction)):
+            if isinstance(action, BrowseURLAction):
+                return TimeoutType.BROWSER_NAVIGATION
+            else:
+                return TimeoutType.BROWSER_INTERACTION
+
+        elif isinstance(action, FileReadAction):
+            return TimeoutType.FILE_READ
+
+        elif isinstance(action, (FileWriteAction, FileEditAction)):
+            return TimeoutType.FILE_WRITE
+
+        else:
+            return TimeoutType.COMMAND_DEFAULT
 
     @property
     def runtime_initialized(self) -> bool:
@@ -333,9 +436,27 @@ class Runtime(FileEditRuntimeMixin):
             )
 
     async def _handle_action(self, event: Action) -> None:
+        # Enhanced timeout handling
         if event.timeout is None:
-            # We don't block the command if this is a default timeout action
-            event.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
+            # Determine appropriate timeout type based on action
+            timeout_type = self._get_timeout_type_for_action(event)
+
+            # Get enhanced timeout value
+            timeout_value = self.timeout_manager.timeout_config.get_timeout(
+                timeout_type,
+                attempt=getattr(event, 'timeout_attempt', 1),
+                complexity_factor=getattr(event, 'timeout_complexity_factor', 1.0),
+            )
+
+            # Set enhanced timeout with metadata
+            event.set_enhanced_timeout(
+                timeout_value=timeout_value,
+                timeout_type=timeout_type.value,
+                attempt=getattr(event, 'timeout_attempt', 1),
+                complexity_factor=getattr(event, 'timeout_complexity_factor', 1.0),
+                blocking=False,
+            )
+
         assert event.timeout is not None
         try:
             await self._export_latest_git_provider_tokens(event)
