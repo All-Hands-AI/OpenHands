@@ -1,3 +1,3 @@
 export function ContextMenuSeparator() {
-  return <div className="w-full h-[1px] bg-[#525252]" />;
+  return <div className="h-[1px] w-full bg-tertiary my-1.5" />;
 }
