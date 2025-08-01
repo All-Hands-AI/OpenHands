@@ -227,7 +227,6 @@ describe("ConversationName", () => {
     // Should be in edit mode
     expect(screen.getByTestId("conversation-name-input")).toBeInTheDocument();
 
-    const inputElement = screen.getByTestId("conversation-name-input");
     await user.tab();
 
     // Should be back in view mode
