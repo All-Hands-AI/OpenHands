@@ -179,8 +179,14 @@ describe("ConversationName", () => {
     await user.type(inputElement, "  Trimmed Title  ");
     await user.tab();
 
-    // Should have trimmed the whitespace
-    expect(inputElement).toHaveValue("Trimmed Title");
+    // Should call mutation with trimmed value
+    expect(mockMutate).toHaveBeenCalledWith(
+      {
+        conversationId: "test-conversation-id",
+        newTitle: "Trimmed Title",
+      },
+      expect.any(Object),
+    );
   });
 
   it("should handle Enter key to save changes", async () => {

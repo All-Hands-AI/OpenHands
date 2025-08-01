@@ -35,7 +35,6 @@ export function ConversationName() {
           },
         );
       }
-      inputRef.current.value = trimmed;
     } else if (inputRef.current) {
       // reset the value if it's empty
       inputRef.current.value = conversation?.title ?? "";
