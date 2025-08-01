@@ -22,6 +22,9 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
+from openhands.agenthub.codeact_agent.tools.todo_write import (
+    create_todo_write_tool,
+)
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
@@ -131,6 +134,9 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
+        if self.config.enable_plan_mode:
+            # In plan mode, we use the todo_write tool for task management
+            tools.append(create_todo_write_tool(use_short_tool_desc))
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:

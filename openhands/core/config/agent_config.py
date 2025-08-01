@@ -43,6 +43,8 @@ class AgentConfig(BaseModel):
     """Whether history should be truncated to continue the session when hitting LLM context length limit."""
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
+    enable_plan_mode: bool = Field(default=False)
+    """Whether to enable plan mode, which uses the long horizon system message and add two new tools - todo_write and sequential_thinking - for planning and executing complex tasks."""
     condenser: CondenserConfig = Field(
         default_factory=lambda: NoOpCondenserConfig(type='noop')
     )
