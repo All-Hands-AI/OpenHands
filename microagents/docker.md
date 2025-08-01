@@ -12,7 +12,7 @@ triggers:
 
 ## Starting Docker in Container Environments
 
-To start Docker in a container environment:
+Please check if docker is already installed. If so, to start Docker in a container environment:
 
 ```bash
 # Start Docker daemon in the background
