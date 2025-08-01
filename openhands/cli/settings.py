@@ -23,7 +23,10 @@ from openhands.cli.utils import (
 )
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.condenser_config import ConversationWindowCondenserConfig, CondenserPipelineConfig
+from openhands.core.config.condenser_config import (
+    CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -477,10 +480,7 @@ async def modify_llm_settings_advanced(
                 ConversationWindowCondenserConfig(),
                 # Use LLMSummarizingCondenserConfig with the custom llm_config
                 LLMSummarizingCondenserConfig(
-                    llm_config=llm_config,
-                    type='llm',
-                    keep_first=4,
-                    max_size=120
+                    llm_config=llm_config, type='llm', keep_first=4, max_size=120
                 ),
             ]
         )
