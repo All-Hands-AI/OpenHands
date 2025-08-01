@@ -176,24 +176,36 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 {% endif %}
 
+# ================================================================
+# Setup VSCode Server (static, rarely changes)
+# ================================================================
 {{ setup_vscode_server() }}
 
 # ================================================================
-# Copy Project source files
+# Copy dependency files and install dependencies (changes less frequently than source code)
+# ================================================================
+{% if not build_from_scratch %}
+RUN if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
+    mkdir -p /openhands/code/openhands && \
+    touch /openhands/code/openhands/__init__.py
+
+COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+
+{{ install_dependencies() }}
+{% endif %}
+
+# ================================================================
+# Copy Project source files (changes most frequently, should be last)
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
-COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
-
-
 # ================================================================
-# END: Build from versioned image
+# Install VSCode extensions (depends on source code)
 # ================================================================
 {% if build_from_versioned %}
-{{ install_dependencies() }}
 {{ install_vscode_extensions() }}
 {% endif %}
 
