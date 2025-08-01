@@ -669,6 +669,7 @@ def get_metrics(state: State) -> dict[str, Any]:
     """Extract metrics from the state."""
     metrics = state.metrics.get() if state.metrics else {}
     metrics['condenser'] = get_condensation_metadata(state)
+    metrics['routing_history'] = state.routing_history
     return metrics
 
 

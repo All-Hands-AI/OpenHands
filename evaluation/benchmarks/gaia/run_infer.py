@@ -23,10 +23,12 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -56,6 +58,7 @@ AGENT_CLS_TO_INST_SUFFIX = {
 
 
 def get_config(
+    instance: pd.Series,
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
@@ -70,18 +73,34 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
+        )
+    )
+
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    model_routing_config = config_copy.get_agent_config().model_routing
+    # Set log_completions to True for all routing LLMs
+    for llm_cfg in model_routing_config.routing_llms.values():
+        llm_cfg.log_completions = True
+        update_llm_config_for_completions_logging(
+            llm_cfg, metadata.eval_output_dir, instance['instance_id']
+        )
+
+    if config_copy.search_api_key:
+        config.search_api_key = SecretStr(config_copy.search_api_key)
+
     if metadata.agent_config:
+        metadata.agent_config.model_routing = model_routing_config
         config.set_agent_config(metadata.agent_config, metadata.agent_class)
     else:
         logger.info('Agent config not provided, using default settings')
         agent_config = config.get_agent_config(metadata.agent_class)
         agent_config.enable_prompt_extensions = False
+        agent_config.model_routing = model_routing_config
 
-    config_copy = copy.deepcopy(config)
-    load_from_toml(config_copy)
-    if config_copy.search_api_key:
-        config.search_api_key = SecretStr(config_copy.search_api_key)
     return config
 
 
@@ -150,7 +169,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ) -> EvalOutput:
-    config = get_config(metadata)
+    config = get_config(instance, metadata)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
@@ -271,7 +290,7 @@ Here is the task:
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

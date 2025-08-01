@@ -28,6 +28,7 @@ from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.model_routing_config import ModelRoutingConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
@@ -212,6 +213,33 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         except ValueError:
             # Re-raise ValueError from SecurityConfig.from_toml_section
             raise ValueError('Error in [security] section in config.toml')
+
+    if 'model_routing' in toml_config:
+        try:
+            model_routing_mapping = ModelRoutingConfig.from_toml_section(
+                toml_config['model_routing']
+            )
+            # We only use the base model routing config for now
+            if 'model_routing' in model_routing_mapping:
+                default_agent_config = cfg.get_agent_config()
+                default_agent_config.model_routing = model_routing_mapping[
+                    'model_routing'
+                ]
+
+                # Construct the routing_llms by filtering llms with for_routing = True
+                routing_llms_dict = {}
+                for llm_name, llm_config in cfg.llms.items():
+                    if llm_config and llm_config.for_routing:
+                        routing_llms_dict[llm_name] = llm_config
+                default_agent_config.model_routing.routing_llms = routing_llms_dict
+
+                logger.openhands_logger.debug(
+                    'Default model routing configuration loaded from config toml and assigned to default agent'
+                )
+        except (TypeError, KeyError, ValidationError) as e:
+            logger.openhands_logger.warning(
+                f'Cannot parse [model_routing] config from toml, values have not been applied.\nError: {e}'
+            )
 
     # Process sandbox section if present
     if 'sandbox' in toml_config:
