@@ -14,7 +14,6 @@ import { renderWithProviders } from "test-utils";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { ConversationCard } from "#/components/features/conversation-panel/conversation-card/conversation-card";
 import { clickOnEditButton } from "./utils";
-import { act } from "react";
 
 // We'll use the actual i18next implementation but override the translation function
 
