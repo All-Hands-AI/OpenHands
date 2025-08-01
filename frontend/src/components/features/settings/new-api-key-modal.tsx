@@ -29,7 +29,7 @@ export function NewApiKeyModal({
   if (!newlyCreatedKey) return null;
 
   const modalFooter = (
-    <>
+    <div className="flex gap-2">
       <BrandButton
         type="button"
         variant="primary"
@@ -40,7 +40,7 @@ export function NewApiKeyModal({
       <BrandButton type="button" variant="secondary" onClick={onClose}>
         {t(I18nKey.BUTTON$CLOSE)}
       </BrandButton>
-    </>
+    </div>
   );
 
   return (

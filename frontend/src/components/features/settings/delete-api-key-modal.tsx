@@ -40,7 +40,7 @@ export function DeleteApiKeyModal({
   if (!keyToDelete) return null;
 
   const modalFooter = (
-    <>
+    <div className="flex gap-2">
       <BrandButton
         type="button"
         variant="danger"
@@ -63,7 +63,7 @@ export function DeleteApiKeyModal({
       >
         {t(I18nKey.BUTTON$CANCEL)}
       </BrandButton>
-    </>
+    </div>
   );
 
   return (
