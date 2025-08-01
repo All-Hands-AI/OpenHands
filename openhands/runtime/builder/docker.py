@@ -98,9 +98,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             logger.info(
                 'No docker binary available inside openhands-app container, trying to download online...'
             )
+            # Following official Docker installation documentation for Debian
+            # https://docs.docker.com/engine/install/debian/
             commands = [
                 'apt-get update',
-                'apt-get install -y ca-certificates curl gnupg',
+                'apt-get install -y ca-certificates curl',
                 'install -m 0755 -d /etc/apt/keyrings',
                 'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc',
                 'chmod a+r /etc/apt/keyrings/docker.asc',

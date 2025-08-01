@@ -73,26 +73,40 @@ RUN mkdir -p /openhands && \
 {% endmacro %}
 
 {% macro setup_docker() %}
-# Install Docker
+# Install Docker following official documentation
+# https://docs.docker.com/engine/install/ubuntu/
+# https://docs.docker.com/engine/install/debian/
 RUN \
     # Determine OS type and install accordingly
     if [[ "{{ base_image }}" == *"ubuntu"* ]] || [[ "{{ base_image }}" == *"mswebench"* ]]; then \
-        # Handle Ubuntu (including noble)
-        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
+        # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
+        # Add Docker's official GPG key
+        apt-get update && \
+        apt-get install -y ca-certificates curl && \
+        install -m 0755 -d /etc/apt/keyrings && \
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+        chmod a+r /etc/apt/keyrings/docker.asc && \
+        # Add the repository to Apt sources
         # For Ubuntu 24.04 (noble), use jammy repository as noble isn't supported yet
         if [ "$(lsb_release -cs)" = "noble" ]; then \
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
         else \
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
         fi; \
     else \
-        # Handle Debian
-        curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg && \
-        # For Debian, use the appropriate repository
-        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+        # Handle Debian (following https://docs.docker.com/engine/install/debian/)
+        # Add Docker's official GPG key
+        apt-get update && \
+        apt-get install -y ca-certificates curl && \
+        install -m 0755 -d /etc/apt/keyrings && \
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+        chmod a+r /etc/apt/keyrings/docker.asc && \
+        # Add the repository to Apt sources
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
     fi && \
+    # Install Docker Engine, containerd, and Docker Compose
     apt-get update && \
-    apt-get install -y docker-ce docker-ce-cli containerd.io && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
