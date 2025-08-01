@@ -70,6 +70,7 @@ class RecallObservation(Observation):
     # workspace context
     repo_name: str = ''
     repo_directory: str = ''
+    repo_branch: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
