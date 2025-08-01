@@ -34,6 +34,7 @@ from openhands.events.action import (
     FileWriteAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.agent import TodoWriteAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -45,6 +46,7 @@ from openhands.events.observation import (
     Observation,
     UserRejectObservation,
 )
+from openhands.events.observation.todo_write import TodoWriteObservation
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -869,6 +871,25 @@ fi
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
+            elif isinstance(action, TodoWriteAction):
+                # Format the todo list for display
+                num_todos = len(action.todos)
+                if num_todos == 0:
+                    content = 'Todo list has been cleared.'
+                else:
+                    content = f'Todo list updated with {num_todos} items:\n'
+                    for i, todo in enumerate(action.todos, 1):
+                        status_icon = {
+                            'pending': '⏳',
+                            'in_progress': '🔄',
+                            'completed': '✅',
+                        }.get(todo.get('status', 'pending'), '⏳')
+                        priority_icon = {'high': '🔴', 'medium': '🟡', 'low': '🟢'}.get(
+                            todo.get('priority', 'medium'), '🟡'
+                        )
+                        content += f'{i}. {status_icon} {priority_icon} {todo.get("content", "")}\n'
+
+                return TodoWriteObservation(content=content, todos=action.todos)
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')

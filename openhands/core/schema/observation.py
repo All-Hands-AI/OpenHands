@@ -55,3 +55,6 @@ class ObservationType(str, Enum):
 
     DOWNLOAD = 'download'
     """Result of downloading/opening a file via the browser"""
+
+    TODO_WRITE = 'todo_write'
+    """Result of a todo write operation"""

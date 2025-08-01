@@ -30,6 +30,7 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
+from openhands.events.observation.todo_write import TodoWriteObservation
 
 observations = (
     NullObservation,
@@ -49,6 +50,7 @@ observations = (
     RecallObservation,
     MCPObservation,
     FileDownloadObservation,
+    TodoWriteObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

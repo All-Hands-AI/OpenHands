@@ -36,10 +36,11 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
 )
-from openhands.events.action.agent import CondensationRequestAction
+from openhands.events.action.agent import CondensationRequestAction, TodoWriteAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import TODO_WRITE_TOOL_NAME
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -219,6 +220,16 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+
+            # ================================================
+            # TodoWriteAction
+            # ================================================
+            elif tool_call.function.name == TODO_WRITE_TOOL_NAME:
+                if 'todos' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "todos" in tool call {tool_call.function.name}'
+                    )
+                action = TodoWriteAction(todos=arguments['todos'])
 
             # ================================================
             # MCPAction (MCP)

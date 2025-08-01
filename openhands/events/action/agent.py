@@ -201,3 +201,28 @@ class CondensationRequestAction(Action):
     @property
     def message(self) -> str:
         return 'Requesting a condensation of the conversation history.'
+
+
+@dataclass
+class TodoWriteAction(Action):
+    """An action where the agent writes or updates a todo list for task management.
+
+    Attributes:
+        todos (list): The list of todo items with their status and metadata.
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.TODO_WRITE.
+    """
+
+    todos: list[dict[str, Any]] = field(default_factory=list)
+    thought: str = ''
+    action: str = ActionType.TODO_WRITE
+
+    @property
+    def message(self) -> str:
+        num_todos = len(self.todos)
+        if num_todos == 0:
+            return 'Clearing the todo list.'
+        elif num_todos == 1:
+            return 'Managing 1 todo item.'
+        else:
+            return f'Managing {num_todos} todo items.'

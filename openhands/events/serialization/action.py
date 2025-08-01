@@ -11,6 +11,7 @@ from openhands.events.action.agent import (
     CondensationAction,
     CondensationRequestAction,
     RecallAction,
+    TodoWriteAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import (
@@ -46,6 +47,7 @@ actions = (
     CondensationAction,
     CondensationRequestAction,
     MCPAction,
+    TodoWriteAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
