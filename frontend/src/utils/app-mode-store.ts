@@ -7,9 +7,8 @@ type AppMode = "saas" | "oss" | null;
 
 class AppModeStore {
   private static instance: AppModeStore;
-  private _appMode: AppMode = null;
 
-  private constructor() {}
+  private _appMode: AppMode = null;
 
   public static getInstance(): AppModeStore {
     if (!AppModeStore.instance) {
