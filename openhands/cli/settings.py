@@ -23,7 +23,10 @@ from openhands.cli.utils import (
 )
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -73,6 +76,10 @@ def display_settings(config: OpenHandsConfig) -> None:
             (
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
+            ),
+            (
+                '   Search API Key',
+                '********' if config.search_api_key else 'Not Set',
             ),
             (
                 '   Configuration File',
@@ -468,12 +475,21 @@ async def modify_llm_settings_advanced(
 
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
-        agent_config.condenser = LLMSummarizingCondenserConfig(
-            llm_config=llm_config,
-            type='llm',
+        agent_config.condenser = CondenserPipelineConfig(
+            type='pipeline',
+            condensers=[
+                ConversationWindowCondenserConfig(type='conversation_window'),
+                # Use LLMSummarizingCondenserConfig with the custom llm_config
+                LLMSummarizingCondenserConfig(
+                    llm_config=llm_config, type='llm', keep_first=4, max_size=120
+                ),
+            ],
         )
+
     else:
-        agent_config.condenser = NoOpCondenserConfig(type='noop')
+        agent_config.condenser = ConversationWindowCondenserConfig(
+            type='conversation_window'
+        )
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
@@ -486,5 +502,77 @@ async def modify_llm_settings_advanced(
     settings.agent = agent
     settings.confirmation_mode = enable_confirmation_mode
     settings.enable_default_condenser = enable_memory_condensation
+
+    await settings_store.store(settings)
+
+
+async def modify_search_api_settings(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Modify search API settings."""
+    session = PromptSession(key_bindings=kb_cancel())
+
+    search_api_key = None
+
+    try:
+        print_formatted_text(
+            HTML(
+                '\n<grey>Configure Search API Key for enhanced search capabilities.</grey>'
+            )
+        )
+        print_formatted_text(
+            HTML('<grey>You can get a Tavily API key from: https://tavily.com/</grey>')
+        )
+        print_formatted_text('')
+
+        # Show current status
+        current_key_status = '********' if config.search_api_key else 'Not Set'
+        print_formatted_text(
+            HTML(
+                f'<grey>Current Search API Key: </grey><green>{current_key_status}</green>'
+            )
+        )
+        print_formatted_text('')
+
+        # Ask if user wants to modify
+        modify_key = cli_confirm(
+            config,
+            'Do you want to modify the Search API Key?',
+            ['Set/Update API Key', 'Remove API Key', 'Keep current setting'],
+        )
+
+        if modify_key == 0:  # Set/Update API Key
+            search_api_key = await get_validated_input(
+                session,
+                'Enter Tavily Search API Key. You can get it from https://www.tavily.com/ (starts with tvly-, CTRL-c to cancel): ',
+                validator=lambda x: x.startswith('tvly-') if x.strip() else False,
+                error_message='Search API Key must start with "tvly-"',
+            )
+        elif modify_key == 1:  # Remove API Key
+            search_api_key = ''  # Empty string to remove the key
+        else:  # Keep current setting
+            return
+
+    except (
+        UserCancelledError,
+        KeyboardInterrupt,
+        EOFError,
+    ):
+        return  # Return on exception
+
+    save_settings = save_settings_confirmation(config)
+
+    if not save_settings:
+        return
+
+    # Update config
+    config.search_api_key = SecretStr(search_api_key) if search_api_key else None
+
+    # Update settings store
+    settings = await settings_store.load()
+    if not settings:
+        settings = Settings()
+
+    settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     await settings_store.store(settings)

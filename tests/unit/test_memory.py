@@ -453,7 +453,9 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
 
     # Create a RepositoryInfo
     repository_info = RepositoryInfo(
-        repo_name='test-owner/test-repo', repo_directory='/workspace/test-repo'
+        repo_name='test-owner/test-repo',
+        repo_directory='/workspace/test-repo',
+        branch_name='main',
     )
 
     conversation_instructions = ConversationInstructions(
