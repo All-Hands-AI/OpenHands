@@ -27,6 +27,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { useAppModeSync } from "#/hooks/use-app-mode-sync";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -76,6 +77,9 @@ export default function MainApp() {
     isFetching: isFetchingAuth,
     isError: isAuthError,
   } = useIsAuthed();
+
+  // Sync the APP_MODE from config to the app mode store
+  useAppModeSync();
 
   // Always call the hook, but we'll only use the result when not on TOS page
   const gitHubAuthUrl = useGitHubAuthUrl({

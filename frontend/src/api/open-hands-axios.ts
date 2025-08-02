@@ -45,11 +45,14 @@ const checkForEmailVerificationError = (data: any): boolean => {
   return false;
 };
 
+// Import the app mode store
+import { appModeStore } from "#/utils/app-mode-store";
+
 // Set up request interceptor to modify API paths based on APP_MODE
 openHands.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get the current APP_MODE from window.__APP_MODE__
-    const appMode = window.__APP_MODE__;
+    // Get the current APP_MODE from the app mode store
+    const appMode = appModeStore.getAppMode();
 
     // Only modify the URL if it's a string and contains "/api/user"
     if (

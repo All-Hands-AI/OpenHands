@@ -6,7 +6,7 @@
  * @param appMode The current application mode ("saas" or "oss")
  * @returns The modified API path
  */
-export const getApiPath = (path: string, appMode?: string | null): string => {
+export const getApiPath = (path: string, appMode: "saas" | "oss" | null | undefined): string => {
   // Only modify paths when APP_MODE is "saas"
   if (appMode === "saas" && path.startsWith("/api/user")) {
     // Check if the path is exactly "/api/user" or has a trailing slash
