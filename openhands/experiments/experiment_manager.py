@@ -14,7 +14,7 @@ class ExperimentManager:
         return conversation_settings
 
     @staticmethod
-    def run_agent_config_variant_test(
+    def run_config_variant_test(
         user_id: str, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         logger.debug(

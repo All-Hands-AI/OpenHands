@@ -75,7 +75,7 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
-        self.config = ExperimentManagerImpl.run_agent_config_variant_test(user_id, sid, self.config)
+        self.config = ExperimentManagerImpl.run_config_variant_test(user_id, sid, self.config)
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
