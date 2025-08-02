@@ -60,11 +60,18 @@ class MCPClient(BaseModel):
         self,
         server: MCPSSEServerConfig | MCPSHTTPServerConfig,
         conversation_id: str | None = None,
-        timeout: float = 30.0,
+        timeout: float | None = None,
     ):
         """Connect to MCP server using SHTTP or SSE transport"""
         server_url = server.url
         api_key = server.api_key
+
+        if timeout is None:
+            timeout = (
+                server.timeout
+                if getattr(server, 'timeout', None)
+                else load_openhands_config().mcp.default_timeout
+            )
 
         if not server_url:
             raise ValueError('Server URL is required.')
