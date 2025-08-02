@@ -1,6 +1,7 @@
 import React from "react";
 import { UserAvatar } from "./user-avatar";
 import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -9,6 +10,7 @@ interface UserActionsProps {
 }
 
 export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
+  const { data: isAuthed } = useIsAuthed();
   const [accountContextMenuIsVisible, setAccountContextMenuIsVisible] =
     React.useState(false);
 
@@ -25,6 +27,9 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     closeAccountMenu();
   };
 
+  // Always show the menu for authenticated users, even without user data
+  const showMenu = accountContextMenuIsVisible && isAuthed === true;
+
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
       <UserAvatar
@@ -33,7 +38,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      {accountContextMenuIsVisible && !!user && (
+      {showMenu && (
         <AccountSettingsContextMenu
           onLogout={handleLogout}
           onClose={closeAccountMenu}
