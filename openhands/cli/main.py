@@ -1,3 +1,5 @@
+import openhands.cli.suppress_warnings  # noqa: F401  # isort: skip
+
 import asyncio
 import logging
 import os
@@ -9,8 +11,6 @@ from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 
-# NOTE: Must import suppress_warnings first to prevent pydub SyntaxWarnings
-import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
