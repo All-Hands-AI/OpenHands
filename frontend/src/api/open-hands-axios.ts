@@ -5,9 +5,6 @@ import axios, {
 } from "axios";
 import { getApiPath } from "#/utils/api-path";
 
-// Import the app mode store
-import { appModeStore } from "#/utils/app-mode-store";
-
 export const openHands = axios.create({
   baseURL: `${window.location.protocol}//${import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host}`,
 });
@@ -51,8 +48,8 @@ const checkForEmailVerificationError = (data: any): boolean => {
 // Set up request interceptor to modify API paths based on APP_MODE
 openHands.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Get the current APP_MODE from the app mode store
-    const appMode = appModeStore.getAppMode();
+    // Get the current APP_MODE from window.__APP_MODE__
+    const appMode = window.__APP_MODE__;
 
     // Only modify the URL if it's a string and contains "/api/user"
     if (
