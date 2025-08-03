@@ -88,14 +88,16 @@ class MCPClient(BaseModel):
                 transport = StreamableHttpTransport(
                     url=server_url,
                     headers=headers if headers else None,
+                    auth=api_key if api_key else None,
                 )
             else:
                 transport = SSETransport(
                     url=server_url,
                     headers=headers if headers else None,
+                    auth=api_key if api_key else None,
                 )
 
-            self.client = Client(transport, timeout=timeout)
+            self.client = Client(transport, timeout=timeout, auth=api_key if api_key else None)
 
             await self._initialize_and_list_tools()
         except McpError as e:
