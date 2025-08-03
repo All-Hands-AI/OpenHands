@@ -130,8 +130,8 @@ class MCPClient(BaseModel):
         """Connect to MCP server using stdio transport"""
         try:
             transport = StdioTransport(
-                command=server.command, 
-                args=server.args or [], 
+                command=server.command,
+                args=server.args or [],
                 env=server.env,
                 cwd=None,  # Use default working directory
                 keep_alive=None  # Use default keep_alive behavior
