@@ -16,8 +16,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Set environment variables
+  set-env:
+    uses: ./.github/workflows/set-env-vars.yml
+
   # Run python tests on Linux
   test-on-linux:
+    needs: set-env
     name: Python Tests on Linux
     runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
