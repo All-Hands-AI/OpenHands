@@ -226,6 +226,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} CONNECTION ERROR:`,
             error,
@@ -233,6 +234,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("disconnect", (reason) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
             reason,
