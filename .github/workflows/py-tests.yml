@@ -49,18 +49,31 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
-      - name: Set Poetry to use Python 3.12
-        run: poetry env use ${{ env.pythonLocation }}/bin/python
+      - name: Create a new virtual environment
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install poetry
       - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
+        run: |
+          source .venv/bin/activate
+          poetry install --with dev,test,runtime
       - name: Build Environment
-        run: make build
+        run: |
+          source .venv/bin/activate
+          make build
       - name: Run Unit Tests
-        run: poetry run pytest --forked -n auto -svv ./tests/unit
+        run: |
+          source .venv/bin/activate
+          poetry run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
-        run: TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
+        run: |
+          source .venv/bin/activate
+          TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
       - name: Run E2E Tests
-        run: poetry run pytest -svv tests/e2e
+        run: |
+          source .venv/bin/activate
+          poetry run pytest -svv tests/e2e
 
   # Run specific Windows python tests
   test-on-windows:
@@ -82,16 +95,26 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
-      - name: Set Poetry to use Python 3.12
-        run: poetry env use ${{ env.pythonLocation }}/python
+      - name: Create a new virtual environment
+        run: |
+          python -m venv .venv
+          .\.venv\Scripts\activate
+          pip install poetry
       - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
+        run: |
+          .\.venv\Scripts\activate
+          poetry install --with dev,test,runtime
       - name: Run Windows unit tests
-        run: poetry run pytest -svv tests/unit/test_windows_bash.py
+        run: |
+          .\.venv\Scripts\activate
+          poetry run pytest -svv tests/unit/test_windows_bash.py
         env:
           DEBUG: "1"
       - name: Run Windows runtime tests with LocalRuntime
-        run: $env:TEST_RUNTIME="local"; poetry run pytest -svv tests/runtime/test_bash.py
+        run: |
+          .\.venv\Scripts\activate
+          $env:TEST_RUNTIME="local"
+          poetry run pytest -svv tests/runtime/test_bash.py
         env:
           TEST_RUNTIME: local
           DEBUG: "1"
