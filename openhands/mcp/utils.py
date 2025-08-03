@@ -1,4 +1,5 @@
 import json
+import os
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -75,6 +76,13 @@ async def create_mcp_clients(
         )
         return []
 
+    # Skip in CI environment if OPENHANDS_SKIP_MCP is set
+    if os.environ.get('OPENHANDS_SKIP_MCP') == '1':
+        logger.info(
+            'MCP functionality is disabled by environment variable, skipping client creation'
+        )
+        return []
+
     if stdio_servers is None:
         stdio_servers = []
 
@@ -142,6 +150,13 @@ async def fetch_mcp_tools_from_config(
         logger.info('MCP functionality is disabled on Windows, skipping tool fetching')
         return []
 
+    # Skip in CI environment if OPENHANDS_SKIP_MCP is set
+    if os.environ.get('OPENHANDS_SKIP_MCP') == '1':
+        logger.info(
+            'MCP functionality is disabled by environment variable, skipping tool fetching'
+        )
+        return []
+
     mcp_clients = []
     mcp_tools = []
     try:
@@ -196,6 +211,11 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
         logger.info('MCP functionality is disabled on Windows')
         return ErrorObservation('MCP functionality is not available on Windows')
 
+    # Skip in CI environment if OPENHANDS_SKIP_MCP is set
+    if os.environ.get('OPENHANDS_SKIP_MCP') == '1':
+        logger.info('MCP functionality is disabled by environment variable')
+        return ErrorObservation('MCP functionality is disabled by environment variable')
+
     if not mcp_clients:
         raise ValueError('No MCP clients found')
 
@@ -240,7 +260,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
 async def add_mcp_tools_to_agent(
     agent: 'Agent', runtime: Runtime, memory: 'Memory'
-) -> MCPConfig:
+) -> MCPConfig | None:
     """
     Add MCP tools to an agent.
     """
@@ -250,7 +270,15 @@ async def add_mcp_tools_to_agent(
     if sys.platform == 'win32':
         logger.info('MCP functionality is disabled on Windows, skipping MCP tools')
         agent.set_mcp_tools([])
-        return
+        return None
+
+    # Skip in CI environment if OPENHANDS_SKIP_MCP is set
+    if os.environ.get('OPENHANDS_SKIP_MCP') == '1':
+        logger.info(
+            'MCP functionality is disabled by environment variable, skipping MCP tools'
+        )
+        agent.set_mcp_tools([])
+        return None
 
     assert runtime.runtime_initialized, (
         'Runtime must be initialized before adding MCP tools'

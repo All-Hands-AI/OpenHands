@@ -1,0 +1,18 @@
+name: Set Environment Variables
+
+on:
+  workflow_call:
+    outputs:
+      env_vars_set:
+        description: "Indicates that environment variables have been set"
+        value: ${{ jobs.set_env_vars.outputs.env_vars_set }}
+
+jobs:
+  set_env_vars:
+    runs-on: ubuntu-latest
+    outputs:
+      env_vars_set: "true"
+    steps:
+      - name: Set environment variables
+        run: |
+          echo "OPENHANDS_SKIP_MCP=1" >> $GITHUB_ENV

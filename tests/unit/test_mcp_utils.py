@@ -1,7 +1,12 @@
 import json
+import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+
+# Unset OPENHANDS_SKIP_MCP for tests
+if 'OPENHANDS_SKIP_MCP' in os.environ:
+    del os.environ['OPENHANDS_SKIP_MCP']
 
 # Import the module, not the functions directly to avoid circular imports
 import openhands.mcp.utils

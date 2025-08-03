@@ -22,6 +22,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     env:
       INSTALL_DOCKER: '0' # Set to '0' to skip Docker installation
+      OPENHANDS_SKIP_MCP: '1' # Skip MCP functionality in tests
     strategy:
       matrix:
         python-version: ['3.12']
@@ -58,6 +59,8 @@ jobs:
   test-on-windows:
     name: Python Tests on Windows
     runs-on: windows-latest
+    env:
+      OPENHANDS_SKIP_MCP: '1' # Skip MCP functionality in tests
     strategy:
       matrix:
         python-version: ['3.12']
