@@ -22,7 +22,8 @@ from openhands.mcp.tool import MCPClientTool
 
 class MCPClient(BaseModel):
     """
-    A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
+    A collection of tools that connects to an MCP server and manages available
+    tools through the Model Context Protocol.
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -54,7 +55,8 @@ class MCPClient(BaseModel):
             self.tool_map[tool.name] = server_tool
             self.tools.append(server_tool)
 
-        logger.info(f'Connected to server with tools: {[tool.name for tool in tools]}')
+        tool_names = [tool.name for tool in tools]
+        logger.info(f'Connected to server with tools: {tool_names}')
 
     async def connect_http(
         self,
@@ -70,15 +72,13 @@ class MCPClient(BaseModel):
             raise ValueError('Server URL is required.')
 
         try:
-            headers = (
-                {
-                    'Authorization': f'Bearer {api_key}',
-                    's': api_key,  # We need this for action execution server's MCP Router
-                    'X-Session-API-Key': api_key,  # We need this for Remote Runtime
-                }
-                if api_key
-                else {}
-            )
+            headers = {
+                'Authorization': f'Bearer {api_key}',
+                # We need this for action execution server's MCP Router
+                's': api_key,
+                # We need this for Remote Runtime
+                'X-Session-API-Key': api_key
+            } if api_key else {}
 
             if conversation_id:
                 headers['X-OpenHands-ServerConversation-ID'] = conversation_id
@@ -97,7 +97,8 @@ class MCPClient(BaseModel):
                     auth=api_key if api_key else None,
                 )
 
-            self.client = Client(transport, timeout=timeout, auth=api_key if api_key else None)
+            auth = api_key if api_key else None
+            self.client = Client(transport, timeout=timeout, auth=auth)
 
             await self._initialize_and_list_tools()
         except McpError as e:
@@ -126,7 +127,9 @@ class MCPClient(BaseModel):
             )
             raise
 
-    async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
+    async def connect_stdio(
+        self, server: MCPStdioServerConfig, timeout: float = 30.0
+    ):
         """Connect to MCP server using stdio transport"""
         try:
             transport = StdioTransport(
@@ -139,9 +142,8 @@ class MCPClient(BaseModel):
             self.client = Client(transport, timeout=timeout)
             await self._initialize_and_list_tools()
         except Exception as e:
-            server_name = getattr(
-                server, 'name', f'{server.command} {" ".join(server.args or [])}'
-            )
+            cmd_str = f'{server.command} {" ".join(server.args or [])}'
+            server_name = getattr(server, 'name', cmd_str)
             error_msg = f'Failed to connect to stdio server {server_name}: {e}'
             logger.error(error_msg)
             mcp_error_collector.add_error(
@@ -156,9 +158,11 @@ class MCPClient(BaseModel):
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
             raise ValueError(f'Tool {tool_name} not found.')
-        # The MCPClientTool is primarily for metadata; use the session to call the actual tool.
+        # MCPClientTool is for metadata; use the session to call the tool
         if not self.client:
             raise RuntimeError('Client session is not available.')
 
         async with self.client:
-            return await self.client.call_tool_mcp(name=tool_name, arguments=args)
+            return await self.client.call_tool_mcp(
+                name=tool_name, arguments=args
+            )
