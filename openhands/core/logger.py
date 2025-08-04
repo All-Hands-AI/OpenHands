@@ -42,7 +42,7 @@ else:
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
-LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
+LOG_TO_FILE = os.getenv('LOG_TO_FILE', str(LOG_LEVEL == 'DEBUG')).lower() in ['true', '1', 'yes']
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
@@ -362,7 +362,6 @@ if DEBUG:
     openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
-    LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
 if LOG_JSON:
@@ -374,13 +373,11 @@ openhands_logger.addFilter(SensitiveDataFilter(openhands_logger.name))
 openhands_logger.propagate = False
 openhands_logger.debug('Logging initialized')
 
-_default_log_dir = os.path.join(
+LOG_DIR = os.path.join(
     # parent dir of openhands/core (i.e., root of the repo)
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
     'logs',
 )
-
-LOG_DIR = os.getenv("TMPDIR", _default_log_dir)
 
 if LOG_TO_FILE:
     openhands_logger.addHandler(
