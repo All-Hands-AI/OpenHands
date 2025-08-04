@@ -51,26 +51,31 @@ async def test_session_preserves_env_mcp_config(mock_sio, monkeypatch):
     mock_agent_cls = MagicMock()
     mock_agent_instance = MagicMock()
     mock_agent_cls.return_value = mock_agent_instance
-    
+
     # Initialize the agent (this is where the MCP config would be reset)
-    with patch.object(session.agent_session, 'start', AsyncMock()), \
-         patch.object(Agent, 'get_cls', return_value=mock_agent_cls):
+    with (
+        patch.object(session.agent_session, 'start', AsyncMock()),
+        patch.object(Agent, 'get_cls', return_value=mock_agent_cls),
+    ):
         await session.initialize_agent(settings, None, None)
 
     # Verify that the MCP configuration was preserved
     assert len(session.config.mcp.shttp_servers) > 0
-    
+
     # Check if the environment variable config is still there
     env_server_found = False
     for server in session.config.mcp.shttp_servers:
         if isinstance(server, dict) and server.get('url') == 'http://env-server:8080':
             env_server_found = True
             assert server.get('api_key') == 'env-api-key'
-        elif isinstance(server, MCPSHTTPServerConfig) and server.url == 'http://env-server:8080':
+        elif (
+            isinstance(server, MCPSHTTPServerConfig)
+            and server.url == 'http://env-server:8080'
+        ):
             env_server_found = True
             assert server.api_key == 'env-api-key'
-    
-    assert env_server_found, "Environment variable MCP configuration was lost"
+
+    assert env_server_found, 'Environment variable MCP configuration was lost'
 
     # Clean up
     await session.close()
@@ -112,24 +117,29 @@ async def test_session_settings_override_env_mcp_config(mock_sio, monkeypatch):
     mock_agent_cls = MagicMock()
     mock_agent_instance = MagicMock()
     mock_agent_cls.return_value = mock_agent_instance
-    
+
     # Initialize the agent
-    with patch.object(session.agent_session, 'start', AsyncMock()), \
-         patch.object(Agent, 'get_cls', return_value=mock_agent_cls):
+    with (
+        patch.object(session.agent_session, 'start', AsyncMock()),
+        patch.object(Agent, 'get_cls', return_value=mock_agent_cls),
+    ):
         await session.initialize_agent(settings, None, None)
 
     # Verify that the settings MCP configuration was used
     assert len(session.config.mcp.shttp_servers) > 0
-    
+
     # Check if the settings config is there
     settings_server_found = False
     for server in session.config.mcp.shttp_servers:
-        if isinstance(server, MCPSHTTPServerConfig) and server.url == 'http://settings-server:8080':
+        if (
+            isinstance(server, MCPSHTTPServerConfig)
+            and server.url == 'http://settings-server:8080'
+        ):
             settings_server_found = True
             assert server.api_key == 'settings-api-key'
-    
-    assert settings_server_found, "Settings MCP configuration was lost"
-    
+
+    assert settings_server_found, 'Settings MCP configuration was lost'
+
     # Check that the environment variable config is NOT there (it was overridden)
     for server in session.config.mcp.shttp_servers:
         if isinstance(server, dict):
