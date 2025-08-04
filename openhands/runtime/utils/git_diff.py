@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+MAX_FILE_SIZE_FOR_GIT_DIFF = 1024 * 1024  # 1 Mb
+
 
 def get_closest_git_repo(path: Path) -> Path | None:
     while True:
@@ -75,9 +77,11 @@ def get_valid_ref(repo_dir: str) -> str | None:
 
 def get_git_diff(relative_file_path: str) -> dict[str, str]:
     path = Path(os.getcwd(), relative_file_path).resolve()
+    if os.path.getsize(path) > MAX_FILE_SIZE_FOR_GIT_DIFF:
+        raise ValueError('file_to_large')
     closest_git_repo = get_closest_git_repo(path)
     if not closest_git_repo:
-        raise ValueError('no_repo')
+        raise ValueError('no_repository')
     current_rev = get_valid_ref(str(closest_git_repo))
     try:
         original = run(
