@@ -45,7 +45,7 @@ if DEBUG:
 LOG_TO_FILE = os.getenv('LOG_TO_FILE', str(LOG_LEVEL == 'DEBUG')).lower() in [
     'true',
     '1',
-    'yes'
+    'yes',
 ]
 DISABLE_COLOR_PRINTING = False
 
