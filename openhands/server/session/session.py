@@ -148,10 +148,21 @@ class Session:
 
         mcp_env_vars = {k: v for k, v in os.environ.items() if 'MCP' in k}
         self.logger.debug(f'MCP-related environment variables: {mcp_env_vars}')
-
-        self.config.mcp = settings.mcp_config or MCPConfig(
-            sse_servers=[], stdio_servers=[]
-        )
+        
+        # Preserve the MCP configuration from environment variables
+        # If settings.mcp_config is provided, use it
+        # Otherwise, use the existing config.mcp (which includes env var settings)
+        # Only fall back to empty MCPConfig if both are None
+        if settings.mcp_config is not None:
+            self.logger.debug(f"Using MCP configuration from settings: {settings.mcp_config}")
+            self.config.mcp = settings.mcp_config
+        elif hasattr(self.config, 'mcp') and self.config.mcp is not None:
+            self.logger.debug(f"Preserving existing MCP configuration: {self.config.mcp}")
+            # No need to reassign as it's already set in the deepcopy of config
+            pass
+        else:
+            self.logger.debug("No MCP configuration found, using empty config")
+            self.config.mcp = MCPConfig(sse_servers=[], stdio_servers=[])
 
         self.logger.debug(f'MCP configuration after initial setup: {self.config.mcp}')
         self.logger.debug(
