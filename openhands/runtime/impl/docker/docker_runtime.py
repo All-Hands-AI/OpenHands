@@ -5,7 +5,7 @@ import typing
 import uuid
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Callable, Optional, cast
+from typing import Any, Callable, Optional
 from uuid import UUID
 
 import docker
