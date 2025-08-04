@@ -146,6 +146,10 @@ async def fetch_mcp_tools_from_config(
     mcp_tools = []
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
+        # Log each server configuration for debugging
+        for i, server in enumerate(mcp_config.shttp_servers):
+            logger.debug(f'SHTTP server {i}: {server}')
+            
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
             mcp_config.sse_servers,
@@ -158,6 +162,11 @@ async def fetch_mcp_tools_from_config(
             logger.debug('No MCP clients were successfully connected')
             return []
 
+        # Log each client and its tools
+        for i, client in enumerate(mcp_clients):
+            logger.debug(f'MCP client {i} connected to: {client.server_config}')
+            logger.debug(f'MCP client {i} tools: {[tool.name for tool in client.tools]}')
+            
         # Convert tools to the format expected by the agent
         mcp_tools = convert_mcp_clients_to_tools(mcp_clients)
 
@@ -284,9 +293,19 @@ async def add_mcp_tools_to_agent(
         updated_mcp_config, use_stdio=isinstance(runtime, CLIRuntime)
     )
 
+    tool_names = [tool["function"]["name"] for tool in mcp_tools]
     logger.info(
-        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
+        f'Loaded {len(mcp_tools)} MCP tools: {tool_names}'
     )
+    
+    # Log which tools came from which server
+    try:
+        for i, client in enumerate(mcp_clients):
+            client_tools = [tool.name for tool in client.tools]
+            server_info = getattr(client, 'server_config', 'unknown server')
+            logger.info(f'MCP server {server_info} provided tools: {client_tools}')
+    except Exception as e:
+        logger.error(f'Error logging MCP client tools: {e}')
 
     # Set the MCP tools on the agent
     agent.set_mcp_tools(mcp_tools)
