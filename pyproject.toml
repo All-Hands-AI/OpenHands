@@ -17,10 +17,10 @@ packages = [
   { include = "third_party/**/*" },
   { include = "pyproject.toml", to = "openhands" },
   { include = "poetry.lock", to = "openhands" },
-  { include = "microagents/**/*" },
 ]
 include = [
   "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
+  "microagents/**/*",
 ]
 build = "build_vscode.py" # Build VSCode extension during Poetry build
 
