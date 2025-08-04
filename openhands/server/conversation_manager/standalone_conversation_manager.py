@@ -4,7 +4,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable, Iterable
 
-from openhands.server.routes import settings
 import socketio
 
 from openhands.core.config.openhands_config import OpenHandsConfig
