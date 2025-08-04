@@ -23,22 +23,22 @@ from openhands.utils.import_utils import get_impl
 def _validate_mcp_url(url: str) -> str:
     """Shared URL validation logic for MCP servers."""
     if not url.strip():
-        raise ValueError('URL cannot be empty')
+        raise ValueError("URL cannot be empty")
 
     url = url.strip()
     try:
         parsed = urlparse(url)
         if not parsed.scheme:
-            raise ValueError('URL must include a scheme (http:// or https://)')
+            raise ValueError("URL must include a scheme (http:// or https://)")
         if not parsed.netloc:
-            raise ValueError('URL must include a valid domain/host')
-        if parsed.scheme not in ['http', 'https', 'ws', 'wss']:
-            raise ValueError('URL scheme must be http, https, ws, or wss')
+            raise ValueError("URL must include a valid domain/host")
+        if parsed.scheme not in ["http", "https", "ws", "wss"]:
+            raise ValueError("URL scheme must be http, https, ws, or wss")
         return url
     except Exception as e:
         if isinstance(e, ValueError):
             raise
-        raise ValueError(f'Invalid URL format: {str(e)}')
+        raise ValueError(f"Invalid URL format: {str(e)}")
 
 
 class MCPSSEServerConfig(BaseModel):
@@ -52,7 +52,7 @@ class MCPSSEServerConfig(BaseModel):
     url: str
     api_key: str | None = None
 
-    @field_validator('url')
+    @field_validator("url")
     @classmethod
     def validate_url(cls, v: str) -> str:
         """Validate URL format for MCP servers."""
@@ -74,46 +74,47 @@ class MCPStdioServerConfig(BaseModel):
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
 
-    @field_validator('name')
+    @field_validator("name")
     @classmethod
     def validate_server_name(cls, v: str) -> str:
         """Validate server name for stdio MCP servers."""
         if not v.strip():
-            raise ValueError('Server name cannot be empty')
+            raise ValueError("Server name cannot be empty")
 
         v = v.strip()
 
         # Check for valid characters (alphanumeric, hyphens, underscores)
-        if not re.match(r'^[a-zA-Z0-9_-]+$', v):
+        if not re.match(r"^[a-zA-Z0-9_-]+$", v):
             raise ValueError(
-                'Server name can only contain letters, numbers, hyphens, and underscores'
+                "Server name can only contain letters, numbers, hyphens, and underscores"
             )
 
         return v
 
-    @field_validator('command')
+    @field_validator("command")
     @classmethod
     def validate_command(cls, v: str) -> str:
         """Validate command for stdio MCP servers."""
         if not v.strip():
-            raise ValueError('Command cannot be empty')
+            raise ValueError("Command cannot be empty")
 
         v = v.strip()
 
         # Check that command doesn't contain spaces (should be a single executable)
-        if ' ' in v:
+        if " " in v:
             raise ValueError(
-                'Command should be a single executable without spaces (use arguments field for parameters)'
+                "Command should be a single executable without spaces (use arguments field for parameters)"
             )
 
         return v
 
-    @field_validator('args', mode='before')
+    @field_validator("args", mode="before")
     @classmethod
     def parse_args(cls, v) -> list[str]:
         """Parse arguments from string or return list as-is.
 
         Supports shell-like argument parsing using shlex.split().
+
         Examples:
         - "-y mcp-remote https://example.com"
         - '--config "path with spaces" --debug'
@@ -136,7 +137,7 @@ class MCPStdioServerConfig(BaseModel):
 
         return v or []
 
-    @field_validator('env', mode='before')
+    @field_validator("env", mode="before")
     @classmethod
     def parse_env(cls, v) -> dict[str, str]:
         """Parse environment variables from string or return dict as-is."""
@@ -145,21 +146,21 @@ class MCPStdioServerConfig(BaseModel):
                 return {}
 
             env = {}
-            for pair in v.split(','):
+            for pair in v.split(","):
                 pair = pair.strip()
                 if not pair:
                     continue
 
-                if '=' not in pair:
+                if "=" not in pair:
                     raise ValueError(
                         f"Environment variable '{pair}' must be in KEY=VALUE format"
                     )
 
-                key, value = pair.split('=', 1)
+                key, value = pair.split("=", 1)
                 key = key.strip()
                 if not key:
-                    raise ValueError('Environment variable key cannot be empty')
-                if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', key):
+                    raise ValueError("Environment variable key cannot be empty")
+                if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", key):
                     raise ValueError(
                         f"Invalid environment variable name '{key}'. Must start with letter or underscore, contain only alphanumeric characters and underscores"
                     )
@@ -189,7 +190,7 @@ class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
 
-    @field_validator('url')
+    @field_validator("url")
     @classmethod
     def validate_url(cls, v: str) -> str:
         """Validate URL format for MCP servers."""
@@ -208,7 +209,7 @@ class MCPConfig(BaseModel):
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
-    model_config = ConfigDict(extra='forbid')
+    model_config = ConfigDict(extra="forbid")
 
     @staticmethod
     def _normalize_servers(servers_data: list[dict | str]) -> list[dict]:
@@ -216,20 +217,20 @@ class MCPConfig(BaseModel):
         normalized = []
         for server in servers_data:
             if isinstance(server, str):
-                normalized.append({'url': server})
+                normalized.append({"url": server})
             else:
                 normalized.append(server)
         return normalized
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     def convert_string_urls(cls, data):
         """Convert string URLs to MCPSSEServerConfig objects."""
         if isinstance(data, dict):
-            if 'sse_servers' in data:
-                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
+            if "sse_servers" in data:
+                data["sse_servers"] = cls._normalize_servers(data["sse_servers"])
 
-            if 'shttp_servers' in data:
-                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+            if "shttp_servers" in data:
+                data["shttp_servers"] = cls._normalize_servers(data["shttp_servers"])
 
         return data
 
@@ -239,21 +240,20 @@ class MCPConfig(BaseModel):
 
         # Check for duplicate server URLs
         if len(set(urls)) != len(urls):
-            raise ValueError('Duplicate MCP server URLs are not allowed')
+            raise ValueError("Duplicate MCP server URLs are not allowed")
 
         # Validate URLs
         for url in urls:
             try:
                 result = urlparse(url)
                 if not all([result.scheme, result.netloc]):
-                    raise ValueError(f'Invalid URL format: {url}')
+                    raise ValueError(f"Invalid URL format: {url}")
             except Exception as e:
-                raise ValueError(f'Invalid URL {url}: {str(e)}')
+                raise ValueError(f"Invalid URL {url}: {str(e)}")
 
     @classmethod
-    def from_toml_section(cls, data: dict) -> dict[str, 'MCPConfig']:
-        """
-        Create a mapping of MCPConfig instances from a toml dictionary representing the [mcp] section.
+    def from_toml_section(cls, data: dict) -> dict[str, "MCPConfig"]:
+        """Create a mapping of MCPConfig instances from a toml dictionary representing the [mcp] section.
 
         The configuration is built from all keys in data.
 
@@ -265,89 +265,106 @@ class MCPConfig(BaseModel):
 
         try:
             # Convert all entries in sse_servers to MCPSSEServerConfig objects
-            if 'sse_servers' in data:
-                data['sse_servers'] = cls._normalize_servers(data['sse_servers'])
+            if "sse_servers" in data:
+                data["sse_servers"] = cls._normalize_servers(data["sse_servers"])
                 servers: list[
                     MCPSSEServerConfig | MCPStdioServerConfig | MCPSHTTPServerConfig
                 ] = []
-                for server in data['sse_servers']:
+                for server in data["sse_servers"]:
                     servers.append(MCPSSEServerConfig(**server))
-                data['sse_servers'] = servers
+                data["sse_servers"] = servers
 
             # Convert all entries in stdio_servers to MCPStdioServerConfig objects
-            if 'stdio_servers' in data:
+            if "stdio_servers" in data:
                 servers = []
-                for server in data['stdio_servers']:
+                for server in data["stdio_servers"]:
                     servers.append(MCPStdioServerConfig(**server))
-                data['stdio_servers'] = servers
+                data["stdio_servers"] = servers
 
-            if 'shttp_servers' in data:
-                data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
+            if "shttp_servers" in data:
+                data["shttp_servers"] = cls._normalize_servers(data["shttp_servers"])
                 servers = []
-                for server in data['shttp_servers']:
+                for server in data["shttp_servers"]:
                     servers.append(MCPSHTTPServerConfig(**server))
-                data['shttp_servers'] = servers
+                data["shttp_servers"] = servers
 
             # Create SSE config if present
             mcp_config = MCPConfig.model_validate(data)
             mcp_config.validate_servers()
 
             # Create the main MCP config
-            mcp_mapping['mcp'] = cls(
+            mcp_mapping["mcp"] = cls(
                 sse_servers=mcp_config.sse_servers,
                 stdio_servers=mcp_config.stdio_servers,
                 shttp_servers=mcp_config.shttp_servers,
             )
         except ValidationError as e:
-            raise ValueError(f'Invalid MCP configuration: {e}')
+            raise ValueError(f"Invalid MCP configuration: {e}")
         return mcp_mapping
 
 
 class OpenHandsMCPConfig:
     @staticmethod
-    def add_search_engine(app_config: 'OpenHandsConfig') -> MCPStdioServerConfig | None:
-        """Add search engine to the MCP config"""
+    def add_search_engine(app_config: "OpenHandsConfig") -> MCPStdioServerConfig | None:
+        """Add search engine to the MCP config."""
         if (
             app_config.search_api_key
-            and app_config.search_api_key.get_secret_value().startswith('tvly-')
+            and app_config.search_api_key.get_secret_value().startswith("tvly-")
         ):
-            logger.info('Adding search engine to MCP config')
+            logger.info("Adding search engine to MCP config")
             return MCPStdioServerConfig(
-                name='tavily',
-                command='npx',
-                args=['-y', 'tavily-mcp@0.2.1'],
-                env={'TAVILY_API_KEY': app_config.search_api_key.get_secret_value()},
+                name="tavily",
+                command="npx",
+                args=["-y", "tavily-mcp@0.2.1"],
+                env={"TAVILY_API_KEY": app_config.search_api_key.get_secret_value()},
             )
         else:
-            logger.warning('No search engine API key found, skipping search engine')
+            logger.warning("No search engine API key found, skipping search engine")
         # Do not add search engine to MCP config in SaaS mode since it will be added by the OpenHands server
         return None
 
     @staticmethod
     def create_default_mcp_server_config(
-        host: str, config: 'OpenHandsConfig', user_id: str | None = None
+        host: str, config: "OpenHandsConfig", user_id: str | None = None
     ) -> tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]:
-        """
-        Create a default MCP server configuration.
+        """Create a default MCP server configuration.
 
         Args:
             host: Host string
             config: OpenHandsConfig
+            user_id: Optional user ID for the MCP server
         Returns:
             tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
+        from openhands.core.logger import openhands_logger as logger
+
+        logger.debug(f"Creating default MCP server config with host: {host}")
+
+        # Log environment variables related to MCP configuration
+        import os
+
+        mcp_env_vars = {k: v for k, v in os.environ.items() if "MCP" in k}
+        logger.debug(
+            f"MCP-related environment variables in create_default_mcp_server_config: {mcp_env_vars}"
+        )
+
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
+            logger.debug(
+                f"Added search engine stdio server: {search_engine_stdio_server}"
+            )
 
-        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+        shttp_servers = MCPSHTTPServerConfig(url=f"http://{host}/mcp/mcp", api_key=None)
+        logger.debug(f"Created default MCP HTTP server: {shttp_servers}")
+
         return shttp_servers, stdio_servers
 
 
 openhands_mcp_config_cls = os.environ.get(
-    'OPENHANDS_MCP_CONFIG_CLS',
-    'openhands.core.config.mcp_config.OpenHandsMCPConfig',
+    "OPENHANDS_MCP_CONFIG_CLS",
+    "openhands.core.config.mcp_config.OpenHandsMCPConfig",
 )
 
 OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)
