@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Callable, Iterable
 
+from openhands.server.routes import settings
 import socketio
 
 from openhands.core.config.openhands_config import OpenHandsConfig
@@ -331,10 +332,17 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        config = self.config.model_copy(deep=True)
+
+        if hasattr(settings, 'git_user_name') and settings.git_user_name:
+            config.git_user_name = settings.git_user_name
+        if hasattr(settings, 'git_user_email') and settings.git_user_email:
+            config.git_user_email = settings.git_user_email
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )
