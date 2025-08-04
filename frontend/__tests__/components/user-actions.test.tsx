@@ -1,27 +1,64 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it, test, vi, afterEach } from "vitest";
+import { describe, expect, it, test, vi, afterEach, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { UserActions } from "#/components/features/sidebar/user-actions";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactElement } from "react";
+
+// Create a mock for useIsAuthed that we can control per test
+const useIsAuthedMock = vi
+  .fn()
+  .mockReturnValue({ data: true, isLoading: false });
+
+// Mock the useIsAuthed hook
+vi.mock("#/hooks/query/use-is-authed", () => ({
+  useIsAuthed: () => useIsAuthedMock(),
+}));
 
 describe("UserActions", () => {
   const user = userEvent.setup();
   const onClickAccountSettingsMock = vi.fn();
   const onLogoutMock = vi.fn();
 
+  // Create a wrapper with QueryClientProvider
+  const renderWithQueryClient = (ui: ReactElement) => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
+    return render(ui, {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      ),
+    });
+  };
+
+  beforeEach(() => {
+    // Reset the mock to default value before each test
+    useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+  });
+
   afterEach(() => {
     onClickAccountSettingsMock.mockClear();
     onLogoutMock.mockClear();
+    vi.clearAllMocks();
   });
 
   it("should render", () => {
-    render(<UserActions onLogout={onLogoutMock} />);
+    renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
 
     expect(screen.getByTestId("user-actions")).toBeInTheDocument();
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
   });
 
   it("should toggle the user menu when the user avatar is clicked", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}
@@ -43,7 +80,7 @@ describe("UserActions", () => {
   });
 
   it("should call onLogout and close the menu when the logout option is clicked", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}
@@ -62,20 +99,25 @@ describe("UserActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should show context menu when user is undefined and avatar is clicked", async () => {
-    render(<UserActions onLogout={onLogoutMock} />);
+  it("should NOT show context menu when user is not authenticated and avatar is clicked", async () => {
+    // Set isAuthed to false for this test
+    useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+
+    renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    // Context menu SHOULD appear even when user is undefined
+    // Context menu should NOT appear because user is not authenticated
     expect(
-      screen.getByTestId("account-settings-context-menu"),
-    ).toBeInTheDocument();
+      screen.queryByTestId("account-settings-context-menu"),
+    ).not.toBeInTheDocument();
   });
 
   it("should show context menu even when user has no avatar_url", async () => {
-    render(<UserActions onLogout={onLogoutMock} user={{ avatar_url: "" }} />);
+    renderWithQueryClient(
+      <UserActions onLogout={onLogoutMock} user={{ avatar_url: "" }} />,
+    );
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
@@ -86,52 +128,66 @@ describe("UserActions", () => {
     ).toBeInTheDocument();
   });
 
-  it("should be able to access logout even when no user is provided", async () => {
-    render(<UserActions onLogout={onLogoutMock} />);
+  it("should NOT be able to access logout when user is not authenticated", async () => {
+    // Set isAuthed to false for this test
+    useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+
+    renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    // Logout option should be accessible even when no user is provided
+    // Context menu should NOT appear because user is not authenticated
     expect(
-      screen.getByText("ACCOUNT_SETTINGS$LOGOUT"),
-    ).toBeInTheDocument();
+      screen.queryByTestId("account-settings-context-menu"),
+    ).not.toBeInTheDocument();
 
-    // Verify logout works
-    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
-    await user.click(logoutOption);
-    expect(onLogoutMock).toHaveBeenCalledOnce();
+    // Logout option should NOT be accessible when user is not authenticated
+    expect(screen.queryByText("ACCOUNT_SETTINGS$LOGOUT")).not.toBeInTheDocument();
   });
 
   it("should handle user prop changing from undefined to defined", async () => {
-    const { rerender } = render(<UserActions onLogout={onLogoutMock} />);
+    // Start with no authentication
+    useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
 
-    // Initially no user - but we can still click to show the menu
-    const userAvatar = screen.getByTestId("user-avatar");
-    await user.click(userAvatar);
-    expect(
-      screen.getByTestId("account-settings-context-menu"),
-    ).toBeInTheDocument();
+    const { rerender } = renderWithQueryClient(
+      <UserActions onLogout={onLogoutMock} />,
+    );
 
-    // Close the menu
+    // Initially no user and not authenticated - menu should not appear
+    let userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
     expect(
       screen.queryByTestId("account-settings-context-menu"),
     ).not.toBeInTheDocument();
 
-    // Add user prop
+    // Set authentication to true for the rerender
+    useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+
+    // Add user prop and create a new QueryClient to ensure fresh state
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+
     rerender(
-      <UserActions
-        onLogout={onLogoutMock}
-        user={{ avatar_url: "https://example.com/avatar.png" }}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <UserActions
+          onLogout={onLogoutMock}
+          user={{ avatar_url: "https://example.com/avatar.png" }}
+        />
+      </QueryClientProvider>,
     );
 
     // Component should still render correctly
     expect(screen.getByTestId("user-actions")).toBeInTheDocument();
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
 
-    // Menu should still work with user defined
+    // Menu should now work with user defined and authenticated
+    userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
     expect(
       screen.getByTestId("account-settings-context-menu"),
@@ -139,7 +195,7 @@ describe("UserActions", () => {
   });
 
   it("should handle user prop changing from defined to undefined", async () => {
-    const { rerender } = render(
+    const { rerender } = renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}
@@ -153,22 +209,27 @@ describe("UserActions", () => {
       screen.getByTestId("account-settings-context-menu"),
     ).toBeInTheDocument();
 
-    // Remove user prop - menu should still be visible
-    rerender(<UserActions onLogout={onLogoutMock} />);
+    // Set authentication to false for the rerender
+    useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
 
-    // Context menu should remain visible even when user becomes undefined
+    // Remove user prop - menu should disappear because user is no longer authenticated
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <UserActions onLogout={onLogoutMock} />
+      </QueryClientProvider>,
+    );
+
+    // Context menu should NOT be visible when user becomes unauthenticated
     expect(
-      screen.getByTestId("account-settings-context-menu"),
-    ).toBeInTheDocument();
+      screen.queryByTestId("account-settings-context-menu"),
+    ).not.toBeInTheDocument();
 
-    // Verify logout still works
-    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
-    await user.click(logoutOption);
-    expect(onLogoutMock).toHaveBeenCalledOnce();
+    // Logout option should not be accessible
+    expect(screen.queryByText("ACCOUNT_SETTINGS$LOGOUT")).not.toBeInTheDocument();
   });
 
   it("should work with loading state and user provided", async () => {
-    render(
+    renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
         user={{ avatar_url: "https://example.com/avatar.png" }}

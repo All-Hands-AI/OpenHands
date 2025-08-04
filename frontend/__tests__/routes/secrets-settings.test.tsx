@@ -101,7 +101,8 @@ describe("Content", () => {
 
     renderSecretsSettings();
 
-    expect(getSecretsSpy).not.toHaveBeenCalled();
+    // In SAAS mode, getSecrets is still called because the user is authenticated
+    await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
     await waitFor(() =>
       expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
     );
