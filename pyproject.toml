@@ -20,6 +20,7 @@ packages = [
 ]
 include = [
   "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
+  "microagents/**/*",
 ]
 build = "build_vscode.py" # Build VSCode extension during Poetry build
 
