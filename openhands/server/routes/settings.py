@@ -7,7 +7,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.server.dependencies import get_dependencies
-from openhands.server.routes.secrets_migration import invalidate_legacy_secrets_store
+from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
