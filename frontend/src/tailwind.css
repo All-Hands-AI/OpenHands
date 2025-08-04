@@ -4,8 +4,6 @@
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
 
-
-
 /* OLD TAILWIND STYLES */
 @theme {
   --color-primary: #C9B974;
@@ -20,9 +18,6 @@
   --color-content: #ECEDEE;
   --color-content-2: #F9FBFE;
 }
-
-
-
 
 .button-base {
   @apply bg-tertiary border border-neutral-600 rounded-xs;
