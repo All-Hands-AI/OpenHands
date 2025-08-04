@@ -156,7 +156,6 @@ def get_config(
         }
 
     sandbox_config.rm_all_containers = True
-    sandbox_config.network_subnet = "172.31.15.32/27"
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,

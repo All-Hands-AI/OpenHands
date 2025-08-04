@@ -482,16 +482,6 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container {self.container_name} not found.'
             )
 
-        if not "all-hands" in self.config.sandbox.remote_runtime_api_url and not self.config.sandbox.use_host_network:
-            ip_address = container.attrs["NetworkSettings"]["Networks"][self.config.sandbox.network_name]["IPAddress"]
-            if not ip_address:
-                raise ConnectionError(
-                    f'Container {self.container_name} does not have an IP address assigned.'
-                )
-
-            # ip_address = container.attrs['NetworkSettings']['IPAddress']
-            self.api_url = f"http://{ip_address}:{self._container_port}"
-
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None) -> None:
