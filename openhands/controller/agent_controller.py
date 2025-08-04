@@ -657,6 +657,7 @@ class AgentController:
         # Take a snapshot of the current metrics before starting the delegate
         state = State(
             session_id=self.id.removesuffix('-delegate'),
+            user_id=self.user_id,
             inputs=action.inputs or {},
             iteration_flag=self.state.iteration_flag,
             budget_flag=self.state.budget_flag,
