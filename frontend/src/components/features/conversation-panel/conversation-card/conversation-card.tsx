@@ -70,7 +70,7 @@ export function ConversationCard({
   const metrics = useSelector((state: RootState) => state.metrics);
 
   const onTitleSave = (newTitle: string) => {
-    if (newTitle !== "") {
+    if (newTitle !== "" && newTitle !== title) {
       onChangeTitle?.(newTitle);
     }
     setTitleMode("view");
@@ -218,7 +218,7 @@ export function ConversationCard({
             <ConversationRepoLink selectedRepository={selectedRepository} />
           )}
           {(createdAt ?? lastUpdatedAt) && (
-            <p className="text-xs text-[#A3A3A3]">
+            <p className="text-xs text-[#A3A3A3] flex-1 text-right">
               <time>
                 {`${formatTimeDelta(new Date(lastUpdatedAt ?? createdAt))} ${t(I18nKey.CONVERSATION$AGO)}`}
               </time>
