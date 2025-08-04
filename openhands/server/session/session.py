@@ -162,8 +162,11 @@ class Session:
             self.logger.debug(
                 f'Preserving existing MCP configuration: {self.config.mcp}'
             )
-            # No need to reassign as it's already set in the deepcopy of config
-            pass
+            # Store the existing HTTP servers from environment variables
+            self.existing_shttp_servers = self.config.mcp.shttp_servers.copy()
+            self.logger.debug(
+                f'Preserving existing HTTP servers: {self.existing_shttp_servers}'
+            )
         else:
             self.logger.debug('No MCP configuration found, using empty config')
             self.config.mcp = MCPConfig(sse_servers=[], stdio_servers=[])
@@ -183,9 +186,19 @@ class Session:
         self.logger.debug(f'Default MCP HTTP server: {openhands_mcp_server}')
         self.logger.debug(f'Default MCP stdio servers: {openhands_mcp_stdio_servers}')
 
+        # Store the existing servers before adding the default server
+        existing_shttp_servers = getattr(self, 'existing_shttp_servers', [])
+
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
             self.logger.debug('Added default MCP HTTP server to config')
+
+        # Add back any servers from environment variables
+        if existing_shttp_servers:
+            self.logger.debug(
+                f'Restoring {len(existing_shttp_servers)} HTTP servers from environment variables'
+            )
+            self.config.mcp.shttp_servers.extend(existing_shttp_servers)
 
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
