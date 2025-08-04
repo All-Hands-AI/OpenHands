@@ -15,6 +15,7 @@ export interface TooltipButtonProps {
   tooltipClassName?: React.HTMLAttributes<HTMLDivElement>["className"];
   disabled?: boolean;
   placement?: TooltipProps["placement"];
+  showArrow?: boolean;
 }
 
 export function TooltipButton({
@@ -29,6 +30,7 @@ export function TooltipButton({
   tooltipClassName,
   disabled = false,
   placement = "right",
+  showArrow = false,
 }: TooltipButtonProps) {
   const handleClick = (e: React.MouseEvent) => {
     if (onClick && !disabled) {
@@ -127,6 +129,7 @@ export function TooltipButton({
       closeDelay={100}
       placement={placement}
       className={tooltipClassName}
+      showArrow={showArrow}
     >
       {content}
     </Tooltip>

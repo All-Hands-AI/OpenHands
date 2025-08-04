@@ -18,7 +18,6 @@ import { TypingIndicator } from "./typing-indicator";
 import { useWsClient } from "#/context/ws-client-provider";
 import { Messages } from "./messages";
 import { ChatSuggestions } from "./chat-suggestions";
-import { ActionSuggestions } from "./action-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
@@ -220,14 +219,6 @@ export function ChatInterface() {
               }
             />
           )}
-
-          {isWaitingForUserInput &&
-            hasSubstantiveAgentActions &&
-            !optimisticUserMessage && (
-              <ActionSuggestions
-                onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
-              />
-            )}
         </div>
 
         <div className="flex flex-col gap-[6px] px-4 pb-4">
@@ -256,6 +247,9 @@ export function ChatInterface() {
             onSubmit={handleSendMessage}
             onStop={handleStop}
             value={messageToSend ?? undefined}
+            isWaitingForUserInput={isWaitingForUserInput}
+            hasSubstantiveAgentActions={hasSubstantiveAgentActions}
+            optimisticUserMessage={!!optimisticUserMessage}
           />
         </div>
 

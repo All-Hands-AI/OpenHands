@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { Controls } from "#/components/features/controls/controls";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
@@ -69,7 +68,6 @@ function AppContent() {
 
   const {
     isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
@@ -84,10 +82,10 @@ function AppContent() {
               <ConversationMain />
             </div>
 
-            <Controls
+            {/* <Controls
               setSecurityOpen={onSecurityModalOpen}
               showSecurityLock={!!settings?.SECURITY_ANALYZER}
-            />
+            /> */}
             {settings && (
               <Security
                 isOpen={securityModalIsOpen}
