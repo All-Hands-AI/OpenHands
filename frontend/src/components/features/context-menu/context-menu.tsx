@@ -18,7 +18,7 @@ export function ContextMenu({
     <ul
       data-testid={testId}
       ref={ref}
-      className={cn("bg-tertiary rounded-md z-50", className)}
+      className={cn("bg-tertiary rounded-md overflow-hidden z-50", className)}
     >
       {children}
     </ul>
