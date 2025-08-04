@@ -62,16 +62,16 @@ describe("UserActions", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should NOT show context menu when user is undefined and avatar is clicked", async () => {
+  it("should show context menu when user is undefined and avatar is clicked", async () => {
     render(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    // Context menu should NOT appear because user is undefined
+    // Context menu SHOULD appear even when user is undefined
     expect(
-      screen.queryByTestId("account-settings-context-menu"),
-    ).not.toBeInTheDocument();
+      screen.getByTestId("account-settings-context-menu"),
+    ).toBeInTheDocument();
   });
 
   it("should show context menu even when user has no avatar_url", async () => {
@@ -86,23 +86,35 @@ describe("UserActions", () => {
     ).toBeInTheDocument();
   });
 
-  it("should NOT be able to access logout when no user is provided", async () => {
+  it("should be able to access logout even when no user is provided", async () => {
     render(<UserActions onLogout={onLogoutMock} />);
 
     const userAvatar = screen.getByTestId("user-avatar");
     await user.click(userAvatar);
 
-    // Logout option should not be accessible because context menu doesn't appear
+    // Logout option should be accessible even when no user is provided
     expect(
-      screen.queryByText("ACCOUNT_SETTINGS$LOGOUT"),
-    ).not.toBeInTheDocument();
-    expect(onLogoutMock).not.toHaveBeenCalled();
+      screen.getByText("ACCOUNT_SETTINGS$LOGOUT"),
+    ).toBeInTheDocument();
+
+    // Verify logout works
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
+    await user.click(logoutOption);
+    expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 
-  it("should handle user prop changing from undefined to defined", () => {
+  it("should handle user prop changing from undefined to defined", async () => {
     const { rerender } = render(<UserActions onLogout={onLogoutMock} />);
 
-    // Initially no user - context menu shouldn't work
+    // Initially no user - but we can still click to show the menu
+    const userAvatar = screen.getByTestId("user-avatar");
+    await user.click(userAvatar);
+    expect(
+      screen.getByTestId("account-settings-context-menu"),
+    ).toBeInTheDocument();
+
+    // Close the menu
+    await user.click(userAvatar);
     expect(
       screen.queryByTestId("account-settings-context-menu"),
     ).not.toBeInTheDocument();
@@ -118,6 +130,12 @@ describe("UserActions", () => {
     // Component should still render correctly
     expect(screen.getByTestId("user-actions")).toBeInTheDocument();
     expect(screen.getByTestId("user-avatar")).toBeInTheDocument();
+
+    // Menu should still work with user defined
+    await user.click(userAvatar);
+    expect(
+      screen.getByTestId("account-settings-context-menu"),
+    ).toBeInTheDocument();
   });
 
   it("should handle user prop changing from defined to undefined", async () => {
@@ -135,12 +153,18 @@ describe("UserActions", () => {
       screen.getByTestId("account-settings-context-menu"),
     ).toBeInTheDocument();
 
-    // Remove user prop - menu should disappear
+    // Remove user prop - menu should still be visible
     rerender(<UserActions onLogout={onLogoutMock} />);
 
+    // Context menu should remain visible even when user becomes undefined
     expect(
-      screen.queryByTestId("account-settings-context-menu"),
-    ).not.toBeInTheDocument();
+      screen.getByTestId("account-settings-context-menu"),
+    ).toBeInTheDocument();
+
+    // Verify logout still works
+    const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
+    await user.click(logoutOption);
+    expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 
   it("should work with loading state and user provided", async () => {
