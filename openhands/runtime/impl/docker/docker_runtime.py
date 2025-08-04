@@ -1,8 +1,11 @@
 import os
 import platform
+import threading
 import typing
+import uuid
+from dataclasses import dataclass
 from functools import lru_cache
-from typing import Callable
+from typing import Any, Callable, Optional
 from uuid import UUID
 
 import docker
@@ -18,6 +21,8 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.events.action import Action
+from openhands.events.observation import Observation
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
@@ -39,6 +44,7 @@ from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
+WARM_CONTAINER_PREFIX = 'openhands-warm-'
 
 EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
@@ -50,6 +56,26 @@ if os.name == 'nt' or platform.release().endswith('microsoft-standard-WSL2'):
     VSCODE_PORT_RANGE = (35000, 39999)
     APP_PORT_RANGE_1 = (40000, 44999)
     APP_PORT_RANGE_2 = (45000, 49151)
+
+# Global variables to track warm containers
+_WARM_CONTAINERS: list[Any] = []
+_RUNNING_CONTAINERS: dict[str, Any] = {}
+
+
+@dataclass
+class DockerContainerInfo:
+    """Information about a running Docker container."""
+
+    container: Container
+    host_port: int
+    container_port: int
+    vscode_port: int
+    app_ports: list[int]
+    host_port_lock: Optional[PortLock] = None
+    vscode_port_lock: Optional[PortLock] = None
+    app_port_locks: Optional[list[PortLock]] = None
+    log_streamer: Optional[Any] = None
+    api_url: Optional[str] = None
 
 
 def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
@@ -68,6 +94,134 @@ def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
             httpx.ReadTimeout,
         ),
     )
+
+
+def _create_warm_container(
+    config: OpenHandsConfig,
+    plugins: list[PluginRequirement],
+    runtime_container_image: str,
+) -> DockerContainerInfo:
+    """Create a warm container for future use.
+
+    Args:
+        config: The OpenHands configuration.
+        plugins: List of plugin requirements.
+        runtime_container_image: The container image to use.
+
+    Returns:
+        DockerContainerInfo: Information about the created container.
+    """
+    # Generate a unique ID for the warm container
+    warm_id = f'{WARM_CONTAINER_PREFIX}{uuid.uuid4().hex[:8]}'
+    logger.info(f'Creating warm container {warm_id}')
+
+    # Create a temporary DockerRuntime instance to create the container
+    from openhands.core.file_store import FileStore
+
+    file_store = FileStore(warm_id)
+    event_stream = EventStream(sid=warm_id, file_store=file_store)
+    runtime = DockerRuntime(
+        config=config,
+        sid=warm_id,
+        plugins=plugins,
+        attach_to_existing=False,
+        event_stream=event_stream,
+    )
+
+    # Set the runtime container image
+    if runtime_container_image:
+        # Explicitly cast to string to help mypy
+        runtime.runtime_container_image = str(runtime_container_image)
+
+    # Initialize the container
+    runtime.init_container()
+
+    # Create container info
+    if runtime.container is None:
+        raise RuntimeError('Failed to create container')
+
+    container_info = DockerContainerInfo(
+        container=runtime.container,
+        host_port=runtime._host_port,
+        container_port=runtime._container_port,
+        vscode_port=runtime._vscode_port,
+        app_ports=runtime._app_ports,
+        host_port_lock=runtime._host_port_lock,
+        vscode_port_lock=runtime._vscode_port_lock,
+        app_port_locks=runtime._app_port_locks,
+        log_streamer=None,
+        api_url=runtime.api_url if hasattr(runtime, 'api_url') else None,
+    )
+
+    # Wait for the container to be ready
+    runtime.wait_until_alive()
+
+    # Return the container info
+    return container_info
+
+
+def _create_warm_container_in_background(
+    config: OpenHandsConfig,
+    plugins: list[PluginRequirement],
+    runtime_container_image: str,
+) -> None:
+    """Create a warm container in a background thread.
+
+    Args:
+        config: The OpenHands configuration.
+        plugins: List of plugin requirements.
+        runtime_container_image: The container image to use.
+    """
+
+    def _create_container_thread():
+        try:
+            container_info = _create_warm_container(
+                config, plugins, runtime_container_image
+            )
+            _WARM_CONTAINERS.append(container_info)
+            logger.info(
+                f'Added warm container to pool (total: {len(_WARM_CONTAINERS)})'
+            )
+        except Exception as e:
+            logger.error(f'Error creating warm container: {e}')
+
+    # Start a thread to create the container
+    thread = threading.Thread(target=_create_container_thread)
+    thread.daemon = True
+    thread.start()
+
+
+def cleanup_warm_containers() -> None:
+    """Clean up all warm containers."""
+    logger.info(f'Cleaning up {len(_WARM_CONTAINERS)} warm containers')
+
+    # Create a copy of the list to avoid modification during iteration
+    containers_to_cleanup = _WARM_CONTAINERS.copy()
+    _WARM_CONTAINERS.clear()
+
+    # Clean up each container
+    for container_info in containers_to_cleanup:
+        try:
+            # Stop and remove the container
+            container_info.container.stop()
+            container_info.container.remove(force=True)
+
+            # Release port locks
+            if container_info.host_port_lock:
+                container_info.host_port_lock.release()
+
+            if container_info.vscode_port_lock:
+                container_info.vscode_port_lock.release()
+
+            if container_info.app_port_locks:
+                for lock in container_info.app_port_locks:
+                    if lock:
+                        lock.release()
+        except Exception as e:
+            logger.error(f'Error cleaning up warm container: {e}')
+
+
+# The DockerRuntime class will be initialized at the end of the file
 
 
 class DockerRuntime(ActionExecutionClient):
@@ -165,35 +319,163 @@ class DockerRuntime(ActionExecutionClient):
 
     async def connect(self) -> None:
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
-        try:
-            await call_sync_from_async(self._attach_to_container)
-        except docker.errors.NotFound as e:
-            if self.attach_to_existing:
-                self.log(
-                    'warning',
-                    f'Container {self.container_name} not found.',
-                )
-                raise AgentRuntimeDisconnectedError from e
-            self.maybe_build_runtime_container_image()
-            self.log(
-                'info', f'Starting runtime with image: {self.runtime_container_image}'
-            )
-            await call_sync_from_async(self.init_container)
-            self.log(
-                'info',
-                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
-            )
 
-        if DEBUG_RUNTIME and self.container:
-            self.log_streamer = LogStreamer(self.container, self.log)
+        # Get environment variables for warm container configuration
+        desired_num_warm_containers = int(os.getenv('DESIRED_NUM_WARM_CONTAINERS', '0'))
+
+        # Check if there's already a container running for this session ID
+        if self.sid in _RUNNING_CONTAINERS:
+            self.log('info', f'Connecting to existing container for session {self.sid}')
+            container_info = _RUNNING_CONTAINERS[self.sid]
+            self.container = container_info.container
+            self._host_port = container_info.host_port
+            self._container_port = container_info.container_port
+            self._vscode_port = container_info.vscode_port
+            self._app_ports = container_info.app_ports
+            self.api_url = container_info.api_url
+            self._host_port_lock = container_info.host_port_lock
+            self._vscode_port_lock = container_info.vscode_port_lock
+            self._app_port_locks = container_info.app_port_locks
+            self.log_streamer = container_info.log_streamer
         else:
-            self.log_streamer = None
+            # Try to use a warm container if available
+            warm_container_available = False
+
+            if not self.attach_to_existing:
+                try:
+                    # Check if there are any warm containers available
+                    if _WARM_CONTAINERS:
+                        # Pop a warm container from the list
+                        self.log('info', 'Using a warm container')
+                        container_info = _WARM_CONTAINERS.pop(0)
+
+                        # Use the warm container
+                        self.container = container_info.container
+                        self._host_port = container_info.host_port
+                        self._container_port = container_info.container_port
+                        self._vscode_port = container_info.vscode_port
+                        self._app_ports = container_info.app_ports
+                        self._host_port_lock = container_info.host_port_lock
+                        self._vscode_port_lock = container_info.vscode_port_lock
+                        self._app_port_locks = container_info.app_port_locks
+
+                        # Rename the container to match the session ID
+                        if self.container:
+                            old_name = self.container.name
+                            self.container.rename(self.container_name)
+                        else:
+                            self.log('error', 'Container is None, cannot rename')
+                        if self.container:
+                            self.log(
+                                'info',
+                                f'Renamed container from {old_name} to {self.container_name}',
+                            )
+
+                        # Update the API URL
+                        self.api_url = container_info.api_url
+
+                        # Set up log streamer if needed
+                        if DEBUG_RUNTIME and self.container:
+                            self.log_streamer = LogStreamer(self.container, self.log)
+                        else:
+                            self.log_streamer = None
+
+                        # Store the container in the global dictionary
+                        if self.container:
+                            _RUNNING_CONTAINERS[self.sid] = DockerContainerInfo(
+                                container=self.container,
+                                host_port=self._host_port,
+                                container_port=self._container_port,
+                                vscode_port=self._vscode_port,
+                                app_ports=self._app_ports,
+                                host_port_lock=self._host_port_lock,
+                                vscode_port_lock=self._vscode_port_lock,
+                                app_port_locks=self._app_port_locks,
+                                log_streamer=self.log_streamer,
+                                api_url=self.api_url,
+                            )
+
+                        warm_container_available = True
+                    else:
+                        # No warm containers available
+                        self.log(
+                            'info',
+                            'No warm containers available, starting a new container',
+                        )
+                        warm_container_available = False
+                except Exception as e:
+                    # Error using warm container
+                    self.log('error', f'Error using warm container: {e}')
+                    warm_container_available = False
+
+            # If no warm container is available, start a new one
+            if not warm_container_available:
+                try:
+                    await call_sync_from_async(self._attach_to_container)
+                except docker.errors.NotFound as e:
+                    if self.attach_to_existing:
+                        self.log(
+                            'warning',
+                            f'Container {self.container_name} not found.',
+                        )
+                        raise AgentRuntimeDisconnectedError from e
+                    self.maybe_build_runtime_container_image()
+                    self.log(
+                        'info',
+                        f'Starting runtime with image: {self.runtime_container_image}',
+                    )
+                    await call_sync_from_async(self.init_container)
+                    self.log(
+                        'info',
+                        f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
+                    )
+
+                    # Set up log streamer if needed
+                    if DEBUG_RUNTIME and self.container:
+                        self.log_streamer = LogStreamer(self.container, self.log)
+                    else:
+                        self.log_streamer = None
+
+                    # Store the container in the global dictionary
+                    if self.container:
+                        _RUNNING_CONTAINERS[self.sid] = DockerContainerInfo(
+                            container=self.container,
+                            host_port=self._host_port,
+                            container_port=self._container_port,
+                            vscode_port=self._vscode_port,
+                            app_ports=self._app_ports,
+                            host_port_lock=self._host_port_lock,
+                            vscode_port_lock=self._vscode_port_lock,
+                            app_port_locks=self._app_port_locks,
+                            log_streamer=self.log_streamer,
+                            api_url=self.api_url,
+                        )
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
+
+        if not self.attach_to_existing:
+            self.set_runtime_status(RuntimeStatus.READY)
+        self._runtime_initialized = True
+
+        # Check if we need to create more warm containers after connecting
+        if (
+            desired_num_warm_containers > 0
+            and len(_WARM_CONTAINERS) < desired_num_warm_containers
+        ):
+            num_to_create = desired_num_warm_containers - len(_WARM_CONTAINERS)
+            self.log(
+                'info',
+                f'Creating {num_to_create} additional warm containers to reach desired count',
+            )
+            for _ in range(num_to_create):
+                if self.runtime_container_image:
+                    _create_warm_container_in_background(
+                        self.config, self.plugins, self.runtime_container_image
+                    )
 
         if not self.attach_to_existing:
             self.log('info', 'Runtime is ready.')
@@ -236,6 +518,64 @@ class DockerRuntime(ActionExecutionClient):
                 'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
+
+    @classmethod
+    def initialize(cls) -> None:
+        """Initialize the DockerRuntime class.
+
+        This method is called at module import time to set up any class-level resources.
+        """
+        # Register shutdown handler to clean up warm containers
+        add_shutdown_listener(cleanup_warm_containers)
+
+    @staticmethod
+    def initialize_warm_containers(
+        config: OpenHandsConfig,
+        plugins: list[PluginRequirement],
+        runtime_container_image: Optional[str] = None,
+    ) -> None:
+        """Initialize warm containers for future use.
+
+        Args:
+            config: The OpenHands configuration.
+            plugins: List of plugin requirements.
+            runtime_container_image: The container image to use, or None to build it.
+        """
+        initial_num_warm_containers = int(os.getenv('INITIAL_NUM_WARM_CONTAINERS', '0'))
+        # Initialize warm containers if needed
+        if initial_num_warm_containers > 0 and len(_WARM_CONTAINERS) == 0:
+            logger.info(
+                f'Initializing {initial_num_warm_containers} warm containers for future use'
+            )
+
+            # Build the runtime container image if needed
+            if (
+                runtime_container_image is None
+                and config.sandbox.runtime_container_image is None
+            ):
+                if config.sandbox.base_container_image is None:
+                    raise ValueError(
+                        'Neither runtime container image nor base container image is set'
+                    )
+                docker_client = docker.from_env()
+                runtime_builder = DockerRuntimeBuilder(docker_client)
+                runtime_container_image = build_runtime_image(
+                    config.sandbox.base_container_image,
+                    runtime_builder,
+                    platform=config.sandbox.platform,
+                    extra_deps=config.sandbox.runtime_extra_deps,
+                    force_rebuild=config.sandbox.force_rebuild_runtime,
+                    extra_build_args=config.sandbox.runtime_extra_build_args,
+                    enable_browser=config.enable_browser,
+                )
+            elif runtime_container_image is None:
+                runtime_container_image = config.sandbox.runtime_container_image
+
+            for _ in range(initial_num_warm_containers):
+                if runtime_container_image:
+                    _create_warm_container_in_background(
+                        config, plugins, runtime_container_image
+                    )
 
     def _process_volumes(self) -> dict[str, dict[str, str]]:
         """Process volume mounts based on configuration.
@@ -485,25 +825,66 @@ class DockerRuntime(ActionExecutionClient):
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None) -> None:
-        """Closes the DockerRuntime and associated objects
+        """Closes the DockerRuntime and associated objects.
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix
         """
-        super().close()
+        # If we're in attach_to_existing mode, don't close the container
+        if self.attach_to_existing:
+            self.log(
+                'info',
+                f'Not closing container for session {self.sid} (attach_to_existing=True)',
+            )
+            # Just clean up our reference to the container, but leave it running
+            self.container = None
+            super().close()
+            return
+
+        # Remove from running containers dictionary
+        if self.sid in _RUNNING_CONTAINERS:
+            del _RUNNING_CONTAINERS[self.sid]
+
+        # Close log streamer if it exists
         if self.log_streamer:
             self.log_streamer.close()
 
         if rm_all_containers is None:
             rm_all_containers = self.config.sandbox.rm_all_containers
 
-        if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
+        if self.config.sandbox.keep_runtime_alive:
+            super().close()
             return
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
-        stop_all_containers(close_prefix)
+
+        # Stop and remove the container
+        if self.container:
+            try:
+                self.container.stop()
+                self.container.remove(force=True)
+                self.log(
+                    'info', f'Container {self.container_name} stopped and removed.'
+                )
+            except docker.errors.NotFound:
+                self.log('warning', f'Container {self.container_name} not found.')
+            except Exception as e:
+                self.log('error', f'Error stopping container: {e}')
+            finally:
+                self.container = None
+
+        # If rm_all_containers is True, stop all containers with the prefix
+        if rm_all_containers:
+            close_prefix = CONTAINER_NAME_PREFIX
+            stop_all_containers(close_prefix)
+
+        # Release port locks
         self._release_port_locks()
+
+        # Clean up warm containers if this is the last runtime being disconnected
+        if not _RUNNING_CONTAINERS:
+            self.log('info', 'No active containers, cleaning up warm containers')
+            cleanup_warm_containers()
+
+        super().close()
 
     def _release_port_locks(self) -> None:
         """Release all acquired port locks."""
@@ -525,6 +906,95 @@ class DockerRuntime(ActionExecutionClient):
                 )
 
         self._app_port_locks.clear()
+
+    async def execute_action(self, action: Action) -> Observation:
+        """Execute an action by sending it to the container."""
+        if not self._runtime_initialized:
+            raise AgentRuntimeDisconnectedError('Runtime not initialized')
+
+        # Check if our container is still valid
+        if self.container is None:
+            # Check if there's a container in the global dictionary
+            if self.sid in _RUNNING_CONTAINERS:
+                self.container = _RUNNING_CONTAINERS[self.sid].container
+            else:
+                raise AgentRuntimeDisconnectedError('Container not found')
+
+        # Execute the action using the parent class method
+        try:
+            # Send the action to the server
+            # Handle different Action implementations
+            if hasattr(action, 'to_dict'):
+                action_dict = action.to_dict()
+            elif hasattr(action, 'model_dump'):
+                action_dict = action.model_dump()
+            else:
+                # Fallback to using the Action as a dictionary directly
+                action_dict = action
+            response = self._send_action_server_request(
+                'POST',
+                f'{self.action_execution_server_url}/action',
+                json={'action': action_dict},
+            )
+
+            # After executing the action, check if we need to create more warm containers
+            desired_num_warm_containers = int(
+                os.getenv('DESIRED_NUM_WARM_CONTAINERS', '0')
+            )
+            if (
+                desired_num_warm_containers > 0
+                and len(_WARM_CONTAINERS) < desired_num_warm_containers
+            ):
+                self.log(
+                    'info',
+                    f'Creating a new warm container to maintain desired count of {desired_num_warm_containers}',
+                )
+                if self.runtime_container_image:
+                    _create_warm_container_in_background(
+                        self.config, self.plugins, self.runtime_container_image
+                    )
+
+            # Parse the observation based on available methods
+            response_json = response.json()
+            if hasattr(Observation, 'parse_obj'):
+                return Observation.parse_obj(response_json)
+            elif hasattr(Observation, 'model_validate'):
+                return Observation.model_validate(response_json)
+            else:
+                # Fallback to direct instantiation
+                return Observation(**response_json)
+        except Exception as e:
+            if _is_retryablewait_until_alive_error(e):
+                self.log('error', f'Error executing action: {e}')
+                self.log('info', 'Attempting to reconnect to runtime...')
+                await call_sync_from_async(self.wait_until_alive)
+
+                # Try again after reconnecting
+                # Send the action to the server
+                # Handle different Action implementations
+                if hasattr(action, 'to_dict'):
+                    action_dict = action.to_dict()
+                elif hasattr(action, 'model_dump'):
+                    action_dict = action.model_dump()
+                else:
+                    # Fallback to using the Action as a dictionary directly
+                    action_dict = action
+                response = self._send_action_server_request(
+                    'POST',
+                    f'{self.action_execution_server_url}/action',
+                    json={'action': action_dict},
+                )
+
+                # Parse the observation based on available methods
+                response_json = response.json()
+                if hasattr(Observation, 'parse_obj'):
+                    return Observation.parse_obj(response_json)
+                elif hasattr(Observation, 'model_validate'):
+                    return Observation.model_validate(response_json)
+                else:
+                    # Fallback to direct instantiation
+                    return Observation(**response_json)
+            raise
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
@@ -609,7 +1079,9 @@ class DockerRuntime(ActionExecutionClient):
 
     def pause(self) -> None:
         """Pause the runtime by stopping the container.
-        This is different from container.stop() as it ensures environment variables are properly preserved."""
+
+        This is different from container.stop() as it ensures environment variables are properly preserved.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 
@@ -622,7 +1094,9 @@ class DockerRuntime(ActionExecutionClient):
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
-        This is different from container.start() as it ensures environment variables are properly restored."""
+
+        This is different from container.start() as it ensures environment variables are properly restored.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 
@@ -654,3 +1128,7 @@ class DockerRuntime(ActionExecutionClient):
             app_config=self.config,
             main_module=self.main_module,
         )
+
+
+# Initialize the DockerRuntime class at the end of the file
+DockerRuntime.initialize()
