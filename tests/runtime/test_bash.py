@@ -1463,3 +1463,45 @@ def test_bash_remove_prefix(temp_dir, runtime_cls, run_as_openhands):
         assert 'git remote -v' not in obs.content
     finally:
         _close_test_runtime(runtime)
+
+
+def test_git_config_is_set(temp_dir, runtime_cls, run_as_openhands):
+    """Test that git user.name and user.email are properly set in the runtime."""
+    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    try:
+        # Check git user.name
+        obs = _run_cmd_action(runtime, 'git config --get user.name')
+        assert obs.exit_code == 0, 'git config user.name should be set'
+        assert 'openhands' in obs.content, "git user.name should be set to 'openhands'"
+
+        # Check git user.email
+        obs = _run_cmd_action(runtime, 'git config --get user.email')
+        assert obs.exit_code == 0, 'git config user.email should be set'
+        assert 'openhands@all-hands.dev' in obs.content, (
+            "git user.email should be set to 'openhands@all-hands.dev'"
+        )
+
+        # Verify that we can make a git commit with the configured user
+        # Create a test file
+        obs = _run_cmd_action(
+            runtime, 'mkdir -p /tmp/git-test && cd /tmp/git-test && git init'
+        )
+        assert obs.exit_code == 0, 'Failed to initialize git repository'
+
+        # Create a test file and commit it
+        obs = _run_cmd_action(
+            runtime,
+            'cd /tmp/git-test && echo "test" > test.txt && git add test.txt && git commit -m "Test commit"',
+        )
+        assert obs.exit_code == 0, 'Failed to commit with the configured git user'
+
+        # Verify the commit author
+        obs = _run_cmd_action(
+            runtime, 'cd /tmp/git-test && git log --format="%an <%ae>" -n 1'
+        )
+        assert obs.exit_code == 0
+        assert 'openhands <openhands@all-hands.dev>' in obs.content, (
+            "Commit author should be 'openhands <openhands@all-hands.dev>'"
+        )
+    finally:
+        _close_test_runtime(runtime)
