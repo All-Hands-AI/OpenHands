@@ -33,7 +33,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      {accountContextMenuIsVisible && !!user && (
+      {accountContextMenuIsVisible && (
         <AccountSettingsContextMenu
           onLogout={handleLogout}
           onClose={closeAccountMenu}
