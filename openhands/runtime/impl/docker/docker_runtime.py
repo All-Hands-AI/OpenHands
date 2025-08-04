@@ -5,7 +5,7 @@ import typing
 import uuid
 from dataclasses import dataclass
 from functools import lru_cache
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, cast
 from uuid import UUID
 
 import docker
@@ -131,7 +131,7 @@ def _create_warm_container(
     # Set the runtime container image
     if runtime_container_image:
         # Explicitly cast to string to help mypy
-        runtime.runtime_container_image = str(runtime_container_image)
+        runtime.runtime_container_image = cast(str, runtime_container_image)
 
     # Initialize the container
     runtime.init_container()
@@ -150,7 +150,7 @@ def _create_warm_container(
         vscode_port_lock=runtime._vscode_port_lock,
         app_port_locks=runtime._app_port_locks,
         log_streamer=None,
-        api_url=runtime.api_url if hasattr(runtime, 'api_url') else None,
+        api_url=getattr(runtime, 'api_url', None),
     )
 
     # Wait for the container to be ready
