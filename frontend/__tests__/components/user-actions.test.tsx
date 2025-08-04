@@ -138,9 +138,7 @@ describe("UserActions", () => {
     await user.click(userAvatar);
 
     // Logout option should be accessible even when no user is provided
-    expect(
-      screen.getByText("ACCOUNT_SETTINGS$LOGOUT"),
-    ).toBeInTheDocument();
+    expect(screen.getByText("ACCOUNT_SETTINGS$LOGOUT")).toBeInTheDocument();
 
     // Verify logout works
     const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
@@ -148,7 +146,7 @@ describe("UserActions", () => {
     expect(onLogoutMock).toHaveBeenCalledOnce();
   });
 
-  it("should handle user prop changing from undefined to defined", () => {
+  it("should handle user prop changing from undefined to defined", async () => {
     // Start with no authentication
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
 
