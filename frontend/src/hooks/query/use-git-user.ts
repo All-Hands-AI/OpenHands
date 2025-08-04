@@ -12,7 +12,7 @@ export const useGitUser = () => {
   const user = useQuery({
     queryKey: ["user"],
     queryFn: OpenHands.getGitUser,
-    enabled: !!config?.APP_MODE && isAuthed === true, // Enable regardless of providers
+    enabled: !!config?.APP_MODE && isAuthed, // Enable regardless of providers
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

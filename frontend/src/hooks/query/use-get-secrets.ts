@@ -12,6 +12,6 @@ export const useGetSecrets = () => {
   return useQuery({
     queryKey: ["secrets"],
     queryFn: SecretsService.getSecrets,
-    enabled: isOss || isAuthed === true, // Enable regardless of providers
+    enabled: isOss || isAuthed, // Enable regardless of providers
   });
 };

@@ -29,7 +29,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   };
 
   // Always show the menu for authenticated users, even without user data
-  const showMenu = accountContextMenuIsVisible && isAuthed === true;
+  const showMenu = accountContextMenuIsVisible && isAuthed;
 
   return (
     <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
