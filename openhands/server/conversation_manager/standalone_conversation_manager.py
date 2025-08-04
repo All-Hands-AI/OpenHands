@@ -333,11 +333,6 @@ class StandaloneConversationManager(ConversationManager):
 
         config = self.config.model_copy(deep=True)
 
-        if hasattr(settings, 'git_user_name') and settings.git_user_name:
-            config.git_user_name = settings.git_user_name
-        if hasattr(settings, 'git_user_email') and settings.git_user_email:
-            config.git_user_email = settings.git_user_email
-
         session = Session(
             sid=sid,
             file_store=self.file_store,

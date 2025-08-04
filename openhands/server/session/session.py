@@ -118,6 +118,12 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+
+        # Set Git user configuration if provided in settings
+        if hasattr(settings, 'git_user_name') and settings.git_user_name:
+            self.config.git_user_name = settings.git_user_name
+        if hasattr(settings, 'git_user_email') and settings.git_user_email:
+            self.config.git_user_email = settings.git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task
