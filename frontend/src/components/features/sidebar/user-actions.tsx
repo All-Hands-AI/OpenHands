@@ -15,6 +15,7 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
     React.useState(false);
 
   const toggleAccountMenu = () => {
+    // Always toggle the menu, even if user is undefined
     setAccountContextMenuIsVisible((prev) => !prev);
   };
 
