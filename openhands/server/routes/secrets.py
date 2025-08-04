@@ -17,7 +17,6 @@ from openhands.server.user_auth import (
     get_secrets_store,
     get_user_secrets,
 )
-from openhands.server.routes.secrets_migration import invalidate_legacy_secrets_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 
