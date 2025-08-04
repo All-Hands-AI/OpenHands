@@ -23,6 +23,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.impl.docker.containers import stop_all_containers
+from openhands.runtime.impl.docker.docker_lifecycle_lock import docker_lifecycle_lock
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
@@ -399,33 +400,38 @@ class DockerRuntime(ActionExecutionClient):
                 ]
         else:
             device_requests = None
-        try:
-            if self.runtime_container_image is None:
-                raise ValueError('Runtime container image is not set')
-            self.container = self.docker_client.containers.run(
-                self.runtime_container_image,
-                command=command,
-                # Override the default 'bash' entrypoint because the command is a binary.
-                entrypoint=[],
-                network_mode=network_mode,
-                ports=port_mapping,
-                working_dir='/openhands/code/',  # do not change this!
-                name=self.container_name,
-                detach=True,
-                environment=environment,
-                volumes=volumes,  # type: ignore
-                device_requests=device_requests,
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
-            )
-            self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
-        except Exception as e:
-            self.log(
-                'error',
-                f'Error: Instance {self.container_name} FAILED to start container!\n',
-            )
-            self.close()
-            raise e
+
+        # Acquire the Docker lifecycle lock to prevent race conditions during container startup
+        with docker_lifecycle_lock.acquire(
+            timeout=60.0, operation=f"start_container_{self.container_name}"
+        ):
+            try:
+                if self.runtime_container_image is None:
+                    raise ValueError('Runtime container image is not set')
+                self.container = self.docker_client.containers.run(
+                    self.runtime_container_image,
+                    command=command,
+                    # Override the default 'bash' entrypoint because the command is a binary.
+                    entrypoint=[],
+                    network_mode=network_mode,
+                    ports=port_mapping,
+                    working_dir='/openhands/code/',  # do not change this!
+                    name=self.container_name,
+                    detach=True,
+                    environment=environment,
+                    volumes=volumes,  # type: ignore
+                    device_requests=device_requests,
+                    **(self.config.sandbox.docker_runtime_kwargs or {}),
+                )
+                self.log('debug', f'Container started. Server url: {self.api_url}')
+                self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
+            except Exception as e:
+                self.log(
+                    'error',
+                    f'Error: Instance {self.container_name} FAILED to start container!\n',
+                )
+                self.close()
+                raise e
 
     def _attach_to_container(self) -> None:
         self.container = self.docker_client.containers.get(self.container_name)
@@ -492,11 +498,16 @@ class DockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
+
+        # Acquire the Docker lifecycle lock to prevent race conditions during container shutdown
         close_prefix = (
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
-        stop_all_containers(close_prefix)
-        self._release_port_locks()
+        with docker_lifecycle_lock.acquire(
+            timeout=30.0, operation=f"stop_containers_{close_prefix}"
+        ):
+            stop_all_containers(close_prefix)
+            self._release_port_locks()
 
     def _release_port_locks(self) -> None:
         """Release all acquired port locks."""
@@ -602,7 +613,8 @@ class DockerRuntime(ActionExecutionClient):
 
     def pause(self) -> None:
         """Pause the runtime by stopping the container.
-        This is different from container.stop() as it ensures environment variables are properly preserved."""
+        This is different from container.stop() as it ensures environment variables are properly preserved.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 
@@ -615,7 +627,8 @@ class DockerRuntime(ActionExecutionClient):
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
-        This is different from container.start() as it ensures environment variables are properly restored."""
+        This is different from container.start() as it ensures environment variables are properly restored.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 

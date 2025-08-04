@@ -15,9 +15,7 @@ from openhands.core.config.mcp_config import (
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
-from openhands.core.exceptions import (
-    AgentRuntimeTimeoutError,
-)
+from openhands.core.exceptions import AgentRuntimeTimeoutError
 from openhands.events import EventStream
 from openhands.events.action import (
     ActionConfirmationStatus,
@@ -44,6 +42,7 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
+from openhands.runtime.impl.docker.docker_lifecycle_lock import docker_lifecycle_lock
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.system_stats import update_last_execution_time
@@ -123,7 +122,9 @@ class ActionExecutionClient(Runtime):
         Raises:
             AgentRuntimeError: If the request fails
         """
-        return send_request(self.session, method, url, **kwargs)
+        # Acquire the Docker lifecycle lock to prevent race conditions during container operations
+        with docker_lifecycle_lock.acquire(timeout=30.0, operation=f"{method} {url}"):
+            return send_request(self.session, method, url, **kwargs)
 
     def check_if_alive(self) -> None:
         response = self._send_action_server_request(
