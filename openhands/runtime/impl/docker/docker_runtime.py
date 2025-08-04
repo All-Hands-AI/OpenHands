@@ -856,11 +856,12 @@ class DockerRuntime(ActionExecutionClient):
             super().close()
             return
 
-        # Stop and remove the container
+        # Stop and remove the container using stop_all_containers for compatibility with tests
         if self.container:
             try:
-                self.container.stop()
-                self.container.remove(force=True)
+                # Use stop_all_containers with the specific container name to maintain
+                # compatibility with existing tests
+                stop_all_containers(self.container_name)
                 self.log(
                     'info', f'Container {self.container_name} stopped and removed.'
                 )
@@ -874,7 +875,9 @@ class DockerRuntime(ActionExecutionClient):
         # If rm_all_containers is True, stop all containers with the prefix
         if rm_all_containers:
             close_prefix = CONTAINER_NAME_PREFIX
-            stop_all_containers(close_prefix)
+            # Don't call stop_all_containers again if we already stopped the specific container
+            if self.container_name != close_prefix:
+                stop_all_containers(close_prefix)
 
         # Release port locks
         self._release_port_locks()
