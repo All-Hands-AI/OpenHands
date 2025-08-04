@@ -17,10 +17,9 @@ from openhands.server.user_auth import (
     get_secrets_store,
     get_user_secrets,
 )
-from openhands.storage.data_models.settings import Settings
+from openhands.server.routes.secrets_migration import invalidate_legacy_secrets_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
-from openhands.storage.settings.settings_store import SettingsStore
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
@@ -28,9 +27,6 @@ app = APIRouter(prefix='/api', dependencies=get_dependencies())
 # =================================================
 # SECTION: Handle git provider tokens
 # =================================================
-
-
-from openhands.server.routes.secrets_migration import invalidate_legacy_secrets_store
 
 
 def process_token_validation_result(
