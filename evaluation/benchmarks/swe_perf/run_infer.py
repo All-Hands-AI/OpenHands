@@ -824,19 +824,6 @@ if __name__ == '__main__':
             cpu_group=None,  # We will use the cpu_groups_queue to get the cpu group later
         )
 
-        if not "all-hands" in config.sandbox.remote_runtime_api_url and not config.sandbox.use_host_network:
-            # HACK: Assuming docker, fix this later.
-
-            client = docker.from_env()
-            network = client.networks.create(
-                config.sandbox.network_name,
-                driver='bridge',
-                check_duplicate=True,
-                ipam=docker.types.IPAMConfig(pool_configs=[
-                    docker.types.IPAMPool(subnet=config.sandbox.network_subnet)
-                ])
-            )
-
         run_evaluation(
             instances,
             metadata,
