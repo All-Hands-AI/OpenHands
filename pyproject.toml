@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.51.0"
+version = "0.51.1"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -20,6 +20,7 @@ packages = [
 ]
 include = [
   "openhands/integrations/vscode/openhands-vscode-0.0.1.vsix",
+  "microagents/**/*",
 ]
 build = "build_vscode.py" # Build VSCode extension during Poetry build
 

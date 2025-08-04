@@ -512,6 +512,7 @@ class ConversationMemory:
                     repo_info = RepositoryInfo(
                         repo_name=obs.repo_name or '',
                         repo_directory=obs.repo_directory or '',
+                        branch_name=obs.repo_branch or None,
                     )
                 else:
                     repo_info = None
