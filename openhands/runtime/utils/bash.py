@@ -237,6 +237,15 @@ class BashSession:
             f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
         )
         time.sleep(0.1)  # Wait for command to take effect
+
+        # Set lower priority for bash session to ensure webserver stays responsive
+        try:
+            self.pane.send_keys('renice 10 $$', enter=True)
+            time.sleep(0.1)
+            logger.debug("Set bash session priority to low")
+        except Exception as e:
+            logger.debug("Could not set bash session priority: %s", e)
+
         self._clear_screen()
 
         # Store the last command for interactive input handling
@@ -504,9 +513,9 @@ class BashSession:
         if len(splited_commands) > 1:
             return ErrorObservation(
                 content=(
-                    f'ERROR: Cannot execute multiple commands at once.\n'
-                    f'Please run each command separately OR chain them into a single command via && or ;\n'
-                    f'Provided commands:\n{"\n".join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))}'
+                                    'ERROR: Cannot execute multiple commands at once.\n'
+                'Please run each command separately OR chain them into a single command via && or ;\n'
+                'Provided commands:\n' + '\n'.join(f"({i + 1}) {cmd}" for i, cmd in enumerate(splited_commands))
                 )
             )
 
@@ -625,7 +634,8 @@ class BashSession:
             # We ignore this if the command is *blocking*
             time_since_last_change = time.time() - last_change_time
             logger.debug(
-                f'CHECKING NO CHANGE TIMEOUT ({self.NO_CHANGE_TIMEOUT_SECONDS}s): elapsed {time_since_last_change}. Action blocking: {action.blocking}'
+                'CHECKING NO CHANGE TIMEOUT (%ss): elapsed %s. Action blocking: %s',
+                self.NO_CHANGE_TIMEOUT_SECONDS, time_since_last_change, action.blocking
             )
             if (
                 not action.blocking
@@ -640,7 +650,8 @@ class BashSession:
             # 3) Execution timed out due to hard timeout
             elapsed_time = time.time() - start_time
             logger.debug(
-                f'CHECKING HARD TIMEOUT ({action.timeout}s): elapsed {elapsed_time:.2f}'
+                'CHECKING HARD TIMEOUT (%ss): elapsed %.2f',
+                action.timeout, elapsed_time
             )
             if action.timeout and elapsed_time >= action.timeout:
                 logger.debug('Hard timeout triggered.')
@@ -651,6 +662,6 @@ class BashSession:
                     timeout=action.timeout,
                 )
 
-            logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
+            logger.debug('SLEEPING for %s seconds for next poll', self.POLL_INTERVAL)
             time.sleep(self.POLL_INTERVAL)
         raise RuntimeError('Bash session was likely interrupted...')

@@ -82,6 +82,26 @@ if sys.platform == 'win32':
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 
+def set_process_priority():
+    """Set higher priority for the webserver process to ensure it stays responsive."""
+    try:
+        if sys.platform != 'win32':
+            import os
+
+            # Set nice value to -10 (higher priority) for the current process
+            os.nice(-10)
+            logger.info("Set webserver process priority to high")
+        else:
+            import psutil
+
+            # On Windows, set high priority
+            process = psutil.Process()
+            process.nice(psutil.HIGH_PRIORITY_CLASS)
+            logger.info("Set webserver process priority to high on Windows")
+    except (OSError, PermissionError) as e:
+        logger.warning(f"Could not set process priority: {e}")
+
+
 class ActionRequest(BaseModel):
     action: dict
 
@@ -711,6 +731,9 @@ if __name__ == '__main__':
 
     # example: python client.py 8000 --working-dir /workspace --plugins JupyterRequirement
     args = parser.parse_args()
+
+    # Set high priority for the webserver process to ensure it stays responsive
+    set_process_priority()
 
     # Start the file viewer server in a separate thread
     logger.info('Starting file viewer server')
