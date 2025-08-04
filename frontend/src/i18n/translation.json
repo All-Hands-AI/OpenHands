@@ -11774,5 +11774,37 @@
         "tr": "Mikro ajan içeriği yüklenirken hata oluştu.",
         "de": "Fehler beim Laden des Microagent-Inhalts.",
         "uk": "Помилка під час завантаження вмісту мікроагента."
+    },
+    "COMMON$STOP_CONVERSATION": {
+        "en": "Stop Conversation",
+        "ja": "会話を停止",
+        "zh-CN": "停止对话",
+        "zh-TW": "停止對話",
+        "ko-KR": "대화 중지",
+        "no": "Stopp samtale",
+        "it": "Ferma conversazione",
+        "pt": "Parar conversa",
+        "es": "Detener conversación",
+        "ar": "إيقاف المحادثة",
+        "fr": "Arrêter la conversation",
+        "tr": "Konuşmayı Durdur",
+        "de": "Gespräch stoppen",
+        "uk": "Зупинити розмову"
+    },
+    "COMMON$DELETE_CONVERSATION": {
+        "en": "Delete Conversation",
+        "ja": "会話を削除",
+        "zh-CN": "删除对话",
+        "zh-TW": "刪除對話",
+        "ko-KR": "대화 삭제",
+        "no": "Slett samtale",
+        "it": "Elimina conversazione",
+        "pt": "Excluir conversa",
+        "es": "Eliminar conversación",
+        "ar": "حذف المحادثة",
+        "fr": "Supprimer la conversation",
+        "tr": "Konuşmayı Sil",
+        "de": "Gespräch löschen",
+        "uk": "Видалити розмову"
     }
 }
