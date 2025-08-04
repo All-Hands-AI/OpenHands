@@ -28,6 +28,7 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.llm.llm import LLM
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.session.agent_session import AgentSession
@@ -74,6 +75,9 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
