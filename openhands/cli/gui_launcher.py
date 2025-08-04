@@ -10,7 +10,6 @@ from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
 
 from openhands import __version__
-from openhands.utils.term_color import TermColor, colorize
 
 
 def _format_docker_command_for_logging(cmd: list[str]) -> str:
@@ -20,10 +19,10 @@ def _format_docker_command_for_logging(cmd: list[str]) -> str:
         cmd (list[str]): The Docker command as a list of strings
 
     Returns:
-        str: The formatted command string in grey color
+        str: The formatted command string in grey HTML color
     """
     cmd_str = ' '.join(cmd)
-    return colorize(f'Running Docker command: {cmd_str}', TermColor.GREY)
+    return f'<grey>Running Docker command: {cmd_str}</grey>'
 
 
 def check_docker_requirements() -> bool:
