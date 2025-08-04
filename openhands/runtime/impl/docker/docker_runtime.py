@@ -130,8 +130,7 @@ def _create_warm_container(
 
     # Set the runtime container image
     if runtime_container_image:
-        # Explicitly cast to string to help mypy
-        runtime.runtime_container_image = cast(str, runtime_container_image)
+        runtime.runtime_container_image = runtime_container_image
 
     # Initialize the container
     runtime.init_container()
@@ -238,6 +237,7 @@ class DockerRuntime(ActionExecutionClient):
     """
 
     _shutdown_listener_id: UUID | None = None
+    runtime_container_image: str | None = None
 
     def __init__(
         self,
