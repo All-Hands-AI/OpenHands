@@ -4,11 +4,6 @@ export type TabType = "personal" | "repositories" | "organizations";
 
 export interface RepositoryMicroagent {
   name: string;
-  type: "repo" | "knowledge";
-  content: string;
-  triggers: string[];
-  inputs: string[];
-  tools: string[];
   created_at: string;
   git_provider: string;
   path: string;
@@ -24,4 +19,9 @@ export interface MicroagentFormData {
   triggers: string[];
   selectedBranch: string;
   microagentPath: string;
+}
+
+export interface LearnThisRepoFormData {
+  query: string;
+  selectedBranch: string;
 }

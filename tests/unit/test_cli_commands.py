@@ -549,8 +549,8 @@ class TestHandleSettingsCommand:
         config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
-        # Mock user selecting "Go back"
-        mock_cli_confirm.return_value = 2
+        # Mock user selecting "Go back" (now option 4, index 3)
+        mock_cli_confirm.return_value = 3
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
