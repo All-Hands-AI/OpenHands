@@ -282,7 +282,7 @@ async def modify_llm_settings_basic(
                 config,
                 (
                     '(Step 2/3) Select Available OpenHands Model:\n'
-                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/openhands-llms'
+                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
                 ),
                 model_choices,
             )
@@ -333,6 +333,13 @@ async def modify_llm_settings_basic(
             else:
                 # Use the default model
                 model = default_model
+
+        if provider == 'openhands':
+            print_formatted_text(
+                HTML(
+                    '\nYou can find your OpenHands LLM API Key in the <a href="https://app.all-hands.dev/settings/api-keys">API Keys</a> tab of OpenHands Cloud: https://app.all-hands.dev/settings/api-keys'
+                )
+            )
 
         api_key = await get_validated_input(
             session,

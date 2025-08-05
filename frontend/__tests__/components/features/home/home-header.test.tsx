@@ -17,7 +17,7 @@ vi.mock("react-i18next", async () => {
       t: (key: string) => {
         // Return a mock translation for the test
         const translations: Record<string, string> = {
-          HOME$LETS_START_BUILDING: "Make Cool Shit!",
+          HOME$LETS_START_BUILDING: "Let's start building",
           HOME$LAUNCH_FROM_SCRATCH: "Launch from Scratch",
           HOME$LOADING: "Loading...",
           HOME$OPENHANDS_DESCRIPTION: "OpenHands is an AI software engineer",

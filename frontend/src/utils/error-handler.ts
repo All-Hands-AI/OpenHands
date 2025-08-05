@@ -9,17 +9,7 @@ interface ErrorDetails {
   msgId?: string;
 }
 
-/**
- * Track an error to PostHog for analytics purposes.
- * Respects user's analytics consent - errors are only tracked if the user
- * has opted in to analytics via the "Send anonymous data" setting.
- */
 export function trackError({ message, source, metadata = {} }: ErrorDetails) {
-  // Only track errors if user has opted in to analytics
-  if (posthog.has_opted_out_capturing()) {
-    return;
-  }
-
   const error = new Error(message);
   posthog.captureException(error, {
     error_source: source || "unknown",

@@ -76,7 +76,7 @@ class TestDisplayFunctions:
         assert mock_print.call_count == 2
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
-        assert 'Make Cool Shit!' in str(args[0])
+        assert "Let's start building" in str(args[0])
 
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_welcome_message_with_message(self, mock_print):
@@ -86,7 +86,7 @@ class TestDisplayFunctions:
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
         message_text = str(args[0])
-        assert 'Make Cool Shit!' in message_text
+        assert "Let's start building" in message_text
         # Check the second call contains the custom message
         args, kwargs = mock_print.call_args_list[1]
         message_text = str(args[0])
@@ -100,7 +100,7 @@ class TestDisplayFunctions:
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
         message_text = str(args[0])
-        assert 'Make Cool Shit!' in message_text
+        assert "Let's start building" in message_text
         # Check the second call contains the default message
         args, kwargs = mock_print.call_args_list[1]
         message_text = str(args[0])

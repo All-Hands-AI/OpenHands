@@ -11,7 +11,6 @@ import * as CustomToast from "#/utils/custom-toast-handlers";
 vi.mock("posthog-js", () => ({
   default: {
     captureException: vi.fn(),
-    has_opted_out_capturing: vi.fn(() => false),
   },
 }));
 
@@ -65,24 +64,6 @@ describe("Error Handler", () => {
           details: { foo: "bar" },
         },
       );
-    });
-
-    it("should not track error when user has opted out of analytics", () => {
-      // Mock user has opted out
-      vi.mocked(posthog.has_opted_out_capturing).mockReturnValue(true);
-
-      const error = {
-        message: "Test error",
-        source: "test",
-      };
-
-      trackError(error);
-
-      // Should not call captureException when opted out
-      expect(posthog.captureException).not.toHaveBeenCalled();
-
-      // Reset mock for other tests
-      vi.mocked(posthog.has_opted_out_capturing).mockReturnValue(false);
     });
   });
 

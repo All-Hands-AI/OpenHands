@@ -22,7 +22,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
-        <div id="modal-portal-exit" />
         <ScrollRestoration />
         <Scripts />
         <Toaster />
@@ -32,8 +31,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export const meta: MetaFunction = () => [
-  { title: "MojoCode" },
-  { name: "description", content: "Make Cool Shit!!" },
+  { title: "OpenHands" },
+  { name: "description", content: "Let's Start Building!" },
 ];
 
 export default function App() {

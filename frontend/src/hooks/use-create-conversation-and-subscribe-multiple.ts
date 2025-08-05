@@ -51,11 +51,11 @@ export const useCreateConversationAndSubscribeMultiple = () => {
           onSuccess: (data) => {
             let baseUrl = "";
             if (data?.url && !data.url.startsWith("/")) {
-              baseUrl = new URL(data.url).orgin;
+              baseUrl = new URL(data.url).host;
             } else {
               baseUrl =
                 (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
-                window?.location.orgin;
+                window?.location.host;
             }
 
             // Subscribe to the conversation

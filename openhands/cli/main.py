@@ -473,7 +473,7 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     )
     print_formatted_text(
         HTML(
-            '<ansiyellow>   Installation guide: https://www.sixtyoneeighty.comstral.sh/uv/getting-started/installation</ansiyellow>'
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
         )
     )
     print_formatted_text('')

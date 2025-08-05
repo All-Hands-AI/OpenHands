@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="./docs/static/img/logo.png" alt="Logo" width="200">
-  <h1 align="center">MojoCode: Make Cool Shit!</h1>
+  <h1 align="center">OpenHands: Code Less, Make More</h1>
 </div>
 
 
@@ -15,7 +15,7 @@
   <a href="https://discord.gg/ESHStjSjD4"><img src="https://img.shields.io/badge/Discord-Join%20Us-purple?logo=discord&logoColor=white&style=for-the-badge" alt="Join our Discord community"></a>
   <a href="https://github.com/All-Hands-AI/OpenHands/blob/main/CREDITS.md"><img src="https://img.shields.io/badge/Project-Credits-blue?style=for-the-badge&color=FFE165&logo=github&logoColor=white" alt="Credits"></a>
   <br/>
-  <a href="https://www.sixtyoneeighty.comll-hands.dev/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
+  <a href="https://docs.all-hands.dev/usage/getting-started"><img src="https://img.shields.io/badge/Documentation-000?logo=googledocs&logoColor=FFE165&style=for-the-badge" alt="Check out the documentation"></a>
   <a href="https://arxiv.org/abs/2407.16741"><img src="https://img.shields.io/badge/Paper%20on%20Arxiv-000?logoColor=FFE165&logo=arxiv&style=for-the-badge" alt="Paper on Arxiv"></a>
   <a href="https://docs.google.com/spreadsheets/d/1wOUdFCMyY6Nt0AIqF705KN4JKOWgeI4wUGUP60krXXs/edit?gid=0#gid=0"><img src="https://img.shields.io/badge/Benchmark%20score-000?logoColor=FFE165&logo=huggingface&style=for-the-badge" alt="Evaluation Benchmark Score"></a>
 
@@ -37,7 +37,7 @@ Welcome to OpenHands (formerly OpenDevin), a platform for software development a
 OpenHands agents can do anything a human developer can: modify code, run commands, browse the web,
 call APIs, and yes—even copy code snippets from StackOverflow.
 
-Learn more at [docs.all-hands.dev](https://www.sixtyoneeighty.comll-hands.dev), or [sign up for OpenHands Cloud](https://app.all-hands.dev) to get started.
+Learn more at [docs.all-hands.dev](https://docs.all-hands.dev), or [sign up for OpenHands Cloud](https://app.all-hands.dev) to get started.
 
 > [!IMPORTANT]
 > Using OpenHands for work? We'd love to chat! Fill out
@@ -53,11 +53,11 @@ which comes with $20 in free credits for new users.
 ## 💻 Running OpenHands Locally
 
 OpenHands can also run on your local system using Docker.
-See the [Running OpenHands](https://www.sixtyoneeighty.comll-hands.dev/usage/installation) guide for
+See the [Running OpenHands](https://docs.all-hands.dev/usage/installation) guide for
 system requirements and more information.
 
 > [!WARNING]
-> On a public network? See our [Hardened Docker Installation Guide](https://www.sixtyoneeighty.comll-hands.dev/usage/runtimes/docker#hardened-docker-installation)
+> On a public network? See our [Hardened Docker Installation Guide](https://docs.all-hands.dev/usage/runtimes/docker#hardened-docker-installation)
 > to secure your deployment by restricting network binding and implementing additional security measures.
 
 
@@ -81,7 +81,7 @@ You'll find OpenHands running at [http://localhost:3000](http://localhost:3000)!
 
 When you open the application, you'll be asked to choose an LLM provider and add an API key.
 [Anthropic's Claude Sonnet 4](https://www.anthropic.com/api) (`anthropic/claude-sonnet-4-20250514`)
-works best, but you have [many options](https://www.sixtyoneeighty.comll-hands.dev/usage/llms).
+works best, but you have [many options](https://docs.all-hands.dev/usage/llms).
 
 ## 💡 Other ways to run OpenHands
 
@@ -92,22 +92,22 @@ works best, but you have [many options](https://www.sixtyoneeighty.comll-hands.d
 > If you're interested in running OpenHands in a multi-tenant environment, check out the source-available, commercially-licensed
 > [OpenHands Cloud Helm Chart](https://github.com/all-Hands-AI/OpenHands-cloud)
 
-You can [connect OpenHands to your local filesystem](https://www.sixtyoneeighty.comll-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
-run OpenHands in a scriptable [headless mode](https://www.sixtyoneeighty.comll-hands.dev/usage/how-to/headless-mode),
-interact with it via a [friendly CLI](https://www.sixtyoneeighty.comll-hands.dev/usage/how-to/cli-mode),
-or run it on tagged issues with [a github action](https://www.sixtyoneeighty.comll-hands.dev/usage/how-to/github-action).
+You can [connect OpenHands to your local filesystem](https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem),
+run OpenHands in a scriptable [headless mode](https://docs.all-hands.dev/usage/how-to/headless-mode),
+interact with it via a [friendly CLI](https://docs.all-hands.dev/usage/how-to/cli-mode),
+or run it on tagged issues with [a github action](https://docs.all-hands.dev/usage/how-to/github-action).
 
-Visit [Running OpenHands](https://www.sixtyoneeighty.comll-hands.dev/usage/installation) for more information and setup instructions.
+Visit [Running OpenHands](https://docs.all-hands.dev/usage/installation) for more information and setup instructions.
 
 If you want to modify the OpenHands source code, check out [Development.md](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 
-Having issues? The [Troubleshooting Guide](https://www.sixtyoneeighty.comll-hands.dev/usage/troubleshooting) can help.
+Having issues? The [Troubleshooting Guide](https://docs.all-hands.dev/usage/troubleshooting) can help.
 
 ## 📖 Documentation
   <a href="https://deepwiki.com/All-Hands-AI/OpenHands"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki" title="Autogenerated Documentation by DeepWiki"></a>
 
 To learn more about the project, and for tips on using OpenHands,
-check out our [documentation](https://www.sixtyoneeighty.comll-hands.dev/usage/getting-started).
+check out our [documentation](https://docs.all-hands.dev/usage/getting-started).
 
 There you'll find resources on how to use different LLM providers,
 troubleshooting resources, and advanced configuration options.
