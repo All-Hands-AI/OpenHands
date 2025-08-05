@@ -22,7 +22,6 @@ class FileReadAction(Action):
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
-    reasoning_content: str | None = None
 
     @property
     def message(self) -> str:
@@ -36,6 +35,9 @@ class FileReadAction(Action):
             ret += f'Reasoning: {self.reasoning_content}\n'
         ret += f'Thought: {self.thought}\n'
         return ret
+        
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 @dataclass
@@ -53,7 +55,6 @@ class FileWriteAction(Action):
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
-    reasoning_content: str | None = None
 
     @property
     def message(self) -> str:
@@ -68,6 +69,9 @@ class FileWriteAction(Action):
         ret += f'Thought: {self.thought}\n'
         ret += f'Content:\n```\n{self.content}\n```\n'
         return ret
+        
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 @dataclass
@@ -125,7 +129,6 @@ class FileEditAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
-    reasoning_content: str | None = None
 
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
@@ -151,3 +154,6 @@ class FileEditAction(Action):
                 ret += 'Undo Edit\n'
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
+        
+    def __str__(self) -> str:
+        return self.__repr__()
