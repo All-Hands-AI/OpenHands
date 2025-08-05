@@ -59,7 +59,7 @@ export function CustomChatInput({
   // Use the auto-resize hook
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
-    maxHeight: 120,
+    maxHeight: 80,
     value,
   });
 
@@ -291,8 +291,8 @@ export function CustomChatInput({
         onDrop={handleDrop}
       >
         {/* Main Input Row */}
-        <div className="box-border content-stretch flex flex-row items-start justify-between p-0 relative shrink-0 w-full pb-[18px]">
-          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-start justify-start min-h-px min-w-px p-0 relative shrink-0 pt-1">
+        <div className="box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px] gap-2">
+          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-end justify-start min-h-px min-w-px p-0 relative shrink-0">
             <ChatAddFileButton
               disabled={disabled}
               handleFileIconClick={handleFileIconClick}
@@ -303,7 +303,7 @@ export function CustomChatInput({
               className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
               data-name="Text & caret"
             >
-              <div className="basis-0 flex flex-col font-['Outfit:Regular',_sans-serif] font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
+              <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                 <div
                   ref={chatInputRef}
                   className={cn(
@@ -313,7 +313,6 @@ export function CustomChatInput({
                   contentEditable={!disabled}
                   data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                   data-testid="chat-input"
-                  style={{ fontFamily: "'Outfit', sans-serif" }}
                   onInput={handleInput}
                   onPaste={handlePaste}
                   onKeyDown={handleKeyDown}
@@ -334,7 +333,7 @@ export function CustomChatInput({
           )}
         </div>
 
-        <div className="w-full flex items-center justify-between">
+        <div className="w-full flex items-center justify-between translate-x-[-6px]">
           <ServerStatus conversationStatus={conversationStatus} />
           <AgentStatus
             handleStop={handleStop}
