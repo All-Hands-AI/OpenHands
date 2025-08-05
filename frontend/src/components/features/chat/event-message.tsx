@@ -19,6 +19,8 @@ import { MCPObservationContent } from "./mcp-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
+import { MicroagentStatus } from "#/types/microagent-status";
+import { MicroagentStatusIndicator } from "./microagent/microagent-status-indicator";
 import { FileList } from "../files/file-list";
 import { parseMessageFromEvent } from "./event-content-helpers/parse-message-from-event";
 import { LikertScale } from "../feedback/likert-scale";
@@ -43,6 +45,13 @@ interface EventMessageProps {
   hasObservationPair: boolean;
   isAwaitingUserConfirmation: boolean;
   isLastMessage: boolean;
+  microagentStatus?: MicroagentStatus | null;
+  microagentConversationId?: string;
+  microagentPRUrl?: string;
+  actions?: Array<{
+    icon: React.ReactNode;
+    onClick: () => void;
+  }>;
   isInLast10Actions: boolean;
 }
 
@@ -51,6 +60,10 @@ export function EventMessage({
   hasObservationPair,
   isAwaitingUserConfirmation,
   isLastMessage,
+  microagentStatus,
+  microagentConversationId,
+  microagentPRUrl,
+  actions,
   isInLast10Actions,
 }: EventMessageProps) {
   const shouldShowConfirmationButtons =
@@ -90,27 +103,66 @@ export function EventMessage({
 
   if (isErrorObservation(event)) {
     return (
-      <>
+      <div>
         <ErrorMessage
           errorId={event.extras.error_id}
           defaultMessage={event.message}
         />
+        {microagentStatus && actions && (
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
+          />
+        )}
         {renderLikertScale()}
-      </>
+      </div>
     );
   }
 
   if (hasObservationPair && isOpenHandsAction(event)) {
     if (hasThoughtProperty(event.args)) {
-      return <ChatMessage type="agent" message={event.args.thought} />;
+      return (
+        <div>
+          <ChatMessage
+            type="agent"
+            message={event.args.thought}
+            actions={actions}
+          />
+          {microagentStatus && actions && (
+            <MicroagentStatusIndicator
+              status={microagentStatus}
+              conversationId={microagentConversationId}
+              prUrl={microagentPRUrl}
+            />
+          )}
+        </div>
+      );
     }
-    return null;
+    return microagentStatus && actions ? (
+      <MicroagentStatusIndicator
+        status={microagentStatus}
+        conversationId={microagentConversationId}
+        prUrl={microagentPRUrl}
+      />
+    ) : null;
   }
 
   if (isFinishAction(event)) {
     return (
       <>
-        <ChatMessage type="agent" message={getEventContent(event).details} />
+        <ChatMessage
+          type="agent"
+          message={getEventContent(event).details}
+          actions={actions}
+        />
+        {microagentStatus && actions && (
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
+          />
+        )}
         {renderLikertScale()}
       </>
     );
@@ -124,7 +176,7 @@ export function EventMessage({
         {isAssistantMessage(event) && hasReasoningContent(event.args) && (
           <ReasoningContent content={event.args.reasoning_content} />
         )}
-        <ChatMessage type={event.source} message={message}>
+        <ChatMessage type={event.source} message={message} actions={actions}>
           {event.args.image_urls && event.args.image_urls.length > 0 && (
             <ImageCarousel size="small" images={event.args.image_urls} />
           )}
@@ -133,6 +185,13 @@ export function EventMessage({
           )}
           {shouldShowConfirmationButtons && <ConfirmationButtons />}
         </ChatMessage>
+        {microagentStatus && actions && (
+          <MicroagentStatusIndicator
+            status={microagentStatus}
+            conversationId={microagentConversationId}
+            prUrl={microagentPRUrl}
+          />
+        )}
         {isAssistantMessage(event) &&
           event.action === "message" &&
           renderLikertScale()}
@@ -141,7 +200,11 @@ export function EventMessage({
   }
 
   if (isRejectObservation(event)) {
-    return <ChatMessage type="agent" message={event.content} />;
+    return (
+      <div>
+        <ChatMessage type="agent" message={event.content} />
+      </div>
+    );
   }
 
   if (isMcpObservation(event)) {

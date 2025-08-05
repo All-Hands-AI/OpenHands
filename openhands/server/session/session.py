@@ -10,6 +10,7 @@ from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
 from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
@@ -27,7 +28,9 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.llm.llm import LLM
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
@@ -72,6 +75,9 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -156,13 +162,18 @@ class Session:
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
-            # Default condenser chains a condenser that limits browser the total
-            # size of browser observations with a condenser that limits the size
-            # of the view given to the LLM. The order matters: with the browser
-            # output first, the summarizer will only see the most recent browser
-            # output, which should keep the summarization cost down.
+            # Default condenser chains three condensers together:
+            # 1. a conversation window condenser that handles explicit
+            # condensation requests,
+            # 2. a condenser that limits the total size of browser observations,
+            # and
+            # 3. a condenser that limits the size of the view given to the LLM.
+            # The order matters: with the browser output first, the summarizer
+            # will only see the most recent browser output, which should keep
+            # the summarization cost down.
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
+                    ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
                         llm_config=llm.config, keep_first=4, max_size=120
@@ -243,9 +254,8 @@ class Session:
         )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        msg_id = 'STATUS$LLM_RETRY'
         self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            'info', RuntimeStatus.LLM_RETRY, f'Retrying LLM request, {retries} / {max}'
         )
 
     def on_event(self, event: Event) -> None:
@@ -331,7 +341,9 @@ class Session:
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str) -> None:
+    async def _send_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Sends a status message to the client."""
         if msg_type == 'error':
             agent_session = self.agent_session
@@ -343,11 +355,18 @@ class Session:
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(
-            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
+            {
+                'status_update': True,
+                'type': msg_type,
+                'id': runtime_status.value,
+                'message': message,
+            }
         )
 
-    def queue_status_message(self, msg_type: str, id: str, message: str) -> None:
+    def queue_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Queues a status message to be sent asynchronously."""
         asyncio.run_coroutine_threadsafe(
-            self._send_status_message(msg_type, id, message), self.loop
+            self._send_status_message(msg_type, runtime_status, message), self.loop
         )

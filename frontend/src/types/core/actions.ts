@@ -11,7 +11,7 @@ export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
 }
 
 export interface SystemMessageAction extends OpenHandsActionEvent<"system"> {
-  source: "agent";
+  source: "agent" | "environment";
   args: {
     content: string;
     tools: Array<Record<string, unknown>> | null;
@@ -67,7 +67,6 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
     final_thought: string;
-    task_completed: "success" | "failure" | "partial";
     outputs: Record<string, unknown>;
     thought: string;
   };

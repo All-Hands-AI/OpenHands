@@ -22,11 +22,14 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
+    MicroagentParseError,
     ProviderType,
     Repository,
+    ResourceNotFoundError,
     SuggestedTask,
     User,
 )
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -95,6 +98,13 @@ CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
 
 
 class ProviderHandler:
+    # Class variable for provider domains
+    PROVIDER_DOMAINS: dict[ProviderType, str] = {
+        ProviderType.GITHUB: 'github.com',
+        ProviderType.GITLAB: 'gitlab.com',
+        ProviderType.BITBUCKET: 'bitbucket.org',
+    }
+
     def __init__(
         self,
         provider_tokens: PROVIDER_TOKEN_TYPE,
@@ -325,20 +335,26 @@ class ProviderHandler:
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
     ) -> Repository:
+        errors = []
+
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{specified_provider.value}: {str(e)}')
 
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
-            except Exception:
-                pass
+            except Exception as e:
+                errors.append(f'{provider.value}: {str(e)}')
 
+        # Log all accumulated errors before raising AuthenticationError
+        logger.error(
+            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
+        )
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(
@@ -393,3 +409,151 @@ class ProviderHandler:
                 other_branches.append(branch)
 
         return main_branches + other_branches
+
+    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
+        """Get microagents from a repository using the appropriate service.
+
+        Args:
+            repository: Repository name in the format 'owner/repo'
+
+        Returns:
+            List of microagents found in the repository
+
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        # Try all available providers in order
+        errors = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                result = await service.get_microagents(repository)
+                # Only return early if we got a non-empty result
+                if result:
+                    return result
+                # If we got an empty array, continue checking other providers
+                logger.debug(
+                    f'No microagents found on {provider} for {repository}, trying other providers'
+                )
+            except Exception as e:
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error fetching microagents from {provider} for {repository}: {e}'
+                )
+
+        # If all providers failed or returned empty results, return empty array
+        if errors:
+            logger.error(
+                f'Failed to fetch microagents for {repository} with all available providers. Errors: {"; ".join(errors)}'
+            )
+            raise AuthenticationError(f'Unable to fetch microagents for {repository}')
+
+        # All providers returned empty arrays
+        return []
+
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Get content of a specific microagent file from a repository.
+
+        Args:
+            repository: Repository name in the format 'owner/repo'
+            file_path: Path to the microagent file within the repository
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            AuthenticationError: If authentication fails
+        """
+        # Try all available providers in order
+        errors = []
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                result = await service.get_microagent_content(repository, file_path)
+                # If we got content, return it immediately
+                if result:
+                    return result
+                # If we got empty content, continue checking other providers
+                logger.debug(
+                    f'No content found on {provider} for {repository}/{file_path}, trying other providers'
+                )
+            except ResourceNotFoundError:
+                logger.debug(
+                    f'File not found on {provider} for {repository}/{file_path}, trying other providers'
+                )
+                continue
+            except MicroagentParseError as e:
+                # Parsing errors are specific to the provider, add to errors list
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error parsing microagent content from {provider} for {repository}: {e}'
+                )
+            except Exception as e:
+                # For other errors (auth, rate limit, etc.), add to errors list
+                errors.append(f'{provider.value}: {str(e)}')
+                logger.warning(
+                    f'Error fetching microagent content from {provider} for {repository}: {e}'
+                )
+
+        # If all providers failed or returned empty results, raise an error
+        if errors:
+            logger.error(
+                f'Failed to fetch microagent content for {repository} with all available providers. Errors: {"; ".join(errors)}'
+            )
+
+        # All providers returned empty content or file not found
+        raise AuthenticationError(
+            f'Microagent file {file_path} not found in {repository}'
+        )
+
+    async def get_authenticated_git_url(self, repo_name: str) -> str:
+        """Get an authenticated git URL for a repository.
+
+        Args:
+            repo_name: Repository name (owner/repo)
+
+        Returns:
+            Authenticated git URL if credentials are available, otherwise regular HTTPS URL
+        """
+        try:
+            repository = await self.verify_repo_provider(repo_name)
+        except AuthenticationError:
+            raise Exception('Git provider authentication issue when getting remote URL')
+
+        provider = repository.git_provider
+        repo_name = repository.full_name
+
+        domain = self.PROVIDER_DOMAINS[provider]
+
+        # If provider tokens are provided, use the host from the token if available
+        if self.provider_tokens and provider in self.provider_tokens:
+            domain = self.provider_tokens[provider].host or domain
+
+        # Try to use token if available, otherwise use public URL
+        if self.provider_tokens and provider in self.provider_tokens:
+            git_token = self.provider_tokens[provider].token
+            if git_token:
+                token_value = git_token.get_secret_value()
+                if provider == ProviderType.GITLAB:
+                    remote_url = (
+                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
+                    )
+                elif provider == ProviderType.BITBUCKET:
+                    # For Bitbucket, handle username:app_password format
+                    if ':' in token_value:
+                        # App token format: username:app_password
+                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    else:
+                        # Access token format: use x-token-auth
+                        remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
+                else:
+                    # GitHub
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+            else:
+                remote_url = f'https://{domain}/{repo_name}.git'
+        else:
+            remote_url = f'https://{domain}/{repo_name}.git'
+
+        return remote_url

@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
@@ -9,6 +9,9 @@ from openhands.cli.tui import (
     display_banner,
     display_command,
     display_event,
+    display_mcp_action,
+    display_mcp_errors,
+    display_mcp_observation,
     display_message,
     display_runtime_initialization_message,
     display_shutdown_message,
@@ -24,14 +27,17 @@ from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
     CmdRunAction,
+    MCPAction,
     MessageAction,
 )
 from openhands.events.observation import (
     CmdOutputObservation,
     FileEditObservation,
     FileReadObservation,
+    MCPObservation,
 )
 from openhands.llm.metrics import Metrics
+from openhands.mcp.error_collector import MCPError
 
 
 class TestDisplayFunctions:
@@ -71,6 +77,35 @@ class TestDisplayFunctions:
         # Check the first call contains the welcome message
         args, kwargs = mock_print.call_args_list[0]
         assert "Let's start building" in str(args[0])
+
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_welcome_message_with_message(self, mock_print):
+        message = 'Test message'
+        display_welcome_message(message)
+        assert mock_print.call_count == 2
+        # Check the first call contains the welcome message
+        args, kwargs = mock_print.call_args_list[0]
+        message_text = str(args[0])
+        assert "Let's start building" in message_text
+        # Check the second call contains the custom message
+        args, kwargs = mock_print.call_args_list[1]
+        message_text = str(args[0])
+        assert 'Test message' in message_text
+        assert 'Type /help for help' in message_text
+
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_welcome_message_without_message(self, mock_print):
+        display_welcome_message()
+        assert mock_print.call_count == 2
+        # Check the first call contains the welcome message
+        args, kwargs = mock_print.call_args_list[0]
+        message_text = str(args[0])
+        assert "Let's start building" in message_text
+        # Check the second call contains the default message
+        args, kwargs = mock_print.call_args_list[1]
+        message_text = str(args[0])
+        assert 'What do you want to build?' in message_text
+        assert 'Type /help for help' in message_text
 
     @patch('openhands.cli.tui.display_message')
     def test_display_event_message_action(self, mock_display_message):
@@ -146,6 +181,71 @@ class TestDisplayFunctions:
         display_event(action, config)
 
         mock_display_message.assert_called_once_with('Thinking about this...')
+
+    @patch('openhands.cli.tui.display_mcp_action')
+    def test_display_event_mcp_action(self, mock_display_mcp_action):
+        config = MagicMock(spec=OpenHandsConfig)
+        mcp_action = MCPAction(name='test_tool', arguments={'param': 'value'})
+
+        display_event(mcp_action, config)
+
+        mock_display_mcp_action.assert_called_once_with(mcp_action)
+
+    @patch('openhands.cli.tui.display_mcp_observation')
+    def test_display_event_mcp_observation(self, mock_display_mcp_observation):
+        config = MagicMock(spec=OpenHandsConfig)
+        mcp_observation = MCPObservation(
+            content='Tool result', name='test_tool', arguments={'param': 'value'}
+        )
+
+        display_event(mcp_observation, config)
+
+        mock_display_mcp_observation.assert_called_once_with(mcp_observation)
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_action(self, mock_print_container):
+        mcp_action = MCPAction(name='test_tool', arguments={'param': 'value'})
+
+        display_mcp_action(mcp_action)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'param' in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_action_no_args(self, mock_print_container):
+        mcp_action = MCPAction(name='test_tool')
+
+        display_mcp_action(mcp_action)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'Arguments' not in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_observation(self, mock_print_container):
+        mcp_observation = MCPObservation(
+            content='Tool result', name='test_tool', arguments={'param': 'value'}
+        )
+
+        display_mcp_observation(mcp_observation)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'Tool result' in container.body.text
+
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_observation_no_content(self, mock_print_container):
+        mcp_observation = MCPObservation(content='', name='test_tool')
+
+        display_mcp_observation(mcp_observation)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'No output' in container.body.text
 
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_message(self, mock_print):
@@ -275,113 +375,118 @@ class TestUserCancelledError:
 
 class TestReadConfirmationInput:
     @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_yes(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'y'
-        mock_create_session.return_value = mock_session
+    @patch('openhands.cli.tui.cli_confirm')
+    async def test_read_confirmation_input_yes(self, mock_confirm):
+        mock_confirm.return_value = 0  # user picked first menu item
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        cfg = MagicMock()  # <- no spec for simplicity
+        cfg.cli = MagicMock(vi_mode=False)
+
+        result = await read_confirmation_input(config=cfg)
         assert result == 'yes'
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_yes_full(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'yes'
-        mock_create_session.return_value = mock_session
+    @patch('openhands.cli.tui.cli_confirm')
+    async def test_read_confirmation_input_no(self, mock_confirm):
+        mock_confirm.return_value = 1  # user picked second menu item
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'yes'
+        cfg = MagicMock()  # <- no spec for simplicity
+        cfg.cli = MagicMock(vi_mode=False)
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_no(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'n'
-        mock_create_session.return_value = mock_session
-
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        result = await read_confirmation_input(config=cfg)
         assert result == 'no'
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_no_full(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'no'
-        mock_create_session.return_value = mock_session
+    @patch('openhands.cli.tui.cli_confirm')
+    async def test_read_confirmation_input_always(self, mock_confirm):
+        mock_confirm.return_value = 2  # user picked third menu item
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        cfg = MagicMock()  # <- no spec for simplicity
+        cfg.cli = MagicMock(vi_mode=False)
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_always(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'a'
-        mock_create_session.return_value = mock_session
-
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
+        result = await read_confirmation_input(config=cfg)
         assert result == 'always'
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_always_full(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'always'
-        mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'always'
+"""Tests for CLI TUI MCP functionality."""
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_invalid(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = 'invalid'
-        mock_create_session.return_value = mock_session
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+class TestMCPTUIDisplay:
+    """Test MCP TUI display functions."""
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_empty(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = ''
-        mock_create_session.return_value = mock_session
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_action_with_arguments(self, mock_print_container):
+        """Test displaying MCP action with arguments."""
+        mcp_action = MCPAction(
+            name='test_tool', arguments={'param1': 'value1', 'param2': 42}
+        )
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        display_mcp_action(mcp_action)
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_none(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.return_value = None
-        mock_create_session.return_value = mock_session
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'param1' in container.body.text
+        assert 'value1' in container.body.text
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+    @patch('openhands.cli.tui.print_container')
+    def test_display_mcp_observation_with_content(self, mock_print_container):
+        """Test displaying MCP observation with content."""
+        mcp_observation = MCPObservation(
+            content='Tool execution successful',
+            name='test_tool',
+            arguments={'param': 'value'},
+        )
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_keyboard_interrupt(
-        self, mock_create_session
+        display_mcp_observation(mcp_observation)
+
+        mock_print_container.assert_called_once()
+        container = mock_print_container.call_args[0][0]
+        assert 'test_tool' in container.body.text
+        assert 'Tool execution successful' in container.body.text
+
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.mcp_error_collector')
+    def test_display_mcp_errors_no_errors(self, mock_collector, mock_print):
+        """Test displaying MCP errors when none exist."""
+        mock_collector.get_errors.return_value = []
+
+        display_mcp_errors()
+
+        mock_print.assert_called_once()
+        call_args = mock_print.call_args[0][0]
+        assert 'No MCP errors detected' in str(call_args)
+
+    @patch('openhands.cli.tui.print_container')
+    @patch('openhands.cli.tui.print_formatted_text')
+    @patch('openhands.cli.tui.mcp_error_collector')
+    def test_display_mcp_errors_with_errors(
+        self, mock_collector, mock_print, mock_print_container
     ):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.side_effect = KeyboardInterrupt
-        mock_create_session.return_value = mock_session
+        """Test displaying MCP errors when some exist."""
+        # Create mock errors
+        error1 = MCPError(
+            timestamp=1234567890.0,
+            server_name='test-server-1',
+            server_type='stdio',
+            error_message='Connection failed',
+            exception_details='Socket timeout',
+        )
+        error2 = MCPError(
+            timestamp=1234567891.0,
+            server_name='test-server-2',
+            server_type='sse',
+            error_message='Server unreachable',
+        )
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        mock_collector.get_errors.return_value = [error1, error2]
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.create_prompt_session')
-    async def test_read_confirmation_input_eof_error(self, mock_create_session):
-        mock_session = AsyncMock()
-        mock_session.prompt_async.side_effect = EOFError
-        mock_create_session.return_value = mock_session
+        display_mcp_errors()
 
-        result = await read_confirmation_input(config=MagicMock(spec=OpenHandsConfig))
-        assert result == 'no'
+        # Should print error count header
+        assert mock_print.call_count >= 1
+        header_call = mock_print.call_args_list[0][0][0]
+        assert '2 MCP error(s) detected' in str(header_call)
+
+        # Should print containers for each error
+        assert mock_print_container.call_count == 2

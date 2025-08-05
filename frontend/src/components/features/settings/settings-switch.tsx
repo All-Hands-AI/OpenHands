@@ -1,4 +1,6 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { StyledSwitchComponent } from "./styled-switch-component";
 
 interface SettingsSwitchProps {
@@ -19,6 +21,7 @@ export function SettingsSwitch({
   isToggled: controlledIsToggled,
   isBeta,
 }: React.PropsWithChildren<SettingsSwitchProps>) {
+  const { t } = useTranslation();
   const [isToggled, setIsToggled] = React.useState(defaultIsToggled ?? false);
 
   const handleToggle = (value: boolean) => {
@@ -43,7 +46,7 @@ export function SettingsSwitch({
         <span className="text-sm">{children}</span>
         {isBeta && (
           <span className="text-[11px] leading-4 text-[#0D0F11] font-[500] tracking-tighter bg-primary px-1 rounded-full">
-            Beta
+            {t(I18nKey.BADGE$BETA)}
           </span>
         )}
       </div>
