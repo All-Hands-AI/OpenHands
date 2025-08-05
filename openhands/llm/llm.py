@@ -197,6 +197,7 @@ class LLM(RetryMixin, DebugMixin):
         ):
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
+            # RESTORED: Direct kwargs approach - testing direct kwargs only
             if 'gemini-2.5-pro' in self.config.model:
                 logger.debug(
                     f'Applying custom generation config for {self.config.model}'
@@ -218,7 +219,6 @@ class LLM(RetryMixin, DebugMixin):
                 # remove other related params that are no longer needed
                 kwargs.pop('thinking', None)
                 kwargs.pop('allowed_openai_params', None)
-
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
                 kwargs.pop(
@@ -356,9 +356,9 @@ class LLM(RetryMixin, DebugMixin):
                     message=r'.*content=.*upload.*',
                     category=DeprecationWarning,
                 )
-                # Apply Gemini thinking patch temporarily for this specific call
-                with self._gemini_thinking_patch_context():
-                    resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+                # COMMENTED OUT: Context manager approach - testing direct kwargs only
+                # with self._gemini_thinking_patch_context():
+                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
