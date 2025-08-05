@@ -20,15 +20,14 @@ Add to your `config.toml`:
 ```toml
 # Main LLM (primary model)
 [llm]
-model = "gpt-4o"
+model = "claude-sonnet-4"
 api_key = "your-api-key"
 
 # Secondary model for routing
 [llm.secondary_model]
-model = "gpt-4o-mini"
+model = "kimi-k2"
 api_key = "your-api-key"
 for_routing = true
-max_input_tokens = 128000
 
 # Enable routing
 [model_routing]
