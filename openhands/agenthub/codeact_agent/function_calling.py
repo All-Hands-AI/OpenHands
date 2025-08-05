@@ -54,8 +54,9 @@ def combine_thought(action: Action, thought: str) -> Action:
 
 def add_reasoning_content(action: Action, reasoning_content: str | None) -> Action:
     """Add reasoning content to an action if it supports it."""
-    if reasoning_content and hasattr(action, 'reasoning_content'):
-        action.reasoning_content = reasoning_content
+    if reasoning_content is not None:
+        # Use setattr to ensure the attribute is set even if it doesn't exist yet
+        setattr(action, 'reasoning_content', reasoning_content)
     return action
 
 
@@ -281,13 +282,14 @@ def response_to_actions(
                     reasoning_content = msg.get('content', '')
                     break
 
-        actions.append(
-            MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else '',
-                wait_for_response=True,
-                reasoning_content=reasoning_content,
-            )
+        message_action = MessageAction(
+            content=str(assistant_msg.content) if assistant_msg.content else '',
+            wait_for_response=True,
         )
+        # Add reasoning content after creation
+        if reasoning_content:
+            message_action.reasoning_content = reasoning_content
+        actions.append(message_action)
 
     # Add response id to actions
     # This will ensure we can match both actions without tool calls (e.g. MessageAction)

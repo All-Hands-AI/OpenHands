@@ -21,3 +21,6 @@ class ActionSecurityRisk(int, Enum):
 @dataclass
 class Action(Event):
     runnable: ClassVar[bool] = False
+    # Add reasoning_content as a field with default value None
+    # This field will be used to store the reasoning content from the LLM
+    reasoning_content: str | None = None
