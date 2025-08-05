@@ -8,6 +8,7 @@ triggers:
 - container
 ---
 
+<<<<<<< HEAD
 # Docker Installation and Usage Guide
 
 ## Installation on Debian/Ubuntu Systems
@@ -37,6 +38,13 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 ## Starting Docker in Container Environments
 
 If you're in a container environment without systemd (like this workspace), start Docker with:
+=======
+# Docker Usage Guide
+
+## Starting Docker in Container Environments
+
+Please check if docker is already installed. If so, to start Docker in a container environment:
+>>>>>>> origin/main
 
 ```bash
 # Start Docker daemon in the background
