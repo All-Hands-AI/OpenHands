@@ -34,11 +34,45 @@ function PosthogInit() {
   }, []);
 
   React.useEffect(() => {
-    if (posthogClientKey) {
+    // Check if we're in development mode using import.meta.env (Vite) or process.env
+    const isDevelopment =
+      import.meta.env.DEV || process.env.NODE_ENV === "development";
+    const isProduction =
+      import.meta.env.PROD || process.env.NODE_ENV === "production";
+
+    console.log(
+      "PostHog init - isDevelopment:",
+      isDevelopment,
+      "isProduction:",
+      isProduction,
+      "clientKey:",
+      !!posthogClientKey,
+    );
+
+    if (posthogClientKey && isProduction && !isDevelopment) {
+      // Only initialize PostHog in production to avoid development network errors
       posthog.init(posthogClientKey, {
         api_host: "https://us.i.posthog.com",
         person_profiles: "identified_only",
       });
+    } else if (posthogClientKey) {
+      // In development or when not in production, create a mock PostHog instance to avoid network errors
+      console.log(
+        "PostHog disabled in development mode to prevent network errors",
+      );
+      // Create a mock posthog object with no-op methods
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window as any).posthog = {
+        init: () => {},
+        capture: () => {},
+        identify: () => {},
+        reset: () => {},
+        isFeatureEnabled: () => false,
+        onFeatureFlags: () => {},
+        people: { set: () => {} },
+        debug: () => {},
+        sessionRecording: { sessionId: "", windowId: "" },
+      };
     }
   }, [posthogClientKey]);
 

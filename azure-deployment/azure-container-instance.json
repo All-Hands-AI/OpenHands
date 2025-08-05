@@ -1,0 +1,152 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "containerGroupName": {
+      "type": "string",
+      "defaultValue": "openhands-app",
+      "metadata": {
+        "description": "Name for the container group"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    },
+    "imageTag": {
+      "type": "string",
+      "defaultValue": "latest",
+      "metadata": {
+        "description": "Docker image tag"
+      }
+    },
+    "openaiApiKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "OpenAI API Key for LLM integration"
+      }
+    },
+    "githubToken": {
+      "type": "securestring",
+      "defaultValue": "",
+      "metadata": {
+        "description": "GitHub token for repository access (optional)"
+      }
+    }
+  },
+  "variables": {
+    "containerImage": "[concat('ghcr.io/all-hands-ai/openhands:', parameters('imageTag'))]",
+    "runtimeImage": "ghcr.io/all-hands-ai/runtime:0.51-nikolaik"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.ContainerInstance/containerGroups",
+      "apiVersion": "2023-05-01",
+      "name": "[parameters('containerGroupName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "containers": [
+          {
+            "name": "openhands-app",
+            "properties": {
+              "image": "[variables('containerImage')]",
+              "ports": [
+                {
+                  "port": 3000,
+                  "protocol": "TCP"
+                }
+              ],
+              "environmentVariables": [
+                {
+                  "name": "LLM_MODEL",
+                  "value": "gpt-4o"
+                },
+                {
+                  "name": "LLM_API_KEY",
+                  "secureValue": "[parameters('openaiApiKey')]"
+                },
+                {
+                  "name": "SANDBOX_RUNTIME_CONTAINER_IMAGE",
+                  "value": "[variables('runtimeImage')]"
+                },
+                {
+                  "name": "WORKSPACE_BASE",
+                  "value": "/workspace"
+                },
+                {
+                  "name": "WORKSPACE_MOUNT_PATH",
+                  "value": "/workspace"
+                },
+                {
+                  "name": "RUN_AS_OPENHANDS",
+                  "value": "true"
+                },
+                {
+                  "name": "SANDBOX_USER_ID",
+                  "value": "1000"
+                },
+                {
+                  "name": "GITHUB_TOKEN",
+                  "secureValue": "[parameters('githubToken')]"
+                }
+              ],
+              "resources": {
+                "requests": {
+                  "cpu": 2.0,
+                  "memoryInGB": 4.0
+                }
+              },
+              "volumeMounts": [
+                {
+                  "name": "workspace-volume",
+                  "mountPath": "/workspace"
+                },
+                {
+                  "name": "docker-socket",
+                  "mountPath": "/var/run/docker.sock"
+                }
+              ]
+            }
+          }
+        ],
+        "osType": "Linux",
+        "restartPolicy": "Always",
+        "ipAddress": {
+          "type": "Public",
+          "ports": [
+            {
+              "port": 3000,
+              "protocol": "TCP"
+            }
+          ]
+        },
+        "volumes": [
+          {
+            "name": "workspace-volume",
+            "emptyDir": {}
+          },
+          {
+            "name": "docker-socket",
+            "hostPath": {
+              "path": "/var/run/docker.sock",
+              "type": "Socket"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "outputs": {
+    "containerIPv4Address": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.ip]"
+    },
+    "containerFQDN": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.ContainerInstance/containerGroups/', parameters('containerGroupName'))).ipAddress.fqdn]"
+    }
+  }
+}
