@@ -200,10 +200,12 @@ class MCPConfig(BaseModel):
     """Configuration for MCP (Message Control Protocol) settings.
 
     Attributes:
+        default_timeout: Default timeout for MCP connections, configurable via environment variables
         sse_servers: List of MCP SSE server configs
         stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.
     """
 
+    default_timeout: float = 30.0
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
@@ -232,6 +234,20 @@ class MCPConfig(BaseModel):
                 data['shttp_servers'] = cls._normalize_servers(data['shttp_servers'])
 
         return data
+
+    @field_validator('default_timeout')
+    def validate_default_timeout(cls, value: float):
+        """Custom validator to ensure default_timeout is greater than zero.
+
+        Prevents invalid configurations that could lead to timeouts in MCP connections."""
+        try:
+            value = float(value)
+        except ValueError:
+            raise ValueError('default_timeout must be of type float')
+
+        if value <= 0:
+            raise ValueError('default_timeout must be greater than zero')
+        return value
 
     def validate_servers(self) -> None:
         """Validate that server URLs are valid and unique."""
