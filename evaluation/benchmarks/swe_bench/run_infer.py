@@ -44,8 +44,9 @@ from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     get_llm_config_arg,
+    get_llms_for_routing_config,
+    get_model_routing_config_arg,
     get_parser,
-    load_from_toml,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -243,9 +244,10 @@ def get_config(
     # get 'draft_editor' config if exists
     config.set_llm_config(get_llm_config_arg('draft_editor'), 'draft_editor')
 
-    config_copy = copy.deepcopy(config)
-    load_from_toml(config_copy)
-    model_routing_config = config_copy.get_agent_config().model_routing
+    model_routing_config = get_model_routing_config_arg()
+    model_routing_config.llms_for_routing = (
+        get_llms_for_routing_config()
+    )  # Populate with LLMs for routing from config.toml file
 
     agent_config = AgentConfig(
         enable_jupyter=False,

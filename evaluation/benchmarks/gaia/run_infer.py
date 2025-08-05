@@ -1,5 +1,4 @@
 import asyncio
-import copy
 import functools
 import os
 import re
@@ -10,7 +9,6 @@ import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
 from PIL import Image
-from pydantic import SecretStr
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.benchmarks.gaia.utils import (
@@ -37,7 +35,11 @@ from openhands.core.config import (
     get_parser,
     load_from_toml,
 )
-from openhands.core.config.utils import get_agent_config_arg
+from openhands.core.config.utils import (
+    get_agent_config_arg,
+    get_llms_for_routing_config,
+    get_model_routing_config_arg,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import AgentFinishAction, CmdRunAction, MessageAction
@@ -78,13 +80,10 @@ def get_config(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']
         )
     )
-
-    config_copy = copy.deepcopy(config)
-    load_from_toml(config_copy)
-    model_routing_config = config_copy.get_agent_config().model_routing
-
-    if config_copy.search_api_key:
-        config.search_api_key = SecretStr(config_copy.search_api_key)
+    model_routing_config = get_model_routing_config_arg()
+    model_routing_config.llms_for_routing = (
+        get_llms_for_routing_config()
+    )  # Populate with LLMs for routing from config.toml file
 
     if metadata.agent_config:
         metadata.agent_config.model_routing = model_routing_config
