@@ -297,6 +297,7 @@ def test_microagent_observation_serialization():
             'repo_name': 'some_repo_name',
             'repo_directory': 'some_repo_directory',
             'repo_url': 'https://github.com/some_repo_name',
+            'repo_branch': '',
             'working_dir': '',
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
@@ -320,6 +321,7 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'repo_name': '',
             'repo_directory': '',
             'repo_url': '',
+            'repo_branch': '',
             'repo_instructions': '',
             'runtime_hosts': {},
             'working_dir': '',
@@ -350,6 +352,7 @@ def test_microagent_observation_knowledge_microagent_serialization():
     original = RecallObservation(
         content='Knowledge microagent information',
         recall_type=RecallType.KNOWLEDGE,
+        repo_branch='',
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='python_best_practices',
@@ -397,6 +400,7 @@ def test_microagent_observation_environment_serialization():
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
+        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080, 'localhost': 5000},
         additional_agent_instructions='You know it all about this runtime',
@@ -446,6 +450,7 @@ def test_microagent_observation_combined_serialization():
         # Environment info
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
+        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080},
         additional_agent_instructions='You know it all about this runtime',

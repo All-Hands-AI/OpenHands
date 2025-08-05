@@ -184,6 +184,9 @@ class Memory:
                 repo_url=self.repository_info.repo_url
                 if self.repository_info and self.repository_info.repo_url is not None
                 else '',
+                repo_branch=self.repository_info.branch_name
+                if self.repository_info and self.repository_info.branch_name is not None
+                else '',
                 repo_instructions=repo_instructions if repo_instructions else '',
                 runtime_hosts=self.runtime_info.available_hosts
                 if self.runtime_info and self.runtime_info.available_hosts is not None
@@ -326,7 +329,11 @@ class Memory:
         return mcp_configs
 
     def set_repository_info(
-        self, repo_name: str, repo_directory: str, repo_url: str | None = None
+        self,
+        repo_name: str,
+        repo_directory: str,
+        repo_url: str | None = None,
+        branch_name: str | None = None,
     ) -> None:
         """Store repository info so we can reference it in an observation."""
         if repo_name or repo_directory:
@@ -338,13 +345,9 @@ class Memory:
                     # Default to github.com if we can't determine the provider
                     provider_domain = 'github.com'
                     repo_url = f'https://{provider_domain}/{repo_name}'
-                self.repository_info = RepositoryInfo(
-                    repo_name, repo_directory, repo_url
-                )
-            else:
-                self.repository_info = RepositoryInfo(
-                    repo_name, repo_directory, repo_url
-                )
+            self.repository_info = RepositoryInfo(
+                repo_name, repo_directory, repo_url, branch_name
+            )
         else:
             self.repository_info = None
 

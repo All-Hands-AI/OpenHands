@@ -12,6 +12,7 @@ export const microagentManagementSlice = createSlice({
     organizationRepositories: [] as GitRepository[],
     repositories: [] as GitRepository[],
     selectedMicroagentItem: null as IMicroagentItem | null,
+    learnThisRepoModalVisible: false,
   },
   reducers: {
     setAddMicroagentModalVisible: (state, action) => {
@@ -35,6 +36,9 @@ export const microagentManagementSlice = createSlice({
     setSelectedMicroagentItem: (state, action) => {
       state.selectedMicroagentItem = action.payload;
     },
+    setLearnThisRepoModalVisible: (state, action) => {
+      state.learnThisRepoModalVisible = action.payload;
+    },
   },
 });
 
@@ -46,6 +50,7 @@ export const {
   setOrganizationRepositories,
   setRepositories,
   setSelectedMicroagentItem,
+  setLearnThisRepoModalVisible,
 } = microagentManagementSlice.actions;
 
 export default microagentManagementSlice.reducer;

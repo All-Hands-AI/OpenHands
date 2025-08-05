@@ -71,6 +71,7 @@ class RecallObservation(Observation):
     repo_name: str = ''
     repo_directory: str = ''
     repo_url: str = ''
+    repo_branch: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
