@@ -30,7 +30,13 @@ vi.mock("#/hooks/query/use-active-conversation", () => ({
 describe("Check for hardcoded English strings", () => {
   test("InteractiveChatBox should not have hardcoded English strings", () => {
     const { container } = renderWithProviders(
-      <InteractiveChatBox onSubmit={() => {}} onStop={() => {}} />,
+      <InteractiveChatBox
+        onSubmit={() => {}}
+        onStop={() => {}}
+        isWaitingForUserInput={false}
+        hasSubstantiveAgentActions={false}
+        optimisticUserMessage={false}
+      />,
     );
 
     // Get all text content

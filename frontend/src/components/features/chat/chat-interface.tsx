@@ -256,6 +256,9 @@ export function ChatInterface() {
             onSubmit={handleSendMessage}
             onStop={handleStop}
             value={messageToSend ?? undefined}
+            isWaitingForUserInput={isWaitingForUserInput}
+            hasSubstantiveAgentActions={hasSubstantiveAgentActions}
+            optimisticUserMessage={!!optimisticUserMessage}
           />
         </div>
 
