@@ -498,6 +498,3 @@ type = "noop"
 # - "noop_router" (default): No routing, always uses primary LLM
 # - "multimodal_router": A router that switches between primary and secondary models, depending on whether the input is multimodal or not
 #router_name = "noop_router"
-
-# Probability threshold for routing decisions (used by threshold-based routers)
-#prob_threshold = 0.49414062500000006
