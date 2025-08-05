@@ -627,9 +627,9 @@ class ActionExecutionClient(Runtime):
         # Wait for any lifecycle operation to complete
         start_time = time.time()
         while self._coordinator.is_lifecycle_operation_active():
-            if time.time() - start_time > 30.0:  # 30 second timeout
+            if time.time() - start_time > self.config.sandbox.timeout:
                 raise RuntimeError("Timeout waiting for lifecycle operation to complete")
-            time.sleep(0.1)
+            time.sleep(5)
 
         # Increment active request count
         self._coordinator.increment_requests()
