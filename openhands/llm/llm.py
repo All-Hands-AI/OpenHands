@@ -202,13 +202,15 @@ class LLM(RetryMixin, DebugMixin):
                     f'Applying custom generation config for {self.config.model}'
                 )
                 kwargs['generationConfig'] = {
-                    'temperature': 0,
+                    # 'temperature': 0,  # Commented out to avoid duplicate with top-level temperature
                     'topP': 1,
                     'thinkingConfig': {'includeThoughts': True},
                 }
                 # These are now inside generationConfig, so remove them from top-level
-                kwargs.pop('temperature', None)
-                kwargs.pop('top_p', None)
+                # kwargs.pop('temperature', None)  # Keep top-level temperature since we removed it from generationConfig
+                kwargs.pop(
+                    'top_p', None
+                )  # Remove top_p since it's in generationConfig as topP
                 # This is now inside thinkingConfig, so remove it from top-level
                 kwargs.pop('reasoning_effort', None)
                 # remove other related params that are no longer needed
