@@ -103,10 +103,6 @@ class State:
     parent_metrics_snapshot: Metrics | None = None
     parent_iteration: int = 100
 
-    routing_history: list[int] = field(
-        default_factory=list
-    )  # 1 means routing activated, 0 means not
-
     # NOTE: this is used by the controller to track parent's metrics snapshot before delegation
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)

@@ -56,10 +56,8 @@ class MultimodalRouter(BaseRouter):
         if route_to_primary:
             logger.warning('Routing to the primary model...')
             self.active_llm = self.llm
-            self.routing_history.append(0)
         else:
             self.active_llm = self.secondary_llm
-            self.routing_history.append(1)
 
     def _validate_model_routing_config(self, routing_llms: dict[str, LLM]):
         if self.SECONDARY_MODEL_CONFIG_NAME not in routing_llms:

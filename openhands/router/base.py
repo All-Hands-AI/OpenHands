@@ -27,9 +27,6 @@ class BaseRouter(ABC):
         # The active LLM for the current turn
         self.active_llm = llm
 
-        # Tracking data
-        self.routing_history: list[int] = []
-
     @abstractmethod
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
         """Configure the active LLM for the current turn based on the messages and events."""

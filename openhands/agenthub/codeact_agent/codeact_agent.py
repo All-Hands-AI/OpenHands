@@ -202,9 +202,6 @@ class CodeActAgent(Agent):
         self.router.set_active_llm(messages_for_routing_decision, condensed_history)
         logger.debug(f'Active LLM set to: {self.router.config.model}')
 
-        # Update the state with the routing history from the router
-        state.routing_history = self.router.routing_history
-
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
             'messages': self.router.format_messages_for_llm(messages),
