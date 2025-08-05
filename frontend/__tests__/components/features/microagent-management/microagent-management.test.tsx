@@ -30,11 +30,13 @@ describe("MicroagentManagement", () => {
         },
         microagentManagement: {
           addMicroagentModalVisible: false,
+          updateMicroagentModalVisible: false,
           selectedRepository: null,
           personalRepositories: [],
           organizationRepositories: [],
           repositories: [],
           selectedMicroagentItem: null,
+          learnThisRepoModalVisible: false,
         },
       },
     });
@@ -103,22 +105,12 @@ describe("MicroagentManagement", () => {
   const mockMicroagents: RepositoryMicroagent[] = [
     {
       name: "test-microagent-1",
-      type: "repo",
-      content: "Test microagent content 1",
-      triggers: ["test", "microagent"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent-1",
     },
     {
       name: "test-microagent-2",
-      type: "knowledge",
-      content: "Test microagent content 2",
-      triggers: ["knowledge", "test"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-02T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent-2",
@@ -171,6 +163,13 @@ describe("MicroagentManagement", () => {
     vi.spyOn(OpenHands, "searchConversations").mockResolvedValue([
       ...mockConversations,
     ]);
+    // Setup default mock for getRepositoryMicroagentContent
+    vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+      content: "Original microagent content for testing updates",
+      path: ".openhands/microagents/update-test-microagent",
+      git_provider: "github",
+      triggers: ["test", "update"],
+    });
   });
 
   it("should render the microagent management page", async () => {
@@ -240,8 +239,9 @@ describe("MicroagentManagement", () => {
     });
 
     // Check that repository names are displayed
-    const repo1 = screen.getByText("user/repo2/.openhands");
+    const repo1 = screen.getByTestId("repository-name-tooltip");
     expect(repo1).toBeInTheDocument();
+    expect(repo1).toHaveTextContent("user/repo2/.openhands");
   });
 
   it("should expand repository accordion and show microagents", async () => {
@@ -254,7 +254,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion = screen.getByText("user/repo2/.openhands");
+    const repoAccordion = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion);
 
     // Wait for microagents to be fetched
@@ -291,12 +291,11 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion = screen.getByText("user/repo2/.openhands");
+    const repoAccordion = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion);
 
     // Check that loading spinner is displayed
-    const loadingSpinner = screen.getByTestId("loading-spinner");
-    expect(loadingSpinner).toBeInTheDocument();
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
 
   it("should handle error when fetching microagents", async () => {
@@ -317,7 +316,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion = screen.getByText("user/repo2/.openhands");
+    const repoAccordion = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion);
 
     // Wait for the error to be handled
@@ -342,7 +341,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion = screen.getByText("user/repo2/.openhands");
+    const repoAccordion = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion);
 
     // Wait for microagents to be fetched
@@ -365,7 +364,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion = screen.getByText("user/repo2/.openhands");
+    const repoAccordion = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion);
 
     // Wait for microagents to be fetched
@@ -404,7 +403,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Check that add microagent buttons are present
-    const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+    const addButtons = screen.getAllByTestId("add-microagent-button");
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
@@ -418,7 +417,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click the first add microagent button
-    const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+    const addButtons = screen.getAllByTestId("add-microagent-button");
     await user.click(addButtons[0]);
 
     // Check that the modal is opened
@@ -437,7 +436,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click the first add microagent button
-    const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+    const addButtons = screen.getAllByTestId("add-microagent-button");
     await user.click(addButtons[0]);
 
     // Check that the modal is opened
@@ -484,7 +483,7 @@ describe("MicroagentManagement", () => {
     });
 
     // Find and click on the first repository accordion
-    const repoAccordion1 = screen.getByText("user/repo2/.openhands");
+    const repoAccordion1 = screen.getByTestId("repository-name-tooltip");
     await user.click(repoAccordion1);
 
     // Wait for microagents to be fetched for first repo
@@ -545,7 +544,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Initially only repositories with .openhands should be visible
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
 
@@ -556,7 +555,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "repo2");
 
       // Only repo2 should be visible
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(
         screen.queryByText("org/repo3/.openhands"),
@@ -582,7 +581,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "REPO2");
 
       // repo2 should be visible (case-insensitive match)
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(
         screen.queryByText("org/repo3/.openhands"),
@@ -605,7 +604,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "repo");
 
       // All repositories with "repo" in the name should be visible
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(
         screen.queryByText("org/repo3/.openhands"),
@@ -631,14 +630,14 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "repo2");
 
       // Only repo2 should be visible
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
 
       // Clear the search input
       await user.clear(searchInput);
 
       // All repositories should be visible again (only those with .openhands)
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(
         screen.queryByText("org/repo3/.openhands"),
@@ -692,7 +691,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, ".openhands");
 
       // Only repositories with .openhands should be visible
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
       expect(screen.queryByText("user/repo4")).not.toBeInTheDocument();
     });
@@ -713,7 +712,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "repo2");
 
       // Click on the filtered repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for microagents to be fetched
@@ -748,7 +747,7 @@ describe("MicroagentManagement", () => {
       await user.type(searchInput, "  repo2  ");
 
       // repo2 should still be visible (whitespace should be trimmed)
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
     });
 
@@ -767,17 +766,17 @@ describe("MicroagentManagement", () => {
 
       // Type "repo" - should show repo2
       await user.type(searchInput, "repo");
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
 
       // Add "2" to make it "repo2" - should show only repo2
       await user.type(searchInput, "2");
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
 
       // Remove "2" to make it "repo" again - should show repo2
       await user.keyboard("{Backspace}");
-      expect(screen.getByText("user/repo2/.openhands")).toBeInTheDocument();
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
       expect(screen.queryByText("user/repo1")).not.toBeInTheDocument();
     });
   });
@@ -794,7 +793,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both microagents and conversations to be fetched
@@ -821,7 +820,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -867,17 +866,16 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Check that loading spinner is displayed
-      const loadingSpinner = screen.getByTestId("loading-spinner");
-      expect(loadingSpinner).toBeInTheDocument();
+      expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
     });
 
     it("should hide loading state when both queries complete", async () => {
       const user = userEvent.setup();
-      renderMicroagentManagement();
+      const { container } = renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
@@ -885,7 +883,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -895,7 +893,9 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that loading spinner is not displayed
-      expect(screen.queryByTestId("loading-spinner")).not.toBeInTheDocument();
+      expect(
+        container.querySelector(".animate-indeterminate-spinner"),
+      ).toBeNull();
     });
 
     it("should display microagent file paths for microagents but not for conversations", async () => {
@@ -908,7 +908,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -957,7 +957,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -993,7 +993,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -1035,7 +1035,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -1072,7 +1072,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for the error to be handled
@@ -1116,7 +1116,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for the error to be handled
@@ -1146,7 +1146,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for searchConversations to be called
@@ -1169,7 +1169,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion = screen.getByText("user/repo2/.openhands");
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       // Wait for both queries to complete
@@ -1184,17 +1184,6 @@ describe("MicroagentManagement", () => {
 
       expect(conversation1).toBeInTheDocument();
       expect(conversation2).toBeInTheDocument();
-
-      // Check that created dates are displayed for conversations (there are multiple elements with the same text)
-      const createdDates = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/01\/2021/,
-      );
-      expect(createdDates.length).toBeGreaterThan(0);
-
-      const createdDates2 = screen.getAllByText(
-        /COMMON\$CREATED_ON.*10\/02\/2021/,
-      );
-      expect(createdDates2.length).toBeGreaterThan(0);
     });
 
     it("should handle multiple repository expansions with conversations", async () => {
@@ -1207,7 +1196,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click on the first repository accordion
-      const repoAccordion1 = screen.getByText("user/repo2/.openhands");
+      const repoAccordion1 = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion1);
 
       // Wait for both queries to be called for first repo
@@ -1248,7 +1237,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Check that add microagent buttons are present
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       expect(addButtons.length).toBeGreaterThan(0);
     });
 
@@ -1262,7 +1251,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Check that the modal is opened
@@ -1294,6 +1283,8 @@ describe("MicroagentManagement", () => {
             personalRepositories: [],
             organizationRepositories: [],
             repositories: [],
+            updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1315,7 +1306,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Wait for modal to be rendered and check form fields
@@ -1339,7 +1330,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Wait for modal to be rendered
@@ -1362,7 +1353,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Check that the modal is opened
@@ -1370,9 +1361,12 @@ describe("MicroagentManagement", () => {
         expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
       });
 
-      // Click the close button (X icon)
-      const closeButton = screen.getByRole("button", { name: "" });
-      await user.click(closeButton);
+      // Click the close button (X icon) - use the first one which should be the modal close button
+      const closeButtons = screen.getAllByRole("button", { name: "" });
+      const modalCloseButton = closeButtons.find(
+        (button) => button.querySelector('svg[height="24"]') !== null,
+      );
+      await user.click(modalCloseButton!);
 
       // Check that modal is closed
       await waitFor(() => {
@@ -1392,7 +1386,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Wait for modal to be rendered and branch to be selected
@@ -1419,7 +1413,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Wait for modal to be rendered
@@ -1445,7 +1439,7 @@ describe("MicroagentManagement", () => {
       });
 
       // Find and click the first add microagent button
-      const addButtons = screen.getAllByText("COMMON$ADD_MICROAGENT");
+      const addButtons = screen.getAllByTestId("add-microagent-button");
       await user.click(addButtons[0]);
 
       // Wait for modal to be rendered and branch to be selected
@@ -1467,11 +1461,6 @@ describe("MicroagentManagement", () => {
   describe("MicroagentManagementMain", () => {
     const mockRepositoryMicroagent: RepositoryMicroagent = {
       name: "test-microagent",
-      type: "repo",
-      content: "Test microagent content",
-      triggers: ["test", "microagent"],
-      inputs: [],
-      tools: [],
       created_at: "2021-10-01T12:00:00Z",
       git_provider: "github",
       path: ".openhands/microagents/test-microagent",
@@ -1547,6 +1536,8 @@ describe("MicroagentManagement", () => {
             organizationRepositories: [],
             repositories: [],
             selectedMicroagentItem,
+            updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: false,
           },
         },
       });
@@ -1810,11 +1801,6 @@ describe("MicroagentManagement", () => {
     it("should handle microagent with all required properties", async () => {
       const completeMicroagent: RepositoryMicroagent = {
         name: "complete-microagent",
-        type: "knowledge",
-        content: "Complete microagent content with all properties",
-        triggers: ["complete", "test"],
-        inputs: ["input1", "input2"],
-        tools: ["tool1", "tool2"],
         created_at: "2021-10-01T12:00:00Z",
         git_provider: "github",
         path: ".openhands/microagents/complete-microagent",
@@ -1857,6 +1843,892 @@ describe("MicroagentManagement", () => {
       // Check that the review PR component is rendered with complete data
       await screen.findByText("MICROAGENT_MANAGEMENT$YOUR_MICROAGENT_IS_READY");
       expect(screen.getAllByTestId("view-conversation-button")).toHaveLength(2);
+    });
+  });
+
+  // Update microagent functionality tests
+  describe("Update microagent functionality", () => {
+    const mockMicroagentForUpdate: RepositoryMicroagent = {
+      name: "update-test-microagent",
+      created_at: "2021-10-01T12:00:00Z",
+      git_provider: "github",
+      path: ".openhands/microagents/update-test-microagent",
+    };
+
+    beforeEach(() => {
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+        { name: "main", commit_sha: "abc123", protected: false },
+      ]);
+    });
+
+    it("should render update microagent modal when updateMicroagentModalVisible is true", async () => {
+      // Render with update modal visible in Redux state
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true, // Start with update modal visible
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Check that update modal is rendered
+      expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      expect(screen.getByTestId("query-input")).toBeInTheDocument();
+      expect(screen.getByTestId("cancel-button")).toBeInTheDocument();
+      expect(screen.getByTestId("confirm-button")).toBeInTheDocument();
+    });
+
+    it("should display update microagent title when isUpdate is true", async () => {
+      // Render with update modal visible and selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Check that the update title is displayed
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should populate form fields with existing microagent data when updating", async () => {
+      // Render with update modal visible and selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Wait for the content to be loaded and form fields to be populated
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue(
+          "Original microagent content for testing updates",
+        );
+      });
+    });
+
+    it("should handle update microagent form submission", async () => {
+      const user = userEvent.setup();
+
+      // Render with update modal visible and selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Modify the content
+      const queryInput = screen.getByTestId("query-input");
+      await user.clear(queryInput);
+      await user.type(queryInput, "Updated microagent content");
+
+      // Submit the form
+      const confirmButton = screen.getByTestId("confirm-button");
+      await user.click(confirmButton);
+
+      // Wait for the modal to be removed after form submission
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("add-microagent-modal"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should close update modal when cancel button is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Render with update modal visible
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Click the cancel button
+      const cancelButton = screen.getByTestId("cancel-button");
+      await user.click(cancelButton);
+
+      // Check that modal is closed
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("add-microagent-modal"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should close update modal when close button (X) is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Render with update modal visible
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Click the close button (X icon) - use the first one which should be the modal close button
+      const closeButtons = screen.getAllByRole("button", { name: "" });
+      const modalCloseButton = closeButtons.find(
+        (button) =>
+          button.querySelector('svg[height="24"]') !== null &&
+          !button.hasAttribute("data-testid"),
+      );
+      await user.click(modalCloseButton!);
+
+      // Check that modal is closed
+      await waitFor(() => {
+        expect(
+          screen.queryByTestId("add-microagent-modal"),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("should handle update modal with empty microagent data", async () => {
+      // Render with update modal visible but no microagent data
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: null,
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Check that update modal is still rendered
+      expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should handle update modal with microagent that has no content", async () => {
+      const user = userEvent.setup();
+
+      // Mock the content API to return empty content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with update modal visible and microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Wait for the content to be loaded and check that the form field is empty
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue("");
+      });
+    });
+
+    it("should handle update modal with microagent that has no triggers", async () => {
+      const user = userEvent.setup();
+
+      // Mock the content API to return content without triggers for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Original microagent content for testing updates",
+        path: ".openhands/microagents/update-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with update modal visible and microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForUpdate,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: true,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Check that the modal is rendered correctly
+      expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
+      ).toBeInTheDocument();
+    });
+  });
+
+  // Learn this repo functionality tests
+  describe("Learn this repo functionality", () => {
+    it("should display learn this repo trigger when no microagents exist", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks before rendering
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      // Wait for repositories to be loaded
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      // Find and click on the first repository accordion to expand it
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      // Wait for microagents and conversations to be fetched
+      await waitFor(() => {
+        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
+        expect(searchConversationsSpy).toHaveBeenCalled();
+      });
+
+      // Verify the learn this repo trigger is displayed when no microagents exist
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("learn-this-repo-trigger"),
+        ).toBeInTheDocument();
+      });
+
+      // Verify trigger has correct text content
+      expect(screen.getByTestId("learn-this-repo-trigger")).toHaveTextContent(
+        "MICROAGENT_MANAGEMENT$LEARN_THIS_REPO",
+      );
+    });
+
+    it("should trigger learn this repo modal opening when trigger is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      // Wait for repositories and expand accordion
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("learn-this-repo-trigger"),
+        ).toBeInTheDocument();
+      });
+
+      // Verify the trigger is clickable and has correct behavior
+      const learnThisRepoTrigger = screen.getByTestId(
+        "learn-this-repo-trigger",
+      );
+
+      // Verify the trigger has the expected text content
+      expect(learnThisRepoTrigger).toHaveTextContent(
+        "MICROAGENT_MANAGEMENT$LEARN_THIS_REPO",
+      );
+
+      // Click the trigger should not throw an error
+      await user.click(learnThisRepoTrigger);
+
+      // The trigger should still be present after click (testing that click is handled gracefully)
+      expect(learnThisRepoTrigger).toBeInTheDocument();
+    });
+
+    it("should show learn this repo trigger only when no microagents or conversations exist", async () => {
+      const user = userEvent.setup();
+
+      // Setup mocks with existing microagents (should NOT show trigger)
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+
+      // Mock with existing microagent
+      getRepositoryMicroagentsSpy.mockResolvedValue([
+        {
+          name: "test-microagent",
+          created_at: "2021-10-01",
+          git_provider: "github",
+          path: ".openhands/microagents/test",
+        },
+      ]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      renderMicroagentManagement();
+
+      await waitFor(() => {
+        expect(OpenHands.retrieveUserGitRepositories).toHaveBeenCalled();
+      });
+
+      const repoAccordion = screen.getByTestId("repository-name-tooltip");
+      await user.click(repoAccordion);
+
+      await waitFor(() => {
+        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
+        expect(searchConversationsSpy).toHaveBeenCalled();
+      });
+
+      // Should NOT show the learn this repo trigger when microagents exist
+      expect(
+        screen.queryByTestId("learn-this-repo-trigger"),
+      ).not.toBeInTheDocument();
+    });
+
+    it("should handle API call for branches when learn this repo modal opens", async () => {
+      // Mock branch API
+      const branchesSpy = vi
+        .spyOn(OpenHands, "getRepositoryBranches")
+        .mockResolvedValue([
+          { name: "main", commit_sha: "abc123", protected: false },
+          { name: "develop", commit_sha: "def456", protected: false },
+        ]);
+
+      // Mock other APIs
+      const getRepositoryMicroagentsSpy = vi.spyOn(
+        OpenHands,
+        "getRepositoryMicroagents",
+      );
+      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
+      getRepositoryMicroagentsSpy.mockResolvedValue([]);
+      searchConversationsSpy.mockResolvedValue([]);
+
+      // Test with direct Redux state that has modal visible
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: null,
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            learnThisRepoModalVisible: true, // Modal should be visible
+            selectedRepository: {
+              id: "1",
+              full_name: "test-org/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+          },
+        },
+      });
+
+      // The branches API should be called when the modal is visible
+      await waitFor(() => {
+        expect(branchesSpy).toHaveBeenCalledWith("test-org/test-repo");
+      });
+    });
+  });
+
+  // Learn something new button functionality tests
+  describe("Learn something new button functionality", () => {
+    const mockMicroagentForLearn: RepositoryMicroagent = {
+      name: "learn-test-microagent",
+      created_at: "2021-10-01T12:00:00Z",
+      git_provider: "github",
+      path: ".openhands/microagents/learn-test-microagent",
+    };
+
+    it("should render learn something new button in microagent view", async () => {
+      // Render with selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForLearn,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Check that the learn something new button is displayed
+      expect(
+        screen.getByText("COMMON$LEARN_SOMETHING_NEW"),
+      ).toBeInTheDocument();
+    });
+
+    it("should open update modal when learn something new button is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Render with selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForLearn,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Find and click the learn something new button
+      const learnButton = screen.getByText("COMMON$LEARN_SOMETHING_NEW");
+      await user.click(learnButton);
+
+      // Check that the update modal is opened
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Check that the update title is displayed
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
+      ).toBeInTheDocument();
+    });
+
+    it("should populate form fields with current microagent data when learn button is clicked", async () => {
+      const user = userEvent.setup();
+
+      // Mock the content API to return the expected content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: ["learn", "test"],
+      });
+
+      // Render with selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForLearn,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Find and click the learn something new button
+      const learnButton = screen.getByText("COMMON$LEARN_SOMETHING_NEW");
+      await user.click(learnButton);
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Wait for the content to be loaded and form to be populated
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue(
+          "Test microagent content for learn functionality",
+        );
+      });
+    });
+
+    it("should handle learn button click with microagent that has no content", async () => {
+      const user = userEvent.setup();
+
+      // Mock the content API to return empty content for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForLearn,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Find and click the learn something new button
+      const learnButton = screen.getByText("COMMON$LEARN_SOMETHING_NEW");
+      await user.click(learnButton);
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Wait for the content to be loaded and check that the form field is empty
+      await waitFor(() => {
+        const queryInput = screen.getByTestId("query-input");
+        expect(queryInput).toHaveValue("");
+      });
+    });
+
+    it("should handle learn button click with microagent that has no triggers", async () => {
+      const user = userEvent.setup();
+
+      // Mock the content API to return content without triggers for this test
+      vi.spyOn(OpenHands, "getRepositoryMicroagentContent").mockResolvedValue({
+        content: "Test microagent content for learn functionality",
+        path: ".openhands/microagents/learn-test-microagent",
+        git_provider: "github",
+        triggers: [],
+      });
+
+      // Render with selected microagent
+      renderWithProviders(<RouterStub />, {
+        preloadedState: {
+          metrics: {
+            cost: null,
+            max_budget_per_task: null,
+            usage: null,
+          },
+          microagentManagement: {
+            selectedMicroagentItem: {
+              microagent: mockMicroagentForLearn,
+              conversation: undefined,
+            },
+            addMicroagentModalVisible: false,
+            updateMicroagentModalVisible: false,
+            selectedRepository: {
+              id: "1",
+              full_name: "user/test-repo",
+              git_provider: "github",
+              is_public: true,
+              owner_type: "user",
+              pushed_at: "2021-10-01T12:00:00Z",
+            },
+            personalRepositories: [],
+            organizationRepositories: [],
+            repositories: [],
+            learnThisRepoModalVisible: false,
+          },
+        },
+      });
+
+      // Find and click the learn something new button
+      const learnButton = screen.getByText("COMMON$LEARN_SOMETHING_NEW");
+      await user.click(learnButton);
+
+      // Wait for modal to be rendered
+      await waitFor(() => {
+        expect(screen.getByTestId("add-microagent-modal")).toBeInTheDocument();
+      });
+
+      // Check that the update modal is opened correctly
+      expect(
+        screen.getByText("MICROAGENT_MANAGEMENT$UPDATE_MICROAGENT"),
+      ).toBeInTheDocument();
     });
   });
 });

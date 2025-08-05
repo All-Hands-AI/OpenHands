@@ -2,11 +2,18 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
-import { MicroagentManagementAddMicroagentModal } from "./microagent-management-add-microagent-modal";
+import { MicroagentManagementUpsertMicroagentModal } from "./microagent-management-upsert-microagent-modal";
 import { RootState } from "#/store";
-import { setAddMicroagentModalVisible } from "#/state/microagent-management-slice";
+import {
+  setAddMicroagentModalVisible,
+  setUpdateMicroagentModalVisible,
+  setLearnThisRepoModalVisible,
+} from "#/state/microagent-management-slice";
 import { useCreateConversationAndSubscribeMultiple } from "#/hooks/use-create-conversation-and-subscribe-multiple";
-import { MicroagentFormData } from "#/types/microagent-management";
+import {
+  LearnThisRepoFormData,
+  MicroagentFormData,
+} from "#/types/microagent-management";
 import { AgentState } from "#/types/agent-state";
 import { getPR, getProviderName, getPRShort } from "#/utils/utils";
 import {
@@ -17,6 +24,7 @@ import {
 import { GitRepository } from "#/types/git";
 import { queryClient } from "#/query-client-config";
 import { Provider } from "#/types/settings";
+import { MicroagentManagementLearnThisRepoModal } from "./microagent-management-learn-this-repo-modal";
 
 // Handle error events
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
@@ -52,33 +60,57 @@ const getConversationInstructions = (
 
 - Step 1: Create a markdown file inside the .openhands/microagents folder with the name of the microagent (The microagent must be created in the .openhands/microagents folder and should be able to perform the described task when triggered).
 
-- Step 2: Update the markdown file with the content below:
+- This is the instructions about what the microagent should do: ${formData.query}
 
 ${
-  formData.triggers &&
-  formData.triggers.length > 0 &&
-  `
----
-triggers:
-${formData.triggers.map((trigger: string) => `  - ${trigger}`).join("\n")}
----
+  formData.triggers && formData.triggers.length > 0
+    ? `
+- This is the triggers of the microagent: ${formData.triggers.join(", ")}
 `
+    : "- Please be noted that the microagent doesn't have any triggers."
 }
 
-${formData.query}
+- Step 2: Create a new branch for the repository ${repositoryName}, must avoid duplicated branches.
 
-- Step 3: Create a new branch for the repository ${repositoryName}, must avoid duplicated branches.
+- Step 3: Please push the changes to your branch on ${getProviderName(gitProvider)} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.
+`;
 
-- Step 4: Please push the changes to your branch on ${getProviderName(gitProvider)} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.
+const getUpdateConversationInstructions = (
+  repositoryName: string,
+  formData: MicroagentFormData,
+  pr: string,
+  prShort: string,
+  gitProvider: Provider,
+) => `Update the microagent for the repository ${repositoryName} by following the steps below:
+
+
+- Step 1: Update the microagent. This is the path of the microagent: ${formData.microagentPath} (The updated microagent must be in the .openhands/microagents folder and should be able to perform the described task when triggered).
+
+- This is the updated instructions about what the microagent should do: ${formData.query}
+
+${
+  formData.triggers && formData.triggers.length > 0
+    ? `
+- This is the triggers of the microagent: ${formData.triggers.join(", ")}
+`
+    : "- Please be noted that the microagent doesn't have any triggers."
+}
+
+- Step 2: Create a new branch for the repository ${repositoryName}, must avoid duplicated branches.
+
+- Step 3: Please push the changes to your branch on ${getProviderName(gitProvider)} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.
 `;
 
 export function MicroagentManagementContent() {
   // Responsive width state
   const [width, setWidth] = useState(window.innerWidth);
 
-  const { addMicroagentModalVisible, selectedRepository } = useSelector(
-    (state: RootState) => state.microagentManagement,
-  );
+  const {
+    addMicroagentModalVisible,
+    updateMicroagentModalVisible,
+    selectedRepository,
+    learnThisRepoModalVisible,
+  } = useSelector((state: RootState) => state.microagentManagement);
 
   const dispatch = useDispatch();
 
@@ -96,8 +128,12 @@ export function MicroagentManagementContent() {
     };
   }, []);
 
-  const hideAddMicroagentModal = () => {
-    dispatch(setAddMicroagentModalVisible(false));
+  const hideUpsertMicroagentModal = (isUpdate: boolean = false) => {
+    if (isUpdate) {
+      dispatch(setUpdateMicroagentModalVisible(false));
+    } else {
+      dispatch(setAddMicroagentModalVisible(false));
+    }
   };
 
   // Reusable function to invalidate conversations list for a repository
@@ -130,7 +166,10 @@ export function MicroagentManagementContent() {
     [invalidateConversationsList, selectedRepository],
   );
 
-  const handleCreateMicroagent = (formData: MicroagentFormData) => {
+  const handleUpsertMicroagent = (
+    formData: MicroagentFormData,
+    isUpdate: boolean = false,
+  ) => {
     if (!selectedRepository || typeof selectedRepository !== "object") {
       return;
     }
@@ -145,14 +184,22 @@ export function MicroagentManagementContent() {
     const pr = getPR(isGitLab);
     const prShort = getPRShort(isGitLab);
 
-    // Create conversation instructions for microagent generation
-    const conversationInstructions = getConversationInstructions(
-      repositoryName,
-      formData,
-      pr,
-      prShort,
-      gitProvider,
-    );
+    // Create conversation instructions for microagent generation or update
+    const conversationInstructions = isUpdate
+      ? getUpdateConversationInstructions(
+          repositoryName,
+          formData,
+          pr,
+          prShort,
+          gitProvider,
+        )
+      : getConversationInstructions(
+          repositoryName,
+          formData,
+          pr,
+          prShort,
+          gitProvider,
+        );
 
     // Create the CreateMicroagent object
     const createMicroagent = {
@@ -171,8 +218,6 @@ export function MicroagentManagementContent() {
       },
       createMicroagent,
       onSuccessCallback: () => {
-        hideAddMicroagentModal();
-
         // Invalidate conversations list to fetch the latest conversations for this repository
         invalidateConversationsList(repositoryName);
 
@@ -183,7 +228,7 @@ export function MicroagentManagementContent() {
           queryKey: ["repository-microagents", owner, repo],
         });
 
-        hideAddMicroagentModal();
+        hideUpsertMicroagentModal(isUpdate);
       },
       onEventCallback: (event: unknown) => {
         // Handle conversation events for real-time status updates
@@ -191,6 +236,58 @@ export function MicroagentManagementContent() {
       },
     });
   };
+
+  const hideLearnThisRepoModal = () => {
+    dispatch(setLearnThisRepoModalVisible(false));
+  };
+
+  const handleLearnThisRepoConfirm = (formData: LearnThisRepoFormData) => {
+    if (!selectedRepository || typeof selectedRepository !== "object") {
+      return;
+    }
+
+    const repository = selectedRepository as GitRepository;
+    const repositoryName = repository.full_name;
+    const gitProvider = repository.git_provider;
+
+    // Launch a new conversation to help the user understand the repo
+    createConversationAndSubscribe({
+      query: formData.query,
+      conversationInstructions: formData.query,
+      repository: {
+        name: repositoryName,
+        branch: formData.selectedBranch,
+        gitProvider,
+      },
+      onSuccessCallback: () => {
+        hideLearnThisRepoModal();
+      },
+    });
+  };
+
+  const renderModals = () => (
+    <>
+      {(addMicroagentModalVisible || updateMicroagentModalVisible) && (
+        <MicroagentManagementUpsertMicroagentModal
+          onConfirm={(formData) =>
+            handleUpsertMicroagent(formData, updateMicroagentModalVisible)
+          }
+          onCancel={() =>
+            hideUpsertMicroagentModal(updateMicroagentModalVisible)
+          }
+          isLoading={isPending}
+          isUpdate={updateMicroagentModalVisible}
+        />
+      )}
+      {learnThisRepoModalVisible && (
+        <MicroagentManagementLearnThisRepoModal
+          onCancel={hideLearnThisRepoModal}
+          onConfirm={handleLearnThisRepoConfirm}
+          isLoading={isPending}
+        />
+      )}
+    </>
+  );
 
   if (width < 1024) {
     return (
@@ -201,13 +298,7 @@ export function MicroagentManagementContent() {
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
           <MicroagentManagementMain />
         </div>
-        {addMicroagentModalVisible && (
-          <MicroagentManagementAddMicroagentModal
-            onConfirm={handleCreateMicroagent}
-            onCancel={hideAddMicroagentModal}
-            isLoading={isPending}
-          />
-        )}
+        {renderModals()}
       </div>
     );
   }
@@ -218,13 +309,7 @@ export function MicroagentManagementContent() {
       <div className="flex-1">
         <MicroagentManagementMain />
       </div>
-      {addMicroagentModalVisible && (
-        <MicroagentManagementAddMicroagentModal
-          onConfirm={handleCreateMicroagent}
-          onCancel={hideAddMicroagentModal}
-          isLoading={isPending}
-        />
-      )}
+      {renderModals()}
     </div>
   );
 }

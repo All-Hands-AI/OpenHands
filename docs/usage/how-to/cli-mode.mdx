@@ -20,7 +20,7 @@ for scripting.
 
 ### Running with Python
 
-**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported)
+**Note** - OpenHands requires Python version 3.12 or higher (Python 3.14 is not currently supported) and `uvx` for the default `fetch` MCP server (more details below).
 
 1. Install OpenHands using pip:
 ```bash
@@ -103,7 +103,7 @@ The conversation history will be saved in `~/.openhands/sessions`.
 ```bash
 docker run -it \
     --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.49-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.51-nikolaik \
     -e SANDBOX_USER_ID=$(id -u) \
     -e SANDBOX_VOLUMES=$SANDBOX_VOLUMES \
     -e LLM_API_KEY=$LLM_API_KEY \
@@ -112,7 +112,7 @@ docker run -it \
     -v ~/.openhands:/.openhands \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app-$(date +%Y%m%d%H%M%S) \
-    docker.all-hands.dev/all-hands-ai/openhands:0.49 \
+    docker.all-hands.dev/all-hands-ai/openhands:0.51 \
     python -m openhands.cli.main --override-cli-mode true
 ```
 
@@ -153,6 +153,7 @@ You can use the following commands whenever the prompt (`>`) is displayed:
 | `/new`       | Start a new conversation                                       |
 | `/settings`  | View and modify current LLM/agent settings                     |
 | `/resume`    | Resume the agent if paused                                     |
+| `/mcp`       | Manage MCP server configuration and view connection errors    |
 
 #### Settings and Configuration
 
@@ -162,7 +163,7 @@ follow the prompts:
 - **Basic settings**: Choose a model/provider and enter your API key.
 - **Advanced settings**: Set custom endpoints, enable or disable confirmation mode, and configure memory condensation.
 
-Settings can also be managed via the `config.toml` file.
+Settings can also be managed via the `config.toml` file in the current directory or `~/.openhands/config.toml`.
 
 #### Repository Initialization
 
@@ -173,6 +174,41 @@ project details and structure. Use this when onboarding the agent to a new codeb
 
 You can pause the agent while it is running by pressing `Ctrl-P`. To continue the conversation after pausing, simply
 type `/resume` at the prompt.
+
+#### MCP Server Management
+
+To configure Model Context Protocol (MCP) servers, you can refer to the documentation on [MCP servers](../mcp) and use the `/mcp` command in the CLI. This command provides an interactive interface for managing Model Context Protocol (MCP) servers:
+
+- **List configured servers**: View all currently configured MCP servers (SSE, Stdio, and SHTTP)
+- **Add new server**: Interactively add a new MCP server with guided prompts
+- **Remove server**: Remove an existing MCP server from your configuration
+- **View errors**: Display any connection errors that occurred during MCP server startup
+
+This command modifies your `~/.openhands/config.toml` file and will prompt you to restart OpenHands for changes to take effect.
+
+By default, the [Fetch MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch) will be automatically configured for OpenHands. You can also [enable search engine](../search-engine-setup) via the [Tavily MCP server](https://github.com/tavily-ai/tavily-mcp) by setting the `search_api_key` under the `[core]` section in the `~/.openhands/config.toml` file.
+
+##### Example of the `config.toml` file with MCP server configuration:
+
+```toml
+[core]
+search_api_key = "tvly-your-api-key-here"
+
+[mcp]
+stdio_servers = [
+    {name="fetch", command="uvx", args=["mcp-server-fetch"]},
+]
+
+sse_servers = [
+    # Basic SSE server with just a URL
+    "http://example.com:8080/sse",
+]
+
+shttp_servers = [
+    # Streamable HTTP server with API key authentication
+    {url="https://secure-example.com/mcp", api_key="your-api-key"}
+]
+```
 
 ## Tips and Troubleshooting
 
