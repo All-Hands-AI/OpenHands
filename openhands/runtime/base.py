@@ -433,15 +433,6 @@ class Runtime(FileEditRuntimeMixin):
         self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
 
-        # Store the repository URL in the memory
-        if hasattr(self, 'memory') and self.memory:
-            self.memory.set_repository_info(
-                selected_repository,
-                str(self.workspace_root / dir_name),
-                remote_repo_url,
-                selected_branch,
-            )
-
         return dir_name
 
     def maybe_run_setup_script(self):

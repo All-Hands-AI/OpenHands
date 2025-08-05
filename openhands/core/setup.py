@@ -200,7 +200,13 @@ def create_memory(
         memory.load_user_workspace_microagents(microagents)
 
         if selected_repository and repo_directory:
-            memory.set_repository_info(selected_repository, repo_directory)
+            # Construct repository URL from repository name (assumes GitHub format)
+            repo_url = (
+                f'https://github.com/{selected_repository}'
+                if '/' in selected_repository
+                else None
+            )
+            memory.set_repository_info(selected_repository, repo_directory, repo_url)
 
     return memory
 
