@@ -29,7 +29,7 @@ export function GitControlBarBranchButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "flex items-center justify-between pl-2.5 pr-2.5 py-1 rounded-[100px] w-52",
+        "group flex items-center justify-between pl-2.5 pr-2.5 py-1 rounded-[100px] w-52",
         hasBranch
           ? "bg-[#25272D] hover:bg-[#525662] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",
@@ -45,7 +45,7 @@ export function GitControlBarBranchButton({
       </div>
 
       {hasBranch && (
-        <div className="w-3 h-3 flex items-center justify-center">
+        <div className="w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <LinkExternalIcon width={12} height={12} color="white" />
         </div>
       )}
