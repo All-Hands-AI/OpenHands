@@ -1,7 +1,7 @@
 from typing import Any, Callable
 from uuid import uuid4
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
@@ -13,6 +13,10 @@ from openhands.llm.llm import LLM
 class RegistryEvent(BaseModel):
     llm: LLM
     service_id: str
+
+    model_config = ConfigDict(
+        arbitrary_types_allowed=True,
+    )
 
 
 class LLMRegistry:
