@@ -2256,7 +2256,7 @@
         "uk": "Помилка збереження файлу. Спробуйте ще раз."
     },
     "SUGGESTIONS$INCREASE_TEST_COVERAGE": {
-        "en": "Increase test coverage",
+        "en": "TO CREATE A NEW APP",
         "ja": "テストカバレッジを向上させる",
         "zh-CN": "提高测试覆盖率",
         "zh-TW": "提高測試覆蓋率",
@@ -2736,7 +2736,7 @@
         "uk": "Відкрити в новій вкладці"
     },
     "INCREASE_TEST_COVERAGE": {
-        "en": "Increase test coverage",
+        "en": "TO CREATE A NEW APP",
         "ja": "テストカバレッジを向上",
         "zh-CN": "提高测试覆盖率",
         "zh-TW": "提高測試覆蓋率",
@@ -2752,7 +2752,7 @@
         "uk": "Збільшення охоплення тестами"
     },
     "AUTO_MERGE_PRS": {
-        "en": "Auto-merge PRs",
+        "en": "DESCRIBE YOUR APP",
         "ja": "PRを自動マージ",
         "zh-CN": "自动合并PR",
         "zh-TW": "自動合併 PR",
@@ -2768,7 +2768,7 @@
         "uk": "Автоматично поєднувати PRs"
     },
     "FIX_README": {
-        "en": "Fix README",
+        "en": "IN THE FIELD",
         "ja": "READMEを修正",
         "zh-CN": "修复README",
         "zh-TW": "修正 README",
@@ -2784,7 +2784,7 @@
         "uk": "Виправити README"
     },
     "CLEAN_DEPENDENCIES": {
-        "en": "Clean dependencies",
+        "en": "BELOW",
         "ja": "依存関係を整理",
         "zh-CN": "清理依赖项",
         "zh-TW": "清理相依性",
