@@ -54,7 +54,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(
     title='OpenHands',
-    description='OpenHands: Code Less, Make More',
+    description='MojoCode: Make Cool Shit!',
     version=__version__,
     lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
     routes=[Mount(path='/mcp', app=mcp_app)],

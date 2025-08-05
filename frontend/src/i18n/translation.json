@@ -1184,7 +1184,7 @@
         "uk": "Щоб розпочати роботу з запропонованими завданнями, підключіть свій обліковий запис GitHub, GitLab або Bitbucket."
     },
     "HOME$LETS_START_BUILDING": {
-        "en": "Let's Start Building!",
+        "en": "Make Cool Shit!!",
         "ja": "開発を始めましょう！",
         "zh-CN": "让我们开始开发！",
         "zh-TW": "讓我們開始開發！",
@@ -1200,7 +1200,7 @@
         "uk": "Почнімо будувати!"
     },
     "HOME$OPENHANDS_DESCRIPTION": {
-        "en": "OpenHands makes it easy to build and maintain software using AI-driven development.",
+        "en": "MojoCode makes it easy to build and maintain software using AI-driven development.",
         "ja": "OpenHandsはAI駆動の開発を使用してソフトウェアの開発と維持を容易にします。",
         "zh-CN": "OpenHands使用AI驱动的开发方式，轻松构建和维护软件。",
         "zh-TW": "OpenHands使用AI驅動的開發方式，輕鬆構建和維護軟件。",
@@ -4608,7 +4608,7 @@
         "uk": "Агента призупинено."
     },
     "LANDING$TITLE": {
-        "en": "Let's start building!",
+        "en": "Make Cool Shit!!",
         "ja": "開発を始めましょう！",
         "zh-CN": "让我们开始构建！",
         "zh-TW": "讓我們開始建構！",
@@ -4624,7 +4624,7 @@
         "uk": "Почнімо будувати!"
     },
     "LANDING$SUBTITLE": {
-        "en": "OpenHands makes it easy to build and maintain software using a simple prompt.",
+        "en": "MojoCode makes it easy to build and maintain software using a simple prompt.",
         "ja": "OpenHandsは、シンプルなプロンプトを使用してソフトウェアの開発と保守を簡単にします。",
         "zh-CN": "OpenHands 使用简单的提示来轻松构建和维护软件。",
         "zh-TW": "OpenHands 使用簡單的提示來輕鬆建構和維護軟體。",

@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "OpenHands API",
-    "description": "OpenHands: Code Less, Make More",
+    "description": "MojoCode: Make Cool Shit!",
     "version": "1.0.0"
   },
   "servers": [

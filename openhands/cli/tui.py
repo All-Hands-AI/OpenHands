@@ -166,7 +166,7 @@ def display_banner(session_id: str) -> None:
 
 def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
-        HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
+        HTML("<gold>Make Cool Shit!!</gold>\n"), style=DEFAULT_STYLE
     )
 
     if message:
