@@ -20,7 +20,10 @@ import { io } from "socket.io-client";
 
 // Initialize your socket connection here
 const socket = io("wss://mojocode.sixtyoneeighty.com", {
-  transports: ["websocket", "polling"]
+  transports: ["websocket", "polling"],
+  query: {
+    conversation_id: "c8c00e95728f4acda5666c0dfce221d0" // <-- Put your real conversation ID here
+  }
 });
 
 socket.on("connect", () => {
