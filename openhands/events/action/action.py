@@ -24,7 +24,7 @@ class Action(Event):
     # Add reasoning_content as a field with init=False so it doesn't affect parameter order
     # This field will be used to store the reasoning content from the LLM
     reasoning_content: str | None = field(default=None, init=False)
-    
+
     def __post_init__(self):
         # Initialize reasoning_content if not already set
         if not hasattr(self, 'reasoning_content'):
