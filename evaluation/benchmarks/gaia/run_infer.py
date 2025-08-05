@@ -82,12 +82,6 @@ def get_config(
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
     model_routing_config = config_copy.get_agent_config().model_routing
-    # Set log_completions to True for all LLMs for routing
-    for llm_cfg in model_routing_config.llms_for_routing.values():
-        llm_cfg.log_completions = True
-        update_llm_config_for_completions_logging(
-            llm_cfg, metadata.eval_output_dir, instance['instance_id']
-        )
 
     if config_copy.search_api_key:
         config.search_api_key = SecretStr(config_copy.search_api_key)
