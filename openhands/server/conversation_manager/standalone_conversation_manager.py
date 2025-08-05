@@ -584,12 +584,12 @@ class StandaloneConversationManager(ConversationManager):
             )
             if title and not title.isspace():
                 conversation.title = title
-                try:
-                    await conversation_module._update_title_conversation(
-                        conversation_id, title
-                    )
-                except Exception as e:
-                    logger.error(f'Error emitting title update event: {e}')
+                # try:
+                #     await conversation_module._update_title_conversation(
+                #         conversation_id, title
+                #     )
+                # except Exception as e:
+                #     logger.error(f'Error emitting title update event: {e}')
             else:
                 conversation.title = default_title
 

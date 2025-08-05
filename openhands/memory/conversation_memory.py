@@ -23,6 +23,7 @@ from openhands.events.action.a2a_action import (
     A2AListRemoteAgentsAction,
     A2ASendTaskAction,
 )
+from openhands.events.action.agent import KnowledgeBaseAction
 from openhands.events.action.mcp import McpAction
 from openhands.events.event import Event, RecallType
 from openhands.events.observation import (
@@ -315,6 +316,14 @@ class ConversationMemory:
                 Message(
                     role=role,  # type: ignore[arg-type]
                     content=[TextContent(text=action.thought)],
+                )
+            ]
+        elif isinstance(action, KnowledgeBaseAction):
+            role = 'user' if action.source == 'user' else 'assistant'
+            return [
+                Message(
+                    role=role,
+                    content=[TextContent(text=action.content)],
                 )
             ]
         elif isinstance(action, MessageAction):

@@ -97,3 +97,6 @@ class ActionType(str, Enum):
 
     A2A_SEND_TASK = 'a2a_send_task'
     """Send a task to a remote agent."""
+
+    KNOWLEDGE_BASE = 'knowledge_base'
+    """Retrieves content from a knowledge base."""

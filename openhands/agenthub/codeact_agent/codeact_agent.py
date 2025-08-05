@@ -753,14 +753,17 @@ class CodeActAgent(Agent):
                     for tool in self.search_tools
                 ],
             )
-
-        # Use ConversationMemory to process events first (static cached content)
-
         knowledge_base = self._handle_knowledge_base()
         if knowledge_base:
-            messages.append(
-                Message(role='user', content=[TextContent(text=knowledge_base)])
-            )
+            messages[0].content.append(TextContent(text=knowledge_base))
+            # messages.append(
+            #     Message(
+            #         role='user',
+            #         content=[TextContent(text=knowledge_base)],
+            #     )
+            # )
+
+        # Use ConversationMemory to process events first (static cached content)
 
         user_context = self._handle_format_output()
         if user_context:
@@ -832,40 +835,17 @@ class CodeActAgent(Agent):
         return ''
 
     def _handle_knowledge_base(self) -> str:
-        knowledge_content = []
-        # Handle x_results
-        if (
-            'x_results' in self.knowledge_base
-            and len(self.knowledge_base['x_results']) > 0
-        ):
-            x_results = [
-                self.knowledge_base['x_results'][k]
-                for k in self.knowledge_base['x_results']
-            ]
-            if x_results:
-                knowledge_content.append(f"""<XResult>
-Description: Here is the tweets that are related to the task, we can consider it is also the knowledge base.
-{json.dumps(x_results, ensure_ascii=False, indent=2)}
-</XResult>""")
-        # Handle knowledge_base_results
-        if (
-            'knowledge_base_results' in self.knowledge_base
-            and len(self.knowledge_base['knowledge_base_results']) > 0
-        ):
-            kb_results = [
-                self.knowledge_base['knowledge_base_results'][k]
-                for k in self.knowledge_base['knowledge_base_results']
-            ]
-            if kb_results:
-                knowledge_content.append(f"""<KnowledgeBase>
-{json.dumps(kb_results, ensure_ascii=False, indent=2)}
-</KnowledgeBase>""")
-
-        if len(knowledge_content) > 0:
-            return f"""
+        if self.space_id is not None or self.thread_follow_up is not None:
+            return """
 **KNOWLEDGE BASE EVALUATION PROTOCOL**
 
-Before proceeding with any task, analyze the provided knowledge base using this framework:
+For EVERY user query, you MUST first analyze the knowledge base using this framework:
+
+**REQUIRED: Look for knowledge base content in these message tags:**
+- `<KnowledgeBase>` tags - contains knowledge base information
+- `<XResult>` tags - contains related tweets/social media data
+
+**IMPORTANT: When responding to users, refer to this simply as "knowledge base" or "provided information" - do not mention specific tag names.**
 
 1. **Relevance Assessment**:
    - Identify which information from the knowledge base relates to the current query
@@ -889,9 +869,6 @@ Before proceeding with any task, analyze the provided knowledge base using this 
 - Retrieve the needed data using the available tools (e.g., `web`, APIs, file access), or
 - Explicitly declare the task blocked and explain why tool-based retrieval failed or is not possible
 
-**Knowledge Base:**
-{knowledge_content}
-
-**Note**: This evaluation enforces precise, tool-assisted reasoning with no tolerance for silent failure due to missing data.
+**Note**: This protocol applies to ALL user queries without exception. Always check the knowledge base tags first.This evaluation enforces precise, tool-assisted reasoning with no tolerance for silent failure due to missing data.
 """
         return ''

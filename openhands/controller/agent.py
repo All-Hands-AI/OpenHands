@@ -59,6 +59,8 @@ class Agent(ABC):
         self.enable_streaming: bool = kwargs.get('enable_streaming', False)
         self.streaming_llm: StreamingLLM | None = None
         self.output_config: dict | None = kwargs.get('output_config', None)
+        self.space_id: int | None = None
+        self.thread_follow_up: int | None = None
 
     @property
     def complete(self) -> bool:
@@ -174,8 +176,15 @@ class Agent(ABC):
         """
         self.output_config = output_config
 
-    def update_agent_knowledge_base(self, knowledge_base: Any | None = None) -> None:
-        """Update the knowledge base for the agent."""
+    def update_agent_knowledge_base(self, knowledge_base: Any | None = None) -> dict:
+        """Update the knowledge base for the agent and return new items.
+
+        Args:
+            knowledge_base (Any | None): The new knowledge base to update
+
+        Returns:
+            dict: Object with structure similar to self.knowledge_base but only containing new items
+        """
         # Initialize structure
         if 'knowledge_base_results' not in self.knowledge_base:
             self.knowledge_base['knowledge_base_results'] = {}
@@ -183,21 +192,45 @@ class Agent(ABC):
             self.knowledge_base['x_results'] = {}
 
         if not knowledge_base:
-            return
+            return {'knowledge_base_results': {}, 'x_results': {}}
 
-        # Update knowledge_base_results
+        new_items: dict[str, Any] = {'knowledge_base_results': {}, 'x_results': {}}
+
+        # Update knowledge_base_results and collect new items
         if 'knowledge_base_results' in knowledge_base:
             for item in knowledge_base['knowledge_base_results']:
-                if item.get('chunkId'):
-                    self.knowledge_base['knowledge_base_results'][item['chunkId']] = (
-                        item
-                    )
+                chunk_id = item.get('chunkId')
+                if chunk_id:
+                    # Check if it's new before updating
+                    if chunk_id not in self.knowledge_base['knowledge_base_results']:
+                        new_items['knowledge_base_results'][chunk_id] = item
+                    # Update the knowledge base
+                    self.knowledge_base['knowledge_base_results'][chunk_id] = item
 
-        # Update x_results
+        # Update x_results and collect new items
         if 'x_results' in knowledge_base:
             for item in knowledge_base['x_results']:
-                if item.get('chunkId'):
-                    self.knowledge_base['x_results'][item['chunkId']] = item
+                chunk_id = item.get('chunkId')
+                if chunk_id:
+                    # Check if it's new before updating
+                    if chunk_id not in self.knowledge_base['x_results']:
+                        new_items['x_results'][chunk_id] = item
+                    # Update the knowledge base
+                    self.knowledge_base['x_results'][chunk_id] = item
+
+        return new_items
+
+    def check_has_knowledge_base(self):
+        return self.knowledge_base and (
+            'knowledge_base_results' in self.knowledge_base
+            or 'x_results' in self.knowledge_base
+        )
 
     def set_event_stream(self, event_stream) -> None:
         self.event_stream = event_stream
+
+    def set_space_id(self, space_id: int) -> None:
+        self.space_id = space_id
+
+    def set_thread_follow_up(self, thread_follow_up: int) -> None:
+        self.thread_follow_up = thread_follow_up

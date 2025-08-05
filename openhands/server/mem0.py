@@ -329,12 +329,13 @@ async def search_knowledge_mem0(
     Search mem0 for knowledge chunks related to the question and conversation.
     Tries both REPORT_FILE and FINISH_CONCLUSION types. Returns a list of knowledge dicts, each with a chunkId, or None if not found.
     """
+    agent_id = raw_followup_conversation_id
+    if agent_id is None:
+        return None
     mem0_client = Mem0Client()
     if not mem0_client.is_available:
         logger.warning('MemoryClient is not available. Skipping mem0 search.')
         return None
-
-    agent_id = raw_followup_conversation_id
 
     for meta_type in [Mem0MetadataType.REPORT_FILE, Mem0MetadataType.FINISH_CONCLUSION]:
         try:

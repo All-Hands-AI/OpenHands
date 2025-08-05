@@ -115,6 +115,24 @@ class RecallAction(Action):
 
 
 @dataclass
+class KnowledgeBaseAction(Action):
+    """This action is used for retrieving content from a knowledge base."""
+
+    action: str = ActionType.KNOWLEDGE_BASE
+    content: str = ''
+    enable_think: Optional[bool] = False
+
+    @property
+    def message(self) -> str:
+        return self.content
+
+    def __str__(self) -> str:
+        ret = f'**Knowledgebase Action** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
+        return ret
+
+
+@dataclass
 class CondensationAction(Action):
     """This action indicates a condensation of the conversation history is happening.
 

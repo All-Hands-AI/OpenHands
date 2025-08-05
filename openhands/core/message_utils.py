@@ -1,3 +1,6 @@
+import json
+from typing import Any
+
 from openhands.events.event import Event
 from openhands.llm.metrics import Metrics, TokenUsage
 
@@ -52,3 +55,48 @@ def get_token_usage_for_event_id(
         if usage is not None:
             return usage
     return None
+
+
+def _extract_content_from_item(item: dict[str, Any]) -> dict[str, Any]:
+    # Extract only relevant content fields
+    extracted = item.copy()
+    del extracted['chunkId']
+    del extracted['documentId']
+    return extracted
+
+
+def process_knowledge_base(knowledge_base: dict[str, Any]) -> str:
+    knowledge_content = []
+
+    # Handle x_results (tweets/social media content)
+    if 'x_results' in knowledge_base and len(knowledge_base['x_results']) > 0:
+        x_results = [
+            knowledge_base['x_results'][k] for k in knowledge_base['x_results']
+        ]
+        if x_results:
+            extracted_x_results = [
+                _extract_content_from_item(item) for item in x_results
+            ]
+            knowledge_content.append(f"""<XResult>
+Description: Here are the tweets/social media posts related to the task, considered as knowledge base.
+{json.dumps(extracted_x_results, ensure_ascii=False, indent=2)}
+</XResult>""")
+
+    # Handle knowledge_base_results
+    if (
+        'knowledge_base_results' in knowledge_base
+        and len(knowledge_base['knowledge_base_results']) > 0
+    ):
+        kb_results = [
+            knowledge_base['knowledge_base_results'][k]
+            for k in knowledge_base['knowledge_base_results']
+        ]
+        if kb_results:
+            extracted_kb_results = [
+                _extract_content_from_item(item) for item in kb_results
+            ]
+            knowledge_content.append(f"""<KnowledgeBase>
+{json.dumps(extracted_kb_results, ensure_ascii=False, indent=2)}
+</KnowledgeBase>""")
+
+    return chr(10).join(knowledge_content)

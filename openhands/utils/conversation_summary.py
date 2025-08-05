@@ -87,8 +87,9 @@ def get_default_conversation_title(conversation_id: str) -> str:
 async def auto_generate_title(
     conversation_id: str,
     user_id: str | None,
-    file_store: FileStore,
+    file_store: FileStore | None,
     settings: Settings,
+    first_user_message: str | None = None,
 ) -> str:
     """
     Auto-generate a title for a conversation based on the first user message.
@@ -102,20 +103,19 @@ async def auto_generate_title(
         A generated title string
     """
     try:
-        # Create an event store for the conversation
-        event_store = EventStore(conversation_id, file_store, user_id)
-
         # Find the first user message
-        first_user_message = None
-        for event in event_store.search_events():
-            if (
-                event.source == EventSource.USER
-                and isinstance(event, MessageAction)
-                and event.content
-                and event.content.strip()
-            ):
-                first_user_message = event.content
-                break
+        if first_user_message is None and file_store is not None:
+            # Create an event store for the conversation
+            event_store = EventStore(conversation_id, file_store, user_id)
+            for event in event_store.search_events():
+                if (
+                    event.source == EventSource.USER
+                    and isinstance(event, MessageAction)
+                    and event.content
+                    and event.content.strip()
+                ):
+                    first_user_message = event.content
+                    break
 
         if first_user_message:
             # Get LLM config from user settings

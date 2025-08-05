@@ -410,8 +410,13 @@ async def search_conversations(
                 conversation_id = getattr(
                     conversation, 'conversation_id', None
                 ) or conversation.get('conversation_id')
-                title = getattr(conversation, 'title', None) or conversation.get(
-                    'title', ''
+                convo_metadata = getattr(
+                    conversation, 'metadata', {}
+                ) or conversation.get('metadata', {})
+                title = (
+                    convo_metadata.get('title', '')
+                    or getattr(conversation, 'title', None)
+                    or conversation.get('title', '')
                 )
                 user_id = getattr(conversation, 'user_id', None) or conversation.get(
                     'user_id'
@@ -572,9 +577,9 @@ async def update_conversation(
         if title:
             metadata.title = title
             await conversation_store.save_metadata(metadata)
-            await conversation_module._update_title_conversation(
-                conversation_id, metadata.title
-            )
+            # await conversation_module._update_title_conversation(
+            #     conversation_id, metadata.title
+            # )
         return True
     except FileNotFoundError:
         logger.warning(

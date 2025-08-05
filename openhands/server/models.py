@@ -33,6 +33,7 @@ Conversation = Table(
     Column('conversation_id', String, nullable=False),
     Column('published', Boolean, nullable=False),
     Column('configs', JSON, nullable=False),
+    Column('metadata', JSON, nullable=True),
     Column('title', String, nullable=False),
     Column('short_description', String, nullable=False),
     Column('status', String, nullable=False, default='available'),

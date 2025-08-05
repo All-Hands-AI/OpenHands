@@ -13,6 +13,7 @@ from openhands.events.action.agent import (
     AgentThinkAction,
     ChangeAgentStateAction,
     CondensationAction,
+    KnowledgeBaseAction,
     RecallAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
@@ -50,6 +51,7 @@ actions = (
     A2AListRemoteAgentsAction,
     A2ASendTaskAction,
     StreamingMessageAction,
+    KnowledgeBaseAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

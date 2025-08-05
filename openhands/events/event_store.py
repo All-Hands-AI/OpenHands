@@ -291,12 +291,7 @@ class EventStore(EventStoreABC):
         if limit < 1 or limit > 100:
             raise ValueError('Limit must be between 1 and 100')
 
-        from openhands.core.config import load_app_config
-        from openhands.storage.database import db_file_store
-
-        config_app = load_app_config()
-
-        if config_app.file_store == 'database':
+        if shared_config.file_store == 'database':
             # Use database-specific filtering for better performance
             order_by = 'created_at DESC' if reverse else 'created_at ASC'
             events = db_file_store._get_events_by_action(

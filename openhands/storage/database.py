@@ -113,24 +113,26 @@ class DatabaseFileStore(FileStore):
             (conversation_id, user_id or ''),
         )
 
+        title = metadata.get('title') or ''
+
         if cursor.fetchone():
             # Update existing conversation
             cursor.execute(
                 """
                 UPDATE conversations
-                SET metadata = %s
+                SET metadata = %s, title = %s
                 WHERE conversation_id = %s AND user_id = %s
                 """,
-                (json.dumps(metadata), conversation_id, user_id or ''),
+                (json.dumps(metadata), title, conversation_id, user_id or ''),
             )
         else:
             # Insert new conversation
             cursor.execute(
                 """
-                INSERT INTO conversations (user_id, conversation_id, metadata, published, created_at)
-                VALUES (%s, %s, %s, false, CURRENT_TIMESTAMP)
+                INSERT INTO conversations (user_id, conversation_id, metadata, title, published, created_at)
+                VALUES (%s, %s, %s, %s, false, CURRENT_TIMESTAMP)
                 """,
-                (user_id or '', conversation_id, json.dumps(metadata)),
+                (user_id or '', conversation_id, json.dumps(metadata), title),
             )
 
     def _write_user_setting(

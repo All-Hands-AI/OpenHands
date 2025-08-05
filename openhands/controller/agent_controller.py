@@ -39,6 +39,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import LOG_ALL_EVENTS
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.message_utils import process_knowledge_base
 from openhands.core.schema import AgentState
 from openhands.core.schema.research import ResearchMode
 from openhands.evaluation import should_step_after_call_evaluation_endpoint
@@ -61,7 +62,11 @@ from openhands.events.action import (
     NullAction,
     StreamingMessageAction,
 )
-from openhands.events.action.agent import CondensationAction, RecallAction
+from openhands.events.action.agent import (
+    CondensationAction,
+    KnowledgeBaseAction,
+    RecallAction,
+)
 
 # Add new imports for event retrieval
 from openhands.events.async_event_store_wrapper import AsyncEventStoreWrapper
@@ -673,6 +678,7 @@ class AgentController:
 
     async def _search_knowledge(self, query: str):
         print(f'self.space_section_id--->laal: {self.space_section_id}')
+        new_items = None
         if self.user_id and (self.space_id or self.thread_follow_up):
             knowledge_base = await search_knowledge_mem0(
                 query,
@@ -681,10 +687,12 @@ class AgentController:
                 self.user_id,
             )
             if knowledge_base and len(knowledge_base) > 0:
-                self.agent.update_agent_knowledge_base(
+                new_items = self.agent.update_agent_knowledge_base(
                     {
-                        'knowledge_base_results': knowledge_base,
-                        'x_results': [],
+                        {
+                            'knowledge_base_results': knowledge_base,
+                            'x_results': [],
+                        }
                     }
                 )
             else:
@@ -696,16 +704,17 @@ class AgentController:
                     self.space_section_id,
                 )
                 if knowledge_base and len(knowledge_base) > 0:
-                    self.agent.update_agent_knowledge_base(knowledge_base)
+                    new_items = self.agent.update_agent_knowledge_base(knowledge_base)
                 else:
                     events = await self._get_followup_conversation_events()
                     if events and len(events) > 0:
-                        self.agent.update_agent_knowledge_base(
+                        new_items = self.agent.update_agent_knowledge_base(
                             {
                                 'knowledge_base_results': events,
                                 'x_results': [],
                             }
                         )
+        return new_items
 
     async def _handle_message_action(self, action: MessageAction) -> None:
         """Handles message actions from the event stream.
@@ -772,8 +781,17 @@ class AgentController:
             )
 
             # update new knowledge base with the user message
-            await self._search_knowledge(action.content)
-
+            new_items = await self._search_knowledge(action.content)
+            if new_items and (
+                len(new_items['knowledge_base_results']) > 0
+                or len(new_items['x_results']) > 0
+            ):
+                knowledge_base_content = process_knowledge_base(new_items)
+                knowledge_base_action = KnowledgeBaseAction(
+                    content=knowledge_base_content,
+                    enable_think=False,
+                )
+                self.event_stream.add_event(knowledge_base_action, EventSource.USER)
             recall_action = RecallAction(query=action.content, recall_type=recall_type)
             self._pending_action = recall_action
             # this is source=USER because the user message is the trigger for the microagent retrieval
