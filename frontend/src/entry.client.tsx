@@ -99,9 +99,8 @@ prepareApp().then(() =>
       <StrictMode>
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
-            <HydratedRouter />
             <PosthogInit />
-            <div id="modal-portal-exit" />
+            <HydratedRouter />
           </QueryClientProvider>
         </Provider>
       </StrictMode>,

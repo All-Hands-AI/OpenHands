@@ -22,6 +22,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         {children}
+        <div id="modal-portal-exit" />
         <ScrollRestoration />
         <Scripts />
         <Toaster />
