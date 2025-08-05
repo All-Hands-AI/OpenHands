@@ -11902,5 +11902,37 @@
         "tr": "Mikro ajan içeriği yüklenirken hata oluştu.",
         "de": "Fehler beim Laden des Microagent-Inhalts.",
         "uk": "Помилка під час завантаження вмісту мікроагента."
+    },
+    "COMMON$NO_REPOSITORY": {
+        "en": "No Repository",
+        "ja": "リポジトリがありません",
+        "zh-CN": "没有存储库",
+        "zh-TW": "沒有存儲庫",
+        "ko-KR": "저장소 없음",
+        "no": "Ingen Repository",
+        "it": "Nessun Repository",
+        "pt": "Nenhum repositório",
+        "es": "Sin repositorio",
+        "ar": "لا يوجد مستودع",
+        "fr": "Aucun dépôt",
+        "tr": "Depo yok",
+        "de": "Kein Repository",
+        "uk": "Немає репозиторію"
+    },
+    "COMMON$NO_BRANCH": {
+        "en": "No Branch",
+        "ja": "ブランチがありません",
+        "zh-CN": "没有分支",
+        "zh-TW": "沒有分支",
+        "ko-KR": "브랜치 없음",
+        "no": "Ingen gren",
+        "it": "Nessun ramo",
+        "pt": "Nenhum branch",
+        "es": "Sin rama",
+        "ar": "لا يوجد فرع",
+        "fr": "Aucune branche",
+        "tr": "Dal yok",
+        "de": "Kein Branch",
+        "uk": "Немає гілки"
     }
 }
