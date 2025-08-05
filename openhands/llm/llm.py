@@ -212,13 +212,15 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
+                kwargs['top_p'] = 1
+                # kwargs['temperature'] = 0
 
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
-            kwargs.pop(
-                'temperature'
-            )  # temperature is not supported for reasoning models
-            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
+                kwargs.pop(
+                    'temperature'
+                )  # temperature is not supported for reasoning models
+                kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
