@@ -219,10 +219,10 @@ correct_num = 5
 api_key = ""
 model = "gpt-4o"
 
-# Example routing LLM configuration for cost-saving model routing
-# Uncomment and configure to enable model routing with a cheaper model
+# Example routing LLM configuration for multi-modal model routing
+# Uncomment and configure to enable model routing with a secondary model
 #[llm.secondary_model]
-#model = "gpt-4o-mini"
+#model = "kimi-k2"
 #api_key = ""
 #for_routing = true
 #max_input_tokens = 128000
@@ -495,8 +495,8 @@ type = "noop"
 [model_routing]
 # Router to use for model selection
 # Available options:
-# - "noop_router" (default): No routing, always uses main LLM
-# - "rule_based_cv_router": Cost-saving router that switches between primary and secondary models
+# - "noop_router" (default): No routing, always uses primary LLM
+# - "multimodal_router": A router that switches between primary and secondary models, depending on whether the input is multimodal or not
 #router_name = "noop_router"
 
 # Probability threshold for routing decisions (used by threshold-based routers)

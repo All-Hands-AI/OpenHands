@@ -8,10 +8,10 @@ Model routing enables OpenHands to switch between different LLM models during a 
 
 ## Available Routers
 
-- **`noop_router`** (default): No routing, always uses main LLM
-- **`rule_based_cv_router`**: Cost-saving router that switches based on:
+- **`noop_router`** (default): No routing, always uses primary LLM
+- **`multimodal_router`**: A router that switches based on:
   - Routes to primary model for images or when secondary model's context limit is exceeded
-  - Uses secondary model for text-only requests within limits
+  - Uses secondary model for text-only requests within its context limit
 
 ## Configuration
 
@@ -32,7 +32,7 @@ max_input_tokens = 128000
 
 # Enable routing
 [model_routing]
-router_name = "rule_based_cv_router"
+router_name = "multimodal_router"
 ```
 
 ## Extending

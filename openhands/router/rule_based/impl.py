@@ -7,9 +7,9 @@ from openhands.llm.llm import LLM
 from openhands.router.base import ROUTER_REGISTRY, BaseRouter
 
 
-class RuleBasedCostSavingRouter(BaseRouter):
+class MultimodalRouter(BaseRouter):
     SECONDARY_MODEL_CONFIG_NAME = 'secondary_model'
-    ROUTER_NAME = 'rule_based_cv_router'
+    ROUTER_NAME = 'multimodal_router'
 
     def __init__(
         self,
@@ -69,4 +69,4 @@ class RuleBasedCostSavingRouter(BaseRouter):
 
 
 # Register the router
-ROUTER_REGISTRY[RuleBasedCostSavingRouter.ROUTER_NAME] = RuleBasedCostSavingRouter
+ROUTER_REGISTRY[MultimodalRouter.ROUTER_NAME] = MultimodalRouter
