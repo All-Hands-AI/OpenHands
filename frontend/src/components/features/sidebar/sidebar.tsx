@@ -3,7 +3,7 @@ import { useLocation } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
-import { DocsButton } from "#/components/shared/buttons/docs-button";
+
 import { NewProjectButton } from "#/components/shared/buttons/new-project-button";
 import { SettingsButton } from "#/components/shared/buttons/settings-button";
 import { ConversationPanelButton } from "#/components/shared/buttons/conversation-panel-button";
@@ -91,7 +91,6 @@ export function Sidebar() {
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
-            <DocsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <SettingsButton disabled={settings?.EMAIL_VERIFIED === false} />
             <UserActions
               user={

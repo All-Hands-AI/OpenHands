@@ -1,13 +1,15 @@
 /** @type {import('tailwindcss').Config} */
-import { heroui } from "@heroui/react";
+// Remove unused import
 import typography from "@tailwindcss/typography";
+
+
 export default {
   theme: {
     extend: {
       colors: {
         primary: "#C9B974", // nice yellow
         logo: "#CFB755", // color for logos and icons
-        base: "#0D0F11", // dark background also used for tooltips
+        base: "#000000", // pure black background also used for tooltips
         "base-secondary": "#24272E", // lighter background
         danger: "#E76A5E",
         success: "#A5E75E",

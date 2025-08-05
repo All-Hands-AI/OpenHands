@@ -22,7 +22,7 @@ export function HomeHeader() {
 
   return (
     <header className="flex flex-col gap-5">
-      <AllHandsLogo />
+      <AllHandsLogo width={200} height={75} />
 
       <div className="flex items-center justify-between">
         <h1 className="heading">{t("HOME$LETS_START_BUILDING")}</h1>
@@ -49,17 +49,6 @@ export function HomeHeader() {
       <div className="flex items-center justify-between">
         <p className="text-sm max-w-[424px]">
           {t("HOME$OPENHANDS_DESCRIPTION")}
-        </p>
-        <p className="text-sm">
-          {t("HOME$NOT_SURE_HOW_TO_START")}{" "}
-          <a
-            href="https://docs.all-hands.dev/usage/getting-started"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-2"
-          >
-            {t("HOME$READ_THIS")}
-          </a>
         </p>
       </div>
     </header>

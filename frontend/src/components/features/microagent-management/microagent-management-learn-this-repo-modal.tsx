@@ -169,7 +169,7 @@ export function MicroagentManagementLearnThisRepoModal({
                 {t(I18nKey.MICROAGENT_MANAGEMENT$LEARN_THIS_REPO_MODAL_TITLE)}
               </h2>
               <a
-                href="https://docs.all-hands.dev/usage/prompting/microagents-overview#microagents-overview"
+                href="https://www.sixtyoneeighty.comll-hands.dev/usage/prompting/microagents-overview#microagents-overview"
                 target="_blank"
                 rel="noopener noreferrer"
                 data-testid="modal-info-link"

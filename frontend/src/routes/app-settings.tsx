@@ -2,13 +2,12 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { useSettings } from "#/hooks/query/use-settings";
-import { AvailableLanguages } from "#/i18n";
-import { DEFAULT_SETTINGS } from "#/services/settings";
+// Removed AvailableLanguages and DEFAULT_SETTINGS imports - language fixed to English
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
-import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
+// Language input removed - language fixed to English
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
 import {
   displayErrorToast,
@@ -26,10 +25,7 @@ function AppSettingsScreen() {
   const { data: settings, isLoading } = useSettings();
   const { data: config } = useConfig();
 
-  const [languageInputHasChanged, setLanguageInputHasChanged] =
-    React.useState(false);
-  const [analyticsSwitchHasChanged, setAnalyticsSwitchHasChanged] =
-    React.useState(false);
+  // Language input state removed - language fixed to English
   const [
     soundNotificationsSwitchHasChanged,
     setSoundNotificationsSwitchHasChanged,
@@ -42,14 +38,9 @@ function AppSettingsScreen() {
     React.useState(false);
 
   const formAction = (formData: FormData) => {
-    const languageLabel = formData.get("language-input")?.toString();
-    const languageValue = AvailableLanguages.find(
-      ({ label }) => label === languageLabel,
-    )?.value;
-    const language = languageValue || DEFAULT_SETTINGS.LANGUAGE;
+    // Language fixed to English
+    const language = "en";
 
-    const enableAnalytics =
-      formData.get("enable-analytics-switch")?.toString() === "on";
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
@@ -65,14 +56,14 @@ function AppSettingsScreen() {
     saveSettings(
       {
         LANGUAGE: language,
-        user_consents_to_analytics: enableAnalytics,
+        user_consents_to_analytics: false, // Permanently disabled
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
       },
       {
         onSuccess: () => {
-          handleCaptureConsent(enableAnalytics);
+          handleCaptureConsent(false); // Analytics permanently disabled
           displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         },
         onError: (error) => {
@@ -80,8 +71,6 @@ function AppSettingsScreen() {
           displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
         },
         onSettled: () => {
-          setLanguageInputHasChanged(false);
-          setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
@@ -90,21 +79,7 @@ function AppSettingsScreen() {
     );
   };
 
-  const checkIfLanguageInputHasChanged = (value: string) => {
-    const selectedLanguage = AvailableLanguages.find(
-      ({ label: langValue }) => langValue === value,
-    )?.label;
-    const currentLanguage = AvailableLanguages.find(
-      ({ value: langValue }) => langValue === settings?.LANGUAGE,
-    )?.label;
-
-    setLanguageInputHasChanged(selectedLanguage !== currentLanguage);
-  };
-
-  const checkIfAnalyticsSwitchHasChanged = (checked: boolean) => {
-    const currentAnalytics = !!settings?.USER_CONSENTS_TO_ANALYTICS;
-    setAnalyticsSwitchHasChanged(checked !== currentAnalytics);
-  };
+  // Language change checking removed - language fixed to English
 
   const checkIfSoundNotificationsSwitchHasChanged = (checked: boolean) => {
     const currentSoundNotifications = !!settings?.ENABLE_SOUND_NOTIFICATIONS;
@@ -128,8 +103,6 @@ function AppSettingsScreen() {
   };
 
   const formIsClean =
-    !languageInputHasChanged &&
-    !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged;
@@ -145,20 +118,9 @@ function AppSettingsScreen() {
       {shouldBeLoading && <AppSettingsInputsSkeleton />}
       {!shouldBeLoading && (
         <div className="p-9 flex flex-col gap-6">
-          <LanguageInput
-            name="language-input"
-            defaultKey={settings.LANGUAGE}
-            onChange={checkIfLanguageInputHasChanged}
-          />
+          {/* Language input removed - language fixed to English */}
 
-          <SettingsSwitch
-            testId="enable-analytics-switch"
-            name="enable-analytics-switch"
-            defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
-            onToggle={checkIfAnalyticsSwitchHasChanged}
-          >
-            {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
-          </SettingsSwitch>
+          {/* Analytics switch removed */}
 
           <SettingsSwitch
             testId="enable-sound-notifications-switch"
@@ -192,7 +154,7 @@ function AppSettingsScreen() {
             placeholder={t(I18nKey.SETTINGS$MAXIMUM_BUDGET_USD)}
             min={1}
             step={1}
-            className="w-full max-w-[680px]" // Match the width of the language field
+            className="w-full max-w-[680px]"
           />
         </div>
       )}

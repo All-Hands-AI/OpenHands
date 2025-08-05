@@ -165,9 +165,7 @@ def display_banner(session_id: str) -> None:
 
 
 def display_welcome_message(message: str = '') -> None:
-    print_formatted_text(
-        HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
-    )
+    print_formatted_text(HTML('<gold>Make Cool Shit!!</gold>\n'), style=DEFAULT_STYLE)
 
     if message:
         print_formatted_text(
@@ -520,7 +518,7 @@ def display_help() -> None:
     # Footer
     print_formatted_text(
         HTML(
-            '<grey>Learn more at: https://docs.all-hands.dev/usage/getting-started</grey>'
+            '<grey>Learn more at: https://www.sixtyoneeighty.comll-hands.dev/usage/getting-started</grey>'
         )
     )
 

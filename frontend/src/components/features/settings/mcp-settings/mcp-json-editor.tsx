@@ -77,7 +77,7 @@ export function MCPJsonEditor({
           components={{
             a: (
               <a
-                href="https://docs.all-hands.dev/usage/mcp"
+                href="https://www.sixtyoneeighty.comll-hands.dev/usage/mcp"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 hover:underline"

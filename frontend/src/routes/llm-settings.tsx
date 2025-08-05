@@ -5,7 +5,7 @@ import { ModelSelector } from "#/components/shared/modals/settings/model-selecto
 import { organizeModelsAndProviders } from "#/utils/organize-models-and-providers";
 import { useAIConfigOptions } from "#/hooks/query/use-ai-config-options";
 import { useSettings } from "#/hooks/query/use-settings";
-import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
+// import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set"; // Temporarily disabled
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
 import { I18nKey } from "#/i18n/declaration";
@@ -19,7 +19,7 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { SettingsDropdownInput } from "#/components/features/settings/settings-dropdown-input";
 import { useConfig } from "#/hooks/query/use-config";
-import { isCustomModel } from "#/utils/is-custom-model";
+// import { isCustomModel } from "#/utils/is-custom-model"; // Temporarily disabled
 import { LlmSettingsInputsSkeleton } from "#/components/features/settings/llm-settings/llm-settings-inputs-skeleton";
 import { KeyStatusIcon } from "#/components/features/settings/key-status-icon";
 import { DEFAULT_SETTINGS } from "#/services/settings";
@@ -55,29 +55,21 @@ function LlmSettingsScreen() {
     string | null
   >(null);
 
-  const modelsAndProviders = organizeModelsAndProviders(
+  const allModelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
   );
 
+  // Filter to only show OpenAI and Gemini providers
+  const modelsAndProviders = Object.fromEntries(
+    Object.entries(allModelsAndProviders).filter(
+      ([provider]) => provider === "openai" || provider === "gemini",
+    ),
+  );
+
   React.useEffect(() => {
-    const determineWhetherToToggleAdvancedSettings = () => {
-      if (resources && settings) {
-        return (
-          isCustomModel(resources.models, settings.LLM_MODEL) ||
-          hasAdvancedSettingsSet({
-            ...settings,
-          })
-        );
-      }
-
-      return false;
-    };
-
-    const userSettingsIsAdvanced = determineWhetherToToggleAdvancedSettings();
+    // Advanced settings are temporarily disabled - always use basic view
     if (settings) setSecurityAnalyzerInputIsVisible(settings.CONFIRMATION_MODE);
-
-    if (userSettingsIsAdvanced) setView("advanced");
-    else setView("basic");
+    setView("basic");
   }, [settings, resources]);
 
   // Initialize currentSelectedModel with the current settings
@@ -174,20 +166,21 @@ function LlmSettingsScreen() {
     else advancedFormAction(formData);
   };
 
-  const handleToggleAdvancedSettings = (isToggled: boolean) => {
-    setSecurityAnalyzerInputIsVisible(!!settings?.CONFIRMATION_MODE);
-    setView(isToggled ? "advanced" : "basic");
-    setDirtyInputs({
-      model: false,
-      apiKey: false,
-      searchApiKey: false,
-      baseUrl: false,
-      agent: false,
-      confirmationMode: false,
-      enableDefaultCondenser: false,
-      securityAnalyzer: false,
-    });
-  };
+  // handleToggleAdvancedSettings function temporarily disabled
+  // const handleToggleAdvancedSettings = (isToggled: boolean) => {
+  //   setSecurityAnalyzerInputIsVisible(!!settings?.CONFIRMATION_MODE);
+  //   setView(isToggled ? "advanced" : "basic");
+  //   setDirtyInputs({
+  //     model: false,
+  //     apiKey: false,
+  //     searchApiKey: false,
+  //     baseUrl: false,
+  //     agent: false,
+  //     confirmationMode: false,
+  //     enableDefaultCondenser: false,
+  //     securityAnalyzer: false,
+  //   });
+  // };
 
   const handleModelIsDirty = (model: string | null) => {
     // openai providers are special case; see ModelSelector
@@ -283,14 +276,15 @@ function LlmSettingsScreen() {
         className="flex flex-col h-full justify-between"
       >
         <div className="p-9 flex flex-col gap-6">
-          <SettingsSwitch
+          {/* Advanced settings toggle temporarily disabled */}
+          {/* <SettingsSwitch
             testId="advanced-settings-switch"
             defaultIsToggled={view === "advanced"}
             onToggle={handleToggleAdvancedSettings}
             isToggled={view === "advanced"}
           >
             {t(I18nKey.SETTINGS$ADVANCED)}
-          </SettingsSwitch>
+          </SettingsSwitch> */}
 
           {view === "basic" && (
             <div
@@ -330,13 +324,6 @@ function LlmSettingsScreen() {
                     <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
                   )
                 }
-              />
-
-              <HelpLink
-                testId="llm-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
               <SettingsInput
@@ -400,7 +387,6 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 onChange={handleBaseUrlIsDirty}
               />
-
               <SettingsInput
                 testId="llm-api-key-input"
                 name="llm-api-key-input"
@@ -414,12 +400,6 @@ function LlmSettingsScreen() {
                     <KeyStatusIcon isSet={settings.LLM_API_KEY_SET} />
                   )
                 }
-              />
-              <HelpLink
-                testId="llm-api-key-help-anchor-advanced"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://docs.all-hands.dev/usage/local-setup#getting-an-api-key"
               />
 
               <SettingsInput
