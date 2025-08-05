@@ -497,7 +497,9 @@ class AgentSession:
                 repo_url = None
                 if provider_handler and '/' in selected_repository:
                     try:
-                        repository = await provider_handler.verify_repo_provider(selected_repository)
+                        repository = await provider_handler.verify_repo_provider(
+                            selected_repository
+                        )
                         provider = repository.git_provider
                         domain = provider_handler.PROVIDER_DOMAINS[provider]
                         repo_url = f'https://{domain}/{selected_repository}'
@@ -507,7 +509,7 @@ class AgentSession:
                 elif '/' in selected_repository:
                     # Fallback to GitHub if no provider handler
                     repo_url = f'https://github.com/{selected_repository}'
-                
+
                 memory.set_repository_info(
                     selected_repository, repo_directory, repo_url, selected_branch
                 )
