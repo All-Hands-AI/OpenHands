@@ -249,6 +249,10 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
+        # Apply Gemini thinking patch if using Gemini 2.5 Pro
+        if self._should_apply_gemini_thinking_patch():
+            self._apply_gemini_thinking_patch()
+
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
@@ -433,6 +437,52 @@ class LLM(RetryMixin, DebugMixin):
             return resp
 
         self._completion = wrapper
+
+    def _should_apply_gemini_thinking_patch(self) -> bool:
+        """Check if we should apply the Gemini thinking patch.
+
+        Returns True for Gemini 2.5 Pro models to enable thinking capabilities.
+        """
+        return 'gemini-2.5-pro' in self.config.model.lower()
+
+    def _apply_gemini_thinking_patch(self) -> None:
+        """Apply monkey patch to enable Gemini thinking capabilities.
+
+        This patches the litellm Gemini transformation function to automatically
+        include thinkingConfig in requests, enabling the model's thinking process
+        to be visible in responses.
+        """
+        try:
+            import litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini as gemini_module
+            from litellm.llms.vertex_ai.gemini.transformation import (
+                sync_transform_request_body,
+            )
+
+            # Store the original function
+            original_sync_transform = sync_transform_request_body
+
+            # Create patched version that adds thinkingConfig
+            def patched_sync_transform_with_thinking(*args, **kwargs):
+                # Add thinkingConfig to optional_params
+                if 'optional_params' in kwargs:
+                    kwargs['optional_params']['thinkingConfig'] = {
+                        'includeThoughts': True,
+                    }
+                return original_sync_transform(*args, **kwargs)
+
+            # Apply the patch
+            gemini_module.sync_transform_request_body = (
+                patched_sync_transform_with_thinking
+            )
+
+            logger.debug(
+                f'Applied Gemini thinking patch for model: {self.config.model}'
+            )
+
+        except ImportError as e:
+            logger.warning(f'Could not apply Gemini thinking patch: {e}')
+        except Exception as e:
+            logger.warning(f'Failed to apply Gemini thinking patch: {e}')
 
     @property
     def completion(self) -> Callable:
