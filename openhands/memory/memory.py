@@ -181,6 +181,9 @@ class Memory:
                 if self.repository_info
                 and self.repository_info.repo_directory is not None
                 else '',
+                repo_branch=self.repository_info.branch_name
+                if self.repository_info and self.repository_info.branch_name is not None
+                else '',
                 repo_instructions=repo_instructions if repo_instructions else '',
                 runtime_hosts=self.runtime_info.available_hosts
                 if self.runtime_info and self.runtime_info.available_hosts is not None
@@ -322,10 +325,14 @@ class Memory:
 
         return mcp_configs
 
-    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
+    def set_repository_info(
+        self, repo_name: str, repo_directory: str, branch_name: str | None = None
+    ) -> None:
         """Store repository info so we can reference it in an observation."""
         if repo_name or repo_directory:
-            self.repository_info = RepositoryInfo(repo_name, repo_directory)
+            self.repository_info = RepositoryInfo(
+                repo_name, repo_directory, branch_name
+            )
         else:
             self.repository_info = None
 

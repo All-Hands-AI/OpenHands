@@ -254,9 +254,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
-        except ValueError:
+        except ValueError as e:
             # Re-raise ValueError from SandboxConfig.from_toml_section
-            raise ValueError('Error in [sandbox] section in config.toml')
+            raise ValueError('Error in [sandbox] section in config.toml') from e
 
     # Process MCP sections if present
     if 'mcp' in toml_config:

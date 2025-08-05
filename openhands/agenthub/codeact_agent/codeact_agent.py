@@ -168,6 +168,13 @@ class CodeActAgent(Agent):
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
+        - CondensationAction(...) - condense conversation history by forgetting specified events and optionally providing a summary
+        - FileReadAction(path, ...) - read file content from specified path
+        - FileEditAction(path, ...) - edit file using LLM-based (deprecated) or ACI-based editing
+        - AgentThinkAction(thought) - log agent's thought/reasoning process
+        - CondensationRequestAction() - request condensation of conversation history
+        - BrowseInteractiveAction(browser_actions) - interact with browser using specified actions
+        - MCPAction(name, arguments) - interact with MCP server tools
         """
         # Continue with pending actions if any
         if self.pending_actions:
