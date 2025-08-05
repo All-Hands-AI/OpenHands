@@ -10,7 +10,7 @@ from pydantic import SecretStr
 from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
-from openhands.llm.llm_registry import LLMRegistry
+from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
@@ -159,13 +159,21 @@ def initialize_repo(
     return dest_dir
 
 
-def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
+def make_commit(
+    repo_dir: str,
+    issue: Issue,
+    issue_type: str,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
+) -> None:
     """Make a commit with the changes to the repository.
 
     Args:
         repo_dir: The directory containing the repository
         issue: The issue to fix
         issue_type: The type of the issue
+        git_user_name: Git username for commits
+        git_user_email: Git email for commits
     """
     # Check if git username is set
     result = subprocess.run(
@@ -176,15 +184,15 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     )
 
     if not result.stdout.strip():
-        # If username is not set, configure git
+        # If username is not set, configure git with the provided credentials
         subprocess.run(
-            f'git -C {repo_dir} config user.name "openhands" && '
-            f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
+            f'git -C {repo_dir} config user.name "{git_user_name}" && '
+            f'git -C {repo_dir} config user.email "{git_user_email}" && '
             f'git -C {repo_dir} config alias.git "git --no-pager"',
             shell=True,
             check=True,
         )
-        logger.info('Git user configured as openhands')
+        logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
 
     # Add all changes to the git index
     result = subprocess.run(
@@ -235,6 +243,8 @@ def send_pull_request(
     reviewer: str | None = None,
     pr_title: str | None = None,
     base_domain: str | None = None,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
 ) -> str:
     """Send a pull request to a GitHub, GitLab, or Bitbucket repository.
 
@@ -452,10 +462,8 @@ def update_existing_pull_request(
                     comment_message += f'- {explanation}\n'
 
                 # Summarize with LLM if provided
-                # TODO: save registry information to persistent store
-                llm_registry = LLMRegistry(None, 'convo_id', None)
                 if llm_config is not None:
-                    llm = llm_registry.register_llm('resolver', llm_config)
+                    llm = LLM(llm_config, service_id='resolver')
                     with open(
                         os.path.join(
                             os.path.dirname(__file__),
@@ -505,6 +513,8 @@ def process_single_issue(
     reviewer: str | None = None,
     pr_title: str | None = None,
     base_domain: str | None = None,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
 ) -> None:
     # Determine default base_domain based on platform
     if base_domain is None:
@@ -536,7 +546,13 @@ def process_single_issue(
 
     apply_patch(patched_repo_dir, resolver_output.git_patch)
 
-    make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+    make_commit(
+        patched_repo_dir,
+        resolver_output.issue,
+        issue_type,
+        git_user_name,
+        git_user_email,
+    )
 
     if issue_type == 'pr':
         update_existing_pull_request(
@@ -563,6 +579,8 @@ def process_single_issue(
             reviewer=reviewer,
             pr_title=pr_title,
             base_domain=base_domain,
+            git_user_name=git_user_name,
+            git_user_email=git_user_email,
         )
 
 
@@ -660,6 +678,18 @@ def main() -> None:
         default=None,
         help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
     )
+    parser.add_argument(
+        '--git-user-name',
+        type=str,
+        default='openhands',
+        help='Git user name for commits',
+    )
+    parser.add_argument(
+        '--git-user-email',
+        type=str,
+        default='openhands@all-hands.dev',
+        help='Git user email for commits',
+    )
     my_args = parser.parse_args()
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -707,6 +737,8 @@ def main() -> None:
         my_args.reviewer,
         my_args.pr_title,
         my_args.base_domain,
+        my_args.git_user_name,
+        my_args.git_user_email,
     )
 
 

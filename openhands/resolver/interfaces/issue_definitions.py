@@ -7,7 +7,7 @@ import jinja2
 
 from openhands.core.config import LLMConfig
 from openhands.events.event import Event
-from openhands.llm.llm_registry import LLMRegistry
+from openhands.llm.llm import LLM
 from openhands.resolver.interfaces.issue import (
     Issue,
     IssueHandlerInterface,
@@ -20,17 +20,10 @@ class ServiceContext:
     issue_type: ClassVar[str]
     default_git_patch: ClassVar[str] = 'No changes made yet'
 
-    def __init__(
-        self,
-        strategy: IssueHandlerInterface,
-        llm_config: LLMConfig | None,
-    ):
+    def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
-        # TODO: we should store registry information as well
-        llm_registry = LLMRegistry(None, 'convo_id', None)
         if llm_config is not None:
-            # Use a unique service ID for each instance to avoid duplicate registration
-            self.llm = llm_registry.register_llm('resolver', llm_config)
+            self.llm = LLM(llm_config, service_id='resolver')
 
     def set_strategy(self, strategy: IssueHandlerInterface) -> None:
         self._strategy = strategy

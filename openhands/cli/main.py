@@ -79,6 +79,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -161,7 +162,8 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    controller, initial_state = create_controller(agent, runtime, config, llm_registry)
+    convo_stats = ConversationStats(runtime.event_stream.file_store, sid, None)
+    controller, initial_state = create_controller(agent, runtime, config, convo_stats)
 
     event_stream = runtime.event_stream
 

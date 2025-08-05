@@ -23,6 +23,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.session.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
@@ -180,9 +181,7 @@ def create_memory(
     return memory
 
 
-def create_agent(
-    config: OpenHandsConfig, llm_registry: LLMRegistry | None = None
-) -> Agent:
+def create_agent(config: OpenHandsConfig, llm_registry: LLMRegistry) -> Agent:
     agent_cls: type[Agent] = Agent.get_cls(config.default_agent)
     agent_config = config.get_agent_config(config.default_agent)
     config.get_llm_config_from_agent(config.default_agent)
@@ -194,7 +193,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
-    llm_registry: LLMRegistry,
+    convo_stats: ConversationStats,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -212,7 +211,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        llm_registry=llm_registry,
+        convo_stats=convo_stats,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),

@@ -150,6 +150,7 @@ class IssueResolver:
             args.base_container_image,
             args.runtime_container_image,
             args.is_experimental,
+            args.runtime,
         )
 
         self.owner = owner
@@ -183,9 +184,11 @@ class IssueResolver:
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
+        runtime: str | None = None,
     ) -> OpenHandsConfig:
         config.default_agent = 'CodeActAgent'
-        config.runtime = 'docker'
+        # Use provided runtime or fallback to config value or default to 'docker'
+        config.runtime = runtime or config.runtime or 'docker'
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
@@ -411,7 +414,7 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        llm_registry = LLMRegistry(None, 'convo_id', None)
+        llm_registry = LLMRegistry(self.app_config)
         runtime = create_runtime(self.app_config, llm_registry)
         await runtime.connect()
 
@@ -441,7 +444,6 @@ class IssueResolver:
                 runtime=runtime,
                 fake_user_response_fn=codeact_user_response,
                 conversation_instructions=conversation_instructions,
-                llm_registry=llm_registry,
             )
             if state is None:
                 raise RuntimeError('Failed to run the agent.')
