@@ -110,7 +110,7 @@ def test_agent_finish_action_serialization_bug_demonstration():
     This test demonstrates and prevents regression of the bug where event_to_dict
     would include task_completed: None in the serialized args even though the
     AgentFinishAction dataclass doesn't have this field.
-    
+
     The bug occurred because during pytest execution, AgentFinishAction instances
     were getting a task_completed=None attribute added dynamically, which would
     then be included in the serialized output by asdict().
@@ -124,31 +124,31 @@ def test_agent_finish_action_serialization_bug_demonstration():
             'final_thought': '',
         },
     }
-    
+
     # Deserialize the action
     action_instance = event_from_dict(original_action_dict)
-    
+
     # The action should be properly deserialized
     assert isinstance(action_instance, AgentFinishAction)
-    
+
     # Now serialize it back
     serialized_dict = event_to_dict(action_instance)
-    
+
     # Remove the message field as other tests do
     serialized_dict.pop('message')
-    
+
     # This assertion should pass - the serialized dict should match the original
     # If this fails, it means the bug has regressed and task_completed is being added
     assert serialized_dict == original_action_dict, (
-        f"Serialization bug detected: serialized dict {serialized_dict} != "
-        f"original dict {original_action_dict}. "
-        f"Extra fields in serialized args: "
-        f"{set(serialized_dict.get('args', {}).keys()) - set(original_action_dict.get('args', {}).keys())}"
+        f'Serialization bug detected: serialized dict {serialized_dict} != '
+        f'original dict {original_action_dict}. '
+        f'Extra fields in serialized args: '
+        f'{set(serialized_dict.get("args", {}).keys()) - set(original_action_dict.get("args", {}).keys())}'
     )
-    
+
     # Specifically check that task_completed is not in the serialized args
     assert 'task_completed' not in serialized_dict.get('args', {}), (
-        "task_completed field should not appear in serialized AgentFinishAction args"
+        'task_completed field should not appear in serialized AgentFinishAction args'
     )
 
 
