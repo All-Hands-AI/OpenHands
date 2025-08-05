@@ -1,7 +1,6 @@
 """Tests for the custom secrets API endpoints."""
 # flake8: noqa: E501
 
-import os
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -18,6 +17,7 @@ from openhands.server.routes.secrets import app as secrets_app
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
+from tests.unit.test_utils import disable_session_api_key
 
 
 @pytest.fixture
@@ -26,11 +26,9 @@ def test_client():
     app = FastAPI()
     app.include_router(secrets_app)
 
-    # Mock SESSION_API_KEY to None to disable authentication in tests
-    with patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False):
-        # Clear the SESSION_API_KEY to disable auth dependency
-        with patch('openhands.server.dependencies._SESSION_API_KEY', None):
-            yield TestClient(app)
+    # Disable session API key authentication for tests
+    with disable_session_api_key():
+        yield TestClient(app)
 
 
 @pytest.fixture

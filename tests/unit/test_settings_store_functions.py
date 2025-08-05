@@ -1,4 +1,3 @@
-import os
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -17,6 +16,7 @@ from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.file_secrets_store import FileSecretsStore
+from tests.unit.test_utils import disable_session_api_key
 
 
 # Mock functions to simulate the actual functions in settings.py
@@ -29,8 +29,7 @@ async def get_settings_store(request):
 def test_client():
     # Create a test client
     with (
-        patch.dict(os.environ, {'SESSION_API_KEY': ''}, clear=False),
-        patch('openhands.server.dependencies._SESSION_API_KEY', None),
+        disable_session_api_key(),
         patch(
             'openhands.server.routes.secrets.check_provider_tokens',
             AsyncMock(return_value=''),

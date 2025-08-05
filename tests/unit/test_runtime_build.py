@@ -31,6 +31,64 @@ OH_VERSION = f'oh_v{oh_version}'
 DEFAULT_BASE_IMAGE = 'nikolaik/python-nodejs:python3.12-nodejs22'
 
 
+@pytest.fixture(scope='module', autouse=True)
+def mock_docker_for_module():
+    """Auto-apply Docker mocking to all tests in this module."""
+    from unittest.mock import MagicMock, patch
+
+    import docker
+
+    mock_client = MagicMock(spec=docker.DockerClient)
+    mock_client.version.return_value = {
+        'Version': '20.10.0',
+        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
+    }
+
+    # Mock images
+    mock_images = MagicMock()
+    mock_image = MagicMock()
+    mock_image.id = 'sha256:test123'
+    mock_images.build.return_value = (mock_image, [])
+    mock_images.get.return_value = mock_image
+    mock_images.list.return_value = []
+    mock_images.remove.return_value = None
+    mock_client.images = mock_images
+
+    # Mock containers
+    mock_containers = MagicMock()
+    mock_containers.run.return_value = MagicMock()
+    mock_containers.list.return_value = []
+    mock_client.containers = mock_containers
+
+    # Mock subprocess for Docker build commands
+    def mock_subprocess_popen(*args, **kwargs):
+        mock_process = MagicMock()
+        mock_stdout = MagicMock()
+        mock_stdout.readline.side_effect = [
+            'Step 1/2 : FROM test\n',
+            'Successfully built test123\n',
+            '',
+        ]
+        mock_process.stdout = mock_stdout
+        mock_process.wait.return_value = 0
+        mock_process.args = args[0] if args else []
+        return mock_process
+
+    def mock_subprocess_run(*args, **kwargs):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ''
+        mock_result.stderr = ''
+        return mock_result
+
+    with (
+        patch('docker.from_env', return_value=mock_client),
+        patch('subprocess.Popen', side_effect=mock_subprocess_popen),
+        patch('subprocess.run', side_effect=mock_subprocess_run),
+    ):
+        yield
+
+
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime_build'))
