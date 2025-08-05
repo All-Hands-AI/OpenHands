@@ -11775,21 +11775,21 @@
         "de": "Fehler beim Laden des Microagent-Inhalts.",
         "uk": "Помилка під час завантаження вмісту мікроагента."
     },
-    "COMMON$STOP_CONVERSATION": {
-        "en": "Stop Conversation",
-        "ja": "会話を停止",
-        "zh-CN": "停止对话",
-        "zh-TW": "停止對話",
-        "ko-KR": "대화 중지",
-        "no": "Stopp samtale",
-        "it": "Ferma conversazione",
-        "pt": "Parar conversa",
-        "es": "Detener conversación",
-        "ar": "إيقاف المحادثة",
-        "fr": "Arrêter la conversation",
-        "tr": "Konuşmayı Durdur",
-        "de": "Gespräch stoppen",
-        "uk": "Зупинити розмову"
+    "COMMON$CLOSE_CONVERSATION_STOP_RUNTIME": {
+        "en": "Close Conversation (Stop Runtime)",
+        "ja": "会話を閉じる（ランタイム停止）",
+        "zh-CN": "关闭对话（停止运行时）",
+        "zh-TW": "關閉對話（停止執行時）",
+        "ko-KR": "대화 닫기(런타임 중지)",
+        "no": "Lukk samtale (stopp kjøring)",
+        "it": "Chiudi conversazione (Interrompi runtime)",
+        "pt": "Fechar conversa (Parar execução)",
+        "es": "Cerrar conversación (Detener ejecución)",
+        "ar": "إغلاق المحادثة (إيقاف وقت التشغيل)",
+        "fr": "Fermer la conversation (Arrêter l'exécution)",
+        "tr": "Konuşmayı Kapat (Çalışma Zamanını Durdur)",
+        "de": "Gespräch schließen (Laufzeit beenden)",
+        "uk": "Закрити розмову (зупинити виконання)"
     },
     "COMMON$DELETE_CONVERSATION": {
         "en": "Delete Conversation",

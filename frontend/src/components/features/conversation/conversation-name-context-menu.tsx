@@ -6,6 +6,19 @@ import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
 import { I18nKey } from "#/i18n/declaration";
 
+import EditIcon from "#/icons/u-edit.svg?react";
+import RobotIcon from "#/icons/u-robot.svg?react";
+import ToolsIcon from "#/icons/u-tools.svg?react";
+import FileExportIcon from "#/icons/u-file-export.svg?react";
+import DownloadIcon from "#/icons/u-download.svg?react";
+import CreditCardIcon from "#/icons/u-credit-card.svg?react";
+import CloseIcon from "#/icons/u-close.svg?react";
+import DeleteIcon from "#/icons/u-delete.svg?react";
+import { ConversationNameContextMenuIconText } from "./conversation-name-context-menu-icon-text";
+
+const contextMenuListItemClassName =
+  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px]";
+
 interface ConversationNameContextMenuProps {
   onClose: () => void;
   onRename?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -45,7 +58,7 @@ export function ConversationNameContextMenu({
       ref={ref}
       testId="conversation-name-context-menu"
       className={cn(
-        "left-0 absolute mt-2 z-50 text-white bg-[#525662] rounded-[6px]",
+        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px]",
         position === "top" && "bottom-full",
         position === "bottom" && "top-full",
       )}
@@ -54,29 +67,40 @@ export function ConversationNameContextMenu({
         <ContextMenuListItem
           testId="rename-button"
           onClick={onRename}
-          className="cursor-pointer"
+          className={contextMenuListItemClassName}
         >
-          {t(I18nKey.BUTTON$RENAME)}
+          <ConversationNameContextMenuIconText
+            icon={<EditIcon width={16} height={16} />}
+            text={t(I18nKey.BUTTON$RENAME)}
+          />
         </ContextMenuListItem>
       )}
 
       {hasTools && <ContextMenuSeparator className="bg-[#959CB2]" />}
 
-      {onShowAgentTools && (
-        <ContextMenuListItem
-          testId="show-agent-tools-button"
-          onClick={onShowAgentTools}
-        >
-          {t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
-        </ContextMenuListItem>
-      )}
-
       {onShowMicroagents && (
         <ContextMenuListItem
           testId="show-microagents-button"
           onClick={onShowMicroagents}
+          className={contextMenuListItemClassName}
         >
-          {t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
+          <ConversationNameContextMenuIconText
+            icon={<RobotIcon width={16} height={16} />}
+            text={t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
+          />
+        </ContextMenuListItem>
+      )}
+
+      {onShowAgentTools && (
+        <ContextMenuListItem
+          testId="show-agent-tools-button"
+          onClick={onShowAgentTools}
+          className={contextMenuListItemClassName}
+        >
+          <ConversationNameContextMenuIconText
+            icon={<ToolsIcon width={16} height={16} />}
+            text={t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
+          />
         </ContextMenuListItem>
       )}
 
@@ -88,8 +112,12 @@ export function ConversationNameContextMenu({
         <ContextMenuListItem
           testId="export-conversation-button"
           onClick={onExportConversation}
+          className={contextMenuListItemClassName}
         >
-          {t(I18nKey.BUTTON$EXPORT_CONVERSATION)}
+          <ConversationNameContextMenuIconText
+            icon={<FileExportIcon width={16} height={16} />}
+            text={t(I18nKey.BUTTON$EXPORT_CONVERSATION)}
+          />
         </ContextMenuListItem>
       )}
 
@@ -97,8 +125,12 @@ export function ConversationNameContextMenu({
         <ContextMenuListItem
           testId="download-vscode-button"
           onClick={onDownloadViaVSCode}
+          className={contextMenuListItemClassName}
         >
-          {t(I18nKey.BUTTON$DOWNLOAD_VIA_VSCODE)}
+          <ConversationNameContextMenuIconText
+            icon={<DownloadIcon width={16} height={16} />}
+            text={t(I18nKey.BUTTON$DOWNLOAD_VIA_VSCODE)}
+          />
         </ContextMenuListItem>
       )}
 
@@ -110,20 +142,38 @@ export function ConversationNameContextMenu({
         <ContextMenuListItem
           testId="display-cost-button"
           onClick={onDisplayCost}
+          className={contextMenuListItemClassName}
         >
-          {t(I18nKey.BUTTON$DISPLAY_COST)}
+          <ConversationNameContextMenuIconText
+            icon={<CreditCardIcon width={16} height={16} />}
+            text={t(I18nKey.BUTTON$DISPLAY_COST)}
+          />
         </ContextMenuListItem>
       )}
 
       {onStop && (
-        <ContextMenuListItem testId="stop-button" onClick={onStop}>
-          {t(I18nKey.COMMON$STOP_CONVERSATION)}
+        <ContextMenuListItem
+          testId="stop-button"
+          onClick={onStop}
+          className={contextMenuListItemClassName}
+        >
+          <ConversationNameContextMenuIconText
+            icon={<CloseIcon width={16} height={16} />}
+            text={t(I18nKey.COMMON$CLOSE_CONVERSATION_STOP_RUNTIME)}
+          />
         </ContextMenuListItem>
       )}
 
       {onDelete && (
-        <ContextMenuListItem testId="delete-button" onClick={onDelete}>
-          {t(I18nKey.COMMON$DELETE_CONVERSATION)}
+        <ContextMenuListItem
+          testId="delete-button"
+          onClick={onDelete}
+          className={contextMenuListItemClassName}
+        >
+          <ConversationNameContextMenuIconText
+            icon={<DeleteIcon width={16} height={16} />}
+            text={t(I18nKey.COMMON$DELETE_CONVERSATION)}
+          />
         </ContextMenuListItem>
       )}
     </ContextMenu>
