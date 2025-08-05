@@ -44,7 +44,8 @@ vi.mock("react-i18next", async () => {
           BUTTON$SHOW_AGENT_TOOLS_AND_METADATA: "Show Agent Tools",
           CONVERSATION$SHOW_MICROAGENTS: "Show Microagents",
           BUTTON$DISPLAY_COST: "Display Cost",
-          COMMON$STOP_CONVERSATION: "Stop Conversation",
+          COMMON$CLOSE_CONVERSATION_STOP_RUNTIME:
+            "Close Conversation (Stop Runtime)",
           COMMON$DELETE_CONVERSATION: "Delete Conversation",
         };
         return translations[key] || key;
@@ -531,7 +532,7 @@ describe("ConversationNameContextMenu", () => {
       "Delete Conversation",
     );
     expect(screen.getByTestId("stop-button")).toHaveTextContent(
-      "Stop Conversation",
+      "Close Conversation (Stop Runtime)",
     );
     expect(screen.getByTestId("display-cost-button")).toHaveTextContent(
       "Display Cost",
