@@ -55,7 +55,7 @@ class LLMConfig(BaseModel):
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
-    openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
+    openrouter_site_url: str = Field(default='https://www.sixtyoneeighty.comll-hands.dev/')
     openrouter_app_name: str = Field(default='OpenHands')
     # total wait time: 8 + 16 + 32 + 64 = 120 seconds
     num_retries: int = Field(default=5)

@@ -466,7 +466,7 @@ def display_mcp_servers(config: OpenHandsConfig) -> None:
     if total_count == 0:
         print_formatted_text(
             'No custom MCP servers configured. See the documentation to learn more:\n'
-            '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
+            '  https://www.sixtyoneeighty.comll-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
         )
     else:
         print_formatted_text(

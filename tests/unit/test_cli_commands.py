@@ -250,7 +250,7 @@ class TestDisplayMcpServers:
         call_args = mock_print.call_args[0][0]
         assert 'No custom MCP servers configured' in call_args
         assert (
-            'https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
+            'https://www.sixtyoneeighty.comll-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
             in call_args
         )
 

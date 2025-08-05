@@ -2864,7 +2864,7 @@
         "uk": "API ключ"
     },
     "API$DONT_KNOW_KEY": {
-        "en": "Don't know your API key?",
+        "en": "Contact the LLM provide for API Keys",
         "ja": "APIキーがわかりませんか？",
         "zh-CN": "不知道您的API密钥？",
         "zh-TW": "不知道您的 API 金鑰？",
@@ -5968,7 +5968,7 @@
         "uk": "Ключ API LLM"
     },
     "SETTINGS$LLM_API_KEY_DESCRIPTION": {
-        "en": "You can use this API Key as the LLM API Key for MojoCode open-source and CLI. It will incur cost on your MojoCode Cloud account. Do NOT share this key elsewhere.",
+        "en": "Go on, just paste your secret API key right there in the front-end code. It's not like the entire internet is a digital cesspool of thieves and bots waiting for idiots like you to make their day. Seriously, do it. I want to watch.",
         "zh-CN": "您可以将此 API 密钥用作 MojoCode 开源和 CLI 的 LLM API 密钥。它将在您的 MojoCode Cloud 账户上产生费用。请勿在其他地方共享此密钥。",
         "zh-TW": "您可以將此 API 金鑰用作 MojoCode 開源和 CLI 的 LLM API 金鑰。它將在您的 MojoCode Cloud 帳戶上產生費用。請勿在其他地方共享此金鑰。",
         "de": "Sie können diesen API-Schlüssel als LLM-API-Schlüssel für MojoCode Open-Source und CLI verwenden. Es fallen Kosten für Ihr MojoCode Cloud-Konto an. Teilen Sie diesen Schlüssel NICHT anderswo.",
@@ -6080,7 +6080,7 @@
         "uk": "Виберіть аналізатор безпеки…"
     },
     "SETTINGS$DONT_KNOW_API_KEY": {
-        "en": "Don't know your API key?",
+        "en": "Contact the LLM provide for API Keys",
         "ja": "APIキーがわかりませんか？",
         "zh-CN": "不知道您的API密钥？",
         "zh-TW": "不知道您的API密鑰？",
@@ -6224,20 +6224,20 @@
         "uk": "Ви можете знайти свій ключ API MojoCode у"
     },
     "SETTINGS$MojoCode_API_KEY_HELP_SUFFIX": {
-        "en": "tab of MojoCode Cloud. LLM usage is billed at the providers' rates with no markup. Details: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "ja": "タブで確認できます。LLMの使用料金は、プロバイダーの料金でマークアップなしで請求されます。詳細: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "zh-CN": "标签页中找到您的MojoCode API密钥。LLM使用费用按提供商费率计费，无加价。详情: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "zh-TW": "標籤頁中找到您的MojoCode API密鑰。LLM使用費用按提供商費率計費，無加價。詳情: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "ko-KR": "탭에서 찾을 수 있습니다. LLM 사용료는 제공업체 요금으로 마크업 없이 청구됩니다. 자세한 내용: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "no": "-fanen i MojoCode Cloud. LLM-bruk faktureres til leverandørenes priser uten påslag. Detaljer: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "it": "scheda di MojoCode Cloud. L'utilizzo di LLM viene fatturato alle tariffe dei fornitori senza ricarico. Dettagli: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "pt": "guia do MojoCode Cloud. O uso de LLM é cobrado nas tarifas dos provedores sem markup. Detalhes: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "es": "pestaña de MojoCode Cloud. El uso de LLM se factura a las tarifas de los proveedores sin recargo. Detalles: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "ar": "علامة التبويب في MojoCode Cloud. يتم فوترة استخدام LLM بأسعار المزودين بدون زيادة. التفاصيل: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "fr": "l'onglet d'MojoCode Cloud. L'utilisation de LLM est facturée aux tarifs des fournisseurs sans majoration. Détails : https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "tr": "MojoCode Cloud'un sekmesinde bulabilirsiniz. LLM kullanımı, sağlayıcıların oranlarında ek ücret olmadan faturalandırılır. Ayrıntılar: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "de": "Tab von MojoCode Cloud. LLM-Nutzung wird zu Anbieterpreisen ohne Aufschlag abgerechnet. Details: https://docs.all-hands.dev/usage/llms/MojoCode-llms",
-        "uk": "вкладці MojoCode Cloud. Використання LLM оплачується за тарифами провайдерів без надбавки. Деталі: https://docs.all-hands.dev/usage/llms/MojoCode-llms"
+        "en": "tab of MojoCode Cloud. LLM usage is billed at the providers' rates with no markup. Details: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "ja": "タブで確認できます。LLMの使用料金は、プロバイダーの料金でマークアップなしで請求されます。詳細: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "zh-CN": "标签页中找到您的MojoCode API密钥。LLM使用费用按提供商费率计费，无加价。详情: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "zh-TW": "標籤頁中找到您的MojoCode API密鑰。LLM使用費用按提供商費率計費，無加價。詳情: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "ko-KR": "탭에서 찾을 수 있습니다. LLM 사용료는 제공업체 요금으로 마크업 없이 청구됩니다. 자세한 내용: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "no": "-fanen i MojoCode Cloud. LLM-bruk faktureres til leverandørenes priser uten påslag. Detaljer: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "it": "scheda di MojoCode Cloud. L'utilizzo di LLM viene fatturato alle tariffe dei fornitori senza ricarico. Dettagli: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "pt": "guia do MojoCode Cloud. O uso de LLM é cobrado nas tarifas dos provedores sem markup. Detalhes: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "es": "pestaña de MojoCode Cloud. El uso de LLM se factura a las tarifas de los proveedores sin recargo. Detalles: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "ar": "علامة التبويب في MojoCode Cloud. يتم فوترة استخدام LLM بأسعار المزودين بدون زيادة. التفاصيل: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "fr": "l'onglet d'MojoCode Cloud. L'utilisation de LLM est facturée aux tarifs des fournisseurs sans majoration. Détails : https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "tr": "MojoCode Cloud'un sekmesinde bulabilirsiniz. LLM kullanımı, sağlayıcıların oranlarında ek ücret olmadan faturalandırılır. Ayrıntılar: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "de": "Tab von MojoCode Cloud. LLM-Nutzung wird zu Anbieterpreisen ohne Aufschlag abgerechnet. Details: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
+        "uk": "вкладці MojoCode Cloud. Використання LLM оплачується за тарифами провайдерів без надбавки. Деталі: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms"
     },
     "SETTINGS$CREATE_API_KEY": {
         "en": "Create API Key",
@@ -6960,7 +6960,7 @@
         "uk": "Ключ API"
     },
     "SETTINGS_FORM$DONT_KNOW_API_KEY_LABEL": {
-        "en": "Don't know your API key?",
+        "en": "Contact the LLM provider for API Keys",
         "es": "¿No sabes tu API key?",
         "zh-CN": "不知道您的API密钥？",
         "zh-TW": "不知道您的 API 金鑰？",
@@ -9936,7 +9936,7 @@
         "uk": "Підпишіться на блог MojoCode, щоб дізнаватися про нові функції та останні релізи."
     },
     "TIPS$API_USAGE": {
-        "en": "MGo on, just paste your secret API key right there in the front-end code. It's not like the entire internet is a digital cesspool of thieves and bots waiting for idiots like you to make their day. Seriously, do it. I want to watch.",
+        "en": "Go on, just paste your secret API key right there in the front-end code. It's not like the entire internet is a digital cesspool of thieves and bots waiting for idiots like you to make their day. Seriously, do it. I want to watch.",
         "ja": "MojoCodeにはAPIがあります！簡単なcURLコマンドでMojoCode会話を作成できます。",
         "zh-CN": "MojoCode有API！使用简单的cURL命令创建MojoCode对话。",
         "zh-TW": "MojoCode有API！使用簡單的cURL命令創建MojoCode對話。",

@@ -276,7 +276,7 @@ export function ApiKeysManager() {
             components={{
               a: (
                 <a
-                  href="https://docs.all-hands.dev/usage/cloud/cloud-api"
+                  href="https://www.sixtyoneeighty.comll-hands.dev/usage/cloud/cloud-api"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-blue-400 hover:underline"

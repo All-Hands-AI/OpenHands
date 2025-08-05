@@ -282,7 +282,7 @@ async def modify_llm_settings_basic(
                 config,
                 (
                     '(Step 2/3) Select Available OpenHands Model:\n'
-                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
+                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/openhands-llms'
                 ),
                 model_choices,
             )

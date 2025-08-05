@@ -1,4 +1,4 @@
-- [ ] This change is worth documenting at https://docs.all-hands.dev/
+- [ ] This change is worth documenting at https://www.sixtyoneeighty.comll-hands.dev/
 - [ ] Include this change in the Release Notes. If checked, you **must** provide an **end-user friendly** description for your change below
 
 **End-user friendly description of the problem this fixes or functionality this introduces.**

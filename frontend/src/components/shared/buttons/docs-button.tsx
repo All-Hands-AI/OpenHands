@@ -13,7 +13,7 @@ export function DocsButton({ disabled = false }: DocsButtonProps) {
     <TooltipButton
       tooltip={t(I18nKey.SIDEBAR$DOCS)}
       ariaLabel={t(I18nKey.SIDEBAR$DOCS)}
-      href="https://docs.all-hands.dev"
+      href="https://www.sixtyoneeighty.comll-hands.dev"
       disabled={disabled}
     >
       <DocsIcon
