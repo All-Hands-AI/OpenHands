@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from prompt_toolkit.formatted_text import HTML
 
 from openhands.cli.commands import (
     display_mcp_servers,
@@ -32,6 +33,7 @@ class TestHandleCommands:
         config = MagicMock(spec=OpenHandsConfig)
         current_dir = '/test/dir'
         settings_store = MagicMock(spec=FileSettingsStore)
+        agent_state = AgentState.RUNNING
 
         return {
             'event_stream': event_stream,
@@ -40,6 +42,7 @@ class TestHandleCommands:
             'config': config,
             'current_dir': current_dir,
             'settings_store': settings_store,
+            'agent_state': agent_state,
         }
 
     @pytest.mark.asyncio
@@ -549,8 +552,8 @@ class TestHandleSettingsCommand:
         config = MagicMock(spec=OpenHandsConfig)
         settings_store = MagicMock(spec=FileSettingsStore)
 
-        # Mock user selecting "Go back"
-        mock_cli_confirm.return_value = 2
+        # Mock user selecting "Go back" (now option 4, index 3)
+        mock_cli_confirm.return_value = 3
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
@@ -562,13 +565,16 @@ class TestHandleSettingsCommand:
 
 class TestHandleResumeCommand:
     @pytest.mark.asyncio
-    async def test_handle_resume_command(self):
-        """Test that handle_resume_command adds the 'continue' message to the event stream."""
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_handle_resume_command_paused_state(self, mock_print):
+        """Test that handle_resume_command works when agent is in PAUSED state."""
         # Create a mock event stream
         event_stream = MagicMock(spec=EventStream)
 
-        # Call the function
-        close_repl, new_session_requested = await handle_resume_command(event_stream)
+        # Call the function with PAUSED state
+        close_repl, new_session_requested = await handle_resume_command(
+            event_stream, AgentState.PAUSED
+        )
 
         # Check that the event stream add_event was called with the correct message action
         event_stream.add_event.assert_called_once()
@@ -581,6 +587,40 @@ class TestHandleResumeCommand:
 
         # Check the return values
         assert close_repl is True
+        assert new_session_requested is False
+
+        # Verify no error message was printed
+        mock_print.assert_not_called()
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        'invalid_state', [AgentState.RUNNING, AgentState.FINISHED, AgentState.ERROR]
+    )
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_handle_resume_command_invalid_states(
+        self, mock_print, invalid_state
+    ):
+        """Test that handle_resume_command shows error for all non-PAUSED states."""
+        event_stream = MagicMock(spec=EventStream)
+
+        close_repl, new_session_requested = await handle_resume_command(
+            event_stream, invalid_state
+        )
+
+        # Check that no event was added to the stream
+        event_stream.add_event.assert_not_called()
+
+        # Verify print was called with the error message
+        assert mock_print.call_count == 1
+        error_call = mock_print.call_args_list[0][0][0]
+        assert isinstance(error_call, HTML)
+        assert 'Error: Agent is not paused' in str(error_call)
+        assert '/resume command is only available when agent is paused' in str(
+            error_call
+        )
+
+        # Check the return values
+        assert close_repl is False
         assert new_session_requested is False
 
 
