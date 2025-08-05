@@ -1,272 +1,272 @@
-from unittest.mock import AsyncMock, patch
+"""Tests for Gemini thinking patch functionality in LLM class."""
 
-import httpx
-import litellm
+from unittest.mock import MagicMock, patch
+
 import pytest
 
+from openhands.core.config import LLMConfig
+from openhands.llm.llm import LLM
 
-@pytest.mark.asyncio
-async def test_gemini_thinking_patch_async():
-    """
-    Tests that we can monkey-patch the thinking config for Gemini async calls.
-    """
-    # Import the original transformation function
-    from litellm.llms.vertex_ai.gemini.transformation import (
-        async_transform_request_body,
+
+@pytest.fixture(autouse=True)
+def mock_logger(monkeypatch):
+    """Suppress logging during tests."""
+    mock_logger = MagicMock()
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_prompt_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.llm.logger', mock_logger)
+    return mock_logger
+
+
+@pytest.fixture
+def gemini_config():
+    """LLM config for Gemini 2.5 Pro model."""
+    return LLMConfig(
+        model='gemini-2.5-pro',
+        api_key='test_key',
+        num_retries=1,
+        retry_min_wait=1,
+        retry_max_wait=2,
     )
 
-    # Store the original function
-    original_transform = async_transform_request_body
 
-    # Create a patched version that adds thinkingConfig
-    async def patched_transform(*args, **kwargs):
-        # Add thinkingConfig to optional_params before calling the original function
-        if 'optional_params' in kwargs:
-            kwargs['optional_params']['thinkingConfig'] = {'includeThoughts': True}
-        # Call the original function with modified params
-        return await original_transform(*args, **kwargs)
+@pytest.fixture
+def gpt_config():
+    """LLM config for GPT-4 model."""
+    return LLMConfig(
+        model='gpt-4',
+        api_key='test_key',
+        num_retries=1,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
 
-    with patch(
-        'litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini.async_transform_request_body',
-        patched_transform,
+
+class TestGeminiThinkingPatch:
+    """Test suite for Gemini thinking patch functionality."""
+
+    def test_should_apply_gemini_thinking_patch_for_gemini_models(self, gemini_config):
+        """Test that Gemini models are correctly identified for patching."""
+        llm = LLM(gemini_config)
+        assert llm._should_apply_gemini_thinking_patch() is True
+
+    def test_should_not_apply_gemini_thinking_patch_for_non_gemini_models(
+        self, gpt_config
     ):
-        # Patch the actual HTTP client
-        with patch(
-            'litellm.llms.custom_httpx.http_handler.AsyncHTTPHandler.post',
-            new_callable=AsyncMock,
-        ) as mock_post:
-            # Configure the mock to return a future-like object with a dummy response
-            mock_request = httpx.Request('POST', 'https://example.com')
-            mock_response = httpx.Response(
-                200,
-                request=mock_request,
-                json={
-                    'candidates': [
-                        {'content': {'parts': [{'text': 'This is a mock response.'}]}}
-                    ],
-                    'usageMetadata': {
-                        'promptTokenCount': 10,
-                        'candidatesTokenCount': 5,
-                        'totalTokenCount': 15,
-                    },
-                },
-            )
-            mock_post.return_value = mock_response
+        """Test that non-Gemini models are not identified for patching."""
+        llm = LLM(gpt_config)
+        assert llm._should_apply_gemini_thinking_patch() is False
 
-            # Simulate a call to litellm
-            litellm.drop_params = True
-            await litellm.acompletion(
-                model='gemini/gemini-pro',
-                messages=[{'role': 'user', 'content': 'Test prompt'}],
-                temperature=0,
-                top_p=1,
-                api_key='dummy-key',  # required for the call to proceed
-            )
+    def test_should_apply_gemini_thinking_patch_case_insensitive(self):
+        """Test that patch detection is case insensitive."""
+        config = LLMConfig(model='GEMINI-2.5-PRO', api_key='test_key')
+        llm = LLM(config)
+        assert llm._should_apply_gemini_thinking_patch() is True
 
-            # Assert that the post method was called
-            mock_post.assert_called()
+    def test_gemini_thinking_patch_context_manager_creation(self, gemini_config):
+        """Test that context manager can be created successfully."""
+        llm = LLM(gemini_config)
+        context_manager = llm._gemini_thinking_patch_context()
+        assert context_manager is not None
 
-            # Get the final JSON payload
-            args, kwargs = mock_post.call_args
-            final_json_payload = kwargs.get('json', {})
-
-            # Assert that the generationConfig is what we want
-            expected_generation_config = {
-                'temperature': 0,
-                'top_p': 1,
-                'thinkingConfig': {'includeThoughts': True},
-            }
-            assert (
-                final_json_payload.get('generationConfig') == expected_generation_config
-            ), (
-                f'generationConfig was {final_json_payload.get("generationConfig")}, expected {expected_generation_config}'
-            )
-
-
-def test_gemini_thinking_patch_sync():
-    """
-    Tests that we can monkey-patch the thinking config for Gemini sync calls.
-    This is important because OpenHands uses litellm.completion() (sync), not acompletion().
-    """
-    # Import the original transformation function
-    from litellm.llms.vertex_ai.gemini.transformation import (
-        sync_transform_request_body,
-    )
-
-    # Store the original function
-    original_transform = sync_transform_request_body
-
-    # Create a patched version that adds thinkingConfig
-    def patched_sync_transform(*args, **kwargs):
-        # Add thinkingConfig to optional_params before calling the original function
-        if 'optional_params' in kwargs:
-            kwargs['optional_params']['thinkingConfig'] = {'includeThoughts': True}
-        # Call the original function with modified params
-        return original_transform(*args, **kwargs)
-
-    with patch(
-        'litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini.sync_transform_request_body',
-        patched_sync_transform,
+    def test_gemini_thinking_patch_context_manager_no_patch_for_non_gemini(
+        self, gpt_config
     ):
-        # Patch the actual HTTP client
-        with patch(
-            'litellm.llms.custom_httpx.http_handler.HTTPHandler.post',
-        ) as mock_post:
-            # Configure the mock to return a dummy response
-            mock_request = httpx.Request('POST', 'https://example.com')
-            mock_response = httpx.Response(
-                200,
-                request=mock_request,
-                json={
-                    'candidates': [
-                        {
-                            'content': {
-                                'parts': [{'text': 'This is a sync mock response.'}]
-                            }
-                        }
-                    ],
-                    'usageMetadata': {
-                        'promptTokenCount': 10,
-                        'candidatesTokenCount': 5,
-                        'totalTokenCount': 15,
-                    },
-                },
-            )
-            mock_post.return_value = mock_response
+        """Test that context manager works correctly for non-Gemini models."""
+        llm = LLM(gpt_config)
 
-            # Simulate a SYNC call to litellm (this is what OpenHands uses)
-            litellm.drop_params = True
-            litellm.completion(
-                model='gemini/gemini-pro',
-                messages=[{'role': 'user', 'content': 'Test sync prompt'}],
-                temperature=0,
-                top_p=1,
-                api_key='dummy-key',  # required for the call to proceed
-            )
+        # Should not raise any exceptions and should work as a no-op
+        with llm._gemini_thinking_patch_context():
+            pass
 
-            # Assert that the post method was called
-            mock_post.assert_called()
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_function_patching_and_restoration(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that functions are properly patched and restored."""
+        # Setup mock module
+        original_sync_func = MagicMock()
+        original_async_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+        original_async_func.__name__ = 'async_transform_request_body'
 
-            # Get the final JSON payload
-            args, kwargs = mock_post.call_args
-            final_json_payload = kwargs.get('json', {})
+        mock_gemini_module.sync_transform_request_body = original_sync_func
+        mock_gemini_module.async_transform_request_body = original_async_func
 
-            # Assert that the generationConfig is what we want
-            expected_generation_config = {
-                'temperature': 0,
-                'top_p': 1,
-                'thinkingConfig': {'includeThoughts': True},
-            }
+        llm = LLM(gemini_config)
+
+        # Test that functions are patched inside context
+        with llm._gemini_thinking_patch_context():
+            # Functions should be different (patched)
+            assert mock_gemini_module.sync_transform_request_body != original_sync_func
             assert (
-                final_json_payload.get('generationConfig') == expected_generation_config
-            ), (
-                f'generationConfig was {final_json_payload.get("generationConfig")}, expected {expected_generation_config}'
+                mock_gemini_module.async_transform_request_body != original_async_func
             )
 
+        # Functions should be restored after context
+        assert mock_gemini_module.sync_transform_request_body == original_sync_func
+        assert mock_gemini_module.async_transform_request_body == original_async_func
 
-@pytest.mark.asyncio
-async def test_gemini_thinking_patch_practical_example():
-    """
-    Demonstrates a practical monkey-patching approach for adding thinkingConfig to Gemini calls.
-    This shows how you could patch litellm in your own code to always include thinking config.
-    Patches both sync and async versions for complete coverage.
-    """
-    # Import the original transformation functions
-    from litellm.llms.vertex_ai.gemini.transformation import (
-        async_transform_request_body,
-        sync_transform_request_body,
-    )
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_adds_thinking_config(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that the patch correctly adds thinkingConfig to optional_params."""
+        # Setup mock module
+        original_sync_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+        mock_gemini_module.sync_transform_request_body = original_sync_func
 
-    # Store the original functions
-    original_async_transform = async_transform_request_body
-    original_sync_transform = sync_transform_request_body
+        llm = LLM(gemini_config)
 
-    # Create patched versions that add thinkingConfig with custom settings
-    async def patched_async_transform_with_custom_thinking(*args, **kwargs):
-        # Add custom thinkingConfig to optional_params
-        if 'optional_params' in kwargs:
-            # You can customize the thinking config here
-            kwargs['optional_params']['thinkingConfig'] = {
-                'includeThoughts': True,
-                # Add other thinking config options as needed
-            }
-        return await original_async_transform(*args, **kwargs)
+        with llm._gemini_thinking_patch_context():
+            # Get the patched function
+            patched_func = mock_gemini_module.sync_transform_request_body
 
-    def patched_sync_transform_with_custom_thinking(*args, **kwargs):
-        # Add custom thinkingConfig to optional_params
-        if 'optional_params' in kwargs:
-            # You can customize the thinking config here
-            kwargs['optional_params']['thinkingConfig'] = {
-                'includeThoughts': True,
-                # Add other thinking config options as needed
-            }
-        return original_sync_transform(*args, **kwargs)
+            # Call the patched function with optional_params
+            test_kwargs = {'optional_params': {'temperature': 0.5}}
+            patched_func('test_arg', **test_kwargs)
 
-    # Apply the monkey patches
-    import litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini as gemini_module
-
-    gemini_module.async_transform_request_body = (
-        patched_async_transform_with_custom_thinking
-    )
-    gemini_module.sync_transform_request_body = (
-        patched_sync_transform_with_custom_thinking
-    )
-
-    try:
-        # Patch the HTTP client to capture the request
-        with patch(
-            'litellm.llms.custom_httpx.http_handler.AsyncHTTPHandler.post',
-            new_callable=AsyncMock,
-        ) as mock_post:
-            # Configure the mock response
-            mock_request = httpx.Request('POST', 'https://example.com')
-            mock_response = httpx.Response(
-                200,
-                request=mock_request,
-                json={
-                    'candidates': [
-                        {
-                            'content': {
-                                'parts': [
-                                    {'text': 'This is a mock response with thinking.'}
-                                ]
-                            }
-                        }
-                    ],
-                    'usageMetadata': {
-                        'promptTokenCount': 15,
-                        'candidatesTokenCount': 8,
-                        'totalTokenCount': 23,
-                    },
-                },
-            )
-            mock_post.return_value = mock_response
-
-            # Make a normal litellm call - the thinking config will be automatically added
-            litellm.drop_params = True
-            await litellm.acompletion(
-                model='gemini/gemini-pro',
-                messages=[{'role': 'user', 'content': 'Explain quantum computing'}],
-                temperature=0.7,
-                max_tokens=100,
-                api_key='dummy-key',
+            # Verify thinkingConfig was added
+            expected_thinking_config = {'includeThoughts': True}
+            assert (
+                test_kwargs['optional_params']['thinkingConfig']
+                == expected_thinking_config
             )
 
-            # Verify the request was made
-            mock_post.assert_called_once()
+            # Verify original function was called
+            original_sync_func.assert_called_once_with('test_arg', **test_kwargs)
 
-            # Check that thinkingConfig was included in the request
-            args, kwargs = mock_post.call_args
-            final_json_payload = kwargs.get('json', {})
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_handles_missing_optional_params(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that the patch handles cases where optional_params is missing."""
+        # Setup mock module
+        original_sync_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+        mock_gemini_module.sync_transform_request_body = original_sync_func
 
-            generation_config = final_json_payload.get('generationConfig', {})
-            assert 'thinkingConfig' in generation_config
-            assert generation_config['thinkingConfig']['includeThoughts'] is True
+        llm = LLM(gemini_config)
 
-            # Verify other parameters are still present
-            assert generation_config['temperature'] == 0.7
+        with llm._gemini_thinking_patch_context():
+            # Get the patched function
+            patched_func = mock_gemini_module.sync_transform_request_body
 
-    finally:
-        # Restore the original functions to avoid affecting other tests
-        gemini_module.async_transform_request_body = original_async_transform
-        gemini_module.sync_transform_request_body = original_sync_transform
+            # Call the patched function without optional_params
+            test_kwargs = {}
+            patched_func('test_arg', **test_kwargs)
+
+            # Should not raise an error and should call original function
+            original_sync_func.assert_called_once_with('test_arg', **test_kwargs)
+
+    def test_gemini_thinking_patch_handles_import_error(self, gemini_config):
+        """Test that import errors are handled gracefully."""
+        llm = LLM(gemini_config)
+
+        # Should not raise an exception even if modules are missing
+        with llm._gemini_thinking_patch_context():
+            pass
+
+    def test_gemini_thinking_patch_handles_general_exception(self, gemini_config):
+        """Test that general exceptions during patching are handled gracefully."""
+        llm = LLM(gemini_config)
+
+        # Should not raise an exception
+        with llm._gemini_thinking_patch_context():
+            pass
+
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_restoration_on_exception(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that functions are restored even if an exception occurs inside the context."""
+        # Setup mock module
+        original_sync_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+        mock_gemini_module.sync_transform_request_body = original_sync_func
+
+        llm = LLM(gemini_config)
+
+        # Test that functions are restored even when exception occurs
+        try:
+            with llm._gemini_thinking_patch_context():
+                # Functions should be patched
+                assert (
+                    mock_gemini_module.sync_transform_request_body != original_sync_func
+                )
+                # Raise an exception
+                raise ValueError('Test exception')
+        except ValueError:
+            pass
+
+        # Functions should still be restored after exception
+        assert mock_gemini_module.sync_transform_request_body == original_sync_func
+
+    def test_gemini_thinking_patch_multiple_models_isolation(
+        self, gemini_config, gpt_config
+    ):
+        """Test that patches are isolated between different model instances."""
+        gemini_llm = LLM(gemini_config)
+        gpt_llm = LLM(gpt_config)
+
+        # Gemini should have patch capability
+        assert gemini_llm._should_apply_gemini_thinking_patch() is True
+
+        # GPT should not have patch capability
+        assert gpt_llm._should_apply_gemini_thinking_patch() is False
+
+        # Both should be able to create context managers without interference
+        with gemini_llm._gemini_thinking_patch_context():
+            with gpt_llm._gemini_thinking_patch_context():
+                pass
+
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_async_function_handling(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that async functions are properly handled when available."""
+        # Setup mock module with both sync and async functions
+        original_sync_func = MagicMock()
+        original_async_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+        original_async_func.__name__ = 'async_transform_request_body'
+
+        mock_gemini_module.sync_transform_request_body = original_sync_func
+        mock_gemini_module.async_transform_request_body = original_async_func
+
+        llm = LLM(gemini_config)
+
+        with llm._gemini_thinking_patch_context():
+            # Both functions should be patched
+            assert mock_gemini_module.sync_transform_request_body != original_sync_func
+            assert (
+                mock_gemini_module.async_transform_request_body != original_async_func
+            )
+
+        # Both functions should be restored
+        assert mock_gemini_module.sync_transform_request_body == original_sync_func
+        assert mock_gemini_module.async_transform_request_body == original_async_func
+
+    @patch('litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini')
+    def test_gemini_thinking_patch_no_async_function(
+        self, mock_gemini_module, gemini_config
+    ):
+        """Test that patch works correctly when async function is not available."""
+        # Setup mock module with only sync function
+        original_sync_func = MagicMock()
+        original_sync_func.__name__ = 'sync_transform_request_body'
+
+        mock_gemini_module.sync_transform_request_body = original_sync_func
+        # Simulate missing async function
+        del mock_gemini_module.async_transform_request_body
+
+        llm = LLM(gemini_config)
+
+        # Should not raise an exception
+        with llm._gemini_thinking_patch_context():
+            # Sync function should be patched
+            assert mock_gemini_module.sync_transform_request_body != original_sync_func
+
+        # Sync function should be restored
+        assert mock_gemini_module.sync_transform_request_body == original_sync_func

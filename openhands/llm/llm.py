@@ -249,10 +249,6 @@ class LLM(RetryMixin, DebugMixin):
 
         self._completion_unwrapped = self._completion
 
-        # Apply Gemini thinking patch if using Gemini 2.5 Pro
-        if self._should_apply_gemini_thinking_patch():
-            self._apply_gemini_thinking_patch()
-
         @self.retry_decorator(
             num_retries=self.config.num_retries,
             retry_exceptions=LLM_RETRY_EXCEPTIONS,
@@ -356,7 +352,9 @@ class LLM(RetryMixin, DebugMixin):
                     message=r'.*content=.*upload.*',
                     category=DeprecationWarning,
                 )
-                resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+                # Apply Gemini thinking patch temporarily for this specific call
+                with self._gemini_thinking_patch_context():
+                    resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -445,44 +443,93 @@ class LLM(RetryMixin, DebugMixin):
         """
         return 'gemini-2.5-pro' in self.config.model.lower()
 
-    def _apply_gemini_thinking_patch(self) -> None:
-        """Apply monkey patch to enable Gemini thinking capabilities.
+    def _gemini_thinking_patch_context(self):
+        """Context manager that temporarily applies Gemini thinking patch.
 
-        This patches the litellm Gemini transformation function to automatically
-        include thinkingConfig in requests, enabling the model's thinking process
-        to be visible in responses.
+        This ensures the patch is only active during the specific completion call
+        and is automatically cleaned up afterwards, preventing interference with
+        other models or subsequent calls.
         """
-        try:
-            import litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini as gemini_module
-            from litellm.llms.vertex_ai.gemini.transformation import (
-                sync_transform_request_body,
-            )
+        from contextlib import contextmanager
 
-            # Store the original function
-            original_sync_transform = sync_transform_request_body
+        @contextmanager
+        def patch_context():
+            if not self._should_apply_gemini_thinking_patch():
+                # No patch needed, just yield
+                yield
+                return
 
-            # Create patched version that adds thinkingConfig
-            def patched_sync_transform_with_thinking(*args, **kwargs):
-                # Add thinkingConfig to optional_params
-                if 'optional_params' in kwargs:
-                    kwargs['optional_params']['thinkingConfig'] = {
-                        'includeThoughts': True,
-                    }
-                return original_sync_transform(*args, **kwargs)
+            # Store original functions for restoration
+            original_sync_transform = None
+            original_async_transform = None
+            gemini_module = None
 
-            # Apply the patch
-            gemini_module.sync_transform_request_body = (
-                patched_sync_transform_with_thinking
-            )
+            patch_applied = False
+            try:
+                # Import the modules we need to patch
+                import litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini as gemini_mod
 
-            logger.debug(
-                f'Applied Gemini thinking patch for model: {self.config.model}'
-            )
+                gemini_module = gemini_mod
 
-        except ImportError as e:
-            logger.warning(f'Could not apply Gemini thinking patch: {e}')
-        except Exception as e:
-            logger.warning(f'Failed to apply Gemini thinking patch: {e}')
+                # Store original functions
+                original_sync_transform = gemini_module.sync_transform_request_body
+                original_async_transform = getattr(
+                    gemini_module, 'async_transform_request_body', None
+                )
+
+                # Create patched sync version
+                def patched_sync_transform_with_thinking(*args, **kwargs):
+                    if 'optional_params' in kwargs:
+                        kwargs['optional_params']['thinkingConfig'] = {
+                            'includeThoughts': True,
+                        }
+                    return original_sync_transform(*args, **kwargs)
+
+                # Create patched async version if it exists
+                async def patched_async_transform_with_thinking(*args, **kwargs):
+                    if 'optional_params' in kwargs:
+                        kwargs['optional_params']['thinkingConfig'] = {
+                            'includeThoughts': True,
+                        }
+                    if original_async_transform is not None:
+                        return await original_async_transform(*args, **kwargs)
+                    return None
+
+                # Apply patches
+                gemini_module.sync_transform_request_body = (
+                    patched_sync_transform_with_thinking
+                )
+                if original_async_transform:
+                    gemini_module.async_transform_request_body = (
+                        patched_async_transform_with_thinking
+                    )
+
+                patch_applied = True
+                logger.debug(
+                    f'Applied temporary Gemini thinking patch for model: {self.config.model}'
+                )
+
+            except ImportError as e:
+                logger.warning(f'Could not apply Gemini thinking patch: {e}')
+            except Exception as e:
+                logger.warning(f'Failed to apply Gemini thinking patch: {e}')
+
+            try:
+                # Yield control to the caller
+                yield
+            finally:
+                # Always restore original functions if patch was applied
+                if patch_applied and gemini_module and original_sync_transform:
+                    gemini_module.sync_transform_request_body = original_sync_transform
+                    logger.debug('Restored original sync_transform_request_body')
+
+                if patch_applied and gemini_module and original_async_transform:
+                    gemini_module.async_transform_request_body = (
+                        original_async_transform
+                    )
+                    logger.debug('Restored original async_transform_request_body')
+
+        return patch_context()
 
     @property
     def completion(self) -> Callable:
