@@ -96,7 +96,8 @@ class MCPClient(BaseModel):
                 )
 
             # Use the new Client.new() factory method in fastmcp 2.11.1+
-            self.client = Client.new(transport, timeout=timeout)
+            # Note: timeout is now set at the transport level in fastmcp 2.11.1+
+            self.client = Client.new(transport)
 
             await self._initialize_and_list_tools()
         except McpError as e:
@@ -132,7 +133,8 @@ class MCPClient(BaseModel):
                 command=server.command, args=server.args or [], env=server.env
             )
             # Use the new Client.new() factory method in fastmcp 2.11.1+
-            self.client = Client.new(transport, timeout=timeout)
+            # Note: timeout is now set at the transport level in fastmcp 2.11.1+
+            self.client = Client.new(transport)
             await self._initialize_and_list_tools()
         except Exception as e:
             server_name = getattr(
