@@ -323,8 +323,8 @@ def json_formatter() -> JsonFormatter:
 
 
 def json_log_handler(
-        level: int = logging.INFO,
-        _out: TextIO = sys.stdout,
+    level: int = logging.INFO,
+    _out: TextIO = sys.stdout,
 ) -> logging.Handler:
     """
     Configure logger instance for structured logging as json lines.
@@ -341,7 +341,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 def log_uncaught_exceptions(
-        ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
+    ex_cls: type[BaseException], ex: BaseException, tb: TracebackType | None
 ) -> Any:
     """Logs uncaught exceptions along with the traceback.
 
@@ -416,11 +416,11 @@ class LlmFileHandler(logging.FileHandler):
     """LLM prompt and response logging."""
 
     def __init__(
-            self,
-            filename: str,
-            mode: str = 'a',
-            encoding: str = 'utf-8',
-            delay: bool = False,
+        self,
+        filename: str,
+        mode: str = 'a',
+        encoding: str = 'utf-8',
+        delay: bool = False,
     ) -> None:
         """Initializes an instance of LlmFileHandler.
 
@@ -493,13 +493,13 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     extra: dict
 
     def __init__(
-            self, logger: logging.Logger = openhands_logger, extra: dict | None = None
+        self, logger: logging.Logger = openhands_logger, extra: dict | None = None
     ) -> None:
         self.logger = logger
         self.extra = extra or {}
 
     def process(
-            self, msg: str, kwargs: MutableMapping[str, Any]
+        self, msg: str, kwargs: MutableMapping[str, Any]
     ) -> tuple[str, MutableMapping[str, Any]]:
         """
         If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
