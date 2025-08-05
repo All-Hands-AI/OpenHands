@@ -592,14 +592,17 @@ class AgentController:
         if new_state == self.state.agent_state:
             return
 
+        # Store old state for control limits check
+        old_state = self.state.agent_state
+
+        # Update agent state BEFORE calling _reset() so _reset() sees the correct state
+        self.state.agent_state = new_state
+
         if new_state in (AgentState.STOPPED, AgentState.ERROR):
             self._reset()
 
         # User is allowing to check control limits and expand them if applicable
-        if (
-            self.state.agent_state == AgentState.ERROR
-            and new_state == AgentState.RUNNING
-        ):
+        if old_state == AgentState.ERROR and new_state == AgentState.RUNNING:
             self.state_tracker.maybe_increase_control_flags_limits(self.headless_mode)
 
         if self._pending_action is not None and (
@@ -614,8 +617,6 @@ class AgentController:
             self._pending_action.confirmation_state = confirmation_state  # type: ignore[attr-defined]
             self._pending_action._id = None  # type: ignore[attr-defined]
             self.event_stream.add_event(self._pending_action, EventSource.AGENT)
-
-        self.state.agent_state = new_state
 
         # Create observation with reason field if it's an error state
         reason = ''
