@@ -1,0 +1,79 @@
+---
+title: Cerebras
+description: OpenHands uses LiteLLM to make calls to chat models on Cerebras. You can find their documentation on using Cerebras as a provider [here](https://docs.litellm.ai/docs/providers/cerebras).
+---
+
+## Overview
+
+Cerebras Code provides ultra-fast inference for large language models, offering speeds up to 2,600 tokens per second. Cerebras specializes in high-performance AI inference with their custom hardware designed specifically for AI workloads.
+
+## Configuration
+
+When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
+
+- `LLM Provider` to `Cerebras`
+- `LLM Model` to the model you will be using. Popular models include:
+  - `cerebras/llama-4-scout` - Latest Llama 4 Scout model (~2600 tokens/s)
+  - `cerebras/llama-3.3-70b` - Llama 3.3 70B model (~2100 tokens/s)
+  - `cerebras/llama-3.1-8b` - Llama 3.1 8B model (~2200 tokens/s)
+  - `cerebras/qwen-3-32b` - Qwen 3 32B model (~2600 tokens/s)
+  - `cerebras/deepseek-r1-distill-llama-70b` - DeepSeek R1 distilled model (~2600 tokens/s)
+
+If the model is not in the list, enable `Advanced` options, and enter it in `Custom Model` (e.g. `cerebras/<model-name>`).
+
+- `API Key` to your Cerebras API key. To get your Cerebras API Key, visit [Cerebras Cloud](https://cloud.cerebras.ai/) and sign up for an account.
+
+## Pricing
+
+Cerebras offers three pricing tiers:
+
+### Exploration (Pay-as-you-go)
+Perfect for prototyping, testing, and small-scale applications:
+- **No minimum commitment** – pay only for what you use
+- **Instant access** to popular Cerebras-supported models
+- **Community support** via Discord
+- Available through [Hugging Face](https://huggingface.co/cerebras) and [OpenRouter](https://openrouter.ai/provider/cerebras)
+
+**Sample pricing for popular models:**
+- **Llama 4 Scout**: $0.65/M input tokens, $0.85/M output tokens (~2600 tokens/s)
+- **Llama 3.3 70B**: $0.85/M input tokens, $1.20/M output tokens (~2100 tokens/s)
+- **Llama 3.1 8B**: $0.10/M input tokens, $0.10/M output tokens (~2200 tokens/s)
+- **Qwen 3 32B**: $0.40/M input tokens, $0.80/M output tokens (~2600 tokens/s)
+- **DeepSeek R1 Distill Llama 70B**: $2.20/M input tokens, $2.50/M output tokens (~2600 tokens/s)
+
+### Growth (Monthly Subscription)
+Scale your production workloads with confidence:
+- **Monthly subscription starting at $1,500/month**
+- **Higher rate limits** (300+ RPM)
+- **Higher request priority** (lower latency at high traffic times)
+- **Early access** to upcoming models and API features
+- **Prioritized support** via Slack
+
+### Enterprise
+Mission-critical performance with white-glove support:
+- **Custom pricing** tailored to your usage
+- **Highest rate limits** for production workloads
+- **Lowest latency** with dedicated queue priority
+- **Extended context length** support
+- **Dedicated deployment** options
+- **Model fine-tuning** and training services available
+- **Dedicated support team** with response time guarantees
+
+For Enterprise pricing, [contact Cerebras sales](https://www.cerebras.ai/build-with-us).
+
+## Key Features
+
+- **Ultra-fast inference**: Up to 2,600 tokens per second
+- **Latest models**: Access to Llama 4, Qwen 3, and other cutting-edge models
+- **High throughput**: Optimized for production workloads
+- **Competitive pricing**: Cost-effective for both development and production use
+- **Multiple access methods**: Direct API, Hugging Face, and OpenRouter integration
+
+## Getting Started
+
+1. Sign up for a Cerebras account at [cloud.cerebras.ai](https://cloud.cerebras.ai/)
+2. Get your API key from the Cerebras dashboard
+3. Configure OpenHands with your Cerebras API key and chosen model
+4. Start building with ultra-fast AI inference!
+
+For more detailed information about Cerebras models and capabilities, visit the [Cerebras documentation](https://inference-docs.cerebras.ai/api-reference/chat-completions).
