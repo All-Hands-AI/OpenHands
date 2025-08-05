@@ -18,9 +18,9 @@ class MultimodalRouter(BaseRouter):
     ):
         super().__init__(llm, model_routing_config)
 
-        self._validate_model_routing_config(self.routing_llms)
+        self._validate_model_routing_config(self.llms_for_routing)
 
-        self.secondary_llm = self.routing_llms[self.SECONDARY_MODEL_CONFIG_NAME]
+        self.secondary_llm = self.llms_for_routing[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
@@ -59,8 +59,8 @@ class MultimodalRouter(BaseRouter):
         else:
             self.active_llm = self.secondary_llm
 
-    def _validate_model_routing_config(self, routing_llms: dict[str, LLM]):
-        if self.SECONDARY_MODEL_CONFIG_NAME not in routing_llms:
+    def _validate_model_routing_config(self, llms_for_routing: dict[str, LLM]):
+        if self.SECONDARY_MODEL_CONFIG_NAME not in llms_for_routing:
             raise ValueError(
                 f'Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found'
             )

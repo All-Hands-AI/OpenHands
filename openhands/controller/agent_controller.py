@@ -816,8 +816,8 @@ class AgentController:
                 if hasattr(self.agent, 'router'):
                     # Primary LLM
                     llm_metrics_before['primary'] = self.agent.router.llm.metrics.copy()
-                    # All routing LLMs
-                    for llm_name, llm in self.agent.router.routing_llms.items():
+                    # All LLMs for routing
+                    for llm_name, llm in self.agent.router.llms_for_routing.items():
                         llm_metrics_before[llm_name] = llm.metrics.copy()
 
                 action = self.agent.step(self.state)
@@ -837,7 +837,7 @@ class AgentController:
                         baseline_metrics = llm_metrics_before['primary']
                     else:
                         # A routing LLM was used - find which one
-                        for llm_name, llm in self.agent.router.routing_llms.items():
+                        for llm_name, llm in self.agent.router.llms_for_routing.items():
                             if llm == used_llm:
                                 baseline_metrics = llm_metrics_before[llm_name]
                                 break

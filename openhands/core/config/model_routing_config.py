@@ -8,11 +8,11 @@ class ModelRoutingConfig(BaseModel):
 
     Attributes:
         router_name (str): The name of the router to use. Default is 'noop_router'.
-        routing_llms (dict[str, LLMConfig]): A dictionary mapping LLM routing config names to their configurations.
+        llms_for_routing (dict[str, LLMConfig]): A dictionary mapping config names of LLMs for routing to their configurations.
     """
 
     router_name: str = Field(default='noop_router')
-    routing_llms: dict[str, LLMConfig] = Field(default_factory=dict)
+    llms_for_routing: dict[str, LLMConfig] = Field(default_factory=dict)
 
     model_config = {'extra': 'forbid'}
 

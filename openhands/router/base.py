@@ -17,11 +17,11 @@ class BaseRouter(ABC):
         self.llm = llm
         self.model_routing_config = model_routing_config
 
-        # Instantiate all the routing LLM instances
-        routing_llms_config = model_routing_config.routing_llms
-        self.routing_llms = {
+        # Instantiate all the LLM instances for routing
+        llms_for_routing_config = model_routing_config.llms_for_routing
+        self.llms_for_routing = {
             llm_name: LLM(config=llm_config)
-            for llm_name, llm_config in routing_llms_config.items()
+            for llm_name, llm_config in llms_for_routing_config.items()
         }
 
         # The active LLM for the current turn
