@@ -366,17 +366,17 @@ describe("Form submission", () => {
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
-    screen.getByTestId("llm-settings-form-advanced");
+    await screen.findByTestId("llm-settings-form-advanced");
 
-    const submitButton = screen.getByTestId("submit-button");
+    const submitButton = await screen.findByTestId("submit-button");
     expect(submitButton).toBeDisabled();
 
-    const model = screen.getByTestId("llm-custom-model-input");
-    const baseUrl = screen.getByTestId("base-url-input");
-    const apiKey = screen.getByTestId("llm-api-key-input");
-    const agent = screen.getByTestId("agent-input");
-    const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
-    const condensor = screen.getByTestId("enable-memory-condenser-switch");
+    const model = await screen.findByTestId("llm-custom-model-input");
+    const baseUrl = await screen.findByTestId("base-url-input");
+    const apiKey = await screen.findByTestId("llm-api-key-input");
+    const agent = await screen.findByTestId("agent-input");
+    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
+    const condensor = await screen.findByTestId("enable-memory-condenser-switch");
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -449,7 +449,7 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
 
     // select security analyzer
-    const securityAnalyzer = screen.getByTestId("security-analyzer-input");
+    const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
     const securityAnalyzerOption = screen.getByText("mock-invariant");
     await userEvent.click(securityAnalyzerOption);
