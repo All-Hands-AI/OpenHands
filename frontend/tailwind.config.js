@@ -1,6 +1,8 @@
 /** @type {import('tailwindcss').Config} */
-import { heroui } from "@heroui/react";
+// Remove unused import
 import typography from "@tailwindcss/typography";
+
+
 export default {
   theme: {
     extend: {

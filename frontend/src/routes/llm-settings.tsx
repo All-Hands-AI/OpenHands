@@ -332,8 +332,6 @@ function LlmSettingsScreen() {
                 }
               />
 
-
-
               <SettingsInput
                 testId="search-api-key-input"
                 name="search-api-key-input"
@@ -395,7 +393,6 @@ function LlmSettingsScreen() {
                 className="w-full max-w-[680px]"
                 onChange={handleBaseUrlIsDirty}
               />
-
               <SettingsInput
                 testId="llm-api-key-input"
                 name="llm-api-key-input"
@@ -410,7 +407,6 @@ function LlmSettingsScreen() {
                   )
                 }
               />
-
 
               <SettingsInput
                 testId="search-api-key-input"
