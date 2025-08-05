@@ -142,6 +142,7 @@ class AgentSession:
             if self.runtime and runtime_connected and selected_repository:
                 repo_directory = selected_repository.split('/')[-1]
 
+            provider_handler = None
             if git_provider_tokens:
                 provider_handler = ProviderHandler(provider_tokens=git_provider_tokens)
                 await provider_handler.set_event_stream_secrets(self.event_stream)
@@ -156,6 +157,7 @@ class AgentSession:
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
                 working_dir=config.workspace_mount_path_in_sandbox,
+                provider_handler=provider_handler,
             )
 
             # NOTE: this needs to happen before controller is created
@@ -468,6 +470,7 @@ class AgentSession:
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
+        provider_handler: ProviderHandler | None = None,
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -490,12 +493,21 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                # Construct repository URL from repository name (assumes GitHub format)
-                repo_url = (
-                    f'https://github.com/{selected_repository}'
-                    if '/' in selected_repository
-                    else None
-                )
+                # Construct repository URL using provider information
+                repo_url = None
+                if provider_handler and '/' in selected_repository:
+                    try:
+                        repository = await provider_handler.verify_repo_provider(selected_repository)
+                        provider = repository.git_provider
+                        domain = provider_handler.PROVIDER_DOMAINS[provider]
+                        repo_url = f'https://{domain}/{selected_repository}'
+                    except Exception:
+                        # Fallback to GitHub if provider verification fails
+                        repo_url = f'https://github.com/{selected_repository}'
+                elif '/' in selected_repository:
+                    # Fallback to GitHub if no provider handler
+                    repo_url = f'https://github.com/{selected_repository}'
+                
                 memory.set_repository_info(
                     selected_repository, repo_directory, repo_url, selected_branch
                 )
