@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 # API base URL
 BASE_URL="https://runtime.eval.all-hands.dev"
 

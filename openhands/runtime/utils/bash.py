@@ -485,6 +485,7 @@ class BashSession:
             raise RuntimeError('Bash session is not initialized')
 
         # Strip the command of any leading/trailing whitespace
+        logger.debug(f'CURRENT PANE CONTENT: {self._get_pane_content()}')
         logger.debug(f'RECEIVED ACTION: {action}')
         command = action.command.strip()
         is_input: bool = action.is_input

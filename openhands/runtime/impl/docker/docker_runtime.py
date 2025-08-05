@@ -1,5 +1,6 @@
 import os
 import socket
+import time
 import typing
 from functools import lru_cache
 from typing import Callable
@@ -24,7 +25,6 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.impl.docker.containers import stop_all_containers
-from openhands.runtime.impl.docker.docker_lifecycle_lock import docker_lifecycle_lock
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
@@ -402,10 +402,12 @@ class DockerRuntime(ActionExecutionClient):
         else:
             device_requests = None
 
-        # Acquire the Docker lifecycle lock to prevent race conditions during container startup
-        with docker_lifecycle_lock.acquire(
-            timeout=60.0, operation=f"start_container_{self.container_name}"
-        ):
+        # Begin lifecycle operation - wait for active requests to complete
+        if not self._begin_lifecycle_operation(timeout=self.config.sandbox.timeout):
+            raise RuntimeError('Timeout waiting for active requests to complete before container startup')
+
+        try:
+            # Acquire the Docker lifecycle lock to prevent race conditions during container startup
             try:
                 if self.runtime_container_image is None:
                     raise ValueError('Runtime container image is not set')
@@ -426,6 +428,8 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 self.log('debug', f'Container started. Server url: {self.api_url}')
                 self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
+                # Allow more time for Docker networking and iptables to stabilize
+                time.sleep(8)
             except Exception as e:
                 self.log(
                     'error',
@@ -433,6 +437,9 @@ class DockerRuntime(ActionExecutionClient):
                 )
                 self.close()
                 raise e
+        finally:
+            # End lifecycle operation - allow new requests
+            self._end_lifecycle_operation()
 
     def _attach_to_container(self) -> None:
         self.container = self.docker_client.containers.get(self.container_name)
@@ -465,10 +472,10 @@ class DockerRuntime(ActionExecutionClient):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
+        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),  # Increased timeout
         retry=tenacity.retry_if_exception(_is_retryablewait_until_alive_error),
         reraise=True,
-        wait=tenacity.wait_fixed(2),
+        wait=tenacity.wait_exponential(multiplier=1, min=1, max=10),  # Exponential backoff
     )
     def wait_until_alive(self) -> None:
         try:
@@ -482,6 +489,8 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container {self.container_name} not found.'
             )
 
+        # Add small delay to allow Docker networking to stabilize
+        time.sleep(0.5)
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None) -> None:
@@ -500,15 +509,24 @@ class DockerRuntime(ActionExecutionClient):
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
 
-        # Acquire the Docker lifecycle lock to prevent race conditions during container shutdown
-        close_prefix = (
-            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-        )
-        with docker_lifecycle_lock.acquire(
-            timeout=30.0, operation=f"stop_containers_{close_prefix}"
-        ):
+        # Begin lifecycle operation - wait for active requests to complete
+        if not self._begin_lifecycle_operation(timeout=self.config.sandbox.timeout):
+            logger.warning('Timeout waiting for active requests to complete before container shutdown, proceeding anyway')
+
+        try:
+            # Acquire the Docker lifecycle lock to prevent race conditions during container shutdown
+            close_prefix = (
+                CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
+            )
+
             stop_all_containers(close_prefix)
             self._release_port_locks()
+            # Give Docker more time to clean up iptables rules and port forwarding
+            # This helps prevent connection refused errors for other containers
+            time.sleep(10)
+        finally:
+            # End lifecycle operation - allow new requests
+            self._end_lifecycle_operation()
 
     def _release_port_locks(self) -> None:
         """Release all acquired port locks."""

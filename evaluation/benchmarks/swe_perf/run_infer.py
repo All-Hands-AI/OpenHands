@@ -148,6 +148,11 @@ def get_config(
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
+    sandbox_config.runtime_startup_env_vars.update(
+        {
+            "NO_CHANGE_TIMEOUT_SECONDS": 900,  # 15 minutes
+        }
+    )
 
     if cpu_group is not None:
         sandbox_config.docker_runtime_kwargs = {
@@ -558,15 +563,13 @@ def process_instance(
             config.sandbox.remote_runtime_resource_factor
         )
 
-        sid = None
-
         # # Uncomment the following lines if you want to use the cpu_group in the instance id
         # sid = instance.instance_id
         # if cpu_group is not None:
         #     sid += f'_{"".join([str(c) for c in cpu_group])}'
         # config.file_store_path = os.path.join(config.file_store_path, sid)
 
-        runtime = create_runtime(config, sid=sid)
+        runtime = create_runtime(config, sid=None)
         call_async_from_sync(runtime.connect)
 
         try:
@@ -832,7 +835,7 @@ if __name__ == '__main__':
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough
-            max_retries=5,
+            max_retries=0,
         )
     else:
         critic = AgentFinishedCritic()
@@ -881,7 +884,7 @@ if __name__ == '__main__':
                 timeout_seconds=8
                 * 60
                 * 60,  # 8 hour PER instance should be more than enough
-                max_retries=5,
+                max_retries=0,
             )
 
             # When eval is done, we update eval_ids to the instances that failed the current attempt

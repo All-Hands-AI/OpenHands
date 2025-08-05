@@ -1,6 +1,8 @@
 import os
 import tempfile
-import threading
+import time
+import fcntl
+import json
 from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
@@ -42,7 +44,6 @@ from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.docker.docker_lifecycle_lock import docker_lifecycle_lock
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
 from openhands.runtime.utils.system_stats import update_last_execution_time
@@ -50,9 +51,143 @@ from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 
+# Global coordination directory for tracking active requests across all worker processes
+_COORDINATION_DIR = None
+
+
+def _get_coordination_dir():
+    """Get or create the coordination directory."""
+    global _COORDINATION_DIR
+    if _COORDINATION_DIR is None:
+        _COORDINATION_DIR = Path(tempfile.gettempdir()) / "openhands_request_coordination"
+        _COORDINATION_DIR.mkdir(exist_ok=True)
+    return _COORDINATION_DIR
+
+
+class FileBasedRequestCoordinator:
+    """File-based coordination system for tracking active requests and lifecycle operations."""
+
+    def __init__(self):
+        self.coord_dir = _get_coordination_dir()
+        self.active_requests_file = self.coord_dir / "active_requests.json"
+        self.lifecycle_lock_file = self.coord_dir / "lifecycle.lock"
+
+        # Initialize active requests file if it doesn't exist
+        if not self.active_requests_file.exists():
+            self._write_active_requests(0)
+
+    def _write_active_requests(self, count: int):
+        """Write the active request count to file."""
+        with open(self.active_requests_file, 'w') as f:
+            json.dump({'count': count}, f)
+
+    def _read_active_requests(self) -> int:
+        """Read the active request count from file."""
+        try:
+            with open(self.active_requests_file, 'r') as f:
+                data = json.load(f)
+                return data.get('count', 0)
+        except (FileNotFoundError, json.JSONDecodeError):
+            return 0
+
+    def increment_requests(self):
+        """Atomically increment the active request count."""
+        # Ensure file exists
+        if not self.active_requests_file.exists():
+            self._write_active_requests(0)
+
+        with open(self.active_requests_file, 'r+') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                f.seek(0)
+                data = json.load(f)
+                count = data.get('count', 0)
+            except json.JSONDecodeError:
+                count = 0
+
+            count += 1
+            f.seek(0)
+            json.dump({'count': count}, f)
+            f.truncate()
+
+    def decrement_requests(self):
+        """Atomically decrement the active request count."""
+        # Ensure file exists
+        if not self.active_requests_file.exists():
+            self._write_active_requests(0)
+
+        with open(self.active_requests_file, 'r+') as f:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+            try:
+                f.seek(0)
+                data = json.load(f)
+                count = data.get('count', 0)
+            except json.JSONDecodeError:
+                count = 0
+
+            count = max(0, count - 1)
+            f.seek(0)
+            json.dump({'count': count}, f)
+            f.truncate()
+
+    def wait_for_no_active_requests(self, timeout: float = 30.0) -> bool:
+        """Wait until there are no active requests."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if self._read_active_requests() == 0:
+                return True
+            time.sleep(0.1)
+        return False
+
+    def acquire_lifecycle_lock(self, timeout: float = 30.0) -> bool:
+        """Acquire the lifecycle lock, preventing new requests."""
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            try:
+                # Try to create the lock file exclusively
+                fd = os.open(self.lifecycle_lock_file, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                os.close(fd)
+                return True
+            except FileExistsError:
+                time.sleep(0.1)
+        return False
+
+    def release_lifecycle_lock(self):
+        """Release the lifecycle lock, allowing new requests."""
+        try:
+            self.lifecycle_lock_file.unlink()
+        except FileNotFoundError:
+            pass  # Already released
+
+    def is_lifecycle_operation_active(self) -> bool:
+        """Check if a lifecycle operation is currently active."""
+        return self.lifecycle_lock_file.exists()
+
+
+# Global coordinator instance
+_coordinator = None
+
+
+def _get_coordinator():
+    """Get or create the global coordinator."""
+    global _coordinator
+    if _coordinator is None:
+        _coordinator = FileBasedRequestCoordinator()
+    return _coordinator
+
+
 def _is_retryable_error(exception):
     return isinstance(
-        exception, (httpx.ReadError, httpcore.ReadError, httpx.RemoteProtocolError, httpcore.RemoteProtocolError)
+        exception, (
+            httpx.ReadError,
+            httpcore.ReadError,
+            httpx.RemoteProtocolError,
+            httpcore.RemoteProtocolError,
+            httpx.ConnectError,
+            httpcore.ConnectError,
+            ConnectionError,
+            OSError  # Covers errno 111 (Connection refused)
+        )
     )
 
 
@@ -77,10 +212,13 @@ class ActionExecutionClient(Runtime):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.session = HttpSession()
-        self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
+
+        # Get file-based coordinator for request tracking across processes
+        self._coordinator = _get_coordinator()
+
         super().__init__(
             config,
             event_stream,
@@ -100,8 +238,8 @@ class ActionExecutionClient(Runtime):
 
     @retry(
         retry=retry_if_exception(_is_retryable_error),
-        stop=stop_after_attempt(5) | stop_if_should_exit(),
-        wait=wait_exponential(multiplier=1, min=4, max=15),
+        stop=stop_after_attempt(8) | stop_if_should_exit(),
+        wait=wait_exponential(multiplier=1, min=2, max=30),
     )
     def _send_action_server_request(
         self,
@@ -122,15 +260,19 @@ class ActionExecutionClient(Runtime):
         Raises:
             AgentRuntimeError: If the request fails
         """
-        # Acquire the Docker lifecycle lock to prevent race conditions during container operations
-        with docker_lifecycle_lock.acquire(timeout=30.0, operation=f"{method} {url}"):
+        # For regular HTTP requests to containers, we don't need the Docker lifecycle lock
+        # since we're just making HTTP calls to running containers. We only track the request.
+        self._acquire_request_slot()
+        try:
             return send_request(self.session, method, url, **kwargs)
+        finally:
+            self._release_request_slot()
 
     def check_if_alive(self) -> None:
         response = self._send_action_server_request(
             'GET',
             f'{self.action_execution_server_url}/alive',
-            timeout=5,
+            timeout=10,  # Increased timeout for more robustness
         )
         assert response.is_closed
 
@@ -282,57 +424,59 @@ class ActionExecutionClient(Runtime):
             # We don't block the command if this is a default timeout action
             action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
-        with self.action_semaphore:
-            if not action.runnable:
-                if isinstance(action, AgentThinkAction):
-                    return AgentThinkObservation('Your thought has been logged.')
-                return NullObservation('')
-            if (
-                hasattr(action, 'confirmation_state')
-                and action.confirmation_state
-                == ActionConfirmationStatus.AWAITING_CONFIRMATION
-            ):
-                return NullObservation('')
-            action_type = action.action  # type: ignore[attr-defined]
-            if action_type not in ACTION_TYPE_TO_CLASS:
-                raise ValueError(f'Action {action_type} does not exist.')
-            if not hasattr(self, action_type):
-                return ErrorObservation(
-                    f'Action {action_type} is not supported in the current runtime.',
-                    error_id='AGENT_ERROR$BAD_ACTION',
-                )
-            if (
-                getattr(action, 'confirmation_state', None)
-                == ActionConfirmationStatus.REJECTED
-            ):
-                return UserRejectObservation(
-                    'Action has been rejected by the user! Waiting for further user input.'
-                )
+        # Requests can now be concurrent - no semaphore needed
+        # Request tracking is handled in _send_action_server_request
+        if not action.runnable:
+            if isinstance(action, AgentThinkAction):
+                return AgentThinkObservation('Your thought has been logged.')
+            return NullObservation('')
+        if (
+            hasattr(action, 'confirmation_state')
+            and action.confirmation_state
+            == ActionConfirmationStatus.AWAITING_CONFIRMATION
+        ):
+            return NullObservation('')
+        action_type = action.action  # type: ignore[attr-defined]
+        if action_type not in ACTION_TYPE_TO_CLASS:
+            raise ValueError(f'Action {action_type} does not exist.')
+        if not hasattr(self, action_type):
+            return ErrorObservation(
+                f'Action {action_type} is not supported in the current runtime.',
+                error_id='AGENT_ERROR$BAD_ACTION',
+            )
+        if (
+            getattr(action, 'confirmation_state', None)
+            == ActionConfirmationStatus.REJECTED
+        ):
+            return UserRejectObservation(
+                'Action has been rejected by the user! Waiting for further user input.'
+            )
 
-            assert action.timeout is not None
+        assert action.timeout is not None
 
-            try:
-                execution_action_body: dict[str, Any] = {
-                    'action': event_to_dict(action),
-                }
-                response = self._send_action_server_request(
-                    'POST',
-                    f'{self.action_execution_server_url}/execute_action',
-                    json=execution_action_body,
-                    # wait a few more seconds to get the timeout error from client side
-                    timeout=action.timeout + 5,
-                )
-                assert response.is_closed
-                output = response.json()
-                obs = observation_from_dict(output)
-                obs._cause = action.id  # type: ignore[attr-defined]
-            except httpx.TimeoutException:
-                raise AgentRuntimeTimeoutError(
-                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-                )
-            finally:
-                update_last_execution_time()
-            return obs
+        # Pre-validate runtime health before executing action
+        try:
+            execution_action_body: dict[str, Any] = {
+                'action': event_to_dict(action),
+            }
+            response = self._send_action_server_request(
+                'POST',
+                f'{self.action_execution_server_url}/execute_action',
+                json=execution_action_body,
+                # wait a few more seconds to get the timeout error from client side
+                timeout=action.timeout + 5,
+            )
+            assert response.is_closed
+            output = response.json()
+            obs = observation_from_dict(output)
+            obs._cause = action.id  # type: ignore[attr-defined]
+        except httpx.TimeoutException:
+            raise AgentRuntimeTimeoutError(
+                f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+            )
+        finally:
+            update_last_execution_time()
+        return obs
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.send_action_for_execution(action)
@@ -476,6 +620,50 @@ class ActionExecutionClient(Runtime):
         # No need for try/finally since disconnect() is now just resetting state
         result = await call_tool_mcp_handler(mcp_clients, action)
         return result
+
+    def _acquire_request_slot(self) -> None:
+        """Acquire a request slot, waiting if a lifecycle operation is in progress."""
+        # Wait for any lifecycle operation to complete
+        start_time = time.time()
+        while self._coordinator.is_lifecycle_operation_active():
+            if time.time() - start_time > 30.0:  # 30 second timeout
+                raise RuntimeError("Timeout waiting for lifecycle operation to complete")
+            time.sleep(0.1)
+
+        # Increment active request count
+        self._coordinator.increment_requests()
+
+    def _release_request_slot(self) -> None:
+        """Release a request slot."""
+        self._coordinator.decrement_requests()
+
+    def _wait_for_active_requests(self, timeout: float = 30.0) -> bool:
+        """Wait for all active requests to complete.
+
+        Returns True if all requests completed, False if timeout occurred.
+        """
+        return self._coordinator.wait_for_no_active_requests(timeout)
+
+    def _begin_lifecycle_operation(self, timeout: float = 30.0) -> bool:
+        """Begin a lifecycle operation, blocking new requests and waiting for active ones.
+
+        Returns True if operation can proceed, False if timeout occurred.
+        """
+        # Try to acquire the lifecycle lock
+        if not self._coordinator.acquire_lifecycle_lock(timeout):
+            return False
+
+        # Wait for active requests to complete
+        if self._wait_for_active_requests(timeout):
+            return True
+        else:
+            # Timeout occurred, release the lock
+            self._coordinator.release_lifecycle_lock()
+            return False
+
+    def _end_lifecycle_operation(self) -> None:
+        """End a lifecycle operation, allowing new requests."""
+        self._coordinator.release_lifecycle_lock()
 
     def close(self) -> None:
         # Make sure we don't close the session multiple times

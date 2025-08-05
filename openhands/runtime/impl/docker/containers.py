@@ -1,7 +1,5 @@
 import docker
 
-from openhands.runtime.impl.docker.docker_lifecycle_lock import docker_lifecycle_lock
-
 
 def stop_all_containers(prefix: str) -> None:
     """Stop all containers with the given prefix.

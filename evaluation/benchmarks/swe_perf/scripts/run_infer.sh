@@ -101,6 +101,10 @@ if [ -n "$EVAL_CONDENSER" ]; then
   EVAL_NOTE="${EVAL_NOTE}-${EVAL_CONDENSER}"
 fi
 
+# export RUNTIME="remote"
+# export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
+export NO_CHANGE_TIMEOUT_SECONDS=900 # 15 minutes
+
 function run_eval() {
   local eval_note="${1}"
   COMMAND="poetry run python evaluation/benchmarks/swe_perf/run_infer.py \
@@ -121,10 +125,6 @@ function run_eval() {
   # Run the command
   eval $COMMAND
 }
-
-# export RUNTIME="remote"
-# export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
-export NO_CHANGE_TIMEOUT_SECONDS=900 # 15 minutes
 
 unset SANDBOX_ENV_GITHUB_TOKEN # prevent the agent from using the github token to push
 if [ -z "$N_RUNS" ]; then
