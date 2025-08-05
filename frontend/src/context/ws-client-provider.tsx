@@ -319,9 +319,9 @@ export function WsClientProvider({
 
     let baseUrl = null;
     if (conversation.url && !conversation.url.startsWith("/")) {
-      baseUrl = new URL(conversation.url).host;
+      baseUrl = new URL(conversation.url).orgin;
     } else {
-      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.orgin;
     }
 
     sio = io(baseUrl, {
