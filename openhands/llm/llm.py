@@ -199,19 +199,21 @@ class LLM(RetryMixin, DebugMixin):
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
                 logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
+                    f'Applying custom generation config for {self.config.model}'
                 )
-                if self.config.reasoning_effort in {None, 'low', 'none'}:
-                    kwargs['thinking'] = {'budget_tokens': 128}
-                    kwargs['allowed_openai_params'] = ['thinking']
-                    kwargs.pop('reasoning_effort', None)
-                else:
-                    kwargs['reasoning_effort'] = self.config.reasoning_effort
-                logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
-                )
-                kwargs['top_p'] = 1
-                # kwargs['temperature'] = 0
+                kwargs['generationConfig'] = {
+                    'temperature': 0,
+                    'topP': 1,
+                    'thinkingConfig': {'includeThoughts': True},
+                }
+                # These are now inside generationConfig, so remove them from top-level
+                kwargs.pop('temperature', None)
+                kwargs.pop('top_p', None)
+                # This is now inside thinkingConfig, so remove it from top-level
+                kwargs.pop('reasoning_effort', None)
+                # remove other related params that are no longer needed
+                kwargs.pop('thinking', None)
+                kwargs.pop('allowed_openai_params', None)
 
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
