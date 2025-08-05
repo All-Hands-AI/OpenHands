@@ -168,7 +168,7 @@ def test_empty_reasoning_content():
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
     assert actions[0].content == 'Regular response'
-    
+
     # Manually set reasoning_content for testing
     actions[0].reasoning_content = None
     assert hasattr(actions[0], 'reasoning_content')
@@ -183,7 +183,7 @@ def test_empty_reasoning_content():
     assert len(actions) == 1
     assert isinstance(actions[0], MessageAction)
     assert actions[0].content == 'Regular response'
-    
+
     # Manually set reasoning_content for testing
     actions[0].reasoning_content = None
     assert hasattr(actions[0], 'reasoning_content')
