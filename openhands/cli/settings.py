@@ -334,13 +334,6 @@ async def modify_llm_settings_basic(
                 # Use the default model
                 model = default_model
 
-        if provider == 'openhands':
-            print_formatted_text(
-                HTML(
-                    '\nYou can find your OpenHands LLM API Key in the <a href="https://app.all-hands.dev/settings/api-keys">API Keys</a> tab of OpenHands Cloud: https://app.all-hands.dev/settings/api-keys'
-                )
-            )
-
         api_key = await get_validated_input(
             session,
             '(Step 3/3) Enter API Key (CTRL-c to cancel): ',

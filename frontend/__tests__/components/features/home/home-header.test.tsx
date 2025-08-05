@@ -20,7 +20,7 @@ vi.mock("react-i18next", async () => {
           HOME$LETS_START_BUILDING: "Make Cool Shit!",
           HOME$LAUNCH_FROM_SCRATCH: "Launch from Scratch",
           HOME$LOADING: "Loading...",
-          HOME$MojoCode_DESCRIPTION: "OpenHands is an AI software engineer",
+          HOME$OPENHANDS_DESCRIPTION: "OpenHands is an AI software engineer",
           HOME$NOT_SURE_HOW_TO_START: "Not sure how to start?",
           HOME$READ_THIS: "Read this",
         };
