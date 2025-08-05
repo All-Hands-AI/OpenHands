@@ -10,42 +10,6 @@ Model Context Protocol (MCP) is a mechanism that allows OpenHands to communicate
 servers can provide additional functionality to the agent, such as specialized data processing, external API access,
 or custom tools. MCP is based on the open standard defined at [modelcontextprotocol.io](https://modelcontextprotocol.io).
 
-<<<<<<< HEAD
-=======
-
->>>>>>> origin/main
-<Note>
-MCP is currently not available on OpenHands Cloud. This feature is only available when running OpenHands locally.
-</Note>
-
-### How MCP Works
-
-When OpenHands starts, it:
-
-1. Reads the MCP configuration.
-2. Connects to any configured SSE and SHTTP servers.
-3. Starts any configured stdio servers.
-4. Registers the tools provided by these servers with the agent.
-
-The agent can then use these tools just like any built-in tool. When the agent calls an MCP tool:
-
-1. OpenHands routes the call to the appropriate MCP server.
-2. The server processes the request and returns a response.
-3. OpenHands converts the response to an observation and presents it to the agent.
-
-## Configuration
-
-MCP configuration can be defined in:
-* The OpenHands UI through the Settings under the `MCP` tab.
-* The `config.toml` file under the `[mcp]` section if not using the UI.
-
-<<<<<<< HEAD
-### Configuration Example via config.toml
-
-```toml
-[mcp]
-# SSE Servers - External servers that communicate via Server-Sent Events
-=======
 ### Configuration Examples
 
 #### Recommended: Using Proxy Servers (SSE/HTTP)
@@ -67,27 +31,10 @@ Then configure OpenHands to use the HTTP endpoint:
 ```toml
 [mcp]
 # SSE Servers - Recommended approach using proxy tools
->>>>>>> origin/main
 sse_servers = [
     # Basic SSE server with just a URL
     "http://example.com:8080/mcp",
 
-<<<<<<< HEAD
-    # SSE server with API key authentication
-    {url="https://secure-example.com/mcp", api_key="your-api-key"}
-]
-
-# SHTTP Servers - External servers that communicate via Streamable HTTP
-shttp_servers = [
-    # Basic SHTTP server with just a URL
-    "http://example.com:8080/mcp",
-
-    # SHTTP server with API key authentication
-    {url="https://secure-example.com/mcp", api_key="your-api-key"}
-]
-
-# Stdio Servers - Local processes that communicate via standard input/output
-=======
     # SuperGateway proxy for fetch server
     "http://localhost:8081/sse",
 
@@ -103,27 +50,17 @@ shttp_servers = [
 ```toml
 [mcp]
 # Direct stdio servers - use only for development/testing
->>>>>>> origin/main
 stdio_servers = [
     # Basic stdio server
     {name="fetch", command="uvx", args=["mcp-server-fetch"]},
 
     # Stdio server with environment variables
     {
-<<<<<<< HEAD
-        name="data-processor",
-        command="python",
-        args=["-m", "my_mcp_server"],
-        env={
-            "DEBUG": "true",
-            "PORT": "8080"
-=======
         name="filesystem",
         command="npx",
         args=["@modelcontextprotocol/server-filesystem", "/"],
         env={
             "DEBUG": "true"
->>>>>>> origin/main
         }
     }
 ]
@@ -157,33 +94,6 @@ SHTTP (Streamable HTTP) servers are configured using either a string URL or an o
 
 ### Stdio Servers
 
-<<<<<<< HEAD
-=======
-**Note**: While stdio servers are supported, we recommend using MCP proxies (see above) for better reliability and performance.
-
->>>>>>> origin/main
-Stdio servers are configured using an object with the following properties:
-
-- `name` (required)
-  - Type: `str`
-  - Description: A unique name for the server
-
-- `command` (required)
-  - Type: `str`
-  - Description: The command to run the server
-
-- `args` (optional)
-  - Type: `list of str`
-  - Default: `[]`
-  - Description: Command-line arguments to pass to the server
-
-- `env` (optional)
-  - Type: `dict of str to str`
-  - Default: `{}`
-  - Description: Environment variables to set for the server process
-
-<<<<<<< HEAD
-=======
 
 #### When to Use Direct Stdio
 
@@ -217,7 +127,6 @@ Other options include:
 - **Health checks**: HTTP endpoints can provide health status
 - **CORS support**: Better integration with web-based tools
 
->>>>>>> origin/main
 ## Transport Protocols
 
 OpenHands supports three different MCP transport protocols:
