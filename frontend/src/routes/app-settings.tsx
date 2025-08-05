@@ -28,8 +28,6 @@ function AppSettingsScreen() {
 
   const [languageInputHasChanged, setLanguageInputHasChanged] =
     React.useState(false);
-  const [analyticsSwitchHasChanged, setAnalyticsSwitchHasChanged] =
-    React.useState(false);
   const [
     soundNotificationsSwitchHasChanged,
     setSoundNotificationsSwitchHasChanged,
@@ -48,8 +46,6 @@ function AppSettingsScreen() {
     )?.value;
     const language = languageValue || DEFAULT_SETTINGS.LANGUAGE;
 
-    const enableAnalytics =
-      formData.get("enable-analytics-switch")?.toString() === "on";
     const enableSoundNotifications =
       formData.get("enable-sound-notifications-switch")?.toString() === "on";
 
@@ -65,14 +61,14 @@ function AppSettingsScreen() {
     saveSettings(
       {
         LANGUAGE: language,
-        user_consents_to_analytics: enableAnalytics,
+        user_consents_to_analytics: false, // Permanently disabled
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
       },
       {
         onSuccess: () => {
-          handleCaptureConsent(enableAnalytics);
+          handleCaptureConsent(false); // Analytics permanently disabled
           displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
         },
         onError: (error) => {
@@ -81,7 +77,6 @@ function AppSettingsScreen() {
         },
         onSettled: () => {
           setLanguageInputHasChanged(false);
-          setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
@@ -99,11 +94,6 @@ function AppSettingsScreen() {
     )?.label;
 
     setLanguageInputHasChanged(selectedLanguage !== currentLanguage);
-  };
-
-  const checkIfAnalyticsSwitchHasChanged = (checked: boolean) => {
-    const currentAnalytics = !!settings?.USER_CONSENTS_TO_ANALYTICS;
-    setAnalyticsSwitchHasChanged(checked !== currentAnalytics);
   };
 
   const checkIfSoundNotificationsSwitchHasChanged = (checked: boolean) => {
@@ -129,7 +119,6 @@ function AppSettingsScreen() {
 
   const formIsClean =
     !languageInputHasChanged &&
-    !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged;
@@ -151,14 +140,7 @@ function AppSettingsScreen() {
             onChange={checkIfLanguageInputHasChanged}
           />
 
-          <SettingsSwitch
-            testId="enable-analytics-switch"
-            name="enable-analytics-switch"
-            defaultIsToggled={!!settings.USER_CONSENTS_TO_ANALYTICS}
-            onToggle={checkIfAnalyticsSwitchHasChanged}
-          >
-            {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
-          </SettingsSwitch>
+          {/* Analytics switch removed */}
 
           <SettingsSwitch
             testId="enable-sound-notifications-switch"
@@ -192,7 +174,7 @@ function AppSettingsScreen() {
             placeholder={t(I18nKey.SETTINGS$MAXIMUM_BUDGET_USD)}
             min={1}
             step={1}
-            className="w-full max-w-[680px]" // Match the width of the language field
+            className="w-full max-w-[680px]"
           />
         </div>
       )}
