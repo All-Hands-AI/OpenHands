@@ -8,7 +8,9 @@ from openhands.utils.import_utils import get_impl
 class ServerConfig(ServerConfigInterface):
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     app_mode = AppMode.OSS
-    posthog_client_key = 'phx_gg7pRbw7uWKoU85ntg0ucBMDOtuMyfhpbZiUHhsvzV39nwa'
+    # PostHog analytics can be disabled by setting DISABLE_POSTHOG=true
+    disable_posthog = os.environ.get('DISABLE_POSTHOG', 'false') == 'true'
+    posthog_client_key = '' if disable_posthog else 'phx_gg7pRbw7uWKoU85ntg0ucBMDOtuMyfhpbZiUHhsvzV39nwa'
     github_client_id = os.environ.get('GITHUB_APP_CLIENT_ID', 'Iv23liWu52e9tIbpJRQz')
     enable_billing = os.environ.get('ENABLE_BILLING', 'false') == 'true'
     hide_llm_settings = os.environ.get('HIDE_LLM_SETTINGS', 'false') == 'true'
