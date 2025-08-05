@@ -6,6 +6,7 @@ import svgr from "vite-plugin-svgr";
 import { reactRouter } from "@react-router/dev/vite";
 import { configDefaults } from "vitest/config";
 import tailwindcss from "@tailwindcss/vite";
+import path from "path";
 
 export default defineConfig(({ mode }) => {
   const {
@@ -31,6 +32,11 @@ export default defineConfig(({ mode }) => {
       svgr(),
       tailwindcss(),
     ],
+    resolve: {
+      alias: {
+        "#": path.resolve(__dirname, "src"),
+      },
+    },
     server: {
       port: FE_PORT,
       host: true,
