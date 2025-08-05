@@ -53,7 +53,7 @@ async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-        title='MojoCode',
+    title='MojoCode',
     description='Make Cool Shit!',
     version=__version__,
     lifespan=combine_lifespans(_lifespan, mcp_app.lifespan),
