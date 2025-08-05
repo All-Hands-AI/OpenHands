@@ -15,10 +15,11 @@ interface SettingsInputProps {
   className?: string;
   onChange?: (value: string) => void;
   required?: boolean;
-  min?: number;
-  max?: number;
-  step?: number;
+  min?: string | number;
+  max?: string | number;
+  step?: string | number;
   pattern?: string;
+  description?: string;
 }
 
 export function SettingsInput({
@@ -39,6 +40,7 @@ export function SettingsInput({
   max,
   step,
   pattern,
+  description,
 }: SettingsInputProps) {
   return (
     <label className={cn("flex flex-col gap-2.5 w-fit", className)}>
@@ -66,6 +68,9 @@ export function SettingsInput({
           "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
         )}
       />
+      {description && (
+        <span className="text-xs text-gray-400 mt-1">{description}</span>
+      )}
     </label>
   );
 }
