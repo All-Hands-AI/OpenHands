@@ -36,17 +36,6 @@ export function APIKeyInput({ isDisabled, isSet }: APIKeyInputProps) {
           inputWrapper: "bg-[#27272A] rounded-md text-sm px-3 py-[10px]",
         }}
       />
-      <p className="text-sm text-[#A3A3A3]">
-        {t(I18nKey.API$DONT_KNOW_KEY)}{" "}
-        <a
-          href="https://www.sixtyoneeighty.comll-hands.dev/usage/llms"
-          rel="noreferrer noopener"
-          target="_blank"
-          className="underline underline-offset-2"
-        >
-          {t(I18nKey.COMMON$CLICK_FOR_INSTRUCTIONS)}
-        </a>
-      </p>
     </fieldset>
   );
 }

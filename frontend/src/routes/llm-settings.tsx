@@ -332,12 +332,7 @@ function LlmSettingsScreen() {
                 }
               />
 
-              <HelpLink
-                testId="llm-api-key-help-anchor"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://www.sixtyoneeighty.comll-hands.dev/usage/local-setup#getting-an-api-key"
-              />
+
 
               <SettingsInput
                 testId="search-api-key-input"
@@ -415,12 +410,7 @@ function LlmSettingsScreen() {
                   )
                 }
               />
-              <HelpLink
-                testId="llm-api-key-help-anchor-advanced"
-                text={t(I18nKey.SETTINGS$DONT_KNOW_API_KEY)}
-                linkText={t(I18nKey.SETTINGS$CLICK_FOR_INSTRUCTIONS)}
-                href="https://www.sixtyoneeighty.comll-hands.dev/usage/local-setup#getting-an-api-key"
-              />
+
 
               <SettingsInput
                 testId="search-api-key-input"

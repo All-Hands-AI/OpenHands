@@ -848,7 +848,7 @@
         "uk": "Підтвердити зміни"
     },
     "SETTINGS$MCP_CONFIG_DESCRIPTION": {
-    "en": "Edit the JSON configuration for MCP servers below. The configuration must include both sse_servers and stdio_servers arrays. For full configuration details and integration examples, see the <a>documentation</a>.",
+    "en": "Edit the JSON configuration for MCP servers below. The configuration must include both sse_servers and stdio_servers arrays.",
     "ja": "以下のMCPサーバーのJSON設定を編集してください。設定にはsse_serversとstdio_serversの両方の配列を含める必要があります。詳細な設定と統合の例については、<a>ドキュメント</a>を参照してください。",
     "zh-CN": "在下方编辑MCP服务器的JSON配置。配置必须包含sse_servers和stdio_servers数组。有关完整的配置详情和集成示例，请参阅<a>文档</a>。",
     "zh-TW": "在下方編輯MCP服務器的JSON配置。配置必須包含sse_servers和stdio_servers數組。有關完整配置詳情與整合範例，請參閱<a>文件</a>。",
@@ -2799,7 +2799,7 @@
         "tr": "Bağımlılıkları temizle",
         "uk": "Почистити залкжності"
     },
-    "CONFIGURATION$MojoCode_WORKSPACE_DIRECTORY_INPUT_LABEL": {
+    "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_LABEL": {
         "en": "MojoCode Workspace directory",
         "zh-CN": "MojoCode工作区目录",
         "de": "MojoCode Arbeitsverzeichnis",
@@ -3295,7 +3295,7 @@
         "de": "LLM-Modell",
         "uk": "LLM модель"
     },
-    "CONFIGURATION$MojoCode_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
+    "CONFIGURATION$OPENHANDS_WORKSPACE_DIRECTORY_INPUT_PLACEHOLDER": {
         "en": "Default: ./workspace",
         "zh-CN": "输入工作区目录路径",
         "de": "Standard: ./workspace",
@@ -6191,7 +6191,7 @@
         "de": "API-Schlüssel ermöglichen es Ihnen, sich programmatisch bei der MojoCode-API zu authentifizieren. Halten Sie Ihre API-Schlüssel sicher; jeder mit Ihrem API-Schlüssel kann auf Ihr Konto zugreifen. Weitere Informationen zur Verwendung der API finden Sie in unserer <a>API-Dokumentation</a>.",
         "uk": "Ключі API дозволяють вам програмно автентифікуватися за допомогою API MojoCode. Зберігайте свої ключі API в безпеці; будь-хто, хто має ваш ключ API, може отримати доступ до вашого облікового запису. Для отримання додаткової інформації про використання API, перегляньте нашу <a>документацію API</a>."
     },
-    "SETTINGS$MojoCode_API_KEY_HELP": {
+    "SETTINGS$OPENHANDS_API_KEY_HELP": {
         "en": "You can find your MojoCode API Key in the <a>API Keys</a> tab of MojoCode Cloud.",
         "ja": "MojoCode APIキーはMojoCode Cloudの<a>APIキー</a>タブで確認できます。",
         "zh-CN": "您可以在MojoCode Cloud的<a>API密钥</a>标签页中找到您的MojoCode API密钥。",
@@ -6207,7 +6207,7 @@
         "de": "Sie finden Ihren MojoCode API-Schlüssel im Tab <a>API-Schlüssel</a> von MojoCode Cloud.",
         "uk": "Ви можете знайти свій ключ API MojoCode у вкладці <a>Ключі API</a> MojoCode Cloud."
     },
-    "SETTINGS$MojoCode_API_KEY_HELP_TEXT": {
+    "SETTINGS$OPENHANDS_API_KEY_HELP_TEXT": {
         "en": "You can find your MojoCode API Key in the",
         "ja": "MojoCode APIキーは",
         "zh-CN": "您可以在",
@@ -6223,7 +6223,7 @@
         "de": "Sie finden Ihren MojoCode API-Schlüssel im",
         "uk": "Ви можете знайти свій ключ API MojoCode у"
     },
-    "SETTINGS$MojoCode_API_KEY_HELP_SUFFIX": {
+    "SETTINGS$OPENHANDS_API_KEY_HELP_SUFFIX": {
         "en": "tab of MojoCode Cloud. LLM usage is billed at the providers' rates with no markup. Details: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
         "ja": "タブで確認できます。LLMの使用料金は、プロバイダーの料金でマークアップなしで請求されます。詳細: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
         "zh-CN": "标签页中找到您的MojoCode API密钥。LLM使用费用按提供商费率计费，无加价。详情: https://www.sixtyoneeighty.comll-hands.dev/usage/llms/MojoCode-llms",
@@ -9471,7 +9471,7 @@
         "tr": "Ajan Sınıfı:",
         "uk": "Клас агента:"
     },
-    "SYSTEM_MESSAGE_MODAL$MojoCode_VERSION": {
+    "SYSTEM_MESSAGE_MODAL$OPENHANDS_VERSION": {
         "en": "MojoCode Version:",
         "zh-CN": "MojoCode 版本：",
         "zh-TW": "MojoCode 版本：",
@@ -10799,7 +10799,7 @@
         "de": "Git-Anbieter verbinden, um Geheimnisse zu verwalten",
         "uk": "Підключити провайдера Git для управління секретами"
     },
-    "SETTINGS$MojoCode_API_KEYS": {
+    "SETTINGS$OPENHANDS_API_KEYS": {
         "en": "MojoCode API Keys",
         "ja": "MojoCode APIキー",
         "zh-CN": "MojoCode API密钥",
@@ -11199,7 +11199,7 @@
         "de": "Bereit, einen Microagent hinzuzufügen?",
         "uk": "Готові додати мікроагента?"
     },
-    "MICROAGENT_MANAGEMENT$MojoCode_CAN_LEARN_ABOUT_REPOSITORIES": {
+    "MICROAGENT_MANAGEMENT$OPENHANDS_CAN_LEARN_ABOUT_REPOSITORIES": {
         "en": "MojoCode can automatically learn about your repositories and store its findings as markdown in a microagent. The microagent will help MojoCode run faster and more accurately in any future conversations.",
         "ja": "MojoCodeはあなたのリポジトリについて自動的に学習し、その結果をマイクロエージェント内のMarkdownとして保存できます。マイクロエージェントは今後の会話でMojoCodeがより速く、より正確に動作するのに役立ちます。",
         "zh-CN": "MojoCode 可以自动学习您的仓库，并将其发现以 markdown 形式存储在微代理中。微代理将帮助 MojoCode 在未来的对话中运行得更快、更准确。",
