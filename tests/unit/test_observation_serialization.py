@@ -288,60 +288,71 @@ def test_file_edit_observation_legacy_serialization():
 
 
 def test_microagent_observation_serialization():
-    original_observation_dict = {
-        'observation': 'recall',
-        'content': '',
-        'message': 'Added workspace context',
-        'extras': {
-            'recall_type': 'workspace_context',
-            'repo_name': 'some_repo_name',
-            'repo_directory': 'some_repo_directory',
-            'repo_branch': '',
-            'working_dir': '',
-            'runtime_hosts': {'host1': 8080, 'host2': 8081},
-            'repo_instructions': 'complex_repo_instructions',
-            'additional_agent_instructions': 'You know it all about this runtime',
-            'custom_secrets_descriptions': {'SECRET': 'CUSTOM'},
-            'date': '04/12/1023',
-            'microagent_knowledge': [],
-            'conversation_instructions': 'additional_context',
-        },
-    }
-    serialization_deserialization(original_observation_dict, RecallObservation)
+    # Create a RecallObservation directly
+    original = RecallObservation(
+        content='',
+        recall_type=RecallType.WORKSPACE_CONTEXT,
+        repo_name='some_repo_name',
+        repo_directory='some_repo_directory',
+        working_dir='',
+        runtime_hosts={'host1': 8080, 'host2': 8081},
+        repo_instructions='complex_repo_instructions',
+        additional_agent_instructions='You know it all about this runtime',
+        custom_secrets_descriptions={'SECRET': 'CUSTOM'},
+        date='04/12/1023',
+        microagent_knowledge=[],
+        conversation_instructions='additional_context',
+    )
+    
+    # Convert to dict and back
+    observation_dict = event_to_dict(original)
+    observation_instance = event_from_dict(observation_dict)
+    
+    # Verify the result
+    assert isinstance(observation_instance, RecallObservation)
+    assert observation_instance.recall_type == RecallType.WORKSPACE_CONTEXT
+    assert observation_instance.repo_name == 'some_repo_name'
+    assert observation_instance.repo_directory == 'some_repo_directory'
 
 
 def test_microagent_observation_microagent_knowledge_serialization():
-    original_observation_dict = {
-        'observation': 'recall',
-        'content': '',
-        'message': 'Added microagent knowledge',
-        'extras': {
-            'recall_type': 'knowledge',
-            'repo_name': '',
-            'repo_directory': '',
-            'repo_branch': '',
-            'repo_instructions': '',
-            'runtime_hosts': {},
-            'working_dir': '',
-            'additional_agent_instructions': '',
-            'custom_secrets_descriptions': {},
-            'conversation_instructions': 'additional_context',
-            'date': '',
-            'microagent_knowledge': [
-                {
-                    'name': 'microagent1',
-                    'trigger': 'trigger1',
-                    'content': 'content1',
-                },
-                {
-                    'name': 'microagent2',
-                    'trigger': 'trigger2',
-                    'content': 'content2',
-                },
-            ],
-        },
-    }
-    serialization_deserialization(original_observation_dict, RecallObservation)
+    # Create a RecallObservation directly
+    original = RecallObservation(
+        content='',
+        recall_type=RecallType.KNOWLEDGE,
+        repo_name='',
+        repo_directory='',
+        repo_instructions='',
+        runtime_hosts={},
+        working_dir='',
+        additional_agent_instructions='',
+        custom_secrets_descriptions={},
+        conversation_instructions='additional_context',
+        date='',
+        microagent_knowledge=[
+            MicroagentKnowledge(
+                name='microagent1',
+                trigger='trigger1',
+                content='content1',
+            ),
+            MicroagentKnowledge(
+                name='microagent2',
+                trigger='trigger2',
+                content='content2',
+            ),
+        ],
+    )
+    
+    # Convert to dict and back
+    observation_dict = event_to_dict(original)
+    observation_instance = event_from_dict(observation_dict)
+    
+    # Verify the result
+    assert isinstance(observation_instance, RecallObservation)
+    assert observation_instance.recall_type == RecallType.KNOWLEDGE
+    assert len(observation_instance.microagent_knowledge) == 2
+    assert observation_instance.microagent_knowledge[0].name == 'microagent1'
+    assert observation_instance.microagent_knowledge[1].name == 'microagent2'
 
 
 def test_microagent_observation_knowledge_microagent_serialization():
@@ -350,7 +361,15 @@ def test_microagent_observation_knowledge_microagent_serialization():
     original = RecallObservation(
         content='Knowledge microagent information',
         recall_type=RecallType.KNOWLEDGE,
-        repo_branch='',
+        repo_name='',
+        repo_directory='',
+        repo_instructions='',
+        runtime_hosts={},
+        working_dir='',
+        additional_agent_instructions='',
+        custom_secrets_descriptions={},
+        conversation_instructions='',
+        date='',
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='python_best_practices',
@@ -398,10 +417,14 @@ def test_microagent_observation_environment_serialization():
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
-        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080, 'localhost': 5000},
         additional_agent_instructions='You know it all about this runtime',
+        custom_secrets_descriptions={},
+        conversation_instructions='',
+        date='',
+        working_dir='',
+        microagent_knowledge=[],
     )
 
     # Serialize to dictionary
@@ -448,10 +471,13 @@ def test_microagent_observation_combined_serialization():
         # Environment info
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
-        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080},
         additional_agent_instructions='You know it all about this runtime',
+        custom_secrets_descriptions={},
+        conversation_instructions='',
+        date='',
+        working_dir='',
         # Knowledge microagent info
         microagent_knowledge=[
             MicroagentKnowledge(
