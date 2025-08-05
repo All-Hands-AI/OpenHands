@@ -1,0 +1,46 @@
+# OpenHands WebSocket Configuration Template
+# Copy this to config.toml and customize as needed
+
+[core]
+# Enable debugging for better WebSocket troubleshooting
+debug = true
+
+# Workspace configuration
+workspace_base = "./workspace"
+
+# Runtime configuration
+runtime = "local"
+
+# Enable browser environment
+enable_browser = true
+
+# Maximum iterations
+max_iterations = 500
+
+[llm]
+# Default model configuration
+model = "gpt-4o"
+api_key = ""
+
+[agent]
+# Enable all tools for full functionality
+enable_browsing = true
+enable_editor = true
+enable_jupyter = true
+enable_cmd = true
+enable_think = true
+enable_finish = true
+
+[sandbox]
+# Sandbox timeout in seconds
+timeout = 120
+
+# Use host network for better connectivity
+use_host_network = true
+
+# Initialize plugins
+initialize_plugins = true
+
+[security]
+# Disable confirmation mode for smoother operation
+confirmation_mode = false
