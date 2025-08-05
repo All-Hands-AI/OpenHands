@@ -1,5 +1,6 @@
 import os
 import tempfile
+import threading
 import time
 import fcntl
 import json
@@ -212,6 +213,7 @@ class ActionExecutionClient(Runtime):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.session = HttpSession()
+        self.action_semaphore = threading.Semaphore(1)
         self._runtime_closed: bool = False
         self._vscode_token: str | None = None  # initial dummy value
         self._last_updated_mcp_stdio_servers: list[MCPStdioServerConfig] = []
@@ -424,59 +426,58 @@ class ActionExecutionClient(Runtime):
             # We don't block the command if this is a default timeout action
             action.set_hard_timeout(self.config.sandbox.timeout, blocking=False)
 
-        # Requests can now be concurrent - no semaphore needed
-        # Request tracking is handled in _send_action_server_request
-        if not action.runnable:
-            if isinstance(action, AgentThinkAction):
-                return AgentThinkObservation('Your thought has been logged.')
-            return NullObservation('')
-        if (
-            hasattr(action, 'confirmation_state')
-            and action.confirmation_state
-            == ActionConfirmationStatus.AWAITING_CONFIRMATION
-        ):
-            return NullObservation('')
-        action_type = action.action  # type: ignore[attr-defined]
-        if action_type not in ACTION_TYPE_TO_CLASS:
-            raise ValueError(f'Action {action_type} does not exist.')
-        if not hasattr(self, action_type):
-            return ErrorObservation(
-                f'Action {action_type} is not supported in the current runtime.',
-                error_id='AGENT_ERROR$BAD_ACTION',
-            )
-        if (
-            getattr(action, 'confirmation_state', None)
-            == ActionConfirmationStatus.REJECTED
-        ):
-            return UserRejectObservation(
-                'Action has been rejected by the user! Waiting for further user input.'
-            )
+        with self.action_semaphore:
+            if not action.runnable:
+                if isinstance(action, AgentThinkAction):
+                    return AgentThinkObservation('Your thought has been logged.')
+                return NullObservation('')
+            if (
+                hasattr(action, 'confirmation_state')
+                and action.confirmation_state
+                == ActionConfirmationStatus.AWAITING_CONFIRMATION
+            ):
+                return NullObservation('')
+            action_type = action.action  # type: ignore[attr-defined]
+            if action_type not in ACTION_TYPE_TO_CLASS:
+                raise ValueError(f'Action {action_type} does not exist.')
+            if not hasattr(self, action_type):
+                return ErrorObservation(
+                    f'Action {action_type} is not supported in the current runtime.',
+                    error_id='AGENT_ERROR$BAD_ACTION',
+                )
+            if (
+                getattr(action, 'confirmation_state', None)
+                == ActionConfirmationStatus.REJECTED
+            ):
+                return UserRejectObservation(
+                    'Action has been rejected by the user! Waiting for further user input.'
+                )
 
-        assert action.timeout is not None
+            assert action.timeout is not None
 
-        # Pre-validate runtime health before executing action
-        try:
-            execution_action_body: dict[str, Any] = {
-                'action': event_to_dict(action),
-            }
-            response = self._send_action_server_request(
-                'POST',
-                f'{self.action_execution_server_url}/execute_action',
-                json=execution_action_body,
-                # wait a few more seconds to get the timeout error from client side
-                timeout=action.timeout + 5,
-            )
-            assert response.is_closed
-            output = response.json()
-            obs = observation_from_dict(output)
-            obs._cause = action.id  # type: ignore[attr-defined]
-        except httpx.TimeoutException:
-            raise AgentRuntimeTimeoutError(
-                f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
-            )
-        finally:
-            update_last_execution_time()
-        return obs
+            # Pre-validate runtime health before executing action
+            try:
+                execution_action_body: dict[str, Any] = {
+                    'action': event_to_dict(action),
+                }
+                response = self._send_action_server_request(
+                    'POST',
+                    f'{self.action_execution_server_url}/execute_action',
+                    json=execution_action_body,
+                    # wait a few more seconds to get the timeout error from client side
+                    timeout=action.timeout + 5,
+                )
+                assert response.is_closed
+                output = response.json()
+                obs = observation_from_dict(output)
+                obs._cause = action.id  # type: ignore[attr-defined]
+            except httpx.TimeoutException:
+                raise AgentRuntimeTimeoutError(
+                    f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
+                )
+            finally:
+                update_last_execution_time()
+            return obs
 
     def run(self, action: CmdRunAction) -> Observation:
         return self.send_action_for_execution(action)
