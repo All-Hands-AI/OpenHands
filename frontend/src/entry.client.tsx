@@ -16,6 +16,23 @@ import store from "./store";
 import OpenHands from "./api/open-hands";
 import { displayErrorToast } from "./utils/custom-toast-handlers";
 import { queryClient } from "./query-client-config";
+import { io } from "socket.io-client";
+
+// Initialize your socket connection here
+const socket = io("wss://mojocode.sixtyoneeighty.com", {
+  transports: ["websocket", "polling"]
+});
+
+socket.on("connect", () => {
+  console.log("Connected to Socket.IO!", socket.id);
+});
+
+socket.on("connect_error", (err) => {
+  console.error("Socket.IO connect error:", err);
+});
+
+// (You can export socket here if you want to use it elsewhere)
+export { socket };
 
 function PosthogInit() {
   const [posthogClientKey, setPosthogClientKey] = React.useState<string | null>(
