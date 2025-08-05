@@ -8,7 +8,7 @@ from fastmcp.server.dependencies import get_http_request
 from pydantic import Field
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.bitbucket.bitbucket_service import BitbucketService
+from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.provider import ProviderToken
@@ -89,6 +89,9 @@ async def create_pr(
     title: Annotated[str, Field(description='PR Title')],
     body: Annotated[str | None, Field(description='PR body')],
     draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
+    labels: Annotated[
+        list[str] | None, Field(description='Labels to apply to the PR')
+    ] = None,
 ) -> str:
     """Open a PR in GitHub"""
 
@@ -129,6 +132,7 @@ async def create_pr(
             title=title,
             body=body,
             draft=draft,
+            labels=labels,
         )
 
         if conversation_id:
@@ -156,6 +160,9 @@ async def create_mr(
         ),
     ],
     description: Annotated[str | None, Field(description='MR description')],
+    labels: Annotated[
+        list[str] | None, Field(description='Labels to apply to the MR')
+    ] = None,
 ) -> str:
     """Open a MR in GitLab"""
 
@@ -197,6 +204,7 @@ async def create_mr(
             target_branch=target_branch,
             title=title,
             description=description,
+            labels=labels,
         )
 
         if conversation_id and user_id:
@@ -242,7 +250,7 @@ async def create_bitbucket_pr(
         else ProviderToken()
     )
 
-    bitbucket_service = BitbucketService(
+    bitbucket_service = BitBucketServiceImpl(
         user_id=bitbucket_token.user_id,
         external_auth_id=user_id,
         external_auth_token=access_token,

@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
 from openhands.core.schema import ActionType
@@ -20,26 +19,18 @@ class ChangeAgentStateAction(Action):
         return f'Agent state changed to {self.agent_state}'
 
 
-class AgentFinishTaskCompleted(Enum):
-    FALSE = 'false'
-    PARTIAL = 'partial'
-    TRUE = 'true'
-
-
 @dataclass
 class AgentFinishAction(Action):
     """An action where the agent finishes the task.
 
     Attributes:
         final_thought (str): The message to send to the user.
-        task_completed (enum): Whether the agent believes the task has been completed.
         outputs (dict): The other outputs of the agent, for instance "content".
         thought (str): The agent's explanation of its actions.
         action (str): The action type, namely ActionType.FINISH.
     """
 
     final_thought: str = ''
-    task_completed: AgentFinishTaskCompleted | None = None
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
@@ -195,3 +186,18 @@ class CondensationAction(Action):
         if self.summary:
             return f'Summary: {self.summary}'
         return f'Condenser is dropping the events: {self.forgotten}.'
+
+
+@dataclass
+class CondensationRequestAction(Action):
+    """This action is used to request a condensation of the conversation history.
+
+    Attributes:
+        action (str): The action type, namely ActionType.CONDENSATION_REQUEST.
+    """
+
+    action: str = ActionType.CONDENSATION_REQUEST
+
+    @property
+    def message(self) -> str:
+        return 'Requesting a condensation of the conversation history.'

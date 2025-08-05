@@ -18,6 +18,7 @@ import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message"
 import { GitSettingInputsSkeleton } from "#/components/features/settings/git-settings/github-settings-inputs-skeleton";
 import { useAddGitProviders } from "#/hooks/mutation/use-add-git-providers";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { ProjectManagementIntegration } from "#/components/features/settings/project-management/project-management-integration";
 
 function GitSettingsScreen() {
   const { t } = useTranslation();
@@ -110,6 +111,10 @@ function GitSettingsScreen() {
     !gitlabHostInputHasValue &&
     !bitbucketHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
+  const shouldRenderProjectManagementIntegrations =
+    config?.FEATURE_FLAGS?.ENABLE_JIRA ||
+    config?.FEATURE_FLAGS?.ENABLE_JIRA_DC ||
+    config?.FEATURE_FLAGS?.ENABLE_LINEAR;
 
   return (
     <form
@@ -118,13 +123,35 @@ function GitSettingsScreen() {
       className="flex flex-col h-full justify-between"
     >
       {!isLoading && (
-        <div className="p-9 flex flex-col gap-12">
+        <div className="p-9 flex flex-col">
           {shouldRenderExternalConfigureButtons && !isLoading && (
-            <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
+            <>
+              <div className="pb-1 flex flex-col">
+                <h3 className="text-xl font-medium text-white">
+                  {t(I18nKey.SETTINGS$GITHUB)}
+                </h3>
+                <ConfigureGitHubRepositoriesAnchor slug={config.APP_SLUG!} />
+              </div>
+              <div className="w-1/2 border-b border-gray-200" />
+            </>
           )}
 
           {shouldRenderExternalConfigureButtons && !isLoading && (
-            <InstallSlackAppAnchor />
+            <>
+              <div className="pb-1 mt-6 flex flex-col">
+                <h3 className="text-xl font-medium text-white">
+                  {t(I18nKey.SETTINGS$SLACK)}
+                </h3>
+                <InstallSlackAppAnchor />
+              </div>
+              <div className="w-1/2 border-b border-gray-200" />
+            </>
+          )}
+
+          {shouldRenderProjectManagementIntegrations && !isLoading && (
+            <div className="mt-6">
+              <ProjectManagementIntegration />
+            </div>
           )}
 
           {!isSaas && (
@@ -185,7 +212,7 @@ function GitSettingsScreen() {
                 !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
               }
             >
-              Disconnect Tokens
+              {t(I18nKey.GIT$DISCONNECT_TOKENS)}
             </BrandButton>
             <BrandButton
               testId="submit-button"

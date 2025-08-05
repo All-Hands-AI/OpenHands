@@ -189,10 +189,10 @@ function AppSettingsScreen() {
             label={t(I18nKey.SETTINGS$MAX_BUDGET_PER_CONVERSATION)}
             defaultValue={settings.MAX_BUDGET_PER_TASK?.toString() || ""}
             onChange={checkIfMaxBudgetPerTaskHasChanged}
-            placeholder="Maximum budget per conversation in USD"
+            placeholder={t(I18nKey.SETTINGS$MAXIMUM_BUDGET_USD)}
             min={1}
             step={1}
-            className="w-[680px]" // Match the width of the language field
+            className="w-full max-w-[680px]" // Match the width of the language field
           />
         </div>
       )}
