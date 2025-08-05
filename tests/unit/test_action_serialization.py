@@ -49,6 +49,7 @@ def test_event_props_serialization_deserialization():
         'args': {
             'content': 'This is a test.',
             'image_urls': None,
+            'file_urls': None,
             'wait_for_response': False,
         },
     }
@@ -61,6 +62,7 @@ def test_message_action_serialization_deserialization():
         'args': {
             'content': 'This is a test.',
             'image_urls': None,
+            'file_urls': None,
             'wait_for_response': False,
         },
     }
@@ -73,11 +75,34 @@ def test_agent_finish_action_serialization_deserialization():
         'args': {
             'outputs': {},
             'thought': '',
-            'task_completed': None,
             'final_thought': '',
         },
     }
     serialization_deserialization(original_action_dict, AgentFinishAction)
+
+
+def test_agent_finish_action_legacy_task_completed_serialization():
+    """Test that old conversations with task_completed can still be loaded."""
+    original_action_dict = {
+        'action': 'finish',
+        'args': {
+            'outputs': {},
+            'thought': '',
+            'final_thought': 'Task completed',
+            'task_completed': 'true',  # This should be ignored during deserialization
+        },
+    }
+    # This should work without errors - task_completed should be stripped out
+    event = event_from_dict(original_action_dict)
+    assert isinstance(event, Action)
+    assert isinstance(event, AgentFinishAction)
+    assert event.final_thought == 'Task completed'
+    # task_completed attribute should not exist anymore
+    assert not hasattr(event, 'task_completed')
+
+    # When serialized back, task_completed should not be present
+    event_dict = event_to_dict(event)
+    assert 'task_completed' not in event_dict['args']
 
 
 def test_agent_reject_action_serialization_deserialization():
@@ -108,7 +133,11 @@ def test_cmd_run_action_serialization_deserialization():
 def test_browse_url_action_serialization_deserialization():
     original_action_dict = {
         'action': 'browse',
-        'args': {'thought': '', 'url': 'https://www.example.com'},
+        'args': {
+            'thought': '',
+            'url': 'https://www.example.com',
+            'return_axtree': False,
+        },
     }
     serialization_deserialization(original_action_dict, BrowseURLAction)
 
@@ -120,6 +149,7 @@ def test_browse_interactive_action_serialization_deserialization():
             'thought': '',
             'browser_actions': 'goto("https://www.example.com")',
             'browsergym_send_msg_to_user': '',
+            'return_axtree': False,
         },
     }
     serialization_deserialization(original_action_dict, BrowseInteractiveAction)

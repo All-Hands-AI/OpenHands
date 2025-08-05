@@ -9,6 +9,7 @@ from openhands.events.observation import (
     RecallObservation,
 )
 from openhands.events.observation.agent import MicroagentKnowledge
+from openhands.events.observation.commands import MAX_CMD_OUTPUT_SIZE
 from openhands.events.serialization import (
     event_from_dict,
     event_to_dict,
@@ -111,6 +112,59 @@ def test_success_field_serialization():
     )
     serialized = event_to_dict(obs)
     assert serialized['success'] is False
+
+
+def test_cmd_output_truncation():
+    """Test that large command outputs are truncated during initialization."""
+    # Create a large content string that exceeds MAX_CMD_OUTPUT_SIZE (50000 characters)
+    large_content = 'a' * 60000  # 60k characters
+
+    # Create a CmdOutputObservation with the large content
+    obs = CmdOutputObservation(
+        content=large_content,
+        command='ls -R',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
+    )
+
+    # Verify the content was truncated
+    assert len(obs.content) < 60000
+
+    # The truncated content might be slightly larger than MAX_CMD_OUTPUT_SIZE
+    # due to the added truncation message
+    truncation_msg = '[... Observation truncated due to length ...]'
+    assert truncation_msg in obs.content
+
+    # The truncation algorithm might add a few extra characters due to the truncation message
+    # We'll allow a small margin (1% of MAX_CMD_OUTPUT_SIZE) for the total content length
+    margin = int(MAX_CMD_OUTPUT_SIZE * 0.01)  # 1% margin
+    assert len(obs.content) <= MAX_CMD_OUTPUT_SIZE + margin
+
+    # Verify the beginning and end of the content are preserved
+    half_size = MAX_CMD_OUTPUT_SIZE // 2
+    assert obs.content.startswith('a' * half_size)
+    assert obs.content.endswith('a' * half_size)
+
+
+def test_cmd_output_no_truncation():
+    """Test that small command outputs are not truncated."""
+    # Create a content string that doesn't exceed MAX_CMD_OUTPUT_SIZE (50000 characters)
+    # We use a much smaller value for testing efficiency
+    small_content = 'a' * 1000  # 1k characters
+
+    # Create a CmdOutputObservation with the small content
+    obs = CmdOutputObservation(
+        content=small_content,
+        command='ls',
+        metadata=CmdOutputMetadata(
+            exit_code=0,
+        ),
+    )
+
+    # Verify the content was not truncated
+    assert len(obs.content) == 1000
+    assert obs.content == small_content
 
 
 def test_legacy_serialization():
@@ -242,6 +296,8 @@ def test_microagent_observation_serialization():
             'recall_type': 'workspace_context',
             'repo_name': 'some_repo_name',
             'repo_directory': 'some_repo_directory',
+            'repo_branch': '',
+            'working_dir': '',
             'runtime_hosts': {'host1': 8080, 'host2': 8081},
             'repo_instructions': 'complex_repo_instructions',
             'additional_agent_instructions': 'You know it all about this runtime',
@@ -263,8 +319,10 @@ def test_microagent_observation_microagent_knowledge_serialization():
             'recall_type': 'knowledge',
             'repo_name': '',
             'repo_directory': '',
+            'repo_branch': '',
             'repo_instructions': '',
             'runtime_hosts': {},
+            'working_dir': '',
             'additional_agent_instructions': '',
             'custom_secrets_descriptions': {},
             'conversation_instructions': 'additional_context',
@@ -292,6 +350,7 @@ def test_microagent_observation_knowledge_microagent_serialization():
     original = RecallObservation(
         content='Knowledge microagent information',
         recall_type=RecallType.KNOWLEDGE,
+        repo_branch='',
         microagent_knowledge=[
             MicroagentKnowledge(
                 name='python_best_practices',
@@ -339,6 +398,7 @@ def test_microagent_observation_environment_serialization():
         recall_type=RecallType.WORKSPACE_CONTEXT,
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
+        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080, 'localhost': 5000},
         additional_agent_instructions='You know it all about this runtime',
@@ -388,6 +448,7 @@ def test_microagent_observation_combined_serialization():
         # Environment info
         repo_name='OpenHands',
         repo_directory='/workspace/openhands',
+        repo_branch='main',
         repo_instructions="Follow the project's coding style guide.",
         runtime_hosts={'127.0.0.1': 8080},
         additional_agent_instructions='You know it all about this runtime',

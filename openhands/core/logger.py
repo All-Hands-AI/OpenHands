@@ -43,7 +43,11 @@ else:
 if DEBUG:
     LOG_LEVEL = 'DEBUG'
 
-LOG_TO_FILE = os.getenv('LOG_TO_FILE', 'False').lower() in ['true', '1', 'yes']
+LOG_TO_FILE = os.getenv('LOG_TO_FILE', str(LOG_LEVEL == 'DEBUG')).lower() in [
+    'true',
+    '1',
+    'yes',
+]
 DISABLE_COLOR_PRINTING = False
 
 LOG_ALL_EVENTS = os.getenv('LOG_ALL_EVENTS', 'False').lower() in ['true', '1', 'yes']
@@ -262,6 +266,7 @@ class SensitiveDataFilter(logging.Filter):
             'modal_api_token_secret',
             'llm_api_key',
             'sandbox_env_github_token',
+            'runloop_api_key',
             'daytona_api_key',
         ]
 
@@ -370,7 +375,6 @@ if DEBUG:
     openhands_logger.addFilter(StackInfoFilter())
 
 if current_log_level == logging.DEBUG:
-    LOG_TO_FILE = True
     openhands_logger.debug('DEBUG mode enabled.')
 
 if LOG_JSON:

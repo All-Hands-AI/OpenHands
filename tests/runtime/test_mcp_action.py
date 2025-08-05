@@ -128,7 +128,11 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     )
     override_mcp_config = MCPConfig(stdio_servers=[mcp_stdio_server_config])
     runtime, config = _load_runtime(
-        temp_dir, runtime_cls, run_as_openhands, override_mcp_config=override_mcp_config
+        temp_dir,
+        runtime_cls,
+        run_as_openhands,
+        override_mcp_config=override_mcp_config,
+        enable_browser=True,
     )
 
     # Test browser server
@@ -160,7 +164,7 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
     assert result_json['content'][0]['type'] == 'text'
     assert (
         result_json['content'][0]['text']
-        == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+        == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
     )
 
     runtime.close()
@@ -220,6 +224,7 @@ async def test_both_stdio_and_sse_mcp(
             runtime_cls,
             run_as_openhands,
             override_mcp_config=override_mcp_config,
+            enable_browser=True,
         )
 
         # ======= Test SSE server =======
@@ -269,7 +274,7 @@ async def test_both_stdio_and_sse_mcp(
         assert result_json['content'][0]['type'] == 'text'
         assert (
             result_json['content'][0]['text']
-            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+            == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
         )
     finally:
         if runtime:
@@ -297,6 +302,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
             runtime_cls,
             run_as_openhands,
             override_mcp_config=override_mcp_config,
+            enable_browser=True,
         )
 
         # NOTE: this simulate the case where the microagent adds a new stdio server to the runtime
@@ -354,7 +360,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
         assert result_json['content'][0]['type'] == 'text'
         assert (
             result_json['content'][0]['text']
-            == 'Contents of http://localhost:8000/:\n---\n\n* <server.log>\n\n---'
+            == 'Contents of http://localhost:8000/:\n---\n\n* <.downloads/>\n* <server.log>\n\n---'
         )
     finally:
         if runtime:

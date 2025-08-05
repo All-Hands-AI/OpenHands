@@ -26,6 +26,7 @@
           "usage/installation",
           "usage/getting-started",
           "usage/key-features",
+          "usage/faqs",
           {
             "group": "OpenHands Cloud",
             "pages": [
@@ -33,8 +34,19 @@
               {
                 "group": "Integrations",
                 "pages": [
+                  "usage/cloud/bitbucket-installation",
                   "usage/cloud/github-installation",
-                  "usage/cloud/gitlab-installation"
+                  "usage/cloud/gitlab-installation",
+                  "usage/cloud/slack-installation",
+                  {
+                    "group": "Project Management Tools",
+                    "pages": [
+                      "usage/cloud/project-management/overview",
+                      "usage/cloud/project-management/jira-integration",
+                      "usage/cloud/project-management/jira-dc-integration",
+                      "usage/cloud/project-management/linear-integration"
+                    ]
+                  }
                 ]
               },
               "usage/cloud/cloud-ui",
@@ -42,19 +54,71 @@
             ]
           },
           {
-            "group": "Running OpenHands on Your Own",
+            "group": "Run OpenHands on Your Own",
             "pages": [
               "usage/local-setup",
               "usage/how-to/gui-mode",
               "usage/how-to/cli-mode",
               "usage/how-to/headless-mode",
-              "usage/how-to/github-action"
+              "usage/how-to/github-action",
+              {
+                "group": "Advanced Configuration",
+                "pages": [
+                {
+                  "group": "LLM Configuration",
+                  "pages": [
+                    "usage/llms/llms",
+                    {
+                      "group": "Providers",
+                      "pages": [
+                        "usage/llms/azure-llms",
+                        "usage/llms/google-llms",
+                        "usage/llms/groq",
+                        "usage/llms/local-llms",
+                        "usage/llms/litellm-proxy",
+                        "usage/llms/moonshot",
+                        "usage/llms/openai-llms",
+                        "usage/llms/openhands-llms",
+                        "usage/llms/openrouter"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "group": "Runtime Configuration",
+                  "pages": [
+                    "usage/runtimes/overview",
+                    {
+                      "group": "Providers",
+                      "pages": [
+                        "usage/runtimes/docker",
+                        "usage/runtimes/remote",
+                        "usage/runtimes/local",
+                        {
+                          "group": "Third-Party Providers",
+                          "pages": [
+                            "usage/runtimes/modal",
+                            "usage/runtimes/daytona",
+                            "usage/runtimes/runloop",
+                            "usage/runtimes/e2b"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "usage/configuration-options",
+                "usage/how-to/custom-sandbox-guide",
+                "usage/search-engine-setup",
+                "usage/mcp"
+                ]
+              }
             ]
           },
           {
-            "group": "Customization",
+            "group": "Customizations & Settings",
             "pages": [
-              "usage/prompting/prompting-best-practices",
+              "usage/common-settings",
               "usage/prompting/repository",
               {
                 "group": "Microagents",
@@ -69,53 +133,9 @@
             ]
           },
           {
-            "group": "Advanced Configuration",
+            "group": "Tips and Tricks",
             "pages": [
-            {
-              "group": "LLM Configuration",
-              "pages": [
-                "usage/llms/llms",
-                {
-                  "group": "Providers",
-                  "pages": [
-                    "usage/llms/azure-llms",
-                    "usage/llms/google-llms",
-                    "usage/llms/groq",
-                    "usage/llms/local-llms",
-                    "usage/llms/litellm-proxy",
-                    "usage/llms/openai-llms",
-                    "usage/llms/openrouter"
-                  ]
-                }
-              ]
-            },
-            {
-              "group": "Runtime Configuration",
-              "pages": [
-                "usage/runtimes/overview",
-                {
-                  "group": "Providers",
-                  "pages": [
-                    "usage/runtimes/docker",
-                    "usage/runtimes/remote",
-                    "usage/runtimes/local",
-                    {
-                      "group": "Third-Party Providers",
-                      "pages": [
-                        "usage/runtimes/modal",
-                        "usage/runtimes/daytona",
-                        "usage/runtimes/runloop",
-                        "usage/runtimes/e2b"
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            "usage/configuration-options",
-            "usage/how-to/custom-sandbox-guide",
-            "usage/search-engine-setup",
-            "usage/mcp"
+              "usage/prompting/prompting-best-practices"
             ]
           },
           {
@@ -141,6 +161,12 @@
               "usage/how-to/websocket-connection"
             ]
           }
+        ]
+      },
+      {
+        "tab": "Success Stories",
+        "pages": [
+          "success-stories/index"
         ]
       },
       {
@@ -182,7 +208,7 @@
   },
   "footer": {
     "socials": {
-      "slack": "https://join.slack.com/t/openhands-ai/shared_invite/zt-34zm4j0gj-Qz5kRHoca8DFCbqXPS~f_A",
+      "slack": "https://join.slack.com/t/openhands-ai/shared_invite/zt-3847of6xi-xuYJIPa6YIPg4ElbDWbtSA",
       "github": "https://github.com/All-Hands-AI/OpenHands",
       "discord": "https://discord.gg/ESHStjSjD4"
     }

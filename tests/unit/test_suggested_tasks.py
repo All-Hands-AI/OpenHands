@@ -10,7 +10,7 @@ from openhands.integrations.service_types import TaskType, User
 async def test_get_suggested_tasks():
     # Mock responses
     mock_user = User(
-        id=1,
+        id='1',
         login='test-user',
         avatar_url='https://example.com/avatar.jpg',
         name='Test User',

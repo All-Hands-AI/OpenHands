@@ -2,6 +2,8 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (6/15/2025): We now support running SWE-bench-Live evaluation (see the paper [here](https://arxiv.org/abs/2505.23419))! For how to run it, checkout [this README](./SWE-bench-Live.md).**
+
 **UPDATE (5/26/2025): We now support running interactive SWE-Bench evaluation (see the paper [here](https://arxiv.org/abs/2502.13069))! For how to run it, checkout [this README](./SWE-Interact.md).**
 
 **UPDATE (4/8/2025): We now support running SWT-Bench evaluation! For more details, checkout [the corresponding section](#SWT-Bench-Evaluation).**
@@ -36,6 +38,10 @@ Please follow instruction [here](../../README.md#setup) to setup your local deve
 > - If your LLM config has temperature=0, we will automatically use temperature=0.1 for the 2nd and 3rd attempts
 >
 > To enable this iterative protocol, set `export ITERATIVE_EVAL_MODE=true`
+>
+> **Skipping errors on build**
+>
+> For debugging purposes, you can set `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=true` to continue evaluation even when instances reach maximum retries. After evaluation completes, check `maximum_retries_exceeded.jsonl` for a list of failed instances, fix those issues, and then run the evaluation again with `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=false`.
 
 
 ### Running Locally with Docker

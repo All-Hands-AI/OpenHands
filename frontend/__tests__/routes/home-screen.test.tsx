@@ -45,13 +45,13 @@ const renderHomeScreen = () =>
 
 const MOCK_RESPOSITORIES: GitRepository[] = [
   {
-    id: 1,
+    id: "1",
     full_name: "octocat/hello-world",
     git_provider: "github",
     is_public: true,
   },
   {
-    id: 2,
+    id: "2",
     full_name: "octocat/earth",
     git_provider: "github",
     is_public: true,
@@ -90,7 +90,7 @@ describe("HomeScreen", () => {
     const mainContainer = screen
       .getByTestId("home-screen")
       .querySelector("main");
-    expect(mainContainer).toHaveClass("flex", "flex-col", "md:flex-row");
+    expect(mainContainer).toHaveClass("flex", "flex-col", "lg:flex-row");
   });
 
   it("should filter the suggested tasks based on the selected repository", async () => {
@@ -222,10 +222,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -240,10 +242,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
 
@@ -258,10 +262,12 @@ describe("HomeScreen", () => {
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
 
-      expect(headerLaunchButton).toBeDisabled();
-      expect(repoLaunchButton).toBeDisabled();
-      tasksLaunchButtonsAfter.forEach((button) => {
-        expect(button).toBeDisabled();
+      await waitFor(() => {
+        expect(headerLaunchButton).toBeDisabled();
+        expect(repoLaunchButton).toBeDisabled();
+        tasksLaunchButtonsAfter.forEach((button) => {
+          expect(button).toBeDisabled();
+        });
       });
     });
   });
@@ -327,6 +333,9 @@ describe("Settings 404", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();
@@ -334,10 +343,7 @@ describe("Settings 404", () => {
 
     renderHomeScreen();
 
-    // small hack to wait for the modal to not appear
-    await expect(
-      screen.findByTestId("ai-config-modal", {}, { timeout: 1000 }),
-    ).rejects.toThrow();
+    expect(screen.queryByTestId("ai-config-modal")).not.toBeInTheDocument();
   });
 });
 
@@ -352,6 +358,9 @@ describe("Setup Payment modal", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
     const error = createAxiosNotFoundErrorObject();

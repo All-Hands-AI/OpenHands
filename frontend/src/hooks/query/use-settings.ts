@@ -27,6 +27,7 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
       apiSettings.enable_proactive_conversation_starters,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     SEARCH_API_KEY: apiSettings.search_api_key || "",
+    MAX_BUDGET_PER_TASK: apiSettings.max_budget_per_task,
     EMAIL: apiSettings.email || "",
     EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,

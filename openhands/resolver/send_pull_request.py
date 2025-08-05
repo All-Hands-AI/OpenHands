@@ -11,6 +11,7 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
 from openhands.llm.llm import LLM
+from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
@@ -158,13 +159,21 @@ def initialize_repo(
     return dest_dir
 
 
-def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
+def make_commit(
+    repo_dir: str,
+    issue: Issue,
+    issue_type: str,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
+) -> None:
     """Make a commit with the changes to the repository.
 
     Args:
         repo_dir: The directory containing the repository
         issue: The issue to fix
         issue_type: The type of the issue
+        git_user_name: Git username for commits
+        git_user_email: Git email for commits
     """
     # Check if git username is set
     result = subprocess.run(
@@ -175,15 +184,15 @@ def make_commit(repo_dir: str, issue: Issue, issue_type: str) -> None:
     )
 
     if not result.stdout.strip():
-        # If username is not set, configure git
+        # If username is not set, configure git with the provided credentials
         subprocess.run(
-            f'git -C {repo_dir} config user.name "openhands" && '
-            f'git -C {repo_dir} config user.email "openhands@all-hands.dev" && '
+            f'git -C {repo_dir} config user.name "{git_user_name}" && '
+            f'git -C {repo_dir} config user.email "{git_user_email}" && '
             f'git -C {repo_dir} config alias.git "git --no-pager"',
             shell=True,
             check=True,
         )
-        logger.info('Git user configured as openhands')
+        logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
 
     # Add all changes to the git index
     result = subprocess.run(
@@ -234,41 +243,58 @@ def send_pull_request(
     reviewer: str | None = None,
     pr_title: str | None = None,
     base_domain: str | None = None,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
 ) -> str:
-    """Send a pull request to a GitHub or Gitlab repository.
+    """Send a pull request to a GitHub, GitLab, or Bitbucket repository.
 
     Args:
         issue: The issue to send the pull request for
-        token: The GitHub or Gitlab token to use for authentication
-        username: The GitHub or Gitlab username, if provided
+        token: The token to use for authentication
+        username: The username, if provided
         platform: The platform of the repository.
         patch_dir: The directory containing the patches to apply
         pr_type: The type: branch (no PR created), draft or ready (regular PR created)
         fork_owner: The owner of the fork to push changes to (if different from the original repo owner)
         additional_message: The additional messages to post as a comment on the PR in json list format
         target_branch: The target branch to create the pull request against (defaults to repository default branch)
-        reviewer: The GitHub or Gitlab username of the reviewer to assign
+        reviewer: The username of the reviewer to assign
         pr_title: Custom title for the pull request (optional)
-        base_domain: The base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)
+        base_domain: The base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)
     """
     if pr_type not in ['branch', 'draft', 'ready']:
         raise ValueError(f'Invalid pr_type: {pr_type}')
 
     # Determine default base_domain based on platform
     if base_domain is None:
-        base_domain = 'github.com' if platform == ProviderType.GITHUB else 'gitlab.com'
+        if platform == ProviderType.GITHUB:
+            base_domain = 'github.com'
+        elif platform == ProviderType.GITLAB:
+            base_domain = 'gitlab.com'
+        else:  # platform == ProviderType.BITBUCKET
+            base_domain = 'bitbucket.org'
 
+    # Create the appropriate handler based on platform
     handler = None
     if platform == ProviderType.GITHUB:
         handler = ServiceContextIssue(
             GithubIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
-    else:  # platform == Platform.GITLAB
+    elif platform == ProviderType.GITLAB:
         handler = ServiceContextIssue(
             GitlabIssueHandler(issue.owner, issue.repo, token, username, base_domain),
             None,
         )
+    elif platform == ProviderType.BITBUCKET:
+        handler = ServiceContextIssue(
+            BitbucketIssueHandler(
+                issue.owner, issue.repo, token, username, base_domain
+            ),
+            None,
+        )
+    else:
+        raise ValueError(f'Unsupported platform: {platform}')
 
     # Create a new branch with a unique name
     base_branch_name = f'openhands-fix-issue-{issue.number}'
@@ -487,6 +513,8 @@ def process_single_issue(
     reviewer: str | None = None,
     pr_title: str | None = None,
     base_domain: str | None = None,
+    git_user_name: str = 'openhands',
+    git_user_email: str = 'openhands@all-hands.dev',
 ) -> None:
     # Determine default base_domain based on platform
     if base_domain is None:
@@ -518,7 +546,13 @@ def process_single_issue(
 
     apply_patch(patched_repo_dir, resolver_output.git_patch)
 
-    make_commit(patched_repo_dir, resolver_output.issue, issue_type)
+    make_commit(
+        patched_repo_dir,
+        resolver_output.issue,
+        issue_type,
+        git_user_name,
+        git_user_email,
+    )
 
     if issue_type == 'pr':
         update_existing_pull_request(
@@ -545,6 +579,8 @@ def process_single_issue(
             reviewer=reviewer,
             pr_title=pr_title,
             base_domain=base_domain,
+            git_user_name=git_user_name,
+            git_user_email=git_user_email,
         )
 
 
@@ -642,6 +678,18 @@ def main() -> None:
         default=None,
         help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
     )
+    parser.add_argument(
+        '--git-user-name',
+        type=str,
+        default='openhands',
+        help='Git user name for commits',
+    )
+    parser.add_argument(
+        '--git-user-email',
+        type=str,
+        default='openhands@all-hands.dev',
+        help='Git user email for commits',
+    )
     my_args = parser.parse_args()
 
     token = my_args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
@@ -689,6 +737,8 @@ def main() -> None:
         my_args.reviewer,
         my_args.pr_title,
         my_args.base_domain,
+        my_args.git_user_name,
+        my_args.git_user_email,
     )
 
 
