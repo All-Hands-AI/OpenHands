@@ -22,7 +22,7 @@ export function AccountSettingsContextMenu({
       ref={ref}
       className="absolute right-full md:left-full -top-1 z-10 w-fit"
     >
-      <ContextMenuListItem onClick={onLogout}>
+      <ContextMenuListItem onClick={onLogout} data-testid="logout-button">
         {t(I18nKey.ACCOUNT_SETTINGS$LOGOUT)}
       </ContextMenuListItem>
     </ContextMenu>

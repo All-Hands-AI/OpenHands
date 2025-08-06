@@ -28,6 +28,7 @@ from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm_registry import LLMRegistry
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
@@ -80,6 +81,9 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -124,6 +128,12 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+
+        # Set Git user configuration if provided in settings
+        if hasattr(settings, 'git_user_name') and settings.git_user_name:
+            self.config.git_user_name = settings.git_user_name
+        if hasattr(settings, 'git_user_email') and settings.git_user_email:
+            self.config.git_user_email = settings.git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task

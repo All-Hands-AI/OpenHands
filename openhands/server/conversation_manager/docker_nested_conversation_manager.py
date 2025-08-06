@@ -12,7 +12,6 @@ import docker
 import httpx
 import socketio
 from docker.models.containers import Container
-from fastapi import status
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -21,6 +20,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
@@ -207,11 +207,11 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json.pop('git_provider_tokens', None)
                 if settings_json.get('git_provider'):
                     settings_json['git_provider'] = settings_json['git_provider'].value
-                secrets_store = settings_json.pop('secrets_store', None) or {}
+                settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
 
                 # Setup provider tokens
                 provider_handler = self._get_provider_handler(settings)
@@ -232,21 +232,21 @@ class DockerNestedConversationManager(ConversationManager):
                             'provider_tokens': provider_tokens_json,
                         },
                     )
-                    assert response.status_code == status.HTTP_200_OK
+                    response.raise_for_status()
 
                 # Setup custom secrets
-                custom_secrets = secrets_store.get('custom_secrets') or {}
+                custom_secrets = settings.custom_secrets  # type: ignore
                 if custom_secrets:
-                    for key, value in custom_secrets.items():
+                    for key, secret in custom_secrets.items():
                         response = await client.post(
                             f'{api_url}/api/secrets',
                             json={
                                 'name': key,
-                                'description': value.description,
-                                'value': value.value,
+                                'description': secret.description,
+                                'value': secret.secret.get_secret_value(),
                             },
                         )
-                        assert response.status_code == status.HTTP_200_OK
+                        response.raise_for_status()
 
                 init_conversation: dict[str, Any] = {
                     'initial_user_msg': initial_user_msg,
@@ -269,7 +269,7 @@ class DockerNestedConversationManager(ConversationManager):
                 logger.info(
                     f'_start_agent_loop:{response.status_code}:{response.json()}'
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
         finally:
             self._starting_conversation_ids.discard(sid)
 
@@ -483,10 +483,14 @@ class DockerNestedConversationManager(ConversationManager):
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
 
-        config = setup_llm_config(self.config, settings)
+        config: OpenHandsConfig = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
+        config = setup_llm_config(config, settings)
         llm_registry = LLMRegistry(config, settings.agent)
         convo_stats = ConversationStats(self.file_store, sid, user_id)
         llm_registry.subscribe(convo_stats.register_llm)
+
         session = Session(
             sid=sid,
             llm_registry=llm_registry,

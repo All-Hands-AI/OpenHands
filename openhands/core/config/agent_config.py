@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
@@ -44,7 +47,11 @@ class AgentConfig(BaseModel):
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
     condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type='noop')
+        # The default condenser is set to the conversation window condenser -- if
+        # we use NoOp and the conversation hits the LLM context length limit,
+        # the agent will generate a condensation request which will never be
+        # handled.
+        default_factory=lambda: ConversationWindowCondenserConfig()
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""

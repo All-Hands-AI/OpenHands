@@ -159,6 +159,7 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+                selected_branch=selected_branch,
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
                 working_dir=config.workspace_mount_path_in_sandbox,
@@ -473,6 +474,7 @@ class AgentSession:
         self,
         selected_repository: str | None,
         repo_directory: str | None,
+        selected_branch: str | None,
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
@@ -498,7 +500,9 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(
+                    selected_repository, repo_directory, selected_branch
+                )
         return memory
 
     def get_state(self) -> AgentState | None:

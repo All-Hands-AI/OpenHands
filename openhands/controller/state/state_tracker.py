@@ -72,6 +72,7 @@ class StateTracker:
         if state is None:
             self.state = State(
                 session_id=id.removesuffix('-delegate'),
+                user_id=self.user_id,
                 inputs={},
                 convo_stats=convo_stats,
                 iteration_flag=IterationControlFlag(

@@ -23,6 +23,7 @@ from openhands.core.setup import (
     create_memory,
     create_runtime,
     generate_sid,
+    get_provider_tokens,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -102,12 +103,15 @@ async def run_controller(
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
     if runtime is None:
+        # In itialize repository if needed
+        repo_tokens = get_provider_tokens()
         runtime = create_runtime(
             config,
             llm_registry,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
+            git_provider_tokens=repo_tokens,
         )
         # Connect to the runtime
         call_async_from_sync(runtime.connect)
@@ -116,6 +120,7 @@ async def run_controller(
         if config.sandbox.selected_repo:
             repo_directory = initialize_repository_for_runtime(
                 runtime,
+                immutable_provider_tokens=repo_tokens,
                 selected_repository=config.sandbox.selected_repo,
             )
 

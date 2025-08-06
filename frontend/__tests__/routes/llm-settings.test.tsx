@@ -47,7 +47,7 @@ describe("Content", () => {
       const apiKey = screen.getByTestId("llm-api-key-input");
 
       await waitFor(() => {
-        expect(provider).toHaveValue("Anthropic");
+        expect(provider).toHaveValue("OpenHands");
         expect(model).toHaveValue("claude-sonnet-4-20250514");
 
         expect(apiKey).toHaveValue("");
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
+      expect(model).toHaveValue("openhands/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -366,17 +366,17 @@ describe("Form submission", () => {
 
     renderLlmSettingsScreen();
     await screen.findByTestId("llm-settings-screen");
-    screen.getByTestId("llm-settings-form-advanced");
+    await screen.findByTestId("llm-settings-form-advanced");
 
-    const submitButton = screen.getByTestId("submit-button");
+    const submitButton = await screen.findByTestId("submit-button");
     expect(submitButton).toBeDisabled();
 
-    const model = screen.getByTestId("llm-custom-model-input");
-    const baseUrl = screen.getByTestId("base-url-input");
-    const apiKey = screen.getByTestId("llm-api-key-input");
-    const agent = screen.getByTestId("agent-input");
-    const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
-    const condensor = screen.getByTestId("enable-memory-condenser-switch");
+    const model = await screen.findByTestId("llm-custom-model-input");
+    const baseUrl = await screen.findByTestId("base-url-input");
+    const apiKey = await screen.findByTestId("llm-api-key-input");
+    const agent = await screen.findByTestId("agent-input");
+    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
+    const condensor = await screen.findByTestId("enable-memory-condenser-switch");
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -449,7 +449,7 @@ describe("Form submission", () => {
     expect(submitButton).toBeDisabled();
 
     // select security analyzer
-    const securityAnalyzer = screen.getByTestId("security-analyzer-input");
+    const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
     const securityAnalyzerOption = screen.getByText("mock-invariant");
     await userEvent.click(securityAnalyzerOption);
@@ -537,7 +537,7 @@ describe("Form submission", () => {
 
     // select provider
     await userEvent.click(provider);
-    const providerOption = screen.getByText("Anthropic");
+    const providerOption = screen.getByText("OpenHands");
     await userEvent.click(providerOption);
 
     // select model
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-sonnet-4-20250514",
+        llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),
