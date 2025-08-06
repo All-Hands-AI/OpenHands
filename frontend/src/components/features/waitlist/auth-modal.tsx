@@ -10,23 +10,39 @@ import GitLabLogo from "#/assets/branding/gitlab-logo.svg?react";
 import BitbucketLogo from "#/assets/branding/bitbucket-logo.svg?react";
 import { useAuthUrl } from "#/hooks/use-auth-url";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { Provider } from "#/types/settings";
 
 interface AuthModalProps {
   githubAuthUrl: string | null;
   appMode?: GetConfigResponse["APP_MODE"] | null;
+  authUrl?: GetConfigResponse["AUTH_URL"];
+  providersConfigured?: Provider[];
 }
 
-export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
+export function AuthModal({
+  githubAuthUrl,
+  appMode,
+  authUrl,
+  providersConfigured,
+}: AuthModalProps) {
   const { t } = useTranslation();
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "gitlab",
+    authUrl,
   });
 
   const bitbucketAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "bitbucket",
+    authUrl,
+  });
+
+  const enterpriseSsoUrl = useAuthUrl({
+    appMode: appMode || null,
+    identityProvider: "enterprise_sso",
+    authUrl,
   });
 
   const handleGitHubAuth = () => {
@@ -50,6 +66,35 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
     }
   };
 
+  const handleEnterpriseSsoAuth = () => {
+    if (enterpriseSsoUrl) {
+      // Always start the OIDC flow, let the backend handle TOS check
+      window.location.href = enterpriseSsoUrl;
+    }
+  };
+
+  // Only show buttons if providers are configured and include the specific provider
+  const showGithub =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("github");
+  const showGitlab =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("gitlab");
+  const showBitbucket =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("bitbucket");
+  const showEnterpriseSso =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("enterprise_sso");
+
+  // Check if no providers are configured
+  const noProvidersConfigured =
+    !providersConfigured || providersConfigured.length === 0;
+
   return (
     <ModalBackdrop>
       <ModalBody className="border border-tertiary">
@@ -61,35 +106,60 @@ export function AuthModal({ githubAuthUrl, appMode }: AuthModalProps) {
         </div>
 
         <div className="flex flex-col gap-3 w-full">
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleGitHubAuth}
-            className="w-full"
-            startContent={<GitHubLogo width={20} height={20} />}
-          >
-            {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
-          </BrandButton>
+          {noProvidersConfigured ? (
+            <div className="text-center p-4 text-muted-foreground">
+              {t(I18nKey.AUTH$NO_PROVIDERS_CONFIGURED)}
+            </div>
+          ) : (
+            <>
+              {showGithub && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleGitHubAuth}
+                  className="w-full"
+                  startContent={<GitHubLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.GITHUB$CONNECT_TO_GITHUB)}
+                </BrandButton>
+              )}
 
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleGitLabAuth}
-            className="w-full"
-            startContent={<GitLabLogo width={20} height={20} />}
-          >
-            {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
-          </BrandButton>
+              {showGitlab && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleGitLabAuth}
+                  className="w-full"
+                  startContent={<GitLabLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.GITLAB$CONNECT_TO_GITLAB)}
+                </BrandButton>
+              )}
 
-          <BrandButton
-            type="button"
-            variant="primary"
-            onClick={handleBitbucketAuth}
-            className="w-full"
-            startContent={<BitbucketLogo width={20} height={20} />}
-          >
-            {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
-          </BrandButton>
+              {showBitbucket && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleBitbucketAuth}
+                  className="w-full"
+                  startContent={<BitbucketLogo width={20} height={20} />}
+                >
+                  {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                </BrandButton>
+              )}
+
+              {showEnterpriseSso && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleEnterpriseSsoAuth}
+                  className="w-full"
+                >
+                  {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
+                </BrandButton>
+              )}
+            </>
+          )}
         </div>
 
         <p

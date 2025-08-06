@@ -47,6 +47,13 @@ def suppress_cli_warnings():
         'ignore',
         category=SyntaxWarning,
         module=r'pydub\.utils',
+
+    # Suppress LiteLLM close_litellm_async_clients was never awaited warning
+    warnings.filterwarnings(
+        'ignore',
+        message="coroutine 'close_litellm_async_clients' was never awaited",
+        category=RuntimeWarning,
+
     )
 
 

@@ -15,6 +15,7 @@ class RuntimeInfo:
     available_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
+    working_dir: str = ''
 
 
 @dataclass
@@ -23,6 +24,7 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    branch_name: str | None = None
 
 
 @dataclass

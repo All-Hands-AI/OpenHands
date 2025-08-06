@@ -152,8 +152,10 @@ class AgentSession:
             self.memory = await self._create_memory(
                 selected_repository=selected_repository,
                 repo_directory=repo_directory,
+                selected_branch=selected_branch,
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
+                working_dir=config.workspace_mount_path_in_sandbox,
             )
 
             # NOTE: this needs to happen before controller is created
@@ -462,8 +464,10 @@ class AgentSession:
         self,
         selected_repository: str | None,
         repo_directory: str | None,
+        selected_branch: str | None,
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
+        working_dir: str,
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -473,7 +477,9 @@ class AgentSession:
 
         if self.runtime:
             # sets available hosts and other runtime info
-            memory.set_runtime_info(self.runtime, custom_secrets_descriptions)
+            memory.set_runtime_info(
+                self.runtime, custom_secrets_descriptions, working_dir
+            )
             memory.set_conversation_instructions(conversation_instructions)
 
             # loads microagents from repo/.openhands/microagents
@@ -484,7 +490,9 @@ class AgentSession:
             memory.load_user_workspace_microagents(microagents)
 
             if selected_repository and repo_directory:
-                memory.set_repository_info(selected_repository, repo_directory)
+                memory.set_repository_info(
+                    selected_repository, repo_directory, selected_branch
+                )
         return memory
 
     def _maybe_restore_state(self) -> State | None:

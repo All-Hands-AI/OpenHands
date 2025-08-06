@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { Typography } from "../typography/Typography";
 import { cn } from "../../shared/utils/cn";
 
@@ -7,7 +7,7 @@ type RadioOptionProps = Omit<HTMLProps<"input">, "id" | "checked"> & {
   label: React.ReactNode;
   labelClassName?: string;
   id: string;
-};
+} & BaseProps;
 
 export const RadioOption = ({
   className,
@@ -17,6 +17,7 @@ export const RadioOption = ({
   id: propId,
   disabled,
   onChange,
+  testId,
   ...props
 }: RadioOptionProps) => {
   const generatedId = useId();
@@ -25,6 +26,7 @@ export const RadioOption = ({
   return (
     <label
       htmlFor={id}
+      data-testid={testId}
       className={cn(
         "flex items-center gap-x-4",
         disabled ? "cursor-not-allowed" : "cursor-pointer"
