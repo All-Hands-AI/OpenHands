@@ -86,26 +86,26 @@ export function ChatMessage({
         />
       </div>
 
-        <div
-            style={{
-                whiteSpace: 'normal',
-                wordBreak: 'break-word',
-            }}
+      <div
+        style={{
+          whiteSpace: "normal",
+          wordBreak: "break-word",
+        }}
+      >
+        <Markdown
+          components={{
+            code,
+            ul,
+            ol,
+            a: anchor,
+            p: paragraph,
+          }}
+          remarkPlugins={[remarkGfm, remarkBreaks]}
         >
-            <Markdown
-                components={{
-                    code,
-                    ul,
-                    ol,
-                    a: anchor,
-                    p: paragraph,
-                }}
-                remarkPlugins={[remarkGfm, remarkBreaks]}
-            >
-                {message}
-            </Markdown>
-        </div>
-        {children}
+          {message}
+        </Markdown>
+      </div>
+      {children}
     </article>
   );
 }
