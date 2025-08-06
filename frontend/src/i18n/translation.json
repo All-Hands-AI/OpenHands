@@ -1247,6 +1247,22 @@
         "de": "Mit einem Repository verbinden",
         "uk": "Підключіть до репозиторій"
     },
+    "HOME$CONNECT_TO_REPOSITORY_TOOLTIP": {
+        "en": "You can enter a public GitHub URL if you'd like to work from a public repo instead",
+        "ja": "代わりにパブリックリポジトリで作業したい場合は、パブリックGitHub URLを入力できます",
+        "zh-CN": "如果您想从公共仓库工作，可以输入公共GitHub URL",
+        "zh-TW": "如果您想從公共儲存庫工作，可以輸入公共GitHub URL",
+        "ko-KR": "대신 공개 저장소에서 작업하고 싶다면 공개 GitHub URL을 입력할 수 있습니다",
+        "no": "Du kan angi en offentlig GitHub URL hvis du vil jobbe fra et offentlig repo i stedet",
+        "it": "Puoi inserire un URL GitHub pubblico se preferisci lavorare da un repository pubblico",
+        "pt": "Você pode inserir um URL GitHub público se quiser trabalhar de um repositório público",
+        "es": "Puede ingresar una URL de GitHub pública si desea trabajar desde un repositorio público",
+        "ar": "يمكنك إدخال رابط GitHub عام إذا كنت تريد العمل من مستودع عام بدلاً من ذلك",
+        "fr": "Vous pouvez saisir une URL GitHub publique si vous souhaitez travailler à partir d'un dépôt public",
+        "tr": "Bunun yerine genel bir repo'dan çalışmak istiyorsanız genel bir GitHub URL'si girebilirsiniz",
+        "de": "Sie können eine öffentliche GitHub-URL eingeben, wenn Sie stattdessen von einem öffentlichen Repository arbeiten möchten",
+        "uk": "Ви можете ввести публічну GitHub URL, якщо хочете працювати з публічного репозиторію"
+    },
     "HOME$LOADING": {
         "en": "Loading...",
         "ja": "読み込み中...",
