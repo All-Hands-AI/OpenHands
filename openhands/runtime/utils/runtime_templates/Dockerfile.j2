@@ -75,7 +75,7 @@ RUN mkdir -p /openhands && \
 # https://docs.docker.com/engine/install/debian/
 RUN \
     # Determine OS type and install accordingly
-    if grep -q Ubuntu /etc/os-release; then \
+    if [[ "{{ base_image }}" == *"ubuntu"* ]]; then \
         # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
         # Add Docker's official GPG key
         apt-get update && \
@@ -113,8 +113,8 @@ RUN mkdir -p /etc/docker && \
     echo '{"mtu": 1450}' > /etc/docker/daemon.json
 {% endmacro %}
 
-# Install Docker only if not a swebench image
-{% if not ('swebench' in base_image) %}
+# Install Docker only if not a swebench or mswebench image
+{% if not ('swebench' in base_image) and not ('mswebench' in base_image) %}
 {{ install_docker() }}
 {% endif %}
 # ================================================================
