@@ -15,6 +15,7 @@ from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
@@ -24,11 +25,27 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture
 def mock_llm_registry():
     """Create a mock LLM registry that properly simulates LLM registration"""
+    config = OpenHandsConfig()
+    registry = LLMRegistry(config=config, agent_cls=None, retry_listener=None)
+    return registry
+
+
+@pytest.fixture
+def mock_conversation_stats():
+    """Create a mock ConversationStats that properly simulates metrics tracking"""
     file_store = InMemoryFileStore({})
-    registry = LLMRegistry(
+    stats = ConversationStats(
         file_store=file_store, conversation_id='test-conversation', user_id='test-user'
     )
-    return registry
+    return stats
+
+
+@pytest.fixture
+def connected_registry_and_stats(mock_llm_registry, mock_conversation_stats):
+    """Connect the LLMRegistry and ConversationStats properly"""
+    # Subscribe to LLM registry events to track metrics
+    mock_llm_registry.subscribe(mock_conversation_stats.register_llm)
+    return mock_llm_registry, mock_conversation_stats
 
 
 @pytest.fixture
@@ -51,7 +68,7 @@ def mock_agent(mock_llm_registry):
 
     # Simulate the agent's LLM registration process
     mock_llm_registry.service_to_llm.clear()
-    mock_llm = mock_llm_registry.register_llm('agent_llm', llm_config)
+    mock_llm = mock_llm_registry.get_llm('agent_llm', llm_config)
 
     # Set up the agent
     agent.llm = mock_llm
@@ -64,7 +81,9 @@ def mock_agent(mock_llm_registry):
 
 
 @pytest.mark.asyncio
-async def test_agent_session_start_with_no_state(mock_agent, mock_llm_registry):
+async def test_agent_session_start_with_no_state(
+    mock_agent, mock_llm_registry, mock_conversation_stats
+):
     """Test that AgentSession.start() works correctly when there's no state to restore"""
 
     # Setup
@@ -73,6 +92,7 @@ async def test_agent_session_start_with_no_state(mock_agent, mock_llm_registry):
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -153,7 +173,9 @@ async def test_agent_session_start_with_no_state(mock_agent, mock_llm_registry):
 
 
 @pytest.mark.asyncio
-async def test_agent_session_start_with_restored_state(mock_agent, mock_llm_registry):
+async def test_agent_session_start_with_restored_state(
+    mock_agent, mock_llm_registry, mock_conversation_stats
+):
     """Test that AgentSession.start() works correctly when there's a state to restore"""
 
     # Setup
@@ -162,6 +184,7 @@ async def test_agent_session_start_with_restored_state(mock_agent, mock_llm_regi
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -245,8 +268,12 @@ async def test_agent_session_start_with_restored_state(mock_agent, mock_llm_regi
 
 
 @pytest.mark.asyncio
-async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_registry):
-    """Test that metrics are centralized through the LLM registry."""
+async def test_metrics_centralization_via_conversation_stats(
+    mock_agent, connected_registry_and_stats
+):
+    """Test that metrics are centralized through the ConversationStats service."""
+
+    mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
 
     # Setup
     file_store = InMemoryFileStore({})
@@ -254,6 +281,7 @@ async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_regi
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -300,23 +328,26 @@ async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_regi
             max_iterations=10,
         )
 
-        # Verify that the LLM registry is properly set up
-        assert session.controller.state.llm_registry is mock_llm_registry
+        # Verify that the ConversationStats is properly set up
+        assert session.controller.state.convo_stats is mock_conversation_stats
 
         # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
-        session.controller.agent.llm.metrics.add_cost(test_cost)
+        # Use the metrics that ConversationStats is actually tracking
+        # The ConversationStats is tracking the 'agent' service, so add cost to those metrics
+        tracked_metrics = mock_conversation_stats.service_to_metrics['agent']
+        tracked_metrics.add_cost(test_cost)
 
-        # Verify that the cost is reflected in the combined metrics from the registry
-        combined_metrics = session.controller.state.llm_registry.get_combined_metrics()
+        # Verify that the cost is reflected in the combined metrics from the conversation stats
+        combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
         assert combined_metrics.accumulated_cost == test_cost
 
         # Add more cost to simulate additional LLM usage
         additional_cost = 0.1
-        session.controller.agent.llm.metrics.add_cost(additional_cost)
+        tracked_metrics.add_cost(additional_cost)
 
         # Verify the combined metrics reflect the total cost
-        combined_metrics = session.controller.state.llm_registry.get_combined_metrics()
+        combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
         assert combined_metrics.accumulated_cost == test_cost + additional_cost
 
         # Reset the agent and verify that combined metrics are preserved
@@ -324,14 +355,18 @@ async def test_metrics_centralization_via_llm_registry(mock_agent, mock_llm_regi
 
         # Combined metrics should still be preserved after agent reset
         assert (
-            session.controller.state.llm_registry.get_combined_metrics().accumulated_cost
+            session.controller.state.convo_stats.get_combined_metrics().accumulated_cost
             == test_cost + additional_cost
         )
 
 
 @pytest.mark.asyncio
-async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_registry):
+async def test_budget_control_flag_syncs_with_metrics(
+    mock_agent, connected_registry_and_stats
+):
     """Test that BudgetControlFlag's current value matches the accumulated costs."""
+
+    mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
 
     # Setup
     file_store = InMemoryFileStore({})
@@ -339,6 +374,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_regis
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -394,7 +430,9 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_regis
 
         # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
-        session.controller.agent.llm.metrics.add_cost(test_cost)
+        # Use the metrics that ConversationStats is actually tracking
+        tracked_metrics = mock_conversation_stats.service_to_metrics['agent']
+        tracked_metrics.add_cost(test_cost)
 
         # Verify that the budget control flag's current value is updated
         # This happens through the state_tracker.sync_budget_flag_with_metrics method
@@ -403,7 +441,7 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_regis
 
         # Add more cost to simulate additional LLM usage
         additional_cost = 0.1
-        session.controller.agent.llm.metrics.add_cost(additional_cost)
+        tracked_metrics.add_cost(additional_cost)
 
         # Sync again and verify the budget flag is updated
         session.controller.state_tracker.sync_budget_flag_with_metrics()
@@ -421,10 +459,11 @@ async def test_budget_control_flag_syncs_with_metrics(mock_agent, mock_llm_regis
             session.controller.state.budget_flag.current_value
             == test_cost + additional_cost
         )
-        assert session.controller.state.budget_flag.current_value == test_cost + 0.1
 
 
-def test_override_provider_tokens_with_custom_secret(mock_llm_registry):
+def test_override_provider_tokens_with_custom_secret(
+    mock_llm_registry, mock_conversation_stats
+):
     """Test that override_provider_tokens_with_custom_secret works correctly.
 
     This test verifies that the method properly removes provider tokens when
@@ -437,6 +476,7 @@ def test_override_provider_tokens_with_custom_secret(mock_llm_registry):
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=mock_conversation_stats,
     )
 
     # Create test data
