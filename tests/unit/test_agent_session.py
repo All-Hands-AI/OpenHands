@@ -74,7 +74,6 @@ def make_mock_agent():
     return _make_mock_agent
 
 
-
 @pytest.mark.asyncio
 async def test_agent_session_start_with_no_state(
     make_mock_agent, mock_llm_registry, mock_conversation_stats
