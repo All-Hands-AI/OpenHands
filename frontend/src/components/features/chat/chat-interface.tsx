@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
@@ -33,6 +33,10 @@ import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
+import {
+  setMessageToSend,
+  setDataFromExpandedChatInput,
+} from "#/state/conversation-slice";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -44,6 +48,7 @@ function getEntryPoint(
 }
 
 export function ChatInterface() {
+  const dispatch = useDispatch();
   const { getErrorMessage } = useWSErrorMessage();
   const { send, isLoadingMessages, parsedEvents } = useWsClient();
   const { setOptimisticUserMessage, getOptimisticUserMessage } =
@@ -61,12 +66,14 @@ export function ChatInterface() {
   const { data: config } = useConfig();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const dataFromExpandedChatInput = useSelector(
+    (state: RootState) => state.conversation.dataFromExpandedChatInput,
+  );
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
-  const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
@@ -142,8 +149,21 @@ export function ChatInterface() {
 
     send(createChatMessage(prompt, imageUrls, uploadedFiles, timestamp));
     setOptimisticUserMessage(content);
-    setMessageToSend(null);
+    dispatch(setMessageToSend(null));
   };
+
+  // Watch for changes in dataFromExpandedChatInput and process them
+  React.useEffect(() => {
+    if (dataFromExpandedChatInput) {
+      handleSendMessage(
+        dataFromExpandedChatInput.message,
+        dataFromExpandedChatInput.images,
+        dataFromExpandedChatInput.files,
+      );
+      // Clear the data after processing
+      dispatch(setDataFromExpandedChatInput(null));
+    }
+  }, [dataFromExpandedChatInput, dispatch]);
 
   const handleStop = () => {
     posthog.capture("stop_button_clicked");
@@ -198,7 +218,11 @@ export function ChatInterface() {
           !optimisticUserMessage &&
           !events.some(
             (event) => isOpenHandsAction(event) && event.source === "user",
-          ) && <ChatSuggestions onSuggestionsClick={setMessageToSend} />}
+          ) && (
+            <ChatSuggestions
+              onSuggestionsClick={(value) => dispatch(setMessageToSend(value))}
+            />
+          )}
         {/* Note: We only hide chat suggestions when there's a user message */}
 
         <div
@@ -255,7 +279,6 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            value={messageToSend ?? undefined}
           />
         </div>
 

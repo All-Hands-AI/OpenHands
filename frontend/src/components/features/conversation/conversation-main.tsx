@@ -8,9 +8,14 @@ import {
 } from "#/components/layout/resizable-panel";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
+import { ExpandedInteractiveChatBox } from "../chat/expanded-interactive-chat-box";
 
 export function ConversationMain() {
   const [width, setWidth] = useState(window.innerWidth);
+
+  const isChatInputExpanded = useSelector(
+    (state: RootState) => state.conversation.isChatInputExpanded,
+  );
 
   function handleResize() {
     setWidth(window.innerWidth);
@@ -40,7 +45,11 @@ export function ConversationMain() {
         </div>
         {isRightPanelShown && (
           <div className="h-full w-full min-h-[494px]">
-            <ConversationTabs />
+            {isChatInputExpanded ? (
+              <ExpandedInteractiveChatBox />
+            ) : (
+              <ConversationTabs />
+            )}
           </div>
         )}
       </div>
@@ -56,7 +65,13 @@ export function ConversationMain() {
         firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
-        secondChild={<ConversationTabs />}
+        secondChild={
+          isChatInputExpanded ? (
+            <ExpandedInteractiveChatBox />
+          ) : (
+            <ConversationTabs />
+          )
+        }
       />
     );
   }

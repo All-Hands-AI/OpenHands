@@ -44,23 +44,32 @@ describe("InteractiveChatBox", () => {
     expect(chatBox).toBeInTheDocument();
   });
 
-  it("should set custom values", () => {
+  it("should set custom values", async () => {
     renderWithProviders(
       <InteractiveChatBox
         onSubmit={onSubmitMock}
         onStop={onStopMock}
-        value="Hello, world!"
       />,
       {
         preloadedState: {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
           },
+          conversation: {
+            messageToSend: "Hello, world!",
+            isRightPanelShown: true,
+            isChatInputExpanded: false,
+            images: [],
+            files: [],
+            dataFromExpandedChatInput: null,
+          },
         },
       },
     );
 
     const textbox = screen.getByTestId("chat-input");
+    // Wait for the useEffect to run and set the content
+    await new Promise(resolve => setTimeout(resolve, 0));
     expect(textbox).toHaveTextContent("Hello, world!");
   });
 
@@ -208,12 +217,19 @@ describe("InteractiveChatBox", () => {
       <InteractiveChatBox
         onSubmit={onSubmit}
         onStop={onStop}
-        value="test message"
       />,
       {
         preloadedState: {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
+          },
+          conversation: {
+            messageToSend: "test message",
+            isRightPanelShown: true,
+            isChatInputExpanded: false,
+            images: [],
+            files: [],
+            dataFromExpandedChatInput: null,
           },
         },
       },
@@ -233,9 +249,9 @@ describe("InteractiveChatBox", () => {
     // Verify onSubmit was called with the message
     expect(onSubmit).toHaveBeenCalledWith("test message", [], []);
 
-    // Simulate parent component updating the value prop
+    // Simulate parent component updating the value by changing the Redux state
     rerender(
-      <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} value="" />,
+      <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />,
     );
 
     // Verify the text input was cleared

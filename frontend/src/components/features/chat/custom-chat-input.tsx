@@ -1,4 +1,5 @@
-import React, { useRef, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import React, { useRef, useCallback, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -7,6 +8,14 @@ import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
+import { useCursorManagement } from "#/hooks/use-cursor-management";
+import ExpandArrowIcon from "#/icons/u-expand-arrows-alt.svg?react";
+import CloseIcon from "#/icons/u-close.svg?react";
+import { RootState } from "#/store";
+import {
+  setIsChatInputExpanded,
+  setMessageToSend,
+} from "#/state/conversation-slice";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -36,9 +45,51 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const { t } = useTranslation();
+
   const chatInputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatInputRowRef = useRef<HTMLDivElement>(null);
+  const [shouldShowExpandArrow, setShouldShowExpandArrow] = useState(false);
+  const [dynamicMaxHeight, setDynamicMaxHeight] = useState(80);
+
+  const isChatInputExpanded = useSelector(
+    (state: RootState) => state.conversation.isChatInputExpanded,
+  );
+
+  const currentMaxHeight = isChatInputExpanded ? dynamicMaxHeight : 80;
+
+  const dispatch = useDispatch();
+
+  // Function to calculate dynamic max height based on chatInputRowRef height
+  const calculateDynamicMaxHeight = useCallback(() => {
+    if (!isChatInputExpanded || !chatInputRowRef.current) {
+      return 80;
+    }
+
+    const rowHeight = chatInputRowRef.current.offsetHeight;
+    // Subtract some pixels for padding/margins to ensure proper fit
+    const buffer = 24;
+    const calculatedHeight = Math.max(rowHeight - buffer, 80); // Minimum 60px
+
+    return calculatedHeight;
+  }, [isChatInputExpanded]);
+
+  // Update dynamic max height when expanded state changes
+  useEffect(() => {
+    if (isChatInputExpanded) {
+      // Use setTimeout to ensure the DOM has updated with flex-1 class
+      const timer = setTimeout(() => {
+        const newMaxHeight = calculateDynamicMaxHeight();
+        setDynamicMaxHeight(newMaxHeight);
+      }, 0);
+
+      return () => clearTimeout(timer);
+    }
+
+    setDynamicMaxHeight(80);
+    return undefined;
+  }, [isChatInputExpanded, calculateDynamicMaxHeight]);
 
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
@@ -48,6 +99,24 @@ export function CustomChatInput({
     return text.trim() === "";
   }, []);
 
+  // Helper function to update expand arrow visibility
+  const updateExpandArrowVisibility = useCallback(() => {
+    if (isChatInputExpanded) {
+      return;
+    }
+
+    const element = chatInputRef.current;
+    if (!element) {
+      setShouldShowExpandArrow(false);
+      return;
+    }
+
+    const hasContent = (element.innerText || "").trim() !== "";
+    const exceedsMaxHeight = element.scrollHeight > currentMaxHeight;
+
+    setShouldShowExpandArrow(hasContent && exceedsMaxHeight);
+  }, [isChatInputExpanded, currentMaxHeight]);
+
   // Helper function to properly clear contentEditable for placeholder display
   const clearEmptyContent = useCallback((): void => {
     if (chatInputRef.current && isContentEmpty()) {
@@ -56,12 +125,39 @@ export function CustomChatInput({
     }
   }, [isContentEmpty]);
 
-  // Use the auto-resize hook
+  // Custom hook for cursor management
+  const { scrollToCursor, focusAndPositionCursor } =
+    useCursorManagement(chatInputRef);
+
+  // Use the auto-resize hook with dynamic maxHeight
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
-    maxHeight: 120,
+    maxHeight: currentMaxHeight,
     value,
   });
+
+  // Auto-focus and position cursor when expanded state changes
+  useEffect(() => {
+    if (!chatInputRef.current || disabled) {
+      return undefined;
+    }
+
+    // Use setTimeout to ensure DOM has updated
+    const timer = setTimeout(() => {
+      if (chatInputRef.current) {
+        focusAndPositionCursor();
+      }
+    }, 50); // Small delay to ensure DOM updates are complete
+
+    return () => clearTimeout(timer);
+  }, [isChatInputExpanded, disabled, focusAndPositionCursor]);
+
+  // Re-initialize auto-resize when currentMaxHeight changes
+  React.useEffect(() => {
+    if (chatInputRef.current) {
+      autoResize();
+    }
+  }, [currentMaxHeight, autoResize]);
 
   // Function to add files and notify parent
   const addFiles = useCallback(
@@ -166,32 +262,11 @@ export function CustomChatInput({
       clearEmptyContent();
     }
 
+    // Update expand arrow visibility based on current content
+    updateExpandArrowVisibility();
+
     // Ensure cursor stays visible when content is scrollable
-    if (!chatInputRef.current) {
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0) {
-      return;
-    }
-
-    const range = selection.getRangeAt(0);
-    if (
-      !range.getBoundingClientRect ||
-      !chatInputRef.current.getBoundingClientRect
-    ) {
-      return;
-    }
-
-    const rect = range.getBoundingClientRect();
-    const inputRect = chatInputRef.current.getBoundingClientRect();
-
-    // If cursor is below the visible area, scroll to show it
-    if (rect.bottom > inputRect.bottom) {
-      chatInputRef.current.scrollTop =
-        chatInputRef.current.scrollHeight - chatInputRef.current.clientHeight;
-    }
+    scrollToCursor();
   };
 
   // Handle paste events to clean up formatting
@@ -204,8 +279,12 @@ export function CustomChatInput({
     // Insert plain text
     document.execCommand("insertText", false, text);
 
-    // Trigger resize
-    setTimeout(autoResize, 0);
+    // Trigger resize, update expand arrow, and ensure cursor visibility
+    setTimeout(() => {
+      autoResize();
+      updateExpandArrowVisibility();
+      scrollToCursor();
+    }, 0);
   };
 
   // Handle key events
@@ -222,36 +301,9 @@ export function CustomChatInput({
     setTimeout(() => {
       autoResize();
       // Ensure cursor stays visible after key navigation
-      if (!chatInputRef.current) {
-        return;
-      }
-
       const isArrowKey = e.key === "ArrowUp" || e.key === "ArrowDown";
-      if (!isArrowKey) {
-        return;
-      }
-
-      const selection = window.getSelection();
-      if (!selection || selection.rangeCount === 0) {
-        return;
-      }
-
-      const range = selection.getRangeAt(0);
-      if (
-        !range.getBoundingClientRect ||
-        !chatInputRef.current.getBoundingClientRect
-      ) {
-        return;
-      }
-
-      const rect = range.getBoundingClientRect();
-      const inputRect = chatInputRef.current.getBoundingClientRect();
-
-      // Scroll to keep cursor visible
-      if (rect.top < inputRect.top) {
-        chatInputRef.current.scrollTop -= inputRect.top - rect.top + 5;
-      } else if (rect.bottom > inputRect.bottom) {
-        chatInputRef.current.scrollTop += rect.bottom - inputRect.bottom + 5;
+      if (isArrowKey) {
+        scrollToCursor();
       }
     }, 0);
   };
@@ -269,8 +321,35 @@ export function CustomChatInput({
     }
   };
 
+  // Check if content exceeds max height and update expand arrow visibility
+  useEffect(() => {
+    updateExpandArrowVisibility();
+  }, [value, updateExpandArrowVisibility]); // Re-run when value prop changes
+
+  const toggleChatInput = (isExpanded: boolean) => {
+    dispatch(setMessageToSend(chatInputRef.current?.innerText || ""));
+    dispatch(setIsChatInputExpanded(isExpanded));
+
+    // Auto-focus will be handled by the useEffect, but we can also trigger it immediately
+    // for better responsiveness when expanding
+    if (isExpanded && chatInputRef.current && !disabled) {
+      // Use a shorter timeout for immediate response when expanding
+      setTimeout(() => {
+        if (chatInputRef.current) {
+          focusAndPositionCursor();
+        }
+      }, 10);
+    }
+  };
+
   return (
-    <div className={`w-full ${className}`}>
+    <div
+      className={cn(
+        "w-full relative",
+        isChatInputExpanded && "h-full",
+        className,
+      )}
+    >
       {/* Hidden file input */}
       <input
         type="file"
@@ -285,14 +364,23 @@ export function CustomChatInput({
       {/* Chat Input Component */}
       <div
         ref={chatContainerRef}
-        className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full"
+        className={cn(
+          "bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full",
+          isChatInputExpanded && "h-full justify-end",
+        )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
         {/* Main Input Row */}
-        <div className="box-border content-stretch flex flex-row items-start justify-between p-0 relative shrink-0 w-full pb-[18px]">
-          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-start justify-start min-h-px min-w-px p-0 relative shrink-0 pt-1">
+        <div
+          ref={chatInputRowRef}
+          className={cn(
+            "box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px]",
+            isChatInputExpanded && "flex-1",
+          )}
+        >
+          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-end justify-start min-h-px min-w-px p-0 relative shrink-0 pt-1">
             <ChatAddFileButton
               disabled={disabled}
               handleFileIconClick={handleFileIconClick}
@@ -303,17 +391,23 @@ export function CustomChatInput({
               className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
               data-name="Text & caret"
             >
-              <div className="basis-0 flex flex-col font-['Outfit:Regular',_sans-serif] font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
+              <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[80px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    `chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap`,
                     disabled && "cursor-not-allowed",
+                    isChatInputExpanded && `items-start`,
                   )}
+                  style={{
+                    ...(isChatInputExpanded && {
+                      minHeight: `${currentMaxHeight}px`,
+                    }),
+                    maxHeight: `${currentMaxHeight}px`, // need to use inline style to override the style from the useAutoResize hook.
+                  }}
                   contentEditable={!disabled}
                   data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                   data-testid="chat-input"
-                  style={{ fontFamily: "'Outfit', sans-serif" }}
                   onInput={handleInput}
                   onPaste={handlePaste}
                   onKeyDown={handleKeyDown}
@@ -342,6 +436,34 @@ export function CustomChatInput({
           />
         </div>
       </div>
+
+      {shouldShowExpandArrow && !isChatInputExpanded && (
+        <button
+          type="button"
+          className={cn(
+            "absolute top-5 cursor-pointer",
+            isChatInputExpanded ? "right-[24px]" : "right-[26px]",
+          )}
+          onClick={() => {
+            toggleChatInput(true);
+          }}
+        >
+          <ExpandArrowIcon width={15} height={15} color="#9299AA" />
+        </button>
+      )}
+
+      {isChatInputExpanded && (
+        <button
+          type="button"
+          className={cn(
+            "absolute top-5 cursor-pointer",
+            isChatInputExpanded ? "right-[24px]" : "right-[26px]",
+          )}
+          onClick={() => toggleChatInput(false)}
+        >
+          <CloseIcon width={18} height={18} color="#ffffff" />
+        </button>
+      )}
     </div>
   );
 }
