@@ -1,6 +1,8 @@
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
+from pydantic import SecretStr
+
 # Import MCPConfig directly to avoid circular imports
 from openhands.core.config.mcp_config import MCPConfig
 
@@ -145,3 +147,69 @@ class ConfigurationMerger:
         )
 
         config.mcp = merged_mcp
+
+    @staticmethod
+    def config_to_settings(config: 'OpenHandsConfig') -> 'Settings':
+        """Convert an OpenHandsConfig to a Settings object.
+
+        This method creates a new Settings object with values from the provided
+        OpenHandsConfig. It's the inverse operation of merge_settings_with_config.
+
+        Args:
+            config: The configuration to convert
+
+        Returns:
+            A new Settings instance with values from the config
+        """
+        # Import here to avoid circular imports
+        from openhands.storage.data_models.settings import Settings
+
+        llm_config = config.get_llm_config()
+        security = config.security
+
+        # Get MCP config if available
+        mcp_config = None
+        if hasattr(config, 'mcp') and config.mcp is not None:
+            mcp_config = config.mcp
+
+        # Convert API key to SecretStr if it's a string
+        llm_api_key = None
+        if llm_config.api_key is not None:
+            if isinstance(llm_config.api_key, str):
+                llm_api_key = SecretStr(llm_config.api_key)
+            else:
+                llm_api_key = llm_config.api_key
+
+        # Convert sandbox API key to SecretStr if it's a string
+        sandbox_api_key = None
+        if config.sandbox.api_key is not None:
+            sandbox_api_key = SecretStr(config.sandbox.api_key)
+
+        # Convert search API key to SecretStr if it's a string
+        search_api_key = None
+        if config.search_api_key is not None:
+            if isinstance(config.search_api_key, str):
+                search_api_key = SecretStr(config.search_api_key)
+            else:
+                search_api_key = config.search_api_key
+
+        settings = Settings(
+            language='en',
+            agent=config.default_agent,
+            max_iterations=config.max_iterations,
+            security_analyzer=security.security_analyzer,
+            confirmation_mode=security.confirmation_mode,
+            llm_model=llm_config.model,
+            llm_api_key=llm_api_key,
+            llm_base_url=llm_config.base_url,
+            remote_runtime_resource_factor=config.sandbox.remote_runtime_resource_factor,
+            sandbox_base_container_image=config.sandbox.base_container_image,
+            sandbox_runtime_container_image=config.sandbox.runtime_container_image,
+            sandbox_api_key=sandbox_api_key,
+            mcp_config=mcp_config,
+            search_api_key=search_api_key,
+            max_budget_per_task=config.max_budget_per_task,
+            git_user_name=config.git_user_name,
+            git_user_email=config.git_user_email,
+        )
+        return settings

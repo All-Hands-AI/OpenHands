@@ -11,9 +11,7 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
-from openhands.core.config.utils import load_openhands_config
 from openhands.storage.data_models.user_secrets import UserSecrets
 
 
@@ -109,33 +107,3 @@ class Settings(BaseModel):
 
         """Force invalidate secret store"""
         return {'provider_tokens': {}}
-
-    @staticmethod
-    def from_config() -> Settings | None:
-        app_config = load_openhands_config()
-        llm_config: LLMConfig = app_config.get_llm_config()
-        if llm_config.api_key is None:
-            # If no api key has been set, we take this to mean that there is no reasonable default
-            return None
-        security = app_config.security
-
-        # Get MCP config if available
-        mcp_config = None
-        if hasattr(app_config, 'mcp'):
-            mcp_config = app_config.mcp
-
-        settings = Settings(
-            language='en',
-            agent=app_config.default_agent,
-            max_iterations=app_config.max_iterations,
-            security_analyzer=security.security_analyzer,
-            confirmation_mode=security.confirmation_mode,
-            llm_model=llm_config.model,
-            llm_api_key=llm_config.api_key,
-            llm_base_url=llm_config.base_url,
-            remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
-            mcp_config=mcp_config,
-            search_api_key=app_config.search_api_key,
-            max_budget_per_task=app_config.max_budget_per_task,
-        )
-        return settings

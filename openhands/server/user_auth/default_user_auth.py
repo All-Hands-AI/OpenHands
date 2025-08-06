@@ -48,24 +48,40 @@ class DefaultUserAuth(UserAuth):
         return settings_store
 
     async def get_user_settings(self) -> Settings | None:
+        """Get user settings, merging MCP config from config.toml if needed.
+
+        This method retrieves user settings from the settings store. If settings exist,
+        it merges the MCP configuration from config.toml with the user's settings.
+
+        Returns:
+            The user settings with merged MCP config, or None if no settings exist.
+        """
+        # Return cached settings if available
         settings = self._settings
         if settings:
             return settings
+
+        # Load settings from store
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
 
-        # Merge config.toml settings with stored settings
+        # If settings exist, merge MCP config from config.toml
         if settings:
+            # Load default config
             config = OpenHandsConfig()
-            # Merge settings with config
-            merged_config = ConfigurationMerger.merge_settings_with_config(
-                settings, config
-            )
-            # Create new settings with the same values as the original settings
-            # but with the MCP config from the merged config
-            if merged_config.mcp is not None:
-                settings.mcp_config = merged_config.mcp
 
+            # Only merge MCP settings if needed
+            if config.mcp is not None:
+                # Create merged config with settings taking precedence
+                merged_config = ConfigurationMerger.merge_settings_with_config(
+                    settings, config
+                )
+
+                # Update settings with merged MCP config
+                if merged_config.mcp is not None:
+                    settings.mcp_config = merged_config.mcp
+
+        # Cache and return settings
         self._settings = settings
         return settings
 

@@ -1,7 +1,6 @@
-from unittest.mock import patch
-
 from pydantic import SecretStr
 
+from openhands.core.config.configuration_merger import ConfigurationMerger
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.config.sandbox_config import SandboxConfig
@@ -10,9 +9,9 @@ from openhands.server.routes.settings import convert_to_settings
 from openhands.storage.data_models.settings import Settings
 
 
-def test_settings_from_config():
-    # Mock configuration
-    mock_app_config = OpenHandsConfig(
+def test_config_to_settings():
+    # Create a configuration
+    config = OpenHandsConfig(
         default_agent='test-agent',
         max_iterations=100,
         security=SecurityConfig(
@@ -28,28 +27,26 @@ def test_settings_from_config():
         sandbox=SandboxConfig(remote_runtime_resource_factor=2),
     )
 
-    with patch(
-        'openhands.storage.data_models.settings.load_openhands_config',
-        return_value=mock_app_config,
-    ):
-        settings = Settings.from_config()
+    # Convert config to settings
+    settings = ConfigurationMerger.config_to_settings(config)
 
-        assert settings is not None
-        assert settings.language == 'en'
-        assert settings.agent == 'test-agent'
-        assert settings.max_iterations == 100
-        assert settings.security_analyzer == 'test-analyzer'
-        assert settings.confirmation_mode is True
-        assert settings.llm_model == 'test-model'
-        assert settings.llm_api_key.get_secret_value() == 'test-key'
-        assert settings.llm_base_url == 'https://test.example.com'
-        assert settings.remote_runtime_resource_factor == 2
-        assert not settings.secrets_store.provider_tokens
+    # Verify settings
+    assert settings is not None
+    assert settings.language == 'en'
+    assert settings.agent == 'test-agent'
+    assert settings.max_iterations == 100
+    assert settings.security_analyzer == 'test-analyzer'
+    assert settings.confirmation_mode is True
+    assert settings.llm_model == 'test-model'
+    assert settings.llm_api_key.get_secret_value() == 'test-key'
+    assert settings.llm_base_url == 'https://test.example.com'
+    assert settings.remote_runtime_resource_factor == 2
+    assert not settings.secrets_store.provider_tokens
 
 
-def test_settings_from_config_no_api_key():
-    # Mock configuration without API key
-    mock_app_config = OpenHandsConfig(
+def test_config_to_settings_no_api_key():
+    # Create a configuration without API key
+    config = OpenHandsConfig(
         default_agent='test-agent',
         max_iterations=100,
         security=SecurityConfig(
@@ -63,12 +60,12 @@ def test_settings_from_config_no_api_key():
         sandbox=SandboxConfig(remote_runtime_resource_factor=2),
     )
 
-    with patch(
-        'openhands.storage.data_models.settings.load_openhands_config',
-        return_value=mock_app_config,
-    ):
-        settings = Settings.from_config()
-        assert settings is None
+    # Convert config to settings
+    settings = ConfigurationMerger.config_to_settings(config)
+
+    # Verify settings
+    assert settings is not None
+    assert settings.llm_api_key is None
 
 
 def test_settings_handles_sensitive_data():

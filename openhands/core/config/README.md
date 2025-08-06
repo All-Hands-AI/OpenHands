@@ -2,17 +2,28 @@
 
 ## Overview
 
-OpenHands uses a flexible configuration system that allows settings to be defined through environment variables, TOML files, and command-line arguments. The configuration is managed through a package structure in `openhands/core/config/`.
+OpenHands uses a flexible configuration system that allows settings to be defined through environment variables, TOML files, command-line arguments, and user settings. The configuration is managed through a package structure in `openhands/core/config/`.
+
+## Configuration Sources and Precedence
+
+OpenHands configuration comes from multiple sources, with the following precedence (highest to lowest):
+
+1. **User Settings**: Settings configured by users through the UI or API
+2. **Environment Variables**: Settings defined in the environment
+3. **TOML Files**: Settings defined in `config.toml`
+4. **Command-line Arguments**: Settings provided as command-line arguments
+5. **Default Values**: Default values defined in the configuration classes
 
 ## Configuration Classes
 
 The main configuration classes are:
 
-- `AppConfig`: The root configuration class
+- `OpenHandsConfig`: The root configuration class (formerly AppConfig)
 - `LLMConfig`: Configuration for the Language Model
 - `AgentConfig`: Configuration for the agent
 - `SandboxConfig`: Configuration for the sandbox environment
 - `SecurityConfig`: Configuration for security settings
+- `MCPConfig`: Configuration for Multi-Channel Providers
 
 These classes are defined as dataclasses, with class attributes holding default values for all fields.
 
@@ -55,9 +66,9 @@ Be cautious when setting sensitive information like API keys in environment vari
 
 ## Usage
 
-The `load_app_config()` function is the recommended way to initialize your configuration. It performs the following steps:
+The `load_openhands_config()` function is the recommended way to initialize your configuration. It performs the following steps:
 
-1. Creates an instance of `AppConfig`
+1. Creates an instance of `OpenHandsConfig`
 2. Loads settings from the `config.toml` file (if present)
 3. Loads settings from environment variables, overriding TOML settings if applicable
 4. Applies final tweaks and validations to the configuration, falling back to the default values specified in the code
@@ -65,13 +76,13 @@ The `load_app_config()` function is the recommended way to initialize your confi
 
 There are also command line args, which may work to override other sources.
 
-Here's an example of how to use `load_app_config()`:
+Here's an example of how to use `load_openhands_config()`:
 
-````python
-from openhands.core.config import load_app_config
+```python
+from openhands.core.config import load_openhands_config
 
 # Load all configuration settings
-config = load_app_config()
+config = load_openhands_config()
 
 # Now you can access your configuration
 llm_config = config.get_llm_config()
@@ -82,9 +93,39 @@ sandbox_config = config.sandbox
 print(f"Using LLM model: {llm_config.model}")
 print(f"Agent memory enabled: {agent_config.memory_enabled}")
 print(f"Sandbox timeout: {sandbox_config.timeout}")
-````
+```
 
-By using `load_app_config()`, you ensure that all configuration sources are properly loaded and processed, providing a consistent and fully initialized configuration for your application.
+By using `load_openhands_config()`, you ensure that all configuration sources are properly loaded and processed, providing a consistent and fully initialized configuration for your application.
+
+## Merging User Settings with Configuration
+
+OpenHands provides a `ConfigurationMerger` utility for merging user settings with the application configuration:
+
+```python
+from openhands.core.config import ConfigurationMerger, OpenHandsConfig
+from openhands.storage.data_models.settings import Settings
+
+# Load the application configuration
+config = OpenHandsConfig()
+
+# Create or load user settings
+settings = Settings(llm_model="gpt-4", max_iterations=100)
+
+# Merge settings with configuration (settings take precedence)
+merged_config = ConfigurationMerger.merge_settings_with_config(settings, config)
+
+# You can also convert configuration to settings
+settings = ConfigurationMerger.config_to_settings(config)
+```
+
+### Special Handling for MCP Configuration
+
+MCP (Multi-Channel Provider) configuration is special because it represents a list of providers that can come from multiple sources. When merging MCP configuration:
+
+1. Providers from `config.toml` appear first in the merged list
+2. Providers from user settings are appended to the list
+
+This allows both system-wide providers (from `config.toml`) and user-specific providers (from settings) to be used together.
 
 ## Additional Configuration Methods
 
@@ -97,4 +138,6 @@ These methods are handled by separate functions in the config package.
 
 ## Conclusion
 
-The OpenHands configuration system provides a flexible and type-safe way to manage application settings. By following the naming conventions and utilizing the provided functions, developers can easily customize the behavior of OpenHands components through environment variables and other configuration sources.
+The OpenHands configuration system provides a flexible and type-safe way to manage application settings from multiple sources. By following the naming conventions and utilizing the provided functions, developers can easily customize the behavior of OpenHands components through environment variables, configuration files, and user settings.
+
+The `ConfigurationMerger` utility provides a clean way to merge user settings with application configuration, ensuring that settings from different sources are properly combined according to the defined precedence rules.
