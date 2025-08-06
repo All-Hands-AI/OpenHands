@@ -220,6 +220,7 @@ export default function MainApp() {
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
           providersConfigured={config.data?.PROVIDERS_CONFIGURED}
+          authUrl={config.data?.AUTH_URL}
         />
       )}
       {renderReAuthModal && <ReauthModal />}
