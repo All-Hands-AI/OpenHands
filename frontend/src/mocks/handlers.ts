@@ -8,9 +8,10 @@ import { DEFAULT_SETTINGS } from "#/services/settings";
 import { STRIPE_BILLING_HANDLERS } from "./billing-handlers";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { FILE_SERVICE_HANDLERS } from "./file-service-handlers";
-import { GitRepository, GitUser } from "#/types/git";
+import { GitUser } from "#/types/git";
 import { TASK_SUGGESTIONS_HANDLERS } from "./task-suggestions-handlers";
 import { SECRETS_HANDLERS } from "./secrets-handlers";
+import { GIT_REPOSITORY_HANDLERS } from "./git-repository-handlers";
 
 export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   llm_model: DEFAULT_SETTINGS.LLM_MODEL,
@@ -24,7 +25,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  provider_tokens_set: DEFAULT_SETTINGS.PROVIDER_TOKENS_SET,
+  provider_tokens_set: { github: null, gitlab: null, bitbucket: null },
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   enable_proactive_conversation_starters:
@@ -138,25 +139,8 @@ export const handlers = [
   ...FILE_SERVICE_HANDLERS,
   ...TASK_SUGGESTIONS_HANDLERS,
   ...SECRETS_HANDLERS,
+  ...GIT_REPOSITORY_HANDLERS,
   ...openHandsHandlers,
-  http.get("/api/user/repositories", () => {
-    const data: GitRepository[] = [
-      {
-        id: "1",
-        full_name: "octocat/hello-world",
-        git_provider: "github",
-        is_public: true,
-      },
-      {
-        id: "2",
-        full_name: "octocat/earth",
-        git_provider: "github",
-        is_public: true,
-      },
-    ];
-
-    return HttpResponse.json(data);
-  }),
   http.get("/api/user/info", () => {
     const user: GitUser = {
       id: "1",
@@ -205,9 +189,6 @@ export const handlers = [
 
     if (!settings) return HttpResponse.json(null, { status: 404 });
 
-    if (Object.keys(settings.provider_tokens_set).length > 0)
-      settings.provider_tokens_set = {};
-
     return HttpResponse.json(settings);
   }),
   http.post("/api/settings", async ({ request }) => {
@@ -215,18 +196,7 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      let newSettings: Partial<PostApiSettings> = {};
-      if (typeof body === "object") {
-        newSettings = { ...body };
-      }
-
-      const fullSettings = {
-        ...MOCK_DEFAULT_USER_SETTINGS,
-        ...MOCK_USER_PREFERENCES.settings,
-        ...newSettings,
-      };
-
-      MOCK_USER_PREFERENCES.settings = fullSettings;
+      MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
       return HttpResponse.json(null, { status: 200 });
     }
 
