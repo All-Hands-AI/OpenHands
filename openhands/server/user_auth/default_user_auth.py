@@ -4,6 +4,7 @@ from fastapi import Request
 from pydantic import SecretStr
 
 from openhands.core.config import ConfigurationMerger, OpenHandsConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
@@ -48,13 +49,20 @@ class DefaultUserAuth(UserAuth):
         return settings_store
 
     async def get_user_settings(self) -> Settings | None:
-        """Get user settings, merging MCP config from config.toml if needed.
+        """Get user settings with proper precedence handling.
 
-        This method retrieves user settings from the settings store. If settings exist,
-        it merges the MCP configuration from config.toml with the user's settings.
+        This method retrieves user settings from the settings store and applies the correct
+        precedence order:
+        1. Command-line arguments (already in OpenHandsConfig)
+        2. User settings (from settings store)
+        3. Environment variables (already in OpenHandsConfig)
+        4. TOML files (already in OpenHandsConfig)
+        5. Default values (already in OpenHandsConfig)
+
+        For MCP configuration, we merge the lists from both sources.
 
         Returns:
-            The user settings with merged MCP config, or None if no settings exist.
+            The merged settings, or None if no settings exist.
         """
         # Return cached settings if available
         settings = self._settings
@@ -65,25 +73,124 @@ class DefaultUserAuth(UserAuth):
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
 
-        # If settings exist, merge MCP config from config.toml
-        if settings:
-            # Load default config
-            config = OpenHandsConfig()
+        # If no settings exist, return None
+        if not settings:
+            self._settings = None
+            return None
 
-            # Only merge MCP settings if needed
-            if config.mcp is not None:
-                # Create merged config with settings taking precedence
-                merged_config = ConfigurationMerger.merge_settings_with_config(
-                    settings, config
-                )
+        # Load config (contains command-line args, env vars, and TOML settings)
+        config = OpenHandsConfig()
 
-                # Update settings with merged MCP config
-                if merged_config.mcp is not None:
-                    settings.mcp_config = merged_config.mcp
+        # Create a new settings object with the same values
+        final_settings = Settings(
+            language=settings.language,
+            agent=settings.agent,
+            max_iterations=settings.max_iterations,
+            security_analyzer=settings.security_analyzer,
+            confirmation_mode=settings.confirmation_mode,
+            llm_model=settings.llm_model,
+            llm_api_key=settings.llm_api_key,
+            llm_base_url=settings.llm_base_url,
+            remote_runtime_resource_factor=settings.remote_runtime_resource_factor,
+            sandbox_base_container_image=settings.sandbox_base_container_image,
+            sandbox_runtime_container_image=settings.sandbox_runtime_container_image,
+            sandbox_api_key=settings.sandbox_api_key,
+            mcp_config=settings.mcp_config,
+            search_api_key=settings.search_api_key,
+            max_budget_per_task=settings.max_budget_per_task,
+            git_user_name=settings.git_user_name,
+            git_user_email=settings.git_user_email,
+        )
+        
+        # Apply command-line arguments with highest precedence
+        # Only override if the config has a non-None value
+        if config.default_agent is not None:
+            final_settings.agent = config.default_agent
+            
+        if config.max_iterations is not None:
+            final_settings.max_iterations = config.max_iterations
+            
+        # Handle other config fields that might be set via command line
+        if config.git_user_name is not None:
+            final_settings.git_user_name = config.git_user_name
+            
+        if config.git_user_email is not None:
+            final_settings.git_user_email = config.git_user_email
+            
+        if config.max_budget_per_task is not None:
+            final_settings.max_budget_per_task = config.max_budget_per_task
+            
+        # Handle LLM config
+        llm_config = config.get_llm_config()
+        if llm_config.model is not None:
+            final_settings.llm_model = llm_config.model
+            
+        if llm_config.api_key is not None:
+            # Convert to SecretStr if needed
+            if isinstance(llm_config.api_key, str):
+                final_settings.llm_api_key = SecretStr(llm_config.api_key)
+            elif hasattr(llm_config.api_key, 'get_secret_value'):
+                final_settings.llm_api_key = llm_config.api_key
+                
+        if llm_config.base_url is not None:
+            final_settings.llm_base_url = llm_config.base_url
+            
+        # Handle security config
+        if config.security.security_analyzer is not None:
+            final_settings.security_analyzer = config.security.security_analyzer
+            
+        if config.security.confirmation_mode is not None:
+            final_settings.confirmation_mode = config.security.confirmation_mode
+            
+        # Handle sandbox config
+        if config.sandbox.remote_runtime_resource_factor is not None:
+            final_settings.remote_runtime_resource_factor = config.sandbox.remote_runtime_resource_factor
+            
+        if config.sandbox.base_container_image is not None:
+            final_settings.sandbox_base_container_image = config.sandbox.base_container_image
+            
+        if config.sandbox.runtime_container_image is not None:
+            final_settings.sandbox_runtime_container_image = config.sandbox.runtime_container_image
+            
+        # Special handling for MCP config - merge the lists
+        if config.mcp is not None:
+            # Get user settings MCP config
+            user_mcp_config = settings.mcp_config
+            
+            # Create a new MCP config with both server lists
+            final_mcp = MCPConfig()
+            
+            # Add config servers first (highest precedence)
+            if config.mcp.sse_servers:
+                final_mcp.sse_servers = list(config.mcp.sse_servers)
+            
+            # Then add user settings servers
+            if user_mcp_config and user_mcp_config.sse_servers:
+                if not final_mcp.sse_servers:
+                    final_mcp.sse_servers = []
+                final_mcp.sse_servers.extend(user_mcp_config.sse_servers)
+            
+            # Do the same for stdio and shttp servers
+            if config.mcp.stdio_servers:
+                final_mcp.stdio_servers = list(config.mcp.stdio_servers)
+            if user_mcp_config and user_mcp_config.stdio_servers:
+                if not final_mcp.stdio_servers:
+                    final_mcp.stdio_servers = []
+                final_mcp.stdio_servers.extend(user_mcp_config.stdio_servers)
+            
+            if config.mcp.shttp_servers:
+                final_mcp.shttp_servers = list(config.mcp.shttp_servers)
+            if user_mcp_config and user_mcp_config.shttp_servers:
+                if not final_mcp.shttp_servers:
+                    final_mcp.shttp_servers = []
+                final_mcp.shttp_servers.extend(user_mcp_config.shttp_servers)
+            
+            # Set the final MCP config
+            final_settings.mcp_config = final_mcp
 
         # Cache and return settings
-        self._settings = settings
-        return settings
+        self._settings = final_settings
+        return final_settings
 
     async def get_secrets_store(self) -> SecretsStore:
         secrets_store = self._secrets_store

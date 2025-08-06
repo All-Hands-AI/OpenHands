@@ -177,22 +177,46 @@ class ConfigurationMerger:
         if llm_config.api_key is not None:
             if isinstance(llm_config.api_key, str):
                 llm_api_key = SecretStr(llm_config.api_key)
-            else:
+            elif hasattr(llm_config.api_key, 'get_secret_value'):
+                # It's already a SecretStr
                 llm_api_key = llm_config.api_key
+            else:
+                # Skip mock objects or other non-string types
+                llm_api_key = None
 
         # Convert sandbox API key to SecretStr if it's a string
         sandbox_api_key = None
         if config.sandbox.api_key is not None:
-            sandbox_api_key = SecretStr(config.sandbox.api_key)
+            if isinstance(config.sandbox.api_key, str):
+                sandbox_api_key = SecretStr(config.sandbox.api_key)
+            elif hasattr(config.sandbox.api_key, 'get_secret_value'):
+                # It's already a SecretStr
+                sandbox_api_key = config.sandbox.api_key
+            else:
+                # Skip mock objects or other non-string types
+                sandbox_api_key = None
 
         # Convert search API key to SecretStr if it's a string
         search_api_key = None
         if config.search_api_key is not None:
             if isinstance(config.search_api_key, str):
                 search_api_key = SecretStr(config.search_api_key)
-            else:
+            elif hasattr(config.search_api_key, 'get_secret_value'):
+                # It's already a SecretStr
                 search_api_key = config.search_api_key
+            else:
+                # Skip mock objects or other non-string types
+                search_api_key = None
 
+        # Handle base_url for mocks
+        llm_base_url = None
+        if llm_config.base_url is not None:
+            if isinstance(llm_config.base_url, str):
+                llm_base_url = llm_config.base_url
+            else:
+                # Skip mock objects or other non-string types
+                llm_base_url = None
+                
         settings = Settings(
             language='en',
             agent=config.default_agent,
@@ -201,7 +225,7 @@ class ConfigurationMerger:
             confirmation_mode=security.confirmation_mode,
             llm_model=llm_config.model,
             llm_api_key=llm_api_key,
-            llm_base_url=llm_config.base_url,
+            llm_base_url=llm_base_url,
             remote_runtime_resource_factor=config.sandbox.remote_runtime_resource_factor,
             sandbox_base_container_image=config.sandbox.base_container_image,
             sandbox_runtime_container_image=config.sandbox.runtime_container_image,

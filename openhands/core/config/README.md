@@ -8,10 +8,10 @@ OpenHands uses a flexible configuration system that allows settings to be define
 
 OpenHands configuration comes from multiple sources, with the following precedence (highest to lowest):
 
-1. **User Settings**: Settings configured by users through the UI or API
-2. **Environment Variables**: Settings defined in the environment
-3. **TOML Files**: Settings defined in `config.toml`
-4. **Command-line Arguments**: Settings provided as command-line arguments
+1. **Command-line Arguments**: Settings provided as command-line arguments
+2. **User Settings**: Settings configured by users through the UI or API
+3. **Environment Variables**: Settings defined in the environment
+4. **TOML Files**: Settings defined in `config.toml`
 5. **Default Values**: Default values defined in the configuration classes
 
 ## Configuration Classes
@@ -68,13 +68,14 @@ Be cautious when setting sensitive information like API keys in environment vari
 
 The `load_openhands_config()` function is the recommended way to initialize your configuration. It performs the following steps:
 
-1. Creates an instance of `OpenHandsConfig`
+1. Creates an instance of `OpenHandsConfig` with default values
 2. Loads settings from the `config.toml` file (if present)
-3. Loads settings from environment variables, overriding TOML settings if applicable
-4. Applies final tweaks and validations to the configuration, falling back to the default values specified in the code
-5. Optionally sets global logging levels based on the configuration
+3. Loads settings from environment variables, overriding TOML settings
+4. Processes command-line arguments, which have the highest precedence and override all other sources
+5. Applies final tweaks and validations to the configuration
+6. Optionally sets global logging levels based on the configuration
 
-There are also command line args, which may work to override other sources.
+When used in the server context, user settings (from the UI/API) are applied after loading the configuration, taking precedence over environment variables and TOML settings but not over command-line arguments.
 
 Here's an example of how to use `load_openhands_config()`:
 
