@@ -3,26 +3,28 @@
 @plugin '../hero.ts';
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
+@source '../node_modules/@openhands/ui/dist/**/*.{js,ts,jsx,tsx}';
+@import "../node_modules/@openhands/ui/dist/tokens.css";
 
-
+@plugin 'tailwind-scrollbar' {
+  nocompatible: true;
+  preferredstrategy: "pseudoelements";
+}
 
 /* OLD TAILWIND STYLES */
 @theme {
-  --color-primary: #C9B974;
-  --color-logo: #CFB755;
-  --color-base: #0D0F11;
-  --color-base-secondary: #24272E;
-  --color-danger: #E76A5E;
-  --color-success: #A5E75E;
-  --color-basic: #9099AC;
+  --color-primary: #c9b974;
+  --color-logo: #cfb755;
+  --color-base: #0d0f11;
+  --color-base-secondary: #24272e;
+  --color-danger: #e76a5e;
+  --color-success: #a5e75e;
+  --color-basic: #9099ac;
   --color-tertiary: #454545;
-  --color-tertiary-light: #B7BDC2;
-  --color-content: #ECEDEE;
-  --color-content-2: #F9FBFE;
+  --color-tertiary-light: #b7bdc2;
+  --color-content: #ecedee;
+  --color-content-2: #f9fbfe;
 }
-
-
-
 
 .button-base {
   @apply bg-tertiary border border-neutral-600 rounded-xs;
@@ -42,12 +44,50 @@
 
 /* Custom Chat Input */
 .custom-scrollbar::-webkit-scrollbar {
+<<<<<<< HEAD
   display: none;
 }
 
 .custom-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+=======
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Hide scrollbar by default */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+/* Show scrollbar on hover */
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(208, 217, 250, 0.3);
+  opacity: 1;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(208, 217, 250, 0.5);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-scrollbar:hover {
+  scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
+>>>>>>> ALL-2552/revise-ux
 }
 
 /* Custom styles for contenteditable */
@@ -130,25 +170,33 @@
 }
 
 .loader {
-  background: #C9B974;
+  background: #c9b974;
   animation: l5 1s infinite linear alternate;
 }
 
 @keyframes l5 {
   0% {
-    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
-    background: #C9B974;
+    box-shadow:
+      20px 0 #c9b974,
+      -20px 0 rgba(201, 185, 116, 0.1);
+    background: #c9b974;
   }
   33% {
-    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
-    background: rgba(201,185,116,0.1);
+    box-shadow:
+      20px 0 #c9b974,
+      -20px 0 rgba(201, 185, 116, 0.1);
+    background: rgba(201, 185, 116, 0.1);
   }
   66% {
-    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
-    background: rgba(201,185,116,0.1);
+    box-shadow:
+      20px 0 rgba(201, 185, 116, 0.1),
+      -20px 0 #c9b974;
+    background: rgba(201, 185, 116, 0.1);
   }
   100% {
-    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
-    background: #C9B974;
+    box-shadow:
+      20px 0 rgba(201, 185, 116, 0.1),
+      -20px 0 #c9b974;
+    background: #c9b974;
   }
 }

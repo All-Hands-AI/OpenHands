@@ -198,7 +198,7 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
+      className="h-screen p-3 pl-0 lg:min-w-[1024px] flex flex-col md:flex-row"
     >
       <Sidebar />
 
