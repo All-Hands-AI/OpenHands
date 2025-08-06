@@ -25,6 +25,7 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
+import { Controls } from "#/components/features/controls/controls";
 
 function AppContent() {
   useConversationConfig();
@@ -69,6 +70,7 @@ function AppContent() {
 
   const {
     isOpen: securityModalIsOpen,
+    onOpen: onSecurityModalOpen,
     onOpenChange: onSecurityModalOpenChange,
   } = useDisclosure();
 
@@ -86,10 +88,10 @@ function AppContent() {
               <ConversationMain />
             </div>
 
-            {/* <Controls
+            <Controls
               setSecurityOpen={onSecurityModalOpen}
               showSecurityLock={!!settings?.SECURITY_ANALYZER}
-            /> */}
+            />
             {settings && (
               <Security
                 isOpen={securityModalIsOpen}
