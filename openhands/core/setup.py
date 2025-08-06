@@ -16,14 +16,12 @@ from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_S
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.event import Event
-from openhands.integrations.provider import ProviderToken, ProviderType
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderToken,
     ProviderType,
 )
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
