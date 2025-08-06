@@ -56,6 +56,10 @@ def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
 
+    # task_completed has been deprecated - remove it from args to maintain backward compatibility
+    if 'task_completed' in args:
+        args.pop('task_completed')
+
     # Handle translated_ipython_code deprecation
     if 'translated_ipython_code' in args:
         code = args.pop('translated_ipython_code')

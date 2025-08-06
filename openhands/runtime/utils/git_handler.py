@@ -115,7 +115,7 @@ class GitHandler:
 
         result = self.execute(self.git_diff_cmd.format(file_path=file_path), self.cwd)
         if result.exit_code == 0:
-            diff = json.loads(result.content)
+            diff = json.loads(result.content, strict=False)
             return diff
 
         if self.git_diff_cmd != GIT_DIFF_CMD:

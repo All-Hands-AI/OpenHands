@@ -75,6 +75,9 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -157,10 +160,6 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
-        agent_config = ExperimentManagerImpl.run_agent_config_variant_test(
-            self.user_id, self.sid, agent_config
-        )
 
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
