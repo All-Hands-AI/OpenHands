@@ -104,22 +104,27 @@ async def create_mcp_clients(
             client = MCPClient()
             try:
                 await client.connect_stdio(server)
-                
+
                 # Log which tools this specific server provides
                 tool_names = [tool.name for tool in client.tools]
-                server_name = getattr(server, 'name', f'{server.command} {" ".join(server.args or [])}')
+                server_name = getattr(
+                    server, 'name', f'{server.command} {" ".join(server.args or [])}'
+                )
                 logger.info(
                     f'Successfully connected to MCP stdio server {server_name} - '
                     f'provides {len(tool_names)} tools: {tool_names}'
                 )
-                
+
                 mcp_clients.append(client)
             except Exception as e:
                 # Error is already logged and collected in client.connect_stdio()
                 logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
             continue
 
+        # We no longer need to convert dictionary server configs here
+        # The conversion happens in MCPClient.connect_http
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
+
         connection_type = 'SHTTP' if is_shttp else 'SSE'
         logger.info(
             f'Initializing MCP agent for {server} with {connection_type} connection...'
