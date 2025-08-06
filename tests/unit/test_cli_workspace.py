@@ -2,14 +2,20 @@
 
 import os
 import tempfile
+from unittest.mock import MagicMock
 
 import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
-from openhands.llm.llm_registry import LLMRegistry
+# Mock LLMRegistry
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.storage import get_file_store
+
+# Create a mock LLMRegistry class
+class MockLLMRegistry:
+    def __init__(self, config):
+        self.config = config
 
 
 @pytest.fixture
@@ -24,9 +30,9 @@ def cli_runtime(temp_dir):
     """Create a CLIRuntime instance for testing."""
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('test', file_store)
-    llm_registry = LLMRegistry(file_store, 'test', None)
     config = OpenHandsConfig()
     config.workspace_base = temp_dir
+    llm_registry = MockLLMRegistry(config)
     runtime = CLIRuntime(config, event_stream, llm_registry)
     runtime._runtime_initialized = True  # Skip initialization
     return runtime
