@@ -32,4 +32,5 @@ export default {
   appDirectory: "src",
   buildEnd: unpackClientDirectory,
   ssr: false,
+  basename: (process.env.VITE_APP_BASE_URL || "/").replace(/\/$/, ""),
 } satisfies Config;

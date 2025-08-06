@@ -28,6 +28,12 @@ i18n
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
     load: "currentOnly",
+    backend: {
+      loadPath: `${import.meta.env.BASE_URL || "/"}locales/{{lng}}/{{ns}}.json`,
+    },
+    interpolation: {
+      escapeValue: false,
+    },
   });
 
 export default i18n;
