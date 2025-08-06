@@ -164,7 +164,7 @@ VERIFIED_OPENAI_MODELS = [
 VERIFIED_ANTHROPIC_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
-    'claude-opus-4-1-20250805'
+    'claude-opus-4-1-20250805',
     'claude-3-7-sonnet-20250219',
     'claude-3-sonnet-20240229',
     'claude-3-opus-20240229',
