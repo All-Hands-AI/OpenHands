@@ -2,6 +2,7 @@ export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
   bitbucket: "bitbucket",
+  enterprise_sso: "enterprise_sso",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;
@@ -49,6 +50,8 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  GIT_USER_NAME?: string;
+  GIT_USER_EMAIL?: string;
 };
 
 export type ApiSettings = {
@@ -75,6 +78,8 @@ export type ApiSettings = {
   };
   email?: string;
   email_verified?: boolean;
+  git_user_name?: string;
+  git_user_email?: string;
 };
 
 export type PostSettings = Settings & {
