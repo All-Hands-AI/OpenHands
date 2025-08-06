@@ -6527,6 +6527,22 @@
         "es": "Eliminar",
         "tr": "Sil"
     },
+    "BUTTON$DELETE_CONVERSATION": {
+        "en": "Delete Conversation",
+        "uk": "Видалити розмову",
+        "ja": "会話を削除",
+        "zh-CN": "删除对话",
+        "zh-TW": "刪除對話",
+        "ko-KR": "대화 삭제",
+        "no": "Slett samtale",
+        "ar": "حذف المحادثة",
+        "de": "Konversation löschen",
+        "fr": "Supprimer la conversation",
+        "it": "Elimina conversazione",
+        "pt": "Excluir conversa",
+        "es": "Eliminar conversación",
+        "tr": "Sohbeti sil"
+    },
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard",
         "uk": "Копіювати в буфер обміну",
@@ -12142,6 +12158,38 @@
         "no": "Trekkforespørsel",
         "tr": "Çekme İsteği",
         "uk": "Запит на злиття"
+    },
+    "COMMON$CLOSE_CONVERSATION_STOP_RUNTIME": {
+        "en": "Close Conversation (Stop Runtime)",
+        "ja": "会話を閉じる（ランタイム停止）",
+        "zh-CN": "关闭对话（停止运行时）",
+        "zh-TW": "關閉對話（停止執行時）",
+        "ko-KR": "대화 닫기(런타임 중지)",
+        "no": "Lukk samtale (stopp kjøring)",
+        "it": "Chiudi conversazione (Interrompi runtime)",
+        "pt": "Fechar conversa (Parar execução)",
+        "es": "Cerrar conversación (Detener ejecución)",
+        "ar": "إغلاق المحادثة (إيقاف وقت التشغيل)",
+        "fr": "Fermer la conversation (Arrêter l'exécution)",
+        "tr": "Konuşmayı Kapat (Çalışma Zamanını Durdur)",
+        "de": "Gespräch schließen (Laufzeit beenden)",
+        "uk": "Закрити розмову (зупинити виконання)"
+    },
+    "COMMON$DELETE_CONVERSATION": {
+        "en": "Delete Conversation",
+        "ja": "会話を削除",
+        "zh-CN": "删除对话",
+        "zh-TW": "刪除對話",
+        "ko-KR": "대화 삭제",
+        "no": "Slett samtale",
+        "it": "Elimina conversazione",
+        "pt": "Excluir conversa",
+        "es": "Eliminar conversación",
+        "ar": "حذف المحادثة",
+        "fr": "Supprimer la conversation",
+        "tr": "Konuşmayı Sil",
+        "de": "Gespräch löschen",
+        "uk": "Видалити розмову"
     },
     "COMMON$NO_REPOSITORY": {
         "en": "No Repository",
