@@ -174,8 +174,8 @@ async def fetch_mcp_tools_from_config(
     mcp_tools = []
     try:
         # Ensure the MCP config has proper server config objects
-        mcp_config = mcp_config.convert_dict_servers()
-        
+        mcp_config = mcp_config.convert_servers()
+
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
         # Log each server configuration for debugging
         for i, server in enumerate(mcp_config.shttp_servers):
