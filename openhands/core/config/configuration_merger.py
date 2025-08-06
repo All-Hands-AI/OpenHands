@@ -1,3 +1,4 @@
+import logging
 from copy import deepcopy
 from typing import TYPE_CHECKING
 
@@ -5,6 +6,8 @@ from pydantic import SecretStr
 
 # Import MCPConfig directly to avoid circular imports
 from openhands.core.config.mcp_config import MCPConfig
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from openhands.core.config.openhands_config import OpenHandsConfig
@@ -90,41 +93,46 @@ class ConfigurationMerger:
             # Apply the value to the appropriate config object
             if nested_obj is None:
                 # Apply to the main config object
+                logger.debug(f"Merging setting {settings_field} -> config.{config_field}")
                 setattr(config, config_field, settings_value)
             elif nested_obj == 'llm_config':
                 # Apply to the LLM config
+                logger.debug(f"Merging setting {settings_field} -> config.llm_config.{config_field}")
                 setattr(llm_config, config_field, settings_value)
             elif nested_obj == 'security':
                 # Apply to the security config
+                logger.debug(f"Merging setting {settings_field} -> config.security.{config_field}")
                 setattr(config.security, config_field, settings_value)
             elif nested_obj == 'sandbox':
                 # Apply to the sandbox config
+                logger.debug(f"Merging setting {settings_field} -> config.sandbox.{config_field}")
                 setattr(config.sandbox, config_field, settings_value)
+            else:
+                # Unsupported nested object
+                raise ValueError(f"Unsupported nested_obj '{nested_obj}' for field mapping: "
+                                f"({settings_field}, {config_field}, {nested_obj})")
         
         # MCP settings need special handling for merging
         ConfigurationMerger._merge_mcp_settings(config, settings)
 
-    # The _merge_core_settings method has been replaced by the field mapping approach
 
-    # The _merge_llm_settings method has been replaced by the field mapping approach
-
-    # The _merge_security_settings method has been replaced by the field mapping approach
-
-    # The _merge_sandbox_settings method has been replaced by the field mapping approach
 
     @staticmethod
     def _merge_mcp_settings(config: 'OpenHandsConfig', settings: 'Settings') -> None:
         """Merge MCP-specific settings."""
         if settings.mcp_config is None:
+            logger.debug("No MCP config in settings, skipping MCP merge")
             return
 
         if config.mcp is None:
+            logger.debug("No MCP config in config, using settings MCP config directly")
             # mypy doesn't understand that this is reachable
             config.mcp = settings.mcp_config  # type: ignore
             return
 
+        logger.debug("Merging MCP configs with config servers taking precedence")
+        
         # Merge MCP configs with config.toml taking priority (appearing first)
-
         merged_mcp = MCPConfig(
             sse_servers=list(config.mcp.sse_servers)
             + list(settings.mcp_config.sse_servers),
@@ -134,6 +142,10 @@ class ConfigurationMerger:
             + list(settings.mcp_config.shttp_servers),
         )
 
+        logger.debug(f"Merged MCP config has {len(merged_mcp.sse_servers)} SSE servers, "
+                    f"{len(merged_mcp.stdio_servers)} stdio servers, and "
+                    f"{len(merged_mcp.shttp_servers)} shttp servers")
+        
         config.mcp = merged_mcp
 
     @staticmethod
@@ -152,76 +164,54 @@ class ConfigurationMerger:
         # Import here to avoid circular imports
         from openhands.storage.data_models.settings import Settings
 
+        # Create a new Settings object with default values
+        settings = Settings(language='en')
+        
+        # Get config objects that will be accessed frequently
         llm_config = config.get_llm_config()
-        security = config.security
-
-        # Get MCP config if available
-        mcp_config = None
-        if hasattr(config, 'mcp') and config.mcp is not None:
-            mcp_config = config.mcp
-
-        # Convert API key to SecretStr if it's a string
-        llm_api_key = None
-        if llm_config.api_key is not None:
-            if isinstance(llm_config.api_key, str):
-                llm_api_key = SecretStr(llm_config.api_key)
-            elif hasattr(llm_config.api_key, 'get_secret_value'):
-                # It's already a SecretStr
-                llm_api_key = llm_config.api_key
+        
+        # Use the field mapping to apply config values to settings
+        for settings_field, config_field, nested_obj in ConfigurationMerger.FIELD_MAPPING:
+            # Get the value from the appropriate config object
+            if nested_obj is None:
+                config_value = getattr(config, config_field, None)
+                logger.debug(f"Converting config.{config_field} -> settings.{settings_field}")
+            elif nested_obj == 'llm_config':
+                config_value = getattr(llm_config, config_field, None)
+                logger.debug(f"Converting config.llm_config.{config_field} -> settings.{settings_field}")
+            elif nested_obj == 'security':
+                config_value = getattr(config.security, config_field, None)
+                logger.debug(f"Converting config.security.{config_field} -> settings.{settings_field}")
+            elif nested_obj == 'sandbox':
+                config_value = getattr(config.sandbox, config_field, None)
+                logger.debug(f"Converting config.sandbox.{config_field} -> settings.{settings_field}")
             else:
-                # Skip mock objects or other non-string types
-                llm_api_key = None
-
-        # Convert sandbox API key to SecretStr if it's a string
-        sandbox_api_key = None
-        if config.sandbox.api_key is not None:
-            if isinstance(config.sandbox.api_key, str):
-                sandbox_api_key = SecretStr(config.sandbox.api_key)
-            elif hasattr(config.sandbox.api_key, 'get_secret_value'):
-                # It's already a SecretStr
-                sandbox_api_key = config.sandbox.api_key
-            else:
-                # Skip mock objects or other non-string types
-                sandbox_api_key = None
-
-        # Convert search API key to SecretStr if it's a string
-        search_api_key = None
-        if config.search_api_key is not None:
-            if isinstance(config.search_api_key, str):
-                search_api_key = SecretStr(config.search_api_key)
-            elif hasattr(config.search_api_key, 'get_secret_value'):
-                # It's already a SecretStr
-                search_api_key = config.search_api_key
-            else:
-                # Skip mock objects or other non-string types
-                search_api_key = None
-
-        # Handle base_url for mocks
-        llm_base_url = None
-        if llm_config.base_url is not None:
-            if isinstance(llm_config.base_url, str):
-                llm_base_url = llm_config.base_url
-            else:
-                # Skip mock objects or other non-string types
-                llm_base_url = None
+                # Unsupported nested object
+                raise ValueError(f"Unsupported nested_obj '{nested_obj}' for field mapping: "
+                                f"({settings_field}, {config_field}, {nested_obj})")
+            
+            # Skip if the config value is None
+            if config_value is None:
+                continue
                 
-        settings = Settings(
-            language='en',
-            agent=config.default_agent,
-            max_iterations=config.max_iterations,
-            security_analyzer=security.security_analyzer,
-            confirmation_mode=security.confirmation_mode,
-            llm_model=llm_config.model,
-            llm_api_key=llm_api_key,
-            llm_base_url=llm_base_url,
-            remote_runtime_resource_factor=config.sandbox.remote_runtime_resource_factor,
-            sandbox_base_container_image=config.sandbox.base_container_image,
-            sandbox_runtime_container_image=config.sandbox.runtime_container_image,
-            sandbox_api_key=sandbox_api_key,
-            mcp_config=mcp_config,
-            search_api_key=search_api_key,
-            max_budget_per_task=config.max_budget_per_task,
-            git_user_name=config.git_user_name,
-            git_user_email=config.git_user_email,
-        )
+            # Handle special cases for API keys (convert to SecretStr)
+            if settings_field in ('llm_api_key', 'sandbox_api_key', 'search_api_key'):
+                if isinstance(config_value, str):
+                    logger.debug(f"Converting string API key to SecretStr for {settings_field}")
+                    setattr(settings, settings_field, SecretStr(config_value))
+                elif hasattr(config_value, 'get_secret_value'):
+                    # It's already a SecretStr
+                    setattr(settings, settings_field, config_value)
+                else:
+                    # Skip mock objects or other non-string types
+                    logger.debug(f"Skipping non-string API key for {settings_field}")
+            else:
+                # Apply the value directly
+                setattr(settings, settings_field, config_value)
+        
+        # Special handling for MCP config
+        if hasattr(config, 'mcp') and config.mcp is not None:
+            logger.debug("Adding MCP config to settings")
+            settings.mcp_config = config.mcp
+            
         return settings
