@@ -703,22 +703,6 @@
         "de": "Geheimnis bearbeiten",
         "uk": "Редагувати секрет"
     },
-    "SECRETS$NO_SECRETS_FOUND": {
-        "en": "No secrets found",
-        "ja": "シークレットが見つかりません",
-        "zh-CN": "未找到密钥",
-        "zh-TW": "未找到密鑰",
-        "ko-KR": "비밀을 찾을 수 없습니다",
-        "no": "Ingen hemmeligheter funnet",
-        "it": "Nessun segreto trovato",
-        "pt": "Nenhum segredo encontrado",
-        "es": "No se encontraron secretos",
-        "ar": "لم يتم العثور على أسرار",
-        "fr": "Aucun secret trouvé",
-        "tr": "Gizli bulunamadı",
-        "de": "Keine Geheimnisse gefunden",
-        "uk": "Секретів не знайдено"
-    },
     "SECRETS$ADD_NEW_SECRET": {
         "en": "Add a new secret",
         "ja": "新しいシークレットを追加",
