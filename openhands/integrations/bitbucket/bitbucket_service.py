@@ -223,7 +223,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             pushed_at=repo.get('updated_on'),
             owner_type=owner_type,
             link_header=link_header,
-            main_branch=main_branch
+            main_branch=main_branch,
         )
 
     async def search_repositories(
@@ -286,9 +286,8 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
         url = f'{self.BASE_URL}/workspaces'
-        data = await self._make_request(url)
+        data, _ = await self._make_request(url)
         return data.get('values', [])
-
 
     async def _fetch_paginated_data(
         self, url: str, params: dict, max_items: int

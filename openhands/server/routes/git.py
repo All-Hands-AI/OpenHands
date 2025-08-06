@@ -13,6 +13,7 @@ from openhands.integrations.provider import (
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
+    ProviderType,
     Repository,
     SuggestedTask,
     UnknownException,
