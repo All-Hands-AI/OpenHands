@@ -619,3 +619,475 @@ async def test_update_conversation_no_user_id_no_metadata_user_id():
         # Verify success (should work when both are None)
         assert result is True
         mock_conversation_store.save_metadata.assert_called_once()
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_branch_validation_error():
+    """Test conversation update when selected_branch and selected_repository are not provided together."""
+    # Test with only selected_branch (should fail validation)
+    with pytest.raises(
+        ValueError,
+        match='selected_branch and selected_repository must be provided together or both omitted',
+    ):
+        UpdateConversationRequest(selected_branch='feature/new-feature')
+
+    # Test with only selected_repository (should fail validation)
+    with pytest.raises(
+        ValueError,
+        match='selected_branch and selected_repository must be provided together or both omitted',
+    ):
+        UpdateConversationRequest(selected_repository='owner/repo')
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_branch_and_repository_success():
+    """Test successful conversation update with branch and repository."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_branch = 'feature/new-feature'
+    new_repository = 'owner/repo'
+    new_title = 'Updated Title'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository='old_owner/old_repo',
+        selected_branch='main',
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Mock ProviderHandler and its get_branch method
+    mock_branch = MagicMock()
+    mock_branch.name = new_branch
+    mock_branch.commit_sha = 'abc123'
+    mock_branch.protected = False
+
+    # Create update request
+    update_request = UpdateConversationRequest(
+        title=new_title, selected_branch=new_branch, selected_repository=new_repository
+    )
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with (
+        patch(
+            'openhands.server.routes.manage_conversations.conversation_manager'
+        ) as mock_manager,
+        patch(
+            'openhands.server.routes.manage_conversations.ProviderHandler'
+        ) as mock_provider_handler_class,
+    ):
+        mock_manager.sio = mock_sio
+        mock_provider_handler = MagicMock()
+        mock_provider_handler.get_branch = AsyncMock(return_value=mock_branch)
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify branch validation was called
+        mock_provider_handler.get_branch.assert_called_once_with(
+            new_repository, new_branch, mock_metadata.git_provider
+        )
+
+        # Verify metadata was updated and saved
+        mock_conversation_store.save_metadata.assert_called_once()
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.title == new_title.strip()
+        assert saved_metadata.selected_branch == new_branch.strip()
+        assert saved_metadata.selected_repository == new_repository.strip()
+
+        # Verify socket emission includes all updated fields
+        mock_sio.emit.assert_called_once()
+        emit_call = mock_sio.emit.call_args
+        assert emit_call[0][0] == 'oh_event'
+        event_data = emit_call[0][1]
+        assert event_data['conversation_title'] == new_title
+        assert event_data['selected_branch'] == new_branch
+        assert event_data['selected_repository'] == new_repository
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_branch_not_found():
+    """Test conversation update when selected branch doesn't exist."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_branch = 'nonexistent-branch'
+    new_repository = 'owner/repo'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Original Title',
+        selected_repository=None,
+        selected_branch=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Create update request
+    update_request = UpdateConversationRequest(
+        selected_branch=new_branch, selected_repository=new_repository
+    )
+
+    with patch(
+        'openhands.server.routes.manage_conversations.ProviderHandler'
+    ) as mock_provider_handler_class:
+        mock_provider_handler = MagicMock()
+        # Simulate branch not found by raising an exception
+        mock_provider_handler.get_branch = AsyncMock(
+            side_effect=Exception('Branch not found')
+        )
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result is an error response
+        assert isinstance(result, JSONResponse)
+        assert result.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Parse the JSON content
+        content = json.loads(result.body)
+        assert content['status'] == 'error'
+        assert (
+            f'Branch "{new_branch}" does not exist in repository "{new_repository}"'
+            in content['message']
+        )
+        assert content['msg_id'] == 'VALIDATION$BRANCH_NOT_FOUND'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_only_branch_and_repository():
+    """Test updating only branch and repository without title."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_branch = 'develop'
+    new_repository = 'owner/new-repo'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Existing Title',
+        selected_repository='owner/old-repo',
+        selected_branch='main',
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Mock ProviderHandler and its get_branch method
+    mock_branch = MagicMock()
+    mock_branch.name = new_branch
+
+    # Create update request (no title)
+    update_request = UpdateConversationRequest(
+        selected_branch=new_branch, selected_repository=new_repository
+    )
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with (
+        patch(
+            'openhands.server.routes.manage_conversations.conversation_manager'
+        ) as mock_manager,
+        patch(
+            'openhands.server.routes.manage_conversations.ProviderHandler'
+        ) as mock_provider_handler_class,
+    ):
+        mock_manager.sio = mock_sio
+        mock_provider_handler = MagicMock()
+        mock_provider_handler.get_branch = AsyncMock(return_value=mock_branch)
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify metadata was updated (title should remain unchanged)
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.title == 'Existing Title'  # Unchanged
+        assert saved_metadata.selected_branch == new_branch.strip()
+        assert saved_metadata.selected_repository == new_repository.strip()
+
+        # Verify socket emission only includes updated fields
+        emit_call = mock_sio.emit.call_args
+        event_data = emit_call[0][1]
+        assert 'conversation_title' not in event_data  # Title wasn't updated
+        assert event_data['selected_branch'] == new_branch
+        assert event_data['selected_repository'] == new_repository
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_branch_whitespace_trimming():
+    """Test that branch and repository names are properly trimmed of whitespace."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    branch_with_whitespace = '  feature/spaced  '
+    repository_with_whitespace = '  owner/repo  '
+    expected_branch = 'feature/spaced'
+    expected_repository = 'owner/repo'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Title',
+        selected_repository=None,
+        selected_branch=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Mock ProviderHandler
+    mock_branch = MagicMock()
+    mock_branch.name = expected_branch
+
+    # Create update request with whitespace
+    update_request = UpdateConversationRequest(
+        selected_branch=branch_with_whitespace,
+        selected_repository=repository_with_whitespace,
+    )
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with (
+        patch(
+            'openhands.server.routes.manage_conversations.conversation_manager'
+        ) as mock_manager,
+        patch(
+            'openhands.server.routes.manage_conversations.ProviderHandler'
+        ) as mock_provider_handler_class,
+    ):
+        mock_manager.sio = mock_sio
+        mock_provider_handler = MagicMock()
+        mock_provider_handler.get_branch = AsyncMock(return_value=mock_branch)
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify metadata was updated with trimmed values
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.selected_branch == expected_branch
+        assert saved_metadata.selected_repository == expected_repository
+
+        # Verify branch validation was called with original (untrimmed) values
+        # because validation happens before trimming in the metadata update
+        mock_provider_handler.get_branch.assert_called_once_with(
+            repository_with_whitespace,
+            branch_with_whitespace,
+            mock_metadata.git_provider,
+        )
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_provider_handler_exception():
+    """Test conversation update when ProviderHandler raises an exception during validation."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_branch = 'feature/test'
+    new_repository = 'owner/repo'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Title',
+        selected_repository=None,
+        selected_branch=None,
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Create update request
+    update_request = UpdateConversationRequest(
+        selected_branch=new_branch, selected_repository=new_repository
+    )
+
+    with patch(
+        'openhands.server.routes.manage_conversations.ProviderHandler'
+    ) as mock_provider_handler_class:
+        # Simulate provider handler initialization failure
+        mock_provider_handler_class.side_effect = Exception(
+            'Provider authentication failed'
+        )
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result is an error response
+        assert isinstance(result, JSONResponse)
+        assert result.status_code == status.HTTP_400_BAD_REQUEST
+
+        # Parse the JSON content
+        content = json.loads(result.body)
+        assert content['status'] == 'error'
+        assert (
+            f'Branch "{new_branch}" does not exist in repository "{new_repository}"'
+            in content['message']
+        )
+        assert content['msg_id'] == 'VALIDATION$BRANCH_NOT_FOUND'
+
+
+@pytest.mark.update_conversation
+@pytest.mark.asyncio
+async def test_update_conversation_mixed_updates():
+    """Test updating title, branch, and repository all together."""
+    conversation_id = 'test_conversation_123'
+    user_id = 'test_user_456'
+    new_title = 'New Title'
+    new_branch = 'feature/everything'
+    new_repository = 'owner/new-repo'
+
+    # Create mock metadata
+    mock_metadata = ConversationMetadata(
+        conversation_id=conversation_id,
+        user_id=user_id,
+        title='Old Title',
+        selected_repository='owner/old-repo',
+        selected_branch='old-branch',
+        last_updated_at=datetime.now(timezone.utc),
+    )
+
+    # Create mock conversation store
+    mock_conversation_store = MagicMock(spec=ConversationStore)
+    mock_conversation_store.get_metadata = AsyncMock(return_value=mock_metadata)
+    mock_conversation_store.save_metadata = AsyncMock()
+
+    # Mock provider tokens
+    mock_provider_tokens = {}
+
+    # Mock ProviderHandler
+    mock_branch = MagicMock()
+    mock_branch.name = new_branch
+
+    # Create update request with all fields
+    update_request = UpdateConversationRequest(
+        title=new_title, selected_branch=new_branch, selected_repository=new_repository
+    )
+
+    # Mock the conversation manager socket
+    mock_sio = AsyncMock()
+
+    with (
+        patch(
+            'openhands.server.routes.manage_conversations.conversation_manager'
+        ) as mock_manager,
+        patch(
+            'openhands.server.routes.manage_conversations.ProviderHandler'
+        ) as mock_provider_handler_class,
+    ):
+        mock_manager.sio = mock_sio
+        mock_provider_handler = MagicMock()
+        mock_provider_handler.get_branch = AsyncMock(return_value=mock_branch)
+        mock_provider_handler_class.return_value = mock_provider_handler
+
+        # Call the function
+        result = await update_conversation(
+            conversation_id=conversation_id,
+            data=update_request,
+            user_id=user_id,
+            provider_tokens=mock_provider_tokens,
+            conversation_store=mock_conversation_store,
+        )
+
+        # Verify the result
+        assert result is True
+
+        # Verify all fields were updated
+        saved_metadata = mock_conversation_store.save_metadata.call_args[0][0]
+        assert saved_metadata.title == new_title
+        assert saved_metadata.selected_branch == new_branch
+        assert saved_metadata.selected_repository == new_repository
+
+        # Verify socket emission includes all updated fields
+        emit_call = mock_sio.emit.call_args
+        event_data = emit_call[0][1]
+        assert event_data['conversation_title'] == new_title
+        assert event_data['selected_branch'] == new_branch
+        assert event_data['selected_repository'] == new_repository

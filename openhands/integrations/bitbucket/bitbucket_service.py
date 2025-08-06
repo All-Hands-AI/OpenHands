@@ -63,6 +63,24 @@ class BitBucketService(BaseGitService, GitService):
     def provider(self) -> str:
         return ProviderType.BITBUCKET.value
 
+    def _extract_owner_and_repo(self, repository: str) -> tuple[str, str]:
+        """Extract owner and repo from repository string.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+
+        Returns:
+            Tuple of (owner, repo)
+
+        Raises:
+            ValueError: If repository format is invalid
+        """
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        return parts[-2], parts[-1]
+
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
         return self.token
@@ -321,13 +339,7 @@ class BitBucketService(BaseGitService, GitService):
         self, repository: str
     ) -> Repository:
         """Gets all repository details from repository name."""
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repository.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repository}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repository)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
         data, _ = await self._make_request(url)
@@ -352,13 +364,7 @@ class BitBucketService(BaseGitService, GitService):
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository."""
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repository.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repository}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repository)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
 
@@ -387,6 +393,28 @@ class BitBucketService(BaseGitService, GitService):
 
         return branches
 
+    async def get_branch(self, repository: str, branch_name: str) -> Branch:
+        """Get information about a specific branch in the repository.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+            branch_name: Name of the branch to get
+
+        Returns:
+            Branch object with branch information
+        """
+        owner, repo = self._extract_owner_and_repo(repository)
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches/{branch_name}'
+        response, _ = await self._make_request(url)
+
+        return Branch(
+            name=response.get('name', ''),
+            commit_sha=response.get('target', {}).get('hash', ''),
+            protected=False,  # Bitbucket doesn't expose this in the API
+            last_push_date=response.get('target', {}).get('date', None),
+        )
+
     async def create_pr(
         self,
         repo_name: str,
@@ -409,13 +437,7 @@ class BitBucketService(BaseGitService, GitService):
         Returns:
             The URL of the created pull request
         """
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repo_name.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repo_name}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repo_name)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}/pullrequests'
 

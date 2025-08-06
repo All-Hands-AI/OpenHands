@@ -517,6 +517,29 @@ class GitLabService(BaseGitService, GitService):
 
         return all_branches
 
+    async def get_branch(self, repository: str, branch_name: str) -> Branch:
+        """Get information about a specific branch in the repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            branch_name: Name of the branch to get
+
+        Returns:
+            Branch object with branch information
+        """
+        encoded_name = repository.replace('/', '%2F')
+        url = (
+            f'{self.BASE_URL}/projects/{encoded_name}/repository/branches/{branch_name}'
+        )
+        response, _ = await self._make_request(url)
+
+        return Branch(
+            name=response.get('name'),
+            commit_sha=response.get('commit', {}).get('id', ''),
+            protected=response.get('protected', False),
+            last_push_date=response.get('commit', {}).get('committed_date'),
+        )
+
     async def create_mr(
         self,
         id: int | str,

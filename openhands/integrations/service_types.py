@@ -483,6 +483,10 @@ class GitService(Protocol):
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
 
+    async def get_branch(self, repository: str, branch_name: str) -> Branch:
+        """Get information about a specific branch in the repository"""
+        ...
+
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository"""
         ...

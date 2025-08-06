@@ -510,6 +510,33 @@ class GitHubService(BaseGitService, GitService):
 
         return all_branches
 
+    async def get_branch(self, repository: str, branch_name: str) -> Branch:
+        """Get information about a specific branch in the repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            branch_name: Name of the branch to get
+
+        Returns:
+            Branch object with branch information
+        """
+        url = f'{self.BASE_URL}/repos/{repository}/branches/{branch_name}'
+        response, _ = await self._make_request(url)
+
+        # Extract the last commit date if available
+        last_push_date = None
+        if response.get('commit') and response['commit'].get('commit'):
+            commit_info = response['commit']['commit']
+            if commit_info.get('committer') and commit_info['committer'].get('date'):
+                last_push_date = commit_info['committer']['date']
+
+        return Branch(
+            name=response.get('name'),
+            commit_sha=response.get('commit', {}).get('sha', ''),
+            protected=response.get('protected', False),
+            last_push_date=last_push_date,
+        )
+
     async def create_pr(
         self,
         repo_name: str,

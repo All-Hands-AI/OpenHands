@@ -410,6 +410,48 @@ class ProviderHandler:
 
         return main_branches + other_branches
 
+    async def get_branch(
+        self,
+        repository: str,
+        branch_name: str,
+        specified_provider: ProviderType | None = None,
+    ) -> Branch:
+        """
+        Get branch information from a repository
+
+        Args:
+            repository: The repository name
+            branch_name: The branch name to get
+            specified_provider: Optional provider type to use
+
+        Returns:
+            Branch object with branch information
+
+        Raises:
+            Exception: If branch is not found or cannot be accessed
+        """
+        if specified_provider:
+            service = self._get_service(specified_provider)
+            return await service.get_branch(repository, branch_name)
+
+        # Try all available providers
+        last_exception = None
+        for provider in self.provider_tokens:
+            try:
+                service = self._get_service(provider)
+                return await service.get_branch(repository, branch_name)
+            except Exception as e:
+                logger.warning(
+                    f'Error getting branch {branch_name} from {provider}: {e}'
+                )
+                last_exception = e
+                continue
+
+        # If we get here, all providers failed
+        raise last_exception or Exception(
+            f'Branch {branch_name} not found in repository {repository}'
+        )
+
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository using the appropriate service.
 

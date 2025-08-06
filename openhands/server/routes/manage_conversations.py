@@ -593,11 +593,185 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
 class UpdateConversationRequest(BaseModel):
     """Request model for updating conversation metadata."""
 
-    title: str = Field(
-        ..., min_length=1, max_length=200, description='New conversation title'
+    title: str | None = Field(
+        None, min_length=1, max_length=200, description='New conversation title'
+    )
+    selected_branch: str | None = Field(
+        None,
+        description='New selected branch for the conversation (must be provided with selected_repository)',
+    )
+    selected_repository: str | None = Field(
+        None, description='Selected repository (must be provided with selected_branch)'
     )
 
     model_config = ConfigDict(extra='forbid')
+
+    def model_post_init(self, __context) -> None:
+        """Validate that selected_branch and selected_repository are provided together."""
+        if (self.selected_branch is None) != (self.selected_repository is None):
+            raise ValueError(
+                'selected_branch and selected_repository must be provided together or both omitted'
+            )
+
+
+def _build_update_log_message(data: UpdateConversationRequest) -> str:
+    """Build a log message describing which fields are being updated."""
+    update_fields = []
+    if data.title is not None:
+        update_fields.append(f'title: {data.title}')
+    if data.selected_branch is not None:
+        update_fields.append(f'selected_branch: {data.selected_branch}')
+    if data.selected_repository is not None:
+        update_fields.append(f'selected_repository: {data.selected_repository}')
+
+    return ', '.join(update_fields) if update_fields else 'no fields'
+
+
+async def _validate_branch_update(
+    data: UpdateConversationRequest,
+    metadata: ConversationMetadata,
+    provider_tokens: PROVIDER_TOKEN_TYPE,
+) -> JSONResponse | None:
+    """Validate branch update requirements.
+
+    Args:
+        data: Update request data
+        metadata: Current conversation metadata
+        provider_tokens: Provider tokens for API access
+
+    Returns:
+        JSONResponse with error if validation fails, None if validation passes
+    """
+    if data.selected_branch is None:
+        return None
+
+    # Since both selected_branch and selected_repository are required together,
+    # we can safely use data.selected_repository
+    repository = data.selected_repository
+    if (
+        not repository
+    ):  # This should never happen due to model validation, but for type safety
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'selected_repository is required when updating selected_branch',
+                'msg_id': 'VALIDATION$MISSING_REPOSITORY',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    # Validate branch exists using ProviderHandler
+    try:
+        provider_handler = ProviderHandler(provider_tokens)
+        await provider_handler.get_branch(
+            repository, data.selected_branch, metadata.git_provider
+        )
+        # If get_branch doesn't raise an exception, the branch exists
+        return None
+    except Exception as e:
+        logger.error(f'Error validating branch existence: {str(e)}')
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': f'Branch "{data.selected_branch}" does not exist in repository "{repository}"',
+                'msg_id': 'VALIDATION$BRANCH_NOT_FOUND',
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+
+def _validate_user_permission(
+    metadata: ConversationMetadata, user_id: str | None, conversation_id: str
+) -> JSONResponse | None:
+    """Validate that the user has permission to update the conversation."""
+    if user_id and metadata.user_id != user_id:
+        logger.warning(
+            f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Permission denied: You can only update your own conversations',
+                'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+    return None
+
+
+def _update_conversation_metadata(
+    metadata: ConversationMetadata, data: UpdateConversationRequest
+) -> tuple[str | None, str | None, str | None]:
+    """Update the conversation metadata with new values."""
+    original_title = metadata.title
+    original_branch = metadata.selected_branch
+    original_repository = metadata.selected_repository
+
+    if data.title is not None:
+        metadata.title = data.title.strip()
+    if data.selected_branch is not None:
+        metadata.selected_branch = data.selected_branch.strip()
+    if data.selected_repository is not None:
+        metadata.selected_repository = data.selected_repository.strip()
+
+    metadata.last_updated_at = datetime.now(timezone.utc)
+
+    return original_title, original_branch, original_repository
+
+
+async def _emit_conversation_update_event(
+    conversation_id: str,
+    data: UpdateConversationRequest,
+    metadata: ConversationMetadata,
+) -> None:
+    """Emit WebSocket event to notify connected clients about conversation updates."""
+    try:
+        status_update_dict = {
+            'status_update': True,
+            'type': 'info',
+            'message': conversation_id,
+        }
+
+        # Add specific fields that were updated
+        if data.title is not None:
+            status_update_dict['conversation_title'] = metadata.title
+        if data.selected_branch is not None:
+            status_update_dict['selected_branch'] = metadata.selected_branch
+        if data.selected_repository is not None:
+            status_update_dict['selected_repository'] = metadata.selected_repository
+
+        await conversation_manager.sio.emit(
+            'oh_event',
+            status_update_dict,
+            to=f'room:{conversation_id}',
+        )
+    except Exception as e:
+        logger.error(f'Error emitting update event: {e}')
+        # Don't fail the update if we can't emit the event
+
+
+def _build_success_log_message(
+    data: UpdateConversationRequest,
+    original_title: str | None,
+    original_branch: str | None,
+    original_repository: str | None,
+    metadata: ConversationMetadata,
+) -> str:
+    """Build a log message describing the successful updates."""
+    log_messages = []
+    if data.title is not None:
+        log_messages.append(f'title from "{original_title}" to "{metadata.title}"')
+    if data.selected_branch is not None:
+        log_messages.append(
+            f'selected_branch from "{original_branch}" to "{metadata.selected_branch}"'
+        )
+    if data.selected_repository is not None:
+        log_messages.append(
+            f'selected_repository from "{original_repository}" to "{metadata.selected_repository}"'
+        )
+
+    return ', '.join(log_messages) if log_messages else ''
 
 
 @app.patch('/conversations/{conversation_id}')
@@ -605,16 +779,17 @@ async def update_conversation(
     conversation_id: str,
     data: UpdateConversationRequest,
     user_id: str | None = Depends(get_user_id),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> bool:
     """Update conversation metadata.
 
-    This endpoint allows updating conversation details like title.
+    This endpoint allows updating conversation details like title and selected branch.
     Only the conversation owner can update the conversation.
 
     Args:
         conversation_id: The ID of the conversation to update
-        data: The conversation update data (title, etc.)
+        data: The conversation update data (title, selected_branch, etc.)
         user_id: The authenticated user ID
         conversation_store: The conversation store dependency
 
@@ -624,9 +799,9 @@ async def update_conversation(
     Raises:
         HTTPException: If conversation is not found or user lacks permission
     """
-
+    update_message = _build_update_log_message(data)
     logger.info(
-        f'Updating conversation {conversation_id} with title: {data.title}',
+        f'Updating conversation {conversation_id} with {update_message}',
         extra={'session_id': conversation_id, 'user_id': user_id},
     )
 
@@ -634,53 +809,40 @@ async def update_conversation(
         # Get the existing conversation metadata
         metadata = await conversation_store.get_metadata(conversation_id)
 
-        # Validate that the user owns this conversation
-        if user_id and metadata.user_id != user_id:
-            logger.warning(
-                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
-                extra={'session_id': conversation_id, 'user_id': user_id},
-            )
-            return JSONResponse(
-                content={
-                    'status': 'error',
-                    'message': 'Permission denied: You can only update your own conversations',
-                    'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
-                },
-                status_code=status.HTTP_403_FORBIDDEN,
-            )
+        # Validate user permissions
+        permission_error = _validate_user_permission(metadata, user_id, conversation_id)
+        if permission_error:
+            return permission_error
+
+        # Validate branch update if needed
+        branch_validation_error = await _validate_branch_update(
+            data, metadata, provider_tokens
+        )
+        if branch_validation_error:
+            return branch_validation_error
 
         # Update the conversation metadata
-        original_title = metadata.title
-        metadata.title = data.title.strip()
-        metadata.last_updated_at = datetime.now(timezone.utc)
+        original_title, original_branch, original_repository = (
+            _update_conversation_metadata(metadata, data)
+        )
 
         # Save the updated metadata
         await conversation_store.save_metadata(metadata)
 
-        # Emit a status update to connected clients about the title change
-        try:
-            status_update_dict = {
-                'status_update': True,
-                'type': 'info',
-                'message': conversation_id,
-                'conversation_title': metadata.title,
-            }
-            await conversation_manager.sio.emit(
-                'oh_event',
-                status_update_dict,
-                to=f'room:{conversation_id}',
-            )
-        except Exception as e:
-            logger.error(f'Error emitting title update event: {e}')
-            # Don't fail the update if we can't emit the event
+        # Emit update event to connected clients
+        await _emit_conversation_update_event(conversation_id, data, metadata)
 
-        logger.info(
-            f'Successfully updated conversation {conversation_id} title from "{original_title}" to "{metadata.title}"',
-            extra={'session_id': conversation_id, 'user_id': user_id},
+        # Log successful updates
+        log_message = _build_success_log_message(
+            data, original_title, original_branch, original_repository, metadata
         )
+        if log_message:
+            logger.info(
+                f'Successfully updated conversation {conversation_id}: {log_message}',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
 
         return True
-
     except FileNotFoundError:
         logger.warning(
             f'Conversation {conversation_id} not found for update',
