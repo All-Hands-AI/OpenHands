@@ -75,7 +75,7 @@ from openhands.events.observation import (
 from openhands.events.serialization.event import truncate_content
 from openhands.llm.metrics import Metrics
 from openhands.runtime.runtime_status import RuntimeStatus
-from openhands.server.session.conversation_stats import ConversationStats
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 
 # note: RESUME is only available on web GUI

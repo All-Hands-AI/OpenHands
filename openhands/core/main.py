@@ -35,7 +35,7 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.server.session.conversation_stats import ConversationStats
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.utils.async_utils import call_async_from_sync
 
 

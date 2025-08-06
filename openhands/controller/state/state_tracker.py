@@ -13,7 +13,7 @@ from openhands.events.observation.delegate import AgentDelegateObservation
 from openhands.events.observation.empty import NullObservation
 from openhands.events.serialization.event import event_to_trajectory
 from openhands.events.stream import EventStream
-from openhands.server.session.conversation_stats import ConversationStats
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 
 

@@ -30,7 +30,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.security import SecurityAnalyzer, options
-from openhands.server.session.conversation_stats import ConversationStats
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async

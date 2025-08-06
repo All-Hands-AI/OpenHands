@@ -79,7 +79,7 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.server.session.conversation_stats import ConversationStats
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
