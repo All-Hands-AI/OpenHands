@@ -29,6 +29,7 @@ from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
+from openhands.server.conversation_manager.utils import setup_llm_config
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.services.conversation_stats import ConversationStats
@@ -481,7 +482,9 @@ class DockerNestedConversationManager(ConversationManager):
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
-        llm_registry = LLMRegistry(self.config, settings.agent)
+
+        config = setup_llm_config(self.config, settings)
+        llm_registry = LLMRegistry(config, settings.agent)
         convo_stats = ConversationStats(self.file_store, sid, user_id)
         llm_registry.subscribe(convo_stats.register_llm)
         session = Session(
@@ -489,16 +492,16 @@ class DockerNestedConversationManager(ConversationManager):
             llm_registry=llm_registry,
             convo_stats=convo_stats,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )
         llm_registry.retry_listner = session._notify_on_llm_retry
-        agent_cls = settings.agent or self.config.default_agent
-        agent_config = self.config.get_agent_config(agent_cls)
+        agent_cls = settings.agent or config.default_agent
+        agent_config = config.get_agent_config(agent_cls)
         agent = Agent.get_cls(agent_cls)(agent_config, llm_registry)
 
-        config = self.config.model_copy(deep=True)
+        config = config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars
         env_vars['CONVERSATION_MANAGER_CLASS'] = (
             'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'

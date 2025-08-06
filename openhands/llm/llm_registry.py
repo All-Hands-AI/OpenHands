@@ -1,3 +1,4 @@
+import copy
 from typing import Any, Callable
 from uuid import uuid4
 
@@ -27,7 +28,11 @@ class LLMRegistry:
         retry_listener: Callable[[int, int], None] | None = None,
     ):
         self.registry_id = str(uuid4())
-        self.config = config
+        self.config = copy.deepcopy(config)
+        self.retry_listner = retry_listener
+        self.agent_to_llm_config = self.config.get_agent_to_llm_config_map()
+        self.service_to_llm: dict[str, LLM] = {}
+        self.subscriber: Callable[[Any], None] | None = None
 
         selected_agent_cls = self.config.default_agent
         if agent_cls:
@@ -35,12 +40,7 @@ class LLMRegistry:
 
         agent_name = selected_agent_cls if selected_agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
-        self.service_to_llm: dict[str, LLM] = {}
         self.active_agent_llm: LLM = self.get_llm('agent', llm_config)
-        self.subscriber: Callable[[Any], None] | None = None
-        self.retry_listner = retry_listener
-
-        self.agent_to_llm_config = self.config.get_agent_to_llm_config_map()
 
     def _create_new_llm(
         self, service_id: str, config: LLMConfig, with_listener: bool = True

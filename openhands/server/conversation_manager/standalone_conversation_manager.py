@@ -16,6 +16,7 @@ from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.conversation_manager.utils import setup_llm_config
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.services.conversation_stats import ConversationStats
@@ -335,13 +336,14 @@ class StandaloneConversationManager(ConversationManager):
                 await self.close_session(oldest_conversation_id)
 
         # Registry automatically restores state if it already exists for a conversation
-        llm_registry = LLMRegistry(self.config, settings.agent)
+        config = setup_llm_config(self.config, settings)
+        llm_registry = LLMRegistry(config, settings.agent)
         convo_stats = ConversationStats(self.file_store, sid, user_id)
         llm_registry.subscribe(convo_stats.register_llm)
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             llm_registry=llm_registry,
             convo_stats=convo_stats,
             sio=self.sio,
