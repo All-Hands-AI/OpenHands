@@ -44,14 +44,6 @@
 
 /* Custom Chat Input */
 .custom-scrollbar::-webkit-scrollbar {
-<<<<<<< HEAD
-  display: none;
-}
-
-.custom-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-=======
   width: 6px;
   height: 6px;
 }
@@ -87,7 +79,6 @@
 
 .custom-scrollbar:hover {
   scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
->>>>>>> ALL-2552/revise-ux
 }
 
 /* Custom styles for contenteditable */
