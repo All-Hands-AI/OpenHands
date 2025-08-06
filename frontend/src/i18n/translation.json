@@ -11918,21 +11918,5 @@
         "tr": "Depo yok",
         "de": "Kein Repository",
         "uk": "Немає репозиторію"
-    },
-    "COMMON$NO_BRANCH": {
-        "en": "No Branch",
-        "ja": "ブランチがありません",
-        "zh-CN": "没有分支",
-        "zh-TW": "沒有分支",
-        "ko-KR": "브랜치 없음",
-        "no": "Ingen gren",
-        "it": "Nessun ramo",
-        "pt": "Nenhum branch",
-        "es": "Sin rama",
-        "ar": "لا يوجد فرع",
-        "fr": "Aucune branche",
-        "tr": "Dal yok",
-        "de": "Kein Branch",
-        "uk": "Немає гілки"
     }
 }

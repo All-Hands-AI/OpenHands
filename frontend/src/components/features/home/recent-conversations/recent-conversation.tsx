@@ -7,6 +7,7 @@ import { Provider } from "#/types/settings";
 import { formatTimeDelta } from "#/utils/format-time-delta";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationStatusIndicator } from "./conversation-status-indicator";
+import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 
 interface RecentConversationProps {
   conversation: Conversation;
@@ -24,7 +25,7 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
         type="button"
         className="flex flex-col gap-1 py-[14px] cursor-pointer w-full"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 pl-1">
           <ConversationStatusIndicator
             conversationStatus={conversation.status}
           />
@@ -46,9 +47,12 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
               </span>
             </div>
           ) : (
-            <span className="max-w-[124px] truncate">
-              {t(I18nKey.COMMON$NO_REPOSITORY)}
-            </span>
+            <div className="flex items-center gap-1">
+              <RepoForkedIcon width={12} height={12} color="#A3A3A3" />
+              <span className="max-w-[124px] truncate">
+                {t(I18nKey.COMMON$NO_REPOSITORY)}
+              </span>
+            </div>
           )}
           {hasRepository ? (
             <div className="flex items-center gap-1">
@@ -60,11 +64,7 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
                 {conversation.selected_branch}
               </span>
             </div>
-          ) : (
-            <span className="max-w-[124px] truncate">
-              {t(I18nKey.COMMON$NO_BRANCH)}
-            </span>
-          )}
+          ) : null}
           <span>
             {formatTimeDelta(
               new Date(conversation.created_at || conversation.last_updated_at),
