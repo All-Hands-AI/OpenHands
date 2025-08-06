@@ -10,12 +10,12 @@ from litellm.exceptions import (
 )
 
 from openhands.core.config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics, TokenUsage
-from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture(autouse=True)
@@ -41,15 +41,13 @@ def default_config():
 
 @pytest.fixture
 def llm_registry():
-    file_store = InMemoryFileStore({})
-    return LLMRegistry(
-        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
-    )
+    config = OpenHandsConfig()
+    return LLMRegistry(config=config, agent_cls=None)
 
 
 def test_llm_init_with_default_config(default_config, llm_registry):
     service_id = 'test-service'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     assert llm.config.model == 'gpt-4o'
     assert llm.config.api_key.get_secret_value() == 'test_key'
     assert isinstance(llm.metrics, Metrics)
@@ -142,7 +140,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config, llm_regis
         'max_output_tokens': 2000,
     }
     service_id = 'test-service-model-info'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 8000
     assert llm.config.max_output_tokens == 2000
@@ -152,7 +150,7 @@ def test_llm_init_with_model_info(mock_get_model_info, default_config, llm_regis
 def test_llm_init_without_model_info(mock_get_model_info, default_config, llm_registry):
     mock_get_model_info.side_effect = Exception('Model info not available')
     service_id = 'test-service-no-model-info'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens is None
     assert llm.config.max_output_tokens is None
@@ -169,7 +167,7 @@ def test_llm_init_with_custom_config(llm_registry):
         top_k=None,
     )
     service_id = 'test-service-custom-config'
-    llm = llm_registry.register_llm(service_id, custom_config)
+    llm = llm_registry.get_llm(service_id, custom_config)
     assert llm.config.model == 'custom-model'
     assert llm.config.api_key.get_secret_value() == 'custom_key'
     assert llm.config.max_input_tokens == 5000
@@ -184,7 +182,7 @@ def test_llm_top_k_in_completion_when_set(mock_litellm_completion, llm_registry)
     # Create a config with top_k set
     config_with_top_k = LLMConfig(top_k=50)
     service_id = 'test-service-top-k'
-    llm = llm_registry.register_llm(service_id, config_with_top_k)
+    llm = llm_registry.get_llm(service_id, config_with_top_k)
 
     # Define a side effect function to check top_k
     def side_effect(*args, **kwargs):
@@ -203,7 +201,7 @@ def test_llm_top_k_not_in_completion_when_none(mock_litellm_completion, llm_regi
     # Create a config with top_k set to None
     config_without_top_k = LLMConfig(top_k=None)
     service_id = 'test-service-no-top-k'
-    llm = llm_registry.register_llm(service_id, config_without_top_k)
+    llm = llm_registry.get_llm(service_id, config_without_top_k)
 
     # Define a side effect function to check top_k
     def side_effect(*args, **kwargs):
@@ -221,10 +219,10 @@ def test_llm_init_with_metrics(llm_registry):
     metrics = Metrics()
     service_id = 'test-service-metrics'
 
-    # We need to mock the register_llm method to use our custom metrics
-    original_register_llm = llm_registry.register_llm
+    # We need to mock the get_llm method to use our custom metrics
+    original_get_llm = llm_registry.get_llm
 
-    def mock_register_llm(service_id, config, retry_listener=None):
+    def mock_get_llm(service_id, config, retry_listener=None):
         return LLM(
             config=config,
             service_id=service_id,
@@ -233,15 +231,15 @@ def test_llm_init_with_metrics(llm_registry):
         )
 
     try:
-        llm_registry.register_llm = mock_register_llm
-        llm = llm_registry.register_llm(service_id, config)
+        llm_registry.get_llm = mock_get_llm
+        llm = llm_registry.get_llm(service_id, config)
         assert llm.metrics is metrics
         assert (
             llm.metrics.model_name == 'default'
         )  # because we didn't specify model_name in Metrics init
     finally:
         # Restore the original method
-        llm_registry.register_llm = original_register_llm
+        llm_registry.get_llm = original_get_llm
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -256,7 +254,7 @@ def test_response_latency_tracking(mock_litellm_completion, llm_registry):
     # Create LLM instance and make a completion call
     config = LLMConfig(model='gpt-4o', api_key='test_key')
     service_id = 'test-service-latency'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # Make the completion call
     response = llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
@@ -288,7 +286,7 @@ def test_llm_init_with_openrouter_model(
         'max_output_tokens': 1500,
     }
     service_id = 'test-service-openrouter'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
@@ -312,7 +310,7 @@ def test_stop_parameter_handling(mock_litellm_completion, default_config, llm_re
         'custom-model'  # Use a model not in FUNCTION_CALLING_SUPPORTED_MODELS
     )
     service_id = 'test-service-stop-param'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         tools=[
@@ -325,7 +323,7 @@ def test_stop_parameter_handling(mock_litellm_completion, default_config, llm_re
     # Test with Grok-4 model that doesn't support stop parameter
     default_config.model = 'xai/grok-4-0709'
     service_id = 'test-service-no-stop-param'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         tools=[
@@ -348,7 +346,7 @@ def test_completion_with_mocked_logger(
     }
 
     service_id = 'test-service-mocked-logger'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -381,7 +379,7 @@ def test_completion_retries(
     ]
 
     service_id = 'test-service-retries'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -404,7 +402,7 @@ def test_completion_rate_limit_wait_time(
         ]
 
         service_id = 'test-service-rate-limit'
-        llm = llm_registry.register_llm(service_id, default_config)
+        llm = llm_registry.get_llm(service_id, default_config)
         response = llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
@@ -429,7 +427,7 @@ def test_completion_operation_cancelled(
     mock_litellm_completion.side_effect = OperationCancelled('Operation cancelled')
 
     service_id = 'test-service-operation-cancelled'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     with pytest.raises(OperationCancelled):
         llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
@@ -449,7 +447,7 @@ def test_completion_keyboard_interrupt(
     mock_litellm_completion.side_effect = side_effect
 
     service_id = 'test-service-keyboard-interrupt'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     with pytest.raises(OperationCancelled):
         try:
             llm.completion(
@@ -476,7 +474,7 @@ def test_completion_keyboard_interrupt_handler(
     mock_litellm_completion.side_effect = side_effect
 
     service_id = 'test-service-keyboard-interrupt-handler'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     result = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -519,7 +517,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 
     # Create LLM instance and make a completion call
     service_id = 'test-service-no-response-zero-temp'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -561,7 +559,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     )
 
     service_id = 'test-service-no-response-nonzero-temp'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     with pytest.raises(LLMNoResponseError):
         llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
@@ -631,7 +629,7 @@ def test_gemini_25_pro_function_calling(
     for i, (model_name, expected_support) in enumerate(test_cases):
         config = LLMConfig(model=model_name, api_key='test_key')
         service_id = f'test-service-gemini-{i}'
-        llm = llm_registry.register_llm(service_id, config)
+        llm = llm_registry.get_llm(service_id, config)
 
         assert llm.is_function_calling_active() == expected_support, (
             f'Expected function calling support to be {expected_support} for model {model_name}'
@@ -675,7 +673,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
 
     # Create LLM instance and make a completion call with non-zero temperature
     service_id = 'test-service-no-response-nonzero-temp-success'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -737,7 +735,7 @@ def test_completion_retry_with_llm_no_response_error_successful_retry(
 
     # Create LLM instance and make a completion call with explicit temperature=0
     service_id = 'test-service-no-response-successful-retry'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -772,7 +770,7 @@ def test_completion_with_litellm_mock(
     mock_litellm_completion.return_value = mock_response
 
     service_id = 'test-service-litellm-mock'
-    test_llm = llm_registry.register_llm(service_id, default_config)
+    test_llm = llm_registry.get_llm(service_id, default_config)
     response = test_llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -807,7 +805,7 @@ def test_llm_gemini_thinking_parameter(mock_litellm_completion, default_config):
     }
 
     # Initialize LLM and call completion
-    llm = LLM(config=gemini_config)
+    llm = LLM(config=gemini_config, service_id='test-service')
     llm.completion(messages=[{'role': 'user', 'content': 'Hello!'}])
 
     # Verify that litellm_completion was called with the 'thinking' parameter
@@ -829,7 +827,7 @@ def test_get_token_count_with_dict_messages(
 ):
     mock_token_counter.return_value = 42
     service_id = 'test-service-token-count-dict'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -845,7 +843,7 @@ def test_get_token_count_with_message_objects(
     mock_token_counter, default_config, mock_logger, llm_registry
 ):
     service_id = 'test-service-token-count-objects'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
 
     # Create a Message object and its equivalent dict
     message_obj = Message(role='user', content=[TextContent(text='Hello!')])
@@ -875,7 +873,7 @@ def test_get_token_count_with_custom_tokenizer(
     config = copy.deepcopy(default_config)
     config.custom_tokenizer = 'custom/tokenizer'
     service_id = 'test-service-custom-tokenizer'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -893,7 +891,7 @@ def test_get_token_count_error_handling(
 ):
     mock_token_counter.side_effect = Exception('Token counting failed')
     service_id = 'test-service-error-handling'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
     messages = [{'role': 'user', 'content': 'Hello!'}]
 
     token_count = llm.get_token_count(messages)
@@ -936,7 +934,7 @@ def test_llm_token_usage(mock_litellm_completion, default_config, llm_registry):
     mock_litellm_completion.side_effect = [mock_response_1, mock_response_2]
 
     service_id = 'test-service-token-usage'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
 
     # First call
     llm.completion(messages=[{'role': 'user', 'content': 'Hello usage!'}])
@@ -996,7 +994,7 @@ def test_accumulated_token_usage(mock_litellm_completion, default_config, llm_re
 
     # Create LLM instance
     service_id = 'test-service-accumulated-token-usage'
-    llm = llm_registry.register_llm(service_id, default_config)
+    llm = llm_registry.get_llm(service_id, default_config)
 
     # First call
     llm.completion(messages=[{'role': 'user', 'content': 'First message'}])
@@ -1055,7 +1053,7 @@ def test_completion_with_log_completions(
         mock_litellm_completion.return_value = mock_response
 
         service_id = 'test-service-log-completions'
-        test_llm = llm_registry.register_llm(service_id, default_config)
+        test_llm = llm_registry.get_llm(service_id, default_config)
         response = test_llm.completion(
             messages=[{'role': 'user', 'content': 'Hello!'}],
             stream=False,
@@ -1082,7 +1080,7 @@ def test_llm_base_url_auto_protocol_patch(mock_get, llm_registry):
     mock_get.return_value.json.return_value = {'model': 'fake'}
 
     service_id = 'test-service-base-url-patch'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
     llm.init_model_info()
 
     called_url = mock_get.call_args[0][0]
@@ -1097,7 +1095,7 @@ def test_unknown_model_token_limits(llm_registry):
     # Create LLM instance with a non-existent model to avoid litellm having model info for it
     config = LLMConfig(model='non-existent-model', api_key='test_key')
     service_id = 'test-service-unknown-model-limits'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # Verify max_output_tokens and max_input_tokens are initialized to None (default value)
     assert llm.config.max_output_tokens is None
@@ -1109,7 +1107,7 @@ def test_max_tokens_from_model_info(llm_registry):
     # Create LLM instance with GPT-4 model which has known token limits
     config = LLMConfig(model='gpt-4', api_key='test_key')
     service_id = 'test-service-max-tokens-model-info'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # GPT-4 has specific token limits
     # These are the expected values from litellm
@@ -1122,7 +1120,7 @@ def test_claude_3_7_sonnet_max_output_tokens(llm_registry):
     # Create LLM instance with Claude 3.7 Sonnet model
     config = LLMConfig(model='claude-3-7-sonnet', api_key='test_key')
     service_id = 'test-service-claude-3-7-sonnet'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # Verify max_output_tokens is set to 64000 for Claude 3.7 Sonnet
     assert llm.config.max_output_tokens == 64000
@@ -1135,7 +1133,7 @@ def test_claude_sonnet_4_max_output_tokens(llm_registry):
     # Create LLM instance with a Claude Sonnet 4 model
     config = LLMConfig(model='claude-sonnet-4-20250514', api_key='test_key')
     service_id = 'test-service-claude-sonnet-4'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # Verify max_output_tokens is set to the expected value
     assert llm.config.max_output_tokens == 64000
@@ -1149,7 +1147,7 @@ def test_sambanova_deepseek_model_max_output_tokens(llm_registry):
     # Create LLM instance with SambaNova DeepSeek model
     config = LLMConfig(model='sambanova/DeepSeek-V3-0324', api_key='test_key')
     service_id = 'test-service-sambanova-deepseek'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # SambaNova DeepSeek model has specific token limits
     # This is the expected value from litellm
@@ -1163,7 +1161,7 @@ def test_max_output_tokens_override_in_config(llm_registry):
         model='claude-sonnet-4-20250514', api_key='test_key', max_output_tokens=2048
     )
     service_id = 'test-service-max-output-tokens-override'
-    llm = llm_registry.register_llm(service_id, config)
+    llm = llm_registry.get_llm(service_id, config)
 
     # Verify the config has the overridden max_output_tokens value
     assert llm.config.max_output_tokens == 2048
@@ -1181,7 +1179,7 @@ def test_azure_model_default_max_tokens(llm_registry):
 
     # Create LLM instance with Azure model
     service_id = 'test-service-azure-model'
-    llm = llm_registry.register_llm(service_id, azure_config)
+    llm = llm_registry.get_llm(service_id, azure_config)
 
     # Verify the config has the default max_output_tokens value
     assert llm.config.max_output_tokens is None  # Default value
@@ -1226,7 +1224,7 @@ def test_gemini_none_reasoning_effort_uses_thinking_budget(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1250,7 +1248,7 @@ def test_gemini_low_reasoning_effort_uses_thinking_budget(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1274,7 +1272,7 @@ def test_gemini_medium_reasoning_effort_passes_through(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1297,7 +1295,7 @@ def test_gemini_high_reasoning_effort_passes_through(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1318,7 +1316,7 @@ def test_non_gemini_uses_reasoning_effort(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1342,7 +1340,7 @@ def test_non_reasoning_model_no_optimization(mock_completion):
         'usage': {'prompt_tokens': 10, 'completion_tokens': 5},
     }
 
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
@@ -1368,7 +1366,7 @@ def test_gemini_performance_optimization_end_to_end(mock_completion):
     assert config.reasoning_effort is None
 
     # Create LLM and make completion
-    llm = LLM(config)
+    llm = LLM(config, service_id='test-service')
     messages = [{'role': 'user', 'content': 'Solve this complex problem'}]
 
     response = llm.completion(messages=messages)

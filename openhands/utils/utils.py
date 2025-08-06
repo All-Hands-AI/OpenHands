@@ -1,10 +1,10 @@
 from copy import deepcopy
+
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
 from openhands.storage.data_models.settings import Settings
-from openhands.storage.files import FileStore
 
 
 def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsConfig:
@@ -23,7 +23,7 @@ def create_registry_and_convo_stats(
     config: OpenHandsConfig,
     sid: str,
     user_id: str | None,
-    user_settings: Settings | None = None
+    user_settings: Settings | None = None,
 ) -> tuple[LLMRegistry, ConversationStats, OpenHandsConfig]:
     user_config = config
     if user_settings:
