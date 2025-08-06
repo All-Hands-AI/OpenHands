@@ -15,12 +15,14 @@ import { Provider } from "#/types/settings";
 interface AuthModalProps {
   githubAuthUrl: string | null;
   appMode?: GetConfigResponse["APP_MODE"] | null;
+  authUrl?: GetConfigResponse["AUTH_URL"];
   providersConfigured?: Provider[];
 }
 
 export function AuthModal({
   githubAuthUrl,
   appMode,
+  authUrl,
   providersConfigured,
 }: AuthModalProps) {
   const { t } = useTranslation();
@@ -28,16 +30,19 @@ export function AuthModal({
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "gitlab",
+    authUrl,
   });
 
   const bitbucketAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "bitbucket",
+    authUrl,
   });
 
   const enterpriseSsoUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "enterprise_sso",
+    authUrl,
   });
 
   const handleGitHubAuth = () => {
