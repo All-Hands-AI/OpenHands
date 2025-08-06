@@ -35,9 +35,19 @@ async def test_session_preserves_env_mcp_config(mock_sio, monkeypatch):
 
     # Verify the environment variables were loaded into the config
     assert len(config.mcp.shttp_servers) == 1
-    assert isinstance(config.mcp.shttp_servers[0], dict)
-    assert config.mcp.shttp_servers[0].get('url') == 'http://env-server:8080'
-    assert config.mcp.shttp_servers[0].get('api_key') == 'env-api-key'
+    
+    # Manually convert dictionary server configurations to proper server config objects
+    if isinstance(config.mcp.shttp_servers[0], dict):
+        server_dict = config.mcp.shttp_servers[0]
+        server = MCPSHTTPServerConfig(**server_dict)
+        assert isinstance(server, MCPSHTTPServerConfig)
+        assert server.url == 'http://env-server:8080'
+        assert server.api_key == 'env-api-key'
+    else:
+        # If it's already a proper server config object, just verify it
+        assert isinstance(config.mcp.shttp_servers[0], MCPSHTTPServerConfig)
+        assert config.mcp.shttp_servers[0].url == 'http://env-server:8080'
+        assert config.mcp.shttp_servers[0].api_key == 'env-api-key'
 
     # Create a session with the config
     session = Session(

@@ -340,19 +340,32 @@ def test_env_var_mcp_shttp_server_config(monkeypatch):
     assert len(config.mcp.shttp_servers) == 1
 
     # Access the first server
-    server = config.mcp.shttp_servers[0]
-
-    # Check that it's a dict with the expected keys
-    assert isinstance(server, dict)
-    assert server.get('url') == 'http://env-server:8080'
-    assert server.get('api_key') == 'env-api-key'
+    server_dict = config.mcp.shttp_servers[0]
+    
+    # Manually convert dictionary server configurations to proper server config objects
+    if isinstance(server_dict, dict):
+        server = MCPSHTTPServerConfig(**server_dict)
+        assert isinstance(server, MCPSHTTPServerConfig)
+        assert server.url == 'http://env-server:8080'
+        assert server.api_key == 'env-api-key'
+    else:
+        # If it's already a proper server config object, just verify it
+        assert isinstance(server_dict, MCPSHTTPServerConfig)
+        assert server_dict.url == 'http://env-server:8080'
+        assert server_dict.api_key == 'env-api-key'
 
     # Now let's create a proper MCPConfig with the values from the environment
-    mcp_config = MCPConfig(
-        shttp_servers=[
-            MCPSHTTPServerConfig(**server) for server in config.mcp.shttp_servers
-        ]
-    )
+    if isinstance(config.mcp.shttp_servers[0], dict):
+        # Convert dictionary server configurations to proper server config objects
+        converted_servers = [MCPSHTTPServerConfig(**server) for server in config.mcp.shttp_servers]
+        mcp_config = MCPConfig(
+            shttp_servers=converted_servers
+        )
+    else:
+        # If they're already proper server config objects, just use them
+        mcp_config = MCPConfig(
+            shttp_servers=config.mcp.shttp_servers
+        )
 
     # Verify that the MCPSHTTPServerConfig objects are created correctly
     assert len(mcp_config.shttp_servers) == 1

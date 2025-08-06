@@ -213,6 +213,10 @@ class MCPConfig(BaseModel):
     @model_validator(mode='after')
     def convert_dict_servers(self) -> 'MCPConfig':
         """Convert dictionary server configurations to proper server config objects."""
+        return self.convert_servers()
+        
+    def convert_servers(self) -> 'MCPConfig':
+        """Convert dictionary server configurations to proper server config objects."""
         if self.shttp_servers:
             converted_servers = []
             for server in self.shttp_servers:
