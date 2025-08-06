@@ -80,8 +80,8 @@ class DefaultUserAuth(UserAuth):
 
         # Load config (contains command-line args, env vars, and TOML settings)
         config = OpenHandsConfig()
-        
-        # Start with a new settings object
+
+        # Create a new settings object with the same values
         final_settings = Settings(
             language=settings.language,
             agent=settings.agent,
@@ -101,74 +101,92 @@ class DefaultUserAuth(UserAuth):
             git_user_name=settings.git_user_name,
             git_user_email=settings.git_user_email,
         )
-        
-        # Apply command-line values with highest precedence
-        for settings_field, config_field, nested_obj in ConfigurationMerger.FIELD_MAPPING:
-            # Get the value from the command-line config
-            if nested_obj is None:
-                cmd_value = getattr(config, config_field, None)
-            elif nested_obj == 'llm_config':
-                cmd_value = getattr(config.get_llm_config(), config_field, None)
-            elif nested_obj == 'security':
-                cmd_value = getattr(config.security, config_field, None)
-            elif nested_obj == 'sandbox':
-                cmd_value = getattr(config.sandbox, config_field, None)
-            else:
-                cmd_value = None
-                
-            # Skip if the command-line value is None
-            if cmd_value is None:
-                continue
-                
-            # Apply the command-line value to the final settings
-            if settings_field == 'llm_api_key' and isinstance(cmd_value, str):
-                # Convert string API keys to SecretStr
-                setattr(final_settings, settings_field, SecretStr(cmd_value))
-            elif settings_field == 'sandbox_api_key' and isinstance(cmd_value, str):
-                # Convert string API keys to SecretStr
-                setattr(final_settings, settings_field, SecretStr(cmd_value))
-            elif settings_field == 'search_api_key' and isinstance(cmd_value, str):
-                # Convert string API keys to SecretStr
-                setattr(final_settings, settings_field, SecretStr(cmd_value))
-            else:
-                # Apply the value directly
-                setattr(final_settings, settings_field, cmd_value)
-        
+
+        # Apply command-line arguments with highest precedence
+        # Only override if the config has a non-None value
+        if config.default_agent is not None:
+            final_settings.agent = config.default_agent
+
+        if config.max_iterations is not None:
+            final_settings.max_iterations = config.max_iterations
+
+        # Handle other config fields that might be set via command line
+        if config.git_user_name is not None:
+            final_settings.git_user_name = config.git_user_name
+
+        if config.git_user_email is not None:
+            final_settings.git_user_email = config.git_user_email
+
+        if config.max_budget_per_task is not None:
+            final_settings.max_budget_per_task = config.max_budget_per_task
+
+        # Handle LLM config
+        llm_config = config.get_llm_config()
+        if llm_config.model is not None:
+            final_settings.llm_model = llm_config.model
+
+        if llm_config.api_key is not None:
+            # Convert to SecretStr if needed
+            if isinstance(llm_config.api_key, str):
+                final_settings.llm_api_key = SecretStr(llm_config.api_key)
+            elif hasattr(llm_config.api_key, 'get_secret_value'):
+                final_settings.llm_api_key = llm_config.api_key
+
+        if llm_config.base_url is not None:
+            final_settings.llm_base_url = llm_config.base_url
+
+        # Handle security config
+        if config.security.security_analyzer is not None:
+            final_settings.security_analyzer = config.security.security_analyzer
+
+        if config.security.confirmation_mode is not None:
+            final_settings.confirmation_mode = config.security.confirmation_mode
+
+        # Handle sandbox config
+        if config.sandbox.remote_runtime_resource_factor is not None:
+            final_settings.remote_runtime_resource_factor = config.sandbox.remote_runtime_resource_factor
+
+        if config.sandbox.base_container_image is not None:
+            final_settings.sandbox_base_container_image = config.sandbox.base_container_image
+
+        if config.sandbox.runtime_container_image is not None:
+            final_settings.sandbox_runtime_container_image = config.sandbox.runtime_container_image
+
         # Special handling for MCP config - merge the lists
         if config.mcp is not None:
-            if final_settings.mcp_config is None:
-                final_settings.mcp_config = config.mcp
-            else:
-                # Create a new MCP config with both server lists
-                final_mcp = MCPConfig()
-                
-                # Add config servers first (highest precedence)
-                if config.mcp.sse_servers:
-                    final_mcp.sse_servers = list(config.mcp.sse_servers)
-                
-                # Then add user settings servers
-                if final_settings.mcp_config.sse_servers:
-                    if not final_mcp.sse_servers:
-                        final_mcp.sse_servers = []
-                    final_mcp.sse_servers.extend(final_settings.mcp_config.sse_servers)
-                
-                # Do the same for stdio and shttp servers
-                if config.mcp.stdio_servers:
-                    final_mcp.stdio_servers = list(config.mcp.stdio_servers)
-                if final_settings.mcp_config.stdio_servers:
-                    if not final_mcp.stdio_servers:
-                        final_mcp.stdio_servers = []
-                    final_mcp.stdio_servers.extend(final_settings.mcp_config.stdio_servers)
-                
-                if config.mcp.shttp_servers:
-                    final_mcp.shttp_servers = list(config.mcp.shttp_servers)
-                if final_settings.mcp_config.shttp_servers:
-                    if not final_mcp.shttp_servers:
-                        final_mcp.shttp_servers = []
-                    final_mcp.shttp_servers.extend(final_settings.mcp_config.shttp_servers)
-                
-                # Set the final MCP config
-                final_settings.mcp_config = final_mcp
+            # Get user settings MCP config
+            user_mcp_config = settings.mcp_config
+
+            # Create a new MCP config with both server lists
+            final_mcp = MCPConfig()
+
+            # Add config servers first (highest precedence)
+            if config.mcp.sse_servers:
+                final_mcp.sse_servers = list(config.mcp.sse_servers)
+
+            # Then add user settings servers
+            if user_mcp_config and user_mcp_config.sse_servers:
+                if not final_mcp.sse_servers:
+                    final_mcp.sse_servers = []
+                final_mcp.sse_servers.extend(user_mcp_config.sse_servers)
+
+            # Do the same for stdio and shttp servers
+            if config.mcp.stdio_servers:
+                final_mcp.stdio_servers = list(config.mcp.stdio_servers)
+            if user_mcp_config and user_mcp_config.stdio_servers:
+                if not final_mcp.stdio_servers:
+                    final_mcp.stdio_servers = []
+                final_mcp.stdio_servers.extend(user_mcp_config.stdio_servers)
+
+            if config.mcp.shttp_servers:
+                final_mcp.shttp_servers = list(config.mcp.shttp_servers)
+            if user_mcp_config and user_mcp_config.shttp_servers:
+                if not final_mcp.shttp_servers:
+                    final_mcp.shttp_servers = []
+                final_mcp.shttp_servers.extend(user_mcp_config.shttp_servers)
+
+            # Set the final MCP config
+            final_settings.mcp_config = final_mcp
 
         # Cache and return settings
         self._settings = final_settings
