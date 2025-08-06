@@ -52,17 +52,7 @@ def load_from_env(
         cfg: The OpenHandsConfig object to set attributes on.
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
-    # Log MCP-related environment variables at the start
-    mcp_env_vars = {k: v for k, v in env_or_toml_dict.items() if 'MCP' in k}
-    logger.openhands_logger.debug(
-        f'MCP-related environment variables in load_from_env: {mcp_env_vars}'
-    )
 
-    # Log initial MCP configuration
-    logger.openhands_logger.debug(f'Initial MCP configuration: {cfg.mcp}')
-    logger.openhands_logger.debug(f'Initial MCP HTTP servers: {cfg.mcp.shttp_servers}')
-    logger.openhands_logger.debug(f'Initial MCP stdio servers: {cfg.mcp.stdio_servers}')
-    logger.openhands_logger.debug(f'Initial MCP SSE servers: {cfg.mcp.sse_servers}')
 
     def get_optional_type(union_type: UnionType | type | None) -> type | None:
         """Returns the non-None type from a Union."""
@@ -86,18 +76,7 @@ def load_from_env(
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
-            # Add debug logging for MCP-related fields
-            if 'MCP' in env_var_name:
-                logger.openhands_logger.debug(
-                    f'Processing MCP-related field: {field_name}, env var: {env_var_name}'
-                )
-                if env_var_name in env_or_toml_dict:
-                    logger.openhands_logger.debug(
-                        f'Found env var {env_var_name}={env_or_toml_dict[env_var_name]}'
-                    )
-                    logger.openhands_logger.debug(
-                        f'Field type: {field_type}, current value: {field_value}'
-                    )
+
 
             if isinstance(field_value, BaseModel):
                 set_attr_from_env(field_value, prefix=field_name + '_')
@@ -126,32 +105,16 @@ def load_from_env(
                         or field_type is list
                     ):
                         cast_value = literal_eval(value)
-                        # Add debug logging for MCP-related lists/dicts
-                        if 'MCP' in env_var_name:
-                            logger.openhands_logger.debug(
-                                f'Parsed {env_var_name} as: {cast_value}'
-                            )
+                        # The conversion of MCP server configurations is now handled by the MCPConfig model validator
                     else:
                         if field_type is not None:
                             cast_value = field_type(value)
 
-                    # Add debug logging for MCP-related fields
-                    if 'MCP' in env_var_name:
-                        logger.openhands_logger.debug(
-                            f'Setting {env_var_name} to: {cast_value}'
-                        )
-
                     setattr(sub_config, field_name, cast_value)
 
-                    # Add debug logging for MCP-related fields after setting
-                    if 'MCP' in env_var_name:
-                        logger.openhands_logger.debug(
-                            f'After setting {env_var_name}, value is now: {getattr(sub_config, field_name)}'
-                        )
-
-                except (ValueError, TypeError) as e:
+                except (ValueError, TypeError):
                     logger.openhands_logger.error(
-                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type. Error: {str(e)}'
+                        f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
                     )
 
     # Start processing from the root of the config object
@@ -164,19 +127,7 @@ def load_from_env(
     default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
 
-    # Log final MCP configuration after all environment variables have been processed
-    logger.openhands_logger.debug(
-        f'Final MCP configuration after load_from_env: {cfg.mcp}'
-    )
-    logger.openhands_logger.debug(
-        f'Final MCP HTTP servers after load_from_env: {cfg.mcp.shttp_servers}'
-    )
-    logger.openhands_logger.debug(
-        f'Final MCP stdio servers after load_from_env: {cfg.mcp.stdio_servers}'
-    )
-    logger.openhands_logger.debug(
-        f'Final MCP SSE servers after load_from_env: {cfg.mcp.sse_servers}'
-    )
+
 
 
 def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None:

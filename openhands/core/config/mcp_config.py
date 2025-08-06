@@ -203,11 +203,44 @@ class MCPConfig(BaseModel):
     Attributes:
         sse_servers: List of MCP SSE server configs
         stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.
+        shttp_servers: List of MCP HTTP server configs.
     """
 
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
+    
+    @model_validator(mode='after')
+    def convert_dict_servers(self) -> 'MCPConfig':
+        """Convert dictionary server configurations to proper server config objects."""
+        if self.shttp_servers:
+            converted_servers = []
+            for server in self.shttp_servers:
+                if isinstance(server, dict):
+                    converted_servers.append(MCPSHTTPServerConfig(**server))
+                else:
+                    converted_servers.append(server)
+            self.shttp_servers = converted_servers
+            
+        if self.sse_servers:
+            converted_servers = []
+            for server in self.sse_servers:
+                if isinstance(server, dict):
+                    converted_servers.append(MCPSSEServerConfig(**server))
+                else:
+                    converted_servers.append(server)
+            self.sse_servers = converted_servers
+            
+        if self.stdio_servers:
+            converted_servers = []
+            for server in self.stdio_servers:
+                if isinstance(server, dict):
+                    converted_servers.append(MCPStdioServerConfig(**server))
+                else:
+                    converted_servers.append(server)
+            self.stdio_servers = converted_servers
+            
+        return self
 
     model_config = ConfigDict(extra='forbid')
 
@@ -336,28 +369,13 @@ class OpenHandsMCPConfig:
         Returns:
             tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
-        from openhands.core.logger import openhands_logger as logger
-
-        logger.debug(f'Creating default MCP server config with host: {host}')
-
-        # Log environment variables related to MCP configuration
-        import os
-
-        mcp_env_vars = {k: v for k, v in os.environ.items() if 'MCP' in k}
-        logger.debug(
-            f'MCP-related environment variables in create_default_mcp_server_config: {mcp_env_vars}'
-        )
 
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
-            logger.debug(
-                f'Added search engine stdio server: {search_engine_stdio_server}'
-            )
 
         shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
-        logger.debug(f'Created default MCP HTTP server: {shttp_servers}')
 
         return shttp_servers, stdio_servers
 
