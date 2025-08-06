@@ -1,0 +1,80 @@
+name: End-to-End Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    if: contains(github.event.pull_request.labels.*.name, 'end-to-end') || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      RUNTIME: local
+      INSTALL_DOCKER: 0
+      E2E_TEST: true
+      FRONTEND_PORT: 12000
+      FRONTEND_HOST: 0.0.0.0
+      BACKEND_HOST: 0.0.0.0
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          make install-pre-commit-hooks
+          cd frontend && npm install
+          npx playwright install --with-deps chromium
+
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo usermod -aG docker $USER
+
+      - name: Build OpenHands
+        run: |
+          make build
+
+      - name: Run end-to-end tests
+        run: |
+          cd frontend && npm run test:e2e-workflow
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 30
+
+      - name: Upload OpenHands logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhands-logs
+          path: /tmp/openhands-e2e-test.log
+          retention-days: 30

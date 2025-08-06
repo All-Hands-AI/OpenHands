@@ -62,6 +62,7 @@
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
     "test:e2e": "playwright test",
+    "test:e2e-workflow": "cross-env E2E_TEST=true playwright test --project=e2e-workflow",
     "test:coverage": "npm run make-i18n && vitest run --coverage",
     "dev_wsl": "VITE_WATCH_USE_POLLING=true vite",
     "preview": "vite preview",
