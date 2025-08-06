@@ -75,7 +75,6 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
@@ -84,9 +83,8 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.server.services.conversation_stats import ConversationStats
-from openhands.storage import get_file_store
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.utils.utils import create_registry_and_convo_stats
 
 
 async def cleanup_session(
@@ -150,10 +148,11 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    llm_registry = LLMRegistry(config)
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    convo_stats = ConversationStats(file_store, sid, None)
-    llm_registry.subscribe(convo_stats.register_llm)
+    llm_registry, convo_stats, config = create_registry_and_convo_stats(
+        config,
+        sid,
+        None,
+    )
 
     agent = create_agent(config, llm_registry)
     runtime = create_runtime(

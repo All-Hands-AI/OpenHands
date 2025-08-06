@@ -36,9 +36,8 @@ from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
-from openhands.server.services.conversation_stats import ConversationStats
-from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.utils import create_registry_and_convo_stats
 
 
 class FakeUserResponseFunc(Protocol):
@@ -98,10 +97,12 @@ async def run_controller(
         >>> state = await run_controller(config=config, initial_user_action=action)
     """
     sid = sid or generate_sid(config)
-    llm_registry = llm_registry if llm_registry else LLMRegistry(config)
-    file_store = get_file_store(config.file_store, config.file_store_path)
-    convo_stats = ConversationStats(file_store, sid, None)
-    llm_registry.subscribe(convo_stats.register_llm)
+
+    llm_registry, convo_stats, config = create_registry_and_convo_stats(
+        config,
+        sid,
+        None,
+    )
 
     agent = create_agent(config, llm_registry)
 

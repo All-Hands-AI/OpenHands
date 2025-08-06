@@ -22,17 +22,14 @@ from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
-from openhands.server.conversation_manager.utils import setup_llm_config
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import ROOM_KEY, Session
@@ -44,6 +41,7 @@ from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
+from openhands.utils.utils import create_registry_and_convo_stats
 
 
 @dataclass
@@ -486,10 +484,10 @@ class DockerNestedConversationManager(ConversationManager):
         config: OpenHandsConfig = ExperimentManagerImpl.run_config_variant_test(
             user_id, sid, self.config
         )
-        config = setup_llm_config(config, settings)
-        llm_registry = LLMRegistry(config, settings.agent)
-        convo_stats = ConversationStats(self.file_store, sid, user_id)
-        llm_registry.subscribe(convo_stats.register_llm)
+
+        llm_registry, convo_stats, config = create_registry_and_convo_stats(
+            config, sid, user_id, settings
+        )
 
         session = Session(
             sid=sid,
