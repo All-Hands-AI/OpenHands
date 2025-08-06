@@ -6527,6 +6527,22 @@
         "es": "Eliminar",
         "tr": "Sil"
     },
+    "BUTTON$DELETE_CONVERSATION": {
+        "en": "Delete Conversation",
+        "uk": "Видалити розмову",
+        "ja": "会話を削除",
+        "zh-CN": "删除对话",
+        "zh-TW": "刪除對話",
+        "ko-KR": "대화 삭제",
+        "no": "Slett samtale",
+        "ar": "حذف المحادثة",
+        "de": "Konversation löschen",
+        "fr": "Supprimer la conversation",
+        "it": "Elimina conversazione",
+        "pt": "Excluir conversa",
+        "es": "Eliminar conversación",
+        "tr": "Sohbeti sil"
+    },
     "BUTTON$COPY_TO_CLIPBOARD": {
         "en": "Copy to Clipboard",
         "uk": "Копіювати в буфер обміну",
