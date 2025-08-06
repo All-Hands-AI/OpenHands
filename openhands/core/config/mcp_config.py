@@ -1,7 +1,7 @@
 import os
 import re
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 from urllib.parse import urlparse
 
 from pydantic import (
@@ -231,8 +231,6 @@ class MCPConfig(BaseModel):
 
     def _convert_server_list(self, servers, server_class):
         """Helper method to convert a list of server dictionaries to server objects."""
-        from typing import Any, cast
-
         # Skip if the list is empty
         if not servers:
             return servers
