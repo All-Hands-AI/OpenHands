@@ -126,6 +126,28 @@ export function ConversationName() {
         className="flex items-center gap-2 h-[22px] text-base font-normal text-left"
         data-testid="conversation-name"
       >
+        {titleMode === "edit" ? (
+          <input
+            ref={inputRef}
+            data-testid="conversation-name-input"
+            onClick={handleInputClick}
+            onBlur={handleBlur}
+            onKeyUp={handleKeyUp}
+            type="text"
+            defaultValue={conversation.title}
+            className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit"
+          />
+        ) : (
+          <div
+            className="text-white leading-5 w-fit max-w-fit truncate"
+            data-testid="conversation-name-title"
+            onDoubleClick={handleDoubleClick}
+            title={conversation.title}
+          >
+            {conversation.title}
+          </div>
+        )}
+
         <div className="relative flex items-center">
           <EllipsisButton fill="#B1B9D3" onClick={handleEllipsisClick} />
           {contextMenuOpen && (
@@ -153,28 +175,6 @@ export function ConversationName() {
             />
           )}
         </div>
-
-        {titleMode === "edit" ? (
-          <input
-            ref={inputRef}
-            data-testid="conversation-name-input"
-            onClick={handleInputClick}
-            onBlur={handleBlur}
-            onKeyUp={handleKeyUp}
-            type="text"
-            defaultValue={conversation.title}
-            className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit"
-          />
-        ) : (
-          <div
-            className="text-white leading-5 w-fit max-w-fit truncate"
-            data-testid="conversation-name-title"
-            onDoubleClick={handleDoubleClick}
-            title={conversation.title}
-          >
-            {conversation.title}
-          </div>
-        )}
       </div>
 
       {/* Metrics Modal */}
