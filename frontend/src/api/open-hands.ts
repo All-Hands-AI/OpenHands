@@ -281,7 +281,7 @@ class OpenHands {
 
   static async getUserConversations(): Promise<Conversation[]> {
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      "/api/conversations?limit=20",
+      "/api/conversations?limit=100",
     );
     return data.results;
   }
@@ -289,7 +289,7 @@ class OpenHands {
   static async searchConversations(
     selectedRepository?: string,
     conversationTrigger?: string,
-    limit: number = 20,
+    limit: number = 100,
   ): Promise<Conversation[]> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());
