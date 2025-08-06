@@ -51,15 +51,11 @@ def test_handler_creation(
     expected_context_type: type,
     expected_handler_type: type,
 ):
-    # Create a unique service ID for each test case
-    service_id = f'test_handler_creation_{platform}_{issue_type}'
-
     factory = IssueHandlerFactory(
         **factory_params, platform=platform, issue_type=issue_type
     )
 
-    # Pass the service_id to the create method
-    handler = factory.create(service_id=service_id)
+    handler = factory.create()
 
     assert isinstance(handler, expected_context_type)
     assert isinstance(handler._strategy, expected_handler_type)

@@ -464,9 +464,7 @@ async def test_process_issue(
         [],
     )
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-    # Use a unique service ID for each test case
-    service_id = f'test_process_issue_{test_case["name"]}'
-    handler_instance.llm = LLM(llm_config, service_id=service_id)
+    handler_instance.llm = LLM(llm_config)
 
     # Mock the runtime and its methods
     mock_runtime = MagicMock()
@@ -669,12 +667,8 @@ def test_file_instruction_with_repo_instruction():
         repo_instruction = f.read()
 
     mock_llm_config = LLMConfig(model='test_model', api_key='test_api_key')
-    # Use a unique service ID for this test
-    service_id = 'test_github_file_instruction_with_repo_instruction'
     issue_handler = ServiceContextIssue(
-        GithubIssueHandler('owner', 'repo', 'token'),
-        mock_llm_config,
-        service_id=service_id,
+        GithubIssueHandler('owner', 'repo', 'token'), mock_llm_config
     )
     instruction, conversation_instructions, image_urls = issue_handler.get_instruction(
         issue, prompt, conversation_instructions_prompt, repo_instruction
@@ -1000,10 +994,8 @@ def test_download_pr_with_review_comments():
 
 def test_download_issue_with_specific_comment():
     llm_config = LLMConfig(model='test', api_key='test')
-    # Use a unique service ID for this test
-    service_id = 'test_github_download_issue_with_specific_comment'
     handler = ServiceContextIssue(
-        GithubIssueHandler('owner', 'repo', 'token'), llm_config, service_id=service_id
+        GithubIssueHandler('owner', 'repo', 'token'), llm_config
     )
 
     # Define the specific comment_id to filter

@@ -37,12 +37,8 @@ def default_config():
 
 def test_handle_nonexistent_issue_reference():
     llm_config = LLMConfig(model='test', api_key='test')
-    # Use a unique service ID for this test
-    service_id = 'test_gitlab_handle_nonexistent_issue_reference'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
-        llm_config,
-        service_id=service_id,
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock the requests.get to simulate a 404 error
@@ -95,12 +91,8 @@ def test_handle_rate_limit_error():
 
 def test_handle_network_error():
     llm_config = LLMConfig(model='test', api_key='test')
-    # Use a unique service ID for this test
-    service_id = 'test_gitlab_handle_network_error'
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
-        llm_config,
-        service_id=service_id,
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock the requests.get to simulate a network error
@@ -220,14 +212,11 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
             ),
         ]
 
-        # Use a unique service ID for the test
-        service_id = 'test_gitlab_service_rate_limit'
-        LLM(config=default_config, service_id=service_id)
+        llm = LLM(config=default_config)
         handler = ServiceContextIssue(
-            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'),
-            default_config,
-            service_id=service_id,
+            GitlabIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
         )
+        handler.llm = llm
 
         # Mock issue and history
         issue = Issue(
@@ -266,14 +255,12 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
         'Rate limit exceeded', llm_provider='test_provider', model='test_model'
     )
 
-    # Initialize LLM and handler with a unique service ID
-    service_id = 'test_gitlab_service_exhausts_retries'
-    LLM(config=default_config, service_id=service_id)
+    # Initialize LLM and handler
+    llm = LLM(config=default_config)
     handler = ServiceContextPR(
-        GitlabPRHandler('test-owner', 'test-repo', 'test-token'),
-        default_config,
-        service_id=service_id,
+        GitlabPRHandler('test-owner', 'test-repo', 'test-token'), default_config
     )
+    handler.llm = llm
 
     # Mock issue and history
     issue = Issue(

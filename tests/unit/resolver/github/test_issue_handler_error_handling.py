@@ -210,14 +210,11 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
             ),
         ]
 
-        # Use a unique service ID for the test
-        service_id = 'test_service_rate_limit'
-        LLM(config=default_config, service_id=service_id)
+        llm = LLM(config=default_config)
         handler = ServiceContextIssue(
-            GithubIssueHandler('test-owner', 'test-repo', 'test-token'),
-            default_config,
-            service_id=service_id,
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
         )
+        handler.llm = llm
 
         # Mock issue and history
         issue = Issue(
@@ -256,14 +253,12 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
         'Rate limit exceeded', llm_provider='test_provider', model='test_model'
     )
 
-    # Initialize LLM and handler with a unique service ID
-    service_id = 'test_service_exhausts_retries'
-    LLM(config=default_config, service_id=service_id)
+    # Initialize LLM and handler
+    llm = LLM(config=default_config)
     handler = ServiceContextPR(
-        GithubPRHandler('test-owner', 'test-repo', 'test-token'),
-        default_config,
-        service_id=service_id,
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
     )
+    handler.llm = llm
 
     # Mock issue and history
     issue = Issue(
