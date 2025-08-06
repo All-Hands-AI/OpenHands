@@ -19,8 +19,12 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
     original_connect_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_http_with_short_timeout(self, server_url, timeout=30.0, conversation_id=None):
-        return await original_connect_connect_http(self, server_url, timeout=0.5, conversation_id=conversation_id)
+    async def connect_http_with_short_timeout(
+        self, server_url, timeout=30.0, conversation_id=None
+    ):
+        return await original_connect_connect_http(
+            self, server_url, timeout=0.5, conversation_id=conversation_id
+        )
 
     try:
         # Replace the method with our wrapper
@@ -55,8 +59,12 @@ async def test_create_mcp_clients_with_unreachable_host():
     original_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_http_with_short_timeout(self, server_url, timeout=30.0, conversation_id=None):
-        return await original_connect_http(self, server_url, timeout=1.0, conversation_id=conversation_id)
+    async def connect_http_with_short_timeout(
+        self, server_url, timeout=30.0, conversation_id=None
+    ):
+        return await original_connect_http(
+            self, server_url, timeout=1.0, conversation_id=conversation_id
+        )
 
     try:
         # Replace the method with our wrapper

@@ -10,7 +10,7 @@ def test_fastmcp_import_and_version():
     This test confirms the upgrade was successful.
     """
     # Create a temporary Python script to check fastmcp version
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
         f.write("""
 import fastmcp
 import sys
@@ -27,8 +27,8 @@ sys.exit(0)
 
         # Check the output
         print(result.stdout)
-        assert "FastMCP version: 2.11.1" in result.stdout, (
-            f"Expected fastmcp version 2.11.1, got: {result.stdout}"
+        assert 'FastMCP version: 2.11.1' in result.stdout, (
+            f'Expected fastmcp version 2.11.1, got: {result.stdout}'
         )
 
     finally:
@@ -40,7 +40,7 @@ sys.exit(0)
 def test_fastmcp_imports():
     """Test that we can import key components from fastmcp."""
     # Create a temporary Python script to test imports
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
         f.write("""
 import sys
 import fastmcp
@@ -78,10 +78,10 @@ except Exception as e:
         # Check the output
         print(result.stdout)
         assert result.returncode == 0, (
-            f"Failed to import fastmcp components: {result.stderr}"
+            f'Failed to import fastmcp components: {result.stderr}'
         )
-        assert "Successfully imported key fastmcp components" in result.stdout
-        assert "fastmcp version: 2.11.1" in result.stdout
+        assert 'Successfully imported key fastmcp components' in result.stdout
+        assert 'fastmcp version: 2.11.1' in result.stdout
 
     finally:
         # Clean up
@@ -92,7 +92,7 @@ except Exception as e:
 def test_fastmcp_client_creation():
     """Test that we can create a fastmcp client with the upgraded version."""
     # Create a temporary Python script to test client creation
-    with tempfile.NamedTemporaryFile(suffix=".py", mode="w", delete=False) as f:
+    with tempfile.NamedTemporaryFile(suffix='.py', mode='w', delete=False) as f:
         f.write("""
 import sys
 import asyncio
@@ -134,9 +134,9 @@ if __name__ == "__main__":
         # Check the output
         print(result.stdout)
         assert result.returncode == 0, (
-            f"Failed to create fastmcp Client: {result.stderr}"
+            f'Failed to create fastmcp Client: {result.stderr}'
         )
-        assert "Successfully created fastmcp Client instance" in result.stdout
+        assert 'Successfully created fastmcp Client instance' in result.stdout
 
     finally:
         # Clean up
