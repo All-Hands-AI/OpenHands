@@ -116,6 +116,14 @@ class LLMRegistry:
     def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:
         self.subscriber = callback
 
+        # Subscriptions happen after default llm is initialized
+        # Notify service of this llm
+        self.notify(
+            RegistryEvent(
+                llm=self.active_agent_llm, service_id=self.active_agent_llm.service_id
+            )
+        )
+
     def notify(self, event: RegistryEvent):
         if self.subscriber:
             try:
