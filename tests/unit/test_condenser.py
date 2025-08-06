@@ -39,6 +39,7 @@ from openhands.memory.condenser.impl import (
     StructuredSummaryCondenser,
 )
 from openhands.memory.condenser.impl.pipeline import CondenserPipeline
+from openhands.server.services.conversation_stats import ConversationStats
 
 
 def create_test_event(
@@ -97,10 +98,19 @@ def mock_llm() -> LLM:
 
 
 @pytest.fixture
-def mock_llm_registry(mock_llm) -> LLMRegistry:
+def mock_conversation_stats() -> ConversationStats:
+    """Creates a mock ConversationStats service."""
+    mock_stats = MagicMock(spec=ConversationStats)
+    return mock_stats
+
+
+@pytest.fixture
+def mock_llm_registry(mock_llm, mock_conversation_stats) -> LLMRegistry:
     """Creates a mock LLMRegistry that returns the mock_llm for any registration."""
     mock_registry = MagicMock(spec=LLMRegistry)
-    mock_registry.register_llm.return_value = mock_llm
+    mock_registry.get_llm.return_value = mock_llm
+    # Set up the subscribe method to work with ConversationStats
+    mock_registry.subscribe.return_value = None
     return mock_registry
 
 
@@ -359,29 +369,25 @@ def test_llm_summarizing_condenser_from_config(mock_llm_registry):
     assert condenser.keep_first == 10
 
 
-def test_llm_summarizing_condenser_invalid_config(mock_llm_registry):
+def test_llm_summarizing_condenser_invalid_config(mock_llm, mock_llm_registry):
     """Test that LLMSummarizingCondenser raises error when keep_first > max_size."""
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     pytest.raises(
         ValueError,
         LLMSummarizingCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         max_size=4,
         keep_first=2,
     )
     pytest.raises(
         ValueError,
         LLMSummarizingCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         max_size=0,
     )
     pytest.raises(
         ValueError,
         LLMSummarizingCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         keep_first=-1,
     )
 
@@ -391,10 +397,7 @@ def test_llm_summarizing_condenser_gives_expected_view_size(
 ):
     """Test that LLMSummarizingCondenser maintains the correct view size."""
     max_size = 10
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
-    condenser = LLMSummarizingCondenser(
-        max_size=max_size, llm_config=llm_config, llm_registry=mock_llm_registry
-    )
+    condenser = LLMSummarizingCondenser(max_size=max_size, llm=mock_llm)
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
@@ -413,12 +416,10 @@ def test_llm_summarizing_condenser_keeps_first_and_summary_events(
     """Test that the LLM summarizing condenser appropriately maintains the event prefix and any summary events."""
     max_size = 10
     keep_first = 3
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMSummarizingCondenser(
         max_size=max_size,
         keep_first=keep_first,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     mock_llm.set_mock_response_content('Summary of forgotten events')
@@ -520,7 +521,6 @@ def test_llm_attention_condenser_from_config(mock_llm_registry):
 
     assert isinstance(condenser, LLMAttentionCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
@@ -530,7 +530,7 @@ def test_llm_attention_condenser_from_config(mock_llm_registry):
 
     # Create a new registry that returns our mock LLM that doesn't support function calling
     mock_registry = MagicMock(spec=LLMRegistry)
-    mock_registry.register_llm.return_value = mock_llm
+    mock_registry.get_llm.return_value = mock_llm
 
     pytest.raises(ValueError, LLMAttentionCondenser.from_config, config, mock_registry)
 
@@ -538,12 +538,10 @@ def test_llm_attention_condenser_from_config(mock_llm_registry):
 def test_llm_attention_condenser_gives_expected_view_size(mock_llm, mock_llm_registry):
     """Test that the LLMAttentionCondenser gives views of the expected size."""
     max_size = 10
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMAttentionCondenser(
         max_size=max_size,
         keep_first=0,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -567,12 +565,10 @@ def test_llm_attention_condenser_handles_events_outside_history(
 ):
     """Test that the LLMAttentionCondenser handles event IDs that aren't from the event history."""
     max_size = 2
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMAttentionCondenser(
         max_size=max_size,
         keep_first=0,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -594,12 +590,10 @@ def test_llm_attention_condenser_handles_events_outside_history(
 def test_llm_attention_condenser_handles_too_many_events(mock_llm, mock_llm_registry):
     """Test that the LLMAttentionCondenser handles when the response contains too many event IDs."""
     max_size = 2
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMAttentionCondenser(
         max_size=max_size,
         keep_first=0,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -623,12 +617,10 @@ def test_llm_attention_condenser_handles_too_few_events(mock_llm, mock_llm_regis
     max_size = 2
     # Developer note: We must specify keep_first=0 because
     # keep_first (1) >= max_size//2 (1) is invalid.
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMAttentionCondenser(
         max_size=max_size,
         keep_first=0,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -649,12 +641,10 @@ def test_llm_attention_condenser_handles_keep_first_events(mock_llm, mock_llm_re
     """Test that LLMAttentionCondenser works when keep_first=1 is allowed (must be less than half of max_size)."""
     max_size = 12
     keep_first = 4
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     condenser = LLMAttentionCondenser(
         max_size=max_size,
         keep_first=keep_first,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
@@ -692,17 +682,16 @@ def test_structured_summary_condenser_from_config(mock_llm_registry):
     assert condenser.keep_first == 10
 
 
-def test_structured_summary_condenser_invalid_config(mock_llm_registry):
+def test_structured_summary_condenser_invalid_config(mock_llm):
     """Test that StructuredSummaryCondenser raises error when keep_first > max_size."""
     # Since the condenser only works when function calling is on, we need to
     # mock up the check for that.
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
+    mock_llm.is_function_calling_active.return_value = True
 
     pytest.raises(
         ValueError,
         StructuredSummaryCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         max_size=4,
         keep_first=2,
     )
@@ -710,31 +699,26 @@ def test_structured_summary_condenser_invalid_config(mock_llm_registry):
     pytest.raises(
         ValueError,
         StructuredSummaryCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         max_size=0,
     )
     pytest.raises(
         ValueError,
         StructuredSummaryCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
         keep_first=-1,
     )
 
     # If all other parameters are good but there's no function calling the
     # condenser still counts as improperly configured.
-    # Create a mock registry that returns an LLM that doesn't support function calling
-    mock_llm = MagicMock()
-    mock_llm.is_function_calling_active.return_value = False
-    mock_registry = MagicMock(spec=LLMRegistry)
-    mock_registry.register_llm.return_value = mock_llm
+    # Create a mock LLM that doesn't support function calling
+    mock_llm_no_func = MagicMock()
+    mock_llm_no_func.is_function_calling_active.return_value = False
 
     pytest.raises(
         ValueError,
         StructuredSummaryCondenser,
-        llm_config=llm_config,
-        llm_registry=mock_registry,
+        llm=mock_llm_no_func,
         max_size=40,
         keep_first=2,
     )
@@ -745,10 +729,8 @@ def test_structured_summary_condenser_gives_expected_view_size(
 ):
     """Test that StructuredSummaryCondenser maintains the correct view size."""
     max_size = 10
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
-    condenser = StructuredSummaryCondenser(
-        max_size=max_size, llm_config=llm_config, llm_registry=mock_llm_registry
-    )
+    mock_llm.is_function_calling_active.return_value = True
+    condenser = StructuredSummaryCondenser(max_size=max_size, llm=mock_llm)
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
@@ -767,12 +749,11 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(
     """Test that the StructuredSummaryCondenser appropriately maintains the event prefix and any summary events."""
     max_size = 10
     keep_first = 3
-    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
+    mock_llm.is_function_calling_active.return_value = True
     condenser = StructuredSummaryCondenser(
         max_size=max_size,
         keep_first=keep_first,
-        llm_config=llm_config,
-        llm_registry=mock_llm_registry,
+        llm=mock_llm,
     )
 
     mock_llm.set_mock_response_content('Summary of forgotten events')
