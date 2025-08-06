@@ -49,43 +49,38 @@ def connected_registry_and_stats(mock_llm_registry, mock_conversation_stats):
 
 
 @pytest.fixture
-def mock_agent(mock_llm_registry):
-    """Create a properly configured mock agent that registers with the LLM registry"""
-    # Create the base mocks
-    agent = MagicMock(spec=Agent)
-    agent_config = MagicMock(spec=AgentConfig)
-    llm_config = LLMConfig(
-        model='gpt-4o',
-        api_key='test_key',
-        num_retries=2,
-        retry_min_wait=1,
-        retry_max_wait=2,
-    )
+def make_mock_agent():
+    def _make_mock_agent(llm_registry):
+        agent = MagicMock(spec=Agent)
+        agent_config = MagicMock(spec=AgentConfig)
+        llm_config = LLMConfig(
+            model='gpt-4o',
+            api_key='test_key',
+            num_retries=2,
+            retry_min_wait=1,
+            retry_max_wait=2,
+        )
+        agent_config.disabled_microagents = []
+        agent_config.enable_mcp = True
+        llm_registry.service_to_llm.clear()
+        mock_llm = llm_registry.get_llm('agent_llm', llm_config)
+        agent.llm = mock_llm
+        agent.name = 'test-agent'
+        agent.sandbox_plugins = []
+        agent.config = agent_config
+        agent.prompt_manager = MagicMock()
+        return agent
 
-    # Configure the agent config
-    agent_config.disabled_microagents = []
-    agent_config.enable_mcp = True
+    return _make_mock_agent
 
-    # Simulate the agent's LLM registration process
-    mock_llm_registry.service_to_llm.clear()
-    mock_llm = mock_llm_registry.get_llm('agent_llm', llm_config)
-
-    # Set up the agent
-    agent.llm = mock_llm
-    agent.name = 'test-agent'
-    agent.sandbox_plugins = []
-    agent.config = agent_config
-    agent.prompt_manager = MagicMock()
-
-    return agent
 
 
 @pytest.mark.asyncio
 async def test_agent_session_start_with_no_state(
-    mock_agent, mock_llm_registry, mock_conversation_stats
+    make_mock_agent, mock_llm_registry, mock_conversation_stats
 ):
     """Test that AgentSession.start() works correctly when there's no state to restore"""
-
+    mock_agent = make_mock_agent(mock_llm_registry)
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -174,10 +169,10 @@ async def test_agent_session_start_with_no_state(
 
 @pytest.mark.asyncio
 async def test_agent_session_start_with_restored_state(
-    mock_agent, mock_llm_registry, mock_conversation_stats
+    make_mock_agent, mock_llm_registry, mock_conversation_stats
 ):
     """Test that AgentSession.start() works correctly when there's a state to restore"""
-
+    mock_agent = make_mock_agent(mock_llm_registry)
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -269,11 +264,12 @@ async def test_agent_session_start_with_restored_state(
 
 @pytest.mark.asyncio
 async def test_metrics_centralization_via_conversation_stats(
-    mock_agent, connected_registry_and_stats
+    make_mock_agent, connected_registry_and_stats
 ):
     """Test that metrics are centralized through the ConversationStats service."""
 
     mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
+    mock_agent = make_mock_agent(mock_llm_registry)
 
     # Setup
     file_store = InMemoryFileStore({})
@@ -333,10 +329,7 @@ async def test_metrics_centralization_via_conversation_stats(
 
         # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
-        # Use the metrics that ConversationStats is actually tracking
-        # The ConversationStats is tracking the 'agent' service, so add cost to those metrics
-        tracked_metrics = mock_conversation_stats.service_to_metrics['agent']
-        tracked_metrics.add_cost(test_cost)
+        session.controller.agent.llm.metrics.add_cost(test_cost)
 
         # Verify that the cost is reflected in the combined metrics from the conversation stats
         combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
@@ -344,7 +337,7 @@ async def test_metrics_centralization_via_conversation_stats(
 
         # Add more cost to simulate additional LLM usage
         additional_cost = 0.1
-        tracked_metrics.add_cost(additional_cost)
+        session.controller.agent.llm.metrics.add_cost(additional_cost)
 
         # Verify the combined metrics reflect the total cost
         combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
@@ -362,12 +355,12 @@ async def test_metrics_centralization_via_conversation_stats(
 
 @pytest.mark.asyncio
 async def test_budget_control_flag_syncs_with_metrics(
-    mock_agent, connected_registry_and_stats
+    make_mock_agent, connected_registry_and_stats
 ):
     """Test that BudgetControlFlag's current value matches the accumulated costs."""
 
     mock_llm_registry, mock_conversation_stats = connected_registry_and_stats
-
+    mock_agent = make_mock_agent(mock_llm_registry)
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -430,9 +423,7 @@ async def test_budget_control_flag_syncs_with_metrics(
 
         # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
-        # Use the metrics that ConversationStats is actually tracking
-        tracked_metrics = mock_conversation_stats.service_to_metrics['agent']
-        tracked_metrics.add_cost(test_cost)
+        session.controller.agent.llm.metrics.add_cost(test_cost)
 
         # Verify that the budget control flag's current value is updated
         # This happens through the state_tracker.sync_budget_flag_with_metrics method
@@ -441,7 +432,7 @@ async def test_budget_control_flag_syncs_with_metrics(
 
         # Add more cost to simulate additional LLM usage
         additional_cost = 0.1
-        tracked_metrics.add_cost(additional_cost)
+        session.controller.agent.llm.metrics.add_cost(additional_cost)
 
         # Sync again and verify the budget flag is updated
         session.controller.state_tracker.sync_budget_flag_with_metrics()
