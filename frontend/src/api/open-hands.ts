@@ -14,6 +14,7 @@ import {
   GetMicroagentsResponse,
   GetMicroagentPromptResponse,
   CreateMicroagent,
+  MicroagentContentResponse,
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
@@ -21,6 +22,7 @@ import { GitUser, GitRepository, Branch } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { RepositoryMicroagent } from "#/types/microagent-management";
+import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -165,6 +167,38 @@ class OpenHands {
       // Error checking if feedback exists
       return { exists: false };
     }
+  }
+
+  /**
+   * Get feedback for multiple events in a conversation
+   * @param conversationId The conversation ID
+   * @returns Map of event IDs to feedback data including existence, rating, reason and metadata
+   */
+  static async getBatchFeedback(conversationId: string): Promise<
+    Record<
+      string,
+      {
+        exists: boolean;
+        rating?: number;
+        reason?: string;
+        metadata?: Record<string, BatchFeedbackData>;
+      }
+    >
+  > {
+    const url = `/feedback/conversation/${conversationId}/batch`;
+    const { data } = await openHands.get<
+      Record<
+        string,
+        {
+          exists: boolean;
+          rating?: number;
+          reason?: string;
+          metadata?: Record<string, BatchFeedbackData>;
+        }
+      >
+    >(url);
+
+    return data;
   }
 
   /**
@@ -544,7 +578,7 @@ class OpenHands {
   }
 
   /**
-   * Get the available microagents for a specific repository
+   * Get the available microagents for a repository
    * @param owner The repository owner
    * @param repo The repository name
    * @returns The available microagents for the repository
@@ -555,6 +589,27 @@ class OpenHands {
   ): Promise<RepositoryMicroagent[]> {
     const { data } = await openHands.get<RepositoryMicroagent[]>(
       `/api/user/repository/${owner}/${repo}/microagents`,
+    );
+    return data;
+  }
+
+  /**
+   * Get the content of a specific microagent from a repository
+   * @param owner The repository owner
+   * @param repo The repository name
+   * @param filePath The path to the microagent file within the repository
+   * @returns The microagent content and metadata
+   */
+  static async getRepositoryMicroagentContent(
+    owner: string,
+    repo: string,
+    filePath: string,
+  ): Promise<MicroagentContentResponse> {
+    const { data } = await openHands.get<MicroagentContentResponse>(
+      `/api/user/repository/${owner}/${repo}/microagents/content`,
+      {
+        params: { file_path: filePath },
+      },
     );
     return data;
   }

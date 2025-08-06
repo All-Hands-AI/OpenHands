@@ -225,3 +225,22 @@ export const constructMicroagentUrl = (
       return "";
   }
 };
+
+/**
+ * Extract repository owner, repo name, and file path from repository and microagent data
+ * @param selectedRepository The selected repository object with full_name property
+ * @param microagent The microagent object with path property
+ * @returns Object containing owner, repo, and filePath
+ *
+ * @example
+ * const { owner, repo, filePath } = extractRepositoryInfo(selectedRepository, microagent);
+ */
+export const extractRepositoryInfo = (
+  selectedRepository: { full_name?: string } | null | undefined,
+  microagent: { path?: string } | null | undefined,
+) => {
+  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
+  const filePath = microagent?.path || "";
+
+  return { owner, repo, filePath };
+};

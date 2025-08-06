@@ -13,8 +13,6 @@ The message should include:
 - Any next steps for the user
 - Explanation if you're unable to complete the task
 - Any follow-up questions if more information is needed
-
-The task_completed field should be set to True if you believed you have completed the task, and False otherwise.
 """
 
 FinishTool = ChatCompletionToolParam(
@@ -24,16 +22,11 @@ FinishTool = ChatCompletionToolParam(
         description=_FINISH_DESCRIPTION,
         parameters={
             'type': 'object',
-            'required': ['message', 'task_completed'],
+            'required': ['message'],
             'properties': {
                 'message': {
                     'type': 'string',
                     'description': 'Final message to send to the user',
-                },
-                'task_completed': {
-                    'type': 'string',
-                    'enum': ['true', 'false', 'partial'],
-                    'description': 'Whether you have completed the task.',
                 },
             },
         },

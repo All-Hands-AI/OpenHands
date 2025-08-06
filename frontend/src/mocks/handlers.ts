@@ -170,6 +170,9 @@ export const handlers = [
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: mockSaas,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
       // Uncomment the following to test the maintenance banner
       // MAINTENANCE: {

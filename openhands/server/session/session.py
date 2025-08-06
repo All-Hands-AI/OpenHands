@@ -75,6 +75,9 @@ class Session:
         )
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -119,6 +122,12 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+
+        # Set Git user configuration if provided in settings
+        if hasattr(settings, 'git_user_name') and settings.git_user_name:
+            self.config.git_user_name = settings.git_user_name
+        if hasattr(settings, 'git_user_email') and settings.git_user_email:
+            self.config.git_user_email = settings.git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task
@@ -157,10 +166,6 @@ class Session:
 
         llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
-        agent_config = ExperimentManagerImpl.run_agent_config_variant_test(
-            self.user_id, self.sid, agent_config
-        )
 
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
