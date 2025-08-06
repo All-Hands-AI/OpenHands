@@ -22,19 +22,11 @@ class LocalhostCORSMiddleware(CORSMiddleware):
     def __init__(self, app: ASGIApp) -> None:
         allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
         if allow_origins_str:
-            allow_origins = [origin.strip() for origin in allow_origins_str.split(',')]
+            allow_origins = tuple(
+                origin.strip() for origin in allow_origins_str.split(',')
+            )
         else:
-            allow_origins = []
-
-        # Add localhost patterns to allow_origins to ensure they work properly
-        localhost_patterns = [
-            'http://localhost',
-            'https://localhost',
-            'http://127.0.0.1',
-            'https://127.0.0.1',
-        ]
-        allow_origins.extend(localhost_patterns)
-
+            allow_origins = ()
         super().__init__(
             app,
             allow_origins=allow_origins,
@@ -44,7 +36,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
         )
 
     def is_allowed_origin(self, origin: str) -> bool:
-        if origin:
+        if origin and not self.allow_origins and not self.allow_origin_regex:
             parsed = urlparse(origin)
             hostname = parsed.hostname or ''
 
