@@ -17,11 +17,9 @@ export const generateAuthUrl = (
   let finalAuthUrl: string;
 
   if (authUrl) {
-    console.log(`Passed in AUTH URL ${authUrl}`);
     // Ensure https:// is prepended and remove any accidental duplicate slashes
     finalAuthUrl = `https://${authUrl.replace(/^https?:\/\//, "")}`;
   } else {
-    console.log(`NO AUTH URL PASSED IN`);
     finalAuthUrl = requestUrl.hostname
       .replace(/(^|\.)staging\.all-hands\.dev$/, "$1auth.staging.all-hands.dev")
       .replace(/(^|\.)app\.all-hands\.dev$/, "auth.app.all-hands.dev")
@@ -38,7 +36,6 @@ export const generateAuthUrl = (
     finalAuthUrl = `https://${finalAuthUrl}`;
   }
 
-  console.log(`AUTH URL: ${finalAuthUrl}`);
   const scope = "openid email profile"; // OAuth scope - not user-facing
   const separator = requestUrl.search ? "&" : "?";
   const cleanHref = requestUrl.href.replace(/\/$/, "");
