@@ -32,7 +32,7 @@ export function ConversationMain() {
       <div className="flex flex-col gap-3 overflow-auto w-full">
         <div
           className={cn(
-            "rounded-xl overflow-hidden border border-neutral-600 w-full bg-base-secondary min-h-[494px]",
+            "rounded-xl overflow-hidden border border-neutral-600 w-full bg-base min-h-[494px]",
             !isRightPanelShown && "h-full",
           )}
         >
@@ -53,7 +53,7 @@ export function ConversationMain() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
+        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
         secondChild={<ConversationTabs />}
@@ -63,7 +63,7 @@ export function ConversationMain() {
 
   return (
     <div className="flex flex-col gap-3 overflow-auto w-full h-full">
-      <div className="rounded-xl overflow-hidden border border-neutral-600 w-full h-full bg-base-secondary">
+      <div className="rounded-xl overflow-hidden border border-neutral-600 w-full h-full bg-base">
         <ChatInterface />
       </div>
     </div>
