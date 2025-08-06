@@ -1,27 +1,23 @@
-import { DiGit } from "react-icons/di";
-import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
+import { FaExternalLinkAlt } from "react-icons/fa";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { VscCode } from "react-icons/vsc";
 import { Container } from "#/components/layout/container";
-import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
-import { ServedAppLabel } from "#/components/layout/served-app-label";
 import { TabContent } from "#/components/layout/tab-content";
 import { transformVSCodeUrl } from "#/utils/vscode-url-helper";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import OpenHands from "#/api/open-hands";
 import TerminalIcon from "#/icons/terminal.svg?react";
+import GlobeIcon from "#/icons/globe.svg?react";
+import ServerIcon from "#/icons/server.svg?react";
+import GitChanges from "#/icons/git_changes.svg?react";
+import VSCodeIcon from "#/icons/vscode.svg?react";
 
 export function ConversationTabs() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const { conversationId } = useConversationId();
-
-  const { t } = useTranslation();
 
   const basePath = `/conversations/${conversationId}`;
 
@@ -30,21 +26,15 @@ export function ConversationTabs() {
       className="h-full w-full"
       labels={[
         {
-          label: "Changes",
           to: "",
-          icon: <DiGit className="w-6 h-6" />,
+          icon: GitChanges,
         },
         {
-          label: (
-            <div className="flex items-center gap-1">
-              {t(I18nKey.VSCODE$TITLE)}
-            </div>
-          ),
           to: "vscode",
-          icon: <VscCode className="w-5 h-5" />,
+          icon: VSCodeIcon,
           rightContent: !RUNTIME_INACTIVE_STATES.includes(curAgentState) ? (
             <FaExternalLinkAlt
-              className="w-3 h-3 text-neutral-400 cursor-pointer"
+              className="w-3.5 h-3.5 text-inherit"
               onClick={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -66,26 +56,21 @@ export function ConversationTabs() {
               }}
             />
           ) : null,
+          // },
         },
+
         {
-          label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
           to: "terminal",
-          icon: <TerminalIcon />,
+          icon: TerminalIcon,
         },
-        { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
+        { to: "jupyter", icon: JupyterIcon },
         {
-          label: <ServedAppLabel />,
           to: "served",
-          icon: <FaServer />,
+          icon: ServerIcon,
         },
         {
-          label: (
-            <div className="flex items-center gap-1">
-              {t(I18nKey.BROWSER$TITLE)}
-            </div>
-          ),
           to: "browser",
-          icon: <GlobeIcon />,
+          icon: GlobeIcon,
         },
       ]}
     >
