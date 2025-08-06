@@ -20,7 +20,7 @@ export function ConversationName() {
   const { data: conversation } = useActiveConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
-  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("edit");
+  const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
