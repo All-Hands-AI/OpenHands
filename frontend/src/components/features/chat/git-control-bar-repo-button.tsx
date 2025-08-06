@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import LinkExternalIcon from "#/icons/link-external.svg?react";
 import { constructRepositoryUrl, cn } from "#/utils/utils";
 import { Provider } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
+import { GitProviderIcon } from "#/components/shared/git-provider-icon";
 
 interface GitControlBarRepoButtonProps {
   selectedRepository: string | null | undefined;
@@ -36,7 +36,10 @@ export function GitControlBarRepoButton({
     >
       <div className="flex flex-row gap-2 items-center justify-start">
         <div className="w-3 h-3 flex items-center justify-center">
-          <RepoForkedIcon width={12} height={12} color="white" />
+          <GitProviderIcon
+            gitProvider={gitProvider as Provider}
+            className="w-3 h-3 inline-flex"
+          />
         </div>
         <div className="font-normal text-white text-sm leading-5">
           {hasRepository
