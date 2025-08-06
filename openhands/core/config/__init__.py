@@ -5,6 +5,7 @@ from openhands.core.config.config_utils import (
     OH_MAX_ITERATIONS,
     get_field_info,
 )
+from openhands.core.config.configuration_merger import ConfigurationMerger
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
@@ -34,6 +35,7 @@ __all__ = [
     'SandboxConfig',
     'SecurityConfig',
     'ExtendedConfig',
+    'ConfigurationMerger',
     'load_openhands_config',
     'load_from_env',
     'load_from_toml',
