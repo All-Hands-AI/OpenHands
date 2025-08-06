@@ -71,11 +71,6 @@ async def test_mixed_connection_results():
     # Create a successful client
     successful_client = mock.MagicMock(spec=MCPClient)
 
-    # Add server_config attribute to the client
-    mock_server_config = mock.MagicMock(spec=MCPSSEServerConfig)
-    mock_server_config.url = 'http://server1:8080'
-    successful_client.server_config = mock_server_config
-
     # Create a mock tool with a to_param method that returns a tool dictionary
     mock_tool = mock.MagicMock()
     mock_tool.name = 'mock_tool'

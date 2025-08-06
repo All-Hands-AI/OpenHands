@@ -31,9 +31,6 @@ class MCPClient(BaseModel):
     description: str = 'MCP client tools for server interaction'
     tools: list[MCPClientTool] = Field(default_factory=list)
     tool_map: dict[str, MCPClientTool] = Field(default_factory=dict)
-    server_config: Optional[
-        MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig
-    ] = None
 
     async def _initialize_and_list_tools(self) -> None:
         """Initialize session and populate tool map."""
@@ -71,9 +68,6 @@ class MCPClient(BaseModel):
 
         if not server_url:
             raise ValueError('Server URL is required.')
-
-        # Store the server configuration
-        self.server_config = server
 
         try:
             headers = (
@@ -132,9 +126,6 @@ class MCPClient(BaseModel):
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
         """Connect to MCP server using stdio transport"""
-        # Store the server configuration
-        self.server_config = server
-
         try:
             transport = StdioTransport(
                 command=server.command, args=server.args or [], env=server.env
