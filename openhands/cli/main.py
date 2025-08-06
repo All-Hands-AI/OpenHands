@@ -85,6 +85,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.server.services.conversation_stats import ConversationStats
+from openhands.storage import get_file_store
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -149,8 +150,10 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    # TODO: do we need to restore metrics for CLI?
     llm_registry = LLMRegistry(config)
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    convo_stats = ConversationStats(file_store, sid, None)
+    llm_registry.subscribe(convo_stats.register_llm)
 
     agent = create_agent(config, llm_registry)
     runtime = create_runtime(
@@ -167,7 +170,6 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    convo_stats = ConversationStats(runtime.event_stream.file_store, sid, None)
     controller, initial_state = create_controller(agent, runtime, config, convo_stats)
 
     event_stream = runtime.event_stream

@@ -37,6 +37,7 @@ from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.server.services.conversation_stats import ConversationStats
+from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
 
@@ -98,6 +99,10 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
     llm_registry = llm_registry if llm_registry else LLMRegistry(config)
+    file_store = get_file_store(config.file_store, config.file_store_path)
+    convo_stats = ConversationStats(file_store, sid, None)
+    llm_registry.subscribe(convo_stats.register_llm)
+
     agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository
@@ -157,9 +162,6 @@ async def run_controller(
         replay_events, initial_user_action = load_replay_log(
             config.replay_trajectory_path
         )
-
-    convo_stats = ConversationStats(event_stream.file_store, sid, None)
-    llm_registry.subscribe(convo_stats.register_llm)
 
     controller, initial_state = create_controller(
         agent, runtime, config, convo_stats, replay_events=replay_events
