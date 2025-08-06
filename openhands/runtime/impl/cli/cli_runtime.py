@@ -25,7 +25,6 @@ from pydantic import SecretStr
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import LLMMalformedActionError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.events.action import (
@@ -377,7 +376,6 @@ class CLIRuntime(Runtime):
                     if ready_to_read:
                         line = process.stdout.readline()
                         if line:
-                            logger.debug(f'LINE: {line}')
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
@@ -388,7 +386,6 @@ class CLIRuntime(Runtime):
                     while line:
                         line = process.stdout.readline()
                         if line:
-                            logger.debug(f'LINE: {line}')
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
@@ -508,7 +505,7 @@ class CLIRuntime(Runtime):
             )
         elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
-                raise LLMMalformedActionError(
+                raise PermissionError(
                     f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
             actual_filename = filename
@@ -520,7 +517,7 @@ class CLIRuntime(Runtime):
 
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
-            raise LLMMalformedActionError(
+            raise PermissionError(
                 f'Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}'
             )
 
@@ -532,10 +529,6 @@ class CLIRuntime(Runtime):
             return ErrorObservation('Runtime not initialized')
 
         file_path = self._sanitize_filename(action.path)
-
-        # Cannot read binary files
-        if os.path.exists(file_path) and is_binary(file_path):
-            return ErrorObservation('ERROR_BINARY_FILE')
 
         # Use OHEditor for OH_ACI implementation source
         if action.impl_source == FileReadSource.OH_ACI:
@@ -559,6 +552,10 @@ class CLIRuntime(Runtime):
             # Check if it's a directory
             if os.path.isdir(file_path):
                 return ErrorObservation(f'Cannot read directory: {action.path}')
+
+            # Cannot read binary files
+            if is_binary(file_path):
+                return ErrorObservation('ERROR_BINARY_FILE')
 
             # Read the file
             with open(file_path, 'r', encoding='utf-8', errors='replace') as f:

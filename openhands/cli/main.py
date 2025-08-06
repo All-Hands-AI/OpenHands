@@ -49,7 +49,9 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import (
+    OpenHandsMCPConfigImpl,
+)
 from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -188,6 +190,7 @@ async def run_session(
                 config,
                 current_dir,
                 settings_store,
+                agent_state,
             )
 
             if close_repl:
@@ -352,10 +355,23 @@ async def run_session(
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
-            initial_message = (
-                'NOTE: the last session ended with an error.'
-                "Let's get back on track. Do NOT resume your task. Ask me about it."
-            )
+            error_message = initial_state.last_error
+
+            # Check if it's an authentication error
+            if 'ERROR_LLM_AUTHENTICATION' in error_message:
+                # Start with base authentication error message
+                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+
+                # Add OpenHands-specific guidance if using an OpenHands model
+                llm_config = config.get_llm_config()
+                if llm_config.model.startswith('openhands/'):
+                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+            else:
+                # For other errors, use the standard message
+                initial_message = (
+                    'NOTE: the last session ended with an error.'
+                    "Let's get back on track. Do NOT resume your task. Ask me about it."
+                )
         else:
             # If we are resuming, we already have a task
             initial_message = ''
@@ -403,6 +419,19 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
+
+    # Ask if user wants to configure search API settings
+    print_formatted_text('')
+    setup_search = cli_confirm(
+        config,
+        'Would you like to configure Search API settings (optional)?',
+        ['Yes', 'No'],
+    )
+
+    if setup_search == 0:  # Yes
+        from openhands.cli.settings import modify_search_api_settings
+
+        await modify_search_api_settings(config, settings_store)
 
 
 def run_alias_setup_flow(config: OpenHandsConfig) -> None:
@@ -545,14 +574,30 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
+        # Handle agent configuration
         if args.agent_cls:
             config.default_agent = str(args.agent_cls)
         else:
             # settings.agent is not None because we check for it in setup_config_from_args
             assert settings.agent is not None
             config.default_agent = settings.agent
-        if not args.llm_config and settings.llm_model and settings.llm_api_key:
-            llm_config = config.get_llm_config()
+
+        # Handle LLM configuration with proper precedence:
+        # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
+        # 2. config.toml in current directory has next highest precedence (already loaded)
+        # 3. ~/.openhands/settings.json has lowest precedence (handled here)
+
+        # Only apply settings from settings.json if:
+        # - No LLM config was specified via CLI arguments (-l)
+        # - The current LLM config doesn't have model or API key set (indicating it wasn't loaded from config.toml)
+        llm_config = config.get_llm_config()
+        if (
+            not args.llm_config
+            and (not llm_config.model or not llm_config.api_key)
+            and settings.llm_model
+            and settings.llm_api_key
+        ):
+            logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
@@ -560,6 +605,11 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
         )
+
+        # Load search API key from settings if available and not already set from config.toml
+        if settings.search_api_key and not config.search_api_key:
+            config.search_api_key = settings.search_api_key
+            logger.debug('Using search API key from settings.json')
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?

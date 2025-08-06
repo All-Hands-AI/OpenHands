@@ -190,6 +190,7 @@ VERIFIED_OPENHANDS_MODELS = [
     'o4-mini',
     'gemini-2.5-pro',
     'kimi-k2-0711-preview',
+    'qwen3-coder-480b',
 ]
 
 
