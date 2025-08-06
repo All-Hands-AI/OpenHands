@@ -1,6 +1,4 @@
 import os
-import socket
-import time
 import typing
 from functools import lru_cache
 from typing import Callable
@@ -401,45 +399,33 @@ class DockerRuntime(ActionExecutionClient):
                 ]
         else:
             device_requests = None
-
-        # Begin lifecycle operation - wait for active requests to complete
-        if not self._begin_lifecycle_operation(timeout=self.config.sandbox.timeout):
-            raise RuntimeError('Timeout waiting for active requests to complete before container startup')
-
         try:
-            # Acquire the Docker lifecycle lock to prevent race conditions during container startup
-            try:
-                if self.runtime_container_image is None:
-                    raise ValueError('Runtime container image is not set')
-                self.container = self.docker_client.containers.run(
-                    self.runtime_container_image,
-                    command=command,
-                    # Override the default 'bash' entrypoint because the command is a binary.
-                    entrypoint=[],
-                    network_mode=network_mode,
-                    ports=port_mapping,
-                    working_dir='/openhands/code/',  # do not change this!
-                    name=self.container_name,
-                    detach=True,
-                    environment=environment,
-                    volumes=volumes,  # type: ignore
-                    device_requests=device_requests,
-                    **(self.config.sandbox.docker_runtime_kwargs or {}),
-                )
-                self.log('debug', f'Container started. Server url: {self.api_url}')
-                self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
-                # Allow more time for Docker networking and iptables to stabilize
-                time.sleep(8)
-            except Exception as e:
-                self.log(
-                    'error',
-                    f'Error: Instance {self.container_name} FAILED to start container!\n',
-                )
-                self.close()
-                raise e
-        finally:
-            # End lifecycle operation - allow new requests
-            self._end_lifecycle_operation()
+            if self.runtime_container_image is None:
+                raise ValueError('Runtime container image is not set')
+            self.container = self.docker_client.containers.run(
+                self.runtime_container_image,
+                command=command,
+                # Override the default 'bash' entrypoint because the command is a binary.
+                entrypoint=[],
+                network_mode=network_mode,
+                ports=port_mapping,
+                working_dir='/openhands/code/',  # do not change this!
+                name=self.container_name,
+                detach=True,
+                environment=environment,
+                volumes=volumes,  # type: ignore
+                device_requests=device_requests,
+                **(self.config.sandbox.docker_runtime_kwargs or {}),
+            )
+            self.log('debug', f'Container started. Server url: {self.api_url}')
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
+        except Exception as e:
+            self.log(
+                'error',
+                f'Error: Instance {self.container_name} FAILED to start container!\n',
+            )
+            self.close()
+            raise e
 
     def _attach_to_container(self) -> None:
         self.container = self.docker_client.containers.get(self.container_name)
@@ -472,10 +458,10 @@ class DockerRuntime(ActionExecutionClient):
         )
 
     @tenacity.retry(
-        stop=tenacity.stop_after_delay(180) | stop_if_should_exit(),  # Increased timeout
+        stop=tenacity.stop_after_delay(120) | stop_if_should_exit(),
         retry=tenacity.retry_if_exception(_is_retryablewait_until_alive_error),
         reraise=True,
-        wait=tenacity.wait_exponential(multiplier=1, min=1, max=10),  # Exponential backoff
+        wait=tenacity.wait_fixed(2),
     )
     def wait_until_alive(self) -> None:
         try:
@@ -489,8 +475,6 @@ class DockerRuntime(ActionExecutionClient):
                 f'Container {self.container_name} not found.'
             )
 
-        # Add small delay to allow Docker networking to stabilize
-        time.sleep(0.5)
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None) -> None:
@@ -508,25 +492,11 @@ class DockerRuntime(ActionExecutionClient):
 
         if self.config.sandbox.keep_runtime_alive or self.attach_to_existing:
             return
-
-        # Begin lifecycle operation - wait for active requests to complete
-        if not self._begin_lifecycle_operation(timeout=self.config.sandbox.timeout):
-            logger.warning('Timeout waiting for active requests to complete before container shutdown, proceeding anyway')
-
-        try:
-            # Acquire the Docker lifecycle lock to prevent race conditions during container shutdown
-            close_prefix = (
-                CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
-            )
-
-            stop_all_containers(close_prefix)
-            self._release_port_locks()
-            # Give Docker more time to clean up iptables rules and port forwarding
-            # This helps prevent connection refused errors for other containers
-            time.sleep(10)
-        finally:
-            # End lifecycle operation - allow new requests
-            self._end_lifecycle_operation()
+        close_prefix = (
+            CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
+        )
+        stop_all_containers(close_prefix)
+        self._release_port_locks()
 
     def _release_port_locks(self) -> None:
         """Release all acquired port locks."""
@@ -632,8 +602,7 @@ class DockerRuntime(ActionExecutionClient):
 
     def pause(self) -> None:
         """Pause the runtime by stopping the container.
-        This is different from container.stop() as it ensures environment variables are properly preserved.
-        """
+        This is different from container.stop() as it ensures environment variables are properly preserved."""
         if not self.container:
             raise RuntimeError('Container not initialized')
 
@@ -646,8 +615,7 @@ class DockerRuntime(ActionExecutionClient):
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
-        This is different from container.start() as it ensures environment variables are properly restored.
-        """
+        This is different from container.start() as it ensures environment variables are properly restored."""
         if not self.container:
             raise RuntimeError('Container not initialized')
 
