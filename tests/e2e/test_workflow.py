@@ -90,7 +90,7 @@ def test_simple_browser_navigation(page: Page):
 def test_openhands_workflow(page: Page, openhands_app):
     """Test the OpenHands end-to-end workflow."""
     # Navigate to the OpenHands application
-    page.goto('http://localhost:12002/')
+    page.goto('http://localhost:12001/')
 
     # Wait for the repository selection dropdown to be visible
     page.wait_for_selector('button:has-text("Select a repository")')

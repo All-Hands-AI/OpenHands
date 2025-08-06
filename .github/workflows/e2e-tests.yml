@@ -13,8 +13,8 @@ jobs:
 
     env:
       RUNTIME: local
-      INSTALL_DOCKER: 0
-      FRONTEND_PORT: 12002
+      INSTALL_DOCKER: 1
+      FRONTEND_PORT: 12001
       FRONTEND_HOST: 0.0.0.0
       BACKEND_HOST: 0.0.0.0
 
