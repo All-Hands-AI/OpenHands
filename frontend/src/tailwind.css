@@ -3,27 +3,28 @@
 @plugin '../hero.ts';
 @config "../tailwind.config.js";
 @source '../node_modules/@heroui/theme/dist/**/*.{js,ts,jsx,tsx}';
-/* @import '../node_modules/@openhands/ui/dist/index.css'; */
+@source '../node_modules/@openhands/ui/dist/**/*.{js,ts,jsx,tsx}';
+@import "../node_modules/@openhands/ui/dist/tokens.css";
 
-
+@plugin 'tailwind-scrollbar' {
+  nocompatible: true;
+  preferredstrategy: "pseudoelements";
+}
 
 /* OLD TAILWIND STYLES */
 @theme {
-  --color-primary: #C9B974;
-  --color-logo: #CFB755;
-  --color-base: #0D0F11;
-  --color-base-secondary: #24272E;
-  --color-danger: #E76A5E;
-  --color-success: #A5E75E;
-  --color-basic: #9099AC;
+  --color-primary: #c9b974;
+  --color-logo: #cfb755;
+  --color-base: #0d0f11;
+  --color-base-secondary: #24272e;
+  --color-danger: #e76a5e;
+  --color-success: #a5e75e;
+  --color-basic: #9099ac;
   --color-tertiary: #454545;
-  --color-tertiary-light: #B7BDC2;
-  --color-content: #ECEDEE;
-  --color-content-2: #F9FBFE;
+  --color-tertiary-light: #b7bdc2;
+  --color-content: #ecedee;
+  --color-content-2: #f9fbfe;
 }
-
-
-
 
 .button-base {
   @apply bg-tertiary border border-neutral-600 rounded-xs;
@@ -41,26 +42,152 @@
   @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
 }
 
+/* Custom Chat Input */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Hide scrollbar by default */
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+}
+
+/* Show scrollbar on hover */
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(208, 217, 250, 0.3);
+  opacity: 1;
+}
+
+.custom-scrollbar:hover::-webkit-scrollbar-thumb:hover {
+  background: rgba(208, 217, 250, 0.5);
+}
+
+/* Firefox scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-scrollbar:hover {
+  scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
+}
+
+/* Custom styles for contenteditable */
+.chat-input:empty:before {
+  content: attr(data-placeholder);
+  color: #A1A1A1;
+  pointer-events: none;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+}
+
+.chat-input:focus {
+  outline: none;
+}
+
+.chat-input {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Drag and drop styles */
+.drag-over {
+  background-color: rgba(208, 217, 250, 0.25) !important;
+  border: 2px dashed #d0d9fa !important;
+}
+
+/* File preview styles */
+.file-preview {
+  background: rgba(208, 217, 250, 0.1);
+  border: 1px solid rgba(208, 217, 250, 0.3);
+  border-radius: 8px;
+  padding: 8px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #d0d9fa;
+}
+
+.file-preview .file-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.file-preview .file-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-preview .file-size {
+  color: #959cb2;
+  font-size: 10px;
+}
+
+.file-preview .remove-file {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #d0d9fa;
+  font-size: 10px;
+  transition: background-color 0.2s;
+}
+
+.file-preview .remove-file:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
 .loader {
-  background: #C9B974;
+  background: #c9b974;
   animation: l5 1s infinite linear alternate;
 }
 
 @keyframes l5 {
   0% {
-    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
-    background: #C9B974;
+    box-shadow:
+      20px 0 #c9b974,
+      -20px 0 rgba(201, 185, 116, 0.1);
+    background: #c9b974;
   }
   33% {
-    box-shadow: 20px 0 #C9B974, -20px 0 rgba(201,185,116,0.1);
-    background: rgba(201,185,116,0.1);
+    box-shadow:
+      20px 0 #c9b974,
+      -20px 0 rgba(201, 185, 116, 0.1);
+    background: rgba(201, 185, 116, 0.1);
   }
   66% {
-    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
-    background: rgba(201,185,116,0.1);
+    box-shadow:
+      20px 0 rgba(201, 185, 116, 0.1),
+      -20px 0 #c9b974;
+    background: rgba(201, 185, 116, 0.1);
   }
   100% {
-    box-shadow: 20px 0 rgba(201,185,116,0.1), -20px 0 #C9B974;
-    background: #C9B974;
+    box-shadow:
+      20px 0 rgba(201, 185, 116, 0.1),
+      -20px 0 #c9b974;
+    background: #c9b974;
   }
 }

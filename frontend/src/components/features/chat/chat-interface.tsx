@@ -255,13 +255,7 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            isDisabled={
-              curAgentState === AgentState.LOADING ||
-              curAgentState === AgentState.AWAITING_USER_CONFIRMATION
-            }
-            mode={curAgentState === AgentState.RUNNING ? "stop" : "submit"}
             value={messageToSend ?? undefined}
-            onChange={setMessageToSend}
           />
         </div>
 
