@@ -376,7 +376,7 @@ export function CustomChatInput({
         <div
           ref={chatInputRowRef}
           className={cn(
-            "box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px]",
+            "box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px] gap-2",
             isChatInputExpanded && "flex-1",
           )}
         >
@@ -421,7 +421,7 @@ export function CustomChatInput({
           {/* Send Button */}
           {showButton && (
             <ChatSendButton
-              buttonClassName={buttonClassName}
+              buttonClassName={cn(buttonClassName, "translate-y-[3px]")}
               handleSubmit={handleSubmit}
               disabled={disabled}
             />
@@ -429,7 +429,9 @@ export function CustomChatInput({
         </div>
 
         <div className="w-full flex items-center justify-between">
-          <ServerStatus conversationStatus={conversationStatus} />
+          <div className="translate-x-[-6.5px]">
+            <ServerStatus conversationStatus={conversationStatus} />
+          </div>
           <AgentStatus
             handleStop={handleStop}
             handleResumeAgent={handleResumeAgent}
