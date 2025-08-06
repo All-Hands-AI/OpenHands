@@ -160,19 +160,9 @@ class Session:
             )
         )
 
-        # Store the existing servers before adding the default server
-        existing_shttp_servers = getattr(self, 'existing_shttp_servers', [])
-
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
             self.logger.debug('Added default MCP HTTP server to config')
-
-        # Add back any servers from environment variables
-        if existing_shttp_servers:
-            self.logger.debug(
-                f'Restoring {len(existing_shttp_servers)} HTTP servers from environment variables'
-            )
-            self.config.mcp.shttp_servers.extend(existing_shttp_servers)
 
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 

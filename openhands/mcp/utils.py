@@ -135,7 +135,7 @@ async def create_mcp_clients(
             # Log which tools this specific server provides
             tool_names = [tool.name for tool in client.tools]
             logger.debug(
-                f'Successfully connected to MCP server {server.url} - '
+                f'Successfully connected to MCP STTP server {server.url} - '
                 f'provides {len(tool_names)} tools: {tool_names}'
             )
 

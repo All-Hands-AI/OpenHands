@@ -102,13 +102,10 @@ def load_from_env(
                         or field_type is list
                     ):
                         cast_value = literal_eval(value)
-                        # The conversion of MCP server configurations is now handled by the MCPConfig model validator
                     else:
                         if field_type is not None:
                             cast_value = field_type(value)
-
                     setattr(sub_config, field_name, cast_value)
-
                 except (ValueError, TypeError):
                     logger.openhands_logger.error(
                         f'Error setting env var {env_var_name}={value}: check that the value is of the right type'
@@ -227,9 +224,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
-        except ValueError as e:
+        except ValueError:
             # Re-raise ValueError from SandboxConfig.from_toml_section
-            raise ValueError('Error in [sandbox] section in config.toml') from e
+            raise ValueError('Error in [sandbox] section in config.toml')
 
     # Process MCP sections if present
     if 'mcp' in toml_config:
