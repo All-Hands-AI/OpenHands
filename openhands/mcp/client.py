@@ -61,20 +61,11 @@ class MCPClient(BaseModel):
 
     async def connect_http(
         self,
-        server: MCPSSEServerConfig | MCPSHTTPServerConfig | dict,
+        server: MCPSSEServerConfig | MCPSHTTPServerConfig,
         conversation_id: str | None = None,
         timeout: float = 30.0,
     ):
         """Connect to MCP server using SHTTP or SSE transport"""
-        # Convert dictionary server configs to proper MCPSHTTPServerConfig objects
-        if isinstance(server, dict):
-            if 'url' in server:
-                # This is likely an SHTTP server config
-                server = MCPSHTTPServerConfig(**server)
-            else:
-                # This is likely an SSE server config
-                server = MCPSSEServerConfig(**server)
-
         server_url = server.url
         api_key = server.api_key
 

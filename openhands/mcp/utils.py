@@ -62,10 +62,10 @@ def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[di
 
 
 async def create_mcp_clients(
-    sse_servers: list[MCPSSEServerConfig],
-    shttp_servers: list[MCPSHTTPServerConfig],
+    sse_servers: list[MCPSSEServerConfig | dict],
+    shttp_servers: list[MCPSHTTPServerConfig | dict],
     conversation_id: str | None = None,
-    stdio_servers: list[MCPStdioServerConfig] | None = None,
+    stdio_servers: list[MCPStdioServerConfig | dict] | None = None,
 ) -> list[MCPClient]:
     import sys
 
@@ -78,11 +78,33 @@ async def create_mcp_clients(
 
     if stdio_servers is None:
         stdio_servers = []
+        
+    # Convert dictionary server configurations to proper server config objects
+    converted_sse_servers = []
+    for server in sse_servers:
+        if isinstance(server, dict):
+            converted_sse_servers.append(MCPSSEServerConfig(**server))
+        else:
+            converted_sse_servers.append(server)
+            
+    converted_shttp_servers = []
+    for server in shttp_servers:
+        if isinstance(server, dict):
+            converted_shttp_servers.append(MCPSHTTPServerConfig(**server))
+        else:
+            converted_shttp_servers.append(server)
+            
+    converted_stdio_servers = []
+    for server in stdio_servers:
+        if isinstance(server, dict):
+            converted_stdio_servers.append(MCPStdioServerConfig(**server))
+        else:
+            converted_stdio_servers.append(server)
 
     servers: list[MCPSSEServerConfig | MCPSHTTPServerConfig | MCPStdioServerConfig] = [
-        *sse_servers,
-        *shttp_servers,
-        *stdio_servers,
+        *converted_sse_servers,
+        *converted_shttp_servers,
+        *converted_stdio_servers,
     ]
 
     if not servers:
@@ -121,8 +143,6 @@ async def create_mcp_clients(
                 logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
             continue
 
-        # We no longer need to convert dictionary server configs here
-        # The conversion happens in MCPClient.connect_http
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
 
         connection_type = 'SHTTP' if is_shttp else 'SSE'
