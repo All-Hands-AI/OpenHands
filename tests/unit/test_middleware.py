@@ -32,7 +32,13 @@ def test_localhost_cors_middleware_init_with_env_var():
         # Check that the origins were correctly parsed from the environment variable
         assert 'https://example.com' in middleware.allow_origins
         assert 'https://test.com' in middleware.allow_origins
-        assert len(middleware.allow_origins) == 2
+        # Should include the 2 env origins plus 4 localhost patterns
+        assert len(middleware.allow_origins) == 6
+        # Check that localhost patterns are included
+        assert 'http://localhost' in middleware.allow_origins
+        assert 'https://localhost' in middleware.allow_origins
+        assert 'http://127.0.0.1' in middleware.allow_origins
+        assert 'https://127.0.0.1' in middleware.allow_origins
 
 
 def test_localhost_cors_middleware_init_without_env_var():
@@ -41,8 +47,12 @@ def test_localhost_cors_middleware_init_without_env_var():
         app = FastAPI()
         middleware = LocalhostCORSMiddleware(app)
 
-        # Check that allow_origins is empty when no environment variable is set
-        assert middleware.allow_origins == ()
+        # Check that allow_origins contains only localhost patterns when no environment variable is set
+        assert len(middleware.allow_origins) == 4
+        assert 'http://localhost' in middleware.allow_origins
+        assert 'https://localhost' in middleware.allow_origins
+        assert 'http://127.0.0.1' in middleware.allow_origins
+        assert 'https://127.0.0.1' in middleware.allow_origins
 
 
 def test_localhost_cors_middleware_is_allowed_origin_localhost(app):
