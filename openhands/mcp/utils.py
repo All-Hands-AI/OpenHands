@@ -95,6 +95,15 @@ async def create_mcp_clients(
             client = MCPClient()
             try:
                 await client.connect_stdio(server)
+                
+                # Log which tools this specific server provides
+                tool_names = [tool.name for tool in client.tools]
+                server_name = getattr(server, 'name', f'{server.command} {" ".join(server.args or [])}')
+                logger.info(
+                    f'Successfully connected to MCP stdio server {server_name} - '
+                    f'provides {len(tool_names)} tools: {tool_names}'
+                )
+                
                 mcp_clients.append(client)
             except Exception as e:
                 # Error is already logged and collected in client.connect_stdio()
@@ -110,6 +119,13 @@ async def create_mcp_clients(
 
         try:
             await client.connect_http(server, conversation_id=conversation_id)
+
+            # Log which tools this specific server provides
+            tool_names = [tool.name for tool in client.tools]
+            logger.info(
+                f'Successfully connected to MCP server {server.url} - '
+                f'provides {len(tool_names)} tools: {tool_names}'
+            )
 
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
