@@ -12,8 +12,36 @@ if TYPE_CHECKING:
 
 
 class ConfigurationMerger:
-    """Utility class for merging Settings with OpenHandsConfig.
+    """Utility class for merging Settings with OpenHandsConfig."""
+    
+    # Mapping between Settings fields and OpenHandsConfig fields
+    # Format: (settings_field, config_field, config_nested_object)
+    FIELD_MAPPING = [
+        # Core settings
+        ('agent', 'default_agent', None),
+        ('max_iterations', 'max_iterations', None),
+        ('max_budget_per_task', 'max_budget_per_task', None),
+        ('git_user_name', 'git_user_name', None),
+        ('git_user_email', 'git_user_email', None),
+        ('search_api_key', 'search_api_key', None),
+        
+        # LLM settings
+        ('llm_model', 'model', 'llm_config'),
+        ('llm_api_key', 'api_key', 'llm_config'),
+        ('llm_base_url', 'base_url', 'llm_config'),
+        
+        # Security settings
+        ('security_analyzer', 'security_analyzer', 'security'),
+        ('confirmation_mode', 'confirmation_mode', 'security'),
+        
+        # Sandbox settings
+        ('remote_runtime_resource_factor', 'remote_runtime_resource_factor', 'sandbox'),
+        ('sandbox_base_container_image', 'base_container_image', 'sandbox'),
+        ('sandbox_runtime_container_image', 'runtime_container_image', 'sandbox'),
+        ('sandbox_api_key', 'api_key', 'sandbox'),
+    ]
 
+    """
     This class provides a centralized way to merge user settings with the
     application configuration, ensuring consistent precedence rules across
     all configuration types.
@@ -47,82 +75,42 @@ class ConfigurationMerger:
     @staticmethod
     def _merge_settings(config: 'OpenHandsConfig', settings: 'Settings') -> None:
         """Apply settings to config with consistent precedence rules."""
-        # Core settings
-        ConfigurationMerger._merge_core_settings(config, settings)
-
-        # LLM settings
-        ConfigurationMerger._merge_llm_settings(config, settings)
-
-        # Security settings
-        ConfigurationMerger._merge_security_settings(config, settings)
-
-        # Sandbox settings
-        ConfigurationMerger._merge_sandbox_settings(config, settings)
-
-        # MCP settings
+        # Get LLM config once to avoid repeated calls
+        llm_config = config.get_llm_config()
+        
+        # Use the field mapping to apply settings to config
+        for settings_field, config_field, nested_obj in ConfigurationMerger.FIELD_MAPPING:
+            # Get the value from settings
+            settings_value = getattr(settings, settings_field, None)
+            
+            # Skip if the settings value is None
+            if settings_value is None:
+                continue
+                
+            # Apply the value to the appropriate config object
+            if nested_obj is None:
+                # Apply to the main config object
+                setattr(config, config_field, settings_value)
+            elif nested_obj == 'llm_config':
+                # Apply to the LLM config
+                setattr(llm_config, config_field, settings_value)
+            elif nested_obj == 'security':
+                # Apply to the security config
+                setattr(config.security, config_field, settings_value)
+            elif nested_obj == 'sandbox':
+                # Apply to the sandbox config
+                setattr(config.sandbox, config_field, settings_value)
+        
+        # MCP settings need special handling for merging
         ConfigurationMerger._merge_mcp_settings(config, settings)
 
-    @staticmethod
-    def _merge_core_settings(config: 'OpenHandsConfig', settings: 'Settings') -> None:
-        """Merge core settings."""
-        if settings.agent is not None:
-            config.default_agent = settings.agent
+    # The _merge_core_settings method has been replaced by the field mapping approach
 
-        if settings.max_iterations is not None:
-            config.max_iterations = settings.max_iterations
+    # The _merge_llm_settings method has been replaced by the field mapping approach
 
-        if settings.max_budget_per_task is not None:
-            config.max_budget_per_task = settings.max_budget_per_task
+    # The _merge_security_settings method has been replaced by the field mapping approach
 
-        if settings.git_user_name is not None:
-            config.git_user_name = settings.git_user_name
-
-        if settings.git_user_email is not None:
-            config.git_user_email = settings.git_user_email
-
-        if settings.search_api_key is not None:
-            config.search_api_key = settings.search_api_key
-
-    @staticmethod
-    def _merge_llm_settings(config: 'OpenHandsConfig', settings: 'Settings') -> None:
-        """Merge LLM-specific settings."""
-        llm_config = config.get_llm_config()
-
-        if settings.llm_model:
-            llm_config.model = settings.llm_model
-
-        if settings.llm_api_key:
-            llm_config.api_key = settings.llm_api_key
-
-        if settings.llm_base_url:
-            llm_config.base_url = settings.llm_base_url
-
-    @staticmethod
-    def _merge_security_settings(
-        config: 'OpenHandsConfig', settings: 'Settings'
-    ) -> None:
-        """Merge security-specific settings."""
-        if settings.confirmation_mode is not None:
-            config.security.confirmation_mode = settings.confirmation_mode
-
-        if settings.security_analyzer is not None:
-            config.security.security_analyzer = settings.security_analyzer
-
-    @staticmethod
-    def _merge_sandbox_settings(
-        config: 'OpenHandsConfig', settings: 'Settings'
-    ) -> None:
-        """Merge sandbox-specific settings."""
-        if settings.sandbox_base_container_image is not None:
-            config.sandbox.base_container_image = settings.sandbox_base_container_image
-
-        if settings.sandbox_runtime_container_image is not None:
-            config.sandbox.runtime_container_image = (
-                settings.sandbox_runtime_container_image
-            )
-
-        if settings.sandbox_api_key is not None:
-            config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
+    # The _merge_sandbox_settings method has been replaced by the field mapping approach
 
     @staticmethod
     def _merge_mcp_settings(config: 'OpenHandsConfig', settings: 'Settings') -> None:

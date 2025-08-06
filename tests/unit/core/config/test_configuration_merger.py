@@ -116,7 +116,8 @@ def test_merge_sandbox_settings():
     # Check that the merged config has the values from settings
     assert merged_config.sandbox.base_container_image == 'test-base-image'
     assert merged_config.sandbox.runtime_container_image == 'test-runtime-image'
-    assert merged_config.sandbox.api_key == 'test-sandbox-key'
+    # API key is now stored as SecretStr
+    assert merged_config.sandbox.api_key.get_secret_value() == 'test-sandbox-key'
 
     # Check that the original config is unchanged
     assert config.sandbox.base_container_image != 'test-base-image'
