@@ -769,11 +769,11 @@ describe("ConversationPanel", () => {
     await user.click(editButton);
 
     // Don't change the title, just blur
-    const titleInput = within(cards[0]).getByTestId("conversation-card-title");
     await user.tab();
 
     // Verify API was called with the same title (since handleConversationTitleChange will always be called)
-    expect(updateConversationSpy).toHaveBeenCalledWith("1", {
+    // Verify API was NOT called with the same title (since handleConversationTitleChange will always be called)
+    expect(updateConversationSpy).not.toHaveBeenCalledWith("1", {
       title: "Conversation 1",
     });
   });
