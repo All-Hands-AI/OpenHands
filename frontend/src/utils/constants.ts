@@ -37,3 +37,18 @@ export const DOCUMENTATION_URL = {
       "https://docs.all-hands.dev/usage/prompting/microagents-org",
   },
 };
+
+export const GIT_PROVIDER_OPTIONS = [
+  {
+    label: "GitHub",
+    value: "github",
+  },
+  {
+    label: "GitLab",
+    value: "gitlab",
+  },
+  {
+    label: "Bitbucket",
+    value: "bitbucket",
+  },
+];
