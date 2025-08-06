@@ -53,7 +53,6 @@ def load_from_env(
         env_or_toml_dict: The environment variables or a config.toml dict.
     """
 
-
     def get_optional_type(union_type: UnionType | type | None) -> type | None:
         """Returns the non-None type from a Union."""
         if union_type is None:
@@ -75,8 +74,6 @@ def load_from_env(
             # compute the expected env var name from the prefix and field name
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
-
-
 
             if isinstance(field_value, BaseModel):
                 set_attr_from_env(field_value, prefix=field_name + '_')
@@ -126,8 +123,6 @@ def load_from_env(
     # load default agent config from env
     default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
-
-
 
 
 def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None:
