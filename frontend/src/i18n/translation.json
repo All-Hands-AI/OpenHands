@@ -11823,6 +11823,38 @@
         "de": "OpenHands aktualisiert den Microagenten basierend auf Ihren Anweisungen.",
         "uk": "OpenHands оновить мікроагента відповідно до ваших інструкцій."
     },
+    "SETTINGS$GIT_USERNAME": {
+        "en": "Git Username",
+        "ja": "Gitユーザー名",
+        "zh-CN": "Git用户名",
+        "zh-TW": "Git使用者名稱",
+        "ko-KR": "Git 사용자 이름",
+        "no": "Git-brukernavn",
+        "it": "Nome utente Git",
+        "pt": "Nome de usuário Git",
+        "es": "Nombre de usuario Git",
+        "ar": "اسم مستخدم Git",
+        "fr": "Nom d'utilisateur Git",
+        "tr": "Git Kullanıcı Adı",
+        "de": "Git-Benutzername",
+        "uk": "Ім'я користувача Git"
+    },
+    "SETTINGS$GIT_EMAIL": {
+        "en": "Git Email",
+        "ja": "Gitメールアドレス",
+        "zh-CN": "Git电子邮件",
+        "zh-TW": "Git電子郵件",
+        "ko-KR": "Git 이메일",
+        "no": "Git-e-post",
+        "it": "Email Git",
+        "pt": "Email Git",
+        "es": "Correo electrónico Git",
+        "ar": "بريد Git الإلكتروني",
+        "fr": "Email Git",
+        "tr": "Git E-posta",
+        "de": "Git-E-Mail",
+        "uk": "Електронна пошта Git"
+    },
     "PROJECT_MANAGEMENT$TITLE": {
         "en": "Project Management",
         "ja": "プロジェクト管理",
