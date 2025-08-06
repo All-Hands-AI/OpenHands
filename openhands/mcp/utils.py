@@ -118,11 +118,7 @@ async def create_mcp_clients(
         client = MCPClient()
 
         try:
-            # Pass conversation_id only if it's not None
-            if conversation_id:
-                await client.connect_http(server, conversation_id=conversation_id)
-            else:
-                await client.connect_http(server)
+            await client.connect_http(server, conversation_id=conversation_id)
 
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
