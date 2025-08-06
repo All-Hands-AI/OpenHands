@@ -19,8 +19,8 @@ async def test_create_mcp_clients_timeout_with_invalid_url():
     original_connect_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_http_with_short_timeout(self, server_url, timeout=30.0):
-        return await original_connect_connect_http(self, server_url, timeout=0.5)
+    async def connect_http_with_short_timeout(self, server_url, timeout=30.0, conversation_id=None):
+        return await original_connect_connect_http(self, server_url, timeout=0.5, conversation_id=conversation_id)
 
     try:
         # Replace the method with our wrapper
@@ -49,14 +49,14 @@ async def test_create_mcp_clients_with_unreachable_host():
     """Test that create_mcp_clients handles unreachable hosts properly."""
     # Use a URL with a valid format but pointing to a non-routable IP address
     # This IP is in the TEST-NET-1 range (192.0.2.0/24) reserved for documentation and examples
-    unreachable_url = 'http://192.0.2.1:8080'
+    unreachable_server = MCPSSEServerConfig(url='http://192.0.2.1:8080')
 
     # Temporarily modify the default timeout for the MCPClient.connect_http method
     original_connect_http = MCPClient.connect_http
 
     # Create a wrapper that calls the original method but with a shorter timeout
-    async def connect_http_with_short_timeout(self, server_url, timeout=30.0):
-        return await original_connect_http(self, server_url, timeout=1.0)
+    async def connect_http_with_short_timeout(self, server_url, timeout=30.0, conversation_id=None):
+        return await original_connect_http(self, server_url, timeout=1.0, conversation_id=conversation_id)
 
     try:
         # Replace the method with our wrapper
@@ -64,7 +64,7 @@ async def test_create_mcp_clients_with_unreachable_host():
 
         # Call create_mcp_clients with the unreachable URL
         start_time = asyncio.get_event_loop().time()
-        clients = await create_mcp_clients([unreachable_url], [])
+        clients = await create_mcp_clients([unreachable_server], [])
         end_time = asyncio.get_event_loop().time()
 
         # Verify that no clients were successfully connected
