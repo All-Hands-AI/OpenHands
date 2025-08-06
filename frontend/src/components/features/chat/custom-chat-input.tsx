@@ -326,15 +326,17 @@ export function CustomChatInput({
           {/* Send Button */}
           {showButton && (
             <ChatSendButton
-              buttonClassName={buttonClassName}
+              buttonClassName={cn(buttonClassName, "translate-y-[3px]")}
               handleSubmit={handleSubmit}
               disabled={disabled}
             />
           )}
         </div>
 
-        <div className="w-full flex items-center justify-between translate-x-[-6px]">
-          <ServerStatus conversationStatus={conversationStatus} />
+        <div className="w-full flex items-center justify-between">
+          <div className="translate-x-[-6.5px]">
+            <ServerStatus conversationStatus={conversationStatus} />
+          </div>
           <AgentStatus
             handleStop={handleStop}
             handleResumeAgent={handleResumeAgent}
