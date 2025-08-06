@@ -59,6 +59,7 @@
     "dev:mock": "npm run make-i18n && cross-env VITE_MOCK_API=true VITE_MOCK_SAAS=false react-router dev",
     "dev:mock:saas": "npm run make-i18n && cross-env VITE_MOCK_API=true VITE_MOCK_SAAS=true react-router dev",
     "build": "npm run make-i18n && react-router build",
+    "build:subpath": "npm run make-i18n && react-router build",
     "start": "npx sirv-cli build/ --single",
     "test": "vitest run",
     "test:e2e": "playwright test",

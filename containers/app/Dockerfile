@@ -51,6 +51,8 @@ RUN mkdir -p $WORKSPACE_BASE
 
 RUN apt-get update -y \
     && apt-get install -y curl ssh sudo \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Default is 1000, but OSX is often 501
@@ -85,6 +87,7 @@ RUN python openhands/core/download.py # No-op to download assets
 RUN find /app \! -group app -exec chgrp app {} +
 
 COPY --chown=openhands:app --chmod=770 --from=frontend-builder /app/build ./frontend/build
+COPY --chown=openhands:app --chmod=770 ./frontend ./frontend
 COPY --chown=openhands:app --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
 
 USER root

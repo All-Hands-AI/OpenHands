@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
     VITE_USE_TLS = "false",
     VITE_FRONTEND_PORT = "3001",
     VITE_INSECURE_SKIP_VERIFY = "false",
+    VITE_APP_BASE_URL = "/",
   } = loadEnv(mode, process.cwd());
 
   const USE_TLS = VITE_USE_TLS === "true";
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
   const FE_PORT = Number.parseInt(VITE_FRONTEND_PORT, 10);
 
   return {
+    base: VITE_APP_BASE_URL,
     plugins: [
       !process.env.VITEST && reactRouter(),
       viteTsconfigPaths(),

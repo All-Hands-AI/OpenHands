@@ -2,6 +2,29 @@
 set -eo pipefail
 
 echo "Starting OpenHands..."
+
+# Rebuild frontend if base path is configured and not root
+if [[ -n "$OPENHANDS_BASE_PATH" && "$OPENHANDS_BASE_PATH" != "/" ]]; then
+  echo "Custom base path detected: $OPENHANDS_BASE_PATH"
+  echo "Rebuilding frontend for custom base path..."
+  
+  # Ensure base path has proper format for Vite (should start and end with /)
+  VITE_BASE_PATH="$OPENHANDS_BASE_PATH"
+  if [[ "$VITE_BASE_PATH" != /* ]]; then
+    VITE_BASE_PATH="/$VITE_BASE_PATH"
+  fi
+  if [[ "$VITE_BASE_PATH" != */ ]]; then
+    VITE_BASE_PATH="$VITE_BASE_PATH/"
+  fi
+  
+  cd /app/frontend
+  export VITE_APP_BASE_URL="$VITE_BASE_PATH"
+  npm run build:subpath
+  cd /app
+  
+  echo "Frontend rebuilt successfully for base path: $VITE_BASE_PATH"
+fi
+
 if [[ $NO_SETUP == "true" ]]; then
   echo "Skipping setup, running as $(whoami)"
   "$@"

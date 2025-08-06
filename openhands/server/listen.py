@@ -12,9 +12,18 @@ from openhands.server.middleware import (
 )
 from openhands.server.static import SPAStaticFiles
 
+# Get configurable base path from environment, default to root
+OPENHANDS_BASE_PATH = os.getenv('OPENHANDS_BASE_PATH', '/')
+# Ensure it starts with / and ends with /
+if not OPENHANDS_BASE_PATH.startswith('/'):
+    OPENHANDS_BASE_PATH = '/' + OPENHANDS_BASE_PATH
+OPENHANDS_BASE_PATH = OPENHANDS_BASE_PATH.rstrip('/') + '/'
+if OPENHANDS_BASE_PATH == '//':
+    OPENHANDS_BASE_PATH = '/'
+
 if os.getenv('SERVE_FRONTEND', 'true').lower() == 'true':
     base_app.mount(
-        '/', SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
+        OPENHANDS_BASE_PATH, SPAStaticFiles(directory='./frontend/build', html=True), name='dist'
     )
 
 base_app.add_middleware(LocalhostCORSMiddleware)
