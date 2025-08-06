@@ -1,3 +1,4 @@
+import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
@@ -12,7 +13,9 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
+import Security from "#/components/shared/modals/security/security";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { useSettings } from "#/hooks/query/use-settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useDocumentTitleFromState } from "#/hooks/use-document-title-from-state";
 import OpenHands from "#/api/open-hands";
@@ -22,9 +25,11 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
+import { Controls } from "#/components/features/controls/controls";
 
 function AppContent() {
   useConversationConfig();
+  const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
@@ -63,6 +68,12 @@ function AppContent() {
     dispatch(clearJupyter());
   });
 
+  const {
+    isOpen: securityModalIsOpen,
+    onOpen: onSecurityModalOpen,
+    onOpenChange: onSecurityModalOpenChange,
+  } = useDisclosure();
+
   return (
     <WsClientProvider conversationId={conversationId}>
       <ConversationSubscriptionsProvider>
@@ -76,6 +87,18 @@ function AppContent() {
             <div className="flex h-full overflow-auto">
               <ConversationMain />
             </div>
+
+            <Controls
+              setSecurityOpen={onSecurityModalOpen}
+              showSecurityLock={!!settings?.SECURITY_ANALYZER}
+            />
+            {settings && (
+              <Security
+                isOpen={securityModalIsOpen}
+                onOpenChange={onSecurityModalOpenChange}
+                securityAnalyzer={settings.SECURITY_ANALYZER}
+              />
+            )}
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>
