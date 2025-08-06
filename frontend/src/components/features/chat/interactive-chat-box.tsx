@@ -9,17 +9,24 @@ import { AgentState } from "#/types/agent-state";
 import { ImageCarousel } from "../images/image-carousel";
 import { FileList } from "../files/file-list";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { GitControlBar } from "./git-control-bar";
 
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
   value?: string;
+  isWaitingForUserInput: boolean;
+  hasSubstantiveAgentActions: boolean;
+  optimisticUserMessage: boolean;
 }
 
 export function InteractiveChatBox({
   onSubmit,
   onStop,
   value,
+  isWaitingForUserInput,
+  hasSubstantiveAgentActions,
+  optimisticUserMessage,
 }: InteractiveChatBoxProps) {
   const curAgentState = useSelector(
     (state: RootState) => state.agent.curAgentState,
@@ -65,6 +72,10 @@ export function InteractiveChatBox({
     setImages([]);
   };
 
+  const handleSuggestionsClick = (suggestion: string) => {
+    handleSubmit(suggestion);
+  };
+
   const isDisabled =
     curAgentState === AgentState.LOADING ||
     curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
@@ -92,6 +103,14 @@ export function InteractiveChatBox({
         value={value}
         conversationStatus={conversation?.status || null}
       />
+      <div className="mt-4">
+        <GitControlBar
+          onSuggestionsClick={handleSuggestionsClick}
+          isWaitingForUserInput={isWaitingForUserInput}
+          hasSubstantiveAgentActions={hasSubstantiveAgentActions}
+          optimisticUserMessage={optimisticUserMessage}
+        />
+      </div>
     </div>
   );
 }
