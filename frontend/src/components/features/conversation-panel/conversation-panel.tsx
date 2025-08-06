@@ -124,7 +124,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
       ref={(node) => {
         // Combine both refs
         if (ref.current !== node) ref.current = node;
-        if (scrollContainerRef.current !== node) scrollContainerRef.current = node;
+        if (scrollContainerRef.current !== node)
+          scrollContainerRef.current = node;
       }}
       data-testid="conversation-panel"
       className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"

@@ -6,7 +6,7 @@ export const usePaginatedConversations = (limit: number = 20) => {
   const { data: userIsAuthenticated } = useIsAuthed();
 
   return useInfiniteQuery({
-    queryKey: ["user", "conversations", "paginated"],
+    queryKey: ["user", "conversations", "paginated", limit],
     queryFn: ({ pageParam }) =>
       OpenHands.getUserConversations(limit, pageParam),
     enabled: !!userIsAuthenticated,

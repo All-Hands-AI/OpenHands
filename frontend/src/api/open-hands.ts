@@ -286,7 +286,7 @@ class OpenHands {
   ): Promise<ResultSet<Conversation>> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());
-    
+
     if (pageId) {
       params.append("page_id", pageId);
     }
