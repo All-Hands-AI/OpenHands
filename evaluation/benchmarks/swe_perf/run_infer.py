@@ -835,7 +835,7 @@ if __name__ == '__main__':
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough
-            max_retries=0,
+            max_retries=5,
         )
     else:
         critic = AgentFinishedCritic()
@@ -884,7 +884,7 @@ if __name__ == '__main__':
                 timeout_seconds=8
                 * 60
                 * 60,  # 8 hour PER instance should be more than enough
-                max_retries=0,
+                max_retries=5,
             )
 
             # When eval is done, we update eval_ids to the instances that failed the current attempt
