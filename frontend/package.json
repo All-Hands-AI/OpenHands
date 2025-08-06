@@ -44,7 +44,6 @@
     "react-redux": "^9.2.0",
     "react-router": "^7.7.1",
     "react-syntax-highlighter": "^15.6.1",
-    "react-textarea-autosize": "^8.5.9",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
     "sirv-cli": "^3.0.1",
