@@ -3,7 +3,6 @@ import os
 import re
 from typing import Any
 
-import aiohttp
 import httpx
 from pydantic import SecretStr
 
@@ -287,15 +286,9 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
         """Get all workspaces the user has access to"""
         url = f'{self.BASE_URL}/workspaces'
-        headers = {'Authorization': f'Bearer {self.token}'}
+        data = await self._make_request(url)
+        return data.get('values', [])
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, headers=headers) as response:
-                if response.status == 200:
-                    data = await response.json()
-                    return data.get('values', [])
-                else:
-                    return []
 
     async def _fetch_paginated_data(
         self, url: str, params: dict, max_items: int
