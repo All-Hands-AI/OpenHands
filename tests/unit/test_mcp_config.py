@@ -342,8 +342,13 @@ def test_env_var_mcp_shttp_server_config(monkeypatch):
     # Load from environment
     load_from_env(config, os.environ)
 
-    # Convert dictionary servers to proper server config objects
-    config.mcp = config.mcp.convert_servers()
+    # Convert dictionary servers to proper server config objects by creating a new MCPConfig
+    # This triggers the model validator which automatically converts dict servers to proper objects
+    config.mcp = MCPConfig(
+        sse_servers=config.mcp.sse_servers,
+        stdio_servers=config.mcp.stdio_servers,
+        shttp_servers=config.mcp.shttp_servers,
+    )
 
     # Check that the HTTP server was added
     assert len(config.mcp.shttp_servers) == 1
