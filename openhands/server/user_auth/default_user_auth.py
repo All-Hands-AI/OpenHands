@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from fastapi import Request
 from pydantic import SecretStr
 
+from openhands.core.config import ConfigurationMerger, OpenHandsConfig
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
@@ -55,7 +56,15 @@ class DefaultUserAuth(UserAuth):
 
         # Merge config.toml settings with stored settings
         if settings:
-            settings = settings.merge_with_config_settings()
+            config = OpenHandsConfig()
+            # Merge settings with config
+            merged_config = ConfigurationMerger.merge_settings_with_config(
+                settings, config
+            )
+            # Create new settings with the same values as the original settings
+            # but with the MCP config from the merged config
+            if merged_config.mcp is not None:
+                settings.mcp_config = merged_config.mcp
 
         self._settings = settings
         return settings
