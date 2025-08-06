@@ -54,6 +54,10 @@ export interface GetConfigResponse {
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
+    HIDE_MICROAGENT_MANAGEMENT?: boolean;
+    ENABLE_JIRA: boolean;
+    ENABLE_JIRA_DC: boolean;
+    ENABLE_LINEAR: boolean;
   };
   MAINTENANCE?: {
     startTime: string;

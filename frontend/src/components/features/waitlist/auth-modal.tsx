@@ -35,6 +35,11 @@ export function AuthModal({
     identityProvider: "bitbucket",
   });
 
+  const enterpriseSsoUrl = useAuthUrl({
+    appMode: appMode || null,
+    identityProvider: "enterprise_sso",
+  });
+
   const handleGitHubAuth = () => {
     if (githubAuthUrl) {
       // Always start the OIDC flow, let the backend handle TOS check
@@ -56,6 +61,13 @@ export function AuthModal({
     }
   };
 
+  const handleEnterpriseSsoAuth = () => {
+    if (enterpriseSsoUrl) {
+      // Always start the OIDC flow, let the backend handle TOS check
+      window.location.href = enterpriseSsoUrl;
+    }
+  };
+
   // Only show buttons if providers are configured and include the specific provider
   const showGithub =
     providersConfigured &&
@@ -69,6 +81,10 @@ export function AuthModal({
     providersConfigured &&
     providersConfigured.length > 0 &&
     providersConfigured.includes("bitbucket");
+  const showEnterpriseSso =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("enterprise_sso");
 
   // Check if no providers are configured
   const noProvidersConfigured =
@@ -124,6 +140,17 @@ export function AuthModal({
                   startContent={<BitbucketLogo width={20} height={20} />}
                 >
                   {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                </BrandButton>
+              )}
+
+              {showEnterpriseSso && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleEnterpriseSsoAuth}
+                  className="w-full"
+                >
+                  {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
                 </BrandButton>
               )}
             </>

@@ -28,7 +28,8 @@ from openhands.server.routes.secrets import app as secrets_router
 from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
-from openhands.server.shared import conversation_manager
+from openhands.server.shared import conversation_manager, server_config
+from openhands.server.types import AppMode
 
 mcp_app = mcp_server.http_app(path='/mcp')
 
@@ -68,6 +69,7 @@ app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(secrets_router)
-app.include_router(git_api_router)
+if server_config.app_mode == AppMode.OSS:
+    app.include_router(git_api_router)
 app.include_router(trajectory_router)
 add_health_endpoints(app)

@@ -37,6 +37,9 @@ export function Sidebar() {
   const shouldHideLlmSettings =
     config?.FEATURE_FLAGS.HIDE_LLM_SETTINGS && config?.APP_MODE === "saas";
 
+  const shouldHideMicroagentManagement =
+    config?.FEATURE_FLAGS.HIDE_MICROAGENT_MANAGEMENT;
+
   React.useEffect(() => {
     if (shouldHideLlmSettings) return;
 
@@ -80,9 +83,11 @@ export function Sidebar() {
               }
               disabled={settings?.EMAIL_VERIFIED === false}
             />
-            <MicroagentManagementButton
-              disabled={settings?.EMAIL_VERIFIED === false}
-            />
+            {!shouldHideMicroagentManagement && (
+              <MicroagentManagementButton
+                disabled={settings?.EMAIL_VERIFIED === false}
+              />
+            )}
           </div>
 
           <div className="flex flex-row md:flex-col md:items-center gap-[26px] md:mb-4">
