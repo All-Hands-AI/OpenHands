@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import RepoForkedIcon from "#/icons/repo-forked.svg?react";
 import LinkExternalIcon from "#/icons/link-external.svg?react";
 import { constructRepositoryUrl, cn } from "#/utils/utils";
 import { Provider } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
+import { GitProviderIcon } from "#/components/shared/git-provider-icon";
 
 interface GitControlBarRepoButtonProps {
   selectedRepository: string | null | undefined;
@@ -28,7 +28,7 @@ export function GitControlBarRepoButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "flex flex-row items-center justify-between pl-2.5 pr-2.5 py-1 rounded-[100px] w-52",
+        "group flex flex-row items-center justify-between pl-2.5 pr-2.5 py-1 rounded-[100px] w-52",
         hasRepository
           ? "bg-[#25272D] hover:bg-[#525662] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",
@@ -36,7 +36,10 @@ export function GitControlBarRepoButton({
     >
       <div className="flex flex-row gap-2 items-center justify-start">
         <div className="w-3 h-3 flex items-center justify-center">
-          <RepoForkedIcon width={12} height={12} color="white" />
+          <GitProviderIcon
+            gitProvider={gitProvider as Provider}
+            className="w-3 h-3 inline-flex"
+          />
         </div>
         <div className="font-normal text-white text-sm leading-5">
           {hasRepository
@@ -45,7 +48,7 @@ export function GitControlBarRepoButton({
         </div>
       </div>
       {hasRepository && (
-        <div className="w-3 h-3 flex items-center justify-center">
+        <div className="w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <LinkExternalIcon width={12} height={12} color="white" />
         </div>
       )}
