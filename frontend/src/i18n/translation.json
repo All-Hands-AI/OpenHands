@@ -11471,6 +11471,22 @@
         "de": "Wird gestartet",
         "uk": "Запуск"
     },
+    "BUTTON$RENAME": {
+        "en": "Rename",
+        "ja": "名前を変更",
+        "zh-CN": "重命名",
+        "zh-TW": "重新命名",
+        "ko-KR": "이름 바꾸기",
+        "no": "Gi nytt navn",
+        "it": "Rinomina",
+        "pt": "Renomear",
+        "es": "Renombrar",
+        "ar": "إعادة تسمية",
+        "fr": "Renommer",
+        "tr": "Yeniden adlandır",
+        "de": "Umbenennen",
+        "uk": "Перейменувати"
+    },
     "COMMON$READY_FOR_REVIEW": {
         "en": "Ready for review",
         "ja": "レビューの準備ができました",
