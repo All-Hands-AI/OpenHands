@@ -210,7 +210,10 @@ RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
 RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
-    touch /openhands/code/openhands/__init__.py
+    touch /openhands/code/openhands/__init__.py && \
+    # Set global git configuration to ensure proper author/committer information
+    git config --global user.name "openhands" && \
+    git config --global user.email "openhands@all-hands.dev"
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
