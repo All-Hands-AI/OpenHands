@@ -35,10 +35,8 @@ class LLMRegistry:
 
         agent_name = selected_agent_cls if selected_agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
+        self.service_to_llm: dict[str, LLM] = {}
         self.active_agent_llm: LLM = self.get_llm('agent', llm_config)
-
-        self.service_to_llm: dict[str, LLM] = {'agent': self.active_agent_llm}
-
         self.subscriber: Callable[[Any], None] | None = None
         self.retry_listner = retry_listener
 
