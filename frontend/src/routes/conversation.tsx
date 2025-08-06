@@ -28,17 +28,32 @@ import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs";
+import { useConfig } from "#/hooks/query/use-config";
 
 function AppContent() {
   useConversationConfig();
   const { data: settings } = useSettings();
   const { conversationId } = useConversationId();
   const { data: conversation, isFetched, refetch } = useActiveConversation();
+  const { data: config } = useConfig();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
+
+  // Check if user should have access based on auth and provider configuration
+  const shouldHaveAccess = React.useMemo(() => {
+    if (!config?.APP_MODE || !isAuthed) return false;
+
+    // In OSS mode, only allow access if Git providers are configured
+    if (config.APP_MODE === "oss") {
+      return providers.length > 0;
+    }
+
+    // In non-OSS modes (saas), always allow access when authenticated
+    return true;
+  }, [config?.APP_MODE, isAuthed, providers.length]);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -49,7 +64,7 @@ function AppContent() {
   const [width, setWidth] = React.useState(window.innerWidth);
 
   React.useEffect(() => {
-    if (isFetched && !conversation && isAuthed) {
+    if (isFetched && !conversation && shouldHaveAccess) {
       displayErrorToast(
         "This conversation does not exist, or you do not have permission to access it.",
       );
@@ -60,7 +75,7 @@ function AppContent() {
         () => refetch(),
       );
     }
-  }, [conversation?.conversation_id, isFetched, isAuthed, providers]);
+  }, [conversation?.conversation_id, isFetched, shouldHaveAccess, providers]);
 
   React.useEffect(() => {
     dispatch(clearTerminal());
