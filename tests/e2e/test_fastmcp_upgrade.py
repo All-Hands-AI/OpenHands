@@ -27,8 +27,8 @@ sys.exit(0)
 
         # Check the output
         print(result.stdout)
-        assert 'FastMCP version: 2.11.1' in result.stdout, (
-            f'Expected fastmcp version 2.11.1, got: {result.stdout}'
+        assert 'FastMCP version: 2.11.2' in result.stdout, (
+            f'Expected fastmcp version 2.11.2, got: {result.stdout}'
         )
 
     finally:
@@ -81,7 +81,7 @@ except Exception as e:
             f'Failed to import fastmcp components: {result.stderr}'
         )
         assert 'Successfully imported key fastmcp components' in result.stdout
-        assert 'fastmcp version: 2.11.1' in result.stdout
+        assert 'fastmcp version: 2.11.2' in result.stdout
 
     finally:
         # Clean up
