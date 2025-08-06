@@ -231,9 +231,7 @@ class MCPConfig(BaseModel):
 
     def _convert_server_list(self, servers, server_class):
         """Helper method to convert a list of server dictionaries to server objects."""
-        from typing import Any, TypeVar, cast
-
-        TypeVar('T')
+        from typing import Any, cast
 
         # Skip if the list is empty
         if not servers:
@@ -250,9 +248,23 @@ class MCPConfig(BaseModel):
                 # that we're checking the type at runtime
                 server_dict = cast(dict[str, Any], server)
                 result.append(server_class(**server_dict))
-            else:
-                # Keep the existing server object
+            elif isinstance(server, server_class):
+                # Keep the existing server object if it's already the correct type
                 result.append(server)
+            else:
+                # If it's neither a dict nor the correct server class, raise an error
+                raise TypeError(
+                    f'Expected server to be a dict or {server_class.__name__}, '
+                    f'got {type(server).__name__}'
+                )
+
+        # Verify all servers are of the correct type
+        for server in result:
+            if not isinstance(server, server_class):
+                raise TypeError(
+                    f'Server conversion failed: expected {server_class.__name__}, '
+                    f'got {type(server).__name__}'
+                )
 
         return result
 
