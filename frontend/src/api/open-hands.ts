@@ -289,7 +289,7 @@ class OpenHands {
   static async searchConversations(
     selectedRepository?: string,
     conversationTrigger?: string,
-    limit: number = 100,
+    limit: number = 20,
   ): Promise<Conversation[]> {
     const params = new URLSearchParams();
     params.append("limit", limit.toString());

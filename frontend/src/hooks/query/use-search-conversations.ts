@@ -4,7 +4,7 @@ import OpenHands from "#/api/open-hands";
 export const useSearchConversations = (
   selectedRepository?: string,
   conversationTrigger?: string,
-  limit: number = 100,
+  limit: number = 20,
   cacheDisabled: boolean = false,
 ) =>
   useQuery({
