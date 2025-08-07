@@ -175,24 +175,16 @@ def make_commit(
         git_user_name: Git username for commits
         git_user_email: Git email for commits
     """
-    # Check if git username is set
-    result = subprocess.run(
-        f'git -C {repo_dir} config user.name',
+    # Always set git username and email for this repository
+    # This ensures tests work in CI environments where global git config might not be set
+    subprocess.run(
+        f'git -C {repo_dir} config user.name "{git_user_name}" && '
+        f'git -C {repo_dir} config user.email "{git_user_email}" && '
+        f'git -C {repo_dir} config alias.git "git --no-pager"',
         shell=True,
-        capture_output=True,
-        text=True,
+        check=True,
     )
-
-    if not result.stdout.strip():
-        # If username is not set, configure git with the provided credentials
-        subprocess.run(
-            f'git -C {repo_dir} config user.name "{git_user_name}" && '
-            f'git -C {repo_dir} config user.email "{git_user_email}" && '
-            f'git -C {repo_dir} config alias.git "git --no-pager"',
-            shell=True,
-            check=True,
-        )
-        logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
+    logger.info(f'Git user configured as {git_user_name} <{git_user_email}>')
 
     # Add all changes to the git index
     result = subprocess.run(
@@ -220,9 +212,24 @@ def make_commit(
     # Prepare the commit message
     commit_message = f'Fix {issue_type} #{issue.number}: {issue.title}'
 
-    # Commit the changes
+    # Commit the changes with explicit author and committer
+    author = f'{git_user_name} <{git_user_email}>'
+    # Use -c to set the committer identity for this command only
     result = subprocess.run(
-        ['git', '-C', repo_dir, 'commit', '-m', commit_message],
+        [
+            'git',
+            '-C',
+            repo_dir,
+            '-c',
+            f'user.name={git_user_name}',
+            '-c',
+            f'user.email={git_user_email}',
+            'commit',
+            '--author',
+            author,
+            '-m',
+            commit_message,
+        ],
         capture_output=True,
         text=True,
     )

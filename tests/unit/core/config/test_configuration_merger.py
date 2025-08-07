@@ -2,8 +2,7 @@
 
 from pydantic import SecretStr
 
-from openhands.core.config import OpenHandsConfig
-from openhands.core.config.configuration_merger import ConfigurationMerger
+from openhands.core.config import ConfigurationMerger, OpenHandsConfig
 from openhands.core.config.mcp_config import (
     MCPConfig,
     MCPSSEServerConfig,
