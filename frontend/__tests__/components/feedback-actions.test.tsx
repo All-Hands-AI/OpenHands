@@ -8,7 +8,6 @@ describe("TrajectoryActions", () => {
   const user = userEvent.setup();
   const onPositiveFeedback = vi.fn();
   const onNegativeFeedback = vi.fn();
-  const onExportTrajectory = vi.fn();
 
   afterEach(() => {
     vi.clearAllMocks();
@@ -19,14 +18,12 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
-        onExportTrajectory={onExportTrajectory}
       />,
     );
 
     const actions = screen.getByTestId("feedback-actions");
     within(actions).getByTestId("positive-feedback");
     within(actions).getByTestId("negative-feedback");
-    within(actions).getByTestId("export-trajectory");
   });
 
   it("should call onPositiveFeedback when positive feedback is clicked", async () => {
@@ -34,7 +31,6 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
-        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -49,7 +45,6 @@ describe("TrajectoryActions", () => {
       <TrajectoryActions
         onPositiveFeedback={onPositiveFeedback}
         onNegativeFeedback={onNegativeFeedback}
-        onExportTrajectory={onExportTrajectory}
       />,
     );
 
@@ -59,48 +54,12 @@ describe("TrajectoryActions", () => {
     expect(onNegativeFeedback).toHaveBeenCalled();
   });
 
-  it("should call onExportTrajectory when export button is clicked", async () => {
-    renderWithProviders(
-      <TrajectoryActions
-        onPositiveFeedback={onPositiveFeedback}
-        onNegativeFeedback={onNegativeFeedback}
-        onExportTrajectory={onExportTrajectory}
-      />,
-    );
-
-    const exportButton = screen.getByTestId("export-trajectory");
-    await user.click(exportButton);
-
-    expect(onExportTrajectory).toHaveBeenCalled();
-  });
-
   describe("SaaS mode", () => {
-    it("should only render export button when isSaasMode is true", () => {
-      renderWithProviders(
-        <TrajectoryActions
-          onPositiveFeedback={onPositiveFeedback}
-          onNegativeFeedback={onNegativeFeedback}
-          onExportTrajectory={onExportTrajectory}
-          isSaasMode={true}
-        />,
-      );
-
-      const actions = screen.getByTestId("feedback-actions");
-
-      // Should not render feedback buttons in SaaS mode
-      expect(within(actions).queryByTestId("positive-feedback")).toBeNull();
-      expect(within(actions).queryByTestId("negative-feedback")).toBeNull();
-
-      // Should still render export button
-      within(actions).getByTestId("export-trajectory");
-    });
-
     it("should render all buttons when isSaasMode is false", () => {
       renderWithProviders(
         <TrajectoryActions
           onPositiveFeedback={onPositiveFeedback}
           onNegativeFeedback={onNegativeFeedback}
-          onExportTrajectory={onExportTrajectory}
           isSaasMode={false}
         />,
       );
@@ -108,7 +67,6 @@ describe("TrajectoryActions", () => {
       const actions = screen.getByTestId("feedback-actions");
       within(actions).getByTestId("positive-feedback");
       within(actions).getByTestId("negative-feedback");
-      within(actions).getByTestId("export-trajectory");
     });
 
     it("should render all buttons when isSaasMode is undefined (default behavior)", () => {
@@ -116,30 +74,12 @@ describe("TrajectoryActions", () => {
         <TrajectoryActions
           onPositiveFeedback={onPositiveFeedback}
           onNegativeFeedback={onNegativeFeedback}
-          onExportTrajectory={onExportTrajectory}
         />,
       );
 
       const actions = screen.getByTestId("feedback-actions");
       within(actions).getByTestId("positive-feedback");
       within(actions).getByTestId("negative-feedback");
-      within(actions).getByTestId("export-trajectory");
-    });
-
-    it("should call onExportTrajectory when export button is clicked in SaaS mode", async () => {
-      renderWithProviders(
-        <TrajectoryActions
-          onPositiveFeedback={onPositiveFeedback}
-          onNegativeFeedback={onNegativeFeedback}
-          onExportTrajectory={onExportTrajectory}
-          isSaasMode={true}
-        />,
-      );
-
-      const exportButton = screen.getByTestId("export-trajectory");
-      await user.click(exportButton);
-
-      expect(onExportTrajectory).toHaveBeenCalled();
     });
   });
 });
