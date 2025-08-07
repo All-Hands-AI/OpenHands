@@ -5,14 +5,30 @@ import { UserActions } from "#/components/features/sidebar/user-actions";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactElement } from "react";
 
-// Create a mock for useIsAuthed that we can control per test
+// Create mocks for all the hooks we need
 const useIsAuthedMock = vi
   .fn()
   .mockReturnValue({ data: true, isLoading: false });
 
-// Mock the useIsAuthed hook
+const useConfigMock = vi
+  .fn()
+  .mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+
+const useUserProvidersMock = vi
+  .fn()
+  .mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
+
+// Mock the hooks
 vi.mock("#/hooks/query/use-is-authed", () => ({
   useIsAuthed: () => useIsAuthedMock(),
+}));
+
+vi.mock("#/hooks/query/use-config", () => ({
+  useConfig: () => useConfigMock(),
+}));
+
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => useUserProvidersMock(),
 }));
 
 describe("UserActions", () => {
@@ -40,8 +56,10 @@ describe("UserActions", () => {
   };
 
   beforeEach(() => {
-    // Reset the mock to default value before each test
+    // Reset all mocks to default values before each test
     useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
   });
 
   afterEach(() => {
@@ -102,6 +120,9 @@ describe("UserActions", () => {
   it("should NOT show context menu when user is not authenticated and avatar is clicked", async () => {
     // Set isAuthed to false for this test
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+    // Keep other mocks with default values
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
 
     renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
 
@@ -131,6 +152,9 @@ describe("UserActions", () => {
   it("should NOT be able to access logout when user is not authenticated", async () => {
     // Set isAuthed to false for this test
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+    // Keep other mocks with default values
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
 
     renderWithQueryClient(<UserActions onLogout={onLogoutMock} />);
 
@@ -149,6 +173,9 @@ describe("UserActions", () => {
   it("should handle user prop changing from undefined to defined", async () => {
     // Start with no authentication
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+    // Keep other mocks with default values
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
 
     const { rerender } = renderWithQueryClient(
       <UserActions onLogout={onLogoutMock} />,
@@ -163,6 +190,9 @@ describe("UserActions", () => {
 
     // Set authentication to true for the rerender
     useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+    // Ensure config and providers are set correctly
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
 
     // Add user prop and create a new QueryClient to ensure fresh state
     const queryClient = new QueryClient({
@@ -195,6 +225,11 @@ describe("UserActions", () => {
   });
 
   it("should handle user prop changing from defined to undefined", async () => {
+    // Start with authentication and providers
+    useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
+
     const { rerender } = renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
@@ -211,6 +246,9 @@ describe("UserActions", () => {
 
     // Set authentication to false for the rerender
     useIsAuthedMock.mockReturnValue({ data: false, isLoading: false });
+    // Keep other mocks with default values
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
 
     // Remove user prop - menu should disappear because user is no longer authenticated
     rerender(
@@ -229,6 +267,11 @@ describe("UserActions", () => {
   });
 
   it("should work with loading state and user provided", async () => {
+    // Ensure authentication and providers are set correctly
+    useIsAuthedMock.mockReturnValue({ data: true, isLoading: false });
+    useConfigMock.mockReturnValue({ data: { APP_MODE: "saas" }, isLoading: false });
+    useUserProvidersMock.mockReturnValue({ providers: [{ id: "github", name: "GitHub" }] });
+
     renderWithQueryClient(
       <UserActions
         onLogout={onLogoutMock}
