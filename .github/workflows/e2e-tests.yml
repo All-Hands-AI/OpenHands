@@ -86,8 +86,14 @@ jobs:
           echo "Started at: $(date)" >> /tmp/openhands-e2e-test.log
           echo "" >> /tmp/openhands-e2e-test.log
           
-          # Create workspace directory that the runner can write to
-          mkdir -p /tmp/openhands-workspace
+          # Create workspace directory structure that the runner can write to
+          mkdir -p /tmp/openhands-workspace/.downloads
+          chmod -R 755 /tmp/openhands-workspace
+          
+          # Also create the actual /workspace directory for browser environment
+          sudo mkdir -p /workspace/.downloads
+          sudo chown -R $(id -u):$(id -g) /workspace
+          sudo chmod -R 755 /workspace
           
           # Set environment variables for OpenHands
           export SANDBOX_VOLUMES=/tmp/openhands-workspace:/workspace:rw
