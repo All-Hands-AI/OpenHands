@@ -209,40 +209,6 @@ class MCPConfig(BaseModel):
     sse_servers: list[MCPSSEServerConfig] = Field(default_factory=list)
     stdio_servers: list[MCPStdioServerConfig] = Field(default_factory=list)
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
-
-    @model_validator(mode='after')
-    def convert_server_dicts(self) -> 'MCPConfig':
-        self.shttp_servers = self._convert_server_list(self.shttp_servers, MCPSHTTPServerConfig)
-        self.sse_servers = self._convert_server_list(self.sse_servers, MCPSSEServerConfig)
-        self.stdio_servers = self._convert_server_list(self.stdio_servers, MCPStdioServerConfig)
-        return self
-
-    def _convert_server_list(self, servers, server_class):
-        if not servers:
-            return servers
-
-        result = []
-        for server in servers:
-            if isinstance(server, dict):
-                server_dict = cast(dict[str, Any], server)
-                result.append(server_class(**server_dict))
-            elif isinstance(server, server_class):
-                result.append(server)
-            else:
-                raise TypeError(
-                    f'Expected dict or {server_class.__name__}, got {type(server).__name__}'
-                )
-
-        # Optional: type-check again
-        for server in result:
-            if not isinstance(server, server_class):
-                raise TypeError(
-                    f'Server conversion failed: expected {server_class.__name__}, '
-                    f'got {type(server).__name__}'
-                )
-
-        return result
-
     model_config = ConfigDict(extra='forbid')
 
     @staticmethod
