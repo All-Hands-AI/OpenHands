@@ -10,6 +10,26 @@ import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
 import { ExpandedInteractiveChatBox } from "../chat/expanded-interactive-chat-box";
 
+interface ChatInterfaceWrapperProps {
+  isRightPanelShown: boolean;
+}
+
+export function ChatInterfaceWrapper({
+  isRightPanelShown,
+}: ChatInterfaceWrapperProps) {
+  if (!isRightPanelShown) {
+    return (
+      <div className="flex justify-center w-full h-full">
+        <div className="max-w-[768px]">
+          <ChatInterface />
+        </div>
+      </div>
+    );
+  }
+
+  return <ChatInterface />;
+}
+
 export function ConversationMain() {
   const [width, setWidth] = useState(window.innerWidth);
 
@@ -37,7 +57,7 @@ export function ConversationMain() {
       <div className="flex flex-col gap-3 overflow-auto w-full">
         <div
           className={cn(
-            "rounded-xl overflow-hidden border border-neutral-600 w-full bg-base min-h-[494px]",
+            "rounded-xl overflow-hidden w-full bg-base min-h-[494px]",
             !isRightPanelShown && "h-full",
           )}
         >
@@ -62,9 +82,11 @@ export function ConversationMain() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base"
+        firstClassName="rounded-xl overflow-hidden bg-base"
         secondClassName="flex flex-col overflow-hidden"
-        firstChild={<ChatInterface />}
+        firstChild={
+          <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
+        }
         secondChild={
           isChatInputExpanded ? (
             <ExpandedInteractiveChatBox />
@@ -78,8 +100,8 @@ export function ConversationMain() {
 
   return (
     <div className="flex flex-col gap-3 overflow-auto w-full h-full">
-      <div className="rounded-xl overflow-hidden border border-neutral-600 w-full h-full bg-base">
-        <ChatInterface />
+      <div className="rounded-xl overflow-hidden w-full h-full bg-base">
+        <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
       </div>
     </div>
   );
