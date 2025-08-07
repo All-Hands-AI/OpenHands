@@ -1,8 +1,6 @@
 import pytest
 
 from openhands.core.config import (
-    OH_DEFAULT_AGENT,
-    OH_MAX_ITERATIONS,
     get_headless_parser,
 )
 
@@ -14,8 +12,8 @@ def test_parser_default_values():
     assert args.directory is None
     assert args.task == ''
     assert args.file is None
-    assert args.agent_cls == OH_DEFAULT_AGENT
-    assert args.max_iterations == OH_MAX_ITERATIONS
+    assert args.agent_cls is None
+    assert args.max_iterations is None
     assert args.max_budget_per_task is None
     assert args.eval_output_dir == 'evaluation/evaluation_outputs/outputs'
     assert args.eval_n_limit is None
