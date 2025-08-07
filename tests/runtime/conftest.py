@@ -269,7 +269,7 @@ def _load_runtime(
     event_stream = EventStream(sid, file_store)
 
     # Create a LLMRegistry instance for the runtime
-    llm_registry = LLMRegistry(file_store=file_store, conversation_id=sid, user_id=None)
+    llm_registry = LLMRegistry(config=OpenHandsConfig())
 
     runtime = runtime_cls(
         config=config,
