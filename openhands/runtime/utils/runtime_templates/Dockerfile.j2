@@ -56,23 +56,7 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/openhands/
 # Add /openhands/bin to PATH
 ENV PATH="/openhands/bin:${PATH}"
 
-# Remove UID 1000 and GID 1000 users/groups that might conflict with openhands user
-RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
-    (if getent passwd 1000 | grep -q ubuntu; then userdel ubuntu; fi) && \
-    (if getent group 1000 | grep -q pn; then groupdel pn; fi) && \
-    (if getent group 1000 | grep -q ubuntu; then groupdel ubuntu; fi)
 
-# Create openhands group and user
-RUN groupadd -g 1000 openhands && \
-    useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
-    usermod -aG sudo openhands && \
-    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
-# Create necessary directories
-RUN mkdir -p /openhands && \
-    mkdir -p /openhands/logs && \
-    mkdir -p /openhands/poetry && \
-    chown -R openhands:openhands /openhands
 
 
 # ================================================================
@@ -117,6 +101,29 @@ RUN \
 # Configure Docker daemon with MTU 1450 to prevent packet fragmentation issues
 RUN mkdir -p /etc/docker && \
     echo '{"mtu": 1450}' > /etc/docker/daemon.json
+
+# Remove UID 1000 and GID 1000 users/groups that might conflict with openhands user
+RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
+    (if getent passwd 1000 | grep -q ubuntu; then userdel ubuntu; fi) && \
+    (if getent group 1000 | grep -q pn; then groupdel pn; fi) && \
+    (if getent group 1000 | grep -q ubuntu; then groupdel ubuntu; fi)
+
+# Create openhands group and user
+RUN groupadd -g 1000 openhands && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
+    usermod -aG sudo openhands && \
+    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Create necessary directories
+RUN mkdir -p /openhands && \
+    mkdir -p /openhands/logs && \
+    mkdir -p /openhands/poetry && \
+    mkdir -p /workspace && \
+    mkdir -p /workspace/.openhands && \
+    mkdir -p /home/openhands/.openhands && \
+    chown -R openhands:openhands /openhands && \
+    chown -R openhands:openhands /workspace && \
+    chown -R openhands:openhands /home/openhands
 # ================================================================
 
 {% endmacro %}
@@ -241,6 +248,34 @@ COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openh
 {% endif %}
 
 {{ setup_vscode_server() }}
+
+# ================================================================
+# Ensure openhands user and directories exist (for non-scratch builds)
+# ================================================================
+{% if not build_from_scratch %}
+# Remove UID 1000 and GID 1000 users/groups that might conflict with openhands user
+RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
+    (if getent passwd 1000 | grep -q ubuntu; then userdel ubuntu; fi) && \
+    (if getent group 1000 | grep -q pn; then groupdel pn; fi) && \
+    (if getent group 1000 | grep -q ubuntu; then groupdel ubuntu; fi)
+
+# Create openhands group and user if they don't exist
+RUN (getent group openhands || groupadd -g 1000 openhands) && \
+    (getent passwd openhands || useradd -u 1000 -g 1000 -m -s /bin/bash openhands) && \
+    usermod -aG sudo openhands && \
+    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+# Create necessary directories and set ownership
+RUN mkdir -p /openhands && \
+    mkdir -p /openhands/logs && \
+    mkdir -p /openhands/poetry && \
+    mkdir -p /workspace && \
+    mkdir -p /workspace/.openhands && \
+    mkdir -p /home/openhands/.openhands && \
+    chown -R openhands:openhands /openhands && \
+    chown -R openhands:openhands /workspace && \
+    chown -R openhands:openhands /home/openhands
+{% endif %}
 
 # ================================================================
 # Copy Project source files
