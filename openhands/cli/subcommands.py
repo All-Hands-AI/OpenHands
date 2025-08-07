@@ -79,7 +79,10 @@ def create_subcommand_parser() -> argparse.ArgumentParser:
 
 def _add_cli_arguments(parser: argparse.ArgumentParser) -> None:
     """Add CLI arguments to the parser using centralized configuration."""
-    from openhands.cli.args_config import add_common_arguments, add_cli_specific_arguments
-    
+    from openhands.cli.args_config import (
+        add_cli_specific_arguments,
+        add_common_arguments,
+    )
+
     add_common_arguments(parser)
     add_cli_specific_arguments(parser)

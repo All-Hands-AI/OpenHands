@@ -1,7 +1,6 @@
 """Centralized command line argument configuration for OpenHands CLI and headless modes."""
 
 import argparse
-from typing import List, Tuple
 
 from openhands.core.config.config_utils import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS
 
@@ -109,7 +108,7 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-v', '--version', action='store_true', help='Show version information'
     )
-    
+
     # Evaluation-specific arguments
     parser.add_argument(
         '--eval-output-dir',
@@ -141,7 +140,7 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
-    
+
     # Additional headless-specific arguments
     parser.add_argument(
         '--no-auto-continue',

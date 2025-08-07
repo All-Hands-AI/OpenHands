@@ -20,10 +20,6 @@ from openhands.core.config.condenser_config import (
     condenser_config_from_toml_section,
     create_condenser_config,
 )
-from openhands.core.config.config_utils import (
-    OH_DEFAULT_AGENT,
-    OH_MAX_ITERATIONS,
-)
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
@@ -664,7 +660,7 @@ def get_parser() -> argparse.ArgumentParser:
     """Get the argument parser for headless mode."""
     # Import here to avoid circular imports
     from openhands.cli.args_config import create_headless_parser
-    
+
     return create_headless_parser()
 
 
