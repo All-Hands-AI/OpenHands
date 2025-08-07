@@ -81,34 +81,35 @@ jobs:
 
       - name: Start OpenHands application
         run: |
-          # Start the backend and frontend separately
-          mkdir -p logs
-          echo "Starting backend server..."
-          poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 12000 > /tmp/openhands-backend.log 2>&1 &
-          echo "Waiting for the backend to start..."
-
+          # Use make run to start the application with the correct configuration
+          export INSTALL_DOCKER=0
+          export RUNTIME=local
+          export FRONTEND_PORT=12000
+          export FRONTEND_HOST=0.0.0.0
+          export BACKEND_HOST=0.0.0.0
+          export BACKEND_PORT=3000
+          
+          # Start OpenHands in the background
+          make run > /tmp/openhands-e2e-test.log 2>&1 &
+          
+          echo "Waiting for OpenHands to start..."
+          
           # Wait for the backend to be ready (up to 30 seconds)
           for i in {1..30}; do
-            if nc -z localhost 12000; then
-              echo "Backend is running on port 12000"
+            if nc -z localhost 3000; then
+              echo "Backend is running on port 3000"
               break
             fi
 
             if [ $i -eq 30 ]; then
               echo "Timed out waiting for backend to start"
-              cat /tmp/openhands-backend.log
+              cat /tmp/openhands-e2e-test.log
               exit 1
             fi
 
             echo "Waiting for backend to start (attempt $i/30)..."
             sleep 1
           done
-
-          echo "Backend started successfully."
-
-          # Start the frontend in the background
-          echo "Starting frontend..."
-          cd frontend && VITE_BACKEND_HOST=0.0.0.0:12000 VITE_FRONTEND_PORT=12000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
 
           # Wait for the frontend to be ready (up to 30 seconds)
           for i in {1..30}; do
@@ -119,7 +120,7 @@ jobs:
 
             if [ $i -eq 30 ]; then
               echo "Timed out waiting for frontend to start"
-              cat /tmp/openhands-frontend.log
+              cat /tmp/openhands-e2e-test.log
               exit 1
             fi
 
@@ -127,8 +128,8 @@ jobs:
             sleep 1
           done
 
-          echo "Frontend started successfully."
-
+          echo "OpenHands started successfully."
+          
           # Additional wait to ensure the application is fully initialized
           sleep 10
 
