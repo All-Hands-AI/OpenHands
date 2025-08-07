@@ -16,6 +16,7 @@ from fastapi import (
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.research import ResearchMode
 from openhands.events.action.message import MessageAction
@@ -52,7 +53,10 @@ from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
-from openhands.utils.conversation_summary import get_default_conversation_title
+from openhands.utils.conversation_summary import (
+    generate_conversation_title,
+    get_default_conversation_title,
+)
 from openhands.utils.get_user_setting import get_user_setting
 
 app = APIRouter(prefix='/api')
@@ -72,6 +76,7 @@ class InitSessionRequest(BaseModel):
     thread_follow_up: int | None = None
     followup_discover_id: str | None = None
     space_section_id: int | None = None
+    is_generate_title: bool = False
 
 
 class ChangeVisibilityRequest(BaseModel):
@@ -104,6 +109,7 @@ async def _create_new_conversation(
     raw_followup_conversation_id: str | None = None,
     space_section_id: int | None = None,
     output_config: dict | None = None,
+    is_generate_title: bool = False,
 ):
     logger.info(
         'Creating conversation',
@@ -158,7 +164,14 @@ async def _create_new_conversation(
         extra={'user_id': user_id, 'session_id': conversation_id},
     )
 
-    conversation_title = get_default_conversation_title(conversation_id)
+    if is_generate_title:
+        conversation_title = await _llm_generate_title(
+            user_id=user_id,
+            first_user_message=initial_user_msg,
+            conversation_id=conversation_id,
+        )
+    else:
+        conversation_title = get_default_conversation_title(conversation_id)
 
     logger.info(f'Saving metadata for conversation {conversation_id}')
     await conversation_store.save_metadata(
@@ -218,6 +231,10 @@ async def _create_new_conversation(
 
 
 @app.post('/conversations')
+async def app_new_conversation(request: Request, data: InitSessionRequest):
+    return await new_conversation(request, data)
+
+
 async def new_conversation(request: Request, data: InitSessionRequest):
     """Initialize a new session or join an existing one.
 
@@ -249,6 +266,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         system_prompt = await get_system_prompt_by_space_id_from_thesis_auth_server(
             int(space_id), bearer_token, x_device_id
         )
+    is_generate_title = data.is_generate_title
 
     try:
         knowledge_base = None
@@ -302,6 +320,7 @@ async def new_conversation(request: Request, data: InitSessionRequest):
             raw_followup_conversation_id=raw_followup_conversation_id,
             space_section_id=space_section_id,
             output_config=output_config,
+            is_generate_title=is_generate_title,
         )
 
         end_time = time.time()
@@ -734,3 +753,32 @@ async def _get_conversation_info(
             extra={'session_id': conversation.conversation_id},
         )
         return None
+
+
+async def _llm_generate_title(
+    user_id: str | None, first_user_message: str | None, conversation_id: str
+) -> str:
+    if not user_id or not first_user_message:
+        return get_default_conversation_title(conversation_id)
+
+    try:
+        settings = await get_user_setting(user_id)
+
+        if settings and settings.llm_model:
+            # Create LLM config from settings
+            llm_config = LLMConfig(
+                model=settings.llm_model,
+                api_key=settings.llm_api_key,
+                base_url=settings.llm_base_url,
+            )
+
+            # Try to generate title using LLM
+            llm_title = await generate_conversation_title(
+                first_user_message, llm_config
+            )
+            if llm_title:
+                logger.info(f'Generated title using LLM: {llm_title}')
+                return llm_title
+    except Exception as e:
+        logger.error(f'Error using LLM for title generation: {e}')
+    return get_default_conversation_title(conversation_id)

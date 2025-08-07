@@ -1,5 +1,7 @@
+import json
 import os
 import time
+import urllib.parse
 from enum import Enum, IntEnum
 
 import httpx
@@ -45,6 +47,10 @@ thesis_auth_client = httpx.AsyncClient(
     base_url=os.getenv('THESIS_AUTH_SERVER_URL', ''),
     headers={'Content-Type': 'application/json'},
 )
+
+
+def check_success_response(response: httpx.Response) -> bool:
+    return response.status_code // 100 == 2
 
 
 async def get_user_detail_from_thesis_auth_server(
@@ -523,3 +529,147 @@ async def check_feature_credit(
     except Exception as e:
         logger.exception('Unexpected error while check feature credit')
         raise HTTPException(status_code=500, detail=str(e))
+
+
+async def generate_access_token_from_api_key(api_key: str | None = None) -> dict:
+    if not api_key:
+        return {}
+    url = '/api/user-integration-keys/gen-access-token'
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+        'Authorization': f'Bearer {api_key}',
+    }
+    response = await thesis_auth_client.post(url, headers=headers)
+    response_data = response.json()
+    if response_data.get('token'):
+        response_data['accessToken'] = response_data['token']
+    return response_data
+
+
+async def generate_access_token_from_refresh_token(
+    refresh_token: str | None = None,
+) -> dict:
+    if not refresh_token:
+        return {}
+    url = '/api/users/refresh-token'
+    headers = {
+        'Content-Type': 'application/json',
+        'x-key-oh': os.getenv('KEY_THESIS_BACKEND_SERVER'),
+    }
+    payload = {'refreshToken': refresh_token}
+    response = await thesis_auth_client.post(url, headers=headers, json=payload)
+    return response.json()
+
+
+async def get_user_detail_by_api_key(
+    api_key: str,
+) -> tuple[ThesisUser | None, str | None]:
+    response_data = await generate_access_token_from_api_key(api_key)
+    if not (response_data and response_data.get('accessToken')):
+        logger.error(f'Failed to get user detail from api key: {response_data}')
+        raise HTTPException(
+            status_code=401,
+            detail='Invalid API key',
+        )
+
+    access_token = response_data.get('accessToken')
+    user_data = await get_user_detail_from_thesis_auth_server(f'Bearer {access_token}')
+    if not user_data:
+        return None, None
+
+    return user_data, access_token
+
+
+async def get_list_space(
+    bearer_token: str,
+    offset: int = 0,
+    limit: int = 10,
+    title: str | None = None,
+) -> dict | None:
+    url = '/api/spaces/my-space'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': bearer_token,
+    }
+    params: dict[str, str | int] = {
+        'offset': offset,
+        'limit': limit,
+    }
+    if title:
+        params['filters'] = urllib.parse.quote(json.dumps({'title': title}))
+
+    params_string = '&'.join([f'{k}={v}' for k, v in params.items()])
+    url = f'{url}?{params_string}'
+    response = await thesis_auth_client.get(url, headers=headers)
+    if not check_success_response(response):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get('error', 'Unknown error'),
+        )
+    return response.json()
+
+
+async def get_space_detail(
+    space_id: str,
+    bearer_token: str,
+) -> dict | None:
+    url = f'/api/spaces/{space_id}'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': bearer_token,
+    }
+    response = await thesis_auth_client.get(url, headers=headers)
+    if not check_success_response(response):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get('error', 'Unknown error'),
+        )
+    if not response.json().get('data'):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail='Space not found',
+        )
+    return response.json()
+
+
+async def get_list_sections(
+    space_id: str,
+    bearer_token: str,
+) -> dict | None:
+    url = f'/api/spaces/{space_id}/section/get-all'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': bearer_token,
+    }
+    response = await thesis_auth_client.get(url, headers=headers)
+    if not check_success_response(response):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get('error', 'Unknown error'),
+        )
+    return response.json()
+
+
+async def update_space_section_history(
+    space_id: str,
+    section_id: str,
+    conversation_id: str,
+    bearer_token: str,
+) -> dict | None:
+    url = f'api/spaces/{space_id}/section-history'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': bearer_token,
+    }
+    payload = {
+        'conversationId': conversation_id,
+        'spaceSectionId': section_id,
+    }
+    response = await thesis_auth_client.post(url, headers=headers, json=payload)
+    if not check_success_response(response):
+        raise HTTPException(
+            status_code=response.status_code,
+            detail=response.json().get('error', 'Unknown error'),
+        )
+    return response.json()

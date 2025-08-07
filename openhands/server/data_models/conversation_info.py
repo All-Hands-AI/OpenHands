@@ -18,3 +18,16 @@ class ConversationInfo:
     selected_repository: str | None = None
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     research_mode: str | None = None
+
+
+@dataclass
+class ConversationDetailInfo:
+    conversation_id: str
+    title: str
+    last_updated_at: datetime | None = None
+    status: ConversationStatus = ConversationStatus.STOPPED
+    selected_repository: str | None = None
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    research_mode: str | None = None
+    events: list[dict | None] | None = None
+    final_result: str | dict | None = None
