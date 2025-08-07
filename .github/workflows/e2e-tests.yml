@@ -70,22 +70,8 @@ jobs:
           git config --unset-all core.hooksPath || true
           poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml
 
-      - name: Run basic end-to-end tests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      - name: Setup workspace for end-to-end tests
         run: |
-          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_readme_line_count test_workflow.py::test_simple_browser_navigation -v
-
-      - name: Start OpenHands application
-        run: |
-          # Initialize the unified log file
-          echo "=== OpenHands E2E Test Log ===" > /tmp/openhands-e2e-test.log
-          echo "Started at: $(date)" >> /tmp/openhands-e2e-test.log
-          echo "" >> /tmp/openhands-e2e-test.log
-          
           # Create workspace directory structure that the runner can write to
           mkdir -p /tmp/openhands-workspace/.downloads
           chmod -R 755 /tmp/openhands-workspace
@@ -94,112 +80,23 @@ jobs:
           sudo mkdir -p /workspace/.downloads
           sudo chown -R $(id -u):$(id -g) /workspace
           sudo chmod -R 755 /workspace
-          
-          # Set environment variables for OpenHands
-          export SANDBOX_VOLUMES=/tmp/openhands-workspace:/workspace:rw
-          export SANDBOX_USER_ID=$(id -u)
-          export SANDBOX_RUNTIME=local
-          export INSTALL_DOCKER=0
-          export RUNTIME=local
-          export FRONTEND_PORT=12000
-          export FRONTEND_HOST=0.0.0.0
-          export BACKEND_HOST=0.0.0.0
-          export BACKEND_PORT=3000
-          
-          # Start the backend and frontend manually with proper debugging
-          mkdir -p logs
-          
-          echo "Starting backend server on port 3000..." | tee -a /tmp/openhands-e2e-test.log
-          echo "Environment variables:" | tee -a /tmp/openhands-e2e-test.log
-          echo "  SANDBOX_VOLUMES=$SANDBOX_VOLUMES" | tee -a /tmp/openhands-e2e-test.log
-          echo "  SANDBOX_USER_ID=$SANDBOX_USER_ID" | tee -a /tmp/openhands-e2e-test.log
-          echo "  RUNTIME=$RUNTIME" | tee -a /tmp/openhands-e2e-test.log
-          
-          poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 > /tmp/openhands-backend.log 2>&1 &
-          BACKEND_PID=$!
-          echo "Backend PID: $BACKEND_PID" | tee -a /tmp/openhands-e2e-test.log
-          
-          echo "Waiting for the backend to start..." | tee -a /tmp/openhands-e2e-test.log
-          # Wait for the backend to be ready (up to 60 seconds)
-          for i in {1..60}; do
-            if nc -z localhost 3000; then
-              echo "Backend is running on port 3000" | tee -a /tmp/openhands-e2e-test.log
-              break
-            fi
-
-            if [ $i -eq 60 ]; then
-              echo "Timed out waiting for backend to start" | tee -a /tmp/openhands-e2e-test.log
-              echo "=== Backend Log ===" >> /tmp/openhands-e2e-test.log
-              cat /tmp/openhands-backend.log >> /tmp/openhands-e2e-test.log
-              echo "=== Backend Process Status ===" >> /tmp/openhands-e2e-test.log
-              ps aux | grep uvicorn >> /tmp/openhands-e2e-test.log || echo "No uvicorn process found" >> /tmp/openhands-e2e-test.log
-              exit 1
-            fi
-
-            if [ $((i % 10)) -eq 0 ]; then
-              echo "Waiting for backend to start (attempt $i/60)..." | tee -a /tmp/openhands-e2e-test.log
-            fi
-            sleep 1
-          done
-
-          echo "Backend started successfully." | tee -a /tmp/openhands-e2e-test.log
-
-          # Start the frontend in the background
-          echo "Starting frontend on port 12000..." | tee -a /tmp/openhands-e2e-test.log
-          cd frontend
-          VITE_BACKEND_HOST=0.0.0.0:3000 VITE_FRONTEND_PORT=12000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
-          FRONTEND_PID=$!
-          echo "Frontend PID: $FRONTEND_PID" | tee -a /tmp/openhands-e2e-test.log
-          cd ..
-
-          # Wait for the frontend to be ready (up to 60 seconds)
-          for i in {1..60}; do
-            if nc -z localhost 12000; then
-              echo "Frontend is running on port 12000" | tee -a /tmp/openhands-e2e-test.log
-              break
-            fi
-
-            if [ $i -eq 60 ]; then
-              echo "Timed out waiting for frontend to start" | tee -a /tmp/openhands-e2e-test.log
-              echo "=== Frontend Log ===" >> /tmp/openhands-e2e-test.log
-              cat /tmp/openhands-frontend.log >> /tmp/openhands-e2e-test.log
-              echo "=== Frontend Process Status ===" >> /tmp/openhands-e2e-test.log
-              ps aux | grep npm >> /tmp/openhands-e2e-test.log || echo "No npm process found" >> /tmp/openhands-e2e-test.log
-              exit 1
-            fi
-
-            if [ $((i % 10)) -eq 0 ]; then
-              echo "Waiting for frontend to start (attempt $i/60)..." | tee -a /tmp/openhands-e2e-test.log
-            fi
-            sleep 1
-          done
-
-          echo "Frontend started successfully." | tee -a /tmp/openhands-e2e-test.log
-          
-          # Additional wait to ensure the application is fully initialized
-          echo "Waiting for application to fully initialize..." | tee -a /tmp/openhands-e2e-test.log
-          sleep 10
-          
-          echo "Both backend and frontend are running successfully." | tee -a /tmp/openhands-e2e-test.log
-          echo "Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID" | tee -a /tmp/openhands-e2e-test.log
-          
-          # Test connectivity
-          echo "Testing backend connectivity..." | tee -a /tmp/openhands-e2e-test.log
-          curl -f http://localhost:3000/api/options/models || echo "Backend health check failed" | tee -a /tmp/openhands-e2e-test.log
-          
-          echo "Testing frontend connectivity..." | tee -a /tmp/openhands-e2e-test.log
-          curl -f http://localhost:12000/ || echo "Frontend health check failed" | tee -a /tmp/openhands-e2e-test.log
 
       - name: Run full end-to-end tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          SANDBOX_VOLUMES: /tmp/openhands-workspace:/workspace:rw
+          SANDBOX_USER_ID: 1000
+          SANDBOX_RUNTIME: local
+          INSTALL_DOCKER: 0
+          RUNTIME: local
+          FRONTEND_PORT: 12000
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BACKEND_PORT: 3000
         run: |
-          # Check if Docker is running
-          if ! docker info > /dev/null 2>&1; then
-            echo "Docker is not running, attempting to start it"
-            sudo systemctl start docker || true
-            sleep 5
-          fi
-
-          # Run the test
           cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
 
       - name: Upload test results
