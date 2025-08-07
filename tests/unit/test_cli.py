@@ -366,6 +366,7 @@ async def test_main_without_task(
     mock_args.llm_config = None
     mock_args.name = None
     mock_args.file = None
+    mock_args.conversation = None
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -419,6 +420,7 @@ async def test_main_without_task(
         None,
         session_name=None,
         skip_banner=False,
+        conversation_id=None,
     )
 
 
@@ -560,6 +562,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_args.llm_config = None
     mock_args.name = test_session_name  # Set the session name
     mock_args.file = None
+    mock_args.conversation = None
     mock_parse_args.return_value = mock_args
 
     # Mock config
@@ -613,6 +616,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
         None,
         session_name=test_session_name,
         skip_banner=False,
+        conversation_id=None,
     )
 
 

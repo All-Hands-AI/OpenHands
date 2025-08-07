@@ -12,7 +12,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -148,8 +148,8 @@ class Session:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(
-            sse_servers=[], stdio_servers=[]
+        self.logger.debug(
+            f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
@@ -157,9 +157,16 @@ class Session:
                 self.config.mcp_host, self.config, self.user_id
             )
         )
+
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
+            self.logger.debug('Added default MCP HTTP server to config')
+
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        self.logger.debug(
+            f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
+        )
 
         # TODO: override other LLM config & agent config groups (#2075)
         agent_config = self.config.get_agent_config(agent_cls)
@@ -261,6 +268,7 @@ class Session:
 
     async def _on_event(self, event: Event) -> None:
         """Callback function for events that mainly come from the agent.
+
         Event is the base class for any agent action and observation.
 
         Args:

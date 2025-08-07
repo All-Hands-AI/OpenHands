@@ -130,12 +130,13 @@ async def run_session(
     conversation_instructions: str | None = None,
     session_name: str | None = None,
     skip_banner: bool = False,
+    conversation_id: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
     exit_reason = ExitReason.INTENTIONAL
 
-    sid = generate_sid(config, session_name)
+    sid = conversation_id or generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -713,6 +714,7 @@ After reviewing the file, please ask the user what they would like to do with it
         task_str,
         session_name=args.name,
         skip_banner=banner_shown,
+        conversation_id=args.conversation,
     )
 
     # If a new session was requested, run it
