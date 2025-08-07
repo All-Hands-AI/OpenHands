@@ -108,11 +108,6 @@ def main():
         inner_report = f' python3 -m src.main --dataset_name princeton-nlp/SWE-bench_Verified --predictions_path {swt_converted} --max_workers 12 --run_id {eval_note} --patch_types vanilla  --build_mode api'
         report = f'(pushd ./evaluation/benchmarks/versabench/versabench_cache/swt-bench && source .venv/bin/activate && {inner_report} && popd)'
         eval_benchmark('swt', f'{convert} ; {report}')
-    if args.multimodal:
-        eval_benchmark(
-            'multimodal',
-            f'export RUNTIME=""; ./evaluation/benchmarks/swe_bench/scripts/eval_infer.sh {args.multimodal}  "" princeton-nlp/SWE-bench_Multimodal test',
-        )
     if args.multi_swe:
         config_path = update_multi_swe_config(args.multi_swe)
         eval_benchmark(
@@ -131,7 +126,8 @@ def main():
             'the-agent-company',
             f'./evaluation/benchmarks/the_agent_company/scripts/eval_infer.sh  {args.the_agent_company}',
         )
-
+    if args.multimodal:
+        logger.info("Automatic evaluation of MultiModal is not supported at the moment, please submit manually. See https://github.com/swe-bench/sb-cli")
 
 if __name__ == '__main__':
     main()
