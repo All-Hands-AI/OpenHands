@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import MutableMapping, get_args, get_origin, get_type_hints
+from typing import Any, MutableMapping, get_args, get_origin, get_type_hints
 from uuid import uuid4
 
 import toml
@@ -19,10 +19,6 @@ from openhands.core.config.condenser_config import (
     CondenserConfig,
     condenser_config_from_toml_section,
     create_condenser_config,
-)
-from openhands.core.config.config_utils import (
-    OH_DEFAULT_AGENT,
-    OH_MAX_ITERATIONS,
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
@@ -75,6 +71,7 @@ def load_from_env(
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
+            cast_value: Any
             if isinstance(field_value, BaseModel):
                 set_attr_from_env(field_value, prefix=field_name + '_')
 
@@ -94,7 +91,7 @@ def load_from_env(
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
-                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS                                                                                                                                     │
+                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS
                     elif (
                         get_origin(field_type) is dict
                         or get_origin(field_type) is list
@@ -102,6 +99,20 @@ def load_from_env(
                         or field_type is list
                     ):
                         cast_value = literal_eval(value)
+                        # If it's a list of Pydantic models
+                        if get_origin(field_type) is list:
+                            inner_type = get_args(field_type)[
+                                0
+                            ]  # e.g., MCPSHTTPServerConfig
+                            if isinstance(inner_type, type) and issubclass(
+                                inner_type, BaseModel
+                            ):
+                                cast_value = [
+                                    inner_type(**item)
+                                    if isinstance(item, dict)
+                                    else item
+                                    for item in cast_value
+                                ]
                     else:
                         if field_type is not None:
                             cast_value = field_type(value)
@@ -697,14 +708,14 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=OH_DEFAULT_AGENT,
+        default=None,
         type=str,
         help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=OH_MAX_ITERATIONS,
+        default=None,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
@@ -758,6 +769,12 @@ def get_parser() -> argparse.ArgumentParser:
         help='Session name',
         type=str,
         default='',
+    )
+    parser.add_argument(
+        '--conversation',
+        help='The conversation id to continue',
+        type=str,
+        default=None,
     )
     parser.add_argument(
         '--eval-ids',

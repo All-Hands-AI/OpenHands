@@ -49,7 +49,9 @@ from openhands.core.config import (
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import (
+    OpenHandsMCPConfigImpl,
+)
 from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -127,12 +129,13 @@ async def run_session(
     conversation_instructions: str | None = None,
     session_name: str | None = None,
     skip_banner: bool = False,
+    conversation_id: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
     exit_reason = ExitReason.INTENTIONAL
 
-    sid = generate_sid(config, session_name)
+    sid = conversation_id or generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -188,6 +191,7 @@ async def run_session(
                 config,
                 current_dir,
                 settings_store,
+                agent_state,
             )
 
             if close_repl:
@@ -702,6 +706,7 @@ After reviewing the file, please ask the user what they would like to do with it
         task_str,
         session_name=args.name,
         skip_banner=banner_shown,
+        conversation_id=args.conversation,
     )
 
     # If a new session was requested, run it
