@@ -28,10 +28,16 @@ interface MCPServerFormProps {
   onCancel: () => void;
 }
 
-export function MCPServerForm({ mode, server, existingServers, onSubmit, onCancel }: MCPServerFormProps) {
+export function MCPServerForm({
+  mode,
+  server,
+  existingServers,
+  onSubmit,
+  onCancel,
+}: MCPServerFormProps) {
   const { t } = useTranslation();
   const [serverType, setServerType] = React.useState<MCPServerType>(
-    server?.type || "sse"
+    server?.type || "sse",
   );
   const [error, setError] = React.useState<string | null>(null);
 
@@ -67,12 +73,15 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
       if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
         return t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
       }
-      
+
       // Check for uniqueness (only for add mode or if name changed in edit mode)
-      if (existingServers && (mode === "add" || (mode === "edit" && server?.name !== name))) {
+      if (
+        existingServers &&
+        (mode === "add" || (mode === "edit" && server?.name !== name))
+      ) {
         const existingStdioNames = existingServers
-          .filter(s => s.type === "stdio")
-          .map(s => s.name)
+          .filter((s) => s.type === "stdio")
+          .map((s) => s.name)
           .filter(Boolean);
         if (existingStdioNames.includes(name)) {
           return t(I18nKey.SETTINGS$MCP_ERROR_NAME_DUPLICATE);
@@ -89,22 +98,24 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
     return null;
   };
 
-  const parseEnvironmentVariables = (envString: string): Record<string, string> => {
+  const parseEnvironmentVariables = (
+    envString: string,
+  ): Record<string, string> => {
     const env: Record<string, string> = {};
     if (!envString.trim()) return env;
 
     const lines = envString.split("\n");
     for (const line of lines) {
       const trimmedLine = line.trim();
-      if (!trimmedLine) continue;
-
-      const equalIndex = trimmedLine.indexOf("=");
-      if (equalIndex === -1) continue;
-
-      const key = trimmedLine.substring(0, equalIndex).trim();
-      const value = trimmedLine.substring(equalIndex + 1).trim();
-      if (key) {
-        env[key] = value;
+      if (trimmedLine) {
+        const equalIndex = trimmedLine.indexOf("=");
+        if (equalIndex !== -1) {
+          const key = trimmedLine.substring(0, equalIndex).trim();
+          const value = trimmedLine.substring(equalIndex + 1).trim();
+          if (key) {
+            env[key] = value;
+          }
+        }
       }
     }
     return env;
@@ -136,12 +147,12 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
 
     if (serverType === "sse" || serverType === "shttp") {
       const url = formData.get("url")?.toString().trim();
-      const api_key = formData.get("api_key")?.toString().trim();
+      const apiKey = formData.get("api_key")?.toString().trim();
 
       onSubmit({
         ...baseConfig,
         url: url!,
-        ...(api_key && { api_key }),
+        ...(apiKey && { api_key: apiKey }),
       });
     } else if (serverType === "stdio") {
       const name = formData.get("name")?.toString().trim();
@@ -150,7 +161,10 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
       const envString = formData.get("env")?.toString().trim();
 
       const args = argsString
-        ? argsString.split("\n").map((arg) => arg.trim()).filter(Boolean)
+        ? argsString
+            .split("\n")
+            .map((arg) => arg.trim())
+            .filter(Boolean)
         : [];
       const env = parseEnvironmentVariables(envString || "");
 
@@ -164,7 +178,8 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
     }
   };
 
-  const formTestId = mode === "add" ? "add-mcp-server-form" : "edit-mcp-server-form";
+  const formTestId =
+    mode === "add" ? "add-mcp-server-form" : "edit-mcp-server-form";
 
   return (
     <form
@@ -180,7 +195,6 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
           items={serverTypeOptions}
           selectedKey={serverType}
           onSelectionChange={(key) => setServerType(key as MCPServerType)}
-          inputValue={serverTypeOptions.find(opt => opt.key === serverType)?.label || ""}
           onInputChange={() => {}} // Prevent input changes
           isClearable={false}
           allowsCustomValue={false}
@@ -244,7 +258,9 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_COMMAND_ARGUMENTS)}</span>
+              <span className="text-sm">
+                {t(I18nKey.SETTINGS$MCP_COMMAND_ARGUMENTS)}
+              </span>
               <OptionalTag />
             </div>
             <textarea
@@ -255,7 +271,7 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
               placeholder="arg1&#10;arg2&#10;arg3"
               className={cn(
                 "bg-tertiary border border-[#717888] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt resize-none",
-                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
+                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
               )}
             />
             <p className="text-xs text-tertiary-alt">
@@ -265,7 +281,9 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ENVIRONMENT_VARIABLES)}</span>
+              <span className="text-sm">
+                {t(I18nKey.SETTINGS$MCP_ENVIRONMENT_VARIABLES)}
+              </span>
               <OptionalTag />
             </div>
             <textarea
@@ -277,7 +295,7 @@ export function MCPServerForm({ mode, server, existingServers, onSubmit, onCance
               className={cn(
                 "resize-none",
                 "bg-tertiary border border-[#717888] rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
-                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
+                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed",
               )}
             />
           </label>
