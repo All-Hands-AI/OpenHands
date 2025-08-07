@@ -5,6 +5,7 @@ from argparse import ArgumentParser, _SubParsersAction
 
 from openhands.core.config.config_utils import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS
 
+
 def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
     for action in parser._actions:
         if isinstance(action, _SubParsersAction):
