@@ -45,7 +45,6 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
     OpenHandsConfig,
-    parse_arguments,
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
@@ -522,11 +521,8 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     print_formatted_text('')
 
 
-async def main_with_loop(loop: asyncio.AbstractEventLoop, args=None) -> None:
+async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     """Runs the agent in CLI mode."""
-    if args is None:
-        args = parse_arguments()
-
     # Set log level from command line argument if provided
     if args.log_level and isinstance(args.log_level, str):
         log_level = getattr(logging, str(args.log_level).upper())
@@ -574,13 +570,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args=None) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
-        # Handle agent configuration
-        if args.agent_cls:
-            config.default_agent = str(args.agent_cls)
-        else:
-            # settings.agent is not None because we check for it in setup_config_from_args
-            assert settings.agent is not None
-            config.default_agent = settings.agent
+        # settings.agent is not None because we check for it in setup_config_from_args
+        assert settings.agent is not None
+        config.default_agent = settings.agent
 
         # Handle LLM configuration with proper precedence:
         # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
@@ -722,14 +714,14 @@ def run_cli_command(args):
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main_with_loop(args))
+        loop.run_until_complete(main_with_loop(loop, args))
     except KeyboardInterrupt:
-        print('⚠️ Session was interrupted: interrupted\n')
+        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
-        print(f'Connection refused: {e}')
+        print_formatted_text(f'Connection refused: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f'An error occurred: {e}')
+        print_formatted_text(f'An error occurred: {e}')
         sys.exit(1)
     finally:
         try:
@@ -742,5 +734,5 @@ def run_cli_command(args):
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print(f'Error during cleanup: {e}')
+            print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)

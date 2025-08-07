@@ -763,17 +763,17 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
         )
 
     # Override default agent if provided
-    if args.agent_cls:
+    if hasattr(args, 'agent_cls') and args.agent_cls:
         config.default_agent = args.agent_cls
 
     # Set max iterations and max budget per task if provided, otherwise fall back to config values
-    if args.max_iterations is not None:
+    if hasattr(args, 'max_iterations') and args.max_iterations is not None:
         config.max_iterations = args.max_iterations
-    if args.max_budget_per_task is not None:
+    if hasattr(args, 'max_budget_per_task') and args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
     # Read selected repository in config for use by CLI and main.py
-    if args.selected_repo is not None:
+    if hasattr(args, 'selected_repo') and args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
     return config

@@ -1,8 +1,16 @@
 """Centralized command line argument configuration for OpenHands CLI and headless modes."""
 
 import argparse
+from argparse import ArgumentParser, _SubParsersAction
 
 from openhands.core.config.config_utils import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS
+
+def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
+    for action in parser._actions:
+        if isinstance(action, _SubParsersAction):
+            if name in action.choices:
+                return action.choices[name]
+    raise ValueError(f"Subparser '{name}' not found")
 
 
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
@@ -38,6 +46,19 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         help='Set the log level',
         type=str,
         default=None,
+    )
+    parser.add_argument(
+        '-l',
+        '--llm-config',
+        default=None,
+        type=str,
+        help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
+    )
+    parser.add_argument(
+        '--agent-config',
+        default=None,
+        type=str,
+        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
     parser.add_argument(
         '-v', '--version', action='store_true', help='Show version information'
@@ -106,19 +127,6 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
         '--max-budget-per-task',
         type=float,
         help='The maximum budget allowed per task, beyond which the agent will stop.',
-    )
-    parser.add_argument(
-        '-l',
-        '--llm-config',
-        default=None,
-        type=str,
-        help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
-    )
-    parser.add_argument(
-        '--agent-config',
-        default=None,
-        type=str,
-        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
     # Additional headless-specific arguments
     parser.add_argument(
