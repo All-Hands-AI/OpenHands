@@ -5,48 +5,63 @@ on:
     types: [opened, synchronize, reopened, labeled]
   workflow_dispatch:
 
+# If triggered by a PR, it will be in the same group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   e2e-tests:
     if: contains(github.event.pull_request.labels.*.name, 'end-to-end') || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2204
     timeout-minutes: 15
 
     env:
       RUNTIME: local
       INSTALL_DOCKER: 1
-      FRONTEND_PORT: 12001
+      FRONTEND_PORT: 12000
       FRONTEND_HOST: 0.0.0.0
       BACKEND_HOST: 0.0.0.0
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: useblacksmith/setup-python@v6
         with:
           python-version: '3.12'
-
-      - name: Install Poetry
-        run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          cache: 'poetry'
+          
+      - name: Setup Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: '22.x'
 
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 netcat-openbsd docker.io
+          sudo apt-get install -y libgtk-3-0 netcat-openbsd docker.io tmux
           sudo systemctl start docker
           sudo usermod -aG docker $USER
-
+          
+      - name: Install Python dependencies using Poetry
+        run: poetry install --with dev,test,runtime
+          
+      - name: Install Playwright
+        run: |
+          poetry run playwright install --with-deps chromium
+          
       - name: Build OpenHands
         run: |
           make build
-
-      - name: Install Playwright
-        run: |
-          poetry install --with test
-          poetry run playwright install --with-deps chromium
 
       - name: Run basic end-to-end tests
         run: |
@@ -55,14 +70,39 @@ jobs:
       - name: Start OpenHands application
         run: |
           make run > /tmp/openhands-e2e-test.log 2>&1 &
-          sleep 30  # Wait for the application to start
+          echo "Waiting for OpenHands to start..."
+          
+          # Wait for the application to be ready (up to 60 seconds)
+          for i in {1..60}; do
+            if nc -z localhost 12000; then
+              echo "OpenHands is running on port 12000"
+              break
+            fi
+            
+            if [ $i -eq 60 ]; then
+              echo "Timed out waiting for OpenHands to start"
+              cat /tmp/openhands-e2e-test.log
+              exit 1
+            fi
+            
+            echo "Waiting for OpenHands to start (attempt $i/60)..."
+            sleep 1
+          done
+          
+          # Additional wait to ensure the application is fully initialized
+          sleep 10
 
       - name: Run full end-to-end tests (if Docker is available)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
         run: |
           if docker ps > /dev/null 2>&1; then
-            cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v || true
+            cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
           else
             echo "Docker is not available, skipping full end-to-end tests"
+            exit 1
           fi
 
       - name: Upload test results
