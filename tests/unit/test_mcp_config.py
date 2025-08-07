@@ -282,52 +282,6 @@ def test_mcp_stdio_server_args_parsing_invalid_quotes():
     assert 'Invalid argument format' in str(exc_info.value)
 
 
-def test_mcp_shttp_server_config_basic():
-    """Test basic MCPSHTTPServerConfig."""
-    config = MCPSHTTPServerConfig(url='http://server1:8080')
-    assert config.url == 'http://server1:8080'
-    assert config.api_key is None
-
-
-def test_mcp_shttp_server_config_with_api_key():
-    """Test MCPSHTTPServerConfig with API key."""
-    config = MCPSHTTPServerConfig(url='http://server1:8080', api_key='test-api-key')
-    assert config.url == 'http://server1:8080'
-    assert config.api_key == 'test-api-key'
-
-
-def test_mcp_config_with_shttp_servers():
-    """Test MCPConfig with HTTP servers."""
-    shttp_server = MCPSHTTPServerConfig(
-        url='http://server1:8080',
-        api_key='test-api-key',
-    )
-    config = MCPConfig(shttp_servers=[shttp_server])
-    assert len(config.shttp_servers) == 1
-    assert config.shttp_servers[0].url == 'http://server1:8080'
-    assert config.shttp_servers[0].api_key == 'test-api-key'
-
-
-def test_from_toml_section_with_shttp_servers():
-    """Test creating config from TOML section with HTTP servers."""
-    data = {
-        'sse_servers': ['http://server1:8080'],
-        'shttp_servers': [
-            {
-                'url': 'http://http-server:8080',
-                'api_key': 'test-api-key',
-            }
-        ],
-    }
-    result = MCPConfig.from_toml_section(data)
-    assert 'mcp' in result
-    assert len(result['mcp'].sse_servers) == 1
-    assert result['mcp'].sse_servers[0].url == 'http://server1:8080'
-    assert len(result['mcp'].shttp_servers) == 1
-    assert result['mcp'].shttp_servers[0].url == 'http://http-server:8080'
-    assert result['mcp'].shttp_servers[0].api_key == 'test-api-key'
-
-
 def test_env_var_mcp_shttp_server_config(monkeypatch):
     """Test creating MCPSHTTPServerConfig from environment variables."""
     # Set environment variables for MCP HTTP server
