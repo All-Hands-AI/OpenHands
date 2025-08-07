@@ -3,6 +3,7 @@
 import sys
 
 import openhands
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.gui_launcher import launch_gui_server
 from openhands.cli.main import run_cli_command
 from openhands.core.config import get_cli_parser
