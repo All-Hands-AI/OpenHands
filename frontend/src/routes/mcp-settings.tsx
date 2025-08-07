@@ -243,6 +243,7 @@ function MCPSettingsScreen() {
       {view === "add" && (
         <MCPServerForm
           mode="add"
+          existingServers={allServers}
           onSubmit={handleAddServer}
           onCancel={() => setView("list")}
         />
@@ -252,6 +253,7 @@ function MCPSettingsScreen() {
         <MCPServerForm
           mode="edit"
           server={editingServer}
+          existingServers={allServers}
           onSubmit={handleEditServer}
           onCancel={() => {
             setView("list");

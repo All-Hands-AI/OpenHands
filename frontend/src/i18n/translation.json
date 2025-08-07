@@ -1343,6 +1343,22 @@
         "de": "Name darf nur Buchstaben, Zahlen, Bindestriche und Unterstriche enthalten",
         "uk": "Ім'я може містити лише літери, цифри, дефіси та підкреслення"
     },
+    "SETTINGS$MCP_ERROR_NAME_DUPLICATE": {
+        "en": "A STDIO server with this name already exists",
+        "ja": "この名前のSTDIOサーバーは既に存在します",
+        "zh-CN": "已存在同名的STDIO服务器",
+        "zh-TW": "已存在同名的STDIO伺服器",
+        "ko-KR": "이 이름의 STDIO 서버가 이미 존재합니다",
+        "no": "En STDIO-server med dette navnet eksisterer allerede",
+        "it": "Un server STDIO con questo nome esiste già",
+        "pt": "Um servidor STDIO com este nome já existe",
+        "es": "Ya existe un servidor STDIO con este nombre",
+        "ar": "يوجد بالفعل خادم STDIO بهذا الاسم",
+        "fr": "Un serveur STDIO avec ce nom existe déjà",
+        "tr": "Bu adda bir STDIO sunucusu zaten mevcut",
+        "de": "Ein STDIO-Server mit diesem Namen existiert bereits",
+        "uk": "STDIO сервер з цим ім'ям вже існує"
+    },
     "SETTINGS$MCP_ERROR_NAME_REQUIRED": {
         "en": "Name is required",
         "ja": "名前は必須です",
@@ -1534,6 +1550,22 @@
         "tr": "Komut argümanları",
         "de": "Befehlsargumente",
         "uk": "Аргументи команди"
+    },
+    "SETTINGS$MCP_COMMAND_ARGUMENTS_HELP": {
+        "en": "Enter each argument on a separate line. Arguments will be passed to the command in the order listed.",
+        "ja": "各引数を別々の行に入力してください。引数はリストされた順序でコマンドに渡されます。",
+        "zh-CN": "每行输入一个参数。参数将按列出的顺序传递给命令。",
+        "zh-TW": "每行輸入一個參數。參數將按列出的順序傳遞給指令。",
+        "ko-KR": "각 인수를 별도의 줄에 입력하세요. 인수는 나열된 순서대로 명령어에 전달됩니다.",
+        "no": "Skriv inn hvert argument på en egen linje. Argumenter vil bli sendt til kommandoen i den rekkefølgen de er oppført.",
+        "it": "Inserisci ogni argomento su una riga separata. Gli argomenti verranno passati al comando nell'ordine elencato.",
+        "pt": "Digite cada argumento em uma linha separada. Os argumentos serão passados para o comando na ordem listada.",
+        "es": "Ingrese cada argumento en una línea separada. Los argumentos se pasarán al comando en el orden listado.",
+        "ar": "أدخل كل معامل في سطر منفصل. سيتم تمرير المعاملات إلى الأمر بالترتيب المدرج.",
+        "fr": "Entrez chaque argument sur une ligne séparée. Les arguments seront passés à la commande dans l'ordre listé.",
+        "tr": "Her argümanı ayrı bir satıra girin. Argümanlar listedeki sırayla komuta aktarılacaktır.",
+        "de": "Geben Sie jedes Argument in einer separaten Zeile ein. Die Argumente werden in der aufgelisteten Reihenfolge an den Befehl übergeben.",
+        "uk": "Введіть кожен аргument в окремому рядку. Аргументи будуть передані команді в порядку, в якому вони перераховані."
     },
     "SETTINGS$MCP_ENVIRONMENT_VARIABLES": {
         "en": "Environment Variables",
