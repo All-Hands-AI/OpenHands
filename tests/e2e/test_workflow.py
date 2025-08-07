@@ -104,7 +104,7 @@ def test_simple_browser_navigation(page: Page):
 def test_openhands_workflow(page: Page, openhands_app):
     """
     Test the OpenHands end-to-end workflow.
-    
+
     This test follows the complete user journey:
     1. Start OpenHands
     2. Select the All-Hands-AI/OpenHands repository
@@ -116,17 +116,17 @@ def test_openhands_workflow(page: Page, openhands_app):
         # Navigate to the OpenHands application
         page.goto('http://localhost:12000/')
         page.screenshot(path='/tmp/openhands-screenshot-1-home.png')
-        
+
         # Wait for the page to load
         page.wait_for_selector('body', timeout=5000)
-        
+
         print(f'Page title: {page.title()}')
         print(f'Page URL: {page.url}')
-        
+
         # Wait for the repository selection UI to be visible
         # This might be a dropdown, search box, or other UI element
         print('Waiting for repository selection UI...')
-        
+
         # Try different selectors for the repository selection
         repo_selectors = [
             'input[placeholder*="Search"]',
@@ -134,9 +134,9 @@ def test_openhands_workflow(page: Page, openhands_app):
             'input[aria-label*="repository"]',
             'button:has-text("Select a repository")',
             'div[role="combobox"]',
-            '.repository-selector'
+            '.repository-selector',
         ]
-        
+
         # Find and interact with the repository selector
         repo_selector = None
         for selector in repo_selectors:
@@ -144,37 +144,48 @@ def test_openhands_workflow(page: Page, openhands_app):
                 repo_selector = selector
                 print(f'Found repository selector with: {selector}')
                 break
-        
+
         if not repo_selector:
             # Take a screenshot to see what's on the page
-            page.screenshot(path='/tmp/openhands-screenshot-repo-selector-not-found.png')
+            page.screenshot(
+                path='/tmp/openhands-screenshot-repo-selector-not-found.png'
+            )
             print('Repository selector not found. Taking screenshot for debugging.')
-            
+
             # List all visible elements for debugging
             elements = page.query_selector_all('button, input, select, a')
             print(f'Found {len(elements)} interactive elements:')
             for i, elem in enumerate(elements):
                 try:
-                    text = elem.inner_text() or elem.get_attribute('placeholder') or elem.get_attribute('aria-label') or '[No text]'
+                    text = (
+                        elem.inner_text()
+                        or elem.get_attribute('placeholder')
+                        or elem.get_attribute('aria-label')
+                        or '[No text]'
+                    )
                     print(f'  Element {i}: {text}')
                 except Exception as e:
                     print(f'  Element {i}: Error getting text: {e}')
-            
+
             # Try to find elements with text containing "repository" or "OpenHands"
-            repo_elements = page.query_selector_all('*:has-text("repository"), *:has-text("OpenHands")')
-            print(f'Found {len(repo_elements)} elements with repository/OpenHands text:')
+            repo_elements = page.query_selector_all(
+                '*:has-text("repository"), *:has-text("OpenHands")'
+            )
+            print(
+                f'Found {len(repo_elements)} elements with repository/OpenHands text:'
+            )
             for i, elem in enumerate(repo_elements):
                 try:
                     text = elem.inner_text()
                     print(f'  Element {i}: {text}')
                 except Exception as e:
                     print(f'  Element {i}: Error getting text: {e}')
-        
+
         # Interact with the repository selector
         if repo_selector:
             page.click(repo_selector)
             page.screenshot(path='/tmp/openhands-screenshot-2-repo-selector.png')
-            
+
             # Type or select "All-Hands-AI/OpenHands"
             try:
                 # If it's an input field
@@ -188,26 +199,28 @@ def test_openhands_workflow(page: Page, openhands_app):
                 print(f'Error selecting repository: {e}')
                 # Try alternative approach - direct navigation
                 try:
-                    page.goto('http://localhost:12000/repository/All-Hands-AI/OpenHands')
+                    page.goto(
+                        'http://localhost:12000/repository/All-Hands-AI/OpenHands'
+                    )
                     print('Navigated directly to repository page')
                 except Exception as nav_error:
                     print(f'Error navigating directly: {nav_error}')
-        
+
         # Look for and click the "Launch" button
         launch_selectors = [
             'button:has-text("Launch")',
             'a:has-text("Launch")',
             'button.launch-button',
-            'button[aria-label*="Launch"]'
+            'button[aria-label*="Launch"]',
         ]
-        
+
         launch_button = None
         for selector in launch_selectors:
             if page.locator(selector).count() > 0:
                 launch_button = selector
                 print(f'Found launch button with: {selector}')
                 break
-        
+
         if launch_button:
             page.click(launch_button)
             print('Clicked launch button')
@@ -215,19 +228,19 @@ def test_openhands_workflow(page: Page, openhands_app):
         else:
             print('Launch button not found')
             page.screenshot(path='/tmp/openhands-screenshot-launch-not-found.png')
-        
+
         # Wait for the agent interface to load
         print('Waiting for agent interface...')
         page.wait_for_timeout(5000)  # Give it time to transition
         page.screenshot(path='/tmp/openhands-screenshot-4-agent-interface.png')
-        
+
         # Check for agent status messages
         status_messages = [
             'Connecting',
             'Initializing Agent',
-            'Agent is waiting for user input'
+            'Agent is waiting for user input',
         ]
-        
+
         for status in status_messages:
             try:
                 status_element = page.locator(f'*:has-text("{status}")')
@@ -235,48 +248,52 @@ def test_openhands_workflow(page: Page, openhands_app):
                     print(f'Found status message: {status}')
             except Exception as e:
                 print(f'Error checking for status "{status}": {e}')
-        
+
         # Find the input field to type the question
         input_selectors = [
             'textarea[placeholder*="message"]',
             'textarea[placeholder*="question"]',
             'input[placeholder*="message"]',
             'input[placeholder*="question"]',
-            'div[contenteditable="true"]'
+            'div[contenteditable="true"]',
         ]
-        
+
         input_field = None
         for selector in input_selectors:
             if page.locator(selector).count() > 0:
                 input_field = selector
                 print(f'Found input field with: {selector}')
                 break
-        
+
         if input_field:
             # Type the question
-            page.fill(input_field, 'How many lines are there in the main README.md file?')
+            page.fill(
+                input_field, 'How many lines are there in the main README.md file?'
+            )
             page.screenshot(path='/tmp/openhands-screenshot-5-question-typed.png')
-            
+
             # Find and click the submit button
             submit_selectors = [
                 'button[type="submit"]',
                 'button:has-text("Send")',
                 'button:has-text("Submit")',
                 'button.submit-button',
-                'button[aria-label*="Send"]'
+                'button[aria-label*="Send"]',
             ]
-            
+
             submit_button = None
             for selector in submit_selectors:
                 if page.locator(selector).count() > 0:
                     submit_button = selector
                     print(f'Found submit button with: {selector}')
                     break
-            
+
             if submit_button:
                 page.click(submit_button)
                 print('Submitted question')
-                page.screenshot(path='/tmp/openhands-screenshot-6-question-submitted.png')
+                page.screenshot(
+                    path='/tmp/openhands-screenshot-6-question-submitted.png'
+                )
             else:
                 print('Submit button not found')
                 # Try pressing Enter instead
@@ -284,18 +301,15 @@ def test_openhands_workflow(page: Page, openhands_app):
                 print('Pressed Enter to submit question')
         else:
             print('Input field not found')
-        
+
         # Wait for the agent to process and respond
         print('Waiting for agent response...')
         page.wait_for_timeout(30000)  # Wait up to 30 seconds for response
         page.screenshot(path='/tmp/openhands-screenshot-7-agent-response.png')
-        
+
         # Check for completion status
-        completion_messages = [
-            'Agent is running task',
-            'Agent has finished the task'
-        ]
-        
+        completion_messages = ['Agent is running task', 'Agent has finished the task']
+
         for status in completion_messages:
             try:
                 status_element = page.locator(f'*:has-text("{status}")')
@@ -303,39 +317,42 @@ def test_openhands_workflow(page: Page, openhands_app):
                     print(f'Found completion status: {status}')
             except Exception as e:
                 print(f'Error checking for completion status "{status}": {e}')
-        
+
         # Get the actual line count from README.md for verification
         readme_line_count = get_readme_line_count()
         print(f'Actual README.md line count: {readme_line_count}')
-        
+
         # Try to find the agent's response containing the line count
         try:
             # Look for text containing numbers
-            response_text = page.locator('.agent-response, .message-content, .response-content').all_text_contents()
+            response_text = page.locator(
+                '.agent-response, .message-content, .response-content'
+            ).all_text_contents()
             print(f'Agent response text: {response_text}')
-            
+
             # Check if any response contains a number close to the actual line count
             response_has_line_count = False
             for text in response_text:
                 # Extract numbers from the response
                 import re
+
                 numbers = re.findall(r'\d+', text)
                 for num in numbers:
                     if abs(int(num) - readme_line_count) <= 5:  # Allow small difference
                         response_has_line_count = True
                         print(f'Found line count in response: {num}')
                         break
-            
+
             if response_has_line_count:
                 print('Agent successfully reported the README.md line count')
             else:
                 print('Could not find line count in agent response')
         except Exception as e:
             print(f'Error checking agent response: {e}')
-        
+
         # Take a final screenshot
         page.screenshot(path='/tmp/openhands-final-screenshot.png')
-        
+
         print('Successfully completed the OpenHands end-to-end workflow test')
     except Exception as e:
         # Take a screenshot on failure
