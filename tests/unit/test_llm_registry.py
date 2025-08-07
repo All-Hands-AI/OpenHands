@@ -1,244 +1,177 @@
 from __future__ import annotations
 
-import threading
-import time
 import unittest
 from unittest.mock import MagicMock, patch
 
 from openhands.core.config.llm_config import LLMConfig
-from openhands.llm.llm import LLM
-from openhands.llm.llm_registry import LLMRegistry
-from openhands.storage.memory import InMemoryFileStore
+from openhands.core.config.openhands_config import OpenHandsConfig
+from openhands.llm.llm_registry import LLMRegistry, RegistryEvent
 
 
 class TestLLMRegistry(unittest.TestCase):
-    @staticmethod
-    def generate_unique_id(prefix='test'):
-        """Generate a unique ID with the given prefix."""
-        return f'{prefix}-{time.time()}'
-
     def setUp(self):
         """Set up test environment before each test."""
-        self.file_store = InMemoryFileStore()
-        self.conversation_id = self.generate_unique_id('conversation')
-        self.user_id = self.generate_unique_id('user')
-
-        # Create a registry for testing
-        self.registry = LLMRegistry(
-            file_store=self.file_store,
-            conversation_id=self.conversation_id,
-            user_id=self.user_id,
-        )
-
         # Create a basic LLM config for testing
         self.llm_config = LLMConfig(model='test-model')
 
-    def test_register_duplicate_llm(self):
-        """Test that registering a duplicate LLM raises an exception."""
+        # Create a basic OpenHands config for testing
+        self.config = OpenHandsConfig(
+            llms={'llm': self.llm_config}, default_agent='CodeActAgent'
+        )
+
+        # Create a registry for testing
+        self.registry = LLMRegistry(config=self.config)
+
+    def test_get_llm_creates_new_llm(self):
+        """Test that get_llm creates a new LLM when service doesn't exist."""
         service_id = 'test-service'
 
-        # Register the LLM for the first time
-        self.registry.register_llm(service_id, self.llm_config)
+        # Mock the _create_new_llm method to avoid actual LLM initialization
+        with patch.object(self.registry, '_create_new_llm') as mock_create:
+            mock_llm = MagicMock()
+            mock_llm.config = self.llm_config
+            mock_create.return_value = mock_llm
 
-        # Attempt to register the same LLM again, which should raise an exception
-        with self.assertRaises(Exception) as context:
-            self.registry.register_llm(service_id, self.llm_config)
+            # Get LLM for the first time
+            llm = self.registry.get_llm(service_id, self.llm_config)
+
+            # Verify LLM was created and stored
+            self.assertEqual(llm, mock_llm)
+            mock_create.assert_called_once_with(
+                config=self.llm_config, service_id=service_id
+            )
+
+    def test_get_llm_returns_existing_llm(self):
+        """Test that get_llm returns existing LLM when service already exists."""
+        service_id = 'test-service'
+
+        # Mock the _create_new_llm method to avoid actual LLM initialization
+        with patch.object(self.registry, '_create_new_llm') as mock_create:
+            mock_llm = MagicMock()
+            mock_llm.config = self.llm_config
+            mock_create.return_value = mock_llm
+
+            # Get LLM for the first time
+            llm1 = self.registry.get_llm(service_id, self.llm_config)
+
+            # Manually add to registry to simulate existing LLM
+            self.registry.service_to_llm[service_id] = mock_llm
+
+            # Get LLM for the second time - should return the same instance
+            llm2 = self.registry.get_llm(service_id, self.llm_config)
+
+            # Verify same LLM instance is returned
+            self.assertEqual(llm1, llm2)
+            self.assertEqual(llm1, mock_llm)
+
+            # Verify _create_new_llm was only called once
+            mock_create.assert_called_once()
+
+    def test_get_llm_with_different_config_raises_error(self):
+        """Test that requesting same service ID with different config raises an error."""
+        service_id = 'test-service'
+        different_config = LLMConfig(model='different-model')
+
+        # Manually add an LLM to the registry to simulate existing service
+        mock_llm = MagicMock()
+        mock_llm.config = self.llm_config
+        self.registry.service_to_llm[service_id] = mock_llm
+
+        # Attempt to get LLM with different config should raise ValueError
+        with self.assertRaises(ValueError) as context:
+            self.registry.get_llm(service_id, different_config)
+
+        self.assertIn('Requesting same service ID', str(context.exception))
+        self.assertIn('with different config', str(context.exception))
+
+    def test_get_llm_without_config_raises_error(self):
+        """Test that requesting new LLM without config raises an error."""
+        service_id = 'test-service'
+
+        # Attempt to get LLM without providing config should raise ValueError
+        with self.assertRaises(ValueError) as context:
+            self.registry.get_llm(service_id, None)
 
         self.assertIn(
-            f'Registering duplicate LLM: {service_id}', str(context.exception)
+            'Requesting new LLM without specifying LLM config', str(context.exception)
         )
-
-    def test_save_registry_locking(self):
-        """Test that the save_registry method uses locking to prevent race conditions."""
-        service_id = self.generate_unique_id('service-locking')
-
-        # Register an LLM
-        self.registry.register_llm(service_id, self.llm_config)
-
-        # Mock the file_store.write method to simulate a slow write operation
-        original_write = self.file_store.write
-
-        # Track the number of concurrent writes
-        concurrent_writes = 0
-        max_concurrent_writes = 0
-        write_lock = threading.Lock()
-
-        def slow_write(path, contents):
-            nonlocal concurrent_writes, max_concurrent_writes
-            with write_lock:
-                concurrent_writes += 1
-                max_concurrent_writes = max(max_concurrent_writes, concurrent_writes)
-
-            # Simulate a slow write operation
-            time.sleep(0.1)
-
-            result = original_write(path, contents)
-
-            with write_lock:
-                concurrent_writes -= 1
-
-            return result
-
-        self.file_store.write = slow_write
-
-        # Create multiple threads to call save_registry concurrently
-        threads = []
-        for _ in range(5):
-            thread = threading.Thread(target=self.registry.save_registry)
-            threads.append(thread)
-
-        # Start all threads
-        for thread in threads:
-            thread.start()
-
-        # Wait for all threads to complete
-        for thread in threads:
-            thread.join()
-
-        # Verify that there was never more than one concurrent write
-        self.assertEqual(
-            max_concurrent_writes,
-            1,
-            'Multiple concurrent writes detected, locking failed',
-        )
-
-    def test_restore_registry_with_metrics(self):
-        """Test that when a registry is restored, the registered LLM is initiated with the restored metrics."""
-        service_id = self.generate_unique_id('service-restore')
-        # Create a unique conversation ID for this test
-        conversation_id = self.generate_unique_id('conversation-restore')
-        user_id = self.generate_unique_id('user-restore')
-
-        # Create a registry and register an LLM
-        registry1 = LLMRegistry(
-            file_store=self.file_store,
-            conversation_id=conversation_id,
-            user_id=user_id,
-        )
-
-        # Register an LLM and add some metrics
-        llm1 = registry1.register_llm(service_id, self.llm_config)
-        llm1.metrics.add_cost(10.5)  # Add some cost
-        llm1.metrics.add_token_usage(
-            prompt_tokens=100,
-            completion_tokens=50,
-            cache_read_tokens=0,
-            cache_write_tokens=0,
-            context_window=4096,
-            response_id='test-response-1',
-        )
-
-        # Save the registry
-        registry1.save_registry()
-        # Create a new registry with the same file_store, conversation_id, and user_id
-        registry2 = LLMRegistry(
-            file_store=self.file_store,
-            conversation_id=conversation_id,
-            user_id=user_id,
-        )
-
-        # Register the same LLM service
-        llm2 = registry2.register_llm(service_id, self.llm_config)
-
-        # Verify that the metrics were restored
-        self.assertEqual(llm2.metrics.accumulated_cost, 10.5)
-        self.assertEqual(llm2.metrics.accumulated_token_usage.prompt_tokens, 100)
-        self.assertEqual(llm2.metrics.accumulated_token_usage.completion_tokens, 50)
-        self.assertEqual(len(llm2.metrics.costs), 1)
-        self.assertEqual(len(llm2.metrics.token_usages), 1)
-
-    def test_multiple_services_combined_metrics(self):
-        """Test that multiple services doing LLM completions have their costs accurately reflected in combined metrics."""
-        # Register multiple LLM services
-        service1 = 'service1'
-        service2 = 'service2'
-        service3 = 'service3'
-
-        # Register the LLMs
-        llm1 = self.registry.register_llm(service1, self.llm_config)
-        llm2 = self.registry.register_llm(service2, self.llm_config)
-        llm3 = self.registry.register_llm(service3, self.llm_config)
-
-        # Add different costs and token usages to each LLM
-        llm1.metrics.add_cost(5.0)
-        llm1.metrics.add_token_usage(
-            prompt_tokens=100,
-            completion_tokens=50,
-            cache_read_tokens=0,
-            cache_write_tokens=0,
-            context_window=4096,
-            response_id='response1',
-        )
-
-        llm2.metrics.add_cost(7.5)
-        llm2.metrics.add_token_usage(
-            prompt_tokens=200,
-            completion_tokens=75,
-            cache_read_tokens=0,
-            cache_write_tokens=0,
-            context_window=4096,
-            response_id='response2',
-        )
-
-        llm3.metrics.add_cost(12.25)
-        llm3.metrics.add_token_usage(
-            prompt_tokens=300,
-            completion_tokens=125,
-            cache_read_tokens=0,
-            cache_write_tokens=0,
-            context_window=8192,
-            response_id='response3',
-        )
-
-        # Get the combined metrics
-        combined_metrics = self.registry.get_combined_metrics()
-
-        # Verify the combined metrics
-        self.assertEqual(combined_metrics.accumulated_cost, 24.75)  # 5.0 + 7.5 + 12.25
-        self.assertEqual(
-            combined_metrics.accumulated_token_usage.prompt_tokens, 600
-        )  # 100 + 200 + 300
-        self.assertEqual(
-            combined_metrics.accumulated_token_usage.completion_tokens, 250
-        )  # 50 + 75 + 125
-        self.assertEqual(
-            combined_metrics.accumulated_token_usage.context_window, 8192
-        )  # max of all context windows
-
-        # Verify that the individual LLM metrics are unchanged
-        self.assertEqual(llm1.metrics.accumulated_cost, 5.0)
-        self.assertEqual(llm2.metrics.accumulated_cost, 7.5)
-        self.assertEqual(llm3.metrics.accumulated_cost, 12.25)
 
     def test_request_extraneous_completion(self):
-        """Test that requesting an extraneous completion creates a new LLM if needed and saves the registry."""
+        """Test that requesting an extraneous completion creates a new LLM if needed."""
         service_id = 'extraneous-service'
         messages = [{'role': 'user', 'content': 'Hello, world!'}]
 
-        # Mock the LLM.completion method to return a predictable response
-        with patch.object(LLM, 'completion') as mock_completion:
+        # Mock the _create_new_llm method to avoid actual LLM initialization
+        with patch.object(self.registry, '_create_new_llm') as mock_create:
+            mock_llm = MagicMock()
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
-            mock_response.choices[0].message.content = 'Hello from the LLM!'
-            mock_completion.return_value = mock_response
+            mock_response.choices[0].message.content = '  Hello from the LLM!  '
+            mock_llm.completion.return_value = mock_response
+            mock_create.return_value = mock_llm
 
-            # Mock the save_registry method to verify it's called
-            with patch.object(self.registry, 'save_registry') as mock_save_registry:
-                # Request a completion
-                response = self.registry.request_extraneous_completion(
-                    service_id=service_id,
-                    llm_config=self.llm_config,
-                    messages=messages,
-                )
+            # Mock the side effect to add the LLM to the registry
+            def side_effect(*args, **kwargs):
+                self.registry.service_to_llm[service_id] = mock_llm
+                return mock_llm
 
-                # Verify the response
-                self.assertEqual(response, 'Hello from the LLM!')
+            mock_create.side_effect = side_effect
 
-                # Verify that the LLM was created and added to the registry
-                self.assertIn(service_id, self.registry.service_to_llm)
+            # Request a completion
+            response = self.registry.request_extraneous_completion(
+                service_id=service_id,
+                llm_config=self.llm_config,
+                messages=messages,
+            )
 
-                # Verify that save_registry was called
-                mock_save_registry.assert_called_once()
+            # Verify the response (should be stripped)
+            self.assertEqual(response, 'Hello from the LLM!')
+
+            # Verify that _create_new_llm was called with correct parameters
+            mock_create.assert_called_once_with(
+                config=self.llm_config, service_id=service_id, with_listener=False
+            )
+
+            # Verify completion was called with correct messages
+            mock_llm.completion.assert_called_once_with(messages=messages)
+
+    def test_get_active_llm(self):
+        """Test that get_active_llm returns the active agent LLM."""
+        active_llm = self.registry.get_active_llm()
+        self.assertEqual(active_llm, self.registry.active_agent_llm)
+
+    def test_subscribe_and_notify(self):
+        """Test the subscription and notification system."""
+        events_received = []
+
+        def callback(event: RegistryEvent):
+            events_received.append(event)
+
+        # Subscribe to events
+        self.registry.subscribe(callback)
+
+        # Should receive notification for the active agent LLM
+        self.assertEqual(len(events_received), 1)
+        self.assertEqual(events_received[0].llm, self.registry.active_agent_llm)
+        self.assertEqual(
+            events_received[0].service_id, self.registry.active_agent_llm.service_id
+        )
+
+        # Test that the subscriber is set correctly
+        self.assertIsNotNone(self.registry.subscriber)
+
+        # Test notify method directly with a mock event
+        with patch.object(self.registry, 'subscriber') as mock_subscriber:
+            mock_event = MagicMock()
+            self.registry.notify(mock_event)
+            mock_subscriber.assert_called_once_with(mock_event)
+
+    def test_registry_has_unique_id(self):
+        """Test that each registry instance has a unique ID."""
+        registry2 = LLMRegistry(config=self.config)
+        self.assertNotEqual(self.registry.registry_id, registry2.registry_id)
+        self.assertTrue(len(self.registry.registry_id) > 0)
+        self.assertTrue(len(registry2.registry_id) > 0)
 
 
 if __name__ == '__main__':
