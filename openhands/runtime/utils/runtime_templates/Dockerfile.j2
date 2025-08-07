@@ -308,5 +308,11 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
 # Install extra dependencies if specified
 {% if extra_deps %}RUN {{ extra_deps }} {% endif %}
 
-# Set the default user to openhands
-USER openhands
+# Copy entrypoint script and make it executable
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# Set the entrypoint to run as root first, then switch to openhands
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
+# Note: We don't set USER openhands here because the entrypoint handles the user switch
