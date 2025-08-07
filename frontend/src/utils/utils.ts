@@ -226,3 +226,53 @@ export const extractRepositoryInfo = (
 
   return { owner, repo, filePath };
 };
+
+/**
+ * Construct the repository URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @returns The repository URL
+ *
+ * @example
+ * constructRepositoryUrl("github", "owner/repo") // "https://github.com/owner/repo"
+ * constructRepositoryUrl("gitlab", "owner/repo") // "https://gitlab.com/owner/repo"
+ * constructRepositoryUrl("bitbucket", "owner/repo") // "https://bitbucket.org/owner/repo"
+ */
+export const constructRepositoryUrl = (
+  provider: Provider,
+  repositoryName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+  return `${baseUrl}/${repositoryName}`;
+};
+
+/**
+ * Construct the branch URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @param branchName The branch name
+ * @returns The branch URL
+ *
+ * @example
+ * constructBranchUrl("github", "owner/repo", "main") // "https://github.com/owner/repo/tree/main"
+ * constructBranchUrl("gitlab", "owner/repo", "develop") // "https://gitlab.com/owner/repo/-/tree/develop"
+ * constructBranchUrl("bitbucket", "owner/repo", "feature") // "https://bitbucket.org/owner/repo/src/feature"
+ */
+export const constructBranchUrl = (
+  provider: Provider,
+  repositoryName: string,
+  branchName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+
+  switch (provider) {
+    case "github":
+      return `${baseUrl}/${repositoryName}/tree/${branchName}`;
+    case "gitlab":
+      return `${baseUrl}/${repositoryName}/-/tree/${branchName}`;
+    case "bitbucket":
+      return `${baseUrl}/${repositoryName}/src/${branchName}`;
+    default:
+      return "";
+  }
+};

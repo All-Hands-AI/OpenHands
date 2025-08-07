@@ -442,10 +442,7 @@ export function CustomChatInput({
       {shouldShowExpandArrow && !isChatInputExpanded && (
         <button
           type="button"
-          className={cn(
-            "absolute top-5 cursor-pointer",
-            isChatInputExpanded ? "right-[24px]" : "right-[26px]",
-          )}
+          className="absolute top-5 cursor-pointer right-4"
           onClick={() => {
             toggleChatInput(true);
           }}
@@ -457,10 +454,7 @@ export function CustomChatInput({
       {isChatInputExpanded && (
         <button
           type="button"
-          className={cn(
-            "absolute top-5 cursor-pointer",
-            isChatInputExpanded ? "right-[24px]" : "right-[26px]",
-          )}
+          className="absolute top-5 cursor-pointer right-[13px]"
           onClick={() => toggleChatInput(false)}
         >
           <CloseIcon width={18} height={18} color="#ffffff" />

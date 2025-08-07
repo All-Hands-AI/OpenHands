@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
@@ -46,10 +46,7 @@ describe("InteractiveChatBox", () => {
 
   it("should set custom values", async () => {
     renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-      />,
+      <InteractiveChatBox onSubmit={onSubmitMock} onStop={onStopMock} />,
       {
         preloadedState: {
           agent: {
@@ -69,7 +66,7 @@ describe("InteractiveChatBox", () => {
 
     const textbox = screen.getByTestId("chat-input");
     // Wait for the useEffect to run and set the content
-    await new Promise(resolve => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(textbox).toHaveTextContent("Hello, world!");
   });
 
@@ -214,10 +211,7 @@ describe("InteractiveChatBox", () => {
     const onStop = vi.fn();
 
     const { rerender } = renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmit}
-        onStop={onStop}
-      />,
+      <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />,
       {
         preloadedState: {
           agent: {
@@ -250,9 +244,7 @@ describe("InteractiveChatBox", () => {
     expect(onSubmit).toHaveBeenCalledWith("test message", [], []);
 
     // Simulate parent component updating the value by changing the Redux state
-    rerender(
-      <InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />,
-    );
+    rerender(<InteractiveChatBox onSubmit={onSubmit} onStop={onStop} />);
 
     // Verify the text input was cleared
     expect(screen.getByTestId("chat-input")).toHaveTextContent("");

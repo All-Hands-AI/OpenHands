@@ -37,6 +37,7 @@ import {
   setMessageToSend,
   setDataFromExpandedChatInput,
 } from "#/state/conversation-slice";
+import { GitControlBar } from "./git-control-bar";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -280,6 +281,15 @@ export function ChatInterface() {
             onSubmit={handleSendMessage}
             onStop={handleStop}
           />
+
+          <div className="mt-4">
+            <GitControlBar
+              onSuggestionsClick={(value) => handleSendMessage(value, [], [])}
+              isWaitingForUserInput={isWaitingForUserInput}
+              hasSubstantiveAgentActions={hasSubstantiveAgentActions}
+              optimisticUserMessage={!!optimisticUserMessage}
+            />
+          </div>
         </div>
 
         {config?.APP_MODE !== "saas" && (

@@ -1,4 +1,3 @@
-import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { renderWithProviders } from "../../test-utils";
