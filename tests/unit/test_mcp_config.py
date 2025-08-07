@@ -12,7 +12,6 @@ from openhands.core.config.mcp_config import (
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
-from openhands.mcp.utils import create_mcp_clients
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
