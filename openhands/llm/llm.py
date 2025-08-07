@@ -18,6 +18,7 @@ from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -40,6 +41,7 @@ __all__ = ['LLM']
 
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
     litellm.Timeout,
@@ -61,6 +63,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
 ]
 
 # function calling supporting models
@@ -75,6 +78,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
