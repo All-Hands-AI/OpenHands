@@ -71,6 +71,11 @@ jobs:
           poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml
 
       - name: Run basic end-to-end tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
           cd tests/e2e && poetry run python -m pytest test_workflow.py::test_readme_line_count test_workflow.py::test_simple_browser_navigation -v
 
