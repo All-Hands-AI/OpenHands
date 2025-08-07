@@ -20,10 +20,6 @@ from openhands.core.config.condenser_config import (
     condenser_config_from_toml_section,
     create_condenser_config,
 )
-from openhands.core.config.config_utils import (
-    OH_DEFAULT_AGENT,
-    OH_MAX_ITERATIONS,
-)
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
@@ -712,14 +708,14 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=OH_DEFAULT_AGENT,
+        default=None,
         type=str,
         help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=OH_MAX_ITERATIONS,
+        default=None,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
