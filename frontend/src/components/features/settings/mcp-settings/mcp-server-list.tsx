@@ -22,16 +22,19 @@ interface MCPServerListProps {
 function MCPServerListItemSkeleton() {
   return (
     <tr className="flex w-full items-center border-t border-tertiary">
-      <td className="p-3 w-1/4">
+      <td className="p-3 w-1/4" aria-label="Name loading">
         <div className="skeleton h-4 w-3/4" />
       </td>
-      <td className="p-3 w-1/4">
+      <td className="p-3 w-1/4" aria-label="Type loading">
         <div className="skeleton h-4 w-1/2" />
       </td>
-      <td className="p-3 w-1/2">
+      <td className="p-3 w-1/2" aria-label="Details loading">
         <div className="skeleton h-4 w-full" />
       </td>
-      <td className="p-3 w-1/4 flex items-center justify-end gap-4">
+      <td
+        className="p-3 w-1/4 flex items-center justify-end gap-4"
+        aria-label="Actions loading"
+      >
         <div className="skeleton h-4 w-4" />
         <div className="skeleton h-4 w-4" />
       </td>
@@ -63,12 +66,15 @@ function MCPServerListItem({
     }
   };
 
-  const getServerDescription = (server: MCPServerConfig) => {
-    if (server.type === "stdio" && server.name) {
-      return server.name;
+  const getServerDescription = (serverConfig: MCPServerConfig) => {
+    if (serverConfig.type === "stdio" && serverConfig.name) {
+      return serverConfig.name;
     }
-    if ((server.type === "sse" || server.type === "shttp") && server.url) {
-      return server.url;
+    if (
+      (serverConfig.type === "sse" || serverConfig.type === "shttp") &&
+      serverConfig.url
+    ) {
+      return serverConfig.url;
     }
     return "";
   };
@@ -81,7 +87,10 @@ function MCPServerListItem({
       data-testid="mcp-server-item"
       className="flex w-full items-center border-t border-tertiary"
     >
-      <td className="p-3 w-1/4 text-sm text-content-2 truncate" title={serverName}>
+      <td
+        className="p-3 w-1/4 text-sm text-content-2 truncate"
+        title={serverName}
+      >
         {serverName}
       </td>
 
@@ -120,7 +129,11 @@ function MCPServerListItem({
   );
 }
 
-export function MCPServerList({ servers, onEdit, onDelete }: MCPServerListProps) {
+export function MCPServerList({
+  servers,
+  onEdit,
+  onDelete,
+}: MCPServerListProps) {
   const { t } = useTranslation();
 
   if (servers.length === 0) {
