@@ -110,7 +110,7 @@ def init_user_and_working_directory(
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str = output.stdout.decode()
 
-    command = f'chown -R {username}:root {initial_cwd}'
+    command = f'chown -R {username}:{username} {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
 
