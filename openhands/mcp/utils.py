@@ -173,8 +173,6 @@ async def fetch_mcp_tools_from_config(
     mcp_clients = []
     mcp_tools = []
     try:
-        mcp_config = mcp_config.convert_servers()
-
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
 
         # Create clients - this will fetch tools but not maintain active connections

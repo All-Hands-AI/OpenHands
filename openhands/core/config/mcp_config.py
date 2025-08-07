@@ -74,7 +74,7 @@ class MCPStdioServerConfig(BaseModel):
     args: list[str] = Field(default_factory=list)
     env: dict[str, str] = Field(default_factory=dict)
 
-    @field_validator('name')
+    @field_validator('name', mode='before')
     @classmethod
     def validate_server_name(cls, v: str) -> str:
         """Validate server name for stdio MCP servers."""
@@ -91,7 +91,7 @@ class MCPStdioServerConfig(BaseModel):
 
         return v
 
-    @field_validator('command')
+    @field_validator('command', mode='before')
     @classmethod
     def validate_command(cls, v: str) -> str:
         """Validate command for stdio MCP servers."""
@@ -190,7 +190,7 @@ class MCPSHTTPServerConfig(BaseModel):
     url: str
     api_key: str | None = None
 
-    @field_validator('url')
+    @field_validator('url', mode='before')
     @classmethod
     def validate_url(cls, v: str) -> str:
         """Validate URL format for MCP servers."""
@@ -211,52 +211,29 @@ class MCPConfig(BaseModel):
     shttp_servers: list[MCPSHTTPServerConfig] = Field(default_factory=list)
 
     @model_validator(mode='after')
-    def convert_dict_servers(self) -> 'MCPConfig':
-        """Convert dictionary server configurations to proper server config objects."""
-        return self.convert_servers()
-
-    def convert_servers(self) -> 'MCPConfig':
-        """Convert dictionary server configurations to proper server config objects."""
-        # Use a helper function to convert each server type
-        self.shttp_servers = self._convert_server_list(
-            self.shttp_servers, MCPSHTTPServerConfig
-        )
-        self.sse_servers = self._convert_server_list(
-            self.sse_servers, MCPSSEServerConfig
-        )
-        self.stdio_servers = self._convert_server_list(
-            self.stdio_servers, MCPStdioServerConfig
-        )
+    def convert_server_dicts(self) -> 'MCPConfig':
+        self.shttp_servers = self._convert_server_list(self.shttp_servers, MCPSHTTPServerConfig)
+        self.sse_servers = self._convert_server_list(self.sse_servers, MCPSSEServerConfig)
+        self.stdio_servers = self._convert_server_list(self.stdio_servers, MCPStdioServerConfig)
         return self
 
     def _convert_server_list(self, servers, server_class):
-        """Helper method to convert a list of server dictionaries to server objects."""
-        # Skip if the list is empty
         if not servers:
             return servers
 
-        # Create a new list for the converted servers
         result = []
-
-        # Convert each server
         for server in servers:
             if isinstance(server, dict):
-                # Create a new server object from the dictionary
-                # We need to ignore the type here because mypy doesn't understand
-                # that we're checking the type at runtime
                 server_dict = cast(dict[str, Any], server)
                 result.append(server_class(**server_dict))
             elif isinstance(server, server_class):
-                # Keep the existing server object if it's already the correct type
                 result.append(server)
             else:
-                # If it's neither a dict nor the correct server class, raise an error
                 raise TypeError(
-                    f'Expected server to be a dict or {server_class.__name__}, '
-                    f'got {type(server).__name__}'
+                    f'Expected dict or {server_class.__name__}, got {type(server).__name__}'
                 )
 
-        # Verify all servers are of the correct type
+        # Optional: type-check again
         for server in result:
             if not isinstance(server, server_class):
                 raise TypeError(
