@@ -19,6 +19,7 @@ const SAAS_ONLY_PATHS = [
 const SAAS_NAV_ITEMS = [
   { to: "/settings/user", text: "SETTINGS$NAV_USER" },
   { to: "/settings/integrations", text: "SETTINGS$NAV_INTEGRATIONS" },
+  { to: "/settings/mcp", text: "SETTINGS$NAV_MCP" },
   { to: "/settings/app", text: "SETTINGS$NAV_APPLICATION" },
   { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
