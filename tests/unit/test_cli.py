@@ -6,6 +6,7 @@ import pytest_asyncio
 
 from openhands.cli import main as cli
 from openhands.controller.state.state import State
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 
@@ -124,12 +125,14 @@ def mock_config():
         ''  # Empty string, not starting with 'tvly-'
     )
     config.search_api_key = search_api_key_mock
+    config.get_llm_config_from_agent.return_value = LLMConfig(model='model')
 
     # Mock sandbox with volumes attribute to prevent finalize_config issues
     config.sandbox = MagicMock()
     config.sandbox.volumes = (
         None  # This prevents finalize_config from overriding workspace_base
     )
+    config.model_name = 'model'
 
     return config
 
