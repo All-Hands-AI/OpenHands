@@ -198,6 +198,11 @@ async def connect(connection_id: str, environ):
     space_id = (
         conversation_configs.get('space_id', None) if conversation_configs else None
     )
+    space_section_id = (
+        conversation_configs.get('space_section_id', None)
+        if conversation_configs
+        else None
+    )
     thread_follow_up = (
         conversation_configs.get('thread_follow_up', None)
         if conversation_configs
@@ -249,6 +254,8 @@ async def connect(connection_id: str, environ):
         thread_follow_up,
         research_mode,
         raw_followup_conversation_id,
+        space_section_id,
+        None,
     )
     logger.info(
         f'Connected to conversation {conversation_id} with connection_id {connection_id}. Replaying event stream...'

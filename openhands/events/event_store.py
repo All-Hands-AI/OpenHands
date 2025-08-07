@@ -274,6 +274,7 @@ class EventStore(EventStoreABC):
         observations: list[str] | None = None,
         limit: int = 100,
         reverse: bool = True,
+        sid: str | None = None,
     ) -> list[Event]:
         """Get events filtered by specific actions with limit and sorting by created_at.
 
@@ -290,12 +291,13 @@ class EventStore(EventStoreABC):
         """
         if limit < 1 or limit > 100:
             raise ValueError('Limit must be between 1 and 100')
-
+        if not sid:
+            raise ValueError('sid is required')
         if shared_config.file_store == 'database':
             # Use database-specific filtering for better performance
             order_by = 'created_at DESC' if reverse else 'created_at ASC'
             events = db_file_store._get_events_by_action(
-                self.sid, actions, limit, order_by, observations
+                sid, actions, limit, order_by, observations
             )
             return [event_from_dict(event_dict) for event_dict in events if event_dict]
         else:

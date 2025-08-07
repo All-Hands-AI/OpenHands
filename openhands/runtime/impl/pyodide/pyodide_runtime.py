@@ -10,6 +10,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.utils.async_utils import call_async_from_sync
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -54,7 +55,11 @@ class PyodideRuntime(ActionExecutionClient):
         )
 
     def _get_action_execution_server_host(self):
-        return self.api_url
+        if getattr(self, 'api_url', None):
+            return self.api_url
+        else:
+            call_async_from_sync(self.connect())
+            return self.api_url
 
     async def connect(self):
         pyodide_mcp_config = self.config.dict_mcp_config['pyodide']

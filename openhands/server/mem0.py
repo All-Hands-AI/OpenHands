@@ -355,7 +355,14 @@ async def search_knowledge_mem0(
                     chunk_id = histories[0]['metadata'].get(
                         'chunk_id', str(uuid.uuid4())
                     )
-                    return [{**k, 'chunkId': chunk_id} for k in knowledge]
+                    return [
+                        {
+                            **k,
+                            'chunkId': chunk_id,
+                            'documentId': raw_followup_conversation_id,
+                        }
+                        for k in knowledge
+                    ]
         except Exception:
             logger.exception(
                 f'Unexpected error while searching knowledge for type {meta_type}'
