@@ -412,6 +412,7 @@ async def test_main_without_task(
         None,
         session_name=None,
         skip_banner=False,
+        conversation_id=None,
     )
 
 
@@ -606,6 +607,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
         None,
         session_name=test_session_name,
         skip_banner=False,
+        conversation_id=None,
     )
 
 
