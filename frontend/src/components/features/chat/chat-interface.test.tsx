@@ -20,11 +20,37 @@ vi.mock("#/hooks/query/use-config");
 vi.mock("#/hooks/mutation/use-get-trajectory");
 vi.mock("#/hooks/mutation/use-upload-files");
 vi.mock("react-redux", () => ({
-  useSelector: vi.fn(() => ({
-    curAgentState: "AWAITING_USER_INPUT",
-    selectedRepository: null,
-    replayJson: null,
-  })),
+  useSelector: vi.fn((selector) => {
+    // Mock the complete Redux state structure
+    const mockState = {
+      agent: {
+        curAgentState: "AWAITING_USER_INPUT",
+      },
+      conversation: {
+        isRightPanelShown: true,
+        isChatInputExpanded: false,
+        images: [],
+        files: [],
+        messageToSend: null,
+        dataFromExpandedChatInput: null,
+        shouldStopAgent: false,
+      },
+      initialQuery: {
+        selectedRepository: null,
+        replayJson: null,
+      },
+      status: {
+        curStatusMessage: {
+          status_update: true,
+          type: "info",
+          id: "",
+          message: "",
+        },
+      },
+    };
+    return selector(mockState);
+  }),
+  useDispatch: vi.fn(() => vi.fn()),
 }));
 
 describe("ChatInterface", () => {
