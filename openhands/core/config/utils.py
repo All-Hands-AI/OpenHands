@@ -771,6 +771,12 @@ def get_parser() -> argparse.ArgumentParser:
         default='',
     )
     parser.add_argument(
+        '--conversation',
+        help='The conversation id to continue',
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
         '--eval-ids',
         default=None,
         type=str,
