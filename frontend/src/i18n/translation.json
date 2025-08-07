@@ -1519,6 +1519,38 @@
         "de": "STDIO",
         "uk": "STDIO"
     },
+    "SETTINGS$MCP_COMMAND_ARGUMENTS": {
+        "en": "Command Arguments",
+        "ja": "コマンド引数",
+        "zh-CN": "命令参数",
+        "zh-TW": "指令參數",
+        "ko-KR": "명령어 인수",
+        "no": "Kommandoargumenter",
+        "it": "Argomenti del comando",
+        "pt": "Argumentos do comando",
+        "es": "Argumentos del comando",
+        "ar": "معاملات الأمر",
+        "fr": "Arguments de commande",
+        "tr": "Komut argümanları",
+        "de": "Befehlsargumente",
+        "uk": "Аргументи команди"
+    },
+    "SETTINGS$MCP_ENVIRONMENT_VARIABLES": {
+        "en": "Environment Variables",
+        "ja": "環境変数",
+        "zh-CN": "环境变量",
+        "zh-TW": "環境變數",
+        "ko-KR": "환경 변수",
+        "no": "Miljøvariabler",
+        "it": "Variabili d'ambiente",
+        "pt": "Variáveis de ambiente",
+        "es": "Variables de entorno",
+        "ar": "متغيرات البيئة",
+        "fr": "Variables d'environnement",
+        "tr": "Ortam değişkenleri",
+        "de": "Umgebungsvariablen",
+        "uk": "Змінні середовища"
+    },
     "HOME$CONNECT_PROVIDER_MESSAGE": {
         "en": "To get started with suggested tasks, please connect your GitHub, GitLab, or Bitbucket account.",
         "ja": "提案されたタスクを始めるには、GitHub、GitLab、またはBitbucketアカウントを接続してください。",
