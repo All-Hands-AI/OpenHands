@@ -23,6 +23,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
+  /* Global setup and teardown for e2e-workflow tests */
+  globalSetup: process.env.E2E_TEST ? path.join(__dirname, 'tests/e2e-workflow.setup.ts') : undefined,
+  globalTeardown: process.env.E2E_TEST ? path.join(__dirname, 'tests/e2e-workflow.teardown.ts') : undefined,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
@@ -58,8 +61,6 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         baseURL: "http://localhost:12000/",
       },
-      globalSetup: path.join(__dirname, 'tests/e2e-workflow.setup.ts'),
-      globalTeardown: path.join(__dirname, 'tests/e2e-workflow.teardown.ts'),
     },
 
     /* Test against mobile viewports. */
