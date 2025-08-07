@@ -35,7 +35,7 @@ function HomeScreen() {
         </div>
       </div>
 
-      <div className="pt-4 flex sm:justify-start md:justify-center mb-[262px]">
+      <div className="pt-4 flex sm:justify-start md:justify-center">
         <div
           className="flex flex-col gap-5 px-6 md:flex-row min-w-full md:max-w-full lg:px-0 lg:max-w-[703px] lg:min-w-[703px]"
           data-testid="home-screen-recent-conversations-section"
