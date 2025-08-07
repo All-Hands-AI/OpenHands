@@ -181,6 +181,9 @@ class Memory:
                 if self.repository_info
                 and self.repository_info.repo_directory is not None
                 else '',
+                repo_branch=self.repository_info.branch_name
+                if self.repository_info and self.repository_info.branch_name is not None
+                else '',
                 repo_instructions=repo_instructions if repo_instructions else '',
                 runtime_hosts=self.runtime_info.available_hosts
                 if self.runtime_info and self.runtime_info.available_hosts is not None
@@ -198,6 +201,7 @@ class Memory:
                 conversation_instructions=self.conversation_instructions.content
                 if self.conversation_instructions is not None
                 else '',
+                working_dir=self.runtime_info.working_dir if self.runtime_info else '',
             )
             return obs
         return None
@@ -321,10 +325,14 @@ class Memory:
 
         return mcp_configs
 
-    def set_repository_info(self, repo_name: str, repo_directory: str) -> None:
+    def set_repository_info(
+        self, repo_name: str, repo_directory: str, branch_name: str | None = None
+    ) -> None:
         """Store repository info so we can reference it in an observation."""
         if repo_name or repo_directory:
-            self.repository_info = RepositoryInfo(repo_name, repo_directory)
+            self.repository_info = RepositoryInfo(
+                repo_name, repo_directory, branch_name
+            )
         else:
             self.repository_info = None
 
@@ -332,6 +340,7 @@ class Memory:
         self,
         runtime: Runtime,
         custom_secrets_descriptions: dict[str, str],
+        working_dir: str,
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
@@ -344,11 +353,13 @@ class Memory:
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                working_dir=working_dir,
             )
         else:
             self.runtime_info = RuntimeInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
+                working_dir=working_dir,
             )
 
     def set_conversation_instructions(

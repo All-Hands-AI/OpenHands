@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { SuggestedTask } from "./task.types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
@@ -24,17 +25,25 @@ export function TaskCard({ task }: TaskCardProps) {
   const { mutate: createConversation, isPending } = useCreateConversation();
   const isCreatingConversation = useIsCreatingConversation();
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   const handleLaunchConversation = () => {
     setOptimisticUserMessage(t("TASK$ADDRESSING_TASK"));
 
-    return createConversation({
-      repository: {
-        name: task.repo,
-        gitProvider: task.git_provider,
+    return createConversation(
+      {
+        repository: {
+          name: task.repo,
+          gitProvider: task.git_provider,
+        },
+        suggestedTask: task,
       },
-      suggestedTask: task,
-    });
+      {
+        onSuccess: (data) => {
+          navigate(`/conversations/${data.conversation_id}`);
+        },
+      },
+    );
   };
 
   // Determine the correct URL format based on git provider

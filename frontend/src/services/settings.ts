@@ -3,7 +3,7 @@ import { Settings } from "#/types/settings";
 export const LATEST_SETTINGS_VERSION = 5;
 
 export const DEFAULT_SETTINGS: Settings = {
-  LLM_MODEL: "anthropic/claude-sonnet-4-20250514",
+  LLM_MODEL: "openhands/claude-sonnet-4-20250514",
   LLM_BASE_URL: "",
   AGENT: "CodeActAgent",
   LANGUAGE: "en",
@@ -27,6 +27,8 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
+  GIT_USER_NAME: "openhands",
+  GIT_USER_EMAIL: "openhands@all-hands.dev",
 };
 
 /**

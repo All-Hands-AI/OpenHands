@@ -28,6 +28,10 @@ const saveSettingsMutationFn = async (settings: Partial<PostSettings>) => {
     enable_solvability_analysis: settings.ENABLE_SOLVABILITY_ANALYSIS,
     search_api_key: settings.SEARCH_API_KEY?.trim() || "",
     max_budget_per_task: settings.MAX_BUDGET_PER_TASK,
+    git_user_name:
+      settings.GIT_USER_NAME?.trim() || DEFAULT_SETTINGS.GIT_USER_NAME,
+    git_user_email:
+      settings.GIT_USER_EMAIL?.trim() || DEFAULT_SETTINGS.GIT_USER_EMAIL,
   };
 
   await OpenHands.saveSettings(apiSettings);

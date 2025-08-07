@@ -34,7 +34,7 @@ _Dev Container: Reopen in Container_ command from the Command Palette
 
 #### Develop without sudo access
 
-If you want to develop without system admin/sudo access to upgrade/install `Python` and/or `NodeJs`, you can use
+If you want to develop without system admin/sudo access to upgrade/install `Python` and/or `NodeJS`, you can use
 `conda` or `mamba` to manage the packages for you:
 
 ```bash
@@ -71,7 +71,7 @@ This command will prompt you to enter the LLM API key, model name, and other var
 tailored to your specific needs. Note that the model name will apply only when you run headless. If you use the UI,
 please set the model in the UI.
 
-Note: If you have previously run OpenHands using the docker command, you may have already set some environmental
+Note: If you have previously run OpenHands using the docker command, you may have already set some environment
 variables in your terminal. The final configurations are set from highest to lowest priority:
 Environment variables > config.toml variables > default variables
 
@@ -154,12 +154,12 @@ poetry run pytest ./tests/unit/test_*.py
 1. Add your dependency in `pyproject.toml` or use `poetry add xxx`.
 2. Update the poetry.lock file via `poetry lock --no-update`.
 
-### 9. Use existing Docker image
+### 10. Use existing Docker image
 
 To reduce build time (e.g., if no changes were made to the client-runtime component), you can use an existing Docker
 container image by setting the SANDBOX_RUNTIME_CONTAINER_IMAGE environment variable to the desired Docker image.
 
-Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.48-nikolaik`
+Example: `export SANDBOX_RUNTIME_CONTAINER_IMAGE=ghcr.io/all-hands-ai/runtime:0.51-nikolaik`
 
 ## Develop inside Docker container
 
