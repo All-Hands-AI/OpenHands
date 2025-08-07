@@ -166,35 +166,27 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 {% endmacro %}
 
 {% macro install_vscode_extensions() %}
-# Install our custom extension
+# Install our custom extensions as openhands user
+USER openhands
 RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
-    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/ && \
-    chown -R openhands:openhands ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world
+    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/
 
 RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor && \
-    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/memory-monitor/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor/ && \
-    chown -R openhands:openhands ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor
+    cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/memory-monitor/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-memory-monitor/
 
 # Some extension dirs are removed because they trigger false positives in vulnerability scans.
 RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,ini,npm}
 {% endmacro %}
 
-{% macro install_dependencies() %}
-# Install all dependencies
-WORKDIR /openhands/code
-
+{% macro install_dependencies_root() %}
+# Install system-level dependencies that require root
+USER root
 RUN \
-    /openhands/micromamba/bin/micromamba config set changeps1 False && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
-    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12 && \
-    # Install project dependencies
-    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
-    # Update and install additional tools
-    # (There used to be an "apt-get update" here, hopefully we can skip it.)
     {% if enable_browser %}
+    # Install playwright system dependencies (requires root)
     /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
     {% endif %}
-    # Set environment variables
+    # Set environment variables (requires root)
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     # Set permissions and ownership
     chmod -R g+rws /openhands/poetry && \
@@ -202,9 +194,24 @@ RUN \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     chown -R openhands:openhands /openhands/workspace && \
     chown -R openhands:openhands /openhands/micromamba && \
-    # Clean up
+    # Clean up system packages (requires root)
+    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+{% endmacro %}
+
+{% macro install_dependencies_user() %}
+# Install user-level dependencies as openhands user
+WORKDIR /openhands/code
+
+USER openhands
+RUN \
+    /openhands/micromamba/bin/micromamba config set changeps1 False && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry env use python3.12 && \
+    # Install project dependencies
+    /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
+    # Clean up user caches
     /openhands/micromamba/bin/micromamba run -n openhands poetry cache clear --all . -n && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* && \
     /openhands/micromamba/bin/micromamba clean --all
 
 {% endmacro %}
@@ -241,7 +248,8 @@ RUN \
 
 COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
-{{ install_dependencies() }}
+{{ install_dependencies_user() }}
+{{ install_dependencies_root() }}
 
 # ================================================================
 # END: Build Runtime Image from Scratch
@@ -266,12 +274,16 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
 # END: Build from versioned image
 # ================================================================
 {% if build_from_versioned %}
-{{ install_dependencies() }}
+{{ install_dependencies_user() }}
+{{ install_dependencies_root() }}
 {{ install_vscode_extensions() }}
 {% endif %}
 
-# Install extra dependencies if specified
-{% if extra_deps %}RUN {{ extra_deps }} {% endif %}
+# Install extra dependencies if specified (as openhands user)
+{% if extra_deps %}
+USER openhands
+RUN {{ extra_deps }}
+{% endif %}
 
-# Set the default user to openhands
+# Ensure final user is openhands
 USER openhands
