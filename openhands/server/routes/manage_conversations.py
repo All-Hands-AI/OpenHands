@@ -21,7 +21,6 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
 )
-from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -45,11 +44,11 @@ from openhands.server.services.conversation_service import (
     create_new_conversation,
     setup_init_convo_settings,
 )
-from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
     ConversationStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -63,7 +62,6 @@ from openhands.server.user_auth import (
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation as get_conversation_metadata
 from openhands.server.utils import get_conversation_store
-from openhands.server.shared import file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -342,9 +340,7 @@ async def get_prompt(
 ):
     # get event store for the conversation
     event_store = EventStore(
-        sid=conversation_id,
-        file_store=file_store,
-        user_id=metadata.user_id
+        sid=conversation_id, file_store=file_store, user_id=metadata.user_id
     )
 
     # retrieve the relevant events
