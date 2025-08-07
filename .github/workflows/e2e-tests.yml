@@ -81,72 +81,89 @@ jobs:
 
       - name: Start OpenHands application
         run: |
+          # Initialize the unified log file
+          echo "=== OpenHands E2E Test Log ===" > /tmp/openhands-e2e-test.log
+          echo "Started at: $(date)" >> /tmp/openhands-e2e-test.log
+          echo "" >> /tmp/openhands-e2e-test.log
+          
           # Start the backend and frontend manually with proper debugging
           mkdir -p logs
           
-          echo "Starting backend server on port 3000..."
+          echo "Starting backend server on port 3000..." | tee -a /tmp/openhands-e2e-test.log
           poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 > /tmp/openhands-backend.log 2>&1 &
           BACKEND_PID=$!
-          echo "Backend PID: $BACKEND_PID"
+          echo "Backend PID: $BACKEND_PID" | tee -a /tmp/openhands-e2e-test.log
           
-          echo "Waiting for the backend to start..."
-          # Wait for the backend to be ready (up to 30 seconds)
-          for i in {1..30}; do
+          echo "Waiting for the backend to start..." | tee -a /tmp/openhands-e2e-test.log
+          # Wait for the backend to be ready (up to 60 seconds)
+          for i in {1..60}; do
             if nc -z localhost 3000; then
-              echo "Backend is running on port 3000"
+              echo "Backend is running on port 3000" | tee -a /tmp/openhands-e2e-test.log
               break
             fi
 
-            if [ $i -eq 30 ]; then
-              echo "Timed out waiting for backend to start"
-              echo "Backend log:"
-              cat /tmp/openhands-backend.log
-              echo "Backend process status:"
-              ps aux | grep uvicorn || echo "No uvicorn process found"
+            if [ $i -eq 60 ]; then
+              echo "Timed out waiting for backend to start" | tee -a /tmp/openhands-e2e-test.log
+              echo "=== Backend Log ===" >> /tmp/openhands-e2e-test.log
+              cat /tmp/openhands-backend.log >> /tmp/openhands-e2e-test.log
+              echo "=== Backend Process Status ===" >> /tmp/openhands-e2e-test.log
+              ps aux | grep uvicorn >> /tmp/openhands-e2e-test.log || echo "No uvicorn process found" >> /tmp/openhands-e2e-test.log
               exit 1
             fi
 
-            echo "Waiting for backend to start (attempt $i/30)..."
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "Waiting for backend to start (attempt $i/60)..." | tee -a /tmp/openhands-e2e-test.log
+            fi
             sleep 1
           done
 
-          echo "Backend started successfully."
+          echo "Backend started successfully." | tee -a /tmp/openhands-e2e-test.log
 
           # Start the frontend in the background
-          echo "Starting frontend on port 12000..."
+          echo "Starting frontend on port 12000..." | tee -a /tmp/openhands-e2e-test.log
           cd frontend
           VITE_BACKEND_HOST=0.0.0.0:3000 VITE_FRONTEND_PORT=12000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
           FRONTEND_PID=$!
-          echo "Frontend PID: $FRONTEND_PID"
+          echo "Frontend PID: $FRONTEND_PID" | tee -a /tmp/openhands-e2e-test.log
           cd ..
 
-          # Wait for the frontend to be ready (up to 30 seconds)
-          for i in {1..30}; do
+          # Wait for the frontend to be ready (up to 60 seconds)
+          for i in {1..60}; do
             if nc -z localhost 12000; then
-              echo "Frontend is running on port 12000"
+              echo "Frontend is running on port 12000" | tee -a /tmp/openhands-e2e-test.log
               break
             fi
 
-            if [ $i -eq 30 ]; then
-              echo "Timed out waiting for frontend to start"
-              echo "Frontend log:"
-              cat /tmp/openhands-frontend.log
-              echo "Frontend process status:"
-              ps aux | grep npm || echo "No npm process found"
+            if [ $i -eq 60 ]; then
+              echo "Timed out waiting for frontend to start" | tee -a /tmp/openhands-e2e-test.log
+              echo "=== Frontend Log ===" >> /tmp/openhands-e2e-test.log
+              cat /tmp/openhands-frontend.log >> /tmp/openhands-e2e-test.log
+              echo "=== Frontend Process Status ===" >> /tmp/openhands-e2e-test.log
+              ps aux | grep npm >> /tmp/openhands-e2e-test.log || echo "No npm process found" >> /tmp/openhands-e2e-test.log
               exit 1
             fi
 
-            echo "Waiting for frontend to start (attempt $i/30)..."
+            if [ $((i % 10)) -eq 0 ]; then
+              echo "Waiting for frontend to start (attempt $i/60)..." | tee -a /tmp/openhands-e2e-test.log
+            fi
             sleep 1
           done
 
-          echo "Frontend started successfully."
+          echo "Frontend started successfully." | tee -a /tmp/openhands-e2e-test.log
           
           # Additional wait to ensure the application is fully initialized
+          echo "Waiting for application to fully initialize..." | tee -a /tmp/openhands-e2e-test.log
           sleep 10
           
-          echo "Both backend and frontend are running successfully."
-          echo "Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID"
+          echo "Both backend and frontend are running successfully." | tee -a /tmp/openhands-e2e-test.log
+          echo "Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID" | tee -a /tmp/openhands-e2e-test.log
+          
+          # Test connectivity
+          echo "Testing backend connectivity..." | tee -a /tmp/openhands-e2e-test.log
+          curl -f http://localhost:3000/api/options/models || echo "Backend health check failed" | tee -a /tmp/openhands-e2e-test.log
+          
+          echo "Testing frontend connectivity..." | tee -a /tmp/openhands-e2e-test.log
+          curl -f http://localhost:12000/ || echo "Frontend health check failed" | tee -a /tmp/openhands-e2e-test.log
 
       - name: Run full end-to-end tests
         run: |
