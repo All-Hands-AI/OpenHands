@@ -112,7 +112,7 @@ async def new_conversation(
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
     user_secrets: UserSecrets = Depends(get_user_secrets),
     auth_type: AuthType | None = Depends(get_auth_type),
-) -> ConversationResponse:
+) -> ConversationInfo | ConversationResponse:
     """Initialize a new session or join an existing one.
 
     After successful initialization, the client should connect to the WebSocket
@@ -180,11 +180,25 @@ async def new_conversation(
             conversation_id=conversation_id,
         )
 
-        return ConversationResponse(
-            status='ok',
-            conversation_id=conversation_id,
-            conversation_status=agent_loop_info.status,
+        # Get the conversation metadata to return full conversation info
+        conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+        metadata = await conversation_store.get_metadata(conversation_id)
+        
+        # Return full conversation info instead of just ConversationResponse
+        # This includes url and session_api_key needed for WebSocket connection
+        conversation_info = await _get_conversation_info(
+            metadata, 0, agent_loop_info  # num_connections=0 for new conversation
         )
+        
+        if conversation_info is None:
+            # Fallback to original response if conversation info creation fails
+            return ConversationResponse(
+                status='ok',
+                conversation_id=conversation_id,
+                conversation_status=agent_loop_info.status,
+            )
+        
+        return conversation_info
     except MissingSettingsError as e:
         return JSONResponse(
             content={
