@@ -23,7 +23,7 @@ The main configuration classes are:
 - `AgentConfig`: Configuration for the agent
 - `SandboxConfig`: Configuration for the sandbox environment
 - `SecurityConfig`: Configuration for security settings
-- `MCPConfig`: Configuration for Multi-Channel Providers
+- `MCPConfig`: Configuration for Model Context Protocol
 
 These classes are defined as dataclasses, with class attributes holding default values for all fields.
 
