@@ -19,21 +19,25 @@ export const useAutoLogin = () => {
   const githubAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "github",
+    authUrl: config?.AUTH_URL,
   });
 
   const gitlabAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "gitlab",
+    authUrl: config?.AUTH_URL,
   });
 
   const bitbucketAuthUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "bitbucket",
+    authUrl: config?.AUTH_URL,
   });
 
   const enterpriseSsoUrl = useAuthUrl({
     appMode: config?.APP_MODE || null,
     identityProvider: "enterprise_sso",
+    authUrl: config?.AUTH_URL,
   });
 
   useEffect(() => {
