@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import uuid
 from unittest import mock
 
 import pytest
@@ -16,10 +15,10 @@ from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.stream import EventStream
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp.client import MCPClient
 from openhands.mcp.tool import MCPClientTool
 from openhands.mcp.utils import call_tool_mcp
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.memory import InMemoryFileStore
 
 
@@ -39,14 +38,8 @@ class MockLLM:
 
 
 @pytest.fixture
-def llm_registry():
-    """Create a mock LLMRegistry for testing."""
-    file_store = InMemoryFileStore({})
-    # Use a unique conversation ID for each test to avoid conflicts
-    conversation_id = f'test-conversation-{uuid.uuid4()}'
-    return LLMRegistry(
-        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
-    )
+def convo_stats():
+    return ConversationStats(None, 'convo-id', None)
 
 
 class MockAgent(Agent):
@@ -68,7 +61,7 @@ class MockAgent(Agent):
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_error_handling(llm_registry):
+async def test_mcp_tool_timeout_error_handling(convo_stats):
     """Test that verifies MCP tool timeout errors are properly handled and returned as observations."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -107,7 +100,7 @@ async def test_mcp_tool_timeout_error_handling(llm_registry):
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
-        llm_registry=llm_registry,
+        convo_stats=convo_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
         sid='test-session',
@@ -157,7 +150,7 @@ async def test_mcp_tool_timeout_error_handling(llm_registry):
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_agent_continuation(llm_registry):
+async def test_mcp_tool_timeout_agent_continuation(convo_stats):
     """Test that verifies the agent can continue processing after an MCP tool timeout."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -196,7 +189,7 @@ async def test_mcp_tool_timeout_agent_continuation(llm_registry):
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
-        llm_registry=llm_registry,
+        convo_stats=convo_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
         sid='test-session',

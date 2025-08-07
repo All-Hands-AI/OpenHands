@@ -32,11 +32,7 @@ class MockRuntime(Runtime):
         event_stream.file_store = file_store
 
         # Create a mock LLM registry
-        llm_registry = LLMRegistry(
-            file_store=file_store,
-            conversation_id='test_conversation',
-            user_id='test_user',
-        )
+        llm_registry = LLMRegistry(config)
 
         # Initialize the parent class properly
         super().__init__(

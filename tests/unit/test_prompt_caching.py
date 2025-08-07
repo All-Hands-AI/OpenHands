@@ -3,9 +3,9 @@ from litellm import ModelResponse
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import MessageAction
 from openhands.llm.llm_registry import LLMRegistry
-from openhands.storage.memory import InMemoryFileStore
 
 
 @pytest.fixture
@@ -19,19 +19,14 @@ def llm_config():
 
 @pytest.fixture
 def llm_registry():
-    file_store = InMemoryFileStore({})
-    registry = LLMRegistry(
-        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
-    )
-    # Clear any existing LLMs to avoid conflicts between tests
-    registry.service_to_llm.clear()
+    registry = LLMRegistry(config=OpenHandsConfig())
     return registry
 
 
 @pytest.fixture
-def codeact_agent(llm_config, llm_registry):
+def codeact_agent(llm_registry):
     config = AgentConfig()
-    agent = CodeActAgent(config, llm_config, llm_registry)
+    agent = CodeActAgent(config, llm_registry)
     return agent
 
 
