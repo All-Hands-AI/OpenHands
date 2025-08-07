@@ -56,6 +56,17 @@ def openhands_app():
     if 'LLM_BASE_URL' in os.environ:
         env['LLM_BASE_URL'] = os.environ['LLM_BASE_URL']
 
+    # Get the path to the repository root directory
+    current_dir = os.getcwd()
+    # If we're in the tests/e2e directory, go up two levels to the repo root
+    if current_dir.endswith('tests/e2e'):
+        repo_root = os.path.abspath(os.path.join(current_dir, '../..'))
+    else:
+        # If we're already at the repo root or somewhere else, use current directory
+        repo_root = current_dir
+
+    print(f'Starting OpenHands from directory: {repo_root}')
+
     # Start OpenHands in the background
     log_file = open('/tmp/openhands-e2e-test.log', 'w')
     process = subprocess.Popen(
@@ -63,7 +74,7 @@ def openhands_app():
         env=env,
         stdout=log_file,
         stderr=subprocess.STDOUT,
-        cwd=os.path.join(os.getcwd()),
+        cwd=repo_root,
     )
 
     # Wait for the application to start
