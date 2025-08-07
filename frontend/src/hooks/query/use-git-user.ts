@@ -3,28 +3,13 @@ import React from "react";
 import posthog from "posthog-js";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { useUserProviders } from "#/hooks/use-user-providers";
+import { useShouldShowUserFeatures } from "#/hooks/use-should-show-user-features";
 
 export const useGitUser = () => {
   const { data: config } = useConfig();
-  const { data: isAuthed } = useIsAuthed();
-  const { providers } = useUserProviders();
 
-  // Only enable the query if:
-  // - We have a valid APP_MODE and user is authenticated, AND
-  // - Either we're not in OSS mode OR we have provider tokens configured
-  const shouldFetchUser = React.useMemo(() => {
-    if (!config?.APP_MODE || !isAuthed) return false;
-
-    // In OSS mode, only fetch user info if Git providers are configured
-    if (config.APP_MODE === "oss") {
-      return providers.length > 0;
-    }
-
-    // In non-OSS modes (saas), always fetch user info when authenticated
-    return true;
-  }, [config?.APP_MODE, isAuthed, providers.length]);
+  // Use the shared hook to determine if we should fetch user data
+  const shouldFetchUser = useShouldShowUserFeatures();
 
   const user = useQuery({
     queryKey: ["user"],
