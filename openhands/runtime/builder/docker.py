@@ -13,19 +13,6 @@ from openhands.runtime.builder.base import RuntimeBuilder
 from openhands.utils.term_color import TermColor, colorize
 
 
-def _format_docker_command_for_logging(cmd: list[str]) -> str:
-    """Format a Docker command for logging with grey color.
-
-    Args:
-        cmd (list[str]): The Docker command as a list of strings
-
-    Returns:
-        str: The formatted command string in grey color
-    """
-    cmd_str = ' '.join(cmd)
-    return colorize(f'Running Docker command: {cmd_str}', TermColor.GREY)
-
-
 class DockerRuntimeBuilder(RuntimeBuilder):
     def __init__(self, docker_client: docker.DockerClient):
         self.docker_client = docker_client
@@ -168,16 +155,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
         buildx_cmd.append(path)  # must be last!
 
-        # Log the Docker command that will be executed
-        logger.info(_format_docker_command_for_logging(buildx_cmd))
-
         self.rolling_logger.start(
             f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
         )
 
         builder_cmd = ['docker', 'buildx', 'use', 'default']
-        # Log the builder command as well
-        logger.info(_format_docker_command_for_logging(builder_cmd))
         subprocess.Popen(
             builder_cmd,
             stdout=subprocess.PIPE,
