@@ -723,15 +723,6 @@ def main():
     This function is maintained for backward compatibility and testing purposes.
     New code should use the entry point in openhands.cli.entry instead.
     """
-    import warnings
-
-    warnings.warn(
-        'Direct use of openhands.cli.main.main() is deprecated. '
-        'Use openhands.cli.entry.main() instead.',
-        DeprecationWarning,
-        stacklevel=2,
-    )
-
     # Delegate to the new entry point
     from openhands.cli.entry import main as new_main
 
