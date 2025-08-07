@@ -23,11 +23,12 @@ interface MCPServerConfig {
 interface MCPServerFormProps {
   mode: "add" | "edit";
   server?: MCPServerConfig;
+  existingServers?: MCPServerConfig[];
   onSubmit: (server: MCPServerConfig) => void;
   onCancel: () => void;
 }
 
-export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFormProps) {
+export function MCPServerForm({ mode, server, existingServers, onSubmit, onCancel }: MCPServerFormProps) {
   const { t } = useTranslation();
   const [serverType, setServerType] = React.useState<MCPServerType>(
     server?.type || "sse"
@@ -65,6 +66,17 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
       }
       if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
         return t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
+      }
+      
+      // Check for uniqueness (only for add mode or if name changed in edit mode)
+      if (existingServers && (mode === "add" || (mode === "edit" && server?.name !== name))) {
+        const existingStdioNames = existingServers
+          .filter(s => s.type === "stdio")
+          .map(s => s.name)
+          .filter(Boolean);
+        if (existingStdioNames.includes(name)) {
+          return t(I18nKey.SETTINGS$MCP_ERROR_NAME_DUPLICATE);
+        }
       }
       if (!command) {
         return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_REQUIRED);
@@ -168,6 +180,8 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
           items={serverTypeOptions}
           selectedKey={serverType}
           onSelectionChange={(key) => setServerType(key as MCPServerType)}
+          inputValue={serverTypeOptions.find(opt => opt.key === serverType)?.label || ""}
+          onInputChange={() => {}} // Prevent input changes
           isClearable={false}
           allowsCustomValue={false}
           required
@@ -244,6 +258,9 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
                 "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
               )}
             />
+            <p className="text-xs text-tertiary-alt">
+              {t(I18nKey.SETTINGS$MCP_COMMAND_ARGUMENTS_HELP)}
+            </p>
           </label>
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
