@@ -27,6 +27,7 @@ from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.prompt import (
@@ -615,6 +616,7 @@ async def test_conversation_instructions_plumbed_to_memory(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
+        convo_stats=ConversationStats(file_store, 'test-session', None),
     )
 
     # Create a mock runtime and set it up
