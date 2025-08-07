@@ -82,7 +82,7 @@ COPY --chown=openhands:openhands pyproject.toml poetry.lock README.md MANIFEST.i
 RUN python openhands/core/download.py # No-op to download assets
 # Add this line to set group ownership of all files/directories not already in "app" group
 # openhands:openhands -> openhands:openhands
-RUN find /app \! -group app -exec chgrp app {} +
+RUN find /app \! -group app -exec chgrp openhands {} +
 
 COPY --chown=openhands:openhands --chmod=770 --from=frontend-builder /app/build ./frontend/build
 COPY --chown=openhands:openhands --chmod=770 ./containers/app/entrypoint.sh /app/entrypoint.sh
