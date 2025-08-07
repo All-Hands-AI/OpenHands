@@ -1,8 +1,11 @@
 import os
 import re
 import shlex
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Dict, Any
 from urllib.parse import urlparse
+
+# Import the patch functions
+from openhands.core.config.mcp_config_patch import update_mcp_shttp_servers, get_mcp_shttp_servers
 
 from pydantic import (
     BaseModel,
@@ -342,7 +345,15 @@ class OpenHandsMCPConfig:
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
 
-        shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
+        # Check if we have custom MCP SHTTP servers from the patch
+        custom_servers = get_mcp_shttp_servers()
+        if custom_servers:
+            # Use the first server from the custom servers
+            server = custom_servers[0]
+            shttp_servers = MCPSHTTPServerConfig(url=server['url'], api_key=server['api_key'])
+        else:
+            # Use the default server
+            shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
 
         return shttp_servers, stdio_servers
 
@@ -353,3 +364,6 @@ openhands_mcp_config_cls = os.environ.get(
 )
 
 OpenHandsMCPConfigImpl = get_impl(OpenHandsMCPConfig, openhands_mcp_config_cls)
+
+# Export the patch functions
+__all__ = ['update_mcp_shttp_servers', 'get_mcp_shttp_servers']
