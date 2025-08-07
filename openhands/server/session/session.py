@@ -150,14 +150,8 @@ class Session:
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
         self.logger.debug(
-            f'MCP configuration before setup - settings.mcp_config: {settings.mcp_config}'
+            f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
-
-        # Override MCP config with settings if provided
-        if settings.mcp_config is not None:
-            self.config.mcp = settings.mcp_config
-            self.logger.debug('Overrode MCP configuration with settings')
-
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
