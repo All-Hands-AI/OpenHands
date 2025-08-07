@@ -33,7 +33,6 @@ def _generate_dockerfile(
     build_from: BuildFromImageType = BuildFromImageType.SCRATCH,
     extra_deps: str | None = None,
     enable_browser: bool = True,
-    run_as_non_root: bool = False,
 ) -> str:
     """Generate the Dockerfile content for the runtime image based on the base image.
 
@@ -42,7 +41,6 @@ def _generate_dockerfile(
     - build_from (BuildFromImageType): The build method for the runtime image.
     - extra_deps (str):
     - enable_browser (bool): Whether to enable browser support (install Playwright)
-    - run_as_non_root (bool): Whether to run as non-root user (openhands)
 
     Returns:
     - str: The resulting Dockerfile content
@@ -54,17 +52,12 @@ def _generate_dockerfile(
     )
     template = env.get_template('Dockerfile.j2')
 
-    # Read from environment variable if not explicitly provided
-    if os.getenv('OH_RUNTIME_RUN_AS_NON_ROOT') is not None:
-        run_as_non_root = os.getenv('OH_RUNTIME_RUN_AS_NON_ROOT', '').lower() == 'true'
-
     dockerfile_content = template.render(
         base_image=base_image,
         build_from_scratch=build_from == BuildFromImageType.SCRATCH,
         build_from_versioned=build_from == BuildFromImageType.VERSIONED,
         extra_deps=extra_deps if extra_deps is not None else '',
         enable_browser=enable_browser,
-        run_as_non_root=run_as_non_root,
     )
     return dockerfile_content
 
@@ -122,7 +115,6 @@ def build_runtime_image(
     force_rebuild: bool = False,
     extra_build_args: list[str] | None = None,
     enable_browser: bool = True,
-    run_as_non_root: bool = False,
 ) -> str:
     """Prepares the final docker build folder.
 
@@ -156,7 +148,6 @@ def build_runtime_image(
                 platform=platform,
                 extra_build_args=extra_build_args,
                 enable_browser=enable_browser,
-                run_as_non_root=run_as_non_root,
             )
             return result
 
@@ -170,7 +161,6 @@ def build_runtime_image(
         platform=platform,
         extra_build_args=extra_build_args,
         enable_browser=enable_browser,
-        run_as_non_root=run_as_non_root,
     )
     return result
 
@@ -185,7 +175,6 @@ def build_runtime_image_in_folder(
     platform: str | None = None,
     extra_build_args: list[str] | None = None,
     enable_browser: bool = True,
-    run_as_non_root: bool = False,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image, enable_browser)}'
@@ -208,7 +197,6 @@ def build_runtime_image_in_folder(
             build_from=BuildFromImageType.SCRATCH,
             extra_deps=extra_deps,
             enable_browser=enable_browser,
-            run_as_non_root=run_as_non_root,
         )
         if not dry_run:
             _build_sandbox_image(
@@ -247,14 +235,7 @@ def build_runtime_image_in_folder(
     else:
         logger.debug(f'Build [{hash_image_name}] from scratch')
 
-    prep_build_folder(
-        build_folder,
-        base_image,
-        build_from,
-        extra_deps,
-        enable_browser,
-        run_as_non_root,
-    )
+    prep_build_folder(build_folder, base_image, build_from, extra_deps, enable_browser)
     if not dry_run:
         _build_sandbox_image(
             build_folder,
@@ -280,7 +261,6 @@ def prep_build_folder(
     build_from: BuildFromImageType,
     extra_deps: str | None,
     enable_browser: bool = True,
-    run_as_non_root: bool = False,
 ) -> None:
     # Copy the source code to directory. It will end up in build_folder/code
     # If package is not found, build from source code
@@ -313,7 +293,6 @@ def prep_build_folder(
         build_from=build_from,
         extra_deps=extra_deps,
         enable_browser=enable_browser,
-        run_as_non_root=run_as_non_root,
     )
     dockerfile_path = Path(build_folder, 'Dockerfile')
     with open(str(dockerfile_path), 'w') as f:
@@ -417,10 +396,6 @@ if __name__ == '__main__':
     parser.add_argument(
         '--no_enable_browser', dest='enable_browser', action='store_false'
     )
-    parser.add_argument('--run_as_non_root', action='store_true', default=False)
-    parser.add_argument(
-        '--no_run_as_non_root', dest='run_as_non_root', action='store_false'
-    )
     args = parser.parse_args()
 
     if args.build_folder is not None:
@@ -428,9 +403,9 @@ if __name__ == '__main__':
         # and create a Dockerfile dynamically and place it in the build_folder only. This allows the Docker image to
         # then be created using the Dockerfile (most likely using the containers/build.sh script)
         build_folder = args.build_folder
-        assert os.path.exists(
-            build_folder
-        ), f'Build folder {build_folder} does not exist'
+        assert os.path.exists(build_folder), (
+            f'Build folder {build_folder} does not exist'
+        )
         logger.debug(
             f'Copying the source code and generating the Dockerfile in the build folder: {build_folder}'
         )
@@ -453,7 +428,6 @@ if __name__ == '__main__':
                 force_rebuild=args.force_rebuild,
                 platform=args.platform,
                 enable_browser=args.enable_browser,
-                run_as_non_root=args.run_as_non_root,
             )
 
             _runtime_image_repo, runtime_image_source_tag = (
@@ -493,6 +467,5 @@ if __name__ == '__main__':
             docker_builder,
             platform=args.platform,
             enable_browser=args.enable_browser,
-            run_as_non_root=args.run_as_non_root,
         )
         logger.debug(f'\nBuilt image: {image_name}\n')

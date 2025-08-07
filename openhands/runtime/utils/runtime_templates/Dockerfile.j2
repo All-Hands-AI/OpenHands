@@ -247,23 +247,3 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
 # Install extra dependencies if specified
 {% if extra_deps %}RUN {{ extra_deps }} {% endif %}
-
-# ================================================================
-# Setup non-root user if requested
-# ================================================================
-{% if run_as_non_root %}
-# Create openhands user and group
-RUN groupadd -g 1000 openhands && \
-    useradd -u 1000 -g openhands -m -s /bin/bash openhands && \
-    echo "openhands ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
-    # Set ownership of all OpenHands directories to openhands user
-    chown -R openhands:openhands /openhands && \
-    # Make sure workspace directory exists and has correct permissions
-    mkdir -p /openhands/workspace && \
-    chown -R openhands:openhands /openhands/workspace && \
-    chmod -R g+rws,o+rw /openhands/workspace && \
-    find /openhands \! -group openhands -exec chgrp openhands {} +
-
-# Switch to non-root user for subsequent commands
-USER openhands
-{% endif %}
