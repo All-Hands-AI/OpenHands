@@ -11,7 +11,7 @@ export class MemoryService {
     eventId: number,
   ): Promise<string> {
     const { data } = await openHands.get<GetPromptResponse>(
-      `/api/conversations/${conversationId}/remember_prompt`,
+      `/api/conversations/${conversationId}/remember-prompt`,
       {
         params: { event_id: eventId },
       },

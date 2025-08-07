@@ -619,7 +619,7 @@ class OpenHands {
     eventId: number,
   ): Promise<string> {
     const { data } = await openHands.get<GetMicroagentPromptResponse>(
-      `/api/conversations/${conversationId}/remember_prompt`,
+      `/api/conversations/${conversationId}/remember-prompt`,
       {
         params: { event_id: eventId },
       },
