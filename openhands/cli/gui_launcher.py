@@ -66,19 +66,11 @@ def check_docker_requirements() -> bool:
     return True
 
 
-def get_openhands_config_dir() -> Path:
-    """Get the OpenHands configuration directory path.
-
-    Returns:
-        Path: Path to the ~/.openhands directory.
-    """
-    return Path.home() / '.openhands'
-
-
-def ensure_config_dir_exists() -> None:
-    """Ensure the OpenHands configuration directory exists."""
-    config_dir = get_openhands_config_dir()
+def ensure_config_dir_exists() -> Path:
+    """Ensure the OpenHands configuration directory exists and return its path."""
+    config_dir = Path.home() / '.openhands'
     config_dir.mkdir(exist_ok=True)
+    return config_dir
 
 
 def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
@@ -98,8 +90,7 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         sys.exit(1)
 
     # Ensure config directory exists
-    ensure_config_dir_exists()
-    config_dir = get_openhands_config_dir()
+    config_dir = ensure_config_dir_exists()
 
     # Get the current version for the Docker image
     version = __version__
