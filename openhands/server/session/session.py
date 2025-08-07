@@ -106,19 +106,31 @@ class Session:
         )
 
         # Use the configuration merger to merge settings with config
+        # This replaces all the individual settings assignments that were previously here
         self.config = ConfigurationMerger.merge_settings_with_config(
             settings, self.config
         )
 
+        # NOTE: this needs to happen AFTER the config is updated with the search_api_key
+        self.logger.debug(
+            f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
+        )
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 self.config.mcp_host, self.config, self.user_id
             )
         )
+
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
+            self.logger.debug('Added default MCP HTTP server to config')
+
         self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        self.logger.debug(
+            f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
+        )
 
         # Get agent class from merged config
         agent_cls = self.config.default_agent
@@ -234,6 +246,7 @@ class Session:
 
     async def _on_event(self, event: Event) -> None:
         """Callback function for events that mainly come from the agent.
+
         Event is the base class for any agent action and observation.
 
         Args:
