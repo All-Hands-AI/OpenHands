@@ -9,7 +9,17 @@ from playwright.sync_api import Page, expect
 
 def get_readme_line_count():
     """Get the line count of the README.md file."""
-    readme_path = os.path.join(os.getcwd(), 'README.md')
+    # Get the path to the repository root directory
+    current_dir = os.getcwd()
+    # If we're in the tests/e2e directory, go up two levels to the repo root
+    if current_dir.endswith('tests/e2e'):
+        repo_root = os.path.abspath(os.path.join(current_dir, '../..'))
+    else:
+        # If we're already at the repo root or somewhere else, try to find README.md
+        repo_root = current_dir
+
+    readme_path = os.path.join(repo_root, 'README.md')
+    print(f'Looking for README.md at: {readme_path}')
     with open(readme_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     return len(lines)
@@ -32,7 +42,7 @@ def openhands_app():
     required_vars = ['GITHUB_TOKEN', 'LLM_MODEL', 'LLM_API_KEY']
     for var in required_vars:
         if var not in os.environ:
-            print(f"Warning: {var} not set, using default value for testing")
+            print(f'Warning: {var} not set, using default value for testing')
             if var == 'GITHUB_TOKEN':
                 env[var] = 'test-token'
             elif var == 'LLM_MODEL':
@@ -41,7 +51,7 @@ def openhands_app():
                 env[var] = 'test-key'
         else:
             env[var] = os.environ[var]
-            
+
     # Pass through optional environment variables
     if 'LLM_BASE_URL' in os.environ:
         env['LLM_BASE_URL'] = os.environ['LLM_BASE_URL']
