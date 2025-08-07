@@ -27,7 +27,7 @@ from openhands.core.config.condenser_config import (
     CondenserPipelineConfig,
     ConversationWindowCondenserConfig,
 )
-from openhands.core.config.utils import OH_DEFAULT_AGENT
+from openhands.core.config.config_utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
