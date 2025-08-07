@@ -138,7 +138,7 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
       const envString = formData.get("env")?.toString().trim();
 
       const args = argsString
-        ? argsString.split(",").map((arg) => arg.trim()).filter(Boolean)
+        ? argsString.split("\n").map((arg) => arg.trim()).filter(Boolean)
         : [];
       const env = parseEnvironmentVariables(envString || "");
 
@@ -168,6 +168,8 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
           items={serverTypeOptions}
           selectedKey={serverType}
           onSelectionChange={(key) => setServerType(key as MCPServerType)}
+          isClearable={false}
+          allowsCustomValue={false}
           required
           wrapperClassName="w-full max-w-[350px]"
         />
@@ -228,17 +230,17 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ARGS)}</span>
+              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_COMMAND_ARGUMENTS)}</span>
               <OptionalTag />
             </div>
-            <input
+            <textarea
               data-testid="args-input"
               name="args"
-              type="text"
-              defaultValue={server?.args?.join(", ") || ""}
-              placeholder="arg1, arg2, arg3"
+              rows={3}
+              defaultValue={server?.args?.join("\n") || ""}
+              placeholder="arg1&#10;arg2&#10;arg3"
               className={cn(
-                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+                "bg-tertiary border border-[#717888] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt resize-none",
                 "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
               )}
             />
@@ -246,7 +248,7 @@ export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFor
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
             <div className="flex items-center gap-2">
-              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ENV)}</span>
+              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ENVIRONMENT_VARIABLES)}</span>
               <OptionalTag />
             </div>
             <textarea
