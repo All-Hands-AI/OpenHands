@@ -86,10 +86,29 @@ jobs:
           echo "Started at: $(date)" >> /tmp/openhands-e2e-test.log
           echo "" >> /tmp/openhands-e2e-test.log
           
+          # Create workspace directory that the runner can write to
+          mkdir -p /tmp/openhands-workspace
+          
+          # Set environment variables for OpenHands
+          export WORKSPACE_BASE=/tmp/openhands-workspace
+          export SANDBOX_USER_ID=$(id -u)
+          export SANDBOX_RUNTIME=local
+          export INSTALL_DOCKER=0
+          export RUNTIME=local
+          export FRONTEND_PORT=12000
+          export FRONTEND_HOST=0.0.0.0
+          export BACKEND_HOST=0.0.0.0
+          export BACKEND_PORT=3000
+          
           # Start the backend and frontend manually with proper debugging
           mkdir -p logs
           
           echo "Starting backend server on port 3000..." | tee -a /tmp/openhands-e2e-test.log
+          echo "Environment variables:" | tee -a /tmp/openhands-e2e-test.log
+          echo "  WORKSPACE_BASE=$WORKSPACE_BASE" | tee -a /tmp/openhands-e2e-test.log
+          echo "  SANDBOX_USER_ID=$SANDBOX_USER_ID" | tee -a /tmp/openhands-e2e-test.log
+          echo "  RUNTIME=$RUNTIME" | tee -a /tmp/openhands-e2e-test.log
+          
           poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 > /tmp/openhands-backend.log 2>&1 &
           BACKEND_PID=$!
           echo "Backend PID: $BACKEND_PID" | tee -a /tmp/openhands-e2e-test.log
