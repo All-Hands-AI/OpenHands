@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   MCP_CONFIG: {
     sse_servers: [],
     stdio_servers: [],
+    shttp_servers: [],
   },
   GIT_USER_NAME: "openhands",
   GIT_USER_EMAIL: "openhands@all-hands.dev",
