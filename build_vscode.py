@@ -3,19 +3,11 @@ import pathlib
 import subprocess
 
 # This script is intended to be run by Poetry during the build process.
-# It builds the VS Code extension, but intelligently skips the build in contexts
-# where it's not needed (CLI-only installations, shallow repositories, etc.)
+# It builds the VS Code extension, but skips the build when git repository
+# state is problematic (shallow repos, invalid HEAD, etc.)
 #
 # Environment variables that control behavior:
 # - SKIP_VSCODE_BUILD=1: Explicitly skip VS Code extension build
-# - BUILD_VSCODE_IN_CI=1: Force build in CI environments (default: skip in CI)
-#
-# The script automatically detects and skips building in these scenarios:
-# - CLI-only installation contexts (uvx, pipx, uv)
-# - Shallow git repositories (common with package managers)
-# - Git repositories with invalid HEAD (empty repos, etc.)
-# - CI/automated environments (unless BUILD_VSCODE_IN_CI=1)
-# - Missing or insufficient Node.js version
 
 # Define the expected name of the .vsix file based on the extension's package.json
 # This should match the name and version in openhands-vscode/package.json
@@ -103,50 +95,12 @@ def check_node_version():
 
 
 def should_build_vscode_extension():
-    """Determine if VS Code extension should be built based on context."""
+    """Determine if VS Code extension should be built based on git repository state."""
     # Check if explicitly disabled
     if os.environ.get('SKIP_VSCODE_BUILD', '').lower() in ('1', 'true', 'yes'):
         return False, 'SKIP_VSCODE_BUILD environment variable is set'
 
-    # Check if we're being installed via uvx or similar tools (CLI-only context)
-    # These tools typically set specific environment variables or have specific parent processes
-    cli_only_indicators = [
-        'UVX_PROJECT',
-        'PIPX_HOME',
-        'PIP_DISABLE_PIP_VERSION_CHECK',
-        'UV_PROJECT_ENVIRONMENT',
-        'UV_CACHE_DIR',  # uv/uvx specific
-    ]
-    if any(env_var in os.environ for env_var in cli_only_indicators):
-        return False, 'Detected CLI-only installation context (uvx/pipx/uv)'
-
-    # Check if parent process suggests CLI-only installation
-    try:
-        import psutil
-
-        current_process = psutil.Process()
-        parent_process = current_process.parent()
-        if parent_process and any(
-            name in parent_process.name().lower() for name in ['uvx', 'pipx', 'uv']
-        ):
-            return False, f'Detected CLI-only installation via {parent_process.name()}'
-    except (ImportError, psutil.NoSuchProcess, psutil.AccessDenied):
-        # psutil not available or can't access parent process info
-        pass
-
-    # Check if we're in a CI/automated environment where VS Code extension isn't needed
-    if any(
-        env_var in os.environ
-        for env_var in ['CI', 'GITHUB_ACTIONS', 'GITLAB_CI', 'JENKINS_URL']
-    ):
-        # Allow override for CI that specifically wants to build the extension
-        if os.environ.get('BUILD_VSCODE_IN_CI', '').lower() not in ('1', 'true', 'yes'):
-            return (
-                False,
-                'Detected CI environment, skipping VS Code build (set BUILD_VSCODE_IN_CI=1 to override)',
-            )
-
-    # Check if we're in a development environment (has .git and not shallow)
+    # Check git repository state
     git_valid, git_msg = check_git_repository_state()
     if not git_valid:
         return False, f'Git repository issues: {git_msg}'
@@ -157,7 +111,7 @@ def should_build_vscode_extension():
             'Shallow repository detected, skipping VS Code build to avoid issues',
         )
 
-    return True, 'Development environment detected, building VS Code extension'
+    return True, 'Git repository state is valid for building VS Code extension'
 
 
 def build_vscode_extension():
