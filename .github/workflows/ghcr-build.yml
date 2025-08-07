@@ -332,3 +332,5 @@ jobs:
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
         shell: bash
         run: |
+          echo "Updating PR description with Docker and uvx commands"
+          bash ${GITHUB_WORKSPACE}/.github/scripts/update_pr_description.sh
