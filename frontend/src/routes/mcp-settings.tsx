@@ -1,124 +1,104 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
-import posthog from "posthog-js";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { I18nKey } from "#/i18n/declaration";
+import { MCPServerList } from "#/components/features/settings/mcp-settings/mcp-server-list";
+import { MCPServerForm } from "#/components/features/settings/mcp-settings/mcp-server-form";
+import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
+import { BrandButton } from "#/components/features/settings/brand-button";
 import {
   MCPConfig,
   MCPSSEServer,
   MCPStdioServer,
   MCPSHTTPServer,
 } from "#/types/settings";
-import { BrandButton } from "#/components/features/settings/brand-button";
-import { I18nKey } from "#/i18n/declaration";
-import {
-  displayErrorToast,
-  displaySuccessToast,
-} from "#/utils/custom-toast-handlers";
-import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
-import { MCPServerList } from "#/components/features/settings/mcp-settings/mcp-server-list";
-import { MCPServerForm } from "#/components/features/settings/mcp-settings/mcp-server-form";
-import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 
-export type MCPServerType = "sse" | "stdio" | "shttp";
+type MCPServerType = "sse" | "stdio" | "shttp";
 
-export type MCPServerConfig = {
-  type: MCPServerType;
+interface MCPServerConfig {
   id: string;
-} & (MCPSSEServer | MCPStdioServer | MCPSHTTPServer);
+  type: MCPServerType;
+  name?: string;
+  url?: string;
+  api_key?: string;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
 
 function MCPSettingsScreen() {
   const { t } = useTranslation();
   const { data: settings, isLoading } = useSettings();
-  const { mutate: saveSettings, isPending } = useSaveSettings();
+  const { mutate: saveSettings } = useSaveSettings();
 
-  const [mcpConfig, setMcpConfig] = useState<MCPConfig>({
+  const [view, setView] = React.useState<"list" | "add" | "edit">("list");
+  const [editingServer, setEditingServer] = React.useState<MCPServerConfig | null>(null);
+  const [confirmationModalIsVisible, setConfirmationModalIsVisible] = React.useState(false);
+  const [serverToDelete, setServerToDelete] = React.useState<string | null>(null);
+  const [isDirty, setIsDirty] = React.useState(false);
+
+  const mcpConfig: MCPConfig = settings?.MCP_CONFIG || {
     sse_servers: [],
     stdio_servers: [],
     shttp_servers: [],
-  });
-  const [isDirty, setIsDirty] = useState(false);
-  const [view, setView] = useState<
-    "list" | "add-server-form" | "edit-server-form"
-  >("list");
-  const [selectedServer, setSelectedServer] = useState<MCPServerConfig | null>(
-    null,
-  );
-  const [confirmationModalIsVisible, setConfirmationModalIsVisible] =
-    useState(false);
+  };
 
-  useEffect(() => {
+  const [localMcpConfig, setMcpConfig] = React.useState<MCPConfig>(mcpConfig);
+
+  React.useEffect(() => {
     if (settings?.MCP_CONFIG) {
-      setMcpConfig({
-        sse_servers: settings.MCP_CONFIG.sse_servers || [],
-        stdio_servers: settings.MCP_CONFIG.stdio_servers || [],
-        shttp_servers: settings.MCP_CONFIG.shttp_servers || [],
-      });
+      setMcpConfig(settings.MCP_CONFIG);
     }
-  }, [settings]);
+  }, [settings?.MCP_CONFIG]);
 
-  const normalizeServer = (
-    server: string | MCPSSEServer | MCPSHTTPServer,
-  ): MCPSSEServer | MCPSHTTPServer => {
-    if (typeof server === "string") {
-      return { url: server };
-    }
-    return server;
-  };
+  // Convert servers to a unified format for display
+  const allServers: MCPServerConfig[] = [
+    ...localMcpConfig.sse_servers.map((server, index) => ({
+      id: `sse-${index}`,
+      type: "sse" as const,
+      url: typeof server === "string" ? server : server.url,
+      api_key: typeof server === "object" ? server.api_key : undefined,
+    })),
+    ...localMcpConfig.stdio_servers.map((server, index) => ({
+      id: `stdio-${index}`,
+      type: "stdio" as const,
+      name: server.name,
+      command: server.command,
+      args: server.args,
+      env: server.env,
+    })),
+    ...localMcpConfig.shttp_servers.map((server, index) => ({
+      id: `shttp-${index}`,
+      type: "shttp" as const,
+      url: typeof server === "string" ? server : server.url,
+      api_key: typeof server === "object" ? server.api_key : undefined,
+    })),
+  ];
 
-  const getAllServers = (): MCPServerConfig[] => {
-    const servers: MCPServerConfig[] = [];
-
-    mcpConfig.sse_servers.forEach((server, index) => {
-      const normalizedServer = normalizeServer(server);
-      servers.push({
-        type: "sse",
-        id: `sse-${index}`,
-        ...normalizedServer,
-      } as MCPServerConfig);
-    });
-
-    mcpConfig.stdio_servers.forEach((server, index) => {
-      servers.push({
-        type: "stdio",
-        id: `stdio-${index}`,
-        ...server,
-      } as MCPServerConfig);
-    });
-
-    mcpConfig.shttp_servers.forEach((server, index) => {
-      const normalizedServer = normalizeServer(server);
-      servers.push({
-        type: "shttp",
-        id: `shttp-${index}`,
-        ...normalizedServer,
-      } as MCPServerConfig);
-    });
-
-    return servers;
-  };
-
-  const handleAddServer = (serverConfig: Omit<MCPServerConfig, "id">) => {
-    const newConfig = { ...mcpConfig };
+  const handleAddServer = (serverConfig: MCPServerConfig) => {
+    const newConfig = { ...localMcpConfig };
 
     if (serverConfig.type === "sse") {
-      const { type, ...server } = serverConfig;
-      newConfig.sse_servers = [
-        ...newConfig.sse_servers,
-        server as MCPSSEServer,
-      ];
+      const server: MCPSSEServer = {
+        url: serverConfig.url!,
+        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
+      };
+      newConfig.sse_servers.push(server);
     } else if (serverConfig.type === "stdio") {
-      const { type, ...server } = serverConfig;
-      newConfig.stdio_servers = [
-        ...newConfig.stdio_servers,
-        server as MCPStdioServer,
-      ];
+      const server: MCPStdioServer = {
+        name: serverConfig.name!,
+        command: serverConfig.command!,
+        ...(serverConfig.args && { args: serverConfig.args }),
+        ...(serverConfig.env && { env: serverConfig.env }),
+      };
+      newConfig.stdio_servers.push(server);
     } else if (serverConfig.type === "shttp") {
-      const { type, ...server } = serverConfig;
-      newConfig.shttp_servers = [
-        ...newConfig.shttp_servers,
-        server as MCPSHTTPServer,
-      ];
+      const server: MCPSHTTPServer = {
+        url: serverConfig.url!,
+        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
+      };
+      newConfig.shttp_servers.push(server);
     }
 
     setMcpConfig(newConfig);
@@ -127,22 +107,30 @@ function MCPSettingsScreen() {
   };
 
   const handleEditServer = (serverConfig: MCPServerConfig) => {
-    const newConfig = { ...mcpConfig };
+    const newConfig = { ...localMcpConfig };
     const [, indexStr] = serverConfig.id.split("-");
     const index = parseInt(indexStr, 10);
 
     if (serverConfig.type === "sse") {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { type, id, ...server } = serverConfig;
-      newConfig.sse_servers[index] = server as MCPSSEServer;
+      const server: MCPSSEServer = {
+        url: serverConfig.url!,
+        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
+      };
+      newConfig.sse_servers[index] = server;
     } else if (serverConfig.type === "stdio") {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { type, id, ...server } = serverConfig;
-      newConfig.stdio_servers[index] = server as MCPStdioServer;
+      const server: MCPStdioServer = {
+        name: serverConfig.name!,
+        command: serverConfig.command!,
+        ...(serverConfig.args && { args: serverConfig.args }),
+        ...(serverConfig.env && { env: serverConfig.env }),
+      };
+      newConfig.stdio_servers[index] = server;
     } else if (serverConfig.type === "shttp") {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { type, id, ...server } = serverConfig;
-      newConfig.shttp_servers[index] = server as MCPSHTTPServer;
+      const server: MCPSHTTPServer = {
+        url: serverConfig.url!,
+        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
+      };
+      newConfig.shttp_servers[index] = server;
     }
 
     setMcpConfig(newConfig);
@@ -151,7 +139,7 @@ function MCPSettingsScreen() {
   };
 
   const handleDeleteServer = (serverId: string) => {
-    const newConfig = { ...mcpConfig };
+    const newConfig = { ...localMcpConfig };
     const [serverType, indexStr] = serverId.split("-");
     const index = parseInt(indexStr, 10);
 
@@ -171,111 +159,112 @@ function MCPSettingsScreen() {
   const handleSaveSettings = () => {
     if (!settings) return;
 
-    saveSettings(
-      { MCP_CONFIG: mcpConfig },
-      {
-        onSuccess: () => {
-          displaySuccessToast(t(I18nKey.SETTINGS$SAVED));
-          posthog.capture("settings_saved", {
-            HAS_MCP_CONFIG: true,
-            MCP_SSE_SERVERS_COUNT: mcpConfig.sse_servers.length,
-            MCP_STDIO_SERVERS_COUNT: mcpConfig.stdio_servers.length,
-            MCP_SHTTP_SERVERS_COUNT: mcpConfig.shttp_servers.length,
-          });
-          setIsDirty(false);
-        },
-        onError: (error) => {
-          const errorMessage = retrieveAxiosErrorMessage(error);
-          displayErrorToast(errorMessage || t(I18nKey.ERROR$GENERIC));
-        },
+    const updatedSettings = {
+      ...settings,
+      MCP_CONFIG: localMcpConfig,
+    };
+
+    saveSettings(updatedSettings, {
+      onSuccess: () => {
+        setIsDirty(false);
       },
-    );
+    });
+  };
+
+  const handleEditClick = (server: MCPServerConfig) => {
+    setEditingServer(server);
+    setView("edit");
+  };
+
+  const handleDeleteClick = (serverId: string) => {
+    setServerToDelete(serverId);
+    setConfirmationModalIsVisible(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (serverToDelete) {
+      handleDeleteServer(serverToDelete);
+      setServerToDelete(null);
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setConfirmationModalIsVisible(false);
+    setServerToDelete(null);
   };
 
   if (isLoading) {
-    return <div className="p-9">{t(I18nKey.HOME$LOADING)}</div>;
+    return (
+      <div className="px-11 py-9 flex flex-col gap-5">
+        <div className="animate-pulse">
+          <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-8"></div>
+          <div className="h-10 bg-gray-300 rounded w-32"></div>
+        </div>
+      </div>
+    );
   }
 
-  const allServers = getAllServers();
-
   return (
-    <div
-      data-testid="mcp-settings-screen"
-      className="px-11 py-9 flex flex-col gap-5"
-    >
-      <div className="flex flex-col gap-2 mb-6">
-        <div className="text-sm font-medium">
-          {t(I18nKey.SETTINGS$MCP_TITLE)}
-        </div>
-        <p className="text-xs text-[#A3A3A3]">
-          {t(I18nKey.SETTINGS$MCP_DESCRIPTION)}
-        </p>
-      </div>
-
+    <div className="px-11 py-9 flex flex-col gap-5">
       {view === "list" && (
-        <BrandButton
-          testId="add-mcp-server-button"
-          type="button"
-          variant="primary"
-          onClick={() => setView("add-server-form")}
-        >
-          {t(I18nKey.SETTINGS$MCP_ADD_SERVER)}
-        </BrandButton>
-      )}
-
-      {view === "list" && (
-        <MCPServerList
-          servers={allServers}
-          onEdit={(server) => {
-            setSelectedServer(server);
-            setView("edit-server-form");
-          }}
-          onDelete={(server) => {
-            setSelectedServer(server);
-            setConfirmationModalIsVisible(true);
-          }}
-        />
-      )}
-
-      {(view === "add-server-form" || view === "edit-server-form") && (
-        <MCPServerForm
-          mode={view === "add-server-form" ? "add" : "edit"}
-          server={selectedServer}
-          onSave={
-            view === "add-server-form" ? handleAddServer : handleEditServer
-          }
-          onCancel={() => {
-            setView("list");
-            setSelectedServer(null);
-          }}
-        />
-      )}
-
-      {isDirty && view === "list" && (
-        <div className="flex gap-6 justify-end border-t border-t-tertiary pt-6">
+        <>
           <BrandButton
-            testId="save-mcp-settings-button"
+            testId="add-mcp-server-button"
             type="button"
             variant="primary"
-            onClick={handleSaveSettings}
-            isDisabled={isPending}
+            onClick={() => setView("add")}
+            isDisabled={isLoading}
           >
-            {!isPending && t(I18nKey.SETTINGS$SAVE_CHANGES)}
-            {isPending && t(I18nKey.SETTINGS$SAVING)}
+            {t(I18nKey.SETTINGS$MCP_ADD_SERVER)}
           </BrandButton>
-        </div>
+
+          <MCPServerList
+            servers={allServers}
+            onEdit={handleEditClick}
+            onDelete={handleDeleteClick}
+          />
+
+          {isDirty && (
+            <div className="flex justify-end">
+              <BrandButton
+                testId="save-mcp-settings-button"
+                type="button"
+                variant="primary"
+                onClick={handleSaveSettings}
+              >
+                {t(I18nKey.SETTINGS$SAVE_CHANGES)}
+              </BrandButton>
+            </div>
+          )}
+        </>
       )}
 
-      {confirmationModalIsVisible && selectedServer && (
+      {view === "add" && (
+        <MCPServerForm
+          mode="add"
+          onSubmit={handleAddServer}
+          onCancel={() => setView("list")}
+        />
+      )}
+
+      {view === "edit" && editingServer && (
+        <MCPServerForm
+          mode="edit"
+          server={editingServer}
+          onSubmit={handleEditServer}
+          onCancel={() => {
+            setView("list");
+            setEditingServer(null);
+          }}
+        />
+      )}
+
+      {confirmationModalIsVisible && (
         <ConfirmationModal
-          text={t(I18nKey.SETTINGS$MCP_CONFIRM_DELETE_SERVER, {
-            serverName:
-              selectedServer.type === "stdio"
-                ? (selectedServer as MCPStdioServer).name
-                : (selectedServer as MCPSSEServer | MCPSHTTPServer).url,
-          })}
-          onConfirm={() => handleDeleteServer(selectedServer.id)}
-          onCancel={() => setConfirmationModalIsVisible(false)}
+          text={t(I18nKey.SETTINGS$MCP_CONFIRM_DELETE)}
+          onConfirm={handleConfirmDelete}
+          onCancel={handleCancelDelete}
         />
       )}
     </div>

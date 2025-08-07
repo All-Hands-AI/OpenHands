@@ -1,322 +1,284 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { MCPServerConfig, MCPServerType } from "#/routes/mcp-settings";
-import { MCPStdioServer, MCPSSEServer, MCPSHTTPServer } from "#/types/settings";
-import { BrandButton } from "../brand-button";
 import { SettingsInput } from "../settings-input";
+import { SettingsDropdownInput } from "../settings-dropdown-input";
+import { BrandButton } from "../brand-button";
 import { OptionalTag } from "../optional-tag";
+import { cn } from "#/utils/utils";
+
+type MCPServerType = "sse" | "stdio" | "shttp";
+
+interface MCPServerConfig {
+  id: string;
+  type: MCPServerType;
+  name?: string;
+  url?: string;
+  api_key?: string;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
 
 interface MCPServerFormProps {
   mode: "add" | "edit";
-  server: MCPServerConfig | null;
-  onSave: (server: Omit<MCPServerConfig, "id">) => void;
+  server?: MCPServerConfig;
+  onSubmit: (server: MCPServerConfig) => void;
   onCancel: () => void;
 }
 
-export function MCPServerForm({
-  mode,
-  server,
-  onSave,
-  onCancel,
-}: MCPServerFormProps) {
+export function MCPServerForm({ mode, server, onSubmit, onCancel }: MCPServerFormProps) {
   const { t } = useTranslation();
+  const [serverType, setServerType] = React.useState<MCPServerType>(
+    server?.type || "sse"
+  );
+  const [error, setError] = React.useState<string | null>(null);
 
-  const [serverType, setServerType] = useState<MCPServerType>("sse");
-  const [formData, setFormData] = useState({
-    // Common fields
-    url: "",
-    api_key: "",
-    // Stdio specific fields
-    name: "",
-    command: "",
-    args: "",
-    env: "",
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const serverTypeOptions = [
+    { key: "sse", label: t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SSE) },
+    { key: "stdio", label: t(I18nKey.SETTINGS$MCP_SERVER_TYPE_STDIO) },
+    { key: "shttp", label: t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SHTTP) },
+  ];
 
-  useEffect(() => {
-    if (mode === "edit" && server) {
-      setServerType(server.type);
-
-      if (server.type === "stdio") {
-        const stdioServer = server as MCPStdioServer;
-        setFormData({
-          url: "",
-          api_key: "",
-          name: stdioServer.name,
-          command: stdioServer.command,
-          args: stdioServer.args?.join(" ") || "",
-          env: stdioServer.env
-            ? Object.entries(stdioServer.env)
-                .map(([k, v]) => `${k}=${v}`)
-                .join(", ")
-            : "",
-        });
-      } else {
-        const urlServer = server as MCPSSEServer | MCPSHTTPServer;
-        setFormData({
-          url: urlServer.url,
-          api_key: urlServer.api_key || "",
-          name: "",
-          command: "",
-          args: "",
-          env: "",
-        });
+  const validateForm = (formData: FormData): string | null => {
+    if (serverType === "sse" || serverType === "shttp") {
+      const url = formData.get("url")?.toString().trim();
+      if (!url) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_URL_REQUIRED);
       }
-    } else {
-      // Reset form for add mode
-      setFormData({
-        url: "",
-        api_key: "",
-        name: "",
-        command: "",
-        args: "",
-        env: "",
-      });
-    }
-  }, [mode, server]);
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (serverType === "stdio") {
-      if (!formData.name.trim()) {
-        newErrors.name = t(I18nKey.SETTINGS$MCP_ERROR_NAME_REQUIRED);
-      } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.name.trim())) {
-        newErrors.name = t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
-      }
-
-      if (!formData.command.trim()) {
-        newErrors.command = t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_REQUIRED);
-      } else if (formData.command.trim().includes(" ")) {
-        newErrors.command = t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_NO_SPACES);
-      }
-
-      // Validate environment variables format
-      if (formData.env.trim()) {
-        const envPairs = formData.env
-          .split(",")
-          .map((pair) => pair.trim())
-          .filter(Boolean);
-        for (const pair of envPairs) {
-          if (!pair.includes("=")) {
-            newErrors.env = t(I18nKey.SETTINGS$MCP_ERROR_ENV_FORMAT);
-            break;
-          }
-          const [key] = pair.split("=", 1);
-          if (!key.trim() || !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(key.trim())) {
-            newErrors.env = t(I18nKey.SETTINGS$MCP_ERROR_ENV_KEY_INVALID);
-            break;
-          }
-        }
-      }
-    } else if (!formData.url.trim()) {
-      newErrors.url = t(I18nKey.SETTINGS$MCP_ERROR_URL_REQUIRED);
-    } else {
       try {
-        const url = new URL(formData.url.trim());
-        if (!["http:", "https:", "ws:", "wss:"].includes(url.protocol)) {
-          newErrors.url = t(I18nKey.SETTINGS$MCP_ERROR_URL_PROTOCOL);
+        const urlObj = new URL(url);
+        if (!["http:", "https:"].includes(urlObj.protocol)) {
+          return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID_PROTOCOL);
         }
       } catch {
-        newErrors.url = t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID);
+        return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID);
       }
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (serverType === "stdio") {
+      const name = formData.get("name")?.toString().trim();
+      const command = formData.get("command")?.toString().trim();
+
+      if (!name) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_NAME_REQUIRED);
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
+      }
+      if (!command) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_REQUIRED);
+      }
+      if (command.includes(" ")) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_NO_SPACES);
+      }
+    }
+
+    return null;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const parseEnvironmentVariables = (envString: string): Record<string, string> => {
+    const env: Record<string, string> = {};
+    if (!envString.trim()) return env;
 
-    if (!validateForm()) {
+    const lines = envString.split("\n");
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) continue;
+
+      const equalIndex = trimmedLine.indexOf("=");
+      if (equalIndex === -1) continue;
+
+      const key = trimmedLine.substring(0, equalIndex).trim();
+      const value = trimmedLine.substring(equalIndex + 1).trim();
+      if (key) {
+        env[key] = value;
+      }
+    }
+    return env;
+  };
+
+  const formatEnvironmentVariables = (env?: Record<string, string>): string => {
+    if (!env) return "";
+    return Object.entries(env)
+      .map(([key, value]) => `${key}=${value}`)
+      .join("\n");
+  };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    const formData = new FormData(event.currentTarget);
+    const validationError = validateForm(formData);
+
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    if (serverType === "stdio") {
-      const stdioServer: Omit<MCPServerConfig, "id"> = {
-        type: "stdio",
-        name: formData.name.trim(),
-        command: formData.command.trim(),
-        args: formData.args.trim()
-          ? formData.args.trim().split(/\s+/)
-          : undefined,
-        env: formData.env.trim()
-          ? Object.fromEntries(
-              formData.env
-                .split(",")
-                .map((pair) => pair.trim())
-                .filter(Boolean)
-                .map((pair) => {
-                  const [key, ...valueParts] = pair.split("=");
-                  return [key.trim(), valueParts.join("=")];
-                }),
-            )
-          : undefined,
-      };
-      onSave(stdioServer);
-    } else {
-      const urlServer: Omit<MCPServerConfig, "id"> = {
-        type: serverType,
-        url: formData.url.trim(),
-        api_key: formData.api_key.trim() || undefined,
-      };
-      onSave(urlServer);
+    const baseConfig = {
+      id: server?.id || `${serverType}-${Date.now()}`,
+      type: serverType,
+    };
+
+    if (serverType === "sse" || serverType === "shttp") {
+      const url = formData.get("url")?.toString().trim();
+      const api_key = formData.get("api_key")?.toString().trim();
+
+      onSubmit({
+        ...baseConfig,
+        url: url!,
+        ...(api_key && { api_key }),
+      });
+    } else if (serverType === "stdio") {
+      const name = formData.get("name")?.toString().trim();
+      const command = formData.get("command")?.toString().trim();
+      const argsString = formData.get("args")?.toString().trim();
+      const envString = formData.get("env")?.toString().trim();
+
+      const args = argsString
+        ? argsString.split(",").map((arg) => arg.trim()).filter(Boolean)
+        : [];
+      const env = parseEnvironmentVariables(envString || "");
+
+      onSubmit({
+        ...baseConfig,
+        name: name!,
+        command: command!,
+        ...(args.length > 0 && { args }),
+        ...(Object.keys(env).length > 0 && { env }),
+      });
     }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
+  const formTestId = mode === "add" ? "add-mcp-server-form" : "edit-mcp-server-form";
 
   return (
-    <div className="border border-tertiary rounded-md p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-medium">
-          {mode === "add"
-            ? t(I18nKey.SETTINGS$MCP_ADD_SERVER)
-            : t(I18nKey.SETTINGS$MCP_EDIT_SERVER)}
-        </h3>
+    <form
+      data-testid={formTestId}
+      onSubmit={handleSubmit}
+      className="flex flex-col items-start gap-6"
+    >
+      {mode === "add" && (
+        <SettingsDropdownInput
+          testId="server-type-dropdown"
+          name="server-type"
+          label={t(I18nKey.SETTINGS$MCP_SERVER_TYPE)}
+          items={serverTypeOptions}
+          selectedKey={serverType}
+          onSelectionChange={(key) => setServerType(key as MCPServerType)}
+          required
+          wrapperClassName="w-full max-w-[350px]"
+        />
+      )}
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      {(serverType === "sse" || serverType === "shttp") && (
+        <>
+          <SettingsInput
+            testId="url-input"
+            name="url"
+            type="url"
+            label={t(I18nKey.SETTINGS$MCP_URL)}
+            className="w-full max-w-[680px]"
+            required
+            defaultValue={server?.url || ""}
+            placeholder="https://api.example.com"
+          />
+
+          <SettingsInput
+            testId="api-key-input"
+            name="api_key"
+            type="password"
+            label={t(I18nKey.SETTINGS$MCP_API_KEY)}
+            className="w-full max-w-[680px]"
+            showOptionalTag
+            defaultValue={server?.api_key || ""}
+            placeholder={t(I18nKey.SETTINGS$MCP_API_KEY_PLACEHOLDER)}
+          />
+        </>
+      )}
+
+      {serverType === "stdio" && (
+        <>
+          <SettingsInput
+            testId="name-input"
+            name="name"
+            type="text"
+            label={t(I18nKey.SETTINGS$MCP_NAME)}
+            className="w-full max-w-[350px]"
+            required
+            defaultValue={server?.name || ""}
+            placeholder="my-mcp-server"
+            pattern="^[a-zA-Z0-9_-]+$"
+          />
+
+          <SettingsInput
+            testId="command-input"
+            name="command"
+            type="text"
+            label={t(I18nKey.SETTINGS$MCP_COMMAND)}
+            className="w-full max-w-[680px]"
+            required
+            defaultValue={server?.command || ""}
+            placeholder="python"
+          />
+
+          <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ARGS)}</span>
+              <OptionalTag />
+            </div>
+            <input
+              data-testid="args-input"
+              name="args"
+              type="text"
+              defaultValue={server?.args?.join(", ") || ""}
+              placeholder="arg1, arg2, arg3"
+              className={cn(
+                "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
+              )}
+            />
+          </label>
+
+          <label className="flex flex-col gap-2.5 w-full max-w-[680px]">
+            <div className="flex items-center gap-2">
+              <span className="text-sm">{t(I18nKey.SETTINGS$MCP_ENV)}</span>
+              <OptionalTag />
+            </div>
+            <textarea
+              data-testid="env-input"
+              name="env"
+              rows={4}
+              defaultValue={formatEnvironmentVariables(server?.env)}
+              placeholder="KEY1=value1&#10;KEY2=value2"
+              className={cn(
+                "resize-none",
+                "bg-tertiary border border-[#717888] rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+                "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed"
+              )}
+            />
+          </label>
+        </>
+      )}
+
+      <div className="flex items-center gap-4">
+        <BrandButton
+          testId="cancel-button"
+          type="button"
+          variant="secondary"
+          onClick={onCancel}
+        >
+          {t(I18nKey.BUTTON$CANCEL)}
+        </BrandButton>
+        <BrandButton testId="submit-button" type="submit" variant="primary">
+          {mode === "add" && t(I18nKey.SETTINGS$MCP_ADD_SERVER)}
+          {mode === "edit" && t(I18nKey.SETTINGS$MCP_SAVE_SERVER)}
+        </BrandButton>
       </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {mode === "add" && (
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              {t(I18nKey.SETTINGS$MCP_SERVER_TYPE)}
-            </label>
-            <select
-              value={serverType}
-              onChange={(e) => setServerType(e.target.value as MCPServerType)}
-              className="w-full px-3 py-2 border border-tertiary rounded-md bg-base-secondary text-content-1 focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="sse">
-                {t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SSE)}
-              </option>
-              <option value="stdio">
-                {t(I18nKey.SETTINGS$MCP_SERVER_TYPE_STDIO)}
-              </option>
-              <option value="shttp">
-                {t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SHTTP)}
-              </option>
-            </select>
-          </div>
-        )}
-
-        {serverType === "stdio" ? (
-          <>
-            <SettingsInput
-              label={t(I18nKey.SETTINGS$MCP_NAME)}
-              value={formData.name}
-              onChange={(value) => handleInputChange("name", value)}
-              placeholder={t(I18nKey.SETTINGS$MCP_NAME_PLACEHOLDER)}
-              error={errors.name}
-              required
-            />
-
-            <SettingsInput
-              label={t(I18nKey.SETTINGS$MCP_COMMAND)}
-              value={formData.command}
-              onChange={(value) => handleInputChange("command", value)}
-              placeholder={t(I18nKey.SETTINGS$MCP_COMMAND_PLACEHOLDER)}
-              error={errors.command}
-              required
-            />
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-sm font-medium">
-                  {t(I18nKey.SETTINGS$MCP_ARGS)}
-                </label>
-                <OptionalTag />
-              </div>
-              <SettingsInput
-                value={formData.args}
-                onChange={(value) => handleInputChange("args", value)}
-                placeholder={t(I18nKey.SETTINGS$MCP_ARGS_PLACEHOLDER)}
-                error={errors.args}
-              />
-              <p className="text-xs text-content-3 mt-1">
-                {t(I18nKey.SETTINGS$MCP_ARGS_HELP)}
-              </p>
-            </div>
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-sm font-medium">
-                  {t(I18nKey.SETTINGS$MCP_ENV)}
-                </label>
-                <OptionalTag />
-              </div>
-              <SettingsInput
-                value={formData.env}
-                onChange={(value) => handleInputChange("env", value)}
-                placeholder={t(I18nKey.SETTINGS$MCP_ENV_PLACEHOLDER)}
-                error={errors.env}
-              />
-              <p className="text-xs text-content-3 mt-1">
-                {t(I18nKey.SETTINGS$MCP_ENV_HELP)}
-              </p>
-            </div>
-          </>
-        ) : (
-          <>
-            <SettingsInput
-              label={t(I18nKey.SETTINGS$MCP_URL)}
-              value={formData.url}
-              onChange={(value) => handleInputChange("url", value)}
-              placeholder={t(I18nKey.SETTINGS$MCP_URL_PLACEHOLDER)}
-              error={errors.url}
-              required
-            />
-
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <label className="text-sm font-medium">
-                  {t(I18nKey.SETTINGS$MCP_API_KEY)}
-                </label>
-                <OptionalTag />
-              </div>
-              <SettingsInput
-                value={formData.api_key}
-                onChange={(value) => handleInputChange("api_key", value)}
-                placeholder={t(I18nKey.SETTINGS$MCP_API_KEY_PLACEHOLDER)}
-                type="password"
-              />
-              <p className="text-xs text-content-3 mt-1">
-                {t(I18nKey.SETTINGS$MCP_API_KEY_HELP)}
-              </p>
-            </div>
-          </>
-        )}
-
-        <div className="flex gap-4 pt-4 border-t border-tertiary">
-          <BrandButton
-            type="submit"
-            variant="primary"
-            testId="save-mcp-server-button"
-          >
-            {mode === "add"
-              ? t(I18nKey.SETTINGS$MCP_ADD_SERVER)
-              : t(I18nKey.SETTINGS$SAVE_CHANGES)}
-          </BrandButton>
-
-          <BrandButton
-            type="button"
-            variant="secondary"
-            onClick={onCancel}
-            testId="cancel-mcp-server-button"
-          >
-            {t(I18nKey.SETTINGS$CANCEL)}
-          </BrandButton>
-        </div>
-      </form>
-    </div>
+    </form>
   );
 }

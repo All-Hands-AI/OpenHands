@@ -1,29 +1,41 @@
-import React from "react";
-import { useTranslation } from "react-i18next";
 import { FaPencil, FaTrash } from "react-icons/fa6";
+import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { MCPServerConfig } from "#/routes/mcp-settings";
-import { MCPStdioServer, MCPSSEServer, MCPSHTTPServer } from "#/types/settings";
+
+interface MCPServerConfig {
+  id: string;
+  type: "sse" | "stdio" | "shttp";
+  name?: string;
+  url?: string;
+  api_key?: string;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
 
 interface MCPServerListProps {
   servers: MCPServerConfig[];
   onEdit: (server: MCPServerConfig) => void;
-  onDelete: (server: MCPServerConfig) => void;
+  onDelete: (serverId: string) => void;
 }
 
-export function MCPServerListSkeleton() {
+function MCPServerListItemSkeleton() {
   return (
-    <div className="border-t border-[#717888] last-of-type:border-b max-w-[830px] pr-2.5 py-[13px] flex items-center justify-between">
-      <div className="flex items-center justify-between w-1/3">
-        <span className="skeleton h-4 w-1/2" />
-        <span className="skeleton h-4 w-1/4" />
-      </div>
-
-      <div className="flex items-center gap-8">
-        <span className="skeleton h-4 w-4" />
-        <span className="skeleton h-4 w-4" />
-      </div>
-    </div>
+    <tr className="flex w-full items-center border-t border-tertiary">
+      <td className="p-3 w-1/4">
+        <div className="skeleton h-4 w-3/4" />
+      </td>
+      <td className="p-3 w-1/4">
+        <div className="skeleton h-4 w-1/2" />
+      </td>
+      <td className="p-3 w-1/2">
+        <div className="skeleton h-4 w-full" />
+      </td>
+      <td className="p-3 w-1/4 flex items-center justify-end gap-4">
+        <div className="skeleton h-4 w-4" />
+        <div className="skeleton h-4 w-4" />
+      </td>
+    </tr>
   );
 }
 
@@ -38,15 +50,8 @@ function MCPServerListItem({
 }) {
   const { t } = useTranslation();
 
-  const getServerDisplayName = () => {
-    if (server.type === "stdio") {
-      return (server as MCPStdioServer).name;
-    }
-    return (server as MCPSSEServer | MCPSHTTPServer).url;
-  };
-
-  const getServerTypeLabel = () => {
-    switch (server.type) {
+  const getServerTypeLabel = (type: string) => {
+    switch (type) {
       case "sse":
         return t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SSE);
       case "stdio":
@@ -54,41 +59,41 @@ function MCPServerListItem({
       case "shttp":
         return t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SHTTP);
       default:
-        return server.type.toUpperCase();
+        return type.toUpperCase();
     }
   };
 
-  const getServerDescription = () => {
-    if (server.type === "stdio") {
-      const stdioServer = server as MCPStdioServer;
-      return `${stdioServer.command}${stdioServer.args?.length ? ` ${stdioServer.args.join(" ")}` : ""}`;
+  const getServerDescription = (server: MCPServerConfig) => {
+    if (server.type === "stdio" && server.name) {
+      return server.name;
     }
-
-    const urlServer = server as MCPSSEServer | MCPSHTTPServer;
-    return urlServer.api_key
-      ? t(I18nKey.SETTINGS$MCP_API_KEY_CONFIGURED)
-      : t(I18nKey.SETTINGS$MCP_NO_API_KEY);
+    if ((server.type === "sse" || server.type === "shttp") && server.url) {
+      return server.url;
+    }
+    return "";
   };
+
+  const serverName = server.type === "stdio" ? server.name : server.url;
+  const serverDescription = getServerDescription(server);
 
   return (
     <tr
       data-testid="mcp-server-item"
       className="flex w-full items-center border-t border-tertiary"
     >
-      <td className="p-3 w-1/4 text-sm text-content-2">
-        <div className="truncate" title={getServerDisplayName()}>
-          {getServerDisplayName()}
-        </div>
-        <div className="text-xs text-content-3 mt-1">
-          {getServerTypeLabel()}
-        </div>
+      <td className="p-3 w-1/4 text-sm text-content-2 truncate" title={serverName}>
+        {serverName}
+      </td>
+
+      <td className="p-3 w-1/4 text-sm text-content-2 truncate">
+        {getServerTypeLabel(server.type)}
       </td>
 
       <td
-        className="p-3 w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80"
-        title={getServerDescription()}
+        className="p-3 w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
+        title={serverDescription}
       >
-        {getServerDescription()}
+        {serverDescription}
       </td>
 
       <td className="p-3 w-1/4 flex items-center justify-end gap-4">
@@ -96,8 +101,8 @@ function MCPServerListItem({
           data-testid="edit-mcp-server-button"
           type="button"
           onClick={onEdit}
-          aria-label={`Edit ${getServerDisplayName()}`}
-          className="cursor-pointer hover:text-primary transition-colors"
+          aria-label={`Edit ${serverName}`}
+          className="cursor-pointer"
         >
           <FaPencil size={16} />
         </button>
@@ -105,8 +110,8 @@ function MCPServerListItem({
           data-testid="delete-mcp-server-button"
           type="button"
           onClick={onDelete}
-          aria-label={`Delete ${getServerDisplayName()}`}
-          className="cursor-pointer hover:text-red-500 transition-colors"
+          aria-label={`Delete ${serverName}`}
+          className="cursor-pointer"
         >
           <FaTrash size={16} />
         </button>
@@ -115,21 +120,14 @@ function MCPServerListItem({
   );
 }
 
-export function MCPServerList({
-  servers,
-  onEdit,
-  onDelete,
-}: MCPServerListProps) {
+export function MCPServerList({ servers, onEdit, onDelete }: MCPServerListProps) {
   const { t } = useTranslation();
 
   if (servers.length === 0) {
     return (
       <div className="border border-tertiary rounded-md p-8 text-center">
         <p className="text-content-2 text-sm">
-          {t(I18nKey.SETTINGS$MCP_NO_SERVERS_CONFIGURED)}
-        </p>
-        <p className="text-content-3 text-xs mt-2">
-          {t(I18nKey.SETTINGS$MCP_ADD_SERVER_HINT)}
+          {t(I18nKey.SETTINGS$MCP_NO_SERVERS)}
         </p>
       </div>
     );
@@ -141,7 +139,10 @@ export function MCPServerList({
         <thead className="bg-base-tertiary">
           <tr className="flex w-full items-center">
             <th className="w-1/4 text-left p-3 text-sm font-medium">
-              {t(I18nKey.SETTINGS$MCP_SERVER_NAME)}
+              {t(I18nKey.SETTINGS$NAME)}
+            </th>
+            <th className="w-1/4 text-left p-3 text-sm font-medium">
+              {t(I18nKey.SETTINGS$MCP_SERVER_TYPE)}
             </th>
             <th className="w-1/2 text-left p-3 text-sm font-medium">
               {t(I18nKey.SETTINGS$MCP_SERVER_DETAILS)}
@@ -157,7 +158,7 @@ export function MCPServerList({
               key={server.id}
               server={server}
               onEdit={() => onEdit(server)}
-              onDelete={() => onDelete(server)}
+              onDelete={() => onDelete(server.id)}
             />
           ))}
         </tbody>
@@ -165,3 +166,5 @@ export function MCPServerList({
     </div>
   );
 }
+
+export { MCPServerListItemSkeleton };
