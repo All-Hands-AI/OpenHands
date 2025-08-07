@@ -86,11 +86,11 @@ def test_simple_browser_navigation(page: Page):
     print('Successfully navigated to the OpenHands GitHub repository')
 
 
-@pytest.mark.skip(reason='Requires full OpenHands setup with Docker')
+# @pytest.mark.skip(reason='Requires full OpenHands setup with Docker')
 def test_openhands_workflow(page: Page, openhands_app):
     """Test the OpenHands end-to-end workflow."""
     # Navigate to the OpenHands application
-    page.goto('http://localhost:12001/')
+    page.goto('http://localhost:12002/')
 
     # Wait for the repository selection dropdown to be visible
     page.wait_for_selector('button:has-text("Select a repository")')
