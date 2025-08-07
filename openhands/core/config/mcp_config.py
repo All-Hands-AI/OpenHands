@@ -1,7 +1,7 @@
 import os
 import re
 import shlex
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING
 from urllib.parse import urlparse
 
 from pydantic import (
