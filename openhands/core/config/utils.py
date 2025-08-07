@@ -15,6 +15,7 @@ from pydantic import BaseModel, SecretStr, ValidationError
 from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.arg_utils import get_headless_parser
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     condenser_config_from_toml_section,
@@ -655,18 +656,9 @@ def get_condenser_config_arg(
         return None
 
 
-# Command line arguments
-def get_parser() -> argparse.ArgumentParser:
-    """Get the argument parser for headless mode."""
-    # Import here to avoid circular imports
-    from openhands.cli.args_config import create_headless_parser
-
-    return create_headless_parser()
-
-
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args()
 
     if args.version:

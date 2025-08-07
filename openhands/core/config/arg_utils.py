@@ -14,12 +14,6 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         help='Path to the config file (default: config.toml in the current directory)',
     )
     parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        help='The working directory for the agent',
-    )
-    parser.add_argument(
         '-t',
         '--task',
         type=str,
@@ -31,6 +25,78 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         '--file',
         type=str,
         help='Path to a file containing the task. Overrides -t if both are provided.',
+    )
+    parser.add_argument(
+        '-n',
+        '--name',
+        help='Session name',
+        type=str,
+        default='',
+    )
+    parser.add_argument(
+        '--log-level',
+        help='Set the log level',
+        type=str,
+        default=None,
+    )
+
+
+def add_cli_specific_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add arguments specific to CLI mode (simplified subset)."""
+    parser.add_argument(
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
+        type=bool,
+        default=False,
+    )
+
+
+def add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add arguments specific to evaluation mode."""
+    # Evaluation-specific arguments
+    parser.add_argument(
+        '--eval-output-dir',
+        default='evaluation/evaluation_outputs/outputs',
+        type=str,
+        help='The directory to save evaluation output',
+    )
+    parser.add_argument(
+        '--eval-n-limit',
+        default=None,
+        type=int,
+        help='The number of instances to evaluate',
+    )
+    parser.add_argument(
+        '--eval-num-workers',
+        default=4,
+        type=int,
+        help='The number of workers to use for evaluation',
+    )
+    parser.add_argument(
+        '--eval-note',
+        default=None,
+        type=str,
+        help='The note to add to the evaluation directory',
+    )
+    parser.add_argument(
+        '--eval-ids',
+        default=None,
+        type=str,
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
+    )
+
+
+def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
+    """Add arguments specific to headless mode (full evaluation suite)."""
+    # Version argument
+    parser.add_argument(
+        '-v', '--version', action='store_true', help='Show version information'
+    )
+    parser.add_argument(
+        '-d',
+        '--directory',
+        type=str,
+        help='The working directory for the agent',
     )
     parser.add_argument(
         '-c',
@@ -65,82 +131,6 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
-    parser.add_argument(
-        '-n',
-        '--name',
-        help='Session name',
-        type=str,
-        default='',
-    )
-    parser.add_argument(
-        '--log-level',
-        help='Set the log level',
-        type=str,
-        default=None,
-    )
-
-
-def add_cli_specific_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add arguments specific to CLI mode (simplified subset)."""
-    parser.add_argument(
-        '--no-auto-continue',
-        help='Disable auto-continue responses in CLI mode (i.e. CLI will read from stdin instead of auto-continuing)',
-        action='store_true',
-        default=False,
-    )
-    parser.add_argument(
-        '--selected-repo',
-        help='GitHub repository to clone (format: owner/repo)',
-        type=str,
-        default=None,
-    )
-    parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
-    )
-
-
-def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add arguments specific to headless mode (full evaluation suite)."""
-    # Version argument
-    parser.add_argument(
-        '-v', '--version', action='store_true', help='Show version information'
-    )
-
-    # Evaluation-specific arguments
-    parser.add_argument(
-        '--eval-output-dir',
-        default='evaluation/evaluation_outputs/outputs',
-        type=str,
-        help='The directory to save evaluation output',
-    )
-    parser.add_argument(
-        '--eval-n-limit',
-        default=None,
-        type=int,
-        help='The number of instances to evaluate',
-    )
-    parser.add_argument(
-        '--eval-num-workers',
-        default=4,
-        type=int,
-        help='The number of workers to use for evaluation',
-    )
-    parser.add_argument(
-        '--eval-note',
-        default=None,
-        type=str,
-        help='The note to add to the evaluation directory',
-    )
-    parser.add_argument(
-        '--eval-ids',
-        default=None,
-        type=str,
-        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
-    )
-
     # Additional headless-specific arguments
     parser.add_argument(
         '--no-auto-continue',
@@ -154,15 +144,9 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
     )
-    parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
-    )
 
 
-def create_cli_parser() -> argparse.ArgumentParser:
+def get_cli_parser() -> argparse.ArgumentParser:
     """Create argument parser for CLI mode with simplified argument set."""
     parser = argparse.ArgumentParser(description='Run OpenHands in CLI mode')
     add_common_arguments(parser)
@@ -170,9 +154,18 @@ def create_cli_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def create_headless_parser() -> argparse.ArgumentParser:
+def get_headless_parser() -> argparse.ArgumentParser:
     """Create argument parser for headless mode with full argument set."""
     parser = argparse.ArgumentParser(description='Run the agent via CLI')
     add_common_arguments(parser)
     add_headless_specific_arguments(parser)
+    return parser
+
+
+def get_evaluation_parser() -> argparse.ArgumentParser:
+    """Create argument parser for evaluation mode."""
+    parser = argparse.ArgumentParser(description='Run OpenHands in evaluation mode')
+    add_common_arguments(parser)
+    add_headless_specific_arguments(parser)
+    add_evaluation_arguments(parser)
     return parser

@@ -1,10 +1,14 @@
 import pytest
 
-from openhands.core.config import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS, get_parser
+from openhands.core.config import (
+    OH_DEFAULT_AGENT,
+    OH_MAX_ITERATIONS,
+    get_headless_parser,
+)
 
 
 def test_parser_default_values():
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args([])
 
     assert args.directory is None
@@ -24,7 +28,7 @@ def test_parser_default_values():
 
 
 def test_parser_custom_values():
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args(
         [
             '-v',
@@ -76,7 +80,7 @@ def test_parser_custom_values():
 
 
 def test_parser_file_overrides_task():
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args(['-t', 'task from command', '-f', 'task_file.txt'])
 
     assert args.task == 'task from command'
@@ -84,31 +88,31 @@ def test_parser_file_overrides_task():
 
 
 def test_parser_invalid_max_iterations():
-    parser = get_parser()
+    parser = get_headless_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(['-i', 'not_a_number'])
 
 
 def test_parser_invalid_max_budget():
-    parser = get_parser()
+    parser = get_headless_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(['-b', 'not_a_number'])
 
 
 def test_parser_invalid_eval_n_limit():
-    parser = get_parser()
+    parser = get_headless_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(['--eval-n-limit', 'not_a_number'])
 
 
 def test_parser_invalid_eval_num_workers():
-    parser = get_parser()
+    parser = get_headless_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(['--eval-num-workers', 'not_a_number'])
 
 
 def test_help_message(capsys):
-    parser = get_parser()
+    parser = get_headless_parser()
     with pytest.raises(SystemExit):
         parser.parse_args(['--help'])
     captured = capsys.readouterr()
@@ -150,6 +154,6 @@ def test_help_message(capsys):
 
 def test_selected_repo_format():
     """Test that the selected-repo argument accepts owner/repo format."""
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args(['--selected-repo', 'owner/repo'])
     assert args.selected_repo == 'owner/repo'

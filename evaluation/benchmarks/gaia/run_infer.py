@@ -31,8 +31,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
     load_from_toml,
 )
 from openhands.core.config.utils import get_agent_config_arg
@@ -294,7 +294,7 @@ Here is the task:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--level',
         type=str,
