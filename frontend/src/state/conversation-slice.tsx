@@ -11,6 +11,7 @@ interface ConversationState {
     images: File[];
     files: File[];
   } | null;
+  shouldStopAgent: boolean;
 }
 
 const initialState: ConversationState = {
@@ -20,6 +21,7 @@ const initialState: ConversationState = {
   files: [],
   messageToSend: null,
   dataFromExpandedChatInput: null,
+  shouldStopAgent: false,
 };
 
 export const conversationSlice = createSlice({
@@ -73,6 +75,9 @@ export const conversationSlice = createSlice({
     ) => {
       state.dataFromExpandedChatInput = action.payload;
     },
+    setShouldStopAgent: (state, action: PayloadAction<boolean>) => {
+      state.shouldStopAgent = action.payload;
+    },
   },
 });
 
@@ -90,6 +95,7 @@ export const {
   clearAllFiles,
   setMessageToSend,
   setDataFromExpandedChatInput,
+  setShouldStopAgent,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

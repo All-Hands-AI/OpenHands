@@ -7,7 +7,10 @@ import { ImageCarousel } from "../images/image-carousel";
 import { FileList } from "../files/file-list";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useChatFileUpload } from "#/hooks/use-chat-file-upload";
-import { setDataFromExpandedChatInput } from "#/state/conversation-slice";
+import {
+  setDataFromExpandedChatInput,
+  setShouldStopAgent,
+} from "#/state/conversation-slice";
 
 export function ExpandedInteractiveChatBox() {
   const dispatch = useDispatch();
@@ -48,8 +51,7 @@ export function ExpandedInteractiveChatBox() {
   };
 
   const handleStop = () => {
-    // Default implementation for stopping
-    console.log("Stop action triggered");
+    dispatch(setShouldStopAgent(true));
   };
 
   const isDisabled =

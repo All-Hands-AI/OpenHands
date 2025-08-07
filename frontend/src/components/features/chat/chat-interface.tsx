@@ -36,6 +36,7 @@ import { validateFiles } from "#/utils/file-validation";
 import {
   setMessageToSend,
   setDataFromExpandedChatInput,
+  setShouldStopAgent,
 } from "#/state/conversation-slice";
 import { GitControlBar } from "./git-control-bar";
 
@@ -69,6 +70,9 @@ export function ChatInterface() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const dataFromExpandedChatInput = useSelector(
     (state: RootState) => state.conversation.dataFromExpandedChatInput,
+  );
+  const shouldStopAgent = useSelector(
+    (state: RootState) => state.conversation.shouldStopAgent,
   );
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
@@ -170,6 +174,15 @@ export function ChatInterface() {
     posthog.capture("stop_button_clicked");
     send(generateAgentStateChangeEvent(AgentState.STOPPED));
   };
+
+  // Watch for changes in shouldStopAgent and call handleStop when true
+  React.useEffect(() => {
+    if (shouldStopAgent) {
+      handleStop();
+      // Reset the flag after processing
+      dispatch(setShouldStopAgent(false));
+    }
+  }, [shouldStopAgent, dispatch]);
 
   const onClickShareFeedbackActionButton = async (
     polarity: "positive" | "negative",
