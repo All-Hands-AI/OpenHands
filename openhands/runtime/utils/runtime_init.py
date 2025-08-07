@@ -110,13 +110,21 @@ def init_user_and_working_directory(
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str = output.stdout.decode()
 
-    command = f'chown -R {username}:{username} {initial_cwd}'
+    command = f'sudo chown -R {username}:{username} {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
+    if output.stderr:
+        err_str = output.stderr.decode()
+        logger.warning(f'chown command stderr: {err_str}')
+        out_str += f' [stderr: {err_str}]'
 
-    command = f'chmod g+rw {initial_cwd}'
+    command = f'sudo chmod g+rw {initial_cwd}'
     output = subprocess.run(command, shell=True, capture_output=True)
     out_str += output.stdout.decode()
+    if output.stderr:
+        err_str = output.stderr.decode()
+        logger.warning(f'chmod command stderr: {err_str}')
+        out_str += f' [stderr: {err_str}]'
     logger.debug(f'Created working directory. Output: [{out_str}]')
 
     return None
