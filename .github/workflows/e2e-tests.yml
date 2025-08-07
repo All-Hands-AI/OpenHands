@@ -52,9 +52,23 @@ jobs:
         run: |
           poetry run playwright install --with-deps chromium
           
-      - name: Build OpenHands
+      - name: Setup Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: '22.x'
+          
+      - name: Install frontend dependencies
         run: |
-          make build
+          cd frontend && npm install
+          
+      - name: Build frontend
+        run: |
+          cd frontend && npm run prepare && npm run build
+          
+      - name: Install pre-commit hooks
+        run: |
+          git config --unset-all core.hooksPath || true
+          poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml
 
       - name: Run basic end-to-end tests
         run: |
