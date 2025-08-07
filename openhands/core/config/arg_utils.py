@@ -39,15 +39,8 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         default=None,
     )
-
-
-def add_cli_specific_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add arguments specific to CLI mode (simplified subset)."""
     parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
+        '-v', '--version', action='store_true', help='Show version information'
     )
 
 
@@ -88,10 +81,6 @@ def add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
 
 def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments specific to headless mode (full evaluation suite)."""
-    # Version argument
-    parser.add_argument(
-        '-v', '--version', action='store_true', help='Show version information'
-    )
     parser.add_argument(
         '-d',
         '--directory',
@@ -148,9 +137,60 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
 
 def get_cli_parser() -> argparse.ArgumentParser:
     """Create argument parser for CLI mode with simplified argument set."""
-    parser = argparse.ArgumentParser(description='Run OpenHands in CLI mode')
-    add_common_arguments(parser)
-    add_cli_specific_arguments(parser)
+    # Create a description with welcome message explaining available commands
+    description = (
+        'Welcome to OpenHands: Code Less, Make More\n\n'
+        'OpenHands supports two main commands:\n'
+        '  serve - Launch the OpenHands GUI server (web interface)\n'
+        '  cli   - Run OpenHands in CLI mode (terminal interface)\n\n'
+        'Running "openhands" without a command is the same as "openhands cli"'
+    )
+
+    parser = argparse.ArgumentParser(
+        description=description,
+        prog='openhands',
+        formatter_class=argparse.RawDescriptionHelpFormatter,  # Preserve formatting in description
+        epilog='For more information about a command, run: openhands COMMAND --help',
+    )
+
+    # Create subparsers
+    subparsers = parser.add_subparsers(
+        dest='command',
+        title='commands',
+        description='OpenHands supports two main commands:',
+        metavar='COMMAND',
+    )
+
+    # Add 'serve' subcommand
+    serve_parser = subparsers.add_parser(
+        'serve', help='Launch the OpenHands GUI server using Docker (web interface)'
+    )
+    serve_parser.add_argument(
+        '--mount-cwd',
+        help='Mount the current working directory into the GUI server container',
+        action='store_true',
+        default=False,
+    )
+    serve_parser.add_argument(
+        '--gpu',
+        help='Enable GPU support by mounting all GPUs into the Docker container via nvidia-docker',
+        action='store_true',
+        default=False,
+    )
+
+    # Add 'cli' subcommand - import all the existing CLI arguments
+    cli_parser = subparsers.add_parser(
+        'cli', help='Run OpenHands in CLI mode (terminal interface)'
+    )
+    add_common_arguments(cli_parser)
+
+    cli_parser.add_argument(
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
+        type=bool,
+        default=False,
+    )
+
     return parser
 
 

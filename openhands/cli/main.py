@@ -717,17 +717,30 @@ After reviewing the file, please ask the user what they would like to do with it
     get_runtime_cls(config.runtime).teardown(config)
 
 
-def main():
-    """Legacy entry point for backward compatibility.
+def run_cli_command(args):
+    """Run the CLI command with proper error handling and cleanup."""
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        loop.run_until_complete(main_with_loop(args))
+    except KeyboardInterrupt:
+        print('⚠️ Session was interrupted: interrupted\n')
+    except ConnectionRefusedError as e:
+        print(f'Connection refused: {e}')
+        sys.exit(1)
+    except Exception as e:
+        print(f'An error occurred: {e}')
+        sys.exit(1)
+    finally:
+        try:
+            # Cancel all running tasks
+            pending = asyncio.all_tasks(loop)
+            for task in pending:
+                task.cancel()
 
-    This function is maintained for backward compatibility and testing purposes.
-    New code should use the entry point in openhands.cli.entry instead.
-    """
-    # Delegate to the new entry point
-    from openhands.cli.entry import main as new_main
-
-    new_main()
-
-
-if __name__ == '__main__':
-    main()
+            # Wait for all tasks to complete with a timeout
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
+            loop.close()
+        except Exception as e:
+            print(f'Error during cleanup: {e}')
+            sys.exit(1)
