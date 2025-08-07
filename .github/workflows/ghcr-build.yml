@@ -332,29 +332,3 @@ jobs:
           SHORT_SHA: ${{ steps.short_sha.outputs.SHORT_SHA }}
         shell: bash
         run: |
-          echo "updating PR description"
-          DOCKER_RUN_COMMAND="docker run -it --rm \
-            -p 3000:3000 \
-            -v /var/run/docker.sock:/var/run/docker.sock \
-            --add-host host.docker.internal:host-gateway \
-            -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:$SHORT_SHA-nikolaik \
-            --name openhands-app-$SHORT_SHA \
-            docker.all-hands.dev/all-hands-ai/openhands:$SHORT_SHA"
-
-          PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
-
-          if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
-            UPDATED_PR_BODY=$(echo "${PR_BODY}" | sed -E "s|docker run -it --rm.*|$DOCKER_RUN_COMMAND|")
-          else
-            UPDATED_PR_BODY="${PR_BODY}
-
-          ---
-
-          To run this PR locally, use the following command:
-          \`\`\`
-          $DOCKER_RUN_COMMAND
-          \`\`\`"
-          fi
-
-          echo "updated body: $UPDATED_PR_BODY"
-          gh pr edit $PR_NUMBER --body "$UPDATED_PR_BODY"
