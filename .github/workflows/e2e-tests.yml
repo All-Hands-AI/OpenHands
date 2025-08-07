@@ -81,19 +81,15 @@ jobs:
 
       - name: Start OpenHands application
         run: |
-          # Use make run to start the application with the correct configuration
-          export INSTALL_DOCKER=0
-          export RUNTIME=local
-          export FRONTEND_PORT=12000
-          export FRONTEND_HOST=0.0.0.0
-          export BACKEND_HOST=0.0.0.0
-          export BACKEND_PORT=3000
+          # Start the backend and frontend manually with proper debugging
+          mkdir -p logs
           
-          # Start OpenHands in the background
-          make run > /tmp/openhands-e2e-test.log 2>&1 &
+          echo "Starting backend server on port 3000..."
+          poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 > /tmp/openhands-backend.log 2>&1 &
+          BACKEND_PID=$!
+          echo "Backend PID: $BACKEND_PID"
           
-          echo "Waiting for OpenHands to start..."
-          
+          echo "Waiting for the backend to start..."
           # Wait for the backend to be ready (up to 30 seconds)
           for i in {1..30}; do
             if nc -z localhost 3000; then
@@ -103,13 +99,26 @@ jobs:
 
             if [ $i -eq 30 ]; then
               echo "Timed out waiting for backend to start"
-              cat /tmp/openhands-e2e-test.log
+              echo "Backend log:"
+              cat /tmp/openhands-backend.log
+              echo "Backend process status:"
+              ps aux | grep uvicorn || echo "No uvicorn process found"
               exit 1
             fi
 
             echo "Waiting for backend to start (attempt $i/30)..."
             sleep 1
           done
+
+          echo "Backend started successfully."
+
+          # Start the frontend in the background
+          echo "Starting frontend on port 12000..."
+          cd frontend
+          VITE_BACKEND_HOST=0.0.0.0:3000 VITE_FRONTEND_PORT=12000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+          FRONTEND_PID=$!
+          echo "Frontend PID: $FRONTEND_PID"
+          cd ..
 
           # Wait for the frontend to be ready (up to 30 seconds)
           for i in {1..30}; do
@@ -120,7 +129,10 @@ jobs:
 
             if [ $i -eq 30 ]; then
               echo "Timed out waiting for frontend to start"
-              cat /tmp/openhands-e2e-test.log
+              echo "Frontend log:"
+              cat /tmp/openhands-frontend.log
+              echo "Frontend process status:"
+              ps aux | grep npm || echo "No npm process found"
               exit 1
             fi
 
@@ -128,10 +140,13 @@ jobs:
             sleep 1
           done
 
-          echo "OpenHands started successfully."
+          echo "Frontend started successfully."
           
           # Additional wait to ensure the application is fully initialized
           sleep 10
+          
+          echo "Both backend and frontend are running successfully."
+          echo "Backend PID: $BACKEND_PID, Frontend PID: $FRONTEND_PID"
 
       - name: Run full end-to-end tests
         run: |
