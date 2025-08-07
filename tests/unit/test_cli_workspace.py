@@ -2,15 +2,16 @@
 
 import os
 import tempfile
-from unittest.mock import MagicMock
 
 import pytest
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events import EventStream
+
 # Mock LLMRegistry
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 from openhands.storage import get_file_store
+
 
 # Create a mock LLMRegistry class
 class MockLLMRegistry:

@@ -160,6 +160,7 @@ def conversation_stats():
         file_store=file_store, conversation_id=conversation_id, user_id='test-user'
     )
 
+
 @pytest.fixture
 def connected_registry_and_stats(llm_registry, conversation_stats):
     """Connect the LLMRegistry and ConversationStats properly"""
@@ -276,7 +277,7 @@ async def test_react_to_content_policy_violation(
     make_mock_agent,
     mock_event_stream,
     mock_status_callback,
-    connected_registry_and_stats
+    connected_registry_and_stats,
 ):
     """Test that the controller properly handles content policy violations from the LLM."""
     # Connect LLM registry to conversation stats
@@ -1015,7 +1016,7 @@ async def test_notify_on_llm_retry(
     make_mock_agent,
     mock_event_stream,
     mock_status_callback,
-    connected_registry_and_stats
+    connected_registry_and_stats,
 ):
     # Connect LLM registry to conversation stats
     llm_registry, conversation_stats = connected_registry_and_stats
