@@ -90,7 +90,7 @@ jobs:
           mkdir -p /tmp/openhands-workspace
           
           # Set environment variables for OpenHands
-          export WORKSPACE_BASE=/tmp/openhands-workspace
+          export SANDBOX_VOLUMES=/tmp/openhands-workspace:/workspace:rw
           export SANDBOX_USER_ID=$(id -u)
           export SANDBOX_RUNTIME=local
           export INSTALL_DOCKER=0
@@ -105,7 +105,7 @@ jobs:
           
           echo "Starting backend server on port 3000..." | tee -a /tmp/openhands-e2e-test.log
           echo "Environment variables:" | tee -a /tmp/openhands-e2e-test.log
-          echo "  WORKSPACE_BASE=$WORKSPACE_BASE" | tee -a /tmp/openhands-e2e-test.log
+          echo "  SANDBOX_VOLUMES=$SANDBOX_VOLUMES" | tee -a /tmp/openhands-e2e-test.log
           echo "  SANDBOX_USER_ID=$SANDBOX_USER_ID" | tee -a /tmp/openhands-e2e-test.log
           echo "  RUNTIME=$RUNTIME" | tee -a /tmp/openhands-e2e-test.log
           
