@@ -79,10 +79,70 @@ jobs:
         run: |
           cd tests/e2e && poetry run python -m pytest test_workflow.py::test_readme_line_count test_workflow.py::test_simple_browser_navigation -v
 
-      - name: Run all end-to-end tests
+      - name: Start OpenHands application
         run: |
-          # Run all tests (the full end-to-end test is skipped with @pytest.mark.skip)
-          cd tests/e2e && poetry run python -m pytest test_workflow.py -v
+          # Start the backend and frontend separately
+          mkdir -p logs
+          echo "Starting backend server..."
+          poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 12000 > /tmp/openhands-backend.log 2>&1 &
+          echo "Waiting for the backend to start..."
+
+          # Wait for the backend to be ready (up to 30 seconds)
+          for i in {1..30}; do
+            if nc -z localhost 12000; then
+              echo "Backend is running on port 12000"
+              break
+            fi
+
+            if [ $i -eq 30 ]; then
+              echo "Timed out waiting for backend to start"
+              cat /tmp/openhands-backend.log
+              exit 1
+            fi
+
+            echo "Waiting for backend to start (attempt $i/30)..."
+            sleep 1
+          done
+
+          echo "Backend started successfully."
+
+          # Start the frontend in the background
+          echo "Starting frontend..."
+          cd frontend && VITE_BACKEND_HOST=0.0.0.0:12000 VITE_FRONTEND_PORT=12000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+
+          # Wait for the frontend to be ready (up to 30 seconds)
+          for i in {1..30}; do
+            if nc -z localhost 12000; then
+              echo "Frontend is running on port 12000"
+              break
+            fi
+
+            if [ $i -eq 30 ]; then
+              echo "Timed out waiting for frontend to start"
+              cat /tmp/openhands-frontend.log
+              exit 1
+            fi
+
+            echo "Waiting for frontend to start (attempt $i/30)..."
+            sleep 1
+          done
+
+          echo "Frontend started successfully."
+
+          # Additional wait to ensure the application is fully initialized
+          sleep 10
+
+      - name: Run full end-to-end tests
+        run: |
+          # Check if Docker is running
+          if ! docker info > /dev/null 2>&1; then
+            echo "Docker is not running, attempting to start it"
+            sudo systemctl start docker || true
+            sleep 5
+          fi
+
+          # Run the test
+          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
 
       - name: Upload test results
         if: always()
