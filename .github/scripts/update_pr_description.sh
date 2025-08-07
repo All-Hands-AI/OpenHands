@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -euxo pipefail
 # This script updates the PR description with commands to run the PR locally
 # It adds both Docker and uvx commands
 
@@ -24,7 +25,7 @@ PR_BODY=$(gh pr view $PR_NUMBER --json body --jq .body)
 # Prepare the new PR body with both commands
 if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
   # For existing PR descriptions, replace the command section
-  NEW_PR_BODY=$(echo "$PR_BODY" | sed "s|To run this PR locally, use the following command:.*\`\`\`|To run this PR locally, use the following command:\n\nGUI with Docker:\n\`\`\`\n$DOCKER_RUN_COMMAND\n\`\`\`\n\nCLI with uvx:\n\`\`\`\n$UVX_RUN_COMMAND\n\`\`\`|s")
+  NEW_PR_BODY=$(echo "$PR_BODY" | sed "s|To run this PR locally, use the following command:.*```|To run this PR locally, use the following command:\n\nGUI with Docker:\n```\n$DOCKER_RUN_COMMAND\n```\n\nCLI with uvx:\n```\n$UVX_RUN_COMMAND\n```|s")
 else
   # For new PR descriptions
   NEW_PR_BODY="${PR_BODY}
