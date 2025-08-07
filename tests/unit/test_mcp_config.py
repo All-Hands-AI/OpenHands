@@ -412,9 +412,9 @@ shttp_servers = [
 
     # The values should now be from the environment
     server = config.mcp.shttp_servers[0]
-    assert isinstance(server, dict)
-    assert server.get('url') == 'http://env-server:8080'
-    assert server.get('api_key') == 'env-api-key'
+    assert isinstance(server, MCPSHTTPServerConfig)
+    assert server.url == 'http://env-server:8080'
+    assert server.api_key == 'env-api-key'
 
 
 def test_env_var_mcp_shttp_servers_with_python_str_representation(monkeypatch):
@@ -440,9 +440,9 @@ def test_env_var_mcp_shttp_servers_with_python_str_representation(monkeypatch):
     server = config.mcp.shttp_servers[0]
 
     # Check that it's a dict with the expected keys
-    assert isinstance(server, dict)
-    assert server.get('url') == 'https://example.com/mcp/mcp'
-    assert server.get('api_key') == 'test-api-key'
+    assert isinstance(server, MCPSHTTPServerConfig)
+    assert server.url == 'https://example.com/mcp/mcp'
+    assert server.api_key == 'test-api-key'
 
 
 def test_convert_dict_to_mcp_http_server_config():
@@ -482,13 +482,8 @@ async def test_create_mcp_clients_with_server_config(monkeypatch):
     )
 
 
-@pytest.fixture
-def mock_sio():
-    return AsyncMock()
-
-
 @pytest.mark.asyncio
-async def test_session_preserves_env_mcp_config(mock_sio, monkeypatch):
+async def test_session_preserves_env_mcp_config(monkeypatch):
     """Test that Session preserves MCP configuration from environment variables."""
     # Set environment variables for MCP HTTP server
     monkeypatch.setenv(
@@ -516,7 +511,7 @@ async def test_session_preserves_env_mcp_config(mock_sio, monkeypatch):
         sid='test-sid',
         file_store=InMemoryFileStore({}),
         config=config,
-        sio=mock_sio,
+        sio=AsyncMock(),
     )
 
     # Create empty settings
