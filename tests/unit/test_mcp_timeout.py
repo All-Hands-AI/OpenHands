@@ -70,7 +70,21 @@ async def test_mixed_connection_results():
 
     # Create a successful client
     successful_client = mock.MagicMock(spec=MCPClient)
-    successful_client.tools = [mock.MagicMock()]
+
+    # Create a mock tool with a to_param method that returns a tool dictionary
+    mock_tool = mock.MagicMock()
+    mock_tool.name = 'mock_tool'
+    mock_tool.to_param.return_value = {
+        'type': 'function',
+        'function': {
+            'name': 'mock_tool',
+            'description': 'A mock tool for testing',
+            'parameters': {},
+        },
+    }
+
+    # Set the client's tools
+    successful_client.tools = [mock_tool]
 
     # Mock create_mcp_clients to return our successful client
     with mock.patch(
@@ -81,3 +95,4 @@ async def test_mixed_connection_results():
 
         # Verify that tools were returned
         assert len(tools) > 0
+        assert tools[0]['function']['name'] == 'mock_tool'
