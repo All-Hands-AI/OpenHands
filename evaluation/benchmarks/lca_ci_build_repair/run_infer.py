@@ -30,8 +30,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
     load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -358,7 +358,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '-s',
         '--eval-split',

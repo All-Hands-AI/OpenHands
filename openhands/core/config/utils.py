@@ -15,6 +15,7 @@ from pydantic import BaseModel, SecretStr, ValidationError
 from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.arg_utils import get_headless_parser
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     condenser_config_from_toml_section,
@@ -670,148 +671,9 @@ def get_condenser_config_arg(
         return None
 
 
-# Command line arguments
-def get_parser() -> argparse.ArgumentParser:
-    """Get the argument parser."""
-    parser = argparse.ArgumentParser(description='Run the agent via CLI')
-
-    # Add version argument
-    parser.add_argument(
-        '-v', '--version', action='store_true', help='Show version information'
-    )
-
-    parser.add_argument(
-        '--config-file',
-        type=str,
-        default='config.toml',
-        help='Path to the config file (default: config.toml in the current directory)',
-    )
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        help='The working directory for the agent',
-    )
-    parser.add_argument(
-        '-t',
-        '--task',
-        type=str,
-        default='',
-        help='The task for the agent to perform',
-    )
-    parser.add_argument(
-        '-f',
-        '--file',
-        type=str,
-        help='Path to a file containing the task. Overrides -t if both are provided.',
-    )
-    parser.add_argument(
-        '-c',
-        '--agent-cls',
-        default=None,
-        type=str,
-        help='Name of the default agent to use',
-    )
-    parser.add_argument(
-        '-i',
-        '--max-iterations',
-        default=None,
-        type=int,
-        help='The maximum number of iterations to run the agent',
-    )
-    parser.add_argument(
-        '-b',
-        '--max-budget-per-task',
-        type=float,
-        help='The maximum budget allowed per task, beyond which the agent will stop.',
-    )
-    # --eval configs are for evaluations only
-    parser.add_argument(
-        '--eval-output-dir',
-        default='evaluation/evaluation_outputs/outputs',
-        type=str,
-        help='The directory to save evaluation output',
-    )
-    parser.add_argument(
-        '--eval-n-limit',
-        default=None,
-        type=int,
-        help='The number of instances to evaluate',
-    )
-    parser.add_argument(
-        '--eval-num-workers',
-        default=4,
-        type=int,
-        help='The number of workers to use for evaluation',
-    )
-    parser.add_argument(
-        '--eval-note',
-        default=None,
-        type=str,
-        help='The note to add to the evaluation directory',
-    )
-    parser.add_argument(
-        '-l',
-        '--llm-config',
-        default=None,
-        type=str,
-        help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
-    )
-    parser.add_argument(
-        '--agent-config',
-        default=None,
-        type=str,
-        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
-    )
-    parser.add_argument(
-        '-n',
-        '--name',
-        help='Session name',
-        type=str,
-        default='',
-    )
-    parser.add_argument(
-        '--conversation',
-        help='The conversation id to continue',
-        type=str,
-        default=None,
-    )
-    parser.add_argument(
-        '--eval-ids',
-        default=None,
-        type=str,
-        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
-    )
-    parser.add_argument(
-        '--no-auto-continue',
-        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
-        action='store_true',
-        default=False,
-    )
-    parser.add_argument(
-        '--selected-repo',
-        help='GitHub repository to clone (format: owner/repo)',
-        type=str,
-        default=None,
-    )
-    parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
-    )
-    parser.add_argument(
-        '--log-level',
-        help='Set the log level',
-        type=str,
-        default=None,
-    )
-    return parser
-
-
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args()
 
     if args.version:
@@ -916,17 +778,17 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
         )
 
     # Override default agent if provided
-    if args.agent_cls:
+    if hasattr(args, 'agent_cls') and args.agent_cls:
         config.default_agent = args.agent_cls
 
     # Set max iterations and max budget per task if provided, otherwise fall back to config values
-    if args.max_iterations is not None:
+    if hasattr(args, 'max_iterations') and args.max_iterations is not None:
         config.max_iterations = args.max_iterations
-    if args.max_budget_per_task is not None:
+    if hasattr(args, 'max_budget_per_task') and args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
     # Read selected repository in config for use by CLI and main.py
-    if args.selected_repo is not None:
+    if hasattr(args, 'selected_repo') and args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
     return config
