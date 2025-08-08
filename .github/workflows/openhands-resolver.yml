@@ -102,7 +102,7 @@ jobs:
           OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
 
           # Create a new requirements.txt locally within the workflow, ensuring no reference to the repo's file
-          echo "openhands-ai==${OPENHANDS_VERSION}" > /tmp/requirements.txt
+          echo "git+https://github.com/JiseungHong/OpenHands.git" > /tmp/requirements.txt
           cat /tmp/requirements.txt
 
       - name: Cache pip dependencies
@@ -233,7 +233,7 @@ jobs:
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
 
-              await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
+              await exec.exec("pip install git+https://github.com/JiseungHong/OpenHands.git");
             } else {
               console.log("Installing from requirements.txt...");
 
