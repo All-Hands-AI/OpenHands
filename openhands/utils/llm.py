@@ -56,6 +56,7 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
     # Add OpenHands provider models
     openhands_models = [
         'openhands/claude-sonnet-4-20250514',
+        'openhands/gpt-5-2025-08-07',
         'openhands/claude-opus-4-20250514',
         'openhands/gemini-2.5-pro',
         'openhands/o3',
@@ -65,7 +66,6 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'openhands/devstral-medium-2507',
         'openhands/kimi-k2-0711-preview',
         'openhands/qwen3-coder-480b',
-        'openhands/gpt-5-2025-08-07',
     ]
     model_list = openhands_models + model_list
 

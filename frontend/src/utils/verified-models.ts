@@ -65,6 +65,7 @@ export const VERIFIED_MISTRAL_MODELS = [
 // (e.g., they return `claude-sonnet-4-20250514` instead of `openhands/claude-sonnet-4-20250514`)
 export const VERIFIED_OPENHANDS_MODELS = [
   "claude-sonnet-4-20250514",
+  "gpt-5-2025-08-07",
   "claude-opus-4-20250514",
   "claude-opus-4-1-20250805",
   "gemini-2.5-pro",
@@ -75,7 +76,6 @@ export const VERIFIED_OPENHANDS_MODELS = [
   "devstral-small-2505",
   "kimi-k2-0711-preview",
   "qwen3-coder-480b",
-  "gpt-5-2025-08-07",
 ];
 
 // Default model for OpenHands provider
