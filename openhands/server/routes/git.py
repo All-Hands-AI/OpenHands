@@ -13,6 +13,7 @@ from openhands.integrations.provider import (
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
+    ProviderType,
     Repository,
     SuggestedTask,
     UnknownException,
@@ -33,9 +34,43 @@ from openhands.server.user_auth import (
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 
 
+@app.get('/installations', response_model=list[str])
+async def get_user_installations(
+    provider: ProviderType,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+):
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+        )
+
+        if provider == ProviderType.GITHUB:
+            return await client.get_github_installations()
+        elif provider == ProviderType.BITBUCKET:
+            return await client.get_bitbucket_workspaces()
+        else:
+            return JSONResponse(
+                content=f"Provider {provider} doesn't support installations",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+    return JSONResponse(
+        content='Git provider token required. (such as GitHub).',
+        status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
 @app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
     sort: str = 'pushed',
+    selected_provider: ProviderType | None = None,
+    page: int | None = None,
+    per_page: int | None = None,
+    installation_id: str | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
@@ -48,7 +83,14 @@ async def get_user_repositories(
         )
 
         try:
-            return await client.get_repositories(sort, server_config.app_mode)
+            return await client.get_repositories(
+                sort,
+                server_config.app_mode,
+                selected_provider,
+                page,
+                per_page,
+                installation_id,
+            )
 
         except AuthenticationError as e:
             logger.info(
@@ -119,17 +161,20 @@ async def search_repositories(
     per_page: int = 5,
     sort: str = 'stars',
     order: str = 'desc',
+    selected_provider: ProviderType | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
 ) -> list[Repository] | JSONResponse:
     if provider_tokens:
         client = ProviderHandler(
-            provider_tokens=provider_tokens, external_auth_token=access_token
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
         )
         try:
             repos: list[Repository] = await client.search_repositories(
-                query, per_page, sort, order
+                selected_provider, query, per_page, sort, order
             )
             return repos
 
@@ -146,10 +191,10 @@ async def search_repositories(
             )
 
     logger.info(
-        f'Returning 401 Unauthorized - GitHub token required for user_id: {user_id}'
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
     return JSONResponse(
-        content='GitHub token required.',
+        content='Git provider token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 

@@ -27,7 +27,7 @@ from openhands.core.config.condenser_config import (
     CondenserPipelineConfig,
     ConversationWindowCondenserConfig,
 )
-from openhands.core.config.utils import OH_DEFAULT_AGENT
+from openhands.core.config.config_utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -205,20 +205,11 @@ async def modify_llm_settings_basic(
             provider = verified_providers[choice_index]
         else:
             # User selected "Select another provider" - use manual selection
-            # Define a validator function that prints an error message
-            def provider_validator(x):
-                is_valid = x in organized_models
-                if not is_valid:
-                    print_formatted_text(
-                        HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
-                    )
-                return is_valid
-
             provider = await get_validated_input(
                 session,
                 '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
                 completer=provider_completer,
-                validator=provider_validator,
+                validator=lambda x: x in organized_models,
                 error_message='Invalid provider selected',
             )
 

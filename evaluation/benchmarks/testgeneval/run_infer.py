@@ -37,8 +37,8 @@ from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     SandboxConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -491,7 +491,7 @@ def prepare_dataset_pre(dataset: pd.DataFrame, filter_column: str) -> pd.DataFra
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,

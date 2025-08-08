@@ -81,6 +81,7 @@ export default function MainApp() {
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
+    authUrl: config.data?.AUTH_URL,
   });
 
   // When on TOS page, we don't use the GitHub auth URL
@@ -219,6 +220,7 @@ export default function MainApp() {
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
           providersConfigured={config.data?.PROVIDERS_CONFIGURED}
+          authUrl={config.data?.AUTH_URL}
         />
       )}
       {renderReAuthModal && <ReauthModal />}

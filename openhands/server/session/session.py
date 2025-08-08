@@ -13,7 +13,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -122,6 +122,14 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+
+        # Set Git user configuration if provided in settings
+        git_user_name = getattr(settings, 'git_user_name', None)
+        if git_user_name is not None:
+            self.config.git_user_name = git_user_name
+        git_user_email = getattr(settings, 'git_user_email', None)
+        if git_user_email is not None:
+            self.config.git_user_email = git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task
@@ -143,18 +151,33 @@ class Session:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(
-            sse_servers=[], stdio_servers=[]
+        self.logger.debug(
+            f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
+
+        # Check if settings has custom mcp_config
+        mcp_config = getattr(settings, 'mcp_config', None)
+        if mcp_config is not None:
+            # Use the provided MCP SHTTP servers instead of default setup
+            self.config.mcp = self.config.mcp.merge(mcp_config)
+            self.logger.debug(f'Merged custom MCP Config: {mcp_config}')
+
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 self.config.mcp_host, self.config, self.user_id
             )
         )
+
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
-        self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+            self.logger.debug('Added default MCP HTTP server to config')
+
+            self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        self.logger.debug(
+            f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
+        )
 
         # TODO: override other LLM config & agent config groups (#2075)
 
@@ -263,6 +286,7 @@ class Session:
 
     async def _on_event(self, event: Event) -> None:
         """Callback function for events that mainly come from the agent.
+
         Event is the base class for any agent action and observation.
 
         Args:
