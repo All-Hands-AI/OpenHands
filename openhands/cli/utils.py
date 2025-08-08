@@ -150,6 +150,7 @@ def organize_models_and_providers(
 VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'gpt-5-2025-08-07',
     'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
@@ -184,6 +185,7 @@ VERIFIED_MISTRAL_MODELS = [
 
 VERIFIED_OPENHANDS_MODELS = [
     'claude-sonnet-4-20250514',
+    'gpt-5-2025-08-07',
     'claude-opus-4-20250514',
     'claude-opus-4-1-20250805',
     'devstral-small-2507',
