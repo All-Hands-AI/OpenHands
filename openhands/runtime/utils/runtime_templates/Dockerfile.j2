@@ -183,8 +183,26 @@ RUN rm -rf ${OPENVSCODE_SERVER_ROOT}/extensions/{handlebars,pug,json,diff,grunt,
 USER root
 RUN \
     {% if enable_browser %}
-    # Install playwright system dependencies (requires root)
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    # Install system dependencies for Playwright (requires root)
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libnss3 libnspr4 libatk-bridge2.0-0 libdrm2 libxkbcommon0 libxcomposite1 \
+        libxdamage1 libxrandr2 libgbm1 libxss1 libasound2 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    # Install Playwright browsers in shared location accessible to all users
+    export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers && \
+    mkdir -p /opt/playwright-browsers && \
+    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install chromium && \
+    # Set proper permissions for shared access
+    chmod -R 755 /opt/playwright-browsers && \
+    # Create cache directories and symlinks for both users
+    mkdir -p /home/openhands/.cache && \
+    mkdir -p /root/.cache && \
+    ln -sf /opt/playwright-browsers /home/openhands/.cache/ms-playwright && \
+    ln -sf /opt/playwright-browsers /root/.cache/ms-playwright && \
+    chown -h openhands:openhands /home/openhands/.cache/ms-playwright && \
+    # Set environment variable for all users
+    echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment && \
     {% endif %}
     # Set environment variables (requires root)
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
@@ -200,6 +218,7 @@ RUN \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /etc/bash.bashrc && \
     # Set up environment for root user
     echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /root/.bashrc && \
+    echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /root/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /root/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /root/.bashrc && \
     # Clean up system packages (requires root)
@@ -306,6 +325,7 @@ USER root
 RUN \
     # Set up environment for openhands user
     echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
+    echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
     chown openhands:openhands /home/openhands/.bashrc
