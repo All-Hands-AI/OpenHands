@@ -18,6 +18,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+        coreutils util-linux procps findutils grep sed \
         {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
         libgl1 \
         {%- else %}
@@ -39,6 +40,7 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+        coreutils util-linux procps findutils grep sed \
         libgl1-mesa-glx \
         libasound2-plugins libatomic1 \
         # Install Docker dependencies
