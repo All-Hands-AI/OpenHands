@@ -3,8 +3,6 @@
 import argparse
 from argparse import ArgumentParser, _SubParsersAction
 
-from openhands.core.config.config_utils import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS
-
 
 def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
     for action in parser._actions:
@@ -112,14 +110,14 @@ def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-c',
         '--agent-cls',
-        default=OH_DEFAULT_AGENT,
+        default=None,
         type=str,
         help='Name of the default agent to use',
     )
     parser.add_argument(
         '-i',
         '--max-iterations',
-        default=OH_MAX_ITERATIONS,
+        default=None,
         type=int,
         help='The maximum number of iterations to run the agent',
     )
