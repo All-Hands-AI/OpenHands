@@ -63,7 +63,7 @@ class EventStream(EventStore):
         sid: str,
         file_store: FileStore,
         user_id: str | None = None,
-        max_delay_time: float = 0.5,
+        max_delay_time: float = 1,
     ):
         super().__init__(sid, file_store, user_id)
         self._stop_flag = threading.Event()

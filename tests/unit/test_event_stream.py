@@ -620,7 +620,7 @@ def test_callback_dictionary_modification(temp_dir: str):
     event_stream.add_event(NullObservation('test'), EventSource.AGENT)
 
     # Give some time for the callbacks to execute
-    time.sleep(0.5)
+    time.sleep(1)
 
     # Verify that the first two callbacks were executed
     assert callback_executed[0] is True, 'First callback should have been executed'
@@ -637,7 +637,7 @@ def test_callback_dictionary_modification(temp_dir: str):
     event_stream.add_event(NullObservation('test2'), EventSource.AGENT)
 
     # Give some time for the callbacks to execute
-    time.sleep(0.5)
+    time.sleep(1)
 
     # Now all three callbacks should have been executed
     assert callback_executed[0] is True, 'First callback should have been executed'

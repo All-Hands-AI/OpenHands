@@ -32,7 +32,7 @@ from openhands.server.shared import (
 )
 from openhands.server.thesis_auth import (
     ThesisUser,
-    get_system_prompt_from_thesis_auth_server,
+    get_system_prompt_by_space_id_from_thesis_auth_server,
     get_user_detail_from_thesis_auth_server,
 )
 from openhands.storage.conversation.conversation_store import ConversationStore
@@ -73,14 +73,6 @@ async def connect(connection_id: str, environ):
     # providers_raw: list[str] = query_params.get('providers_set', [])
     # providers_set: list[ProviderType] = [ProviderType(p) for p in providers_raw]
 
-    if conversation_id is not None and jwt_token is not None:
-        # get system prompt from thesis auth server
-        system_prompt = await get_system_prompt_from_thesis_auth_server(
-            conversation_id, 'Bearer ' + (jwt_token or ''), x_device_id
-        )
-    else:
-        system_prompt = None
-
     user_id = None
     mnemonic = None
     conversation_configs = None
@@ -98,6 +90,20 @@ async def connect(connection_id: str, environ):
         conversation_id
     )
     conversation_configs = info
+
+    # Get space_id early to check availability before system prompt retrieval
+    space_id = (
+        conversation_configs.get('space_id', None) if conversation_configs else None
+    )
+
+    # Check if space_id is available before getting system prompt
+    if jwt_token is not None and space_id is not None:
+        # get system prompt from thesis auth server using space_id
+        system_prompt = await get_system_prompt_by_space_id_from_thesis_auth_server(
+            int(space_id), 'Bearer ' + (jwt_token or ''), x_device_id
+        )
+    else:
+        system_prompt = None
 
     # check if conversation_id is shared
     if mode == 'shared':
@@ -195,9 +201,6 @@ async def connect(connection_id: str, environ):
         )
 
     github_user_id = ''
-    space_id = (
-        conversation_configs.get('space_id', None) if conversation_configs else None
-    )
     space_section_id = (
         conversation_configs.get('space_section_id', None)
         if conversation_configs
