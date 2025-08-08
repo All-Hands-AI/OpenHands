@@ -31,7 +31,7 @@ interface ConversationSubscriptionsContextType {
   subscribeToConversation: (options: {
     conversationId: string;
     sessionApiKey: string | null;
-    providersSet: ("github" | "gitlab" | "bitbucket")[];
+    providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
     baseUrl: string;
     onEvent?: (event: unknown, conversationId: string) => void;
   }) => void;
@@ -135,7 +135,7 @@ export function ConversationSubscriptionsProvider({
     (options: {
       conversationId: string;
       sessionApiKey: string | null;
-      providersSet: ("github" | "gitlab" | "bitbucket")[];
+      providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
       baseUrl: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
@@ -226,6 +226,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} CONNECTION ERROR:`,
             error,
@@ -233,6 +234,7 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("disconnect", (reason) => {
+          // eslint-disable-next-line no-console
           console.warn(
             `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
             reason,

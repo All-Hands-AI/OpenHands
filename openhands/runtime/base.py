@@ -17,7 +17,9 @@ import httpx
 
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.exceptions import AgentRuntimeDisconnectedError
+from openhands.core.exceptions import (
+    AgentRuntimeDisconnectedError,
+)
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventSource, EventStream, EventStreamSubscriber
 from openhands.events.action import (
@@ -49,6 +51,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
     ProviderType,
 )
+from openhands.integrations.service_types import AuthenticationError
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -130,7 +133,8 @@ class Runtime(FileEditRuntimeMixin):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     ):
         self.git_handler = GitHandler(
-            execute_shell_fn=self._execute_shell_fn_git_handler
+            execute_shell_fn=self._execute_shell_fn_git_handler,
+            create_file_fn=self._create_file_fn_git_handler,
         )
         self.sid = sid
         self.event_stream = event_stream
@@ -339,14 +343,23 @@ class Runtime(FileEditRuntimeMixin):
                 observation: Observation = await self.call_tool_mcp(event)
             else:
                 observation = await call_sync_from_async(self.run_action, event)
-        except Exception as e:
-            runtime_status = RuntimeStatus.ERROR
-            if isinstance(e, (httpx.NetworkError, AgentRuntimeDisconnectedError)):
-                runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
+        except PermissionError as e:
+            # Handle PermissionError specially - convert to ErrorObservation
+            # so the agent can receive feedback and continue execution
+            observation = ErrorObservation(content=str(e))
+        except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
+            runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
             error_message = f'{type(e).__name__}: {str(e)}'
             self.log('error', f'Unexpected error while running action: {error_message}')
             self.log('error', f'Problematic action: {str(event)}')
-            self.set_runtime_status(runtime_status, error_message)
+            self.set_runtime_status(runtime_status, error_message, level='error')
+            return
+        except Exception as e:
+            runtime_status = RuntimeStatus.ERROR
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message, level='error')
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
@@ -373,7 +386,7 @@ class Runtime(FileEditRuntimeMixin):
                 action = CmdRunAction(
                     command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
-                self.run_action(action)
+                await call_sync_from_async(self.run_action, action)
             else:
                 logger.info(
                     'In workspace mount mode, not initializing a new git repository.'
@@ -411,14 +424,14 @@ class Runtime(FileEditRuntimeMixin):
         )
 
         clone_action = CmdRunAction(command=clone_command)
-        self.run_action(clone_action)
+        await call_sync_from_async(self.run_action, clone_action)
 
         cd_checkout_action = CmdRunAction(
             command=f'cd {dir_name} && {checkout_command}'
         )
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
-        self.run_action(action)
+        await call_sync_from_async(self.run_action, action)
         return dir_name
 
     def maybe_run_setup_script(self):
@@ -567,7 +580,7 @@ fi
 
         if not files:
             self.log(
-                'warning',
+                'debug',
                 f'No files found in {source_description} microagents directory: {microagents_dir}',
             )
             return loaded_microagents
@@ -701,12 +714,18 @@ fi
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
                 )
+            except AuthenticationError as e:
+                self.log(
+                    'debug',
+                    f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+                )
+                raise
             except Exception as e:
                 self.log(
-                    'error',
+                    'debug',
                     f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
-                raise Exception(str(e))
+                raise
 
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
@@ -762,6 +781,11 @@ fi
                     f'Clone command output: {clone_error_msg}',
                 )
 
+        except AuthenticationError as e:
+            self.log(
+                'debug',
+                f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
+            )
         except Exception as e:
             self.log(
                 'debug',
@@ -993,6 +1017,15 @@ fi
             content = obs.content
 
         return CommandResult(content=content, exit_code=exit_code)
+
+    def _create_file_fn_git_handler(self, path: str, content: str) -> int:
+        """
+        This function is used by the GitHandler to execute shell commands.
+        """
+        obs = self.write(FileWriteAction(path=path, content=content))
+        if isinstance(obs, ErrorObservation):
+            return -1
+        return 0
 
     def get_git_changes(self, cwd: str) -> list[dict[str, str]] | None:
         self.git_handler.set_cwd(cwd)

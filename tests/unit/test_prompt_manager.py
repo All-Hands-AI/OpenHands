@@ -50,7 +50,9 @@ At the user's request, repository {{ repository_info.repo_name }} has been clone
 
     # Test with GitHub repo
     manager = PromptManager(prompt_dir=prompt_dir)
-    repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
+    repo_info = RepositoryInfo(
+        repo_name='owner/repo', repo_directory='/workspace/repo', branch_name='main'
+    )
 
     # verify its parts are rendered
     system_msg = manager.get_system_message()
@@ -231,7 +233,9 @@ Today's date is {{ runtime_info.date }}
     manager = PromptManager(prompt_dir=prompt_dir)
 
     # Create repository and runtime information
-    repo_info = RepositoryInfo(repo_name='owner/repo', repo_directory='/workspace/repo')
+    repo_info = RepositoryInfo(
+        repo_name='owner/repo', repo_directory='/workspace/repo', branch_name='main'
+    )
     runtime_info = RuntimeInfo(
         date='02/12/1232',
         available_hosts={'example.com': 8080},

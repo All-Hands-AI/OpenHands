@@ -43,8 +43,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -226,6 +226,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
+        enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
         # do not mount workspace
@@ -731,7 +732,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,

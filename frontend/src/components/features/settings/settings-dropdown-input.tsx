@@ -1,5 +1,5 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionalTag } from "./optional-tag";
 import { cn } from "#/utils/utils";
@@ -44,6 +44,7 @@ export function SettingsDropdownInput({
   defaultFilter,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
+
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
       {label && (

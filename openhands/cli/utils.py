@@ -150,6 +150,7 @@ def organize_models_and_providers(
 VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'gpt-5-2025-08-07',
     'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
@@ -164,6 +165,7 @@ VERIFIED_OPENAI_MODELS = [
 VERIFIED_ANTHROPIC_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'claude-3-7-sonnet-20250219',
     'claude-3-sonnet-20240229',
     'claude-3-opus-20240229',
@@ -183,13 +185,16 @@ VERIFIED_MISTRAL_MODELS = [
 
 VERIFIED_OPENHANDS_MODELS = [
     'claude-sonnet-4-20250514',
+    'gpt-5-2025-08-07',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'devstral-small-2507',
     'devstral-medium-2507',
     'o3',
     'o4-mini',
     'gemini-2.5-pro',
     'kimi-k2-0711-preview',
+    'qwen3-coder-480b',
 ]
 
 
