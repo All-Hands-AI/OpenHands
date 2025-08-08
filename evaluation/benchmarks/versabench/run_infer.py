@@ -35,7 +35,7 @@ def copy_config(output_path, input_path):
         shutil.move(config_file, vbackup_file)
 
     os.makedirs(output_path, exist_ok=True)
-    print(f'Copying {input_path} to {output_path}')
+    logger.info(f'Copying {input_path} to {output_path}')
 
     if not input_path or not os.path.exists(os.path.join(input_path, 'config.toml')):
         open(config_file, 'a').close()  # touch
@@ -216,12 +216,13 @@ def main():
         except Exception:
             pass  # If sudo fails, continue anyway
 
+        logger.info(f'Remember to run the server see https://github.com/TheAgentCompany/TheAgentCompany/blob/main/docs/SETUP.md')
         logger.info(f'Using temporary directory: {the_agent_company_tmp_dir}')
 
         run_single_benchmark(
             'the_agent_company',
             args.split,
-            f'export TMPDIR="{the_agent_company_tmp_dir}";export EVAL_DOCKER_IMAGE_PREFIX=""; ./evaluation/benchmarks/the_agent_company/scripts/run_infer.sh --agent-llm-config {args.llm} --env-llm-config {args.llm} --server-hostname localhost --version 1.0.0 --start-percentile 50 --end-percentile 100 --agent-config CodeActAgent',
+            f'export TMPDIR="{the_agent_company_tmp_dir}";export EVAL_DOCKER_IMAGE_PREFIX=""; ./evaluation/benchmarks/the_agent_company/scripts/run_infer.sh --agent-llm-config {args.llm} --env-llm-config {args.llm} --server-hostname localhost --version 1.0.0 --start-percentile 0 --end-percentile 100 --agent-config CodeActAgent',
         )
     if all or args.gaia:
         # Reminder: add your Tavily API key

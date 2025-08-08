@@ -97,12 +97,17 @@ def init_task_env(runtime: Runtime, hostname: str, env_llm_config: LLMConfig):
     obs = runtime.run_action(action)
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
+    # Strip litellm_proxy/ prefix if present for direct LiteLLM usage
+    model_name = env_llm_config.model
+    if model_name.startswith('litellm_proxy/'):
+        model_name = model_name.removeprefix('litellm_proxy/')
+
     command = (
         f'umask 0022 && '
         f'SERVER_HOSTNAME={hostname} '
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '
-        f'LITELLM_MODEL={env_llm_config.model} '
+        f'LITELLM_MODEL={model_name} '
         'bash /utils/init.sh'
     )
     action = CmdRunAction(command=command)
@@ -201,10 +206,15 @@ def run_solver(
 def run_evaluator(
     runtime: Runtime, env_llm_config: LLMConfig, trajectory_path: str, result_path: str
 ):
+    # Strip litellm_proxy/ prefix if present for direct LiteLLM usage
+    model_name = env_llm_config.model
+    if model_name.startswith('litellm_proxy/'):
+        model_name = model_name.removeprefix('litellm_proxy/')
+
     command = (
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '
-        f'LITELLM_MODEL={env_llm_config.model} '
+        f'LITELLM_MODEL={model_name} '
         f"DECRYPTION_KEY='theagentcompany is all you need' "  # Hardcoded Key
         f'python_default /utils/eval.py --trajectory_path {trajectory_path} --result_path {result_path}'
     )
