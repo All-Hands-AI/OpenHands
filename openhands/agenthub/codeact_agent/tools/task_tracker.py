@@ -187,9 +187,9 @@ def create_task_tracker_tool(
                                     'enum': ['todo', 'in_progress', 'done'],
                                 },
                                 'notes': {
-                                    "type": "string",
-                                    "description": "Optional additional context or details"
-                                }
+                                    'type': 'string',
+                                    'description': 'Optional additional context or details',
+                                },
                             },
                             'required': ['title', 'status', 'id'],
                             'additionalProperties': False,

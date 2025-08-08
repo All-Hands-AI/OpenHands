@@ -21,10 +21,10 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
-from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.agenthub.codeact_agent.tools.task_tracker import (
     create_task_tracker_tool,
 )
+from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig

@@ -235,7 +235,10 @@ def response_to_actions(
                         f'Missing required argument "task_list" for "plan" command in tool call {tool_call.function.name}'
                     )
 
-                action = TaskTrackingAction(command=arguments['command'], task_list=arguments.get('task_list', []))
+                action = TaskTrackingAction(
+                    command=arguments['command'],
+                    task_list=arguments.get('task_list', []),
+                )
 
             # ================================================
             # MCPAction (MCP)
