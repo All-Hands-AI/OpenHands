@@ -739,3 +739,19 @@ def run_cli_command(args):
         except Exception as e:
             print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)
+
+
+def main():
+    """Main entry point for OpenHands CLI."""
+    from openhands.core.config import get_cli_parser
+
+    parser = get_cli_parser()
+    args = parser.parse_args()
+
+    if hasattr(args, 'version') and args.version:
+        import openhands
+
+        print(f'OpenHands CLI version: {openhands.get_version()}')
+        sys.exit(0)
+
+    run_cli_command(args)
