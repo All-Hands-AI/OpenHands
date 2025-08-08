@@ -158,3 +158,9 @@ export interface MicroagentContentResponse {
   git_provider: Provider;
   triggers: string[];
 }
+
+export type GetFilesResponse = string[];
+
+export interface GetFileResponse {
+  code: string;
+}
