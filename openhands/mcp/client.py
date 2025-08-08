@@ -95,6 +95,8 @@ class MCPClient(BaseModel):
                     headers=headers if headers else None,
                 )
 
+            # Use the Client constructor directly in fastmcp 2.11.1+
+            # Note: timeout is now set at the transport level in fastmcp 2.11.1+
             self.client = Client(transport, timeout=timeout)
 
             await self._initialize_and_list_tools()
@@ -130,6 +132,8 @@ class MCPClient(BaseModel):
             transport = StdioTransport(
                 command=server.command, args=server.args or [], env=server.env
             )
+            # Use the Client constructor directly in fastmcp 2.11.1+
+            # Note: timeout is now set at the transport level in fastmcp 2.11.1+
             self.client = Client(transport, timeout=timeout)
             await self._initialize_and_list_tools()
         except Exception as e:
