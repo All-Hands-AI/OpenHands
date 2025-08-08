@@ -417,7 +417,6 @@ async def test_main_without_task(
 
 
 @pytest.mark.asyncio
-
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -437,7 +436,6 @@ async def test_main_with_task(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    
 ):
     """Test main function with a task."""
     loop = asyncio.get_running_loop()
@@ -522,7 +520,6 @@ async def test_main_with_task(
 
 
 @pytest.mark.asyncio
-
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -542,7 +539,6 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    
 ):
     """Test main function with a session name passes it to run_session."""
     loop = asyncio.get_running_loop()
@@ -716,7 +712,6 @@ async def test_run_session_with_name_attempts_state_restore(
 
 
 @pytest.mark.asyncio
-
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -736,7 +731,6 @@ async def test_main_security_check_fails(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    
 ):
     """Test main function when security check fails."""
     loop = asyncio.get_running_loop()
@@ -788,7 +782,6 @@ async def test_main_security_check_fails(
 
 
 @pytest.mark.asyncio
-
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -808,7 +801,6 @@ async def test_config_loading_order(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    
 ):
     """Test the order of configuration loading in the main function.
 
@@ -907,7 +899,6 @@ async def test_config_loading_order(
 
 
 @pytest.mark.asyncio
-
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -929,7 +920,6 @@ async def test_main_with_file_option(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    
 ):
     """Test main function with a file option."""
     loop = asyncio.get_running_loop()
