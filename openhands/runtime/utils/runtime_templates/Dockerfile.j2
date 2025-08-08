@@ -73,7 +73,12 @@ RUN groupadd -g 1000 openhands && \
     usermod -aG sudo openhands && \
     echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
     # Set empty password for openhands user to allow passwordless su
-    passwd -d openhands
+    passwd -d openhands && \
+    # Set empty password for root user as well to ensure su works in both directions
+    passwd -d root && \
+    # Ensure root can su to openhands without password by configuring PAM
+    sed -i '/pam_rootok.so/d' /etc/pam.d/su && \
+    sed -i '1i auth sufficient pam_rootok.so' /etc/pam.d/su
 
 # Create necessary directories
 RUN mkdir -p /openhands && \
