@@ -12,6 +12,9 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 
 {% macro setup_base_system() %}
 
+# Set PATH early to ensure system commands are available
+ENV PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
+
 # Install base system dependencies
 
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
@@ -217,11 +220,14 @@ RUN \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     chown -R openhands:openhands /openhands/workspace && \
     chown -R openhands:openhands /openhands/micromamba && \
+    # Ensure PATH includes system binaries early in startup
+    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/environment && \
+    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/bash.bashrc && \
     # Set up conda environment activation for all users
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /etc/bash.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /etc/bash.bashrc && \
     # Set up environment for root user
-    echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /root/.bashrc && \
+    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /root/.bashrc && \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /root/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /root/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /root/.bashrc && \
@@ -328,7 +334,7 @@ RUN {{ extra_deps }}
 USER root
 RUN \
     # Set up environment for openhands user
-    echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
+    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
