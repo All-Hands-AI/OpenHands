@@ -1,6 +1,7 @@
 """Test function calling module."""
 
 import json
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -14,11 +15,14 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
+    MessageAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
 
 
-def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
+def create_mock_response(
+    function_name: str, arguments: dict[str, Any]
+) -> ModelResponse:
     """Helper function to create a mock response with a tool call."""
     return ModelResponse(
         id='mock-id',
@@ -243,3 +247,160 @@ def test_unexpected_argument_handling():
     # Verify the error message mentions the unexpected argument
     assert 'old_str_prefix' in str(exc_info.value)
     assert 'Unexpected argument' in str(exc_info.value)
+
+
+def test_message_action_empty_response_non_grok():
+    """Test that non-Grok models preserve original behavior for empty responses."""
+    # Create a response with no tool calls and empty content
+    response = ModelResponse(
+        id='mock-id',
+        model='gpt-4o',  # Non-Grok model
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # Non-Grok models should still wait for response even with empty content (original behavior)
+    assert actions[0].wait_for_response is True
+
+
+def test_message_action_empty_response_grok():
+    """Test that Grok models don't wait for response when content is empty."""
+    # Create a response with no tool calls and empty content
+    response = ModelResponse(
+        id='mock-id',
+        model='xai/grok-4-0709',  # Grok model
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # Grok models should NOT wait for response when content is empty (new behavior)
+    assert actions[0].wait_for_response is False
+
+
+def test_message_action_non_empty_response_grok():
+    """Test that Grok models still wait for response when content is non-empty."""
+    # Create a response with no tool calls but with content
+    response = ModelResponse(
+        id='mock-id',
+        model='xai/grok-4-0709',  # Grok model
+        choices=[
+            {
+                'message': {
+                    'content': 'Here is my response.',  # Non-empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == 'Here is my response.'
+    # Grok models should wait for response when there's actual content
+    assert actions[0].wait_for_response is True
+
+
+@pytest.mark.parametrize(
+    'model_name',
+    [
+        'xai/grok-4-0709',
+        'litellm_proxy/xai/grok-4-0709',
+        'openrouter/xai/grok-4-0709',
+    ],
+)
+def test_message_action_grok_model_variants(model_name):
+    """Test that different Grok model name formats are handled correctly."""
+    response = ModelResponse(
+        id='mock-id',
+        model=model_name,
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # All Grok model variants should NOT wait for response when content is empty
+    assert actions[0].wait_for_response is False
+
+
+@pytest.mark.parametrize(
+    'model_name',
+    [
+        'grok-lite',  # Similar name but not the specific Grok-4 model
+        'xai/other-model',  # Same provider but different model
+        'gpt-4-grok-mode',  # Contains 'grok' but not the actual model
+    ],
+)
+def test_message_action_similar_model_names(model_name):
+    """Test that models with similar names to Grok are not affected."""
+    response = ModelResponse(
+        id='mock-id',
+        model=model_name,
+        choices=[
+            {
+                'message': {
+                    'content': '',  # Empty content
+                    'role': 'assistant',
+                },
+                'index': 0,
+                'finish_reason': 'stop',
+            }
+        ],
+    )
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], MessageAction)
+    assert actions[0].content == ''
+    # Non-Grok models should maintain original behavior
+    assert actions[0].wait_for_response is True
+
+
+def test_message_action_with_tool_calls_not_affected():
+    """Test that the empty response handling doesn't affect tool calls."""
+    # This should not be affected by the empty response logic since it has tool calls
+    response = create_mock_response('execute_bash', {'command': 'ls -la'})
+    response.model = 'xai/grok-4-0709'  # Add model attribute
+
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], CmdRunAction)
+    # Tool calls don't have wait_for_response attribute
+    assert not hasattr(actions[0], 'wait_for_response')
