@@ -104,6 +104,8 @@ def extract_model_and_provider(model: str) -> ModelInfo:
             return ModelInfo(provider='anthropic', model=split[0], separator='/')
         if split[0] in VERIFIED_MISTRAL_MODELS:
             return ModelInfo(provider='mistral', model=split[0], separator='/')
+        if split[0] in VERIFIED_OPENHANDS_MODELS:
+            return ModelInfo(provider='openhands', model=split[0], separator='/')
         # return as model only
         return ModelInfo(provider='', model=model, separator='')
 
@@ -145,24 +147,25 @@ def organize_models_and_providers(
     return result_dict
 
 
-VERIFIED_PROVIDERS = ['anthropic', 'openai', 'mistral']
+VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'gpt-5-2025-08-07',
     'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
-    'gpt-4-turbo',
-    'gpt-4',
     'gpt-4-32k',
+    'gpt-4.1',
+    'gpt-4.1-2025-04-14',
     'o1-mini',
-    'o1',
-    'o3-mini',
-    'o3-mini-2025-01-31',
+    'o3',
+    'codex-mini-latest',
 ]
 
 VERIFIED_ANTHROPIC_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'claude-3-7-sonnet-20250219',
     'claude-3-sonnet-20240229',
     'claude-3-opus-20240229',
@@ -176,6 +179,22 @@ VERIFIED_ANTHROPIC_MODELS = [
 
 VERIFIED_MISTRAL_MODELS = [
     'devstral-small-2505',
+    'devstral-small-2507',
+    'devstral-medium-2507',
+]
+
+VERIFIED_OPENHANDS_MODELS = [
+    'claude-sonnet-4-20250514',
+    'gpt-5-2025-08-07',
+    'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
+    'devstral-small-2507',
+    'devstral-medium-2507',
+    'o3',
+    'o4-mini',
+    'gemini-2.5-pro',
+    'kimi-k2-0711-preview',
+    'qwen3-coder-480b',
 ]
 
 

@@ -259,6 +259,7 @@ def test_step_with_no_pending_actions(mock_state: State):
     llm.completion = Mock(return_value=mock_response)
     llm.is_function_calling_active = Mock(return_value=True)  # Enable function calling
     llm.is_caching_prompt_active = Mock(return_value=False)
+    llm.format_messages_for_llm = Mock(return_value=[])  # Mock message formatting
 
     # Create agent with mocked LLM
     config = AgentConfig()
@@ -278,6 +279,10 @@ def test_step_with_no_pending_actions(mock_state: State):
     initial_user_message = MessageAction(content='Initial user message')
     initial_user_message._source = EventSource.USER
     mock_state.history = [initial_user_message]
+
+    # Mock the view returned by condenser
+    mock_view = View(events=mock_state.history)
+    mock_state.view = mock_view
 
     action = agent.step(mock_state)
     assert isinstance(action, MessageAction)

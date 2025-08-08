@@ -41,7 +41,7 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
 )
-from openhands.core.config import OpenHandsConfig, SandboxConfig, get_parser
+from openhands.core.config import OpenHandsConfig, SandboxConfig, get_evaluation_parser
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
 from openhands.events.action import CmdRunAction
@@ -484,7 +484,7 @@ def count_and_log_fields(evaluated_predictions, fields, key):
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--input-file', type=str, required=True, help='Path to input predictions file'
     )

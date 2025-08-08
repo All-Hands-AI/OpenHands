@@ -14,8 +14,16 @@ from openhands.cli.commands import (
     handle_commands,
 )
 from openhands.cli.settings import modify_llm_settings_basic
+from openhands.cli.shell_config import (
+    ShellConfigManager,
+    add_aliases_to_shell_config,
+    alias_setup_declined,
+    aliases_exist_in_shell_config,
+    mark_alias_setup_declined,
+)
 from openhands.cli.tui import (
     UsageMetrics,
+    cli_confirm,
     display_agent_running_message,
     display_banner,
     display_event,
@@ -23,26 +31,31 @@ from openhands.cli.tui import (
     display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
-    process_agent_pause,
     read_confirmation_input,
     read_prompt_input,
+    start_pause_listener,
+    stop_pause_listener,
     update_streaming_output,
 )
 from openhands.cli.utils import (
     update_usage_metrics,
 )
+from openhands.cli.vscode_extension import attempt_vscode_extension_install
 from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
     OpenHandsConfig,
-    parse_arguments,
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import (
+    OpenHandsMCPConfigImpl,
+)
+from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
 from openhands.core.schema import AgentState
+from openhands.core.schema.exit_reason import ExitReason
 from openhands.core.setup import (
     create_agent,
     create_controller,
@@ -62,10 +75,12 @@ from openhands.events.observation import (
 )
 from openhands.io import read_task
 from openhands.mcp import add_mcp_tools_to_agent
+from openhands.mcp.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
 from openhands.microagent.microagent import BaseMicroagent
+from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
@@ -77,7 +92,6 @@ async def cleanup_session(
     controller: AgentController,
 ) -> None:
     """Clean up all resources from the current session."""
-
     event_stream = runtime.event_stream
     end_state = controller.get_state()
     end_state.save_to_session(
@@ -114,11 +128,13 @@ async def run_session(
     conversation_instructions: str | None = None,
     session_name: str | None = None,
     skip_banner: bool = False,
+    conversation_id: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
+    exit_reason = ExitReason.INTENTIONAL
 
-    sid = generate_sid(config, session_name)
+    sid = conversation_id or generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -152,7 +168,7 @@ async def run_session(
     usage_metrics = UsageMetrics()
 
     async def prompt_for_next_task(agent_state: str) -> None:
-        nonlocal reload_microagents, new_session_requested
+        nonlocal reload_microagents, new_session_requested, exit_reason
         while True:
             next_message = await read_prompt_input(
                 config, agent_state, multiline=config.cli_multiline_input
@@ -165,6 +181,7 @@ async def run_session(
                 close_repl,
                 reload_microagents,
                 new_session_requested,
+                exit_reason,
             ) = await handle_commands(
                 next_message,
                 event_stream,
@@ -173,6 +190,7 @@ async def run_session(
                 config,
                 current_dir,
                 settings_store,
+                agent_state,
             )
 
             if close_repl:
@@ -182,6 +200,10 @@ async def run_session(
         nonlocal reload_microagents, is_paused, always_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
+
+        if isinstance(event, AgentStateChangedObservation):
+            if event.agent_state not in [AgentState.RUNNING, AgentState.PAUSED]:
+                await stop_pause_listener()
 
         if isinstance(event, AgentStateChangedObservation):
             if event.agent_state in [
@@ -215,15 +237,22 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status == 'yes' or confirmation_status == 'always':
+                if confirmation_status in ('yes', 'always'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
                     )
-                else:
+                else:  # 'no' or alternative instructions
+                    # Tell the agent the proposed action was rejected
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_REJECTED),
                         EventSource.USER,
+                    )
+                    # Notify the user
+                    print_formatted_text(
+                        HTML(
+                            '<skyblue>Okay, please tell me what I should do next/instead.</skyblue>'
+                        )
                     )
 
                 # Set the always_confirm_mode flag if the user wants to always confirm
@@ -236,9 +265,7 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                loop.create_task(
-                    process_agent_pause(is_paused, event_stream)
-                )  # Create a task to track agent pause requests from the user
+                start_pause_listener(loop, is_paused, event_stream)
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
@@ -263,10 +290,15 @@ async def run_session(
         selected_repository=config.sandbox.selected_repo,
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
+        working_dir=os.getcwd(),
     )
 
     # Add MCP tools to the agent
     if agent.config.enable_mcp:
+        # Clear any previous errors and enable collection
+        mcp_error_collector.clear_errors()
+        mcp_error_collector.enable_collection()
+
         # Add OpenHands' MCP server by default
         _, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
@@ -278,6 +310,9 @@ async def run_session(
 
         await add_mcp_tools_to_agent(agent, runtime, memory)
 
+        # Disable collection after startup
+        mcp_error_collector.disable_collection()
+
     # Clear loading animation
     is_loaded.set()
 
@@ -288,7 +323,27 @@ async def run_session(
     if not skip_banner:
         display_banner(session_id=sid)
 
-    welcome_message = 'What do you want to build?'  # from the application
+    welcome_message = ''
+
+    # Display number of MCP servers configured
+    if agent.config.enable_mcp:
+        total_mcp_servers = (
+            len(runtime.config.mcp.stdio_servers)
+            + len(runtime.config.mcp.sse_servers)
+            + len(runtime.config.mcp.shttp_servers)
+        )
+        if total_mcp_servers > 0:
+            mcp_line = f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.'
+
+            # Check for MCP errors and add indicator to the same line
+            if agent.config.enable_mcp and mcp_error_collector.has_errors():
+                mcp_line += (
+                    ' ✗ MCP errors detected (type /mcp → select View errors to view)'
+                )
+
+            welcome_message += mcp_line + '\n\n'
+
+    welcome_message += 'What do you want to build?'  # from the application
     initial_message = ''  # from the user
 
     if task_content:
@@ -300,10 +355,23 @@ async def run_session(
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
-            initial_message = (
-                'NOTE: the last session ended with an error.'
-                "Let's get back on track. Do NOT resume your task. Ask me about it."
-            )
+            error_message = initial_state.last_error
+
+            # Check if it's an authentication error
+            if 'ERROR_LLM_AUTHENTICATION' in error_message:
+                # Start with base authentication error message
+                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+
+                # Add OpenHands-specific guidance if using an OpenHands model
+                llm_config = config.get_llm_config()
+                if llm_config.model.startswith('openhands/'):
+                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+            else:
+                # For other errors, use the standard message
+                initial_message = (
+                    'NOTE: the last session ended with an error.'
+                    "Let's get back on track. Do NOT resume your task. Ask me about it."
+                )
         else:
             # If we are resuming, we already have a task
             initial_message = ''
@@ -328,6 +396,11 @@ async def run_session(
 
     await cleanup_session(loop, agent, runtime, controller)
 
+    if exit_reason == ExitReason.INTENTIONAL:
+        print_formatted_text('✅ Session terminated successfully.\n')
+    else:
+        print_formatted_text(f'⚠️ Session was interrupted: {exit_reason.value}\n')
+
     return new_session_requested
 
 
@@ -347,15 +420,137 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
 
+    # Ask if user wants to configure search API settings
+    print_formatted_text('')
+    setup_search = cli_confirm(
+        config,
+        'Would you like to configure Search API settings (optional)?',
+        ['Yes', 'No'],
+    )
 
-async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
+    if setup_search == 0:  # Yes
+        from openhands.cli.settings import modify_search_api_settings
+
+        await modify_search_api_settings(config, settings_store)
+
+
+def run_alias_setup_flow(config: OpenHandsConfig) -> None:
+    """Run the alias setup flow to configure shell aliases.
+
+    Prompts the user to set up aliases for 'openhands' and 'oh' commands.
+    Handles existing aliases by offering to keep or remove them.
+
+    Args:
+        config: OpenHands configuration
+    """
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
+    print_formatted_text('')
+
+    # Show the normal setup flow
+    print_formatted_text(
+        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+        )
+    )
+    print_formatted_text('')
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
+        )
+    )
+    print_formatted_text(
+        HTML(
+            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+        )
+    )
+    print_formatted_text('')
+
+    # Use cli_confirm to get user choice
+    choice = cli_confirm(
+        config,
+        'Set up shell aliases?',
+        ['Yes, set up aliases', 'No, skip this step'],
+    )
+
+    if choice == 0:  # User chose "Yes"
+        success = add_aliases_to_shell_config()
+        if success:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+            )
+
+            # Get the appropriate reload command using the shell config manager
+            shell_manager = ShellConfigManager()
+            reload_cmd = shell_manager.get_reload_command()
+
+            print_formatted_text(
+                HTML(
+                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
+                )
+            )
+        else:
+            print_formatted_text('')
+            print_formatted_text(
+                HTML(
+                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
+                )
+            )
+    else:  # User chose "No"
+        # Mark that the user has declined alias setup
+        mark_alias_setup_declined()
+
+        print_formatted_text('')
+        print_formatted_text(
+            HTML(
+                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+            )
+        )
+
+    print_formatted_text('')
+
+
+async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     """Runs the agent in CLI mode."""
-    args = parse_arguments()
+    # Set log level from command line argument if provided
+    if args.log_level and isinstance(args.log_level, str):
+        log_level = getattr(logging, str(args.log_level).upper())
+        logger.setLevel(log_level)
+    else:
+        # Set default log level to WARNING if no LOG_LEVEL environment variable is set
+        # (command line argument takes precedence over environment variable)
+        env_log_level = os.getenv('LOG_LEVEL')
+        if not env_log_level:
+            logger.setLevel(logging.WARNING)
 
-    logger.setLevel(logging.WARNING)
+    # If `config.toml` does not exist in current directory, use the file under home directory
+    if not os.path.exists(args.config_file):
+        home_config_file = os.path.join(
+            os.path.expanduser('~'), '.openhands', 'config.toml'
+        )
+        logger.info(
+            f'Config file {args.config_file} does not exist, using default config file in home directory: {home_config_file}.'
+        )
+        args.config_file = home_config_file
 
     # Load config from toml and override with command line arguments
     config: OpenHandsConfig = setup_config_from_args(args)
+
+    # Attempt to install VS Code extension if applicable (one-time attempt)
+    attempt_vscode_extension_install()
 
     # Load settings from Settings Store
     # TODO: Make this generic?
@@ -377,14 +572,26 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
-        if args.agent_cls:
-            config.default_agent = str(args.agent_cls)
-        else:
-            # settings.agent is not None because we check for it in setup_config_from_args
-            assert settings.agent is not None
-            config.default_agent = settings.agent
-        if not args.llm_config and settings.llm_model and settings.llm_api_key:
-            llm_config = config.get_llm_config()
+        # settings.agent is not None because we check for it in setup_config_from_args
+        assert settings.agent is not None
+        config.default_agent = settings.agent
+
+        # Handle LLM configuration with proper precedence:
+        # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
+        # 2. config.toml in current directory has next highest precedence (already loaded)
+        # 3. ~/.openhands/settings.json has lowest precedence (handled here)
+
+        # Only apply settings from settings.json if:
+        # - No LLM config was specified via CLI arguments (-l)
+        # - The current LLM config doesn't have model or API key set (indicating it wasn't loaded from config.toml)
+        llm_config = config.get_llm_config()
+        if (
+            not args.llm_config
+            and (not llm_config.model or not llm_config.api_key)
+            and settings.llm_model
+            and settings.llm_api_key
+        ):
+            logger.debug('Using LLM configuration from settings.json')
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
@@ -392,6 +599,11 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         config.security.confirmation_mode = (
             settings.confirmation_mode if settings.confirmation_mode else False
         )
+
+        # Load search API key from settings if available and not already set from config.toml
+        if settings.search_api_key and not config.search_api_key:
+            config.search_api_key = settings.search_api_key
+            logger.debug('Using search API key from settings.json')
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
@@ -423,6 +635,29 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
 
+        # Need to finalize config again after setting runtime to 'cli'
+        # This ensures Jupyter plugin is disabled for CLI runtime
+        finalize_config(config)
+
+    # Check if we should show the alias setup flow
+    # Only show it if:
+    # 1. Aliases don't exist in the shell configuration
+    # 2. User hasn't previously declined alias setup
+    # 3. We're in an interactive environment (not during tests or CI)
+    should_show_alias_setup = (
+        not aliases_exist_in_shell_config()
+        and not alias_setup_declined()
+        and sys.stdin.isatty()
+    )
+
+    if should_show_alias_setup:
+        # Clear the terminal if we haven't shown a banner yet (i.e., setup flow didn't run)
+        if not banner_shown:
+            clear()
+
+        run_alias_setup_flow(config)
+        # Don't set banner_shown = True here, so the ASCII art banner will still be shown
+
     # TODO: Set working directory from config or use current working directory?
     current_dir = config.workspace_base
 
@@ -434,7 +669,26 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         return
 
     # Read task from file, CLI args, or stdin
-    task_str = read_task(args, config.cli_multiline_input)
+    if args.file:
+        # For CLI usage, we want to enhance the file content with a prompt
+        # that instructs the agent to read and understand the file first
+        with open(args.file, 'r', encoding='utf-8') as file:
+            file_content = file.read()
+
+        # Create a prompt that instructs the agent to read and understand the file first
+        task_str = f"""The user has tagged a file '{args.file}'.
+Please read and understand the following file content first:
+
+```
+{file_content}
+```
+
+After reviewing the file, please ask the user what they would like to do with it."""
+    else:
+        task_str = read_task(args, config.cli_multiline_input)
+
+    # Setup the runtime
+    get_runtime_cls(config.runtime).setup(config)
 
     # Run the first session
     new_session_requested = await run_session(
@@ -445,6 +699,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
         task_str,
         session_name=args.name,
         skip_banner=banner_shown,
+        conversation_id=args.conversation,
     )
 
     # If a new session was requested, run it
@@ -453,19 +708,23 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
             loop, config, settings_store, current_dir, None
         )
 
+    # Teardown the runtime
+    get_runtime_cls(config.runtime).teardown(config)
 
-def main():
+
+def run_cli_command(args):
+    """Run the CLI command with proper error handling and cleanup."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main_with_loop(loop))
+        loop.run_until_complete(main_with_loop(loop, args))
     except KeyboardInterrupt:
-        print('Received keyboard interrupt, shutting down...')
+        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
-        print(f'Connection refused: {e}')
+        print_formatted_text(f'Connection refused: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f'An error occurred: {e}')
+        print_formatted_text(f'An error occurred: {e}')
         sys.exit(1)
     finally:
         try:
@@ -478,9 +737,5 @@ def main():
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print(f'Error during cleanup: {e}')
+            print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()

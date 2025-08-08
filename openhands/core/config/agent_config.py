@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
@@ -31,6 +34,8 @@ class AgentConfig(BaseModel):
     """Whether to enable think tool"""
     enable_finish: bool = Field(default=True)
     """Whether to enable finish tool"""
+    enable_condensation_request: bool = Field(default=False)
+    """Whether to enable condensation request tool"""
     enable_prompt_extensions: bool = Field(default=True)
     """Whether to enable prompt extensions"""
     enable_mcp: bool = Field(default=True)
@@ -42,7 +47,11 @@ class AgentConfig(BaseModel):
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
     condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type='noop')
+        # The default condenser is set to the conversation window condenser -- if
+        # we use NoOp and the conversation hits the LLM context length limit,
+        # the agent will generate a condensation request which will never be
+        # handled.
+        default_factory=lambda: ConversationWindowCondenserConfig()
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
@@ -51,8 +60,7 @@ class AgentConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:
-        """
-        Create a mapping of AgentConfig instances from a toml dictionary representing the [agent] section.
+        """Create a mapping of AgentConfig instances from a toml dictionary representing the [agent] section.
 
         The default configuration is built from all non-dict keys in data.
         Then, each key with a dict value is treated as a custom agent configuration, and its values override
@@ -70,7 +78,6 @@ class AgentConfig(BaseModel):
             dict[str, AgentConfig]: A mapping where the key "agent" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-
         # Initialize the result mapping
         agent_mapping: dict[str, AgentConfig] = {}
 

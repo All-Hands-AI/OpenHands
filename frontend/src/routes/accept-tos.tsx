@@ -45,6 +45,9 @@ export default function AcceptTOS() {
         navigate(finalRedirectUrl);
       }
     },
+    onError: () => {
+      window.location.href = "/";
+    },
   });
 
   const handleAcceptTOS = () => {

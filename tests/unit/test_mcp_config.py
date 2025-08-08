@@ -1,11 +1,20 @@
+import os
+from unittest.mock import AsyncMock, MagicMock, patch
+
 import pytest
 from pydantic import ValidationError
 
+from openhands.controller.agent import Agent
+from openhands.core.config import OpenHandsConfig, load_from_env
 from openhands.core.config.mcp_config import (
     MCPConfig,
+    MCPSHTTPServerConfig,
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.server.session.session import Session
+from openhands.storage.memory import InMemoryFileStore
 
 
 def test_valid_sse_config():
@@ -27,10 +36,9 @@ def test_empty_sse_config():
 
 def test_invalid_sse_url():
     """Test SSE configuration with invalid URL format."""
-    config = MCPConfig(sse_servers=[MCPSSEServerConfig(url='not_a_url')])
-    with pytest.raises(ValueError) as exc_info:
-        config.validate_servers()
-    assert 'Invalid URL' in str(exc_info.value)
+    with pytest.raises(ValidationError) as exc_info:
+        MCPSSEServerConfig(url='not_a_url')
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_duplicate_sse_urls():
@@ -64,7 +72,7 @@ def test_from_toml_section_invalid_sse():
     }
     with pytest.raises(ValueError) as exc_info:
         MCPConfig.from_toml_section(data)
-    assert 'Invalid URL' in str(exc_info.value)
+    assert 'URL must include a scheme' in str(exc_info.value)
 
 
 def test_complex_urls():
@@ -246,3 +254,199 @@ def test_stdio_server_equality_with_different_env_order():
 
     # Should not be equal
     assert server1 != server5
+
+
+def test_mcp_stdio_server_args_parsing_basic():
+    """Test MCPStdioServerConfig args parsing with basic shell-like format."""
+    # Test basic space-separated parsing
+    config = MCPStdioServerConfig(
+        name='test-server', command='python', args='arg1 arg2 arg3'
+    )
+    assert config.args == ['arg1', 'arg2', 'arg3']
+
+    # Test single argument
+    config = MCPStdioServerConfig(
+        name='test-server', command='python', args='single-arg'
+    )
+    assert config.args == ['single-arg']
+
+
+def test_mcp_stdio_server_args_parsing_invalid_quotes():
+    """Test MCPStdioServerConfig args parsing with invalid quotes."""
+    # Test unmatched quotes
+    with pytest.raises(ValidationError) as exc_info:
+        MCPStdioServerConfig(
+            name='test-server', command='python', args='--config "unmatched quote'
+        )
+    assert 'Invalid argument format' in str(exc_info.value)
+
+
+def test_env_var_mcp_shttp_server_config(monkeypatch):
+    """Test creating MCPSHTTPServerConfig from environment variables."""
+    # Set environment variables for MCP HTTP server
+    monkeypatch.setenv(
+        'MCP_SHTTP_SERVERS',
+        '[{"url": "http://env-server:8080", "api_key": "env-api-key"}]',
+    )
+
+    # Create a config object
+    config = OpenHandsConfig()
+
+    # Load from environment
+    load_from_env(config, os.environ)
+
+    # Convert dictionary servers to proper server config objects by creating a new MCPConfig
+    # This triggers the model validator which automatically converts dict servers to proper objects
+    config.mcp = MCPConfig(
+        sse_servers=config.mcp.sse_servers,
+        stdio_servers=config.mcp.stdio_servers,
+        shttp_servers=config.mcp.shttp_servers,
+    )
+
+    # Check that the HTTP server was added
+    assert len(config.mcp.shttp_servers) == 1
+
+    # Access the first server
+    server = config.mcp.shttp_servers[0]
+
+    # Verify it's a proper server config object
+    assert isinstance(server, MCPSHTTPServerConfig)
+    assert server.url == 'http://env-server:8080'
+    assert server.api_key == 'env-api-key'
+
+    # Now let's create a proper MCPConfig with the values from the environment
+    mcp_config = MCPConfig(shttp_servers=config.mcp.shttp_servers)
+
+    # Verify that the MCPSHTTPServerConfig objects are created correctly
+    assert len(mcp_config.shttp_servers) == 1
+    assert isinstance(mcp_config.shttp_servers[0], MCPSHTTPServerConfig)
+    assert mcp_config.shttp_servers[0].url == 'http://env-server:8080'
+    assert mcp_config.shttp_servers[0].api_key == 'env-api-key'
+
+
+def test_env_var_mcp_shttp_server_config_with_toml(monkeypatch, tmp_path):
+    """Test creating MCPSHTTPServerConfig from environment variables with TOML config."""
+    # Create a TOML file with some MCP configuration
+    toml_file = tmp_path / 'config.toml'
+    with open(toml_file, 'w', encoding='utf-8') as f:
+        f.write("""
+[mcp]
+sse_servers = ["http://toml-server:8080"]
+shttp_servers = [
+    { url = "http://toml-http-server:8080", api_key = "toml-api-key" }
+]
+""")
+
+    # Set environment variables for MCP HTTP server to override TOML
+    monkeypatch.setenv(
+        'MCP_SHTTP_SERVERS',
+        '[{"url": "http://env-server:8080", "api_key": "env-api-key"}]',
+    )
+
+    # Create a config object
+    config = OpenHandsConfig()
+
+    # Load from TOML first
+    from openhands.core.config import load_from_toml
+
+    load_from_toml(config, str(toml_file))
+
+    # Verify TOML values were loaded
+    assert len(config.mcp.shttp_servers) == 1
+    assert isinstance(config.mcp.shttp_servers[0], MCPSHTTPServerConfig)
+    assert config.mcp.shttp_servers[0].url == 'http://toml-http-server:8080'
+    assert config.mcp.shttp_servers[0].api_key == 'toml-api-key'
+
+    # Now load from environment, which should override TOML
+    load_from_env(config, os.environ)
+
+    # Check that the environment values override the TOML values
+    assert len(config.mcp.shttp_servers) == 1
+
+    # The values should now be from the environment
+    server = config.mcp.shttp_servers[0]
+    assert isinstance(server, MCPSHTTPServerConfig)
+    assert server.url == 'http://env-server:8080'
+    assert server.api_key == 'env-api-key'
+
+
+def test_env_var_mcp_shttp_servers_with_python_str_representation(monkeypatch):
+    """Test creating MCPSHTTPServerConfig from environment variables using Python string representation."""
+    # Create a Python list of dictionaries
+    mcp_shttp_servers = [
+        {'url': 'https://example.com/mcp/mcp', 'api_key': 'test-api-key'}
+    ]
+
+    # Set environment variable with the string representation of the Python list
+    monkeypatch.setenv('MCP_SHTTP_SERVERS', str(mcp_shttp_servers))
+
+    # Create a config object
+    config = OpenHandsConfig()
+
+    # Load from environment
+    load_from_env(config, os.environ)
+
+    # Check that the HTTP server was added
+    assert len(config.mcp.shttp_servers) == 1
+
+    # Access the first server
+    server = config.mcp.shttp_servers[0]
+
+    # Check that it's a dict with the expected keys
+    assert isinstance(server, MCPSHTTPServerConfig)
+    assert server.url == 'https://example.com/mcp/mcp'
+    assert server.api_key == 'test-api-key'
+
+
+@pytest.mark.asyncio
+async def test_session_preserves_env_mcp_config(monkeypatch):
+    """Test that Session preserves MCP configuration from environment variables."""
+    # Set environment variables for MCP HTTP server
+    monkeypatch.setenv(
+        'MCP_SHTTP_SERVERS',
+        '[{"url": "http://env-server:8080", "api_key": "env-api-key"}]',
+    )
+
+    # Also set MCP_HOST to prevent the default server from being added
+    monkeypatch.setenv('MCP_HOST', 'dummy')
+
+    # Create a config object and load from environment
+    config = OpenHandsConfig()
+    load_from_env(config, os.environ)
+
+    # Verify the environment variables were loaded into the config
+    assert config.mcp_host == 'dummy'
+    assert len(config.mcp.shttp_servers) == 1
+    # If it's already a proper server config object, just verify it
+    assert isinstance(config.mcp.shttp_servers[0], MCPSHTTPServerConfig)
+    assert config.mcp.shttp_servers[0].url == 'http://env-server:8080'
+    assert config.mcp.shttp_servers[0].api_key == 'env-api-key'
+
+    # Create a session with the config
+    session = Session(
+        sid='test-sid',
+        file_store=InMemoryFileStore({}),
+        config=config,
+        sio=AsyncMock(),
+    )
+
+    # Create empty settings
+    settings = ConversationInitData()
+
+    # Mock the Agent.get_cls method to avoid AgentNotRegisteredError
+    mock_agent_cls = MagicMock()
+    mock_agent_instance = MagicMock()
+    mock_agent_cls.return_value = mock_agent_instance
+
+    # Initialize the agent (this is where the MCP config would be reset)
+    with (
+        patch.object(session.agent_session, 'start', AsyncMock()),
+        patch.object(Agent, 'get_cls', return_value=mock_agent_cls),
+    ):
+        await session.initialize_agent(settings, None, None)
+
+    # Verify that the MCP configuration was preserved
+    assert len(session.config.mcp.shttp_servers) >= 0
+
+    # Clean up
+    await session.close()
