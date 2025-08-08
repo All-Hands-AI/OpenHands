@@ -155,7 +155,7 @@ class Session:
             f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
 
-        # Check if settings has custom mcp_shttp_servers
+        # Check if settings has custom mcp_config
         mcp_config = getattr(settings, 'mcp_config', None)
         if mcp_config is not None:
             # Use the provided MCP SHTTP servers instead of default setup
