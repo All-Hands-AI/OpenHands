@@ -735,14 +735,27 @@ fi
                 'Executing clone command for org-level repo',
             )
 
-            action = CmdRunAction(command=clone_cmd)
+            # Make the organization microagents clone operation blocking with a 60-second timeout
+            self.log(
+                'info',
+                f'Cloning org-level microagents from {org_openhands_repo} (blocking with 60s timeout)',
+            )
+            action = CmdRunAction(command=clone_cmd, blocking=True)
+            action.set_hard_timeout(60)  # 60 seconds timeout
             obs = self.run_action(action)
 
-            if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
-                self.log(
-                    'info',
-                    f'Successfully cloned org-level microagents from {org_openhands_repo}',
-                )
+            if isinstance(obs, CmdOutputObservation):
+                if obs.exit_code == 0:
+                    self.log(
+                        'info',
+                        f'Successfully cloned org-level microagents from {org_openhands_repo}',
+                    )
+                else:
+                    self.log(
+                        'warning',
+                        f'Failed to clone org-level microagents from {org_openhands_repo}: {obs.content}',
+                    )
+                    return loaded_microagents
 
                 # Load microagents from the org-level repo
                 org_microagents_dir = org_repo_dir / 'microagents'
