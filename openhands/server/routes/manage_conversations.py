@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     ChangeAgentStateAction,
@@ -87,6 +88,7 @@ class InitSessionRequest(BaseModel):
     suggested_task: SuggestedTask | None = None
     create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
+    mcp_config: MCPConfig | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -178,6 +180,7 @@ async def new_conversation(
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
+            mcp_config=data.mcp_config,
         )
 
         return ConversationResponse(
