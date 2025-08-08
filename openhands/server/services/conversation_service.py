@@ -85,9 +85,7 @@ async def create_new_conversation(
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     if mcp_shttp_servers:
-        session_init_args['mcp_config'] = MCPConfig(
-            shttp_servers=mcp_shttp_servers
-        )
+        session_init_args['mcp_config'] = MCPConfig(shttp_servers=mcp_shttp_servers)
 
     session_init_args['mcp_shttp_servers'] = mcp_shttp_servers
     conversation_init_data = ConversationInitData(**session_init_args)
