@@ -167,11 +167,26 @@ class KnowledgeMicroagent(BaseMicroagent):
         if self.type not in [MicroagentType.KNOWLEDGE, MicroagentType.TASK]:
             raise ValueError('KnowledgeMicroagent must have type KNOWLEDGE or TASK')
 
-    def match_trigger(self, message: str) -> str | None:
-        """Match a trigger in the message.
+    def match_trigger(self, message: str, repo_name: str | None = None) -> str | None:
+        """Match a trigger in the message or repository name.
 
-        It returns the first trigger that matches the message.
+        It returns the first trigger that matches the message or repository name.
+
+        Args:
+            message: The message to check for triggers
+            repo_name: Optional repository name to check against repo_triggers
+
+        Returns:
+            The matched trigger or None if no match is found
         """
+        # Check repository name triggers if provided
+        if repo_name and self.repo_triggers:
+            repo_name = repo_name.lower()
+            for trigger in self.repo_triggers:
+                if trigger.lower() == repo_name:
+                    return f'repo:{trigger}'
+
+        # Check message triggers
         message = message.lower()
         for trigger in self.triggers:
             if trigger.lower() in message:
@@ -182,6 +197,10 @@ class KnowledgeMicroagent(BaseMicroagent):
     @property
     def triggers(self) -> list[str]:
         return self.metadata.triggers
+
+    @property
+    def repo_triggers(self) -> list[str]:
+        return self.metadata.repo_triggers
 
 
 class RepoMicroagent(BaseMicroagent):
