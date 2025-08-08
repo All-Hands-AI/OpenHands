@@ -156,11 +156,11 @@ class Session:
         )
 
         # Check if settings has custom mcp_shttp_servers
-        mcp_shttp_servers = getattr(settings, 'mcp_shttp_servers', None)
-        if mcp_shttp_servers is not None:
+        mcp_config = getattr(settings, 'mcp_config', None)
+        if mcp_config is not None:
             # Use the provided MCP SHTTP servers instead of default setup
-            self.config.mcp.shttp_servers = mcp_shttp_servers
-            self.logger.debug(f'Using custom MCP SHTTP servers: {mcp_shttp_servers}')
+            self.config.mcp = mcp_config
+            self.logger.debug(f'Using custom MCP Config: {mcp_config}')
         else:
             # Add OpenHands' MCP server by default
             openhands_mcp_server, openhands_mcp_stdio_servers = (

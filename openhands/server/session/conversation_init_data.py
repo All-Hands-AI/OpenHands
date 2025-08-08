@@ -18,7 +18,6 @@ class ConversationInitData(Settings):
     selected_branch: str | None = Field(default=None)
     conversation_instructions: str | None = Field(default=None)
     git_provider: ProviderType | None = Field(default=None)
-    mcp_shttp_servers: list[MCPSHTTPServerConfig] | None = Field(default=None)
 
     model_config = ConfigDict(
         arbitrary_types_allowed=True,
