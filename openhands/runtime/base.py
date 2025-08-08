@@ -435,7 +435,61 @@ class Runtime(FileEditRuntimeMixin):
         return dir_name
 
     def maybe_run_setup_script(self):
-        """Run .openhands/setup.sh if it exists in the workspace or repository."""
+        """
+        Run setup.sh scripts if they exist in the workspace or repository.
+
+        Order of execution:
+        1. Organization-level setup.sh (from org/.openhands or org/openhands-config)
+        2. Repository-level setup.sh (from .openhands/setup.sh)
+        """
+        # First, try to run the organization-level setup script if we have a repository
+        selected_repository = getattr(self, 'selected_repository', None)
+        if selected_repository:
+            repo_parts = selected_repository.split('/')
+            if len(repo_parts) >= 2:
+                org_name = repo_parts[0]  # First part is the organization name
+
+                # Determine if this is a GitLab repository
+                self._is_gitlab_repository(selected_repository)
+
+                # For GitLab, use openhands-config (since .openhands is not a valid repo name)
+                # For other providers, use .openhands
+
+                # Check for org-level setup.sh in the temporary directory
+                # This assumes the org repo was already cloned during microagent loading
+                org_setup_script = f'/tmp/org_openhands_{org_name}/setup.sh'
+
+                # Try to read the org-level setup script
+                org_setup_read_obs = self.read(FileReadAction(path=org_setup_script))
+                if not isinstance(org_setup_read_obs, ErrorObservation):
+                    self.log(
+                        'info',
+                        f'Found org-level setup.sh at {org_setup_script}',
+                    )
+
+                    if self.status_callback:
+                        self.status_callback(
+                            'info',
+                            RuntimeStatus.SETTING_UP_WORKSPACE,
+                            'Running organization-level setup script...',
+                        )
+
+                    # Run the org-level setup script
+                    org_setup_action = CmdRunAction(
+                        f'chmod +x {org_setup_script} && source {org_setup_script}',
+                        blocking=True,
+                        hidden=True,
+                    )
+                    org_setup_action.set_hard_timeout(600)
+
+                    # Add the action to the event stream as an ENVIRONMENT event
+                    source = EventSource.ENVIRONMENT
+                    self.event_stream.add_event(org_setup_action, source)
+
+                    # Execute the action
+                    self.run_action(org_setup_action)
+
+        # Now run the repository-level setup script
         setup_script = '.openhands/setup.sh'
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
