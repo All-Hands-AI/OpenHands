@@ -200,7 +200,10 @@ def create_memory(
         memory.load_user_workspace_microagents(microagents)
 
         if selected_repository and repo_directory:
-            memory.set_repository_info(selected_repository, repo_directory)
+            # Note: In this synchronous context, we cannot determine the actual provider
+            # The repository URL will be set properly in the runtime when the repository is cloned
+            # For now, we pass None and let the memory.py fallback logic handle URL construction
+            memory.set_repository_info(selected_repository, repo_directory, None)
 
     return memory
 
