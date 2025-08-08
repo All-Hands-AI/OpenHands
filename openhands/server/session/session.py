@@ -159,8 +159,8 @@ class Session:
         mcp_config = getattr(settings, 'mcp_config', None)
         if mcp_config is not None:
             # Use the provided MCP SHTTP servers instead of default setup
-            self.config.mcp = mcp_config
-            self.logger.debug(f'Using custom MCP Config: {mcp_config}')
+            self.config.mcp = self.config.mcp.merge(mcp_config)
+            self.logger.debug(f'Merged custom MCP Config: {mcp_config}')
 
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
