@@ -190,8 +190,8 @@ class BatchedWebHookFileStore(FileStore):
 
     def _send_batch(self) -> None:
         """
-        Send the current batch of updates to the webhook.
-        This method acquires the batch lock and processes all pending updates.
+        Send the current batch of updates to the webhook as a single request.
+        This method acquires the batch lock and processes all pending updates in one batch.
         """
         batch_to_send: dict[str, tuple[str, Optional[Union[str, bytes]]]] = {}
 
@@ -209,56 +209,59 @@ class BatchedWebHookFileStore(FileStore):
                 self._batch_timer.cancel()
                 self._batch_timer = None
 
-        # Process the batch outside the lock
-        for path, (operation, contents) in batch_to_send.items():
+        # Process the entire batch in a single request
+        if batch_to_send:
             try:
-                if operation == 'write':
-                    self._send_write(path, contents)
-                elif operation == 'delete':
-                    self._send_delete(path)
+                self._send_batch_request(batch_to_send)
             except Exception as e:
-                # Log the error but continue processing other items
-                print(f'Error sending webhook for {path}: {e}')
+                # Log the error
+                print(f'Error sending webhook batch: {e}')
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(1),
         stop=tenacity.stop_after_attempt(3),
     )
-    def _send_write(self, path: str, contents: Union[str, bytes]) -> None:
+    def _send_batch_request(
+        self, batch: dict[str, tuple[str, Optional[Union[str, bytes]]]]
+    ) -> None:
         """
-        Send a POST request to the webhook URL for a file write operation.
+        Send a single batch request to the webhook URL with all updates.
 
         This method is retried up to 3 times with a 1-second delay between attempts.
 
         Args:
-            path: The path that was written to
-            contents: The contents that were written
+            batch: Dictionary mapping paths to (operation, contents) tuples
 
         Raises:
             httpx.HTTPStatusError: If the webhook request fails
         """
-        base_url = self.base_url + path
-        response = self.client.post(base_url, content=contents)
-        response.raise_for_status()
-
-    @tenacity.retry(
-        wait=tenacity.wait_fixed(1),
-        stop=tenacity.stop_after_attempt(3),
-    )
-    def _send_delete(self, path: str) -> None:
-        """
-        Send a DELETE request to the webhook URL for a file delete operation.
-
-        This method is retried up to 3 times with a 1-second delay between attempts.
-
-        Args:
-            path: The path that was deleted
-
-        Raises:
-            httpx.HTTPStatusError: If the webhook request fails
-        """
-        base_url = self.base_url + path
-        response = self.client.delete(base_url)
+        # Prepare the batch payload
+        batch_payload = []
+        
+        for path, (operation, contents) in batch.items():
+            item = {
+                "method": "POST" if operation == "write" else "DELETE",
+                "path": path,
+            }
+            
+            if operation == "write" and contents is not None:
+                # Convert bytes to string if needed
+                if isinstance(contents, bytes):
+                    try:
+                        # Try to decode as UTF-8
+                        item["content"] = contents.decode("utf-8")
+                    except UnicodeDecodeError:
+                        # If not UTF-8, use base64 encoding
+                        import base64
+                        item["content"] = base64.b64encode(contents).decode("ascii")
+                        item["encoding"] = "base64"
+                else:
+                    item["content"] = contents
+            
+            batch_payload.append(item)
+        
+        # Send the batch as a single request
+        response = self.client.post(self.base_url, json=batch_payload)
         response.raise_for_status()
 
     def flush(self) -> None:

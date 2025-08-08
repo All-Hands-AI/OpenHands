@@ -8,6 +8,7 @@ from openhands.storage.local import LocalFileStore
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.s3 import S3FileStore
 from openhands.storage.web_hook import WebHookFileStore
+from openhands.storage.batched_web_hook import BatchedWebHookFileStore
 
 
 def get_file_store(
@@ -15,6 +16,7 @@ def get_file_store(
     file_store_path: str | None = None,
     file_store_web_hook_url: str | None = None,
     file_store_web_hook_headers: dict | None = None,
+    batch: bool = False,
 ) -> FileStore:
     store: FileStore
     if file_store_type == 'local':
@@ -35,9 +37,21 @@ def get_file_store(
                 file_store_web_hook_headers['X-Session-API-Key'] = os.getenv(
                     'SESSION_API_KEY'
                 )
-        store = WebHookFileStore(
-            store,
-            file_store_web_hook_url,
-            httpx.Client(headers=file_store_web_hook_headers or {}),
-        )
+        
+        client = httpx.Client(headers=file_store_web_hook_headers or {})
+        
+        if batch:
+            # Use batched webhook file store
+            store = BatchedWebHookFileStore(
+                store,
+                file_store_web_hook_url,
+                client,
+            )
+        else:
+            # Use regular webhook file store
+            store = WebHookFileStore(
+                store,
+                file_store_web_hook_url,
+                client,
+            )
     return store

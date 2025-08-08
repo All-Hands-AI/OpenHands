@@ -31,6 +31,7 @@ file_store: FileStore = get_file_store(
     config.file_store_path,
     config.file_store_web_hook_url,
     config.file_store_web_hook_headers,
+    batch=config.file_store_web_hook_batch,
 )
 
 client_manager = None
