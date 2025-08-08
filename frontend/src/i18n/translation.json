@@ -12206,5 +12206,37 @@
         "tr": "Depo yok",
         "de": "Kein Repository",
         "uk": "Немає репозиторію"
+    },
+    "COMMON$STOP_SERVER": {
+        "en": "Stop Server",
+        "ja": "サーバーを停止",
+        "zh-CN": "停止服务器",
+        "zh-TW": "停止伺服器",
+        "ko-KR": "서버 중지",
+        "no": "Stopp server",
+        "it": "Ferma server",
+        "pt": "Parar servidor",
+        "es": "Detener servidor",
+        "ar": "إيقاف الخادم",
+        "fr": "Arrêter le serveur",
+        "tr": "Sunucuyu durdur",
+        "de": "Server stoppen",
+        "uk": "Зупинити сервер"
+    },
+    "COMMON$START_SERVER": {
+        "en": "Start Server",
+        "ja": "サーバーを開始",
+        "zh-CN": "启动服务器",
+        "zh-TW": "啟動伺服器",
+        "ko-KR": "서버 시작",
+        "no": "Start server",
+        "it": "Avvia server",
+        "pt": "Iniciar servidor",
+        "es": "Iniciar servidor",
+        "ar": "تشغيل الخادم",
+        "fr": "Démarrer le serveur",
+        "tr": "Sunucuyu başlat",
+        "de": "Server starten",
+        "uk": "Запустити сервер"
     }
 }
