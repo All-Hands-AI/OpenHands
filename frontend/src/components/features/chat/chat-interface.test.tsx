@@ -25,6 +25,7 @@ vi.mock("react-redux", () => ({
     selectedRepository: null,
     replayJson: null,
   })),
+  useDispatch: vi.fn(() => vi.fn()),
 }));
 
 describe("ChatInterface", () => {
