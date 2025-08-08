@@ -89,18 +89,19 @@ I’ve uploaded a python code repository in the directory workspace_dir_name. Co
 Can you help me implement the necessary changes to the repository so that the runtime of the `workload()` function is faster? Basic guidelines:
 1. Your task is to make changes to non-test files in the /workspace directory to improve the performance of the code running in `workload()`. Please do not directly change the implementation of the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster by only editing the repository containing code that the `workload()` function calls.
 2. Make changes while ensuring the repository is functionally equivalent to the original: your changes should not introduce new bugs or cause already-passing tests to begin failing after your changes. However, you do not need to worry about tests that already fail without any changes made. For relevant test files you find in the repository, you can run them via the bash command `{instance.test_cmd} <test_file>` to check for correctness. Note that running all the tests may take a long time, so you need to determine which tests are relevant to your changes.
-3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run, so please allow it to finish: for iterative testing purposes, you can adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
-4. You may need to reinstall/rebuild the repo for your changes to take effect before testing. Reinstalling may take a long time to run, so please be patient with running it and allow it to complete if possible. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
+3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run, so please allow it to finish and be generous with setting your timeout parameter (a timeout value of 1800 or larger here is encouraged): for faster iteration, you can adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
+4. You may need to reinstall/rebuild the repo for your changes to take effect before testing if you made non-Python changes. Reinstalling may take a long time to run (a timeout value of 1800 or larger here is encouraged), so please be patient with running it and allow it to complete if possible. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
 5. All the dependencies required to run the `workload()` function are already installed in the environment. You should not install or upgrade any dependencies.
 
 Follow these steps to improve performance:
 1. As a first step, explore the repository structure.
 2. Create a Python script to reproduce the performance workload, execute it with python <workload_file>, and examine the printed output metrics.
 3. Edit the source code of the repository to improve performance. Please do not change the contents of the `workload()` function itself, but focus on optimizing the code in the repository that the original `workload()` function uses.
-4. Rebuild and rerun your script to confirm that performance has improved.
-5. If necessary, identify any relevant test files in the repository related to your changes and verify that test statuses did not change after your modifications.
-6. After each attempted change, please reflect on the changes attempted and the performance impact observed. If the performance did not improve, consider alternative approaches or optimizations.
-7. Once you are satisfied, please use the finish command to complete your task.
+4. If non-Python changes were made, rebuild the repo to make sure the changes take effect.
+5. Rerun your script to confirm that performance has improved.
+6. If necessary, identify any relevant test files in the repository related to your changes and verify that test statuses did not change after your modifications.
+7. After each attempted change, please reflect on the changes attempted and the performance impact observed. If the performance did not improve, consider alternative approaches or optimizations.
+8. Once you are satisfied, please use the finish command to complete your task.
 
 Please remember that you should not change the implementation of the `workload()` function. The performance improvement should solely come from editing the source files in the code repository.
 """
@@ -118,7 +119,8 @@ def get_instance_docker_image(
     instance_id: str,
 ) -> str:
     # TODO: This currently assumes docker image is already local.
-    return f"docker.io/sweperf/sweperf:{instance_id}"
+    return f"ghcr.io/18jeffreyma/swefficiency:{instance_id}"
+    # return f"docker.io/swefficiency/swefficiency:{instance_id}"
 
 
 def get_config(
@@ -142,23 +144,19 @@ def get_config(
     sandbox_config.use_host_network = False
     sandbox_config.timeout = 1800
 
-    # Add platform to the sandbox config to solve issue 4401
     sandbox_config.platform = 'linux/amd64'
-    sandbox_config.remote_runtime_resource_factor = get_instance_resource_factor(
-        dataset_name=metadata.dataset,
-        instance_id=instance['instance_id'],
-    )
+    sandbox_config.remote_runtime_resource_factor = 1.0
     sandbox_config.runtime_startup_env_vars.update(
         {
-            "NO_CHANGE_TIMEOUT_SECONDS": 900,  # 15 minutes
+            "NO_CHANGE_TIMEOUT_SECONDS": '900',  # 15 minutes
         }
     )
 
-    if cpu_group is not None:
-        sandbox_config.docker_runtime_kwargs = {
-            # HACK: Use the cpu_group if provided, otherwise use all available CPUs
-            "cpuset_cpus": ','.join(map(str, cpu_group))
-        }
+    # if cpu_group is not None:
+    #     sandbox_config.docker_runtime_kwargs = {
+    #         # HACK: Use the cpu_group if provided, otherwise use all available CPUs
+    #         "cpuset_cpus": ','.join(map(str, cpu_group))
+    #     }
 
     sandbox_config.rm_all_containers = True
 
