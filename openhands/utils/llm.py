@@ -65,6 +65,7 @@ def get_supported_llm_models(config: OpenHandsConfig) -> list[str]:
         'openhands/devstral-medium-2507',
         'openhands/kimi-k2-0711-preview',
         'openhands/qwen3-coder-480b',
+        'openhands/gpt-5-2025-08-07',
     ]
     model_list = openhands_models + model_list
 
