@@ -13,6 +13,15 @@ def test_commit_message_with_quotes():
     with tempfile.TemporaryDirectory() as temp_dir:
         subprocess.run(['git', 'init', temp_dir], check=True)
 
+        # Set git config for the test repository
+        subprocess.run(
+            ['git', '-C', temp_dir, 'config', 'user.name', 'Test User'], check=True
+        )
+        subprocess.run(
+            ['git', '-C', temp_dir, 'config', 'user.email', 'test@example.com'],
+            check=True,
+        )
+
         # Create a test file and add it to git
         test_file = os.path.join(temp_dir, 'test.txt')
         with open(test_file, 'w') as f:
@@ -37,8 +46,14 @@ def test_commit_message_with_quotes():
             thread_ids=None,
         )
 
-        # Make the commit
-        make_commit(temp_dir, issue, 'issue')
+        # Make the commit with the same user name and email as configured above
+        make_commit(
+            temp_dir,
+            issue,
+            'issue',
+            git_user_name='Test User',
+            git_user_email='test@example.com',
+        )
 
         # Get the commit message
         result = subprocess.run(
@@ -131,8 +146,21 @@ def test_pr_title_with_quotes(monkeypatch):
 
         logger.info('Adding and committing test file...')
         subprocess.run(['git', '-C', temp_dir, 'add', 'test.txt'], check=True)
+        # Use -c to set the committer identity for this command only
         subprocess.run(
-            ['git', '-C', temp_dir, 'commit', '-m', 'Initial commit'], check=True
+            [
+                'git',
+                '-C',
+                temp_dir,
+                '-c',
+                'user.name=Test User',
+                '-c',
+                'user.email=test@example.com',
+                'commit',
+                '-m',
+                'Initial commit',
+            ],
+            check=True,
         )
 
         # Create a test issue with problematic title

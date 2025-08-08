@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
 from openhands.server.user_auth.default_user_auth import DefaultUserAuth
 from openhands.storage.data_models.settings import Settings
@@ -36,10 +37,17 @@ async def test_user_auth_mcp_merging_integration():
     mock_settings_store = AsyncMock(spec=FileSettingsStore)
     mock_settings_store.load.return_value = stored_settings
 
+    # Create a mock config with MCP settings
+    mock_config = OpenHandsConfig()
+    mock_config.mcp = config_settings.mcp_config
+
     with patch.object(
         user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
-        with patch.object(Settings, 'from_config', return_value=config_settings):
+        with patch(
+            'openhands.server.user_auth.default_user_auth.OpenHandsConfig',
+            return_value=mock_config,
+        ):
             # Get user settings - this should trigger the merging
             merged_settings = await user_auth.get_user_settings()
 
@@ -76,12 +84,17 @@ async def test_user_auth_caching_behavior():
     mock_settings_store = AsyncMock(spec=FileSettingsStore)
     mock_settings_store.load.return_value = stored_settings
 
+    # Create a mock config with MCP settings
+    mock_config = OpenHandsConfig()
+    mock_config.mcp = config_settings.mcp_config
+
     with patch.object(
         user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
-        with patch.object(
-            Settings, 'from_config', return_value=config_settings
-        ) as mock_from_config:
+        with patch(
+            'openhands.server.user_auth.default_user_auth.OpenHandsConfig',
+            return_value=mock_config,
+        ) as mock_config_class:
             # First call should load and merge
             settings1 = await user_auth.get_user_settings()
 
@@ -95,8 +108,8 @@ async def test_user_auth_caching_behavior():
     # Settings store should only be called once (first time)
     mock_settings_store.load.assert_called_once()
 
-    # from_config should only be called once (during merging)
-    mock_from_config.assert_called_once()
+    # OpenHandsConfig should only be called once (during merging)
+    mock_config_class.assert_called_once()
 
 
 @pytest.mark.asyncio

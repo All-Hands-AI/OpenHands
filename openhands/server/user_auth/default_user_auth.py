@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from fastapi import Request
 from pydantic import SecretStr
 
+from openhands.core.config import ConfigurationMerger, OpenHandsConfig
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.server import shared
 from openhands.server.settings import Settings
@@ -47,18 +48,48 @@ class DefaultUserAuth(UserAuth):
         return settings_store
 
     async def get_user_settings(self) -> Settings | None:
+        """Get user settings with proper precedence handling.
+
+        This method retrieves user settings from the settings store and applies the correct
+        precedence order using the ConfigurationMerger:
+        1. Command-line arguments (already in OpenHandsConfig)
+        2. User settings (from settings store)
+        3. Environment variables (already in OpenHandsConfig)
+        4. TOML files (already in OpenHandsConfig)
+        5. Default values (already in OpenHandsConfig)
+
+        For MCP configuration, we merge the lists from both sources.
+
+        Returns:
+            The merged settings, or None if no settings exist.
+        """
+        # Return cached settings if available
         settings = self._settings
         if settings:
             return settings
+
+        # Load settings from store
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
 
-        # Merge config.toml settings with stored settings
-        if settings:
-            settings = settings.merge_with_config_settings()
+        # If no settings exist, return None
+        if not settings:
+            self._settings = None
+            return None
 
-        self._settings = settings
-        return settings
+        # Load config (contains command-line args, env vars, and TOML settings)
+        config = OpenHandsConfig()
+
+        # Use ConfigurationMerger to properly merge settings with config
+        # This ensures correct precedence: config values (CLI, env, TOML) override user settings
+        merged_config = ConfigurationMerger.merge_settings_with_config(settings, config)
+
+        # Convert the merged config back to settings format
+        final_settings = ConfigurationMerger.config_to_settings(merged_config)
+
+        # Cache and return settings
+        self._settings = final_settings
+        return final_settings
 
     async def get_secrets_store(self) -> SecretsStore:
         secrets_store = self._secrets_store

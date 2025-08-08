@@ -13,6 +13,7 @@ from openhands.core.config.condenser_config import (
     ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
+from openhands.core.config.configuration_merger import ConfigurationMerger
 from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
@@ -103,52 +104,14 @@ class Session:
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
         )
-        agent_cls = settings.agent or self.config.default_agent
-        self.config.security.confirmation_mode = (
-            self.config.security.confirmation_mode
-            if settings.confirmation_mode is None
-            else settings.confirmation_mode
-        )
-        self.config.security.security_analyzer = (
-            settings.security_analyzer or self.config.security.security_analyzer
-        )
-        self.config.sandbox.base_container_image = (
-            settings.sandbox_base_container_image
-            or self.config.sandbox.base_container_image
-        )
-        self.config.sandbox.runtime_container_image = (
-            settings.sandbox_runtime_container_image
-            if settings.sandbox_base_container_image
-            or settings.sandbox_runtime_container_image
-            else self.config.sandbox.runtime_container_image
+
+        # Use the configuration merger to merge settings with config
+        # This replaces all the individual settings assignments that were previously here
+        self.config = ConfigurationMerger.merge_settings_with_config(
+            settings, self.config
         )
 
-        # Set Git user configuration if provided in settings
-        if hasattr(settings, 'git_user_name') and settings.git_user_name:
-            self.config.git_user_name = settings.git_user_name
-        if hasattr(settings, 'git_user_email') and settings.git_user_email:
-            self.config.git_user_email = settings.git_user_email
-        max_iterations = settings.max_iterations or self.config.max_iterations
-
-        # Prioritize settings over config for max_budget_per_task
-        max_budget_per_task = (
-            settings.max_budget_per_task
-            if settings.max_budget_per_task is not None
-            else self.config.max_budget_per_task
-        )
-
-        # This is a shallow copy of the default LLM config, so changes here will
-        # persist if we retrieve the default LLM config again when constructing
-        # the agent
-        default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = settings.llm_model or ''
-        default_llm_config.api_key = settings.llm_api_key
-        default_llm_config.base_url = settings.llm_base_url
-        self.config.search_api_key = settings.search_api_key
-        if settings.sandbox_api_key:
-            self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
-
-        # NOTE: this need to happen AFTER the config is updated with the search_api_key
+        # NOTE: this needs to happen AFTER the config is updated with the search_api_key
         self.logger.debug(
             f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
@@ -169,9 +132,13 @@ class Session:
             f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
         )
 
-        # TODO: override other LLM config & agent config groups (#2075)
+        # Get agent class from merged config
+        agent_cls = self.config.default_agent
 
+        # Create LLM with the merged config
         llm = self._create_llm(agent_cls)
+
+        # Get agent config from the merged config
         agent_config = self.config.get_agent_config(agent_cls)
 
         if settings.enable_default_condenser:
@@ -202,8 +169,11 @@ class Session:
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
+
+        # Create the agent with the merged config
         agent = Agent.get_cls(agent_cls)(llm, agent_config)
 
+        # Extract additional settings for conversation initialization
         git_provider_tokens = None
         selected_repository = None
         selected_branch = None
@@ -221,8 +191,8 @@ class Session:
                 runtime_name=self.config.runtime,
                 config=self.config,
                 agent=agent,
-                max_iterations=max_iterations,
-                max_budget_per_task=max_budget_per_task,
+                max_iterations=self.config.max_iterations,
+                max_budget_per_task=self.config.max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
