@@ -16,7 +16,7 @@ export function RecentConversations() {
   let displayedConversations: Conversation[] = [];
   if (conversations && conversations.length > 0) {
     if (isExpanded) {
-      displayedConversations = conversations;
+      displayedConversations = conversations.slice(0, 10);
     } else {
       displayedConversations = conversations.slice(0, 3);
     }
