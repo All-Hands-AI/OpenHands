@@ -197,6 +197,12 @@ def get_cli_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+    parser.add_argument(
+        '--conversation',
+        help='The conversation id to continue',
+        type=str,
+        default=None,
+    )
 
     return parser
 
