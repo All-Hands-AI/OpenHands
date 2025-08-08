@@ -33,6 +33,8 @@ import { shouldRenderEvent } from "./event-content-helpers/should-render-event";
 import { useUploadFiles } from "#/hooks/mutation/use-upload-files";
 import { useConfig } from "#/hooks/query/use-config";
 import { validateFiles } from "#/utils/file-validation";
+import { MicroagentNamesOverlay } from "./microagent/microagent-overlay";
+import { useKeyboardShortcut } from "#/services/keyboard-mapping";
 
 function getEntryPoint(
   hasRepository: boolean | null,
@@ -67,12 +69,27 @@ export function ChatInterface() {
   >("positive");
   const [feedbackModalIsOpen, setFeedbackModalIsOpen] = React.useState(false);
   const [messageToSend, setMessageToSend] = React.useState<string | null>(null);
+  const [showMicroagentOverlay, setShowMicroagentOverlay] =
+    React.useState(false);
   const { selectedRepository, replayJson } = useSelector(
     (state: RootState) => state.initialQuery,
   );
   const params = useParams();
   const { mutate: getTrajectory } = useGetTrajectory();
   const { mutateAsync: uploadFiles } = useUploadFiles();
+
+  // Keyboard shortcuts for microagent overlay
+  useKeyboardShortcut({
+    key: "r",
+    ctrlKey: true,
+    callback: () => setShowMicroagentOverlay((prev) => !prev),
+  });
+
+  useKeyboardShortcut({
+    key: "Escape",
+    callback: () => setShowMicroagentOverlay(false),
+    enabled: showMicroagentOverlay,
+  });
 
   const optimisticUserMessage = getOptimisticUserMessage();
   const errorMessage = getErrorMessage();
@@ -272,6 +289,12 @@ export function ChatInterface() {
             polarity={feedbackPolarity}
           />
         )}
+
+        {/* Microagent Names Overlay */}
+        <MicroagentNamesOverlay
+          isVisible={showMicroagentOverlay}
+          onClose={() => setShowMicroagentOverlay(false)}
+        />
       </div>
     </ScrollProvider>
   );
