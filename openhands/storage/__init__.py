@@ -2,13 +2,13 @@ import os
 
 import httpx
 
+from openhands.storage.batched_web_hook import BatchedWebHookFileStore
 from openhands.storage.files import FileStore
 from openhands.storage.google_cloud import GoogleCloudFileStore
 from openhands.storage.local import LocalFileStore
 from openhands.storage.memory import InMemoryFileStore
 from openhands.storage.s3 import S3FileStore
 from openhands.storage.web_hook import WebHookFileStore
-from openhands.storage.batched_web_hook import BatchedWebHookFileStore
 
 
 def get_file_store(
@@ -37,9 +37,9 @@ def get_file_store(
                 file_store_web_hook_headers['X-Session-API-Key'] = os.getenv(
                     'SESSION_API_KEY'
                 )
-        
+
         client = httpx.Client(headers=file_store_web_hook_headers or {})
-        
+
         if batch:
             # Use batched webhook file store
             store = BatchedWebHookFileStore(

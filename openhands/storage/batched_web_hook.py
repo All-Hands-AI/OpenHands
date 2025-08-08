@@ -237,29 +237,30 @@ class BatchedWebHookFileStore(FileStore):
         """
         # Prepare the batch payload
         batch_payload = []
-        
+
         for path, (operation, contents) in batch.items():
             item = {
-                "method": "POST" if operation == "write" else "DELETE",
-                "path": path,
+                'method': 'POST' if operation == 'write' else 'DELETE',
+                'path': path,
             }
-            
-            if operation == "write" and contents is not None:
+
+            if operation == 'write' and contents is not None:
                 # Convert bytes to string if needed
                 if isinstance(contents, bytes):
                     try:
                         # Try to decode as UTF-8
-                        item["content"] = contents.decode("utf-8")
+                        item['content'] = contents.decode('utf-8')
                     except UnicodeDecodeError:
                         # If not UTF-8, use base64 encoding
                         import base64
-                        item["content"] = base64.b64encode(contents).decode("ascii")
-                        item["encoding"] = "base64"
+
+                        item['content'] = base64.b64encode(contents).decode('ascii')
+                        item['encoding'] = 'base64'
                 else:
-                    item["content"] = contents
-            
+                    item['content'] = contents
+
             batch_payload.append(item)
-        
+
         # Send the batch as a single request
         response = self.client.post(self.base_url, json=batch_payload)
         response.raise_for_status()
