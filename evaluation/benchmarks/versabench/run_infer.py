@@ -35,7 +35,7 @@ def copy_config(output_path, input_path):
         shutil.move(config_file, vbackup_file)
 
     os.makedirs(output_path, exist_ok=True)
-    print(f'Copying {input_path} to {output_path}')
+    logger.info(f'Copying {input_path} to {output_path}')
 
     if not input_path or not os.path.exists(os.path.join(input_path, 'config.toml')):
         open(config_file, 'a').close()  # touch
