@@ -66,7 +66,9 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 RUN groupadd -g 1000 openhands && \
     useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
     usermod -aG sudo openhands && \
-    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    # Set empty password for openhands user to allow passwordless su
+    passwd -d openhands
 
 # Create necessary directories
 RUN mkdir -p /openhands && \
