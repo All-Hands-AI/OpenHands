@@ -25,8 +25,25 @@ PR_BODY=$(gh pr view "$PR_NUMBER" --json body --jq .body)
 
 # Prepare the new PR body with both commands
 if echo "$PR_BODY" | grep -q "To run this PR locally, use the following command:"; then
-  # For existing PR descriptions, replace the command section using safer delimiter
-  NEW_PR_BODY=$(echo "$PR_BODY" | sed "s|To run this PR locally, use the following command:.*\`\`\`|To run this PR locally, use the following command:\n\nGUI with Docker:\n\`\`\`\n${DOCKER_RUN_COMMAND}\n\`\`\`\n\nCLI with uvx:\n\`\`\`\n${UVX_RUN_COMMAND}\n\`\`\`|s")
+  # For existing PR descriptions, use a more robust approach
+  # Split the PR body at the "To run this PR locally" section and replace everything after it
+  BEFORE_SECTION=$(echo "$PR_BODY" | sed '/To run this PR locally, use the following command:/,$d')
+  NEW_PR_BODY=$(cat <<EOF
+${BEFORE_SECTION}
+
+To run this PR locally, use the following command:
+
+GUI with Docker:
+\`\`\`
+${DOCKER_RUN_COMMAND}
+\`\`\`
+
+CLI with uvx:
+\`\`\`
+${UVX_RUN_COMMAND}
+\`\`\`
+EOF
+)
 else
   # For new PR descriptions: use heredoc safely without indentation
   NEW_PR_BODY=$(cat <<EOF
