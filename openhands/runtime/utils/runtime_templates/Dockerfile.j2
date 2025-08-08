@@ -188,12 +188,20 @@ RUN \
     {% endif %}
     # Set environment variables (requires root)
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
-    # Set permissions and ownership
-    chmod -R g+rws /openhands/poetry && \
+    # Set permissions for shared read-only access
+    chmod -R 755 /openhands/poetry && \
+    chmod -R 755 /openhands/micromamba && \
     chown -R openhands:openhands /openhands/poetry && \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
     chown -R openhands:openhands /openhands/workspace && \
     chown -R openhands:openhands /openhands/micromamba && \
+    # Set up conda environment activation for all users
+    echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /etc/bash.bashrc && \
+    echo 'micromamba activate openhands 2>/dev/null || true' >> /etc/bash.bashrc && \
+    # Set up environment for root user
+    echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /root/.bashrc && \
+    echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /root/.bashrc && \
+    echo 'micromamba activate openhands 2>/dev/null || true' >> /root/.bashrc && \
     # Clean up system packages (requires root)
     apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
@@ -230,7 +238,15 @@ RUN mkdir -p /openhands/micromamba/bin && \
     /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
     /openhands/micromamba/bin/micromamba config remove channels defaults && \
     /openhands/micromamba/bin/micromamba config list && \
-    chown -R openhands:openhands /openhands/micromamba
+    chown -R openhands:openhands /openhands/micromamba && \
+    # Create read-only shared access to micromamba for all users
+    # This allows both root and openhands users to access the same packages
+    # while maintaining security by keeping openhands as the owner
+    chmod -R 755 /openhands/micromamba && \
+    # Create a separate writable location for root's micromamba cache/config
+    mkdir -p /root/.local/share/micromamba && \
+    # Set up environment variables for system-wide access
+    echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /etc/environment
 
 # Create the openhands virtual environment and install poetry and python
 RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
@@ -284,6 +300,15 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
 USER openhands
 RUN {{ extra_deps }}
 {% endif %}
+
+# Set up environment for openhands user
+USER root
+RUN \
+    # Set up environment for openhands user
+    echo 'export PATH="/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
+    echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
+    echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
+    chown openhands:openhands /home/openhands/.bashrc
 
 # Ensure final user is openhands
 USER openhands
