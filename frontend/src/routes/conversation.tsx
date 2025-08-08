@@ -1,12 +1,17 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
+import {
+  setShouldStopConversation,
+  setShouldStartConversation,
+} from "#/state/conversation-slice";
+import { RootState } from "#/store";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -26,6 +31,8 @@ import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 import { Controls } from "#/components/features/controls/controls";
+import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 
 function AppContent() {
   useConversationConfig();
@@ -34,15 +41,56 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  // Get conversation state from Redux
+  const { shouldStopConversation, shouldStartConversation } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
+  // Mutation hooks
+  const stopConversationMutation = useStopConversation();
+  const startConversationMutation = useStartConversation();
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
 
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();
+
+  // Handle stop conversation logic
+  React.useEffect(() => {
+    if (shouldStopConversation && conversationId) {
+      stopConversationMutation.mutate(
+        { conversationId },
+        {
+          onSuccess: () => {
+            refetch();
+            dispatch(setShouldStopConversation(false));
+          },
+        },
+      );
+    }
+  }, [shouldStopConversation]);
+
+  // Handle start conversation logic
+  React.useEffect(() => {
+    if (shouldStartConversation && conversationId) {
+      startConversationMutation.mutate(
+        {
+          conversationId,
+          providers,
+        },
+        {
+          onSuccess: () => {
+            refetch();
+            dispatch(setShouldStartConversation(false));
+          },
+        },
+      );
+    }
+  }, [shouldStartConversation]);
 
   React.useEffect(() => {
     if (isFetched && !conversation && isAuthed) {

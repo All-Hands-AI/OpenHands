@@ -7,39 +7,19 @@ import { ServerStatusContextMenu } from "#/components/features/controls/server-s
 import { ConversationStatus } from "#/types/conversation-status";
 import { AgentState } from "#/types/agent-state";
 
-// Mock the hooks and utilities
-const mockStopMutate = vi.fn();
-const mockStartMutate = vi.fn();
-const mockRefetch = vi.fn();
-
-vi.mock("#/hooks/mutation/use-stop-conversation", () => ({
-  useStopConversation: () => ({
-    mutate: mockStopMutate,
-  }),
-}));
-
-vi.mock("#/hooks/mutation/use-start-conversation", () => ({
-  useStartConversation: () => ({
-    mutate: mockStartMutate,
-  }),
-}));
-
-vi.mock("#/hooks/query/use-active-conversation", () => ({
-  useActiveConversation: () => ({
-    refetch: mockRefetch,
-  }),
-}));
-
-vi.mock("#/hooks/use-conversation-id", () => ({
-  useConversationId: () => ({
-    conversationId: "test-conversation-id",
-  }),
-}));
-
-vi.mock("#/hooks/use-user-providers", () => ({
-  useUserProviders: () => ({
-    providers: [{ name: "test-provider" }],
-  }),
+// Mock the conversation slice actions
+vi.mock("#/state/conversation-slice", () => ({
+  setShouldStopConversation: vi.fn(),
+  setShouldStartConversation: vi.fn(),
+  default: {
+    name: "conversation",
+    initialState: {
+      isRightPanelShown: true,
+      shouldStopConversation: false,
+      shouldStartConversation: false,
+    },
+    reducers: {},
+  },
 }));
 
 // Mock react-redux
@@ -50,6 +30,7 @@ vi.mock("react-redux", () => ({
       curAgentState: AgentState.RUNNING,
     };
   }),
+  useDispatch: vi.fn(() => vi.fn()),
   Provider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -163,8 +144,12 @@ describe("ServerStatus", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should call stop conversation mutation when stop server is clicked", async () => {
+  it("should dispatch stop conversation action when stop server is clicked", async () => {
     const user = userEvent.setup();
+    const mockDispatch = vi.fn();
+    const { useDispatch } = await import("react-redux");
+    vi.mocked(useDispatch).mockReturnValue(mockDispatch);
+
     renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
     const statusContainer = screen.getByText("Running").closest("div");
@@ -173,14 +158,15 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    expect(mockStopMutate).toHaveBeenCalledWith(
-      { conversationId: "test-conversation-id" },
-      { onSuccess: expect.any(Function) },
-    );
+    expect(mockDispatch).toHaveBeenCalled();
   });
 
-  it("should call start conversation mutation when start server is clicked", async () => {
+  it("should dispatch start conversation action when start server is clicked", async () => {
     const user = userEvent.setup();
+    const mockDispatch = vi.fn();
+    const { useDispatch } = await import("react-redux");
+    vi.mocked(useDispatch).mockReturnValue(mockDispatch);
+
     renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
 
     const statusContainer = screen.getByText("Server Stopped").closest("div");
@@ -189,13 +175,7 @@ describe("ServerStatus", () => {
     const startButton = screen.getByTestId("start-server-button");
     await user.click(startButton);
 
-    expect(mockStartMutate).toHaveBeenCalledWith(
-      {
-        conversationId: "test-conversation-id",
-        providers: [{ name: "test-provider" }],
-      },
-      { onSuccess: expect.any(Function) },
-    );
+    expect(mockDispatch).toHaveBeenCalled();
   });
 
   it("should close context menu after stop server action", async () => {
@@ -228,40 +208,6 @@ describe("ServerStatus", () => {
     expect(
       screen.queryByTestId("server-status-context-menu"),
     ).not.toBeInTheDocument();
-  });
-
-  it("should call refetch on successful stop mutation", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
-
-    const statusContainer = screen.getByText("Running").closest("div");
-    await user.click(statusContainer!);
-
-    const stopButton = screen.getByTestId("stop-server-button");
-    await user.click(stopButton);
-
-    // Get the onSuccess callback and call it
-    const onSuccessCallback = mockStopMutate.mock.calls[0][1].onSuccess;
-    onSuccessCallback();
-
-    expect(mockRefetch).toHaveBeenCalled();
-  });
-
-  it("should call refetch on successful start mutation", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
-
-    const statusContainer = screen.getByText("Server Stopped").closest("div");
-    await user.click(statusContainer!);
-
-    const startButton = screen.getByTestId("start-server-button");
-    await user.click(startButton);
-
-    // Get the onSuccess callback and call it
-    const onSuccessCallback = mockStartMutate.mock.calls[0][1].onSuccess;
-    onSuccessCallback();
-
-    expect(mockRefetch).toHaveBeenCalled();
   });
 
   it("should apply custom className", () => {

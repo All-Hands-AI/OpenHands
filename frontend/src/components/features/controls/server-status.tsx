@@ -1,4 +1,4 @@
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import DebugStackframeDot from "#/icons/debug-stackframe-dot.svg?react";
@@ -7,11 +7,10 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
-import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
-import { useConversationId } from "#/hooks/use-conversation-id";
-import { useUserProviders } from "#/hooks/use-user-providers";
-import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import {
+  setShouldStopConversation,
+  setShouldStartConversation,
+} from "#/state/conversation-slice";
 
 export interface ServerStatusProps {
   className?: string;
@@ -24,13 +23,9 @@ export function ServerStatus({
 }: ServerStatusProps) {
   const { t } = useTranslation();
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const dispatch = useDispatch();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { conversationId } = useConversationId();
-  const { providers } = useUserProviders();
-  const { refetch } = useActiveConversation();
-  const stopConversationMutation = useStopConversation();
-  const startConversationMutation = useStartConversation();
 
   const isStartingStatus =
     curAgentState === AgentState.LOADING || curAgentState === AgentState.INIT;
@@ -78,30 +73,13 @@ export function ServerStatus({
 
   const handleStopServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (conversationId) {
-      stopConversationMutation.mutate(
-        { conversationId },
-        {
-          onSuccess: () => refetch(),
-        },
-      );
-    }
+    dispatch(setShouldStopConversation(true));
     setShowContextMenu(false);
   };
 
   const handleStartServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    if (conversationId) {
-      startConversationMutation.mutate(
-        {
-          conversationId,
-          providers,
-        },
-        {
-          onSuccess: () => refetch(),
-        },
-      );
-    }
+    dispatch(setShouldStartConversation(true));
     setShowContextMenu(false);
   };
 
