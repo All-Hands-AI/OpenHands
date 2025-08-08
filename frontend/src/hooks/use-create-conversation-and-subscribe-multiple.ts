@@ -1,24 +1,97 @@
 import React from "react";
+import toast from "react-hot-toast";
 import { useCreateConversation } from "./mutation/use-create-conversation";
-import { useUserProviders } from "./use-user-providers";
 import { useConversationSubscriptions } from "#/context/conversation-subscriptions-provider";
 import { Provider } from "#/types/settings";
 import { CreateMicroagent } from "#/api/open-hands.types";
+import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
+import OpenHands from "#/api/open-hands";
 
 /**
  * Custom hook to create a conversation and subscribe to it, supporting multiple subscriptions.
  * This extends the functionality of useCreateConversationAndSubscribe to allow subscribing to
  * multiple conversations simultaneously.
  */
+
 export const useCreateConversationAndSubscribeMultiple = () => {
   const { mutate: createConversation, isPending } = useCreateConversation();
-  const { providers } = useUserProviders();
   const {
-    subscribeToConversation,
     unsubscribeFromConversation,
     isSubscribedToConversation,
     activeConversationIds,
+    subscribeToConversation,
   } = useConversationSubscriptions();
+
+  // Track conversations that are being set up with their callbacks
+  const [pendingConversations, setPendingConversations] = React.useState<
+    Map<
+      string,
+      {
+        onEventCallback?: (event: unknown, conversationId: string) => void;
+        repositoryName: string;
+      }
+    >
+  >(new Map());
+
+  // Handle polling and subscription for pending conversations
+  React.useEffect(() => {
+    const handleConversationPolling = async () => {
+      const conversationsToProcess = Array.from(pendingConversations.entries());
+
+      await Promise.all(
+        conversationsToProcess.map(async ([conversationId, config]) => {
+          try {
+            const conversation =
+              await OpenHands.getConversation(conversationId);
+
+            if (
+              conversation?.status === "RUNNING" &&
+              conversation.runtime_status
+            ) {
+              // Conversation is ready, subscribe to it
+              let baseUrl = "";
+              if (conversation.url && !conversation.url.startsWith("/")) {
+                baseUrl = new URL(conversation.url).host;
+              } else {
+                baseUrl =
+                  (import.meta.env.VITE_BACKEND_BASE_URL as
+                    | string
+                    | undefined) || window?.location.host;
+              }
+
+              subscribeToConversation({
+                conversationId,
+                sessionApiKey: conversation.session_api_key,
+                providersSet: [], // Empty array since we don't need providers for subscription
+                baseUrl,
+                onEvent: config.onEventCallback,
+              });
+
+              // Remove from pending when subscription is established
+              setPendingConversations((prev) => {
+                const newMap = new Map(prev);
+                newMap.delete(conversationId);
+                return newMap;
+              });
+            }
+          } catch (error) {
+            // Remove failed conversation from pending
+            setPendingConversations((prev) => {
+              const newMap = new Map(prev);
+              newMap.delete(conversationId);
+              return newMap;
+            });
+          }
+        }),
+      );
+    };
+
+    if (pendingConversations.size > 0) {
+      const interval = setInterval(handleConversationPolling, 1000);
+      return () => clearInterval(interval);
+    }
+    return undefined;
+  }, [pendingConversations, subscribeToConversation]);
 
   const createConversationAndSubscribe = React.useCallback(
     ({
@@ -49,25 +122,24 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         },
         {
           onSuccess: (data) => {
-            let baseUrl = "";
-            if (data?.url && !data.url.startsWith("/")) {
-              baseUrl = new URL(data.url).host;
-            } else {
-              baseUrl =
-                (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
-                window?.location.host;
-            }
-
-            // Subscribe to the conversation
-            subscribeToConversation({
-              conversationId: data.conversation_id,
-              sessionApiKey: data.session_api_key,
-              providersSet: providers,
-              baseUrl,
-              onEvent: onEventCallback,
+            // Add to pending conversations for polling
+            setPendingConversations((prev) => {
+              const newMap = new Map(prev);
+              newMap.set(data.conversation_id, {
+                onEventCallback,
+                repositoryName: repository.name,
+              });
+              return newMap;
             });
 
-            // Call the success callback if provided
+            // Show immediate "starting" toast to give user feedback
+            toast(`Starting conversation for ${repository.name}...`, {
+              ...TOAST_OPTIONS,
+              id: `starting-${data.conversation_id}`,
+              duration: 10000, // Longer duration since this will be replaced by the runtime status toast
+            });
+
+            // Call the success callback immediately (conversation created)
             if (onSuccessCallback) {
               onSuccessCallback(data.conversation_id);
             }
@@ -75,7 +147,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         },
       );
     },
-    [createConversation, subscribeToConversation, providers],
+    [createConversation],
   );
 
   return {
