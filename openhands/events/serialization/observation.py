@@ -132,7 +132,20 @@ def observation_from_dict(observation: dict) -> Observation:
                 MicroagentKnowledge(**item) if isinstance(item, dict) else item
                 for item in extras['microagent_knowledge']
             ]
-
-    obs = observation_class(content=content, **extras)
+            
+        # Create a clean dictionary with only the fields that RecallObservation accepts
+        valid_fields = {
+            'recall_type', 'repo_name', 'repo_directory', 'repo_instructions', 
+            'runtime_hosts', 'additional_agent_instructions', 'date', 
+            'custom_secrets_descriptions', 'conversation_instructions', 
+            'working_dir', 'microagent_knowledge'
+        }
+        
+        # Filter extras to only include valid fields
+        filtered_extras = {k: v for k, v in extras.items() if k in valid_fields}
+        
+        obs = observation_class(content=content, **filtered_extras)
+    else:
+        obs = observation_class(content=content, **extras)
     assert isinstance(obs, Observation)
     return obs

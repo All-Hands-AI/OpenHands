@@ -31,6 +31,8 @@ class MessageAction(Action):
     def __str__(self) -> str:
         ret = f'**MessageAction** (source={self.source})\n'
         ret += f'CONTENT: {self.content}'
+        if hasattr(self, 'reasoning_content') and self.reasoning_content:
+            ret += f'\nREASONING: {self.reasoning_content}'
         if self.image_urls:
             for url in self.image_urls:
                 ret += f'\nIMAGE_URL: {url}'

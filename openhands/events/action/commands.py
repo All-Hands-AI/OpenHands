@@ -31,6 +31,10 @@ class CmdRunAction(Action):
 
     def __str__(self) -> str:
         ret = f'**CmdRunAction (source={self.source}, is_input={self.is_input})**\n'
+        # Directly access the reasoning_content attribute from the base class
+        reasoning_content = getattr(self, 'reasoning_content', None)
+        if reasoning_content:
+            ret += f'REASONING: {reasoning_content}\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'COMMAND:\n{self.command}'
@@ -52,6 +56,8 @@ class IPythonRunCellAction(Action):
 
     def __str__(self) -> str:
         ret = '**IPythonRunCellAction**\n'
+        if self.reasoning_content:
+            ret += f'REASONING: {self.reasoning_content}\n'
         if self.thought:
             ret += f'THOUGHT: {self.thought}\n'
         ret += f'CODE:\n{self.code}'
