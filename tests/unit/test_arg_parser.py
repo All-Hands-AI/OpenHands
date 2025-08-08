@@ -1,6 +1,6 @@
 import pytest
 
-from openhands.core.config import OH_DEFAULT_AGENT, OH_MAX_ITERATIONS, get_parser
+from openhands.core.config import get_parser
 
 
 def test_parser_default_values():
@@ -10,8 +10,8 @@ def test_parser_default_values():
     assert args.directory is None
     assert args.task == ''
     assert args.file is None
-    assert args.agent_cls == OH_DEFAULT_AGENT
-    assert args.max_iterations == OH_MAX_ITERATIONS
+    assert args.agent_cls is None
+    assert args.max_iterations is None
     assert args.max_budget_per_task is None
     assert args.eval_output_dir == 'evaluation/evaluation_outputs/outputs'
     assert args.eval_n_limit is None
@@ -139,13 +139,14 @@ def test_help_message(capsys):
         '--selected-repo SELECTED_REPO',
         '--override-cli-mode OVERRIDE_CLI_MODE',
         '--log-level LOG_LEVEL',
+        '--conversation CONVERSATION',
     ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-    assert option_count == 21, f'Expected 21 options, found {option_count}'
+    assert option_count == 22, f'Expected 22 options, found {option_count}'
 
 
 def test_selected_repo_format():

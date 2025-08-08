@@ -87,6 +87,7 @@ export function ChatMessage({
       </div>
 
       <div
+        className="text-sm"
         style={{
           whiteSpace: "normal",
           wordBreak: "break-word",
