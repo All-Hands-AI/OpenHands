@@ -159,7 +159,7 @@ class Session:
         mcp_shttp_servers = getattr(settings, 'mcp_shttp_servers', None)
         if mcp_shttp_servers is not None:
             # Use the provided MCP SHTTP servers instead of default setup
-            self.config.mcp.shttp_servers.extend(mcp_shttp_servers)
+            self.config.mcp.shttp_servers = mcp_shttp_servers
             self.logger.debug(
                 f'Using custom MCP SHTTP servers: {mcp_shttp_servers}'
             )
