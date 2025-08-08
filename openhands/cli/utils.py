@@ -150,13 +150,13 @@ def organize_models_and_providers(
 VERIFIED_PROVIDERS = ['openhands', 'anthropic', 'openai', 'mistral']
 
 VERIFIED_OPENAI_MODELS = [
+    'gpt-5-2025-08-07',
     'o4-mini',
     'gpt-4o',
     'gpt-4o-mini',
     'gpt-4-32k',
     'gpt-4.1',
     'gpt-4.1-2025-04-14',
-    'gpt-5-2025-08-07',
     'o1-mini',
     'o3',
     'codex-mini-latest',
