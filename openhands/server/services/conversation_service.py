@@ -2,7 +2,7 @@ import uuid
 from types import MappingProxyType
 from typing import Any
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSHTTPServerConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl

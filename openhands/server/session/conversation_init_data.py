@@ -1,6 +1,5 @@
 from pydantic import ConfigDict, Field
 
-from openhands.core.config.mcp_config import MCPSHTTPServerConfig
 from openhands.integrations.provider import CUSTOM_SECRETS_TYPE, PROVIDER_TOKEN_TYPE
 from openhands.integrations.service_types import ProviderType
 from openhands.storage.data_models.settings import Settings
