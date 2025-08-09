@@ -271,6 +271,32 @@ class BashSession:
         self.session.kill()
         self._closed = True
 
+    def reset(self) -> None:
+        """Reset the terminal session by closing the current session and creating a fresh one."""
+        logger.info('Resetting bash session...')
+
+        # Store current working directory before reset
+        current_cwd = self._cwd
+
+        # Close current session
+        self.close()
+
+        # Reset internal state
+        self._initialized = False
+        self._closed = False
+        self.prev_status = None
+        self.prev_output = ''
+
+        # Initialize new session
+        self.initialize()
+
+        # Restore working directory
+        if current_cwd != self.work_dir:
+            self.pane.send_keys(f'cd "{current_cwd}"')
+            self._cwd = current_cwd
+
+        logger.info('Bash session reset completed')
+
     @property
     def cwd(self) -> str:
         return self._cwd
@@ -474,6 +500,16 @@ class BashSession:
         """Execute a command in the bash session."""
         if not self._initialized:
             raise RuntimeError('Bash session is not initialized')
+
+        # Check if reset_terminal is requested
+        if hasattr(action, 'reset_terminal') and action.reset_terminal:
+            logger.info('Reset terminal requested, performing session reset...')
+            self.reset()
+            return CmdOutputObservation(
+                command='',
+                content='Terminal session has been reset successfully. All running processes have been terminated and a fresh session has been created.',
+                metadata=CmdOutputMetadata(),
+            )
 
         # Strip the command of any leading/trailing whitespace
         logger.debug(f'RECEIVED ACTION: {action}')
