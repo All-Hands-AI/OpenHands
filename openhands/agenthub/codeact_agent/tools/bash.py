@@ -1,3 +1,4 @@
+import re
 import sys
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
@@ -38,8 +39,6 @@ _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 def refine_prompt(prompt: str):
     if sys.platform == 'win32':
         # Replace 'bash' with 'powershell' including tool names like 'execute_bash'
-        import re
-
         # First replace 'execute_bash' with 'execute_powershell' to handle tool names
         result = re.sub(
             r'\bexecute_bash\b', 'execute_powershell', prompt, flags=re.IGNORECASE
