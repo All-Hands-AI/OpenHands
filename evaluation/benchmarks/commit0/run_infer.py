@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 import pandas as pd
+import toml
 from commit0.harness.constants import SPLIT
 from datasets import load_dataset
 
@@ -174,6 +175,17 @@ def initialize_runtime(
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
+    # Fix Git dubious ownership issue by adding the directory to safe.directory
+    action = CmdRunAction(command=f'git config --global --add safe.directory /workspace/{workspace_dir_name}')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to configure git safe.directory: {str(obs)}',
+    )
+
     action = CmdRunAction(command='git checkout -b openhands')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -263,8 +275,17 @@ def complete_runtime(
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
     test_dir = instance['test']['test_dir']
+    
+    # Check if pytest-json-report plugin is available
+    action = CmdRunAction(command='python -c "import pytest_jsonreport; print(\'pytest-json-report available\')" 2>/dev/null || echo "pytest-json-report not available"')
+    action.set_hard_timeout(60)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    
+    # Run tests with JSON report generation, but don't redirect stderr to avoid interfering with JSON report
     action = CmdRunAction(
-        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -310,6 +331,13 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     test_ids = obs.content.strip().split('\n')
 
+    # Check if report.json exists and read it
+    action = CmdRunAction(command='ls -la report.json')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    
     # Read the test report
     action = CmdRunAction(command='cat report.json')
     action.set_hard_timeout(600)
@@ -353,15 +381,64 @@ def complete_runtime(
             'num_tests': len(test_ids),
         }
 
-    except json.JSONDecodeError:
-        logger.error('Failed to parse test report JSON')
-        eval_result = {
-            'name': workspace_dir_name,
-            'sum': 0,
-            'passed': 0,
-            'num_passed': 0,
-            'num_tests': len(test_ids),
-        }
+    except json.JSONDecodeError as e:
+        logger.error(f'Failed to parse test report JSON: {e}')
+        logger.error(f'JSON report content (first 500 chars): {json_report[:500]}')
+        
+        # Fallback: parse test results from text output
+        logger.info('Attempting to parse test results from text output as fallback')
+        import re
+        
+        # Look for pytest summary line like "53 failed, 148 passed in 1.33s"
+        summary_pattern = r'(\d+)\s+failed,\s+(\d+)\s+passed'
+        summary_match = re.search(summary_pattern, test_output)
+        
+        if summary_match:
+            num_failed = int(summary_match.group(1))
+            num_passed = int(summary_match.group(2))
+            total_tests = num_failed + num_passed
+            passed_ratio = num_passed / total_tests if total_tests > 0 else 0
+            
+            logger.info(f'Parsed from text output: {num_passed} passed, {num_failed} failed')
+            eval_result = {
+                'name': workspace_dir_name,
+                'sum': 0,  # Can't get runtime from text output
+                'passed': passed_ratio,
+                'num_passed': num_passed,
+                'num_tests': len(test_ids),
+            }
+        else:
+            # Look for alternative patterns
+            passed_pattern = r'(\d+)\s+passed'
+            failed_pattern = r'(\d+)\s+failed'
+            
+            passed_match = re.search(passed_pattern, test_output)
+            failed_match = re.search(failed_pattern, test_output)
+            
+            num_passed = int(passed_match.group(1)) if passed_match else 0
+            num_failed = int(failed_match.group(1)) if failed_match else 0
+            
+            if num_passed > 0 or num_failed > 0:
+                total_tests = num_passed + num_failed
+                passed_ratio = num_passed / total_tests if total_tests > 0 else 0
+                
+                logger.info(f'Parsed from text output (alternative): {num_passed} passed, {num_failed} failed')
+                eval_result = {
+                    'name': workspace_dir_name,
+                    'sum': 0,
+                    'passed': passed_ratio,
+                    'num_passed': num_passed,
+                    'num_tests': len(test_ids),
+                }
+            else:
+                logger.error('Could not parse test results from text output either')
+                eval_result = {
+                    'name': workspace_dir_name,
+                    'sum': 0,
+                    'passed': 0,
+                    'num_passed': 0,
+                    'num_tests': len(test_ids),
+                }
 
     # Create tarball of workspace
     temp_zip = runtime.copy_from(f'/workspace/{workspace_dir_name}')
@@ -496,6 +573,38 @@ def process_instance(
     return output
 
 
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+            if 'selected_repos' in data:
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str):
+                    selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset['repo'].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+
+    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    if len(skip_ids) > 0:
+        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
+        return dataset[~dataset[filter_column].isin(skip_ids)]
+    return dataset
+
+
 def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     """Setup Commit0 dataset based on split type.
 
@@ -520,6 +629,8 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
 
     # Replace all forward slashes in instance_id with hyphens
     filtered_dataset['instance_id'] = filtered_dataset['repo'].str.split('/').str[1]
+
+    filtered_dataset = filter_dataset(filtered_dataset, 'instance_id')
 
     return filtered_dataset
 
@@ -557,9 +668,9 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        llm_config.log_completions = True
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
-        llm_config.log_completions = True
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')

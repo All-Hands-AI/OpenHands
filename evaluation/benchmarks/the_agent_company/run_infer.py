@@ -42,6 +42,10 @@ def get_config(
     sandbox_config.enable_auto_lint = True
     # If the web services are running on the host machine, this must be set to True
     sandbox_config.use_host_network = True
+    # Set a more permissive umask to ensure files created in containers are accessible
+    # This helps when running through versabench where containers run as root
+    if 'UMASK' not in sandbox_config.runtime_startup_env_vars:
+        sandbox_config.runtime_startup_env_vars['UMASK'] = '0022'
     config = OpenHandsConfig(
         run_as_openhands=False,
         max_budget_per_task=4,
@@ -85,11 +89,25 @@ def load_dependencies(runtime: Runtime) -> list[str]:
 
 
 def init_task_env(runtime: Runtime, hostname: str, env_llm_config: LLMConfig):
+    # Set a more permissive umask to ensure files created are accessible
+    # This is especially important when running through versabench
+    umask_command = 'umask 0022'
+    action = CmdRunAction(command=umask_command)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
+    # Strip litellm_proxy/ prefix if present for direct LiteLLM usage
+    model_name = env_llm_config.model
+    if model_name.startswith('litellm_proxy/'):
+        model_name = model_name.removeprefix('litellm_proxy/')
+
     command = (
+        f'umask 0022 && '
         f'SERVER_HOSTNAME={hostname} '
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '
-        f'LITELLM_MODEL={env_llm_config.model} '
+        f'LITELLM_MODEL={model_name} '
         'bash /utils/init.sh'
     )
     action = CmdRunAction(command=command)
@@ -133,6 +151,13 @@ def run_solver(
     save_screenshots: bool,
     screenshots_dir: str,
 ) -> State:
+    # Set a more permissive umask to ensure files created by the agent are accessible
+    umask_command = 'umask 0022'
+    action = CmdRunAction(command=umask_command)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+
     instruction = 'Complete the task in /instruction/task.md'
 
     if 'gitlab' in dependencies:
@@ -181,10 +206,15 @@ def run_solver(
 def run_evaluator(
     runtime: Runtime, env_llm_config: LLMConfig, trajectory_path: str, result_path: str
 ):
+    # Strip litellm_proxy/ prefix if present for direct LiteLLM usage
+    model_name = env_llm_config.model
+    if model_name.startswith('litellm_proxy/'):
+        model_name = model_name.removeprefix('litellm_proxy/')
+
     command = (
         f'LITELLM_API_KEY={env_llm_config.api_key.get_secret_value() if env_llm_config.api_key else None} '
         f'LITELLM_BASE_URL={env_llm_config.base_url} '
-        f'LITELLM_MODEL={env_llm_config.model} '
+        f'LITELLM_MODEL={model_name} '
         f"DECRYPTION_KEY='theagentcompany is all you need' "  # Hardcoded Key
         f'python_default /utils/eval.py --trajectory_path {trajectory_path} --result_path {result_path}'
     )
@@ -260,6 +290,7 @@ if __name__ == '__main__':
         raise ValueError('LLM API key is not set for evaluation environment')
 
     task_short_name = args.task_image_name.split('/')[-1].split(':')[0]
+
     logger.info(
         f'Task image name is {args.task_image_name}, short name is {task_short_name}'
     )
@@ -325,13 +356,13 @@ if __name__ == '__main__':
     run_evaluator(runtime, env_llm_config, trajectory_path, result_path)
 
     # finally, move trajectory file and evaluation result from mount path on host (temp dir) to outputs path
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'traj_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'traj_{task_short_name}.json'
         ),
     )
-    shutil.move(
+    shutil.copy2(
         os.path.join(temp_dir, f'eval_{task_short_name}.json'),
         os.path.join(
             os.path.abspath(args.outputs_path), f'eval_{task_short_name}.json'
