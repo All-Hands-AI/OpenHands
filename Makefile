@@ -10,7 +10,7 @@ FRONTEND_PORT ?= 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
-PRE_COMMIT_CONFIG_PATH = "./dev_config/python/.pre-commit-config.yaml"
+PRE_COMMIT_CONFIG_PATH = "./dev_config/.pre-commit-config.yaml"
 PYTHON_VERSION = 3.12
 KIND_CLUSTER_NAME = "local-hands"
 
@@ -243,7 +243,7 @@ test:
 
 build-frontend:
 	@echo "$(YELLOW)Building frontend...$(RESET)"
-	@cd frontend && npm run prepare && npm run build
+	@cd frontend && npm run build
 
 # Start backend
 start-backend:
@@ -355,6 +355,7 @@ help:
 	@echo "$(BLUE)Usage: make [target]$(RESET)"
 	@echo "Targets:"
 	@echo "  $(GREEN)build$(RESET)               - Build project, including environment setup and dependencies."
+	@echo "  $(GREEN)install-pre-commit-hooks$(RESET) - Install pre-commit hooks."
 	@echo "  $(GREEN)lint$(RESET)                - Run linters on the project."
 	@echo "  $(GREEN)setup-config$(RESET)        - Setup the configuration for OpenHands by providing LLM API key,"
 	@echo "                        LLM Model name, and workspace directory."
