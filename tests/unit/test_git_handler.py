@@ -47,12 +47,21 @@ class TestGitHandler(unittest.TestCase):
 
     def _execute_command(self, cmd, cwd=None):
         """Execute a shell command and return the result."""
+        # For git commit commands, add the author and committer information directly to the environment
+        env = os.environ.copy()
+        if cmd.startswith('git') and 'commit' in cmd:
+            env['GIT_AUTHOR_NAME'] = 'Test User'
+            env['GIT_AUTHOR_EMAIL'] = 'test@example.com'
+            env['GIT_COMMITTER_NAME'] = 'Test User'
+            env['GIT_COMMITTER_EMAIL'] = 'test@example.com'
+
         result = subprocess.run(
             args=cmd,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             cwd=cwd,
+            env=env,
         )
         stderr = result.stderr or b''
         stdout = result.stdout or b''
@@ -92,10 +101,13 @@ class TestGitHandler(unittest.TestCase):
         """Set up real git repositories for testing."""
         # Set up origin repository
         self.run_command('git init --initial-branch=main', self.origin_dir)
-        self._execute_command(
-            "git config user.email 'test@example.com'", self.origin_dir
+        # Set git configuration locally for this repository using a specific config file
+        self.run_command(
+            "git config -f .git/config user.email 'test@example.com'", self.origin_dir
         )
-        self._execute_command("git config user.name 'Test User'", self.origin_dir)
+        self.run_command(
+            "git config -f .git/config user.name 'Test User'", self.origin_dir
+        )
 
         # Set up the initial state...
         self.write_file(self.origin_dir, 'unchanged.txt')
@@ -111,9 +123,11 @@ class TestGitHandler(unittest.TestCase):
         self.run_command(f'git clone "{self.origin_dir}" "{self.local_dir}"')
 
         self._execute_command(
-            "git config user.email 'test@example.com'", self.local_dir
+            "git config -f .git/config user.email 'test@example.com'", self.local_dir
         )
-        self._execute_command("git config user.name 'Test User'", self.local_dir)
+        self._execute_command(
+            "git config -f .git/config user.name 'Test User'", self.local_dir
+        )
 
         self.run_command('git checkout -b feature-branch', self.local_dir)
 
@@ -141,8 +155,12 @@ class TestGitHandler(unittest.TestCase):
         nested_1.mkdir()
         nested_1 = str(nested_1)
         self.run_command('git init --initial-branch=main', nested_1)
-        self._execute_command("git config user.email 'test@example.com'", nested_1)
-        self._execute_command("git config user.name 'Test User'", nested_1)
+        self._execute_command(
+            "git config -f .git/config user.email 'test@example.com'", nested_1
+        )
+        self._execute_command(
+            "git config -f .git/config user.name 'Test User'", nested_1
+        )
         self.write_file(nested_1, 'committed_add.txt')
         self.run_command('git add .', nested_1)
         self.run_command('git commit -m "Initial Commit"', nested_1)
@@ -152,8 +170,12 @@ class TestGitHandler(unittest.TestCase):
         nested_2.mkdir()
         nested_2 = str(nested_2)
         self.run_command('git init --initial-branch=main', nested_2)
-        self._execute_command("git config user.email 'test@example.com'", nested_2)
-        self._execute_command("git config user.name 'Test User'", nested_2)
+        self._execute_command(
+            "git config -f .git/config user.email 'test@example.com'", nested_2
+        )
+        self._execute_command(
+            "git config -f .git/config user.name 'Test User'", nested_2
+        )
         self.write_file(nested_2, 'committed_add.txt')
         self.run_command('git add .', nested_2)
         self.run_command('git commit -m "Initial Commit"', nested_2)
