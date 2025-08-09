@@ -4,7 +4,11 @@ from unittest import mock
 import pytest
 
 from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig
-from openhands.mcp_client import MCPClient, create_mcp_clients, fetch_mcp_tools_from_config
+from openhands.mcp_client import (
+    MCPClient,
+    create_mcp_clients,
+    fetch_mcp_tools_from_config,
+)
 
 
 @pytest.mark.asyncio

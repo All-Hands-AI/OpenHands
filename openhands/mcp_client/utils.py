@@ -18,8 +18,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
-from openhands.mcp_client.session import MCPClient
 from openhands.mcp_client.error_collector import mcp_error_collector
+from openhands.mcp_client.session import MCPClient
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime

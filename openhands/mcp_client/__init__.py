@@ -1,5 +1,5 @@
-from openhands.mcp_client.session import MCPClient
 from openhands.mcp_client.error_collector import mcp_error_collector
+from openhands.mcp_client.session import MCPClient
 from openhands.mcp_client.tool import MCPClientTool
 from openhands.mcp_client.utils import (
     add_mcp_tools_to_agent,
