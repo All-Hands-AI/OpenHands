@@ -14,9 +14,9 @@ from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import EventSource
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.stream import EventStream
-from openhands.mcp.client import MCPClient
-from openhands.mcp.tool import MCPClientTool
-from openhands.mcp.utils import call_tool_mcp
+from openhands.mcp_client.session import MCPClient
+from openhands.mcp_client.tool import MCPClientTool
+from openhands.mcp_client.utils import call_tool_mcp
 
 
 class MockConfig:
@@ -226,7 +226,7 @@ async def test_mcp_tool_timeout_agent_continuation():
 
     # Use our fixed function
     with mock.patch(
-        'openhands.mcp.utils.call_tool_mcp', side_effect=fixed_call_tool_mcp
+        'openhands.mcp_clientutils.call_tool_mcp', side_effect=fixed_call_tool_mcp
     ):
         # Call the function that would normally be called by the agent controller
         result = await call_tool_mcp([mock_client], mcp_action)

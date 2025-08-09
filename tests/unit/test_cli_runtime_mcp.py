@@ -42,7 +42,7 @@ class TestCLIRuntimeMCP:
         assert 'No MCP servers configured' in result.content
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
+    @patch('openhands.mcp_clientutils.create_mcp_clients')
     async def test_call_tool_mcp_no_clients_created(self, mock_create_clients):
         """Test MCP call when no clients can be created."""
         # Set up MCP config with servers
@@ -63,8 +63,8 @@ class TestCLIRuntimeMCP:
         mock_create_clients.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
-    @patch('openhands.mcp.utils.call_tool_mcp')
+    @patch('openhands.mcp_clientutils.create_mcp_clients')
+    @patch('openhands.mcp_clientutils.call_tool_mcp')
     async def test_call_tool_mcp_success(self, mock_call_tool, mock_create_clients):
         """Test successful MCP tool call."""
         # Set up MCP config with servers
@@ -100,7 +100,7 @@ class TestCLIRuntimeMCP:
         mock_call_tool.assert_called_once_with([mock_client], action)
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
+    @patch('openhands.mcp_clientutils.create_mcp_clients')
     async def test_call_tool_mcp_exception_handling(self, mock_create_clients):
         """Test exception handling in MCP tool call."""
         # Set up MCP config with servers

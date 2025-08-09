@@ -37,7 +37,7 @@ from openhands.events.observation import (
     MCPObservation,
 )
 from openhands.llm.metrics import Metrics
-from openhands.mcp.error_collector import MCPError
+from openhands.mcp_client.error_collector import MCPError
 
 
 class TestDisplayFunctions:

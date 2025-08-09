@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Import the module, not the functions directly to avoid circular imports
-import openhands.mcp.utils
+import openhands.mcp_client.utils
 from openhands.core.config.mcp_config import MCPSSEServerConfig, MCPStdioServerConfig
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
@@ -13,12 +13,12 @@ from openhands.events.observation.mcp import MCPObservation
 @pytest.mark.asyncio
 async def test_create_mcp_clients_empty():
     """Test creating MCP clients with empty server list."""
-    clients = await openhands.mcp.utils.create_mcp_clients([], [])
+    clients = await openhands.mcp_client.utils.create_mcp_clients([], [])
     assert clients == []
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.MCPClient')
+@patch('openhands.mcp_client.utils.MCPClient')
 async def test_create_mcp_clients_success(mock_mcp_client):
     """Test successful creation of MCP clients."""
     # Setup mock
@@ -32,7 +32,7 @@ async def test_create_mcp_clients_success(mock_mcp_client):
         MCPSSEServerConfig(url='http://server2:8080', api_key='test-key'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
+    clients = await openhands.mcp_client.utils.create_mcp_clients(server_configs, [])
 
     # Verify
     assert len(clients) == 2
@@ -48,7 +48,7 @@ async def test_create_mcp_clients_success(mock_mcp_client):
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.MCPClient')
+@patch('openhands.mcp_client.utils.MCPClient')
 async def test_create_mcp_clients_connection_failure(mock_mcp_client):
     """Test handling of connection failures when creating MCP clients."""
     # Setup mock
@@ -66,7 +66,7 @@ async def test_create_mcp_clients_connection_failure(mock_mcp_client):
         MCPSSEServerConfig(url='http://server2:8080'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(server_configs, [])
+    clients = await openhands.mcp_client.utils.create_mcp_clients(server_configs, [])
 
     # Verify only one client was successfully created
     assert len(clients) == 1
@@ -74,10 +74,10 @@ async def test_create_mcp_clients_connection_failure(mock_mcp_client):
 
 def test_convert_mcp_clients_to_tools_empty():
     """Test converting empty MCP clients list to tools."""
-    tools = openhands.mcp.utils.convert_mcp_clients_to_tools(None)
+    tools = openhands.mcp_client.utils.convert_mcp_clients_to_tools(None)
     assert tools == []
 
-    tools = openhands.mcp.utils.convert_mcp_clients_to_tools([])
+    tools = openhands.mcp_client.utils.convert_mcp_clients_to_tools([])
     assert tools == []
 
 
@@ -102,7 +102,7 @@ def test_convert_mcp_clients_to_tools():
     mock_client2.tools = [mock_tool3]
 
     # Convert to tools
-    tools = openhands.mcp.utils.convert_mcp_clients_to_tools(
+    tools = openhands.mcp_client.utils.convert_mcp_clients_to_tools(
         [mock_client1, mock_client2]
     )
 
@@ -119,7 +119,7 @@ async def test_call_tool_mcp_no_clients():
     action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
 
     with pytest.raises(ValueError, match='No MCP clients found'):
-        await openhands.mcp.utils.call_tool_mcp([], action)
+        await openhands.mcp_client.utils.call_tool_mcp([], action)
 
 
 @pytest.mark.asyncio
@@ -132,7 +132,7 @@ async def test_call_tool_mcp_no_matching_client():
     action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
 
     with pytest.raises(ValueError, match='No matching MCP agent found for tool name'):
-        await openhands.mcp.utils.call_tool_mcp([mock_client], action)
+        await openhands.mcp_client.utils.call_tool_mcp([mock_client], action)
 
 
 @pytest.mark.asyncio
@@ -155,7 +155,7 @@ async def test_call_tool_mcp_success():
     action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
 
     # Call the function
-    observation = await openhands.mcp.utils.call_tool_mcp([mock_client], action)
+    observation = await openhands.mcp_client.utils.call_tool_mcp([mock_client], action)
 
     # Verify
     assert isinstance(observation, MCPObservation)
@@ -164,7 +164,7 @@ async def test_call_tool_mcp_success():
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.MCPClient')
+@patch('openhands.mcp_client.utils.MCPClient')
 async def test_create_mcp_clients_stdio_success(mock_mcp_client):
     """Test successful creation of MCP clients with stdio servers."""
     # Setup mock
@@ -188,7 +188,7 @@ async def test_create_mcp_clients_stdio_success(mock_mcp_client):
         ),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(
+    clients = await openhands.mcp_client.utils.create_mcp_clients(
         [], [], stdio_servers=stdio_server_configs
     )
 
@@ -202,7 +202,7 @@ async def test_create_mcp_clients_stdio_success(mock_mcp_client):
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.MCPClient')
+@patch('openhands.mcp_client.utils.MCPClient')
 async def test_create_mcp_clients_stdio_connection_failure(mock_mcp_client):
     """Test handling of stdio connection failures when creating MCP clients."""
     # Setup mock
@@ -220,7 +220,7 @@ async def test_create_mcp_clients_stdio_connection_failure(mock_mcp_client):
         MCPStdioServerConfig(name='server2', command='invalid_command'),
     ]
 
-    clients = await openhands.mcp.utils.create_mcp_clients(
+    clients = await openhands.mcp_client.utils.create_mcp_clients(
         [], [], stdio_servers=stdio_server_configs
     )
 
@@ -229,7 +229,7 @@ async def test_create_mcp_clients_stdio_connection_failure(mock_mcp_client):
 
 
 @pytest.mark.asyncio
-@patch('openhands.mcp.utils.create_mcp_clients')
+@patch('openhands.mcp_client.utils.create_mcp_clients')
 async def test_fetch_mcp_tools_from_config_with_stdio(mock_create_clients):
     """Test fetching MCP tools with stdio servers enabled."""
     from openhands.core.config.mcp_config import MCPConfig
@@ -247,7 +247,7 @@ async def test_fetch_mcp_tools_from_config_with_stdio(mock_create_clients):
     )
 
     # Test with use_stdio=True
-    tools = await openhands.mcp.utils.fetch_mcp_tools_from_config(
+    tools = await openhands.mcp_client.utils.fetch_mcp_tools_from_config(
         mcp_config, conversation_id='test-conv', use_stdio=True
     )
 
@@ -283,7 +283,7 @@ async def test_call_tool_mcp_stdio_client():
     action = MCPAction(name='stdio_test_tool', arguments={'input': 'test_input'})
 
     # Call the function
-    observation = await openhands.mcp.utils.call_tool_mcp([mock_client], action)
+    observation = await openhands.mcp_client.utils.call_tool_mcp([mock_client], action)
 
     # Verify
     assert isinstance(observation, MCPObservation)

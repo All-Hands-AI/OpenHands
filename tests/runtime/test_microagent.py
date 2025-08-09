@@ -13,7 +13,7 @@ from conftest import (
 
 from openhands.core.config import MCPConfig
 from openhands.core.config.mcp_config import MCPStdioServerConfig
-from openhands.mcp.utils import add_mcp_tools_to_agent
+from openhands.mcp_client.utils import add_mcp_tools_to_agent
 from openhands.microagent.microagent import (
     BaseMicroagent,
     KnowledgeMicroagent,
@@ -416,7 +416,7 @@ async def test_add_mcp_tools_from_microagents():
     }
 
     with patch(
-        'openhands.mcp.utils.fetch_mcp_tools_from_config',
+        'openhands.mcp_clientutils.fetch_mcp_tools_from_config',
         new=AsyncMock(return_value=[mock_tool]),
     ):
         # Call the function with the OpenHandsConfig instead of MCPConfig

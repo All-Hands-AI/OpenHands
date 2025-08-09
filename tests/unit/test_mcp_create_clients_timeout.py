@@ -3,8 +3,8 @@ import asyncio
 import pytest
 
 from openhands.core.config.mcp_config import MCPSSEServerConfig
-from openhands.mcp.client import MCPClient
-from openhands.mcp.utils import create_mcp_clients
+from openhands.mcp_client.session import MCPClient
+from openhands.mcp_client.utils import create_mcp_clients
 
 
 @pytest.mark.asyncio

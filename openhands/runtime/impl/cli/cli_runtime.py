@@ -700,8 +700,8 @@ class CLIRuntime(Runtime):
             return ErrorObservation('MCP functionality is not available on Windows')
 
         # Import here to avoid circular imports
-        from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
-        from openhands.mcp.utils import create_mcp_clients
+        from openhands.mcp_client.utils import call_tool_mcp as call_tool_mcp_handler
+        from openhands.mcp_client.utils import create_mcp_clients
 
         try:
             # Get the MCP config for this runtime
