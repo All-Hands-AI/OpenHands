@@ -700,12 +700,140 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+def _generate_single_command_pattern(command: str) -> list[str]:
+    """Generate candidate regex patterns for a single command based on prefixes.
+
+    Args:
+        command: The single command to generate patterns for.
+
+    Returns:
+        list[str]: List of candidate regex patterns that match similar commands.
+    """
+    import re
+
+    # Split command into parts
+    parts = command.split()
+    if not parts:
+        return [f'^{re.escape(command)}$']
+
+    patterns = []
+
+    # Generate patterns for first word, first two words, first three words
+    for i in range(1, min(4, len(parts) + 1)):
+        prefix_parts = parts[:i]
+        escaped_prefix = '\\s+'.join(re.escape(part) for part in prefix_parts)
+
+        # Create pattern: prefix followed by word boundary and anything until end of line
+        # This prevents matching partial words (e.g., "ls" won't match "lsof")
+        if i == 1:
+            # For single word, add word boundary to prevent partial matches
+            pattern = f'^{escaped_prefix}(\\s.*|$)'
+        else:
+            # For multiple words, the space already acts as a boundary
+            pattern = f'^{escaped_prefix}.*$'
+        patterns.append(pattern)
+
+    return patterns
+
+
+def _parse_piped_command(command: str) -> list[str]:
+    """Parse a command that may contain pipes into individual commands.
+
+    Args:
+        command: The command string to parse.
+
+    Returns:
+        list[str]: List of individual commands split by pipes.
+    """
+    import shlex
+
+    # Handle edge cases first
+    if not command or not command.strip():
+        return []
+
+    # Use shlex to split the command, which handles quotes and escapes properly
+    try:
+        # Split the entire command into tokens
+        tokens = shlex.split(command, posix=True)
+    except ValueError:
+        # If shlex fails (e.g., unmatched quotes), fall back to simple split
+        return [part.strip() for part in command.split('|') if part.strip()]
+
+    # Find pipe tokens and split the command accordingly
+    parts = []
+    current_part: list[str] = []
+
+    for token in tokens:
+        if token == '|':
+            if current_part:
+                parts.append(' '.join(current_part))
+                current_part = []
+        else:
+            current_part.append(token)
+
+    # Add the last part if it exists
+    if current_part:
+        parts.append(' '.join(current_part))
+
+    # If no pipes were found in tokens, check if the original command has pipes
+    # This handles cases where pipes are not separated by spaces
+    if len(parts) <= 1 and '|' in command:
+        return [part.strip() for part in command.split('|') if part.strip()]
+
+    return parts
+
+
+def _generate_command_patterns(command: str) -> list[str]:
+    """Generate candidate regex patterns for a command that can match similar commands.
+
+    This function handles both simple commands and piped commands.
+    For piped commands, it generates patterns for each sub-command.
+
+    Args:
+        command: The command to generate patterns for (may contain pipes).
+
+    Returns:
+        list[str]: List of candidate regex patterns that match similar commands.
+    """
+    # Parse the command to handle pipes
+    sub_commands = _parse_piped_command(command)
+
+    if len(sub_commands) <= 1:
+        # Single command or empty, return all candidate patterns
+        return _generate_single_command_pattern(command)
+    else:
+        # Piped command, generate pattern for each sub-command
+        # For simplicity, we'll just use the first pattern from each sub-command
+        sub_patterns = []
+        for sub_command in sub_commands:
+            patterns = _generate_single_command_pattern(sub_command.strip())
+            if patterns:
+                # Use the most specific pattern (first one)
+                sub_pattern = patterns[0]
+                # Remove the ^ and $ anchors from sub-patterns
+                if sub_pattern.startswith('^'):
+                    sub_pattern = sub_pattern[1:]
+                if sub_pattern.endswith('$'):
+                    sub_pattern = sub_pattern[:-1]
+                sub_patterns.append(sub_pattern)
+
+        if sub_patterns:
+            # Join sub-patterns with pipe separator (allowing flexible whitespace around pipes)
+            pattern = '\\s*\\|\\s*'.join(sub_patterns)
+            return [f'^{pattern}$']
+        else:
+            return []
+
+
+async def read_confirmation_input(
+    config: OpenHandsConfig, command: str = '', pending_action=None
+) -> str:
     try:
         choices = [
             'Yes, proceed',
             'No (and allow to enter instructions)',
-            "Always proceed (don't ask again)",
+            'Always proceed (skip all confirmations)',
+            "Yes, and don't ask again for similar commands",
         ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
@@ -713,7 +841,89 @@ async def read_confirmation_input(config: OpenHandsConfig) -> str:
             cli_confirm, config, 'Choose an option:', choices
         )
 
-        return {0: 'yes', 1: 'no', 2: 'always'}.get(index, 'no')
+        result = {0: 'yes', 1: 'no', 2: 'always', 3: 'remember'}.get(index, 'no')
+
+        # If the user chose "remember", show pattern selection options
+        if result == 'remember' and command:
+            return await _handle_pattern_selection(config, command)
+
+        return result
+
+    except (KeyboardInterrupt, EOFError):
+        return 'no'
+
+
+async def _handle_pattern_selection(config: OpenHandsConfig, command: str) -> str:
+    """Handle pattern selection when user chooses to remember similar commands."""
+    try:
+        # Generate candidate patterns
+        patterns = _generate_command_patterns(command)
+
+        # Create pattern descriptions
+        pattern_choices = []
+        pattern_data = []
+
+        # Add exact command option
+        import re
+
+        exact_pattern = f'^{re.escape(command)}$'
+        pattern_choices.append(f'Exact command: {command}')
+        pattern_data.append(('exact', exact_pattern, f'Exact command: {command}'))
+
+        # Add prefix-based patterns
+        parts = command.split()
+        if parts:
+            for i, pattern in enumerate(patterns):
+                if i < len(parts):
+                    prefix = ' '.join(parts[: i + 1])
+                    description = f'Commands starting with: {prefix}'
+                    pattern_choices.append(description)
+                    pattern_data.append(('pattern', pattern, description))
+
+        # Add custom pattern option
+        pattern_choices.append('Enter custom pattern')
+        pattern_data.append(('custom', '', 'Custom pattern'))
+
+        # Show pattern selection menu
+        pattern_index = await asyncio.to_thread(
+            cli_confirm, config, 'Choose which commands to remember:', pattern_choices
+        )
+
+        if pattern_index < len(pattern_data):
+            pattern_type, pattern_value, description = pattern_data[pattern_index]
+
+            if pattern_type == 'custom':
+                # Get custom pattern from user
+                prompt_session = create_prompt_session(config)
+                print_formatted_text(
+                    HTML(
+                        '<gold>Enter a custom regex pattern (example: ^ls.*$ for all ls commands):</gold>'
+                    )
+                )
+                try:
+                    custom_pattern = await prompt_session.prompt_async('Pattern: ')
+                    if custom_pattern.strip():
+                        # Validate the regex pattern
+                        import re
+
+                        try:
+                            re.compile(custom_pattern.strip())
+                            return f'remember:{custom_pattern.strip()}:Custom pattern: {custom_pattern.strip()}'
+                        except re.error:
+                            print_formatted_text(
+                                HTML(
+                                    '<ansired>Invalid regex pattern. Using exact command instead.</ansired>'
+                                )
+                            )
+                            return f'remember:^{re.escape(command)}$:Exact command: {command}'
+                    else:
+                        return 'no'
+                except (KeyboardInterrupt, EOFError):
+                    return 'no'
+            else:
+                return f'remember:{pattern_value}:{description}'
+
+        return 'no'
 
     except (KeyboardInterrupt, EOFError):
         return 'no'
