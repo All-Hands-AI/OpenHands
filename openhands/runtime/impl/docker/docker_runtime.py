@@ -316,7 +316,11 @@ class DockerRuntime(ActionExecutionClient):
 
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
-        use_host_network = self.config.sandbox.use_host_network
+        # Determine network mode: use host networking if explicitly enabled or if docker-out-of-docker is active
+        use_host_network = (
+            self.config.sandbox.use_host_network
+            or self.config.sandbox.docker_out_of_docker
+        )
         network_mode: typing.Literal['host'] | None = (
             'host' if use_host_network else None
         )
@@ -349,10 +353,16 @@ class DockerRuntime(ActionExecutionClient):
                     }
                 ]
         else:
-            self.log(
-                'warn',
-                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
-            )
+            if self.config.sandbox.docker_out_of_docker:
+                self.log(
+                    'warn',
+                    'Using host network mode for docker-out-of-docker functionality. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                )
+            else:
+                self.log(
+                    'warn',
+                    'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
+                )
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
@@ -383,6 +393,26 @@ class DockerRuntime(ActionExecutionClient):
                 'Mount dir is not set, will not mount the workspace directory to the container'
             )
             volumes = {}  # Empty dict instead of None to satisfy mypy
+
+        # Mount Docker socket if docker-out-of-docker functionality is enabled
+        if self.config.sandbox.docker_out_of_docker:
+            docker_socket_path = '/var/run/docker.sock'
+            # Check if Docker socket exists on host
+            if os.path.exists(docker_socket_path):
+                self.log(
+                    'warning',
+                    'Enabling docker-out-of-docker functionality with Docker socket mounting and host networking. '
+                    'SECURITY WARNING: This grants container access to the host Docker daemon '
+                    'with root-equivalent privileges and host network interfaces. Use only in trusted environments.',
+                )
+                volumes[docker_socket_path] = {'bind': docker_socket_path, 'mode': 'rw'}
+            else:
+                self.log(
+                    'warning',
+                    f'Docker-out-of-docker functionality requested but {docker_socket_path} not found on host. '
+                    f'docker-out-of-docker functionality will not be available.',
+                )
+
         self.log(
             'debug',
             f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
@@ -406,6 +436,28 @@ class DockerRuntime(ActionExecutionClient):
                 ]
         else:
             device_requests = None
+
+        # Prepare additional Docker runtime arguments
+        docker_kwargs = dict(self.config.sandbox.docker_runtime_kwargs or {})
+
+        # Add privileged mode and capabilities for docker-out-of-docker functionality
+        if self.config.sandbox.docker_out_of_docker:
+            # Enable privileged mode to allow Docker daemon operations
+            docker_kwargs['privileged'] = True
+            # Add necessary capabilities for Docker operations
+            docker_kwargs['cap_add'] = [
+                'SYS_ADMIN',  # Required for mount operations
+                'NET_ADMIN',  # Required for network bridge creation
+                'SYS_PTRACE',  # Required for debugging and process tracing
+                'DAC_OVERRIDE',  # Required for file access permissions
+            ]
+            self.log(
+                'warning',
+                'Running container in privileged mode with additional capabilities '
+                'for docker-out-of-docker functionality. '
+                'This significantly increases security risks.',
+            )
+
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
@@ -422,7 +474,7 @@ class DockerRuntime(ActionExecutionClient):
                 environment=environment,
                 volumes=volumes,  # type: ignore
                 device_requests=device_requests,
-                **(self.config.sandbox.docker_runtime_kwargs or {}),
+                **docker_kwargs,
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
