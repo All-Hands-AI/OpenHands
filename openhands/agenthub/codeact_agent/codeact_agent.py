@@ -110,6 +110,11 @@ class CodeActAgent(Agent):
 
         use_short_tool_desc = False
         if self.llm is not None:
+            # For historical reasons, previously OpenAI enforces max function description length of 1k characters
+            # https://community.openai.com/t/function-call-description-max-length/529902
+            # But it no longer seems to be an issue recently
+            # https://community.openai.com/t/was-the-character-limit-for-schema-descriptions-upgraded/1225975
+            # Tested on GPT-5 and longer description still works. But we still keep the logic to be safe for older models.
             use_short_tool_desc = any(
                 model_substr in self.llm.config.model
                 for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
