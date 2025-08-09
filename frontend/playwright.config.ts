@@ -1,11 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
+import path from 'path';
 
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
 // import dotenv from 'dotenv';
-// import path from 'path';
 // dotenv.config({ path: path.resolve(__dirname, '.env') });
 
 /**
@@ -23,10 +23,13 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: "html",
+  /* Global setup and teardown for e2e-workflow tests */
+  globalSetup: process.env.E2E_TEST ? path.join(__dirname, 'tests/e2e-workflow.setup.ts') : undefined,
+  globalTeardown: process.env.E2E_TEST ? path.join(__dirname, 'tests/e2e-workflow.teardown.ts') : undefined,
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: "http://localhost:3001/",
+    baseURL: process.env.E2E_TEST ? "http://localhost:12000/" : "http://localhost:3001/",
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
@@ -34,6 +37,7 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
+    // Regular test configuration
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
@@ -47,6 +51,16 @@ export default defineConfig({
     {
       name: "webkit",
       use: { ...devices["Desktop Safari"] },
+    },
+
+    // End-to-end workflow test configuration
+    {
+      name: "e2e-workflow",
+      testMatch: /e2e-workflow\.test\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: "http://localhost:12000/",
+      },
     },
 
     /* Test against mobile viewports. */
@@ -71,7 +85,7 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
+  webServer: process.env.E2E_TEST ? undefined : {
     command: "npm run dev:mock -- --port 3001",
     url: "http://localhost:3001/",
     reuseExistingServer: !process.env.CI,

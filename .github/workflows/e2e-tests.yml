@@ -1,0 +1,118 @@
+name: End-to-End Tests
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
+  workflow_dispatch:
+
+# If triggered by a PR, it will be in the same group
+concurrency:
+  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-tests:
+    if: contains(github.event.pull_request.labels.*.name, 'end-to-end') || github.event_name == 'workflow_dispatch'
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    timeout-minutes: 30
+
+    env:
+      RUNTIME: local
+      INSTALL_DOCKER: 0  # Skip Docker installation, use existing Docker
+      FRONTEND_PORT: 12000
+      FRONTEND_HOST: 0.0.0.0
+      BACKEND_HOST: 0.0.0.0
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux
+
+      - name: Install Python dependencies using Poetry
+        run: poetry install --with dev,test,runtime
+
+      - name: Install Playwright
+        run: |
+          poetry run playwright install --with-deps chromium
+
+      - name: Setup Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: '22.x'
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend && npm install
+
+      - name: Build frontend
+        run: |
+          cd frontend && npm run prepare && npm run build
+
+      - name: Install pre-commit hooks
+        run: |
+          git config --unset-all core.hooksPath || true
+          poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml
+
+      - name: Setup workspace for end-to-end tests
+        run: |
+          # Create workspace directory structure that the runner can write to
+          mkdir -p /tmp/openhands-workspace/.downloads
+          chmod -R 755 /tmp/openhands-workspace
+
+          # Also create the actual /workspace directory for browser environment
+          sudo mkdir -p /workspace/.downloads
+          sudo chown -R $(id -u):$(id -g) /workspace
+          sudo chmod -R 755 /workspace
+
+      - name: Run full end-to-end tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          SANDBOX_VOLUMES: /tmp/openhands-workspace:/workspace:rw
+          SANDBOX_USER_ID: 1000
+          SANDBOX_RUNTIME: local
+          INSTALL_DOCKER: 0
+          RUNTIME: local
+          FRONTEND_PORT: 12000
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BACKEND_PORT: 3000
+        run: |
+          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v --timeout=600
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: tests/e2e/test-results/
+          retention-days: 30
+
+      - name: Upload OpenHands logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openhands-logs
+          path: |
+            /tmp/openhands-e2e-test.log
+            /tmp/openhands-e2e-build.log
+          retention-days: 30
