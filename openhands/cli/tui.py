@@ -51,7 +51,7 @@ from openhands.events.observation import (
     MCPObservation,
 )
 from openhands.llm.metrics import Metrics
-from openhands.mcp.error_collector import mcp_error_collector
+from openhands.mcp_client.error_collector import mcp_error_collector
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
