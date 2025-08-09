@@ -2,6 +2,7 @@ import uuid
 from types import MappingProxyType
 from typing import Any
 
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
@@ -44,6 +45,7 @@ async def create_new_conversation(
     attach_convo_id: bool = False,
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
+    mcp_config: MCPConfig | None = None,
 ) -> AgentLoopInfo:
     logger.info(
         'Creating conversation',
@@ -82,6 +84,9 @@ async def create_new_conversation(
     session_init_args['selected_branch'] = selected_branch
     session_init_args['git_provider'] = git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
+    if mcp_config:
+        session_init_args['mcp_config'] = mcp_config
+
     conversation_init_data = ConversationInitData(**session_init_args)
 
     logger.info('Loading conversation store')
