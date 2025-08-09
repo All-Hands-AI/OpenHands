@@ -89,8 +89,8 @@ I’ve uploaded a python code repository in the directory workspace_dir_name. Co
 Can you help me implement the necessary changes to the repository so that the runtime of the `workload()` function is faster? Basic guidelines:
 1. Your task is to make changes to non-test files in the /workspace directory to improve the performance of the code running in `workload()`. Please do not directly change the implementation of the `workload()` function to optimize things: I want you to focus on making the workload AS IS run faster by only editing the repository containing code that the `workload()` function calls.
 2. Make changes while ensuring the repository is functionally equivalent to the original: your changes should not introduce new bugs or cause already-passing tests to begin failing after your changes. However, you do not need to worry about tests that already fail without any changes made. For relevant test files you find in the repository, you can run them via the bash command `{instance.test_cmd} <test_file>` to check for correctness. Note that running all the tests may take a long time, so you need to determine which tests are relevant to your changes.
-3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run, so please allow it to finish and be generous with setting your timeout parameter (a timeout value of 1800 or larger here is encouraged): for faster iteration, you can adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
-4. You may need to reinstall/rebuild the repo for your changes to take effect before testing if you made non-Python changes. Reinstalling may take a long time to run (a timeout value of 1800 or larger here is encouraged), so please be patient with running it and allow it to complete if possible. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
+3. Make sure the `workload()` function improves in performance after you make changes to the repository. The workload can potentially take some time to run, so please allow it to finish and be generous with setting your timeout parameter (a timeout value of 3600 or larger here is encouraged): for faster iteration, you should adjust the workload script to use fewer iterations. Before you complete your task, please make sure to check that the **original performance workload** and `workload()` function runs successfully and the performance is improved.
+4. You may need to reinstall/rebuild the repo for your changes to take effect before testing if you made non-Python changes. Reinstalling may take a long time to run (a timeout value of 3600 or larger here is encouraged), so please be patient with running it and allow it to complete if possible. You can reinstall the repository by running the bash command `{instance.rebuild_cmd}` in the workspace directory.
 5. All the dependencies required to run the `workload()` function are already installed in the environment. You should not install or upgrade any dependencies.
 
 Follow these steps to improve performance:
@@ -546,26 +546,20 @@ def process_instance(
             logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
         # Increase resource_factor with increasing attempt_id
-        if runtime_failure_count > 0:
-            config.sandbox.remote_runtime_resource_factor = min(
-                config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
-                8,
-            )
-            logger.warning(
-                f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
-            )
+        # if runtime_failure_count > 0:
+        #     config.sandbox.remote_runtime_resource_factor = min(
+        #         config.sandbox.remote_runtime_resource_factor * (2**runtime_failure_count),
+        #         8,
+        #     )
+        #     logger.warning(
+        #         f'This is the {runtime_failure_count + 1}th attempt for instance {instance.instance_id}, setting resource factor to {config.sandbox.remote_runtime_resource_factor}'
+        #     )
 
         metadata = copy.deepcopy(metadata)
         metadata.details['runtime_failure_count'] = runtime_failure_count
         metadata.details['remote_runtime_resource_factor'] = (
             config.sandbox.remote_runtime_resource_factor
         )
-
-        # # Uncomment the following lines if you want to use the cpu_group in the instance id
-        # sid = instance.instance_id
-        # if cpu_group is not None:
-        #     sid += f'_{"".join([str(c) for c in cpu_group])}'
-        # config.file_store_path = os.path.join(config.file_store_path, sid)
 
         runtime = create_runtime(config, sid=None)
         call_async_from_sync(runtime.connect)
