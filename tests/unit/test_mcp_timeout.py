@@ -26,7 +26,7 @@ async def test_sse_connection_timeout():
     mock_client.disconnect = mock.AsyncMock()
 
     # Mock the MCPClient constructor to return our mock
-    with mock.patch('openhands.mcp_clientutils.MCPClient', return_value=mock_client):
+    with mock.patch('openhands.mcp_client.utils.MCPClient', return_value=mock_client):
         # Create a list of server URLs to test
         servers = [
             MCPSSEServerConfig(url='http://server1:8080'),
@@ -54,7 +54,7 @@ async def test_fetch_mcp_tools_with_timeout():
     mock_config.shttp_servers = []
 
     # Mock create_mcp_clients to return an empty list (simulating all connections failing)
-    with mock.patch('openhands.mcp_clientutils.create_mcp_clients', return_value=[]):
+    with mock.patch('openhands.mcp_client.utils.create_mcp_clients', return_value=[]):
         # Call fetch_mcp_tools_from_config
         tools = await fetch_mcp_tools_from_config(mock_config, None)
 
@@ -92,7 +92,7 @@ async def test_mixed_connection_results():
 
     # Mock create_mcp_clients to return our successful client
     with mock.patch(
-        'openhands.mcp_clientutils.create_mcp_clients', return_value=[successful_client]
+        'openhands.mcp_client.utils.create_mcp_clients', return_value=[successful_client]
     ):
         # Call fetch_mcp_tools_from_config
         tools = await fetch_mcp_tools_from_config(mock_config, None)

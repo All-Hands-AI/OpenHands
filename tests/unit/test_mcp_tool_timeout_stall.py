@@ -226,7 +226,7 @@ async def test_mcp_tool_timeout_agent_continuation():
 
     # Use our fixed function
     with mock.patch(
-        'openhands.mcp_clientutils.call_tool_mcp', side_effect=fixed_call_tool_mcp
+        'openhands.mcp_client.utils.call_tool_mcp', side_effect=fixed_call_tool_mcp
     ):
         # Call the function that would normally be called by the agent controller
         result = await call_tool_mcp([mock_client], mcp_action)
