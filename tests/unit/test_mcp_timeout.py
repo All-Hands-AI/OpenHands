@@ -92,7 +92,8 @@ async def test_mixed_connection_results():
 
     # Mock create_mcp_clients to return our successful client
     with mock.patch(
-        'openhands.mcp_client.utils.create_mcp_clients', return_value=[successful_client]
+        'openhands.mcp_client.utils.create_mcp_clients',
+        return_value=[successful_client],
     ):
         # Call fetch_mcp_tools_from_config
         tools = await fetch_mcp_tools_from_config(mock_config, None)
