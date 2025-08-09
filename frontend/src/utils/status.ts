@@ -47,7 +47,8 @@ export function getIndicatorColor(
     webSocketStatus === "DISCONNECTED" ||
     conversationStatus === "STOPPED" ||
     runtimeStatus === "STATUS$STOPPED" ||
-    agentState === AgentState.STOPPED
+    agentState === AgentState.STOPPED ||
+    agentState === AgentState.ERROR
   ) {
     return IndicatorColor.RED;
   }
