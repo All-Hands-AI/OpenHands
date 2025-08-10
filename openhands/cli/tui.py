@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import datetime
 import json
+import shutil
 import sys
 import threading
 import time
