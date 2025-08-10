@@ -1,11 +1,11 @@
 <div align="center">
-
-<img src="https://i.ibb.co/7xN0Q0w6/RDn-Sl-NCCfl-I.jpg" alt="GP-KhayaL Logo" width="200" />
-
-<h1>GP-KhayaL</h1>
-<p><em>Khayal Virtual Cyber Security</em></p>
-
+  <img src="https://i.ibb.co/7xN0Q0w6/RDn-Sl-NCCfl-I.jpg" 
+       alt="GP-KhayaL Logo" 
+       style="width:100%; max-height:400px; object-fit:contain; border-radius:8px; box-shadow:0 4px 12px rgba(0,0,0,0.15);" />
+  <h1>GP-KhayaL</h1>
+  <p><em>Khayal Virtual Cyber Security</em></p>
 </div>
+
 
 ## Overview
 GP-KhayaL is a developer‑agent platform for working with code, repositories, and AI models. It provides a modern web UI, backend APIs, Git provider integrations, and an extensible runtime to open repositories, edit files, review diffs, commit, and create pull requests.
