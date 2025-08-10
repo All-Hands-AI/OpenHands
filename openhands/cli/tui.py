@@ -6,6 +6,7 @@ import asyncio
 import contextlib
 import datetime
 import json
+import markdown
 import sys
 import threading
 import time
@@ -333,6 +334,29 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
         
         # Add spacing after the message
         print_formatted_text('')
+
+
+def convert_markdown_to_html(text: str) -> str:
+    """
+    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+    
+    Args:
+        text: Markdown text to convert
+        
+    Returns:
+        HTML formatted text
+    """
+    if not text:
+        return text
+    
+    # Use the markdown library to convert markdown to HTML
+    # Enable the 'extra' extension for tables, fenced code, etc.
+    html = markdown.markdown(text, extensions=['extra'])
+    
+    # prompt_toolkit's HTML renderer can handle standard HTML tags
+    # We just need to make sure the HTML is properly formatted
+    
+    return html
 
 
 def display_error(error: str) -> None:
