@@ -300,35 +300,38 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
 def display_message(message: str, is_agent_message: bool = False) -> None:
     """
-    Display a message in the terminal.
+    Display a message in the terminal with markdown rendering.
     
     Args:
         message: The message to display
-        is_agent_message: If True, apply agent styling and markdown rendering
+        is_agent_message: If True, apply agent styling (blue color)
     """
     message = message.strip()
 
     if message:
-        if is_agent_message:
-            # Add spacing before the message
-            print_formatted_text('')
+        # Add spacing before the message
+        print_formatted_text('')
+        
+        try:
+            # Convert markdown to HTML for all messages
+            html_content = convert_markdown_to_html(message)
             
-            try:
-                # Convert markdown to HTML for agent messages
-                html_content = convert_markdown_to_html(message)
-                
+            if is_agent_message:
                 # Use prompt_toolkit's HTML renderer with the agent color
                 print_formatted_text(HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>'))
-            except Exception as e:
-                # If HTML rendering fails, fall back to plain text
-                print(f"Warning: HTML rendering failed: {str(e)}", file=sys.stderr)
+            else:
+                # Regular message display with HTML rendering but default color
+                print_formatted_text(HTML(html_content))
+        except Exception as e:
+            # If HTML rendering fails, fall back to plain text
+            print(f"Warning: HTML rendering failed: {str(e)}", file=sys.stderr)
+            if is_agent_message:
                 print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, message)]))
-            
-            # Add spacing after the message
-            print_formatted_text('')
-        else:
-            # Regular message display
-            print_formatted_text(f'\n{message}')
+            else:
+                print_formatted_text(message)
+        
+        # Add spacing after the message
+        print_formatted_text('')
 
 
 def display_error(error: str) -> None:
