@@ -27,6 +27,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { LoadingOverlay } from "#/components/shared/loading-overlay";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -65,8 +66,8 @@ export default function MainApp() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const isOnTosPage = useIsOnTosPage();
-  const { data: settings } = useSettings();
-  const { error } = useBalance();
+  const { data: settings, isFetching: isFetchingSettings } = useSettings();
+  const { error, isFetching: isFetchingBalance } = useBalance();
   const { migrateUserConsent } = useMigrateUserConsent();
   const { t } = useTranslation();
 
@@ -88,6 +89,14 @@ export default function MainApp() {
   const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
 
   const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
+
+  // Track route transitions for global loading overlay
+  const [isNavigating, setIsNavigating] = React.useState(false);
+  React.useEffect(() => {
+    setIsNavigating(true);
+    const id = setTimeout(() => setIsNavigating(false), 200); // small debounce
+    return () => clearTimeout(id);
+  }, [pathname]);
 
   // Auto-login if login method is stored in local storage
   useAutoLogin();
@@ -196,6 +205,13 @@ export default function MainApp() {
     config.data?.APP_MODE === "saas" &&
     loginMethodExists;
 
+  const showGlobalLoader =
+    isNavigating ||
+    isFetchingAuth ||
+    isFetchingSettings ||
+    isFetchingBalance ||
+    (config.isLoading ?? false);
+
   return (
     <div
       data-testid="root-layout"
@@ -235,6 +251,8 @@ export default function MainApp() {
       {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
         config.data?.APP_MODE === "saas" &&
         settings?.IS_NEW_USER && <SetupPaymentModal />}
+
+      <LoadingOverlay visible={showGlobalLoader} message={"Loading..."} />
     </div>
   );
 }
