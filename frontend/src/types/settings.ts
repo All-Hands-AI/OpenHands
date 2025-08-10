@@ -90,4 +90,5 @@ export type PostApiSettings = ApiSettings & {
   user_consents_to_analytics: boolean | null;
   search_api_key?: string;
   mcp_config?: MCPConfig;
+  enable_reasoning?: boolean;
 };
