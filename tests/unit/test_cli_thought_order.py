@@ -15,10 +15,10 @@ from openhands.events.action.message import MessageAction
 class TestThoughtDisplayOrder:
     """Test that thoughts are displayed in the correct order relative to commands."""
 
-    @patch('openhands.cli.tui.display_message')
+    @patch('openhands.cli.tui.display_thought_if_new')
     @patch('openhands.cli.tui.display_command')
     def test_cmd_run_action_thought_before_command(
-        self, mock_display_command, mock_display_message
+        self, mock_display_command, mock_display_thought_if_new
     ):
         """Test that for CmdRunAction, thought is displayed before command."""
         config = MagicMock(spec=OpenHandsConfig)
@@ -32,8 +32,8 @@ class TestThoughtDisplayOrder:
 
         display_event(cmd_action, config)
 
-        # Verify that display_message (for thought) was called before display_command
-        mock_display_message.assert_called_once_with(
+        # Verify that display_thought_if_new (for thought) was called before display_command
+        mock_display_thought_if_new.assert_called_once_with(
             'I need to install the dependencies first before running the tests.'
         )
         mock_display_command.assert_called_once_with(cmd_action)
@@ -41,21 +41,21 @@ class TestThoughtDisplayOrder:
         # Check the call order by examining the mock call history
         all_calls = []
         all_calls.extend(
-            [('display_message', call) for call in mock_display_message.call_args_list]
+            [('display_thought_if_new', call) for call in mock_display_thought_if_new.call_args_list]
         )
         all_calls.extend(
             [('display_command', call) for call in mock_display_command.call_args_list]
         )
 
         # Sort by the order they were called (this is a simplified check)
-        # In practice, we know display_message should be called first based on our code
-        assert mock_display_message.called
+        # In practice, we know display_thought_if_new should be called first based on our code
+        assert mock_display_thought_if_new.called
         assert mock_display_command.called
 
-    @patch('openhands.cli.tui.display_message')
+    @patch('openhands.cli.tui.display_thought_if_new')
     @patch('openhands.cli.tui.display_command')
     def test_cmd_run_action_no_thought(
-        self, mock_display_command, mock_display_message
+        self, mock_display_command, mock_display_thought_if_new
     ):
         """Test that CmdRunAction without thought only displays command."""
         config = MagicMock(spec=OpenHandsConfig)
@@ -66,14 +66,14 @@ class TestThoughtDisplayOrder:
 
         display_event(cmd_action, config)
 
-        # Verify that display_message was not called (no thought)
-        mock_display_message.assert_not_called()
+        # Verify that display_thought_if_new was not called (no thought)
+        mock_display_thought_if_new.assert_not_called()
         mock_display_command.assert_called_once_with(cmd_action)
 
-    @patch('openhands.cli.tui.display_message')
+    @patch('openhands.cli.tui.display_thought_if_new')
     @patch('openhands.cli.tui.display_command')
     def test_cmd_run_action_empty_thought(
-        self, mock_display_command, mock_display_message
+        self, mock_display_command, mock_display_thought_if_new
     ):
         """Test that CmdRunAction with empty thought only displays command."""
         config = MagicMock(spec=OpenHandsConfig)
@@ -84,15 +84,15 @@ class TestThoughtDisplayOrder:
 
         display_event(cmd_action, config)
 
-        # Verify that display_message was not called (empty thought)
-        mock_display_message.assert_not_called()
+        # Verify that display_thought_if_new was not called (empty thought)
+        mock_display_thought_if_new.assert_not_called()
         mock_display_command.assert_called_once_with(cmd_action)
 
-    @patch('openhands.cli.tui.display_message')
+    @patch('openhands.cli.tui.display_thought_if_new')
     @patch('openhands.cli.tui.display_command')
     @patch('openhands.cli.tui.initialize_streaming_output')
     def test_cmd_run_action_confirmed_no_display(
-        self, mock_init_streaming, mock_display_command, mock_display_message
+        self, mock_init_streaming, mock_display_command, mock_display_thought_if_new
     ):
         """Test that confirmed CmdRunAction doesn't display command again but initializes streaming."""
         config = MagicMock(spec=OpenHandsConfig)
@@ -107,7 +107,7 @@ class TestThoughtDisplayOrder:
         display_event(cmd_action, config)
 
         # Verify that thought is still displayed
-        mock_display_message.assert_called_once_with(
+        mock_display_thought_if_new.assert_called_once_with(
             'I need to install the dependencies first before running the tests.'
         )
         # But command should not be displayed again (already shown when awaiting confirmation)
@@ -115,8 +115,8 @@ class TestThoughtDisplayOrder:
         # Streaming should be initialized
         mock_init_streaming.assert_called_once()
 
-    @patch('openhands.cli.tui.display_message')
-    def test_other_action_thought_display(self, mock_display_message):
+    @patch('openhands.cli.tui.display_thought_if_new')
+    def test_other_action_thought_display(self, mock_display_thought_if_new):
         """Test that other Action types still display thoughts normally."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -127,12 +127,12 @@ class TestThoughtDisplayOrder:
         display_event(action, config)
 
         # Verify that thought is displayed
-        mock_display_message.assert_called_once_with(
+        mock_display_thought_if_new.assert_called_once_with(
             'This is a thought for a generic action.'
         )
 
-    @patch('openhands.cli.tui.display_message')
-    def test_other_action_final_thought_display(self, mock_display_message):
+    @patch('openhands.cli.tui.display_thought_if_new')
+    def test_other_action_final_thought_display(self, mock_display_thought_if_new):
         """Test that other Action types display final thoughts."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -143,10 +143,10 @@ class TestThoughtDisplayOrder:
         display_event(action, config)
 
         # Verify that final thought is displayed
-        mock_display_message.assert_called_once_with('This is a final thought.')
+        mock_display_thought_if_new.assert_called_once_with('This is a final thought.')
 
-    @patch('openhands.cli.tui.display_message')
-    def test_message_action_from_agent(self, mock_display_message):
+    @patch('openhands.cli.tui.display_agent_message')
+    def test_message_action_from_agent(self, mock_display_agent_message):
         """Test that MessageAction from agent is displayed."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -156,11 +156,11 @@ class TestThoughtDisplayOrder:
 
         display_event(message_action, config)
 
-        # Verify that message is displayed
-        mock_display_message.assert_called_once_with('Hello from agent')
+        # Verify that agent message is displayed
+        mock_display_agent_message.assert_called_once_with('Hello from agent', is_finish=False)
 
-    @patch('openhands.cli.tui.display_message')
-    def test_message_action_from_user_not_displayed(self, mock_display_message):
+    @patch('openhands.cli.tui.display_thought_if_new')
+    def test_message_action_from_user_not_displayed(self, mock_display_thought_if_new):
         """Test that MessageAction from user is not displayed."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -171,12 +171,12 @@ class TestThoughtDisplayOrder:
         display_event(message_action, config)
 
         # Verify that message is not displayed (only agent messages are shown)
-        mock_display_message.assert_not_called()
+        mock_display_thought_if_new.assert_not_called()
 
-    @patch('openhands.cli.tui.display_message')
+    @patch('openhands.cli.tui.display_thought_if_new')
     @patch('openhands.cli.tui.display_command')
     def test_cmd_run_action_with_both_thoughts(
-        self, mock_display_command, mock_display_message
+        self, mock_display_command, mock_display_thought_if_new
     ):
         """Test CmdRunAction with both thought and final_thought."""
         config = MagicMock(spec=OpenHandsConfig)
@@ -190,7 +190,7 @@ class TestThoughtDisplayOrder:
 
         # For CmdRunAction, only the regular thought should be displayed
         # (final_thought is handled by the general Action case, but CmdRunAction is handled first)
-        mock_display_message.assert_called_once_with('Initial thought')
+        mock_display_thought_if_new.assert_called_once_with('Initial thought')
         mock_display_command.assert_called_once_with(cmd_action)
 
 
