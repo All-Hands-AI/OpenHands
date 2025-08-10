@@ -2,6 +2,8 @@ import os
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from openhands.core.logger import openhands_logger as logger
+
 
 class SandboxConfig(BaseModel):
     """Configuration for the sandbox.
@@ -54,6 +56,7 @@ class SandboxConfig(BaseModel):
     )
     runtime_container_image: str | None = Field(default=None)
     user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
+    logger.info(f'SandboxConfig user_id default: {user_id}')
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)

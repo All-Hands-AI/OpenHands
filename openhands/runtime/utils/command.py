@@ -28,6 +28,7 @@ def get_action_execution_server_startup_command(
     sandbox_config = app_config.sandbox
     logger.info(f'app_config {vars(app_config)}')
     logger.info(f'sandbox_config {vars(sandbox_config)}')
+    logger.info(f'override_user_id {override_user_id}')
 
     # Plugin args
     plugin_args = []
