@@ -99,11 +99,12 @@ def run_single_benchmark(benchmark, config_path, command):
     
     cwd = os.getcwd()  # preserve current directory
 
+    logger.info(f"Running command: {command}")
     # Run subprocess and capture stdout and stderr
     result = subprocess.run(
         ['/bin/zsh', '-c', command],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        #stdout=subprocess.PIPE,
+        #stderr=subprocess.PIPE,
         env=env,
         cwd=cwd,
         text=True,  # Return strings rather than bytes
@@ -226,6 +227,8 @@ def main():
         )
     if all or args.gaia:
         # Reminder: add your Tavily API key
+
+        logger.info(f'Remember to log with huggingface-cli login')
         run_single_benchmark(
             'gaia',
             args.split,
