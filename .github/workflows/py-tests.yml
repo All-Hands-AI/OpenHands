@@ -44,7 +44,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
+        run: poetry install --with dev,test,runtime --extras "cli server"
       - name: Build Environment
         run: make build
       - name: Run Unit Tests
@@ -73,7 +73,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: 'poetry'
       - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
+        run: poetry install --with dev,test,runtime --extras "cli server"
       - name: Run Windows unit tests
         run: poetry run pytest -svv tests/unit/test_windows_bash.py
         env:

@@ -26,83 +26,96 @@ build = "build_vscode.py" # Build VSCode extension during Poetry build
 
 [tool.poetry.dependencies]
 python = "^3.12,<3.14"
+
+# Core dependencies - always installed (includes all core packages)
+# This includes: events, llm, runtime, controller, critic, agenthub,
+# integrations, storage, security, memory, microagent, mcp, core, utils
 litellm = "^1.74.3, !=1.64.4, !=1.67.*"            # avoid 1.64.4 (known bug) & 1.67.* (known bug #10272)
 aiohttp = ">=3.9.0,!=3.11.13"                      # Pin to avoid yanked version 3.11.13
-google-generativeai = "*"                          # To use litellm with Gemini Pro API
-google-api-python-client = "^2.164.0"              # For Google Sheets API
-google-auth-httplib2 = "*"                         # For Google Sheets authentication
-google-auth-oauthlib = "*"                         # For Google Sheets OAuth
 termcolor = "*"
-docker = "*"
-fastapi = "*"
 toml = "*"
 types-toml = "*"
-uvicorn = "*"
-numpy = "*"
-json-repair = "*"
-browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
-html2text = "*"
-deprecated = "*"
-pexpect = "*"
-jinja2 = "^3.1.3"
-python-multipart = "*"
+python-dotenv = "*"
 tenacity = ">=8.5,<10.0"
-zope-interface = "7.2"
+pydantic = "*"
+python-json-logger = "^3.2.1"
+jinja2 = "^3.1.3"
 pathspec = "^0.12.1"
 pyjwt = "^2.9.0"
-dirhash = "*"
-tornado = "*"
-python-dotenv = "*"
-rapidfuzz = "^3.9.0"
-whatthepatch = "^1.0.6"
+python-frontmatter = "^1.1.0"
+shellingham = "^1.5.4"
+pyyaml = "^6.0.2"
+bashlex = "^0.18"
+zope-interface = "7.2"
 protobuf = "^5.0.0,<6.0.0"                         # Updated to support newer opentelemetry
 opentelemetry-api = "^1.33.1"
 opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
-
 libtmux = ">=0.37,<0.40"
-pygithub = "^2.5.0"
-joblib = "*"
-openhands-aci = "0.3.1"
-python-socketio = "^5.11.4"
-sse-starlette = "^2.1.3"
 psutil = "*"
-python-json-logger = "^3.2.1"
-prompt-toolkit = "^3.0.50"
-poetry = "^2.1.2"
 anyio = "4.9.0"
-pythonnet = "*"
-fastmcp = "^2.5.2"
-python-frontmatter = "^1.1.0"
-shellingham = "^1.5.4"
-# TODO: Should these go into the runtime group?
-ipywidgets = "^8.1.5"
-qtconsole = "^5.6.1"
-PyPDF2 = "*"
-python-pptx = "*"
-pylatexenc = "*"
-python-docx = "*"
-bashlex = "^0.18"
+dirhash = "*"
+rapidfuzz = "^3.9.0"
+whatthepatch = "^1.0.6"
+deprecated = "*"
+httpx-aiohttp = "^0.1.8"
+pexpect = "*"                                      # Needed for core runtime functionality
+fastmcp = "^2.5.2"                                 # Needed for core MCP functionality
 
-# TODO: These are integrations that should probably be optional
-redis = ">=5.2,<7.0"
+# CLI-specific dependencies (optional)
+prompt-toolkit = { version = "^3.0.50", optional = true }
 
-google-cloud-aiplatform = "*"
-anthropic = { extras = [ "vertex" ], version = "*" }
-boto3 = "*"
-kubernetes = "^33.1.0"
-pyyaml = "^6.0.2"
-memory-profiler = "^0.61.0"
-jupyter_kernel_gateway = "*"
+# Server-specific dependencies (optional)
+fastapi = { version = "*", optional = true }
+uvicorn = { version = "*", optional = true }
+python-multipart = { version = "*", optional = true }
+tornado = { version = "*", optional = true }
+python-socketio = { version = "^5.11.4", optional = true }
+sse-starlette = { version = "^2.1.3", optional = true }
+
+# Optional heavy dependencies for core functionality
+docker = { version = "*", optional = true }
+kubernetes = { version = "^33.1.0", optional = true }
+browsergym-core = { version = "0.13.3", optional = true }
+html2text = { version = "*", optional = true }
+PyPDF2 = { version = "*", optional = true }
+python-pptx = { version = "*", optional = true }
+pylatexenc = { version = "*", optional = true }
+python-docx = { version = "*", optional = true }
+ipywidgets = { version = "^8.1.5", optional = true }
+qtconsole = { version = "^5.6.1", optional = true }
+jupyter_kernel_gateway = { version = "*", optional = true }
+google-generativeai = { version = "*", optional = true }
+google-api-python-client = { version = "^2.164.0", optional = true }
+google-auth-httplib2 = { version = "*", optional = true }
+google-auth-oauthlib = { version = "*", optional = true }
+redis = { version = ">=5.2,<7.0", optional = true }
+minio = { version = "^7.2.8", optional = true }
+stripe = { version = ">=11.5,<13.0", optional = true }
+google-cloud-aiplatform = { version = "*", optional = true }
+anthropic = { version = "*", extras = [ "vertex" ], optional = true }
+boto3 = { version = "*", optional = true }
+pygithub = { version = "^2.5.0", optional = true }
+openhands-aci = { version = "0.3.1", optional = true }
+pythonnet = { version = "*", optional = true }
+memory-profiler = { version = "^0.61.0", optional = true }
+numpy = { version = "*", optional = true }
+json-repair = { version = "*", optional = true }
+joblib = { version = "*", optional = true }
 
 # Third-party runtime dependencies (optional)
 e2b = { version = ">=1.0.5,<1.8.0", optional = true }
 modal = { version = ">=0.66.26,<1.2.0", optional = true }
 runloop-api-client = { version = "0.50.0", optional = true }
 daytona = { version = "0.24.2", optional = true }
-httpx-aiohttp = "^0.1.8"
+
+# Poetry is needed for the build process
+poetry = { version = "^2.1.2", optional = true }
 
 [tool.poetry.extras]
-third_party_runtimes = [ "e2b", "modal", "runloop-api-client", "daytona" ]
+# Main feature packages - install only what you need
+cli = [ "prompt-toolkit" ]
+resolver = [  ]                                                                                      # Resolver uses core functionality only
+server = [ "fastapi", "uvicorn", "python-multipart", "tornado", "python-socketio", "sse-starlette" ]
 
 [tool.poetry.group.dev]
 optional = true
