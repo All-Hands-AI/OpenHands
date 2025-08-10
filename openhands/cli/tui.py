@@ -65,6 +65,7 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
+COLOR_AGENT_BLUE = '#00AAAA'  # Teal/Cyan color that works well on both light and dark backgrounds
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
