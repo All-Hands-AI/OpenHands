@@ -362,11 +362,11 @@ def convert_markdown_to_html(text: str) -> str:
         html = html.replace(f'<h{i}>', f'<b>{prefix}')
         html = html.replace(f'</h{i}>', f'</b>\n')
     
-    # Customize bullet points to use dashes instead of dots
+    # Customize bullet points to use dashes instead of dots with compact spacing
     html = html.replace('<ul>', '')
     html = html.replace('</ul>', '')
     html = html.replace('<li>', '- ')
-    html = html.replace('</li>', '\n')
+    html = html.replace('</li>', '')
     
     return html
 
