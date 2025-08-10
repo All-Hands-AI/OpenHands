@@ -1,5 +1,6 @@
 import os
 import re
+import subprocess
 import time
 import traceback
 import uuid
@@ -19,6 +20,51 @@ from openhands.events.observation.commands import (
 )
 from openhands.runtime.utils.bash_constants import TIMEOUT_MESSAGE_TEMPLATE
 from openhands.utils.shutdown_listener import should_continue
+
+
+def cleanup_zombie_tmux_processes() -> int:
+    """Clean up zombie tmux processes system-wide.
+
+    Returns:
+        int: Number of processes cleaned up
+    """
+    cleaned_count = 0
+    try:
+        # Find zombie tmux processes
+        result = subprocess.run(
+            ['ps', 'aux'], capture_output=True, text=True, timeout=10
+        )
+
+        if result.returncode == 0:
+            lines = result.stdout.split('\n')
+            zombie_pids = []
+
+            for line in lines:
+                if 'tmux' in line and '<defunct>' in line:
+                    parts = line.split()
+                    if len(parts) > 1:
+                        try:
+                            pid = int(parts[1])
+                            zombie_pids.append(pid)
+                        except (ValueError, IndexError):
+                            continue
+
+            # Kill zombie processes
+            for pid in zombie_pids:
+                try:
+                    subprocess.run(['kill', '-9', str(pid)], timeout=5)
+                    cleaned_count += 1
+                    logger.debug(f'Killed zombie tmux process: {pid}')
+                except Exception as e:
+                    logger.debug(f'Failed to kill zombie process {pid}: {e}')
+
+            if cleaned_count > 0:
+                logger.info(f'Cleaned up {cleaned_count} zombie tmux processes')
+
+    except Exception as e:
+        logger.debug(f'Error during zombie process cleanup: {e}')
+
+    return cleaned_count
 
 
 def split_bash_commands(commands: str) -> list[str]:
@@ -190,9 +236,26 @@ class BashSession:
         self.username = username
         self._initialized = False
         self.max_memory_mb = max_memory_mb
+        self._closed = False  # Initialize _closed attribute
 
     def initialize(self) -> None:
-        self.server = libtmux.Server()
+        # Clean up any zombie tmux processes before starting
+        try:
+            cleanup_zombie_tmux_processes()
+        except Exception as e:
+            logger.debug(f'Zombie cleanup failed, continuing: {e}')
+
+        # Try to reuse existing server or create a new one
+        try:
+            self.server = libtmux.Server()
+            # Check if server is responsive
+            self.server.sessions  # This will raise an exception if server is not responsive
+            logger.debug('Reusing existing tmux server')
+        except Exception as e:
+            logger.debug(f'Creating new tmux server (previous error: {e})')
+            # Create a new server
+            self.server = libtmux.Server()
+
         _shell_command = '/bin/bash'
         if self.username in ['root', 'openhands']:
             # This starts a non-login (new) shell for the given user
@@ -209,28 +272,55 @@ class BashSession:
 
         logger.debug(f'Initializing bash session with command: {window_command}')
         session_name = f'openhands-{self.username}-{uuid.uuid4()}'
-        self.session = self.server.new_session(
-            session_name=session_name,
-            start_directory=self.work_dir,  # This parameter is supported by libtmux
-            kill_session=True,
-            x=1000,
-            y=1000,
-        )
+
+        try:
+            self.session = self.server.new_session(
+                session_name=session_name,
+                start_directory=self.work_dir,  # This parameter is supported by libtmux
+                kill_session=True,
+                x=1000,
+                y=1000,
+            )
+        except Exception as e:
+            logger.error(f'Failed to create tmux session: {e}')
+            # Clean up any partial state
+            if hasattr(self, 'server'):
+                try:
+                    self.server.kill()
+                except Exception:
+                    pass
+            raise RuntimeError(f'Failed to initialize bash session: {e}') from e
 
         # Set history limit to a large number to avoid losing history
         # https://unix.stackexchange.com/questions/43414/unlimited-history-in-tmux
-        self.session.set_option('history-limit', str(self.HISTORY_LIMIT), _global=True)
-        self.session.history_limit = self.HISTORY_LIMIT
-        # We need to create a new pane because the initial pane's history limit is (default) 2000
-        _initial_window = self.session.active_window
-        self.window = self.session.new_window(
-            window_name='bash',
-            window_shell=window_command,
-            start_directory=self.work_dir,  # This parameter is supported by libtmux
-        )
-        self.pane = self.window.active_pane
-        logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
-        _initial_window.kill()
+        try:
+            self.session.set_option(
+                'history-limit', str(self.HISTORY_LIMIT), _global=True
+            )
+            self.session.history_limit = self.HISTORY_LIMIT
+            # We need to create a new pane because the initial pane's history limit is (default) 2000
+            _initial_window = self.session.active_window
+            self.window = self.session.new_window(
+                window_name='bash',
+                window_shell=window_command,
+                start_directory=self.work_dir,  # This parameter is supported by libtmux
+            )
+            self.pane = self.window.active_pane
+            logger.debug(
+                f'pane: {self.pane}; history_limit: {self.session.history_limit}'
+            )
+            _initial_window.kill()
+        except Exception as e:
+            logger.error(f'Failed to set up tmux window/pane: {e}')
+            # Clean up any partial state
+            try:
+                if hasattr(self, 'session') and self.session:
+                    self.session.kill()
+                if hasattr(self, 'server') and self.server:
+                    self.server.kill()
+            except Exception:
+                pass
+            raise RuntimeError(f'Failed to set up bash session window/pane: {e}') from e
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
@@ -242,7 +332,6 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
-        self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
@@ -266,10 +355,42 @@ class BashSession:
 
     def close(self) -> None:
         """Clean up the session."""
-        if self._closed:
+        if getattr(self, '_closed', False):
             return
-        self.session.kill()
-        self._closed = True
+
+        try:
+            # First kill the session
+            if hasattr(self, 'session') and self.session:
+                try:
+                    logger.debug(f'Killing tmux session: {self.session.name}')
+                    self.session.kill()
+                except Exception as e:
+                    logger.debug(f'Error killing tmux session: {e}')
+
+            # Then clean up the server if it has no more sessions
+            if hasattr(self, 'server') and self.server:
+                try:
+                    # Check if server has any remaining sessions
+                    sessions = self.server.sessions
+                    if not sessions:
+                        logger.debug('No remaining sessions, killing tmux server')
+                        # Kill the server process directly
+                        self.server.kill()
+                    else:
+                        logger.debug(
+                            f'Server still has {len(sessions)} sessions, keeping alive'
+                        )
+                except Exception as e:
+                    logger.debug(f'Error checking server sessions during cleanup: {e}')
+                    # If we can't check sessions, try to kill the server anyway
+                    try:
+                        self.server.kill()
+                    except Exception as kill_error:
+                        logger.debug(f'Error killing tmux server: {kill_error}')
+        except Exception as e:
+            logger.warning(f'Error during bash session cleanup: {e}')
+        finally:
+            self._closed = True
 
     @property
     def cwd(self) -> str:
@@ -590,7 +711,26 @@ class BashSession:
         while should_continue():
             _start_time = time.time()
             logger.debug(f'GETTING PANE CONTENT at {_start_time}')
-            cur_pane_output = self._get_pane_content()
+
+            try:
+                cur_pane_output = self._get_pane_content()
+            except Exception as e:
+                logger.warning(f'Error getting pane content: {e}')
+                # Try to recover by cleaning up and re-initializing
+                try:
+                    self.close()
+                    cleanup_zombie_tmux_processes()
+                    return ErrorObservation(
+                        content=f'Bash session became unresponsive during command execution. Error: {e}'
+                    )
+                except Exception as cleanup_error:
+                    logger.error(
+                        f'Failed to cleanup after pane content error: {cleanup_error}'
+                    )
+                    return ErrorObservation(
+                        content=f'Bash session became unresponsive and cleanup failed. Original error: {e}, Cleanup error: {cleanup_error}'
+                    )
+
             logger.debug(
                 f'PANE CONTENT GOT after {time.time() - _start_time:.2f} seconds'
             )
