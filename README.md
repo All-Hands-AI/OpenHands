@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://i.ibb.co/7xN0Q0w6/RDn-Sl-NCCfl-I.jpg" alt="GP-KhayaL Logo" width="140" />
+<img src="https://i.ibb.co/7xN0Q0w6/RDn-Sl-NCCfl-I.jpg" alt="GP-KhayaL Logo" width="200" />
 
 <h1>GP-KhayaL</h1>
 <p><em>Khayal Virtual Cyber Security</em></p>
