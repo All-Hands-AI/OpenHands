@@ -30,7 +30,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
-# Rich imports removed - using prompt_toolkit's HTML renderer instead
+import markdown  # For converting markdown to HTML
 
 from openhands import __version__
 from openhands.core.config import OpenHandsConfig
@@ -299,8 +299,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
 def convert_markdown_to_html(text: str) -> str:
     """
-    Convert markdown to HTML for prompt_toolkit's HTML renderer.
-    This is a simple implementation that handles the most common markdown features.
+    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
     
     Args:
         text: Markdown text to convert
@@ -311,39 +310,49 @@ def convert_markdown_to_html(text: str) -> str:
     if not text:
         return text
     
-    # Convert headers
-    for i in range(6, 0, -1):
-        pattern = '#' * i + ' '
-        if i <= 2:  # h1 and h2 get special styling
-            text = text.replace(f"\n{pattern}", f"\n<b><u>{pattern}</u></b>")
-        else:
-            text = text.replace(f"\n{pattern}", f"\n<b>{pattern}</b>")
+    # Use the markdown library to convert markdown to HTML
+    # Enable the 'extra' extension for tables, fenced code, etc.
+    html = markdown.markdown(text, extensions=['extra'])
     
-    # Convert bold text
-    # Look for **text** or __text__ patterns
-    lines = text.split('\n')
-    for i, line in enumerate(lines):
-        # Process **bold** text
-        j = 0
-        while j < len(line):
-            if j + 3 < len(line) and line[j:j+2] == '**' and '**' in line[j+2:]:
-                end = line.find('**', j+2)
-                if end != -1:
-                    bold_text = line[j+2:end]
-                    line = line[:j] + f'<b>{bold_text}</b>' + line[end+2:]
-                    j = j + len(f'<b>{bold_text}</b>')
-                    continue
-            j += 1
-        lines[i] = line
+    # Clean up the HTML for prompt_toolkit
+    # Replace some HTML tags with prompt_toolkit compatible ones
     
-    # Convert bullet points
-    for i, line in enumerate(lines):
-        if line.strip().startswith('* '):
-            lines[i] = line.replace('* ', '• ', 1)
-        elif line.strip().startswith('- '):
-            lines[i] = line.replace('- ', '• ', 1)
+    # Replace <h1>, <h2>, etc. with <b> for headers
+    for i in range(1, 7):
+        html = html.replace(f'<h{i}>', '<b>')
+        html = html.replace(f'</h{i}>', '</b>')
     
-    return '\n'.join(lines)
+    # Replace <strong> with <b> for bold text
+    html = html.replace('<strong>', '<b>')
+    html = html.replace('</strong>', '</b>')
+    
+    # Replace <em> with <i> for italic text
+    html = html.replace('<em>', '<i>')
+    html = html.replace('</em>', '</i>')
+    
+    # Replace <code> with a simple representation
+    html = html.replace('<code>', '')
+    html = html.replace('</code>', '')
+    
+    # Replace <pre> with a simple representation
+    html = html.replace('<pre>', '')
+    html = html.replace('</pre>', '')
+    
+    # Replace <ul> and <li> with bullet points
+    html = html.replace('<ul>', '')
+    html = html.replace('</ul>', '')
+    html = html.replace('<li>', '• ')
+    html = html.replace('</li>', '\n')
+    
+    # Remove <p> tags but keep line breaks
+    html = html.replace('<p>', '')
+    html = html.replace('</p>', '\n')
+    
+    # Clean up any double newlines
+    while '\n\n\n' in html:
+        html = html.replace('\n\n\n', '\n\n')
+    
+    return html.strip()
 
 
 def display_message(message: str) -> None:
