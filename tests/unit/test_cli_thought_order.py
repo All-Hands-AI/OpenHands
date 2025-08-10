@@ -157,7 +157,7 @@ class TestThoughtDisplayOrder:
         display_event(message_action, config)
 
         # Verify that agent message is displayed
-        mock_display_agent_message.assert_called_once_with('Hello from agent', is_finish=False)
+        mock_display_agent_message.assert_called_once_with('Hello from agent')
 
     @patch('openhands.cli.tui.display_thought_if_new')
     def test_message_action_from_user_not_displayed(self, mock_display_thought_if_new):

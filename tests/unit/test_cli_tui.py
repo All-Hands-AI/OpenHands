@@ -27,7 +27,6 @@ from openhands.events import EventSource
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
-    AgentFinishAction,
     CmdRunAction,
     MCPAction,
     MessageAction,
@@ -117,7 +116,7 @@ class TestDisplayFunctions:
 
         display_event(message, config)
 
-        mock_display_agent_message.assert_called_once_with('Test message', is_finish=False)
+        mock_display_agent_message.assert_called_once_with('Test message')
 
     @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
@@ -183,15 +182,6 @@ class TestDisplayFunctions:
         display_event(action, config)
 
         mock_display_message.assert_called_once_with('Thinking about this...')
-
-    @patch('openhands.cli.tui.display_agent_message')
-    def test_display_event_agent_finish(self, mock_display_agent_message):
-        config = MagicMock(spec=OpenHandsConfig)
-        finish_action = AgentFinishAction(final_thought='Task completed')
-
-        display_event(finish_action, config)
-
-        mock_display_agent_message.assert_called_once_with('Task completed', is_finish=True)
 
     @patch('openhands.cli.tui.display_mcp_action')
     def test_display_event_mcp_action(self, mock_display_mcp_action):
