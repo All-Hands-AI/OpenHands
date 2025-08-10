@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
+import { displayErrorToast, displaySuccessToast } from "#/utils/custom-toast-handlers";
 
 export const useDeleteConversation = () => {
   const queryClient = useQueryClient();
@@ -24,12 +25,20 @@ export const useDeleteConversation = () => {
 
       return { previousConversations };
     },
-    onError: (err, variables, context) => {
+    onError: (_err, _variables, context) => {
       if (context?.previousConversations) {
         queryClient.setQueryData(
           ["user", "conversations"],
           context.previousConversations,
         );
+      }
+      displayErrorToast("Failed to delete conversation");
+    },
+    onSuccess: (ok) => {
+      if (ok) {
+        displaySuccessToast("Conversation deleted");
+      } else {
+        displayErrorToast("Failed to delete conversation");
       }
     },
     onSettled: () => {

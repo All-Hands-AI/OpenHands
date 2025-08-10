@@ -312,8 +312,17 @@ class OpenHands {
     return data.results;
   }
 
-  static async deleteUserConversation(conversationId: string): Promise<void> {
-    await openHands.delete(`/api/conversations/${conversationId}`);
+  static async deleteUserConversation(conversationId: string): Promise<boolean> {
+    try {
+      await openHands.delete(`/api/conversations/${conversationId}`);
+      if (this.currentConversation?.conversation_id === conversationId) {
+        this.setCurrentConversation(null);
+      }
+      return true;
+    } catch (err) {
+      // Treat not found or other errors as a failed delete without throwing to the UI layer
+      return false;
+    }
   }
 
   static async createConversation(
