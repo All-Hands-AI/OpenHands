@@ -355,11 +355,14 @@ def convert_markdown_to_html(text: str) -> str:
     
     # Add custom styling to improve the appearance of HTML elements
     
-    # Make headings bold and add spacing
+    # Make headings bold and keep markdown prefix
     for i in range(1, 7):
-        # Replace <h1> with bold and larger text with spacing
-        html = html.replace(f'<h{i}>', f'<b><u>')
-        html = html.replace(f'</h{i}>', f'</u></b>\n')
+        # Get the appropriate number of # characters for this heading level
+        prefix = '#' * i + ' '
+        
+        # Replace <h1> with the prefix and bold text
+        html = html.replace(f'<h{i}>', f'<b>{prefix}')
+        html = html.replace(f'</h{i}>', f'</b>\n')
     
     # Improve bullet points with reduced spacing
     html = html.replace('<ul>', '')
