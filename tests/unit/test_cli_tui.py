@@ -256,35 +256,37 @@ class TestDisplayFunctions:
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
-        
+
     @patch('openhands.cli.tui.shutil.get_terminal_size')
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_agent_message(self, mock_print_formatted, mock_terminal_size):
         from collections import namedtuple
-        
+
         # Mock terminal size
         Size = namedtuple('Size', ['columns', 'lines'])
         mock_terminal_size.return_value = Size(columns=80, lines=24)
-        
+
         message = 'Agent message'
         display_agent_message(message)
-        
+
         # Should be called multiple times now (header, separator, content)
         assert mock_print_formatted.call_count >= 3
-        
+
     @patch('openhands.cli.tui.shutil.get_terminal_size')
     @patch('openhands.cli.tui.print_formatted_text')
-    def test_display_agent_message_with_markdown(self, mock_print_formatted, mock_terminal_size):
+    def test_display_agent_message_with_markdown(
+        self, mock_print_formatted, mock_terminal_size
+    ):
         from collections import namedtuple
-        
+
         # Mock terminal size
         Size = namedtuple('Size', ['columns', 'lines'])
         mock_terminal_size.return_value = Size(columns=80, lines=24)
-        
+
         # Test with markdown content
         message = '# Heading\n\nThis is **bold** text.'
         display_agent_message(message)
-        
+
         # Should be called multiple times now (header, separator, content)
         assert mock_print_formatted.call_count >= 3
 

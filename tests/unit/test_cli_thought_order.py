@@ -41,7 +41,10 @@ class TestThoughtDisplayOrder:
         # Check the call order by examining the mock call history
         all_calls = []
         all_calls.extend(
-            [('display_thought_if_new', call) for call in mock_display_thought_if_new.call_args_list]
+            [
+                ('display_thought_if_new', call)
+                for call in mock_display_thought_if_new.call_args_list
+            ]
         )
         all_calls.extend(
             [('display_command', call) for call in mock_display_command.call_args_list]
@@ -143,7 +146,9 @@ class TestThoughtDisplayOrder:
         display_event(action, config)
 
         # Verify that final thought is displayed as an agent message
-        mock_display_message.assert_called_once_with('This is a final thought.', is_agent_message=True)
+        mock_display_message.assert_called_once_with(
+            'This is a final thought.', is_agent_message=True
+        )
 
     @patch('openhands.cli.tui.display_thought_if_new')
     def test_message_action_from_agent(self, mock_display_thought_if_new):
@@ -157,7 +162,9 @@ class TestThoughtDisplayOrder:
         display_event(message_action, config)
 
         # Verify that agent message is displayed with agent styling
-        mock_display_thought_if_new.assert_called_once_with('Hello from agent', is_agent_message=True)
+        mock_display_thought_if_new.assert_called_once_with(
+            'Hello from agent', is_agent_message=True
+        )
 
     @patch('openhands.cli.tui.display_thought_if_new')
     def test_message_action_from_user_not_displayed(self, mock_display_thought_if_new):
