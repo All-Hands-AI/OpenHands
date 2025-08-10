@@ -426,9 +426,12 @@ class ConversationMemory:
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
-            message = Message(
-                role='user', content=[TextContent(text=obs.content)]
-            )  # Content is already truncated by openhands-aci
+            content = []
+            if obs.content.strip().startswith("data:image/png;"):
+                content.append(ImageContent(image_urls=[obs.content.strip()]))
+            else:
+                content.append(TextContent(text=obs.content))
+            message = Message(role='user', content=content)
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.content
             if (
