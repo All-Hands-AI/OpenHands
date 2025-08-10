@@ -298,22 +298,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
-def process_markdown_for_terminal(text: str) -> str:
-    """
-    Process markdown syntax for terminal display using Rich.
-    This function renders markdown as formatted text for the terminal.
-    """
-    if not text:
-        return text
-    
-    # Use Rich to render the markdown without width constraints
-    console = Console(file=io.StringIO(), highlight=False, width=None)
-    console.print(Markdown(text))
-    
-    # Get the rendered output
-    rendered_text = console.file.getvalue()  # type: ignore
-    
-    return rendered_text.strip()
+# Function removed as we're now using Rich console directly in display_agent_message
 
 
 def display_message(message: str) -> None:
@@ -333,24 +318,22 @@ def display_agent_message(message: str) -> None:
     message = message.strip()
 
     if message:
-        # Process markdown in the message
-        try:
-            # Process markdown for terminal display
-            processed_message = process_markdown_for_terminal(message)
-        except Exception:
-            # If markdown processing fails, use the original message
-            processed_message = message
-
-        # Use a consistent icon for agent messages
-        icon = '🔹'
-        header_text = 'Agent Message'
-        
-        # Print a simple header
-        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, f'\n{icon} {header_text}')]))
+        # Add some spacing before the message
         print_formatted_text('')
         
-        # Print the message content directly without any wrapping constraints
-        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, processed_message)]))
+        try:
+            # Create a Rich console for direct rendering
+            console = Console(highlight=True)
+            
+            # Use Rich's Markdown renderer directly
+            # This should properly handle all markdown formatting including bold text and bullet points
+            console.print(Markdown(message))
+        except Exception as e:
+            # If markdown rendering fails, fall back to plain text
+            print(f"Warning: Markdown rendering failed: {str(e)}", file=sys.stderr)
+            print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, message)]))
+        
+        # Add some spacing after the message
         print_formatted_text('')
 
 
