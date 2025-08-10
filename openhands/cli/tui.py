@@ -277,7 +277,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             if hasattr(event, 'thought') and event.thought:
                 display_thought_if_new(event.thought)
             if hasattr(event, 'final_thought') and event.final_thought:
-                display_thought_if_new(event.final_thought)
+                # Use agent message styling for final thoughts
+                display_agent_message(event.final_thought)
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:

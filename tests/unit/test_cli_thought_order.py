@@ -131,9 +131,9 @@ class TestThoughtDisplayOrder:
             'This is a thought for a generic action.'
         )
 
-    @patch('openhands.cli.tui.display_thought_if_new')
-    def test_other_action_final_thought_display(self, mock_display_thought_if_new):
-        """Test that other Action types display final thoughts."""
+    @patch('openhands.cli.tui.display_agent_message')
+    def test_other_action_final_thought_display(self, mock_display_agent_message):
+        """Test that other Action types display final thoughts as agent messages."""
         config = MagicMock(spec=OpenHandsConfig)
 
         # Create a generic Action with final thought
@@ -142,8 +142,8 @@ class TestThoughtDisplayOrder:
 
         display_event(action, config)
 
-        # Verify that final thought is displayed
-        mock_display_thought_if_new.assert_called_once_with('This is a final thought.')
+        # Verify that final thought is displayed as an agent message
+        mock_display_agent_message.assert_called_once_with('This is a final thought.')
 
     @patch('openhands.cli.tui.display_agent_message')
     def test_message_action_from_agent(self, mock_display_agent_message):
