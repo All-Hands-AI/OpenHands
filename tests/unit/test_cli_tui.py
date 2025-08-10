@@ -173,15 +173,15 @@ class TestDisplayFunctions:
 
         mock_display_file_read.assert_called_once_with(file_read)
 
-    @patch('openhands.cli.tui.display_message')
-    def test_display_event_thought(self, mock_display_message):
+    @patch('openhands.cli.tui.display_thought_if_new')
+    def test_display_event_thought(self, mock_display_thought_if_new):
         config = MagicMock(spec=OpenHandsConfig)
         action = Action()
         action.thought = 'Thinking about this...'
 
         display_event(action, config)
 
-        mock_display_message.assert_called_once_with('Thinking about this...')
+        mock_display_thought_if_new.assert_called_once_with('Thinking about this...')
 
     @patch('openhands.cli.tui.display_mcp_action')
     def test_display_event_mcp_action(self, mock_display_mcp_action):
@@ -251,7 +251,7 @@ class TestDisplayFunctions:
     @patch('openhands.cli.tui.print_formatted_text')
     def test_display_message(self, mock_print):
         message = 'Test message'
-        display_message(message)
+        display_message(message, is_agent_message=False)
 
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
