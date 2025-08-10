@@ -32,7 +32,7 @@ interface ConversationSubscriptionsContextType {
   subscribeToConversation: (options: {
     conversationId: string;
     sessionApiKey: string | null;
-    providersSet: ("github" | "gitlab" | "bitbucket")[];
+    providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
     baseUrl: string;
     onEvent?: (event: unknown, conversationId: string) => void;
   }) => void;
@@ -136,7 +136,7 @@ export function ConversationSubscriptionsProvider({
     (options: {
       conversationId: string;
       sessionApiKey: string | null;
-      providersSet: ("github" | "gitlab" | "bitbucket")[];
+      providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
       baseUrl: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
@@ -227,16 +227,18 @@ export function ConversationSubscriptionsProvider({
         });
 
         socket.on("connect_error", (error) => {
-          // Using EventLogger instead of console.warn
-          EventLogger.warning(
-            `Socket for conversation ${conversationId} CONNECTION ERROR: ${error}`,
+          // eslint-disable-next-line no-console
+          console.warn(
+            `Socket for conversation ${conversationId} CONNECTION ERROR:`,
+            error,
           );
         });
 
         socket.on("disconnect", (reason) => {
-          // Using EventLogger instead of console.warn
-          EventLogger.warning(
-            `Socket for conversation ${conversationId} DISCONNECTED! Reason: ${reason}`,
+          // eslint-disable-next-line no-console
+          console.warn(
+            `Socket for conversation ${conversationId} DISCONNECTED! Reason:`,
+            reason,
           );
           setConversationSockets((prev) => {
             // Make sure the conversation still exists in our state
