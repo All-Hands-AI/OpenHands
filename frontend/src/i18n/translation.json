@@ -1119,6 +1119,22 @@
         "de": "Speicherkondensation aktivieren",
         "uk": "Увімкнути конденсацію пам'яті"
     },
+    "SETTINGS$ENABLE_REASONING": {
+        "en": "Enable Reasoning",
+        "zh-TW": "啟用推理",
+        "uk": "Увімкнути міркування",
+        "ja": "推論を有効にする",
+        "zh-CN": "启用推理",
+        "ko-KR": "추론 활성화",
+        "no": "Aktiver resonnement",
+        "ar": "تمكين التفكير",
+        "de": "Schließen aktivieren",
+        "fr": "Activer le raisonnement",
+        "it": "Abilita ragionamento",
+        "pt": "Ativar raciocínio",
+        "es": "Habilitar razonamiento",
+        "tr": "Akıl Yürütme Etkinleştir"
+    },
     "SETTINGS$LANGUAGE": {
         "en": "Language",
         "ja": "言語",

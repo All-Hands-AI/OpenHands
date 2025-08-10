@@ -628,10 +628,12 @@ class AgentController:
         agent_config = self.agent_configs.get(action.agent, self.agent.config)
         llm_config = self.agent_to_llm_config.get(action.agent, self.agent.llm.config)
         # Make sure metrics are shared between parent and child for global accumulation
+        enable_reasoning = getattr(self.agent.llm, 'enable_reasoning', False)
         llm = LLM(
             config=llm_config,
             retry_listener=self.agent.llm.retry_listener,
             metrics=self.state.metrics,
+            enable_reasoning=enable_reasoning,
         )
         delegate_agent = agent_cls(llm=llm, config=agent_config)
 

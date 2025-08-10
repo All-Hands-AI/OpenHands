@@ -40,6 +40,7 @@ export type Settings = {
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
+  ENABLE_REASONING: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
@@ -63,6 +64,7 @@ export type ApiSettings = {
   security_analyzer: string;
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
+  enable_reasoning: boolean;
   enable_sound_notifications: boolean;
   enable_proactive_conversation_starters: boolean;
   user_consents_to_analytics: boolean | null;

@@ -34,6 +34,7 @@ class Settings(BaseModel):
     # Planned to be removed from settings
     secrets_store: UserSecrets = Field(default_factory=UserSecrets, frozen=True)
     enable_default_condenser: bool = True
+    enable_reasoning: bool = False
     enable_sound_notifications: bool = False
     enable_proactive_conversation_starters: bool = True
     user_consents_to_analytics: bool | None = None

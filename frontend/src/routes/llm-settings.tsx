@@ -46,6 +46,7 @@ function LlmSettingsScreen() {
     agent: false,
     confirmationMode: false,
     enableDefaultCondenser: false,
+    enableReasoning: false,
     securityAnalyzer: false,
   });
 
@@ -84,6 +85,7 @@ function LlmSettingsScreen() {
       agent: false,
       confirmationMode: false,
       enableDefaultCondenser: false,
+      enableReasoning: false,
       securityAnalyzer: false,
     });
   };
@@ -134,6 +136,8 @@ function LlmSettingsScreen() {
       formData.get("enable-confirmation-mode-switch")?.toString() === "on";
     const enableDefaultCondenser =
       formData.get("enable-memory-condenser-switch")?.toString() === "on";
+    const enableReasoning =
+      formData.get("enable-reasoning-switch")?.toString() === "on";
     const securityAnalyzer = formData
       .get("security-analyzer-input")
       ?.toString();
@@ -147,6 +151,7 @@ function LlmSettingsScreen() {
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
+        ENABLE_REASONING: enableReasoning,
         SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
       },
       {
@@ -172,6 +177,7 @@ function LlmSettingsScreen() {
       agent: false,
       confirmationMode: false,
       enableDefaultCondenser: false,
+      enableReasoning: false,
       securityAnalyzer: false,
     });
   };
@@ -250,6 +256,14 @@ function LlmSettingsScreen() {
     setDirtyInputs((prev) => ({
       ...prev,
       securityAnalyzer: securityAnalyzerIsDirty,
+    }));
+  };
+
+  const handleEnableReasoningIsDirty = (isToggled: boolean) => {
+    const enableReasoningIsDirty = isToggled !== settings?.ENABLE_REASONING;
+    setDirtyInputs((prev) => ({
+      ...prev,
+      enableReasoning: enableReasoningIsDirty,
     }));
   };
 
@@ -449,6 +463,15 @@ function LlmSettingsScreen() {
                 onToggle={handleEnableDefaultCondenserIsDirty}
               >
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
+              </SettingsSwitch>
+
+              <SettingsSwitch
+                testId="enable-reasoning-switch"
+                name="enable-reasoning-switch"
+                defaultIsToggled={settings.ENABLE_REASONING}
+                onToggle={handleEnableReasoningIsDirty}
+              >
+                {t(I18nKey.SETTINGS$ENABLE_REASONING)}
               </SettingsSwitch>
 
               <SettingsSwitch

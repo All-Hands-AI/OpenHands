@@ -47,6 +47,7 @@ class Session:
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
+    _current_settings: Settings | None = None
 
     def __init__(
         self,
@@ -93,6 +94,8 @@ class Session:
         initial_message: MessageAction | None,
         replay_json: str | None,
     ) -> None:
+        # Store settings for use in LLM creation
+        self._current_settings = settings
         self.agent_session.event_stream.add_event(
             AgentStateChangedObservation('', AgentState.LOADING),
             EventSource.ENVIRONMENT,
@@ -237,9 +240,11 @@ class Session:
     def _create_llm(self, agent_cls: str | None) -> LLM:
         """Initialize LLM, extracted for testing."""
         agent_name = agent_cls if agent_cls is not None else 'agent'
+        enable_reasoning = getattr(self._current_settings, 'enable_reasoning', False)
         return LLM(
             config=self.config.get_llm_config_from_agent(agent_name),
             retry_listener=self._notify_on_llm_retry,
+            enable_reasoning=enable_reasoning,
         )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:

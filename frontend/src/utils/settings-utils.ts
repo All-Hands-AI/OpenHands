@@ -28,6 +28,7 @@ const extractAdvancedFormData = (formData: FormData) => {
   let CONFIRMATION_MODE = false;
   let SECURITY_ANALYZER: string | undefined;
   let ENABLE_DEFAULT_CONDENSER = true;
+  let ENABLE_REASONING = false;
 
   if (isUsingAdvancedOptions) {
     CUSTOM_LLM_MODEL = formData.get("custom-model")?.toString();
@@ -38,6 +39,7 @@ const extractAdvancedFormData = (formData: FormData) => {
       SECURITY_ANALYZER = formData.get("security-analyzer")?.toString();
     }
     ENABLE_DEFAULT_CONDENSER = keys.includes("enable-default-condenser");
+    ENABLE_REASONING = keys.includes("enable-reasoning");
   }
 
   return {
@@ -46,6 +48,7 @@ const extractAdvancedFormData = (formData: FormData) => {
     CONFIRMATION_MODE,
     SECURITY_ANALYZER,
     ENABLE_DEFAULT_CONDENSER,
+    ENABLE_REASONING,
   };
 };
 
