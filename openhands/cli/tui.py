@@ -66,7 +66,7 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
-COLOR_AGENT_BLUE = '#00AAAA'  # Teal/Cyan color that works well on both light and dark backgrounds
+COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
@@ -344,7 +344,7 @@ def convert_markdown_to_html(text: str) -> str:
         text: Markdown text to convert
         
     Returns:
-        HTML formatted text with custom styling for headers only
+        HTML formatted text with custom styling for headers and bullet points
     """
     if not text:
         return text
@@ -353,9 +353,7 @@ def convert_markdown_to_html(text: str) -> str:
     # Enable the 'extra' extension for tables, fenced code, etc.
     html = markdown.markdown(text, extensions=['extra'])
     
-    # Only customize headers, leave other HTML elements as they are
-    
-    # Make headings bold and keep markdown prefix
+    # Customize headers
     for i in range(1, 7):
         # Get the appropriate number of # characters for this heading level
         prefix = '#' * i + ' '
@@ -363,6 +361,12 @@ def convert_markdown_to_html(text: str) -> str:
         # Replace <h1> with the prefix and bold text
         html = html.replace(f'<h{i}>', f'<b>{prefix}')
         html = html.replace(f'</h{i}>', f'</b>\n')
+    
+    # Customize bullet points to use dashes instead of dots
+    html = html.replace('<ul>', '')
+    html = html.replace('</ul>', '')
+    html = html.replace('<li>', '- ')
+    html = html.replace('</li>', '\n')
     
     return html
 
