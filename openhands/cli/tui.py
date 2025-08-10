@@ -344,7 +344,7 @@ def convert_markdown_to_html(text: str) -> str:
         text: Markdown text to convert
         
     Returns:
-        HTML formatted text
+        HTML formatted text with custom styling
     """
     if not text:
         return text
@@ -353,8 +353,30 @@ def convert_markdown_to_html(text: str) -> str:
     # Enable the 'extra' extension for tables, fenced code, etc.
     html = markdown.markdown(text, extensions=['extra'])
     
-    # prompt_toolkit's HTML renderer can handle standard HTML tags
-    # We just need to make sure the HTML is properly formatted
+    # Add custom styling to improve the appearance of HTML elements
+    
+    # Make headings bold and add spacing
+    for i in range(1, 7):
+        # Replace <h1> with bold and larger text with spacing
+        html = html.replace(f'<h{i}>', f'<b><u>')
+        html = html.replace(f'</h{i}>', f'</u></b>\n')
+    
+    # Improve bullet points
+    html = html.replace('<ul>', '\n')
+    html = html.replace('</ul>', '\n')
+    html = html.replace('<li>', '• ')
+    html = html.replace('</li>', '\n')
+    
+    # Add spacing after paragraphs
+    html = html.replace('</p>', '</p>\n')
+    
+    # Make code blocks more visible
+    html = html.replace('<code>', '<i>')
+    html = html.replace('</code>', '</i>')
+    
+    # Clean up any excessive newlines
+    while '\n\n\n' in html:
+        html = html.replace('\n\n\n', '\n\n')
     
     return html
 
