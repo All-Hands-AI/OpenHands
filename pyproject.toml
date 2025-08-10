@@ -150,6 +150,19 @@ jupyterlab = "*"
 notebook = "*"
 flake8 = "*"
 
+[tool.poetry.group.ci]
+optional = true
+
+[tool.poetry.group.ci.dependencies]
+# CI convenience group - includes all extras as regular dependencies
+prompt-toolkit = "*"
+fastapi = "*"
+uvicorn = "*"
+python-multipart = "*"
+tornado = "*"
+python-socketio = "*"
+sse-starlette = "*"
+
 [tool.poetry.group.evaluation]
 optional = true
 
