@@ -1,5 +1,5 @@
 import React from "react";
-import { useLocation } from "react-router";
+import { useLocation, NavLink } from "react-router";
 import { useGitUser } from "#/hooks/query/use-git-user";
 import { UserActions } from "./user-actions";
 import { AllHandsLogoButton } from "#/components/shared/buttons/all-hands-logo-button";
@@ -74,6 +74,16 @@ export function Sidebar() {
               <AllHandsLogoButton />
             </div>
             <NewProjectButton disabled={settings?.EMAIL_VERIFIED === false} />
+            <NavLink
+              to="/chat"
+              className={({ isActive }) =>
+                `px-3 py-2 rounded-sm ${
+                  isActive ? "text-white" : "text-[#9099AC] hover:text-white"
+                }`
+              }
+            >
+              Chat
+            </NavLink>
             <ConversationPanelButton
               isOpen={conversationPanelIsOpen}
               onClick={() =>
