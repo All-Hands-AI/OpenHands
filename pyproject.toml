@@ -42,7 +42,6 @@ numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
 html2text = "*"
-rich = "*"                                         # For terminal formatting
 markdown = "*"                                      # For markdown to HTML conversion
 deprecated = "*"
 pexpect = "*"
