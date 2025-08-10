@@ -4,6 +4,7 @@ from itertools import islice
 
 from jinja2 import Template
 
+from openhands.agenthub.codeact_agent.tools.bash import refine_prompt
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
@@ -24,6 +25,7 @@ class RepositoryInfo:
 
     repo_name: str | None = None
     repo_directory: str | None = None
+    branch_name: str | None = None
 
 
 @dataclass
@@ -90,7 +92,8 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        system_message = self.system_template.render().strip()
+        return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent
