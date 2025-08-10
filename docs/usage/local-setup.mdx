@@ -66,6 +66,30 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 
 ### Start the App
 
+#### Option 1: Using the CLI Launcher (Recommended)
+
+If you have Python 3.12+ installed, you can use the CLI launcher for a simpler experience:
+
+```bash
+# Install OpenHands
+pip install openhands-ai
+
+# Launch the GUI server
+openhands serve
+
+# Or with GPU support (requires nvidia-docker)
+openhands serve --gpu
+
+# Or with current directory mounted
+openhands serve --mount-cwd
+```
+
+Or using `uvx --python 3.12 --from openhands-ai openhands serve` if you have [uv](https://docs.astral.sh/uv/) installed.
+
+This will automatically handle Docker requirements checking, image pulling, and launching the GUI server. The `--gpu` flag enables GPU support via nvidia-docker, and `--mount-cwd` mounts your current directory into the container.
+
+#### Option 2: Using Docker Directly
+
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.51-nikolaik
 

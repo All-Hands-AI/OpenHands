@@ -124,10 +124,12 @@ class Session:
         )
 
         # Set Git user configuration if provided in settings
-        if hasattr(settings, 'git_user_name') and settings.git_user_name:
-            self.config.git_user_name = settings.git_user_name
-        if hasattr(settings, 'git_user_email') and settings.git_user_email:
-            self.config.git_user_email = settings.git_user_email
+        git_user_name = getattr(settings, 'git_user_name', None)
+        if git_user_name is not None:
+            self.config.git_user_name = git_user_name
+        git_user_email = getattr(settings, 'git_user_email', None)
+        if git_user_email is not None:
+            self.config.git_user_email = git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
         # Prioritize settings over config for max_budget_per_task
@@ -152,6 +154,14 @@ class Session:
         self.logger.debug(
             f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
+
+        # Check if settings has custom mcp_config
+        mcp_config = getattr(settings, 'mcp_config', None)
+        if mcp_config is not None:
+            # Use the provided MCP SHTTP servers instead of default setup
+            self.config.mcp = self.config.mcp.merge(mcp_config)
+            self.logger.debug(f'Merged custom MCP Config: {mcp_config}')
+
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
@@ -163,7 +173,7 @@ class Session:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
             self.logger.debug('Added default MCP HTTP server to config')
 
-        self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+            self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
         self.logger.debug(
             f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
