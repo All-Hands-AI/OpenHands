@@ -40,6 +40,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentFinishAction,
     ChangeAgentStateAction,
     CmdRunAction,
     MCPAction,
@@ -258,7 +259,19 @@ def display_thought_if_new(thought: str) -> None:
 def display_event(event: Event, config: OpenHandsConfig) -> None:
     global streaming_output_text_area
     with print_lock:
-        if isinstance(event, CmdRunAction):
+        if isinstance(event, AgentFinishAction):
+            # Handle agent finish actions with special styling
+            # Determine the message to display
+            if event.final_thought:
+                message = event.final_thought
+            elif event.thought:
+                message = event.thought
+            else:
+                message = "All done! What's next on the agenda?"
+            
+            # Display with finish styling
+            display_agent_message(message, is_finish=True)
+        elif isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
                 display_message(event.thought)
@@ -322,8 +335,14 @@ def display_message(message: str) -> None:
         print_formatted_text(f'\n{message}')
 
 
-def display_agent_message(message: str) -> None:
-    """Display a message from the agent with distinctive styling and markdown rendering."""
+def display_agent_message(message: str, is_finish: bool = False) -> None:
+    """
+    Display a message from the agent with distinctive styling and markdown rendering.
+    
+    Args:
+        message: The message content to display
+        is_finish: Whether this is a finish message (changes the icon)
+    """
     message = message.strip()
 
     if message:
@@ -335,8 +354,12 @@ def display_agent_message(message: str) -> None:
             # If markdown processing fails, use the original message
             processed_message = message
 
+        # Choose the appropriate icon based on message type
+        icon = '🎯' if is_finish else '🔹'
+        header_text = 'Agent Finished' if is_finish else 'Agent Message'
+        
         # Print a simple header
-        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, '\n🔹 Agent Message')]))
+        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, f'\n{icon} {header_text}')]))
         print_formatted_text('')
         
         # Print the message content directly without any wrapping constraints
