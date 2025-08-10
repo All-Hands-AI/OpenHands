@@ -344,7 +344,7 @@ def convert_markdown_to_html(text: str) -> str:
         text: Markdown text to convert
         
     Returns:
-        HTML formatted text with custom styling
+        HTML formatted text with custom styling for headers only
     """
     if not text:
         return text
@@ -353,7 +353,7 @@ def convert_markdown_to_html(text: str) -> str:
     # Enable the 'extra' extension for tables, fenced code, etc.
     html = markdown.markdown(text, extensions=['extra'])
     
-    # Add custom styling to improve the appearance of HTML elements
+    # Only customize headers, leave other HTML elements as they are
     
     # Make headings bold and keep markdown prefix
     for i in range(1, 7):
@@ -363,27 +363,6 @@ def convert_markdown_to_html(text: str) -> str:
         # Replace <h1> with the prefix and bold text
         html = html.replace(f'<h{i}>', f'<b>{prefix}')
         html = html.replace(f'</h{i}>', f'</b>\n')
-    
-    # Improve bullet points with reduced spacing
-    html = html.replace('<ul>', '')
-    html = html.replace('</ul>', '')
-    html = html.replace('<li>', '• ')
-    html = html.replace('</li>', '')
-    
-    # Add minimal spacing after paragraphs
-    html = html.replace('<p>', '')
-    html = html.replace('</p>', '\n')
-    
-    # Make code blocks more visible
-    html = html.replace('<code>', '<i>')
-    html = html.replace('</code>', '</i>')
-    
-    # Clean up any excessive newlines
-    while '\n\n\n' in html:
-        html = html.replace('\n\n\n', '\n\n')
-        
-    # Add line breaks after each list item for better readability
-    html = html.replace('• ', '\n• ')
     
     return html
 
