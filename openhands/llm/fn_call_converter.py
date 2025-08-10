@@ -383,7 +383,7 @@ Do NOT assume the environment is the same as in the example above.
 """
     example = example.lstrip()
 
-    return example
+    return refine_prompt(example)
 
 
 IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = get_example_for_tools
