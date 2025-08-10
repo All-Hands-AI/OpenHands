@@ -565,6 +565,92 @@ class OpenHands {
     return data;
   }
 
+  /** Repo workspace endpoints */
+  static async openRepo(
+    conversationId: string,
+    repository?: string,
+    branch?: string,
+  ): Promise<{ workspace_dir: string } | { error: string }> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/open`;
+    const { data } = await openHands.post(url, { repository, branch });
+    return data;
+  }
+
+  static async getRepoTree(
+    conversationId: string,
+    path?: string,
+  ): Promise<string[]> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/tree`;
+    const { data } = await openHands.get<string[]>(url, {
+      params: { path },
+    });
+    return data;
+  }
+
+  static async readRepoFile(
+    conversationId: string,
+    path: string,
+  ): Promise<{ path: string; content: string }> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/file`;
+    const { data } = await openHands.get<{ path: string; content: string }>(
+      url,
+      {
+        params: { path },
+      },
+    );
+    return data;
+  }
+
+  static async writeRepoFile(
+    conversationId: string,
+    path: string,
+    content: string,
+  ): Promise<boolean> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/file`;
+    const { status } = await openHands.put(url, { path, content });
+    return status === 200;
+  }
+
+  static async sendCommand(
+    conversationId: string,
+    command: Record<string, unknown>,
+  ): Promise<boolean> {
+    const { status } = await openHands.post(`/api/options/commands`, {
+      conversation_id: conversationId,
+      command,
+    });
+    return status === 200;
+  }
+
+  static async createBranch(
+    conversationId: string,
+    name: string,
+    from_ref?: string,
+  ): Promise<boolean> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/branch`;
+    const { status } = await openHands.post(url, { name, from_ref });
+    return status === 200;
+  }
+
+  static async commitChanges(
+    conversationId: string,
+    message: string,
+    files?: string[],
+  ): Promise<boolean> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/commit`;
+    const { status } = await openHands.post(url, { message, files });
+    return status === 200;
+  }
+
+  static async createPullRequest(
+    conversationId: string,
+    title: string,
+  ): Promise<string> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/pr`;
+    const { data } = await openHands.post<{ url: string }>(url, { title });
+    return data.url;
+  }
+
   /**
    * Get the available microagents associated with a conversation
    * @param conversationId The ID of the conversation
@@ -714,6 +800,41 @@ class OpenHands {
     const { data } = await openHands.get<string[]>(
       `/api/user/installations?provider=${provider}`,
     );
+    return data;
+  }
+
+  static async getRepoDiff(
+    conversationId: string,
+    path: string,
+  ): Promise<{ original: string; modified: string }> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/diff`;
+    const { data } = await openHands.get<{
+      original: string;
+      modified: string;
+    }>(url, { params: { path } });
+    return data;
+  }
+
+  static async getRepoJobStatus(
+    conversationId: string,
+    jobId: string,
+  ): Promise<{
+    id: string;
+    type: string;
+    status: string;
+    progress: number;
+    result?: unknown;
+    error?: string;
+  }> {
+    const url = `${this.getConversationUrl(conversationId)}/repos/jobs/${jobId}`;
+    const { data } = await openHands.get<{
+      id: string;
+      type: string;
+      status: string;
+      progress: number;
+      result?: unknown;
+      error?: string;
+    }>(url);
     return data;
   }
 }

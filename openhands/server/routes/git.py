@@ -9,6 +9,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
+    ProviderToken,
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
@@ -29,9 +30,32 @@ from openhands.server.user_auth import (
     get_access_token,
     get_provider_tokens,
     get_user_id,
+    get_secrets_store,
 )
+from openhands.storage.secrets.secrets_store import SecretsStore
+from openhands.storage.data_models.user_secrets import UserSecrets
 
 app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
+
+
+@app.post('/providers/github/token')
+async def store_github_token(
+    token: str,
+    host: str | None = None,
+    secrets_store: SecretsStore = Depends(get_secrets_store),
+) -> JSONResponse:
+    try:
+        user_secrets = await secrets_store.load() or UserSecrets()
+        provider_tokens = dict(user_secrets.provider_tokens)
+        provider_tokens[ProviderType.GITHUB] = ProviderToken(  # type: ignore[index]
+            token=SecretStr(token), host=host or 'github.com'
+        )
+        updated = UserSecrets(provider_tokens=provider_tokens)  # type: ignore[arg-type]
+        await secrets_store.store(updated)
+        return JSONResponse(status_code=status.HTTP_200_OK, content={'message': 'GitHub token stored'})
+    except Exception as e:
+        logger.warning(f'Failed to store GitHub token: {e}')
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content={'error': 'Failed to store GitHub token'})
 
 
 @app.get('/installations', response_model=list[str])
@@ -61,6 +85,20 @@ async def get_user_installations(
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+@app.get('/providers/github/installations', response_model=list[str])
+async def get_github_installations_alias(
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+):
+    return await get_user_installations(
+        provider=ProviderType.GITHUB,
+        provider_tokens=provider_tokens,
+        access_token=access_token,
+        user_id=user_id,
     )
 
 
@@ -113,6 +151,28 @@ async def get_user_repositories(
     return JSONResponse(
         content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+@app.get('/providers/github/repos', response_model=list[Repository])
+async def get_github_repositories_alias(
+    sort: str = 'pushed',
+    page: int | None = None,
+    per_page: int | None = None,
+    installation_id: str | None = None,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+):
+    return await get_user_repositories(
+        sort=sort,
+        selected_provider=ProviderType.GITHUB,
+        page=page,
+        per_page=per_page,
+        installation_id=installation_id,
+        provider_tokens=provider_tokens,
+        access_token=access_token,
+        user_id=user_id,
     )
 
 

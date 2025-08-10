@@ -1,0 +1,1 @@
+model_paths: [./custom_models/llama3-base.bin, ./custom_models/mistral-7b.bin]

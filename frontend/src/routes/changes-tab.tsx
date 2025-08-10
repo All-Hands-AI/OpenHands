@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import React from "react";
-import { FileDiffViewer } from "#/components/features/diff-viewer/file-diff-viewer";
+import { ChangesList } from "#/components/features/diff-viewer/changes-list";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { useGetGitChanges } from "#/hooks/query/use-get-git-changes";
 import { I18nKey } from "#/i18n/declaration";
@@ -89,13 +89,7 @@ function GitChanges() {
           </div>
         </div>
       ) : (
-        gitChanges.map((change) => (
-          <FileDiffViewer
-            key={change.path}
-            path={change.path}
-            type={change.status}
-          />
-        ))
+        <ChangesList />
       )}
     </main>
   );

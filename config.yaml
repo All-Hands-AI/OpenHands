@@ -1,0 +1,1 @@
+allowed_models: ["./llama3-unfiltered", "./mistral-7b-raw"]

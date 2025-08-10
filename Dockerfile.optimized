@@ -1,0 +1,42 @@
+# syntax=docker/dockerfile:1
+
+# ---------- Frontend build stage ----------
+FROM node:22-slim AS frontend
+WORKDIR /app/frontend
+COPY frontend/package*.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend .
+RUN npm run build
+
+# ---------- Backend stage ----------
+FROM python:3.12-slim AS backend
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+WORKDIR /app
+
+# System deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Python deps
+COPY pyproject.toml poetry.lock ./
+RUN pip install --no-cache-dir poetry && \
+    poetry config virtualenvs.create false && \
+    poetry install --only main --no-interaction --no-ansi
+
+# App code
+COPY . .
+
+# Copy built frontend into served static dir (adjust path if server serves differently)
+COPY --from=frontend /app/frontend/build /app/frontend/build
+
+# Expose default ports
+EXPOSE 3000 8000
+
+# Environment for optimized runtime
+ENV AI_OPTIMIZED_MODE=true
+
+# Default start (adjust to your project entrypoint)
+# Serve backend (FastAPI) and frontend (static)
+CMD ["bash", "-lc", "make run"]

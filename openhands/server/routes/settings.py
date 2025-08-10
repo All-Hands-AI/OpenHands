@@ -21,8 +21,15 @@ from openhands.server.user_auth import (
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
+from typing import Any
+from openhands.server.shared import server_config
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+
+
+@app.get('/settings/public', response_model=dict[str, Any])
+async def get_public_settings() -> dict[str, Any]:
+    return server_config.get_config()
 
 
 @app.get(
