@@ -45,9 +45,7 @@ def get_action_execution_server_startup_command(
     username = override_username or (
         'openhands' if app_config.run_as_openhands else 'root'
     )
-    user_id = override_user_id or (
-        sandbox_config.user_id if app_config.run_as_openhands else 0
-    )
+    user_id = override_user_id or (1000 if app_config.run_as_openhands else 0)
 
     base_cmd = [
         *python_prefix,
