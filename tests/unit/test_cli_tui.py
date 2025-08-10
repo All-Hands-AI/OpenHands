@@ -6,6 +6,7 @@ from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
+    display_agent_message,
     display_banner,
     display_command,
     display_event,
@@ -26,6 +27,7 @@ from openhands.events import EventSource
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    AgentFinishAction,
     CmdRunAction,
     MCPAction,
     MessageAction,
@@ -107,15 +109,15 @@ class TestDisplayFunctions:
         assert 'What do you want to build?' in message_text
         assert 'Type /help for help' in message_text
 
-    @patch('openhands.cli.tui.display_message')
-    def test_display_event_message_action(self, mock_display_message):
+    @patch('openhands.cli.tui.display_agent_message')
+    def test_display_event_message_action(self, mock_display_agent_message):
         config = MagicMock(spec=OpenHandsConfig)
         message = MessageAction(content='Test message')
         message._source = EventSource.AGENT
 
         display_event(message, config)
 
-        mock_display_message.assert_called_once_with('Test message')
+        mock_display_agent_message.assert_called_once_with('Test message')
 
     @patch('openhands.cli.tui.display_command')
     def test_display_event_cmd_action(self, mock_display_command):
@@ -181,6 +183,15 @@ class TestDisplayFunctions:
         display_event(action, config)
 
         mock_display_message.assert_called_once_with('Thinking about this...')
+        
+    @patch('openhands.cli.tui.display_agent_message')
+    def test_display_event_agent_finish(self, mock_display_agent_message):
+        config = MagicMock(spec=OpenHandsConfig)
+        finish_action = AgentFinishAction(final_thought='Task completed')
+
+        display_event(finish_action, config)
+
+        mock_display_agent_message.assert_called_once_with('Task completed', is_finish=True)
 
     @patch('openhands.cli.tui.display_mcp_action')
     def test_display_event_mcp_action(self, mock_display_mcp_action):
@@ -255,6 +266,37 @@ class TestDisplayFunctions:
         mock_print.assert_called_once()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
+        
+    @patch('openhands.cli.tui.shutil.get_terminal_size')
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_agent_message(self, mock_print_formatted, mock_terminal_size):
+        from collections import namedtuple
+        
+        # Mock terminal size
+        Size = namedtuple('Size', ['columns', 'lines'])
+        mock_terminal_size.return_value = Size(columns=80, lines=24)
+        
+        message = 'Agent message'
+        display_agent_message(message)
+        
+        # Should be called multiple times now (header, separator, content)
+        assert mock_print_formatted.call_count >= 3
+        
+    @patch('openhands.cli.tui.shutil.get_terminal_size')
+    @patch('openhands.cli.tui.print_formatted_text')
+    def test_display_agent_message_with_markdown(self, mock_print_formatted, mock_terminal_size):
+        from collections import namedtuple
+        
+        # Mock terminal size
+        Size = namedtuple('Size', ['columns', 'lines'])
+        mock_terminal_size.return_value = Size(columns=80, lines=24)
+        
+        # Test with markdown content
+        message = '# Heading\n\nThis is **bold** text.'
+        display_agent_message(message)
+        
+        # Should be called multiple times now (header, separator, content)
+        assert mock_print_formatted.call_count >= 3
 
     @patch('openhands.cli.tui.print_container')
     def test_display_command_awaiting_confirmation(self, mock_print_container):
