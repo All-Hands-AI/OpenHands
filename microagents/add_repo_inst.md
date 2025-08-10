@@ -31,7 +31,7 @@ You don't need to do this unless the user asks you to, or if you're trying to ru
 
 Before pushing any changes, you should ensure that any lint errors or simple test errors have been fixed.
 
-* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/python/.pre-commit-config.yaml`
+* If you've made changes to the backend, you should run `pre-commit run --all-files --config ./dev_config/pre-commit-config.yaml`
 * If you've made changes to the frontend, you should run `cd frontend && npm run lint:fix && npm run build ; cd ..`
 
 If either command fails, it may have automatically fixed some issues. You should fix any issues that weren't automatically fixed,
