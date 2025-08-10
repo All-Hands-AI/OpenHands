@@ -50,7 +50,7 @@ class DummyAgent(Agent):
                 'observations': [],
             },
             {
-                'action': CmdRunAction(command='echo "foo"'),
+                'action': CmdRunAction(command='echo "foo"', reset_terminal=False),
                 'observations': [
                     CmdOutputObservation(
                         'foo',
@@ -72,7 +72,7 @@ class DummyAgent(Agent):
                 ],
             },
             {
-                'action': CmdRunAction(command='bash hello.sh'),
+                'action': CmdRunAction(command='bash hello.sh', reset_terminal=False),
                 'observations': [
                     CmdOutputObservation(
                         'Hello, World!',
