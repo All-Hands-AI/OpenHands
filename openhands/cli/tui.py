@@ -30,8 +30,7 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
-from rich.console import Console
-from rich.markdown import Markdown
+# Rich imports removed - using prompt_toolkit's HTML renderer instead
 
 from openhands import __version__
 from openhands.core.config import OpenHandsConfig
@@ -298,7 +297,53 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
-# Function removed as we're now using Rich console directly in display_agent_message
+def convert_markdown_to_html(text: str) -> str:
+    """
+    Convert markdown to HTML for prompt_toolkit's HTML renderer.
+    This is a simple implementation that handles the most common markdown features.
+    
+    Args:
+        text: Markdown text to convert
+        
+    Returns:
+        HTML formatted text
+    """
+    if not text:
+        return text
+    
+    # Convert headers
+    for i in range(6, 0, -1):
+        pattern = '#' * i + ' '
+        if i <= 2:  # h1 and h2 get special styling
+            text = text.replace(f"\n{pattern}", f"\n<b><u>{pattern}</u></b>")
+        else:
+            text = text.replace(f"\n{pattern}", f"\n<b>{pattern}</b>")
+    
+    # Convert bold text
+    # Look for **text** or __text__ patterns
+    lines = text.split('\n')
+    for i, line in enumerate(lines):
+        # Process **bold** text
+        j = 0
+        while j < len(line):
+            if j + 3 < len(line) and line[j:j+2] == '**' and '**' in line[j+2:]:
+                end = line.find('**', j+2)
+                if end != -1:
+                    bold_text = line[j+2:end]
+                    line = line[:j] + f'<b>{bold_text}</b>' + line[end+2:]
+                    j = j + len(f'<b>{bold_text}</b>')
+                    continue
+            j += 1
+        lines[i] = line
+    
+    # Convert bullet points
+    for i, line in enumerate(lines):
+        if line.strip().startswith('* '):
+            lines[i] = line.replace('* ', '• ', 1)
+        elif line.strip().startswith('- '):
+            lines[i] = line.replace('- ', '• ', 1)
+    
+    return '\n'.join(lines)
 
 
 def display_message(message: str) -> None:
@@ -322,15 +367,15 @@ def display_agent_message(message: str) -> None:
         print_formatted_text('')
         
         try:
-            # Create a Rich console for direct rendering
-            console = Console(highlight=True)
+            # Convert markdown to HTML
+            html_content = convert_markdown_to_html(message)
             
-            # Use Rich's Markdown renderer directly
-            # This should properly handle all markdown formatting including bold text and bullet points
-            console.print(Markdown(message))
+            # Use prompt_toolkit's HTML renderer
+            # This will properly handle the HTML tags we've converted from markdown
+            print_formatted_text(HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>'))
         except Exception as e:
-            # If markdown rendering fails, fall back to plain text
-            print(f"Warning: Markdown rendering failed: {str(e)}", file=sys.stderr)
+            # If HTML rendering fails, fall back to plain text
+            print(f"Warning: HTML rendering failed: {str(e)}", file=sys.stderr)
             print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, message)]))
         
         # Add some spacing after the message
