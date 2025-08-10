@@ -211,7 +211,7 @@ class TestThoughtDisplayIntegration:
         # Track the order of calls
         call_order = []
 
-        def track_display_message(message):
+        def track_display_message(message, is_agent_message=False):
             call_order.append(f'THOUGHT: {message}')
 
         def track_display_command(event):
