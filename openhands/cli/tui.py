@@ -361,14 +361,15 @@ def convert_markdown_to_html(text: str) -> str:
         html = html.replace(f'<h{i}>', f'<b><u>')
         html = html.replace(f'</h{i}>', f'</u></b>\n')
     
-    # Improve bullet points
-    html = html.replace('<ul>', '\n')
-    html = html.replace('</ul>', '\n')
+    # Improve bullet points with reduced spacing
+    html = html.replace('<ul>', '')
+    html = html.replace('</ul>', '')
     html = html.replace('<li>', '• ')
-    html = html.replace('</li>', '\n')
+    html = html.replace('</li>', '')
     
-    # Add spacing after paragraphs
-    html = html.replace('</p>', '</p>\n')
+    # Add minimal spacing after paragraphs
+    html = html.replace('<p>', '')
+    html = html.replace('</p>', '\n')
     
     # Make code blocks more visible
     html = html.replace('<code>', '<i>')
@@ -377,6 +378,9 @@ def convert_markdown_to_html(text: str) -> str:
     # Clean up any excessive newlines
     while '\n\n\n' in html:
         html = html.replace('\n\n\n', '\n\n')
+        
+    # Add line breaks after each list item for better readability
+    html = html.replace('• ', '\n• ')
     
     return html
 
