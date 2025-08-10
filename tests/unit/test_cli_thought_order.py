@@ -131,8 +131,8 @@ class TestThoughtDisplayOrder:
             'This is a thought for a generic action.'
         )
 
-    @patch('openhands.cli.tui.display_agent_message')
-    def test_other_action_final_thought_display(self, mock_display_agent_message):
+    @patch('openhands.cli.tui.display_message')
+    def test_other_action_final_thought_display(self, mock_display_message):
         """Test that other Action types display final thoughts as agent messages."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -143,10 +143,10 @@ class TestThoughtDisplayOrder:
         display_event(action, config)
 
         # Verify that final thought is displayed as an agent message
-        mock_display_agent_message.assert_called_once_with('This is a final thought.')
+        mock_display_message.assert_called_once_with('This is a final thought.', is_agent_message=True)
 
-    @patch('openhands.cli.tui.display_agent_message')
-    def test_message_action_from_agent(self, mock_display_agent_message):
+    @patch('openhands.cli.tui.display_thought_if_new')
+    def test_message_action_from_agent(self, mock_display_thought_if_new):
         """Test that MessageAction from agent is displayed."""
         config = MagicMock(spec=OpenHandsConfig)
 
@@ -156,8 +156,8 @@ class TestThoughtDisplayOrder:
 
         display_event(message_action, config)
 
-        # Verify that agent message is displayed
-        mock_display_agent_message.assert_called_once_with('Hello from agent')
+        # Verify that agent message is displayed with agent styling
+        mock_display_thought_if_new.assert_called_once_with('Hello from agent', is_agent_message=True)
 
     @patch('openhands.cli.tui.display_thought_if_new')
     def test_message_action_from_user_not_displayed(self, mock_display_thought_if_new):

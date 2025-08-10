@@ -5,9 +5,7 @@
 import asyncio
 import contextlib
 import datetime
-import io
 import json
-import shutil
 import sys
 import threading
 import time
@@ -30,7 +28,6 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
-import markdown  # For converting markdown to HTML
 
 from openhands import __version__
 from openhands.core.config import OpenHandsConfig
@@ -68,12 +65,10 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
-COLOR_AGENT_BLUE = '#5FAFFF'  # Soft blue for all agent outputs
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
         'grey': COLOR_GREY,
-        'agent-blue': COLOR_AGENT_BLUE,
         'prompt': f'{COLOR_GOLD} bold',
     }
 )
@@ -241,13 +236,19 @@ def display_mcp_errors() -> None:
 
 
 # Prompt output display functions
-def display_thought_if_new(thought: str) -> None:
-    """Display a thought only if it hasn't been displayed recently."""
+def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
+    """
+    Display a thought only if it hasn't been displayed recently.
+    
+    Args:
+        thought: The thought to display
+        is_agent_message: If True, apply agent styling and markdown rendering
+    """
     global recent_thoughts
     if thought and thought.strip():
         # Check if this thought was recently displayed
         if thought not in recent_thoughts:
-            display_message(thought)
+            display_message(thought, is_agent_message=is_agent_message)
             recent_thoughts.append(thought)
             # Keep only the most recent thoughts
             if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
@@ -260,7 +261,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
-                display_thought_if_new(event.thought)
+                display_message(event.thought)
 
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
@@ -274,15 +275,15 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
-                display_thought_if_new(event.thought)
+                display_message(event.thought)
             if hasattr(event, 'final_thought') and event.final_thought:
-                # Use agent message styling for final thoughts
-                display_agent_message(event.final_thought)
+                # Display final thoughts with agent styling
+                display_message(event.final_thought, is_agent_message=True)
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Display agent messages with distinctive styling
-                display_agent_message(event.content)
+                # Display agent messages with styling and markdown rendering
+                display_thought_if_new(event.content, is_agent_message=True)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -297,64 +298,37 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
-def convert_markdown_to_html(text: str) -> str:
+def display_message(message: str, is_agent_message: bool = False) -> None:
     """
-    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+    Display a message in the terminal.
     
     Args:
-        text: Markdown text to convert
-        
-    Returns:
-        HTML formatted text
-    """
-    if not text:
-        return text
-    
-    # Use the markdown library to convert markdown to HTML
-    # Enable the 'extra' extension for tables, fenced code, etc.
-    html = markdown.markdown(text, extensions=['extra'])
-    
-    # prompt_toolkit's HTML renderer can handle standard HTML tags
-    # We just need to make sure the HTML is properly formatted
-    
-    return html
-
-
-def display_message(message: str) -> None:
-    message = message.strip()
-
-    if message:
-        print_formatted_text(f'\n{message}')
-
-
-def display_agent_message(message: str) -> None:
-    """
-    Display a message from the agent with distinctive styling and markdown rendering.
-    
-    Args:
-        message: The message content to display
+        message: The message to display
+        is_agent_message: If True, apply agent styling and markdown rendering
     """
     message = message.strip()
 
     if message:
-        # Add some spacing before the message
-        print_formatted_text('')
-        
-        try:
-            # Convert markdown to HTML
-            html_content = convert_markdown_to_html(message)
+        if is_agent_message:
+            # Add spacing before the message
+            print_formatted_text('')
             
-            # Use prompt_toolkit's HTML renderer with the agent color
-            # We wrap the entire content in a style tag to apply the color
-            # The HTML renderer will handle all the HTML tags properly
-            print_formatted_text(HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>'))
-        except Exception as e:
-            # If HTML rendering fails, fall back to plain text
-            print(f"Warning: HTML rendering failed: {str(e)}", file=sys.stderr)
-            print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, message)]))
-        
-        # Add some spacing after the message
-        print_formatted_text('')
+            try:
+                # Convert markdown to HTML for agent messages
+                html_content = convert_markdown_to_html(message)
+                
+                # Use prompt_toolkit's HTML renderer with the agent color
+                print_formatted_text(HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>'))
+            except Exception as e:
+                # If HTML rendering fails, fall back to plain text
+                print(f"Warning: HTML rendering failed: {str(e)}", file=sys.stderr)
+                print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, message)]))
+            
+            # Add spacing after the message
+            print_formatted_text('')
+        else:
+            # Regular message display
+            print_formatted_text(f'\n{message}')
 
 
 def display_error(error: str) -> None:
