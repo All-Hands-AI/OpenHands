@@ -5,7 +5,9 @@
 import asyncio
 import contextlib
 import datetime
+import io
 import json
+import shutil
 import sys
 import threading
 import time
@@ -28,6 +30,8 @@ from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
+from rich.console import Console
+from rich.markdown import Markdown
 
 from openhands import __version__
 from openhands.core.config import OpenHandsConfig
@@ -65,10 +69,12 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
+COLOR_AGENT_BLUE = '#5FAFFF'  # Soft blue for all agent outputs
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
         'grey': COLOR_GREY,
+        'agent-blue': COLOR_AGENT_BLUE,
         'prompt': f'{COLOR_GOLD} bold',
     }
 )
@@ -275,8 +281,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Check if this message content is a duplicate thought
-                display_thought_if_new(event.content)
+                # Display agent messages with distinctive styling
+                display_agent_message(event.content)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -291,11 +297,51 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
+def process_markdown_for_terminal(text: str) -> str:
+    """
+    Process markdown syntax for terminal display using Rich.
+    This function renders markdown as formatted text for the terminal.
+    """
+    if not text:
+        return text
+    
+    # Use Rich to render the markdown without width constraints
+    console = Console(file=io.StringIO(), highlight=False, width=None)
+    console.print(Markdown(text))
+    
+    # Get the rendered output
+    rendered_text = console.file.getvalue()  # type: ignore
+    
+    return rendered_text.strip()
+
+
 def display_message(message: str) -> None:
     message = message.strip()
 
     if message:
         print_formatted_text(f'\n{message}')
+
+
+def display_agent_message(message: str) -> None:
+    """Display a message from the agent with distinctive styling and markdown rendering."""
+    message = message.strip()
+
+    if message:
+        # Process markdown in the message
+        try:
+            # Process markdown for terminal display
+            processed_message = process_markdown_for_terminal(message)
+        except Exception:
+            # If markdown processing fails, use the original message
+            processed_message = message
+
+        # Print a simple header
+        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, '\n🔹 Agent Message')]))
+        print_formatted_text('')
+        
+        # Print the message content directly without any wrapping constraints
+        print_formatted_text(FormattedText([('fg:' + COLOR_AGENT_BLUE, processed_message)]))
+        print_formatted_text('')
 
 
 def display_error(error: str) -> None:
