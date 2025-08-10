@@ -314,45 +314,10 @@ def convert_markdown_to_html(text: str) -> str:
     # Enable the 'extra' extension for tables, fenced code, etc.
     html = markdown.markdown(text, extensions=['extra'])
     
-    # Clean up the HTML for prompt_toolkit
-    # Replace some HTML tags with prompt_toolkit compatible ones
+    # prompt_toolkit's HTML renderer can handle standard HTML tags
+    # We just need to make sure the HTML is properly formatted
     
-    # Replace <h1>, <h2>, etc. with <b> for headers
-    for i in range(1, 7):
-        html = html.replace(f'<h{i}>', '<b>')
-        html = html.replace(f'</h{i}>', '</b>')
-    
-    # Replace <strong> with <b> for bold text
-    html = html.replace('<strong>', '<b>')
-    html = html.replace('</strong>', '</b>')
-    
-    # Replace <em> with <i> for italic text
-    html = html.replace('<em>', '<i>')
-    html = html.replace('</em>', '</i>')
-    
-    # Replace <code> with a simple representation
-    html = html.replace('<code>', '')
-    html = html.replace('</code>', '')
-    
-    # Replace <pre> with a simple representation
-    html = html.replace('<pre>', '')
-    html = html.replace('</pre>', '')
-    
-    # Replace <ul> and <li> with bullet points
-    html = html.replace('<ul>', '')
-    html = html.replace('</ul>', '')
-    html = html.replace('<li>', '• ')
-    html = html.replace('</li>', '\n')
-    
-    # Remove <p> tags but keep line breaks
-    html = html.replace('<p>', '')
-    html = html.replace('</p>', '\n')
-    
-    # Clean up any double newlines
-    while '\n\n\n' in html:
-        html = html.replace('\n\n\n', '\n\n')
-    
-    return html.strip()
+    return html
 
 
 def display_message(message: str) -> None:
@@ -379,8 +344,9 @@ def display_agent_message(message: str) -> None:
             # Convert markdown to HTML
             html_content = convert_markdown_to_html(message)
             
-            # Use prompt_toolkit's HTML renderer
-            # This will properly handle the HTML tags we've converted from markdown
+            # Use prompt_toolkit's HTML renderer with the agent color
+            # We wrap the entire content in a style tag to apply the color
+            # The HTML renderer will handle all the HTML tags properly
             print_formatted_text(HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>'))
         except Exception as e:
             # If HTML rendering fails, fall back to plain text
