@@ -71,8 +71,7 @@ class GitLabService(BaseGitService, GitService):
         return ProviderType.GITLAB.value
 
     async def _get_gitlab_headers(self) -> dict[str, Any]:
-        """
-        Retrieve the GitLab Token to construct the headers
+        """Retrieve the GitLab Token to construct the headers
         """
         if not self.token:
             latest_token = await self.get_latest_token()
@@ -173,8 +172,7 @@ class GitLabService(BaseGitService, GitService):
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any] | None = None
     ) -> Any:
-        """
-        Execute a GraphQL query against the GitLab GraphQL API
+        """Execute a GraphQL query against the GitLab GraphQL API
 
         Args:
             query: The GraphQL query string
@@ -244,8 +242,7 @@ class GitLabService(BaseGitService, GitService):
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        """
-        Parse a GitLab API project response into a Repository object.
+        """Parse a GitLab API project response into a Repository object.
 
         Args:
             repo: Project data from GitLab API
@@ -269,8 +266,7 @@ class GitLabService(BaseGitService, GitService):
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:
-        """
-        Parse a GitLab URL to extract the repository path.
+        """Parse a GitLab URL to extract the repository path.
 
         Expected format: https://{domain}/{group}/{possibly_subgroup}/{repo}
         Returns the full path from group onwards (e.g., 'group/subgroup/repo' or 'group/repo')
@@ -588,8 +584,7 @@ class GitLabService(BaseGitService, GitService):
         description: str | None = None,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a merge request in GitLab
+        """Creates a merge request in GitLab
 
         Args:
             id: The ID or URL-encoded path of the project
@@ -603,7 +598,6 @@ class GitLabService(BaseGitService, GitService):
             - MR URL when successful
             - Error message when unsuccessful
         """
-
         # Convert string ID to URL-encoded path if needed
         project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
         url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'

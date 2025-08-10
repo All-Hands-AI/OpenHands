@@ -4,8 +4,7 @@ from pydantic import (
 
 
 class POSTUploadFilesModel(BaseModel):
-    """
-    Upload files response model
+    """Upload files response model
     """
 
     file_urls: list[str]

@@ -700,6 +700,7 @@ class LLM(RetryMixin, DebugMixin):
 
         Args:
             messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
+
         Returns:
             int: The number of tokens.
         """

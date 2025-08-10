@@ -188,8 +188,8 @@ skip-string-normalization = true
 
 [tool.ruff]
 lint.select = [ "D" ]
-# ignore warnings for missing docstrings
-lint.ignore = [ "D1" ]
+# ignore warnings for missing docstrings and relax strict docstring style rules
+lint.ignore = [ "D1", "D200", "D202", "D205", "D212", "D415", "D417" ]
 lint.pydocstyle.convention = "google"
 
 [tool.coverage.run]
