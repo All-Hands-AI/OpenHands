@@ -1,3 +1,4 @@
+import asyncio
 import itertools
 import os
 import re
@@ -76,6 +77,55 @@ from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
 
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
+
+
+async def _trigger_title_generation_if_needed(
+    conversation_id: str,
+    user_id: str,
+    conversation_store: ConversationStore,
+    user_settings_store: SettingsStore,
+) -> None:
+    """Trigger title generation for a conversation if it still has the default title."""
+    try:
+        conversation = await conversation_store.get_metadata(conversation_id)
+        if not conversation:
+            return
+
+        default_title = get_default_conversation_title(conversation_id)
+        
+        # Check if the conversation still has the default title
+        if not conversation.title or conversation.title == default_title:
+            # Load user settings
+            settings = await user_settings_store.load()
+            if not settings:
+                return
+
+            # Check if there's an active session for this conversation
+            # If not, we need to create a temporary session to trigger title generation
+            is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+            
+            if not is_running:
+                # Create a minimal session to trigger the title generation callback
+                # This will register the _update_conversation_for_event callback
+                try:
+                    # Get the event store for this conversation
+                    event_store = await conversation_manager._get_event_store(user_id, conversation_id)
+                    
+                    # Check if there are any events in the conversation
+                    events = await event_store.get_events(0, 10)  # Get first 10 events
+                    
+                    if events:
+                        # If there are events, trigger the title generation directly
+                        # by calling the existing _update_conversation_for_event method
+                        if hasattr(conversation_manager, '_update_conversation_for_event'):
+                            await conversation_manager._update_conversation_for_event(
+                                user_id, conversation_id, settings
+                            )
+                            logger.info(f'Triggered title generation for conversation {conversation_id}')
+                except Exception as e:
+                    logger.error(f'Error triggering title generation for conversation {conversation_id}: {e}')
+    except Exception as e:
+        logger.error(f'Error in _trigger_title_generation_if_needed for conversation {conversation_id}: {e}')
 
 
 class InitSessionRequest(BaseModel):
@@ -225,7 +275,9 @@ async def search_conversations(
     limit: int = 20,
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
+    user_id: str = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -273,6 +325,19 @@ async def search_conversations(
     agent_loop_info_by_conversation_id = {
         info.conversation_id: info for info in agent_loop_info
     }
+    
+    # Trigger title generation for conversations with default titles (async, don't wait)
+    for conversation in filtered_results:
+        # Fire and forget - don't wait for title generation to complete
+        asyncio.create_task(
+            _trigger_title_generation_if_needed(
+                conversation.conversation_id,
+                user_id,
+                conversation_store,
+                user_settings_store,
+            )
+        )
+    
     result = ConversationInfoResultSet(
         results=await wait_all(
             _get_conversation_info(
@@ -296,7 +361,9 @@ async def search_conversations(
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
     conversation_id: str,
+    user_id: str = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    user_settings_store: SettingsStore = Depends(get_user_settings_store),
 ) -> ConversationInfo | None:
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
@@ -307,6 +374,17 @@ async def get_conversation(
             filter_to_sids={conversation_id}
         )
         agent_loop_info = agent_loop_infos[0] if agent_loop_infos else None
+        
+        # Trigger title generation if needed (async, don't wait)
+        asyncio.create_task(
+            _trigger_title_generation_if_needed(
+                conversation_id,
+                user_id,
+                conversation_store,
+                user_settings_store,
+            )
+        )
+        
         conversation_info = await _get_conversation_info(
             metadata, num_connections, agent_loop_info
         )
