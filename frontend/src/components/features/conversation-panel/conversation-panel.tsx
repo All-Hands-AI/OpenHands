@@ -17,7 +17,6 @@ import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
 
-
 interface ConversationPanelProps {
   onClose: () => void;
 }
@@ -58,8 +57,6 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
   const { mutate: updateConversation } = useUpdateConversation();
-
-
 
   // Set up infinite scroll
   const scrollContainerRef = useInfiniteScroll({

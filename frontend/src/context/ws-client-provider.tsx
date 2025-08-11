@@ -173,8 +173,8 @@ export function WsClientProvider({
         typeof event.conversation_title === "string"
       ) {
         // Invalidate the conversations query to refetch with updated titles
-        queryClient.invalidateQueries({ 
-          queryKey: ["user", "conversations", "paginated"] 
+        queryClient.invalidateQueries({
+          queryKey: ["user", "conversations", "paginated"],
         });
       }
     }
