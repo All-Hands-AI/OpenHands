@@ -73,8 +73,37 @@ jobs:
           # Build OpenHands using make build
           make build > /tmp/openhands-e2e-build.log 2>&1
 
-          # Start OpenHands in the background
-          make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-e2e-test.log &
+          # Start OpenHands in the background with more verbose logging
+          echo "Starting OpenHands with verbose logging..."
+          # Check frontend configuration
+          echo "Checking frontend configuration..."
+          cat frontend/.env || echo "No .env file found"
+          cat frontend/vite.config.ts > /tmp/vite-config.log
+
+          # First start the backend with detailed logging
+          cd backend && python -m openhands.server --verbose --port 3000 --host 0.0.0.0 > /tmp/openhands-backend.log 2>&1 &
+          echo "Backend started, waiting 10 seconds..."
+          sleep 10
+
+          # Check if backend is reachable
+          echo "Checking if backend is reachable..."
+          curl -v http://0.0.0.0:3000/api/health > /tmp/backend-health-check.log 2>&1 || echo "Backend health check failed"
+          cat /tmp/backend-health-check.log
+
+          # Then start the frontend with detailed logging
+          cd ../frontend && NODE_ENV=production VITE_BACKEND_URL=http://0.0.0.0:3000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+          echo "Frontend started"
+
+          # Wait a bit for the frontend to start
+          sleep 5
+
+          # Check if frontend is reachable
+          echo "Checking if frontend is reachable..."
+          curl -v http://0.0.0.0:12000 > /tmp/frontend-check.log 2>&1 || echo "Frontend check failed"
+          cat /tmp/frontend-check.log
+
+          # Combine logs for artifact upload
+          cat /tmp/openhands-backend.log /tmp/openhands-frontend.log > /tmp/openhands-e2e-test.log
 
           # Wait for the application to start with active polling
           echo "Waiting for OpenHands to start..."
@@ -158,11 +187,22 @@ jobs:
           path: |
             /tmp/openhands-e2e-test.log
             /tmp/openhands-e2e-build.log
+            /tmp/openhands-backend.log
+            /tmp/openhands-frontend.log
+            /tmp/backend-health-check.log
+            /tmp/frontend-check.log
+            /tmp/vite-config.log
           retention-days: 30
 
       - name: Cleanup
         if: always()
         run: |
-          # Stop OpenHands
+          # Stop OpenHands processes
+          echo "Stopping OpenHands processes..."
+          pkill -f "python -m openhands.server" || true
+          pkill -f "npm run dev" || true
           pkill -f "make run" || true
-          pkill -f "python -m openhands" || true
+
+          # Print process status for debugging
+          echo "Checking if any OpenHands processes are still running:"
+          ps aux | grep -E "openhands|npm run dev" || true
