@@ -126,13 +126,47 @@ jobs:
           
           # Verify Playwright browsers are installed
           echo "Verifying Playwright browsers installation..."
-          if [ -d "$HOME/.cache/ms-playwright" ]; then
-            echo "Playwright browsers directory exists at $HOME/.cache/ms-playwright"
-            ls -la $HOME/.cache/ms-playwright
+          
+          # Check if Playwright is installed in the current environment
+          PLAYWRIGHT_VERSION=$(poetry run python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))" 2>/dev/null || echo "")
+          if [ -z "$PLAYWRIGHT_VERSION" ]; then
+            echo "Installing Playwright..."
+            poetry run pip install playwright
           else
-            echo "WARNING: Playwright browsers directory not found. Installing Playwright browsers now..."
+            echo "Playwright $PLAYWRIGHT_VERSION is already installed."
+          fi
+          
+          # Check if browsers are actually installed and working for the current Playwright version
+          # This is more reliable than just checking if the directory exists
+          BROWSER_CHECK=$(poetry run python -c "
+import sys
+try:
+    from playwright.sync_api import sync_playwright
+    with sync_playwright() as p:
+        if p.chromium.executable_path:
+            print('chromium_found')
+            sys.exit(0)
+        else:
+            print('chromium_not_found')
+            sys.exit(1)
+except Exception as e:
+    print(f'error: {e}')
+    sys.exit(1)
+" 2>/dev/null || echo "error")
+          
+          if [ "$BROWSER_CHECK" != "chromium_found" ]; then
+            echo "Chromium browser not found or not working. Installing Playwright browsers..."
             # Install Playwright browsers directly
             poetry run playwright install --with-deps chromium
+            
+            # Verify installation was successful
+            poetry run python -c "
+from playwright.sync_api import sync_playwright
+with sync_playwright() as p:
+    print(f'Chromium executable path: {p.chromium.executable_path}')
+"
+          else
+            echo "Playwright browsers are properly installed and working."
           fi
 
           # Start the application using make run with custom parameters
