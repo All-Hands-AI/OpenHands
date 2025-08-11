@@ -3,7 +3,6 @@ import React from "react";
 import posthog from "posthog-js";
 import { useParams } from "react-router";
 import { useTranslation } from "react-i18next";
-import { I18nKey } from "#/i18n/declaration";
 import { convertImageToBase64 } from "#/utils/convert-image-to-base-64";
 import { TrajectoryActions } from "../trajectory/trajectory-actions";
 import { createChatMessage } from "#/services/chat-service";
@@ -23,8 +22,6 @@ import { ScrollProvider } from "#/context/scroll-context";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
-import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
-import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
 import { useWSErrorMessage } from "#/hooks/use-ws-error-message";
@@ -75,7 +72,6 @@ export function ChatInterface() {
     (state: RootState) => state.initialQuery,
   );
   const params = useParams();
-  const { mutate: getTrajectory } = useGetTrajectory();
   const { mutateAsync: uploadFiles } = useUploadFiles();
 
   const optimisticUserMessage = getOptimisticUserMessage();
@@ -161,25 +157,6 @@ export function ChatInterface() {
     setFeedbackPolarity(polarity);
   };
 
-  const onClickExportTrajectoryButton = () => {
-    if (!params.conversationId) {
-      displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
-      return;
-    }
-
-    getTrajectory(params.conversationId, {
-      onSuccess: async (data) => {
-        await downloadTrajectory(
-          params.conversationId ?? t(I18nKey.CONVERSATION$UNKNOWN),
-          data.trajectory,
-        );
-      },
-      onError: () => {
-        displayErrorToast(t(I18nKey.CONVERSATION$DOWNLOAD_ERROR));
-      },
-    });
-  };
-
   const isWaitingForUserInput =
     curAgentState === AgentState.AWAITING_USER_INPUT ||
     curAgentState === AgentState.FINISHED;
@@ -249,7 +226,6 @@ export function ChatInterface() {
               onNegativeFeedback={() =>
                 onClickShareFeedbackActionButton("negative")
               }
-              onExportTrajectory={() => onClickExportTrajectoryButton()}
               isSaasMode={config?.APP_MODE === "saas"}
             />
 

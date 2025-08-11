@@ -23,8 +23,11 @@ from openhands.cli.utils import (
 )
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.utils import OH_DEFAULT_AGENT
+from openhands.core.config.condenser_config import (
+    CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
+)
+from openhands.core.config.config_utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )
@@ -202,20 +205,11 @@ async def modify_llm_settings_basic(
             provider = verified_providers[choice_index]
         else:
             # User selected "Select another provider" - use manual selection
-            # Define a validator function that prints an error message
-            def provider_validator(x):
-                is_valid = x in organized_models
-                if not is_valid:
-                    print_formatted_text(
-                        HTML('<grey>Invalid provider selected: {}</grey>'.format(x))
-                    )
-                return is_valid
-
             provider = await get_validated_input(
                 session,
                 '(Step 1/3) Select LLM Provider (TAB for options, CTRL-c to cancel): ',
                 completer=provider_completer,
-                validator=provider_validator,
+                validator=lambda x: x in organized_models,
                 error_message='Invalid provider selected',
             )
 
@@ -472,12 +466,21 @@ async def modify_llm_settings_advanced(
 
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
-        agent_config.condenser = LLMSummarizingCondenserConfig(
-            llm_config=llm_config,
-            type='llm',
+        agent_config.condenser = CondenserPipelineConfig(
+            type='pipeline',
+            condensers=[
+                ConversationWindowCondenserConfig(type='conversation_window'),
+                # Use LLMSummarizingCondenserConfig with the custom llm_config
+                LLMSummarizingCondenserConfig(
+                    llm_config=llm_config, type='llm', keep_first=4, max_size=120
+                ),
+            ],
         )
+
     else:
-        agent_config.condenser = NoOpCondenserConfig(type='noop')
+        agent_config.condenser = ConversationWindowCondenserConfig(
+            type='conversation_window'
+        )
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
