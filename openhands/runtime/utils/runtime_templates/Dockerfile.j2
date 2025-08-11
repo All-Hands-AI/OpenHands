@@ -22,15 +22,21 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
         coreutils util-linux procps findutils grep sed \
-        {% if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) %}libgl1{% else %}libgl1-mesa-glx{% endif %} \
+        {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
+        libgl1 \
+        {%- else %}
+        libgl1-mesa-glx \
+        {% endif -%}
         libasound2-plugins libatomic1 \
         # Install Docker dependencies
         apt-transport-https ca-certificates curl gnupg lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
-        apt-get install -y --no-install-recommends nodejs {% if ('mswebench' in base_image) %}python3 python-is-python3 python3-pip python3-venv{% else %}python3.12 python-is-python3 python3-pip python3.12-venv{% endif %} && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        {%- if ('mswebench' in base_image) -%}
+        apt-get install -y --no-install-recommends nodejs python3 python-is-python3 python3-pip python3-venv
+        {%- else %}
+        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv
+        {% endif -%}
 {% endif %}
 
 {% if (('ubuntu' not in base_image) and ('mswebench' not in base_image)) %}
@@ -80,7 +86,6 @@ RUN mkdir -p /openhands && \
     mkdir -p /openhands/poetry && \
     chown -R openhands:openhands /openhands
 
-{% endmacro %}
 
 # ================================================================
 # Define Docker installation macro
@@ -133,6 +138,8 @@ RUN mkdir -p /etc/docker && \
 {{ install_docker() }}
 {% endif %}
 # ================================================================
+
+{% endmacro %}
 
 {% macro setup_vscode_server() %}
 # Reference:
@@ -337,6 +344,3 @@ RUN \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
     chown openhands:openhands /home/openhands/.bashrc
-
-# Ensure final user is openhands
-USER openhands
