@@ -66,68 +66,26 @@ jobs:
           FRONTEND_HOST: 0.0.0.0
           BACKEND_HOST: 0.0.0.0
           BACKEND_PORT: 3000
-          BROWSER_DOWNLOADS_PATH: $HOME/downloads
-          PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
-          DISABLE_SANDBOX: true
           ENABLE_BROWSER: true
           INSTALL_PLAYWRIGHT: 1
         run: |
-          # Check the Makefile to understand what make build and make run do
-          echo "Checking Makefile contents:"
-          if [ -f "Makefile" ]; then
-            cat Makefile > /tmp/makefile-contents.log
-            echo "Makefile found, checking build and run targets:"
-            grep -A 10 "build:" Makefile || echo "No build target found"
-            grep -A 10 "run:" Makefile || echo "No run target found"
-          else
-            echo "ERROR: Makefile not found!"
-            find . -name "Makefile" | head -n 5
-          fi
-
           # Fix poetry.lock file if needed
           echo "Fixing poetry.lock file if needed..."
           poetry lock
 
           # Build OpenHands using make build
           echo "Running make build..."
-          make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
+          make build
 
-          # Create a basic config.toml file
-          echo "Creating basic config.toml file..."
+          # Create a minimal config.toml file
+          echo "Creating minimal config.toml file..."
           echo '[core]' > config.toml
-          echo "enable_browser = false" >> config.toml
+          echo "enable_browser = true" >> config.toml
           echo "runtime = \"local\"" >> config.toml
-          echo '[sandbox]' >> config.toml
-          echo "volumes=\"$HOME/downloads:/tmp/downloads:rw\"" >> config.toml
-          mkdir -p $HOME/downloads
-          chmod -R 777 $HOME/downloads
           cat config.toml
 
-          # Print current directory for debugging
-          echo "Current directory: $(pwd)"
-          echo "Listing top-level directories:"
-          ls -la
-
-          # Check frontend configuration
-          echo "Checking frontend configuration..."
-          if [ -d "frontend" ]; then
-            cat frontend/.env 2>/dev/null || echo "No .env file found"
-            cat frontend/vite.config.ts > /tmp/vite-config.log 2>/dev/null || echo "No vite.config.ts found"
-          else
-            echo "ERROR: frontend directory not found!"
-            find . -type d -name "frontend" | head -n 5
-          fi
-
-          # Find and activate the poetry virtual environment
-          echo "Finding and activating the poetry virtual environment..."
-          VENV_PATH=$(poetry env info -p)
-          echo "Virtual environment path: $VENV_PATH"
-          source $VENV_PATH/bin/activate
-          
           # Verify Playwright browsers are installed
           echo "Verifying Playwright browsers installation..."
-          
-          # Simple check if browsers are installed and working
           BROWSER_CHECK=$(poetry run python -c "
 import sys
 try:
@@ -147,7 +105,6 @@ except Exception as e:
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
             echo "ERROR: Chromium browser not found or not working after running 'make build'"
             echo "This indicates that the Playwright installation in the Makefile failed."
-            echo "Check the build logs for more details."
             exit 1
           else
             echo "Playwright browsers are properly installed and working."
@@ -155,98 +112,49 @@ except Exception as e:
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
-          make run BACKEND_HOST=$BACKEND_HOST BACKEND_PORT=$BACKEND_PORT FRONTEND_HOST=$FRONTEND_HOST FRONTEND_PORT=$FRONTEND_PORT > /tmp/openhands-e2e-test.log 2>&1 &
+          make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 > /tmp/openhands-e2e-test.log 2>&1 &
 
-          # Wait a bit for the application to start
-          sleep 10
-
-          # Check if backend is reachable
-          echo "Checking if backend is reachable..."
-          curl -v http://$BACKEND_HOST:$BACKEND_PORT/api/health > /tmp/backend-health-check.log 2>&1 || echo "Backend health check failed"
-          cat /tmp/backend-health-check.log
-
-          # Check if frontend is reachable
-          echo "Checking if frontend is reachable..."
-          curl -v http://$FRONTEND_HOST:$FRONTEND_PORT > /tmp/frontend-check.log 2>&1 || echo "Frontend check failed"
-          cat /tmp/frontend-check.log
-          
-          # Check if frontend is actually running and serving HTML content
-          echo "Checking if frontend is serving HTML content..."
-          if curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | grep -q "<html"; then
-            echo "SUCCESS: Frontend is serving HTML content"
-            curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | grep -o "<title>.*</title>" || echo "No title found"
-          else
-            echo "ERROR: Frontend is not serving HTML content"
-            echo "Frontend response:"
-            curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | head -n 20
-          fi
-
-          # Wait for the application to start with active polling
+          # Wait for the application to start
           echo "Waiting for OpenHands to start..."
-
-          # Set up polling parameters
-          max_attempts=20
-          wait_time=30
+          max_attempts=10
           attempt=1
-
+          
           while [ $attempt -le $max_attempts ]; do
             echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
-
-            # Check if port is open
-            if nc -z localhost $FRONTEND_PORT; then
-              # Check if we get a proper HTML response
-              if curl -s http://localhost:$FRONTEND_PORT | grep -q "<html"; then
-                echo "SUCCESS: OpenHands is running and responding on port $FRONTEND_PORT"
-
-                # Try to get the page title for additional verification
-                page_title=$(curl -s http://localhost:$FRONTEND_PORT | grep -o "<title>.*</title>" || echo "No title found")
-                echo "Page title: $page_title"
-                break
-              else
-                echo "Port $FRONTEND_PORT is open but not returning HTML content yet"
-              fi
+            
+            # Check if frontend port is open
+            if nc -z localhost 12000; then
+              echo "SUCCESS: Frontend port 12000 is open"
+              break
             else
-              echo "Port $FRONTEND_PORT is not open yet"
+              echo "Frontend port 12000 is not open yet"
             fi
-
-            # Show recent log output every 3 attempts
-            if [ $((attempt % 3)) -eq 0 ]; then
-              echo "Recent log output:"
-              tail -n 20 /tmp/openhands-e2e-test.log
-            fi
-
-            # Check for permission denied errors related to workspace
-            if grep -q "EACCES: permission denied, mkdir '/workspace'" /tmp/openhands-e2e-test.log; then
-              echo "ERROR: Fatal error detected - Permission denied error for /workspace directory"
-              echo "Last 50 lines of the log:"
-              tail -n 50 /tmp/openhands-e2e-test.log
-              exit 1
-            fi
-
-            # Check for other common fatal errors
-            if grep -q "Error: Cannot find module" /tmp/openhands-e2e-test.log ||
-               grep -q "ModuleNotFoundError" /tmp/openhands-e2e-test.log ||
-               grep -q "ImportError" /tmp/openhands-e2e-test.log ||
-               grep -q "Fatal error" /tmp/openhands-e2e-test.log; then
-              echo "ERROR: Fatal error detected in application startup"
-              echo "Last 50 lines of the log:"
-              tail -n 50 /tmp/openhands-e2e-test.log
-              exit 1
-            fi
-
-            # Check if we've reached the maximum number of attempts
-            if [ $attempt -eq $max_attempts ]; then
+            
+            # Show log output on each attempt
+            echo "Recent log output:"
+            tail -n 20 /tmp/openhands-e2e-test.log
+            
+            # Wait before next attempt
+            echo "Waiting 10 seconds before next check..."
+            sleep 10
+            attempt=$((attempt + 1))
+            
+            # Exit if we've reached the maximum number of attempts
+            if [ $attempt -gt $max_attempts ]; then
               echo "ERROR: OpenHands failed to start after $max_attempts attempts"
               echo "Last 50 lines of the log:"
               tail -n 50 /tmp/openhands-e2e-test.log
               exit 1
             fi
-
-            # Wait before next attempt
-            echo "Waiting $wait_time seconds before next check..."
-            sleep $wait_time
-            attempt=$((attempt + 1))
           done
+          
+          # Final verification that the app is running
+          if ! nc -z localhost 12000; then
+            echo "ERROR: OpenHands is not running on port 12000"
+            echo "Last 50 lines of the log:"
+            tail -n 50 /tmp/openhands-e2e-test.log
+            exit 1
+          fi
 
       - name: Run end-to-end tests
         run: |
