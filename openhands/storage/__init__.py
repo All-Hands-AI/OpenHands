@@ -16,7 +16,7 @@ def get_file_store(
     file_store_path: str | None = None,
     file_store_web_hook_url: str | None = None,
     file_store_web_hook_headers: dict | None = None,
-    batch: bool = False,
+    file_store_web_hook_batch: bool = False,
 ) -> FileStore:
     store: FileStore
     if file_store_type == 'local':
@@ -40,7 +40,7 @@ def get_file_store(
 
         client = httpx.Client(headers=file_store_web_hook_headers or {})
 
-        if batch:
+        if file_store_web_hook_batch:
             # Use batched webhook file store
             store = BatchedWebHookFileStore(
                 store,
