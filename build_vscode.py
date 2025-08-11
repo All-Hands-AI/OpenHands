@@ -97,8 +97,12 @@ def check_node_version():
 def should_build_vscode_extension():
     """Determine if VS Code extension should be built based on git repository state."""
     # Check if explicitly disabled
-    if os.environ.get('SKIP_VSCODE_BUILD', '').lower() in ('1', 'true', 'yes'):
-        return False, 'SKIP_VSCODE_BUILD environment variable is set'
+    skip_build_env = os.environ.get('SKIP_VSCODE_BUILD', None)
+    if skip_build_env is not None:
+        if skip_build_env.lower() in ('1', 'true', 'yes'):
+            return False, 'SKIP_VSCODE_BUILD environment variable is set to disable build'
+        elif skip_build_env == '':
+            return True, 'SKIP_VSCODE_BUILD environment variable is set to force build'
 
     # Check git repository state
     git_valid, git_msg = check_git_repository_state()
