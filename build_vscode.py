@@ -55,11 +55,11 @@ def build_vscode_extension():
             print(f'--- Using pre-built VS Code extension: {vsix_path} ---')
         return
 
-    print(f'--- Building VS Code extension in {VSCODE_EXTENSION_DIR} ---')
+    print(f'🔨 Building VS Code extension in {VSCODE_EXTENSION_DIR}')
 
     try:
         # Ensure npm dependencies are installed
-        print('--- Running npm install for VS Code extension ---')
+        print('📦 Installing dependencies for VS Code extension...')
         subprocess.run(
             ['npm', 'install'],
             cwd=VSCODE_EXTENSION_DIR,
@@ -68,7 +68,7 @@ def build_vscode_extension():
         )
 
         # Package the extension
-        print(f'--- Packaging VS Code extension ({VSIX_FILENAME}) ---')
+        print(f'📦 Packaging VS Code extension ({VSIX_FILENAME})...')
         subprocess.run(
             ['npm', 'run', 'package-vsix'],
             cwd=VSCODE_EXTENSION_DIR,
@@ -82,14 +82,14 @@ def build_vscode_extension():
                 f'VS Code extension package not found after build: {vsix_path}'
             )
 
-        print(f'--- VS Code extension built successfully: {vsix_path} ---')
+        print(f'🎉 VS Code extension built successfully: {vsix_path}')
 
     except subprocess.CalledProcessError as e:
-        print(f'--- Warning: Failed to build VS Code extension: {e} ---')
-        print('--- Continuing without building extension ---')
+        print(f'⚠️  Warning: Failed to build VS Code extension: {e}')
+        print('⏭️  Continuing without building extension...')
         if not vsix_path.exists():
-            print('--- Warning: No pre-built VS Code extension found ---')
-            print('--- VS Code extension will not be available ---')
+            print('⚠️  Warning: No pre-built VS Code extension found')
+            print('❌ VS Code extension will not be available')
 
 
 def build(setup_kwargs):
@@ -97,7 +97,7 @@ def build(setup_kwargs):
     This function is called by Poetry during the build process.
     `setup_kwargs` is a dictionary that will be passed to `setuptools.setup()`.
     """
-    print('--- Running custom Poetry build script (build_vscode.py) ---')
+    print('🔧 Running custom Poetry build script for VS Code extension...')
 
     # Build the VS Code extension and place the .vsix file
     build_vscode_extension()
@@ -105,10 +105,10 @@ def build(setup_kwargs):
     # Poetry will handle including files based on pyproject.toml `include` patterns.
     # Ensure openhands/integrations/vscode/*.vsix is included there.
 
-    print('--- Custom Poetry build script (build_vscode.py) finished ---')
+    print('✅ Custom Poetry build script completed!')
 
 
 if __name__ == '__main__':
-    print('Running build_vscode.py directly for testing VS Code extension packaging...')
+    print('🧪 Testing VS Code extension packaging...')
     build_vscode_extension()
-    print('Direct execution of build_vscode.py finished.')
+    print('✅ VS Code extension packaging test completed!')

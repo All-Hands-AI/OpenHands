@@ -23,16 +23,16 @@ RESET=$(shell tput -Txterm sgr0)
 
 # Build
 build:
-	@echo "$(GREEN)Building project...$(RESET)"
+	@echo "$(GREEN)🚀 Building OpenHands project...$(RESET)"
 	@$(MAKE) -s check-dependencies
 	@$(MAKE) -s install-python-dependencies
 	@$(MAKE) -s install-frontend-dependencies
 	@$(MAKE) -s install-pre-commit-hooks
 	@$(MAKE) -s build-frontend
-	@echo "$(GREEN)Build completed successfully.$(RESET)"
+	@echo "$(GREEN)🎉 Build completed successfully! You're ready to go!$(RESET)"
 
 check-dependencies:
-	@echo "$(YELLOW)Checking dependencies...$(RESET)"
+	@echo "$(YELLOW)🔍 Checking your development environment...$(RESET)"
 	@$(MAKE) -s check-system
 	@$(MAKE) -s check-python
 	@$(MAKE) -s check-npm
@@ -42,7 +42,7 @@ ifeq ($(INSTALL_DOCKER),)
 endif
 	@$(MAKE) -s check-poetry
 	@$(MAKE) -s check-tmux
-	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
+	@echo "$(GREEN)✅ All dependencies look great!$(RESET)"
 
 check-system:
 	@echo "$(YELLOW)Checking system...$(RESET)"
@@ -62,11 +62,11 @@ check-system:
 	fi
 
 check-python:
-	@echo "$(YELLOW)Checking Python installation...$(RESET)"
+	@echo "$(YELLOW)🐍 Checking Python installation...$(RESET)"
 	@if command -v python$(PYTHON_VERSION) > /dev/null; then \
-		echo "$(BLUE)$(shell python$(PYTHON_VERSION) --version) is already installed.$(RESET)"; \
+		echo "$(BLUE)✅ Great! $(shell python$(PYTHON_VERSION) --version) is ready to go.$(RESET)"; \
 	else \
-		echo "$(RED)Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
+		echo "$(RED)❌ Oops! Python $(PYTHON_VERSION) is not installed. Please install Python $(PYTHON_VERSION) to continue.$(RESET)"; \
 		exit 1; \
 	fi
 
@@ -117,76 +117,76 @@ check-tmux:
 	fi
 
 check-poetry:
-	@echo "$(YELLOW)Checking Poetry installation...$(RESET)"
+	@echo "$(YELLOW)📝 Checking Poetry installation...$(RESET)"
 	@if command -v poetry > /dev/null; then \
 		POETRY_VERSION=$(shell poetry --version 2>&1 | sed -E 's/Poetry \(version ([0-9]+\.[0-9]+\.[0-9]+)\)/\1/'); \
 		IFS='.' read -r -a POETRY_VERSION_ARRAY <<< "$$POETRY_VERSION"; \
 		if [ $${POETRY_VERSION_ARRAY[0]} -gt 1 ] || ([ $${POETRY_VERSION_ARRAY[0]} -eq 1 ] && [ $${POETRY_VERSION_ARRAY[1]} -ge 8 ]); then \
-			echo "$(BLUE)$(shell poetry --version) is already installed.$(RESET)"; \
+			echo "$(BLUE)✅ Perfect! $(shell poetry --version) is ready to manage your dependencies.$(RESET)"; \
 		else \
-			echo "$(RED)Poetry 1.8 or later is required. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+			echo "$(RED)❌ We need Poetry 1.8 or later. You can install it by running:"; \
 			echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-			echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+			echo "$(RED)📖 More details: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 			exit 1; \
 		fi; \
 	else \
-		echo "$(RED)Poetry is not installed. You can install poetry by running the following command, then adding Poetry to your PATH:"; \
+		echo "$(RED)❌ Poetry is not installed. You can install it by running:"; \
 		echo "$(RED) curl -sSL https://install.python-poetry.org | python$(PYTHON_VERSION) -$(RESET)"; \
-		echo "$(RED)More detail here: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
+		echo "$(RED)📖 More details: https://python-poetry.org/docs/#installing-with-the-official-installer$(RESET)"; \
 		exit 1; \
 	fi
 
 install-python-dependencies:
-	@echo "$(GREEN)Installing Python dependencies...$(RESET)"
+	@echo "$(GREEN)📦 Installing Python dependencies...$(RESET)"
 	@if [ -z "${TZ}" ]; then \
-		echo "Defaulting TZ (timezone) to UTC"; \
+		echo "🌍 Defaulting timezone to UTC"; \
 		export TZ="UTC"; \
 	fi
 	poetry env use python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
-		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
+		echo "$(BLUE)🍎 Installing macOS-specific dependencies...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
 		poetry run pip install chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
-		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
+		echo "📋 Installing specific dependency group: ${POETRY_GROUP}"; \
 		poetry install --only $${POETRY_GROUP}; \
 	else \
 		poetry install --with dev,test,runtime; \
 	fi
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
-			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
+			echo "$(BLUE)🐧 Detected Manjaro Linux. Installing browser automation tools...$(RESET)"; \
 			poetry run pip install playwright; \
 			poetry run playwright install chromium; \
 		else \
 			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
-				echo "Running playwright install --with-deps chromium..."; \
+				echo "🌐 Installing browser automation tools..."; \
 				poetry run playwright install --with-deps chromium; \
 				mkdir -p cache; \
 				touch cache/playwright_chromium_is_installed.txt; \
 			else \
-				echo "Setup already done. Skipping playwright installation."; \
+				echo "✅ Browser tools already set up. Skipping installation."; \
 			fi \
 		fi \
 	else \
-		echo "Skipping Playwright installation (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
+		echo "⏭️  Skipping browser automation setup (INSTALL_PLAYWRIGHT=${INSTALL_PLAYWRIGHT})."; \
 	fi
-	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
+	@echo "$(GREEN)🎉 Python dependencies installed successfully!$(RESET)"
 
 install-frontend-dependencies: check-npm check-nodejs
-	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
-	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
+	@echo "$(YELLOW)🎨 Setting up frontend environment...$(RESET)"
+	@echo "$(YELLOW)🔍 Detecting Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
-	echo "$(BLUE)Installing frontend dependencies with npm...$(RESET)"
+	echo "$(BLUE)📦 Installing frontend dependencies with npm...$(RESET)"
 	@cd frontend && npm install
-	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
+	@echo "$(GREEN)✨ Frontend dependencies installed successfully!$(RESET)"
 
 install-pre-commit-hooks: check-python check-poetry install-python-dependencies
-	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
+	@echo "$(YELLOW)🔧 Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
-	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
+	@echo "$(GREEN)✨ Pre-commit hooks installed successfully!$(RESET)"
 
 lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
