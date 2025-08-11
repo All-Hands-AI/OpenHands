@@ -4,14 +4,19 @@ export const conversationSlice = createSlice({
   name: "conversation",
   initialState: {
     isRightPanelShown: true as boolean,
+    messageToSend: null as string | null,
   },
   reducers: {
     setIsRightPanelShown: (state, action) => {
       state.isRightPanelShown = action.payload;
     },
+    setMessageToSend: (state, action) => {
+      state.messageToSend = action.payload;
+    },
   },
 });
 
-export const { setIsRightPanelShown } = conversationSlice.actions;
+export const { setIsRightPanelShown, setMessageToSend } =
+  conversationSlice.actions;
 
 export default conversationSlice.reducer;

@@ -7,6 +7,7 @@ import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
+import { Tools } from "../controls/tools";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -334,7 +335,8 @@ export function CustomChatInput({
         </div>
 
         <div className="w-full flex items-center justify-between">
-          <div className="translate-x-[-6.5px]">
+          <div className="flex items-center gap-1">
+            <Tools onSubmit={onSubmit} />
             <ServerStatus conversationStatus={conversationStatus} />
           </div>
           <AgentStatus
