@@ -45,30 +45,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux
 
-      - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime
-
-      - name: Install Playwright
-        run: |
-          poetry run playwright install --with-deps chromium
-
       - name: Setup Node.js
         uses: useblacksmith/setup-node@v5
         with:
           node-version: '22.x'
-
-      - name: Install frontend dependencies
-        run: |
-          cd frontend && npm install
-
-      - name: Build frontend
-        run: |
-          cd frontend && npm run prepare && npm run build
-
-      - name: Install pre-commit hooks
-        run: |
-          git config --unset-all core.hooksPath || true
-          poetry run pre-commit install --config ./dev_config/python/.pre-commit-config.yaml
 
       - name: Setup workspace for end-to-end tests
         run: |
@@ -80,6 +60,18 @@ jobs:
           sudo mkdir -p /workspace/.downloads
           sudo chown -R $(id -u):$(id -g) /workspace
           sudo chmod -R 755 /workspace
+
+      - name: Build OpenHands
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          INSTALL_DOCKER: 0
+          RUNTIME: local
+        run: |
+          # Build OpenHands using make build
+          make build > /tmp/openhands-e2e-build.log 2>&1
 
       - name: Run full end-to-end tests
         env:
