@@ -331,10 +331,12 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        config = self.config.model_copy(deep=True)
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )
