@@ -31,28 +31,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install prerequisites for make build
+      - name: Install poetry via pipx
+        run: pipx install poetry
+
+      - name: Set up Python
+        uses: useblacksmith/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'poetry'
+
+      - name: Install system dependencies
         run: |
-          # Install system dependencies
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux software-properties-common
+          sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux
 
-          # Install Python 3.12 from deadsnakes PPA
-          sudo add-apt-repository -y ppa:deadsnakes/ppa
-          sudo apt-get update
-          sudo apt-get install -y python3.12 python3.12-dev python3.12-venv python3.12-distutils
-
-          # Install pip for Python 3.12
-          curl -sS https://bootstrap.pypa.io/get-pip.py | sudo python3.12
-
-          # Install poetry via pipx
-          python3.12 -m pip install pipx
-          python3.12 -m pipx ensurepath
-          python3.12 -m pipx install poetry
-
-          # Set up Node.js
-          curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
-          sudo apt-get install -y nodejs
+      - name: Setup Node.js
+        uses: useblacksmith/setup-node@v5
+        with:
+          node-version: '22.x'
 
       - name: Setup workspace for end-to-end tests
         run: |
