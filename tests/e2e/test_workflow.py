@@ -82,7 +82,6 @@ def test_simple_browser_navigation(page: Page):
     print('Successfully navigated to the OpenHands GitHub repository')
 
 
-@pytest.mark.skip(reason='Browser environment is disabled')
 def test_openhands_workflow(page, openhands_app):
     """
     Test the OpenHands end-to-end workflow.
