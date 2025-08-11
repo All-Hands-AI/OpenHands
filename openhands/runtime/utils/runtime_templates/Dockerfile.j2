@@ -86,8 +86,6 @@ RUN mkdir -p /openhands && \
     mkdir -p /openhands/poetry && \
     chown -R openhands:openhands /openhands
 
-{% endmacro %}
-
 
 # ================================================================
 # Define Docker installation macro
@@ -107,11 +105,7 @@ RUN \
         chmod a+r /etc/apt/keyrings/docker.asc && \
         # Add the repository to Apt sources
         # For Ubuntu 24.04 (noble), use jammy repository as noble isn't supported yet
-        if [ "$(lsb_release -cs)" = "noble" ]; then \
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu jammy stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
-        else \
-            echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
-        fi; \
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
     else \
         # Handle Debian (following https://docs.docker.com/engine/install/debian/)
         # Add Docker's official GPG key
@@ -144,6 +138,8 @@ RUN mkdir -p /etc/docker && \
 {{ install_docker() }}
 {% endif %}
 # ================================================================
+
+{% endmacro %}
 
 {% macro setup_vscode_server() %}
 # Reference:
