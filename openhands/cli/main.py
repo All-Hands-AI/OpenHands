@@ -74,8 +74,8 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
 )
 from openhands.io import read_task
-from openhands.mcp import add_mcp_tools_to_agent
-from openhands.mcp.error_collector import mcp_error_collector
+from openhands.mcp_client import add_mcp_tools_to_agent
+from openhands.mcp_client.error_collector import mcp_error_collector
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
 )

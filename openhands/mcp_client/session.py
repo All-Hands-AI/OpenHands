@@ -16,8 +16,8 @@ from openhands.core.config.mcp_config import (
     MCPStdioServerConfig,
 )
 from openhands.core.logger import openhands_logger as logger
-from openhands.mcp.error_collector import mcp_error_collector
-from openhands.mcp.tool import MCPClientTool
+from openhands.mcp_client.error_collector import mcp_error_collector
+from openhands.mcp_client.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
