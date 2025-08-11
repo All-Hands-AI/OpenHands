@@ -100,7 +100,10 @@ def should_build_vscode_extension():
     skip_build_env = os.environ.get('SKIP_VSCODE_BUILD', None)
     if skip_build_env is not None:
         if skip_build_env.lower() in ('1', 'true', 'yes'):
-            return False, 'SKIP_VSCODE_BUILD environment variable is set to disable build'
+            return (
+                False,
+                'SKIP_VSCODE_BUILD environment variable is set to disable build',
+            )
         elif skip_build_env == '':
             return True, 'SKIP_VSCODE_BUILD environment variable is set to force build'
 
