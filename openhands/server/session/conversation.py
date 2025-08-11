@@ -35,10 +35,7 @@ class ServerConversation:
             event_stream = EventStream(sid, file_store, user_id)
         self.event_stream = event_stream
 
-        if (
-            config.security.security_analyzer
-            and config.security.enable_security_analyzer
-        ):
+        if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
