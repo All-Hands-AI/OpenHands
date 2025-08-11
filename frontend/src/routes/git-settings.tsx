@@ -156,6 +156,7 @@ function GitSettingsScreen() {
 
           {!isSaas && (
             <GitHubTokenInput
+              className="mb-4"
               name="github-token-input"
               isGitHubTokenSet={isGitHubTokenSet}
               onChange={(value) => {
@@ -170,6 +171,7 @@ function GitSettingsScreen() {
 
           {!isSaas && (
             <GitLabTokenInput
+              className="mb-4"
               name="gitlab-token-input"
               isGitLabTokenSet={isGitLabTokenSet}
               onChange={(value) => {
@@ -184,6 +186,7 @@ function GitSettingsScreen() {
 
           {!isSaas && (
             <BitbucketTokenInput
+              className="mb-4"
               name="bitbucket-token-input"
               isBitbucketTokenSet={isBitbucketTokenSet}
               onChange={(value) => {
