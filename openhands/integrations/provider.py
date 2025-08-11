@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from types import MappingProxyType
-from typing import Annotated, Any, Coroutine, Literal, overload
+from typing import Annotated, Any, Coroutine, Literal, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -22,6 +22,7 @@ from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
+    InstallationsService,
     MicroagentParseError,
     ProviderType,
     Repository,
@@ -163,16 +164,61 @@ class ProviderHandler:
         service = self._get_service(provider)
         return await service.get_latest_token()
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_github_installations(self) -> list[str]:
+        service = cast(InstallationsService, self._get_service(ProviderType.GITHUB))
+        try:
+            return await service.get_installations()
+        except Exception as e:
+            logger.warning(f'Failed to get github installations {e}')
+
+        return []
+
+    async def get_bitbucket_workspaces(self) -> list[str]:
+        service = cast(InstallationsService, self._get_service(ProviderType.BITBUCKET))
+        try:
+            return await service.get_installations()
+        except Exception as e:
+            logger.warning(f'Failed to get bitbucket workspaces {e}')
+
+        return []
+
+    async def get_repositories(
+        self,
+        sort: str,
+        app_mode: AppMode,
+        selected_provider: ProviderType | None,
+        page: int | None,
+        per_page: int | None,
+        installation_id: str | None,
+    ) -> list[Repository]:
         """
         Get repositories from providers
         """
+
+        """
+        Get repositories from providers
+        """
+
+        if selected_provider:
+            if not page or not per_page:
+                logger.error('Failed to provider params for paginating repos')
+                return []
+
+            service = self._get_service(selected_provider)
+            try:
+                return await service.get_paginated_repos(
+                    page, per_page, sort, installation_id
+                )
+            except Exception as e:
+                logger.warning(f'Error fetching repos from {selected_provider}: {e}')
+
+            return []
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                service_repos = await service.get_repositories(sort, app_mode)
+                service_repos = await service.get_all_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
@@ -196,17 +242,34 @@ class ProviderHandler:
 
     async def search_repositories(
         self,
+        selected_provider: ProviderType | None,
         query: str,
         per_page: int,
         sort: str,
         order: str,
     ) -> list[Repository]:
+        if selected_provider:
+            service = self._get_service(selected_provider)
+            public = self._is_repository_url(query, selected_provider)
+            try:
+                user_repos = await service.search_repositories(
+                    query, per_page, sort, order, public
+                )
+                return self._deduplicate_repositories(user_repos)
+            except Exception as e:
+                logger.warning(
+                    f'Error searching repos from select provider {selected_provider}: {e}'
+                )
+
+            return []
+
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
+                public = self._is_repository_url(query, provider)
                 service_repos = await service.search_repositories(
-                    query, per_page, sort, order
+                    query, per_page, sort, order, public
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
@@ -214,6 +277,26 @@ class ProviderHandler:
                 continue
 
         return all_repos
+
+    def _is_repository_url(self, query: str, provider: ProviderType) -> bool:
+        """Check if the query is a repository URL."""
+        custom_host = self.provider_tokens[provider].host
+        custom_host_exists = custom_host and custom_host in query
+        default_host_exists = self.PROVIDER_DOMAINS[provider] in query
+
+        return query.startswith(('http://', 'https://')) and (
+            custom_host_exists or default_host_exists
+        )
+
+    def _deduplicate_repositories(self, repos: list[Repository]) -> list[Repository]:
+        """Remove duplicate repositories based on full_name."""
+        seen = set()
+        unique_repos = []
+        for repo in repos:
+            if repo.full_name not in seen:
+                seen.add(repo.id)
+                unique_repos.append(repo)
+        return unique_repos
 
     async def set_event_stream_secrets(
         self,
