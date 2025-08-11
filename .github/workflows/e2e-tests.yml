@@ -70,6 +70,7 @@ jobs:
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
           DISABLE_SANDBOX: true
           ENABLE_BROWSER: false
+          INSTALL_PLAYWRIGHT: 1
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -122,10 +123,15 @@ jobs:
           VENV_PATH=$(poetry env info -p)
           echo "Virtual environment path: $VENV_PATH"
           source $VENV_PATH/bin/activate
-
-          # Install Playwright browsers
-          echo "Installing Playwright browsers..."
-          python -m playwright install chromium
+          
+          # Verify Playwright browsers are installed
+          echo "Verifying Playwright browsers installation..."
+          if [ -d "$HOME/.cache/ms-playwright" ]; then
+            echo "Playwright browsers directory exists at $HOME/.cache/ms-playwright"
+            ls -la $HOME/.cache/ms-playwright
+          else
+            echo "WARNING: Playwright browsers directory not found. It should have been installed during 'make build'."
+          fi
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
