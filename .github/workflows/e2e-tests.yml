@@ -68,7 +68,6 @@ jobs:
           BACKEND_PORT: 3000
           BROWSER_DOWNLOADS_PATH: $HOME/downloads
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
-          SANDBOX_VOLUMES: $HOME/workspace:/workspace:rw
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -90,15 +89,12 @@ jobs:
           echo "Running make build..."
           make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
 
-          # Create a basic config.toml file with custom workspace path
+          # Create a basic config.toml file
           echo "Creating basic config.toml file..."
           echo '[core]' > config.toml
-          echo "workspace_base=\"$HOME/workspace\"" >> config.toml
           echo "browser_downloads_path=\"$HOME/downloads\"" >> config.toml
-          echo '[runtime]' >> config.toml
-          echo "sandbox_volumes=[\"$HOME/workspace:/workspace:rw\"]" >> config.toml
-          mkdir -p $HOME/workspace $HOME/downloads
-          chmod -R 777 $HOME/workspace $HOME/downloads
+          mkdir -p $HOME/downloads
+          chmod -R 777 $HOME/downloads
           cat config.toml
 
           # Print current directory for debugging
