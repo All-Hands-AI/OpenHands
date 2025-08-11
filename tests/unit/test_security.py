@@ -348,8 +348,9 @@ async def test_unsafe_bash_command(temp_dir: str):
                     function=Function(
                         name=ActionType.FINISH,
                         arguments={
-                            'outputs': {'content': 'outputs content'},
                             'final_thought': '',
+                            'task_completed': None,
+                            'outputs': {'content': 'outputs content'},
                         },
                     ),
                 ),
