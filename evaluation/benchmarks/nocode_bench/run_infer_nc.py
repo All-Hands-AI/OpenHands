@@ -21,6 +21,9 @@ from evaluation.benchmarks.nocode_bench.binary_patch_utils import (
 from evaluation.benchmarks.nocode_bench.resource.mapping import (
     get_instance_resource_factor,
 )
+from evaluation.benchmarks.nocode_bench.scripts.utils.evaluation_utils import (
+    run_evaluation_nocode_bench,
+)
 
 from evaluation.benchmarks.nocode_bench.consistants import MAP_REPO_TO_CONFIG
 from evaluation.utils.shared import (
@@ -35,15 +38,15 @@ from evaluation.utils.shared import (
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
-    run_evaluation_nocode_bench,
     update_llm_config_for_completions_logging,
 )
+
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
     get_llm_config_arg,
-    get_parser,
+    get_evaluation_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -689,7 +692,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
