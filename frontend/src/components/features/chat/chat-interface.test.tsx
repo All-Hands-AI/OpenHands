@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { useParams } from "react-router";
+import { MemoryRouter } from "react-router";
 import { vi, describe, test, expect, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ChatInterface } from "./chat-interface";
@@ -15,16 +15,42 @@ import { OpenHandsAction } from "#/types/core/actions";
 vi.mock("#/context/ws-client-provider");
 vi.mock("#/hooks/use-optimistic-user-message");
 vi.mock("#/hooks/use-ws-error-message");
-vi.mock("react-router");
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
 vi.mock("#/hooks/query/use-config");
 vi.mock("#/hooks/mutation/use-get-trajectory");
 vi.mock("#/hooks/mutation/use-upload-files");
+
+// Mock other hooks that might be used by the component
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
+  useConversationNameContextMenu: () => ({
+    isOpen: false,
+    contextMenuRef: { current: null },
+    handleContextMenu: vi.fn(),
+    handleClose: vi.fn(),
+    handleRename: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
 vi.mock("react-redux", () => ({
   useSelector: vi.fn(() => ({
     curAgentState: "AWAITING_USER_INPUT",
     selectedRepository: null,
     replayJson: null,
   })),
+  useDispatch: vi.fn(() => vi.fn()),
 }));
 
 describe("ChatInterface", () => {
@@ -57,9 +83,7 @@ describe("ChatInterface", () => {
       setErrorMessage: vi.fn(),
       removeErrorMessage: vi.fn(),
     });
-    (useParams as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-      conversationId: "test-id",
-    });
+    // useParams is now globally mocked
     (useConfig as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       data: { APP_MODE: "local" },
     });
@@ -76,10 +100,12 @@ describe("ChatInterface", () => {
     });
   });
 
-  // Helper function to render with QueryClientProvider
+  // Helper function to render with QueryClientProvider and Router
   const renderWithQueryClient = (ui: React.ReactElement) =>
     render(
-      <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>,
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter>{ui}</MemoryRouter>
+      </QueryClientProvider>,
     );
 
   test("should show chat suggestions when there are no events", () => {

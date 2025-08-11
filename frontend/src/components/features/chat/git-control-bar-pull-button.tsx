@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
 import ArrowDownIcon from "#/icons/u-arrow-down.svg?react";
-import { cn } from "#/utils/utils";
+import { cn, getGitPullPrompt } from "#/utils/utils";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { I18nKey } from "#/i18n/declaration";
@@ -26,7 +26,7 @@ export function GitControlBarPullButton({
 
   const handlePullClick = () => {
     posthog.capture("pull_button_clicked");
-    onSuggestionsClick("Please pull the latest code from the repository.");
+    onSuggestionsClick(getGitPullPrompt());
   };
 
   return (

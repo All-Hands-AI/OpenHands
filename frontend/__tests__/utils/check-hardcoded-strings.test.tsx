@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { test, expect, describe, vi } from "vitest";
+import { MemoryRouter } from "react-router";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { renderWithProviders } from "../../test-utils";
 
@@ -27,16 +28,46 @@ vi.mock("#/hooks/query/use-active-conversation", () => ({
   }),
 }));
 
+// Mock React Router hooks
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
+
+// Mock other hooks that might be used by the component
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
+  useConversationNameContextMenu: () => ({
+    isOpen: false,
+    contextMenuRef: { current: null },
+    handleContextMenu: vi.fn(),
+    handleClose: vi.fn(),
+    handleRename: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
+
 describe("Check for hardcoded English strings", () => {
   test("InteractiveChatBox should not have hardcoded English strings", () => {
     const { container } = renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={() => {}}
-        onStop={() => {}}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+      <MemoryRouter>
+        <InteractiveChatBox
+          onSubmit={() => {}}
+          onStop={() => {}}
+          isWaitingForUserInput={false}
+          hasSubstantiveAgentActions={false}
+          optimisticUserMessage={false}
+        />
+      </MemoryRouter>,
     );
 
     // Get all text content
