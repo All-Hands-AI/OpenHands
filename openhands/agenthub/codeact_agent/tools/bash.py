@@ -1,5 +1,6 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 from openhands.utils.platform_utils import refine_prompt
 
