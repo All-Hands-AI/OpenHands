@@ -86,7 +86,7 @@ jobs:
           # Create a basic config.toml file with custom workspace path
           echo "Creating basic config.toml file..."
           echo '[core]' > config.toml
-          echo 'workspace_base="$HOME/workspace"' >> config.toml
+          echo "workspace_base=\"$HOME/workspace\"" >> config.toml
           cat config.toml
 
           # Print current directory for debugging
