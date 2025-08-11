@@ -489,6 +489,10 @@ class ActionExecutor:
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
+            if os.path.isdir(filepath):
+                # for windows, we need to raise an error
+                raise IsADirectoryError(f"'{filepath}' is a directory, not a file.")
+
             if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
                 with open(filepath, 'rb') as file:
                     image_data = file.read()
