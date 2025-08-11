@@ -43,7 +43,6 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import (
-    ConversationInstructions,
     PromptManager,
     RepositoryInfo,
     RuntimeInfo,
@@ -363,6 +362,8 @@ class ConversationMemory:
         Raises:
             ValueError: If the observation type is unknown
         """
+        from openhands.utils.prompt import ConversationInstructions
+
         message: Message
 
         if isinstance(obs, CmdOutputObservation):
