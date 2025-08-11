@@ -1036,6 +1036,27 @@ fi
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
 
+    def get_workspace_branch(self, primary_repo_path: str | None = None) -> str | None:
+        """
+        Get the current branch of the workspace.
+
+        Args:
+            primary_repo_path: Path to the primary repository within the workspace.
+                              If None, uses the workspace root.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        if primary_repo_path:
+            # Use the primary repository path
+            git_cwd = str(self.workspace_root / primary_repo_path)
+        else:
+            # Use the workspace root
+            git_cwd = str(self.workspace_root)
+
+        self.git_handler.set_cwd(git_cwd)
+        return self.git_handler.get_current_branch()
+
     @property
     def additional_agent_instructions(self) -> str:
         return ''

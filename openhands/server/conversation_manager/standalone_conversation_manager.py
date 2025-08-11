@@ -2,13 +2,14 @@ import asyncio
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Callable, Iterable
+from typing import Any, Callable, Iterable
 
 import socketio
 
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
+from openhands.core.schema.action import ActionType
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
@@ -489,6 +490,14 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.total_tokens = (
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
+
+        print(f'event: {event}')
+        print(f'is_git_related_event: {self._is_git_related_event(event)}')
+
+        # Check for branch changes if this is a git-related event
+        if event and self._is_git_related_event(event):
+            await self._update_conversation_branch(conversation)
+
         default_title = get_default_conversation_title(conversation_id)
         if (
             conversation.title == default_title
@@ -520,6 +529,160 @@ class StandaloneConversationManager(ConversationManager):
                 conversation.title = default_title
 
         await conversation_store.save_metadata(conversation)
+
+    def _is_git_related_event(self, event) -> bool:
+        """
+        Determine if an event is related to git operations that could change the branch.
+
+        Args:
+            event: The event to check
+
+        Returns:
+            True if the event is git-related and could change the branch, False otherwise
+        """
+        # Check CmdRunAction for git commands that change branches
+        if (
+            hasattr(event, 'command')
+            and hasattr(event, 'action')
+            and event.action == ActionType.RUN
+        ):
+            command = event.command.lower()
+            # Check if any git command that changes branches is present anywhere in the command
+            # This handles compound commands like "cd workspace && git checkout feature-branch"
+            return any(
+                git_cmd in command
+                for git_cmd in [
+                    'git checkout',
+                    'git switch',
+                    'git merge',
+                    'git rebase',
+                    'git reset',
+                    'git delete',
+                ]
+            )
+
+        return False
+
+    async def _update_conversation_branch(self, conversation: ConversationMetadata):
+        """
+        Update the conversation's current branch if it has changed.
+
+        Args:
+            conversation: The conversation metadata to update
+        """
+        try:
+            # Get the session and runtime for this conversation
+            session, runtime = self._get_session_and_runtime(
+                conversation.conversation_id
+            )
+            if not session or not runtime:
+                return
+
+            # Get the current branch from the workspace
+            current_branch = self._get_current_workspace_branch(
+                runtime, conversation.selected_repository
+            )
+
+            # Update branch if it has changed
+            if self._should_update_branch(conversation.selected_branch, current_branch):
+                self._update_branch_in_conversation(conversation, current_branch)
+
+        except Exception as e:
+            self._log_branch_update_error(e, conversation.conversation_id)
+
+    def _get_session_and_runtime(
+        self, conversation_id: str
+    ) -> tuple[Session | None, Any | None]:
+        """
+        Get the session and runtime for a conversation.
+
+        Args:
+            conversation_id: The conversation ID
+
+        Returns:
+            Tuple of (session, runtime) or (None, None) if not found
+        """
+        session = self._local_agent_loops_by_sid.get(conversation_id)
+        if not session or not session.agent_session.runtime:
+            return None, None
+        return session, session.agent_session.runtime
+
+    def _get_current_workspace_branch(
+        self, runtime: Any, selected_repository: str | None
+    ) -> str | None:
+        """
+        Get the current branch from the workspace.
+
+        Args:
+            runtime: The runtime instance
+            selected_repository: The selected repository path or None
+
+        Returns:
+            The current branch name or None if not found
+        """
+        primary_repo_path = self._extract_repository_name(selected_repository)
+        return runtime.get_workspace_branch(primary_repo_path)
+
+    def _extract_repository_name(self, selected_repository: str | None) -> str | None:
+        """
+        Extract the repository name from the full repository path.
+
+        Args:
+            selected_repository: Full repository path (e.g., "org/repo")
+
+        Returns:
+            Repository name (e.g., "repo") or None if no repository
+        """
+        if not selected_repository:
+            return None
+        # Extract the repository name from the full path (e.g., "org/repo" -> "repo")
+        return selected_repository.split('/')[-1]
+
+    def _should_update_branch(
+        self, current_branch: str | None, new_branch: str | None
+    ) -> bool:
+        """
+        Determine if the branch should be updated.
+
+        Args:
+            current_branch: The current branch in conversation metadata
+            new_branch: The new branch from the workspace
+
+        Returns:
+            True if the branch should be updated, False otherwise
+        """
+        return new_branch is not None and new_branch != current_branch
+
+    def _update_branch_in_conversation(
+        self, conversation: ConversationMetadata, new_branch: str | None
+    ):
+        """
+        Update the branch in the conversation metadata.
+
+        Args:
+            conversation: The conversation metadata to update
+            new_branch: The new branch name
+        """
+        old_branch = conversation.selected_branch
+        conversation.selected_branch = new_branch
+
+        logger.info(
+            f'Branch changed from {old_branch} to {new_branch}',
+            extra={'session_id': conversation.conversation_id},
+        )
+
+    def _log_branch_update_error(self, error: Exception, conversation_id: str):
+        """
+        Log an error that occurred during branch update.
+
+        Args:
+            error: The exception that occurred
+            conversation_id: The conversation ID for logging context
+        """
+        logger.warning(
+            f'Failed to update conversation branch: {error}',
+            extra={'session_id': conversation_id},
+        )
 
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None

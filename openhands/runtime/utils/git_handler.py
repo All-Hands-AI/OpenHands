@@ -10,6 +10,7 @@ GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.p
 GIT_DIFF_CMD = (
     'python3 /openhands/code/openhands/runtime/utils/git_diff.py "{file_path}"'
 )
+GIT_BRANCH_CMD = 'git branch --show-current'
 
 
 @dataclass
@@ -41,6 +42,7 @@ class GitHandler:
         self.cwd: str | None = None
         self.git_changes_cmd = GIT_CHANGES_CMD
         self.git_diff_cmd = GIT_DIFF_CMD
+        self.git_branch_cmd = GIT_BRANCH_CMD
 
     def set_cwd(self, cwd: str) -> None:
         """
@@ -58,6 +60,28 @@ class GitHandler:
             self.create_file_fn(str(script_file), f.read())
             result = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
+
+    def get_current_branch(self) -> str | None:
+        """
+        Retrieves the current branch name of the git repository.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        # If cwd is not set, return None
+        if not self.cwd:
+            return None
+
+        result = self.execute(self.git_branch_cmd, self.cwd)
+        if result.exit_code == 0:
+            branch = result.content.strip()
+            # git branch --show-current returns empty string if not on any branch (detached HEAD)
+            if branch:
+                return branch
+            return None
+
+        # If not a git repository or other error, return None
+        return None
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
         """
