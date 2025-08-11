@@ -76,22 +76,53 @@ jobs:
           # Start OpenHands in the background
           make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-e2e-test.log &
 
-          # Wait for the application to start
+          # Wait for the application to start with active polling
           echo "Waiting for OpenHands to start..."
-          sleep 90
 
-          # Check if the application is running
-          if nc -z localhost 12000; then
-            echo "OpenHands is running on port 12000"
-          else
-            echo "Warning: Could not connect to OpenHands frontend on port 12000"
-            echo "Waiting additional time..."
-            sleep 30
-            if ! nc -z localhost 12000; then
-              echo "Error: OpenHands failed to start"
+          # Set up polling parameters
+          max_attempts=20
+          wait_time=30
+          attempt=1
+
+          while [ $attempt -le $max_attempts ]; do
+            echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
+
+            # Check if port is open
+            if nc -z localhost 12000; then
+              # Check if we get a proper HTML response
+              if curl -s http://localhost:12000 | grep -q "<html"; then
+                echo "SUCCESS: OpenHands is running and responding on port 12000"
+
+                # Try to get the page title for additional verification
+                page_title=$(curl -s http://localhost:12000 | grep -o "<title>.*</title>" || echo "No title found")
+                echo "Page title: $page_title"
+                break
+              else
+                echo "Port 12000 is open but not returning HTML content yet"
+              fi
+            else
+              echo "Port 12000 is not open yet"
+            fi
+
+            # Show recent log output every 3 attempts
+            if [ $((attempt % 3)) -eq 0 ]; then
+              echo "Recent log output:"
+              tail -n 20 /tmp/openhands-e2e-test.log
+            fi
+
+            # Check if we've reached the maximum number of attempts
+            if [ $attempt -eq $max_attempts ]; then
+              echo "ERROR: OpenHands failed to start after $max_attempts attempts"
+              echo "Last 50 lines of the log:"
+              tail -n 50 /tmp/openhands-e2e-test.log
               exit 1
             fi
-          fi
+
+            # Wait before next attempt
+            echo "Waiting $wait_time seconds before next check..."
+            sleep $wait_time
+            attempt=$((attempt + 1))
+          done
 
       - name: Run end-to-end tests
         env:
