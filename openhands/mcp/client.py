@@ -1,3 +1,4 @@
+import logging
 from typing import Optional
 
 from fastmcp import Client
@@ -9,6 +10,14 @@ from fastmcp.client.transports import (
 from mcp import McpError
 from mcp.types import CallToolResult
 from pydantic import BaseModel, ConfigDict, Field
+from tenacity import (
+    RetryCallState,
+    before_sleep_log,
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from openhands.core.config.mcp_config import (
     MCPSHTTPServerConfig,
@@ -56,6 +65,32 @@ class MCPClient(BaseModel):
 
         logger.info(f'Connected to server with tools: {[tool.name for tool in tools]}')
 
+    def _log_retry_error(self, retry_state: RetryCallState):
+        """Log and collect error info on each retry attempt"""
+        if retry_state.outcome and retry_state.outcome.failed:
+            exception = retry_state.outcome.exception()
+            server_url = retry_state.args[1].url  # Get server from args
+            server = retry_state.args[1]
+
+            error_msg = f'Error connecting to {server_url}: {exception}'
+            logger.error(error_msg)
+            mcp_error_collector.add_error(
+                server_name=server_url,
+                server_type='shttp'
+                if isinstance(server, MCPSHTTPServerConfig)
+                else 'sse',
+                error_message=error_msg,
+                exception_details=str(exception),
+            )
+
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=1, min=2, max=20),
+        retry=retry_if_exception_type((McpError, Exception)),
+        before_sleep=before_sleep_log(logger, logging.WARNING),
+        after=_log_retry_error,
+        reraise=True,
+    )
     async def connect_http(
         self,
         server: MCPSSEServerConfig | MCPSHTTPServerConfig,
@@ -69,60 +104,34 @@ class MCPClient(BaseModel):
         if not server_url:
             raise ValueError('Server URL is required.')
 
-        try:
-            headers = (
-                {
-                    'Authorization': f'Bearer {api_key}',
-                    's': api_key,  # We need this for action execution server's MCP Router
-                    'X-Session-API-Key': api_key,  # We need this for Remote Runtime
-                }
-                if api_key
-                else {}
+        headers = (
+            {
+                'Authorization': f'Bearer {api_key}',
+                's': api_key,  # We need this for action execution server's MCP Router
+                'X-Session-API-Key': api_key,  # We need this for Remote Runtime
+            }
+            if api_key
+            else {}
+        )
+
+        if conversation_id:
+            headers['X-OpenHands-ServerConversation-ID'] = conversation_id
+
+        # Instantiate custom transports due to custom headers
+        if isinstance(server, MCPSHTTPServerConfig):
+            transport = StreamableHttpTransport(
+                url=server_url,
+                headers=headers if headers else None,
+            )
+        else:
+            transport = SSETransport(
+                url=server_url,
+                headers=headers if headers else None,
             )
 
-            if conversation_id:
-                headers['X-OpenHands-ServerConversation-ID'] = conversation_id
+        self.client = Client(transport, timeout=timeout)
 
-            # Instantiate custom transports due to custom headers
-            if isinstance(server, MCPSHTTPServerConfig):
-                transport = StreamableHttpTransport(
-                    url=server_url,
-                    headers=headers if headers else None,
-                )
-            else:
-                transport = SSETransport(
-                    url=server_url,
-                    headers=headers if headers else None,
-                )
-
-            self.client = Client(transport, timeout=timeout)
-
-            await self._initialize_and_list_tools()
-        except McpError as e:
-            error_msg = f'McpError connecting to {server_url}: {e}'
-            logger.error(error_msg)
-            mcp_error_collector.add_error(
-                server_name=server_url,
-                server_type='shttp'
-                if isinstance(server, MCPSHTTPServerConfig)
-                else 'sse',
-                error_message=error_msg,
-                exception_details=str(e),
-            )
-            raise  # Re-raise the error
-
-        except Exception as e:
-            error_msg = f'Error connecting to {server_url}: {e}'
-            logger.error(error_msg)
-            mcp_error_collector.add_error(
-                server_name=server_url,
-                server_type='shttp'
-                if isinstance(server, MCPSHTTPServerConfig)
-                else 'sse',
-                error_message=error_msg,
-                exception_details=str(e),
-            )
-            raise
+        await self._initialize_and_list_tools()
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
         """Connect to MCP server using stdio transport"""
@@ -146,6 +155,12 @@ class MCPClient(BaseModel):
             )
             raise
 
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential(multiplier=1, min=2, max=20),
+        retry=retry_if_exception_type((Exception)),
+        reraise=True,
+    )
     async def call_tool(self, tool_name: str, args: dict) -> CallToolResult:
         """Call a tool on the MCP server."""
         if tool_name not in self.tool_map:
