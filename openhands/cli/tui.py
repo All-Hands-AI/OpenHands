@@ -11,6 +11,7 @@ import threading
 import time
 from typing import Generator
 
+import markdown  # type: ignore
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -65,6 +66,7 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
+COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
@@ -236,13 +238,19 @@ def display_mcp_errors() -> None:
 
 
 # Prompt output display functions
-def display_thought_if_new(thought: str) -> None:
-    """Display a thought only if it hasn't been displayed recently."""
+def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
+    """
+    Display a thought only if it hasn't been displayed recently.
+
+    Args:
+        thought: The thought to display
+        is_agent_message: If True, apply agent styling and markdown rendering
+    """
     global recent_thoughts
     if thought and thought.strip():
         # Check if this thought was recently displayed
         if thought not in recent_thoughts:
-            display_message(thought)
+            display_message(thought, is_agent_message=is_agent_message)
             recent_thoughts.append(thought)
             # Keep only the most recent thoughts
             if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
@@ -255,7 +263,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
 
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
@@ -269,14 +277,15 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
             if hasattr(event, 'final_thought') and event.final_thought:
-                display_message(event.final_thought)
+                # Display final thoughts with agent styling
+                display_message(event.final_thought, is_agent_message=True)
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Check if this message content is a duplicate thought
-                display_thought_if_new(event.content)
+                # Display agent messages with styling and markdown rendering
+                display_thought_if_new(event.content, is_agent_message=True)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -291,11 +300,76 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_error(event.content)
 
 
-def display_message(message: str) -> None:
+def display_message(message: str, is_agent_message: bool = False) -> None:
+    """
+    Display a message in the terminal with markdown rendering.
+
+    Args:
+        message: The message to display
+        is_agent_message: If True, apply agent styling (blue color)
+    """
     message = message.strip()
 
     if message:
-        print_formatted_text(f'\n{message}')
+        # Add spacing before the message
+        print_formatted_text('')
+
+        try:
+            # Convert markdown to HTML for all messages
+            html_content = convert_markdown_to_html(message)
+
+            if is_agent_message:
+                # Use prompt_toolkit's HTML renderer with the agent color
+                print_formatted_text(
+                    HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>')
+                )
+            else:
+                # Regular message display with HTML rendering but default color
+                print_formatted_text(HTML(html_content))
+        except Exception as e:
+            # If HTML rendering fails, fall back to plain text
+            print(f'Warning: HTML rendering failed: {str(e)}', file=sys.stderr)
+            if is_agent_message:
+                print_formatted_text(
+                    FormattedText([('fg:' + COLOR_AGENT_BLUE, message)])
+                )
+            else:
+                print_formatted_text(message)
+
+
+def convert_markdown_to_html(text: str) -> str:
+    """
+    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+
+    Args:
+        text: Markdown text to convert
+
+    Returns:
+        HTML formatted text with custom styling for headers and bullet points
+    """
+    if not text:
+        return text
+
+    # Use the markdown library to convert markdown to HTML
+    # Enable the 'extra' extension for tables, fenced code, etc.
+    html = markdown.markdown(text, extensions=['extra'])
+
+    # Customize headers
+    for i in range(1, 7):
+        # Get the appropriate number of # characters for this heading level
+        prefix = '#' * i + ' '
+
+        # Replace <h1> with the prefix and bold text
+        html = html.replace(f'<h{i}>', f'<b>{prefix}')
+        html = html.replace(f'</h{i}>', '</b>\n')
+
+    # Customize bullet points to use dashes instead of dots with compact spacing
+    html = html.replace('<ul>', '')
+    html = html.replace('</ul>', '')
+    html = html.replace('<li>', '- ')
+    html = html.replace('</li>', '')
+
+    return html
 
 
 def display_error(error: str) -> None:
