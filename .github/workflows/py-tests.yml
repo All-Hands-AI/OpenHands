@@ -51,8 +51,9 @@ jobs:
         run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest --forked -n auto -svv ./tests/unit
       - name: Run Runtime Tests with CLIRuntime
         run: PYTHONPATH=".:$PYTHONPATH" TEST_RUNTIME=cli poetry run pytest -svv tests/runtime/test_bash.py
-      - name: Run E2E Tests
-        run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest -svv tests/e2e
+      # E2E tests are run in a separate workflow (e2e-tests.yml)
+      # - name: Run E2E Tests
+      #   run: PYTHONPATH=".:$PYTHONPATH" poetry run pytest -svv tests/e2e
 
   # Run specific Windows python tests
   test-on-windows:

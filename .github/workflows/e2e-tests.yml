@@ -66,6 +66,7 @@ jobs:
           FRONTEND_HOST: 0.0.0.0
           BACKEND_HOST: 0.0.0.0
           BACKEND_PORT: 3000
+          BROWSER_DOWNLOADS_PATH: $HOME/downloads
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -153,6 +154,25 @@ jobs:
             if [ $((attempt % 3)) -eq 0 ]; then
               echo "Recent log output:"
               tail -n 20 /tmp/openhands-e2e-test.log
+            fi
+
+            # Check for specific error patterns that indicate a fatal error
+            if grep -q "EACCES: permission denied, mkdir '/workspace'" /tmp/openhands-e2e-test.log; then
+              echo "ERROR: Fatal error detected - Permission denied for /workspace directory"
+              echo "Last 50 lines of the log:"
+              tail -n 50 /tmp/openhands-e2e-test.log
+              exit 1
+            fi
+
+            # Check for other common fatal errors
+            if grep -q "Error: Cannot find module" /tmp/openhands-e2e-test.log ||
+               grep -q "ModuleNotFoundError" /tmp/openhands-e2e-test.log ||
+               grep -q "ImportError" /tmp/openhands-e2e-test.log ||
+               grep -q "Fatal error" /tmp/openhands-e2e-test.log; then
+              echo "ERROR: Fatal error detected in application startup"
+              echo "Last 50 lines of the log:"
+              tail -n 50 /tmp/openhands-e2e-test.log
+              exit 1
             fi
 
             # Check if we've reached the maximum number of attempts
