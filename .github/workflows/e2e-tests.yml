@@ -44,15 +44,15 @@ jobs:
           cache: 'npm'
           cache-dependency-path: 'frontend/package-lock.json'
 
-      - name: Setup workspace for end-to-end tests
+      - name: Setup environment for end-to-end tests
         run: |
           # Create test results directory
           mkdir -p tests/e2e/test-results
 
-          # Create workspace directory for OpenHands (use a directory in the home folder)
-          mkdir -p $HOME/workspace
-          sudo chown -R $USER:$USER $HOME/workspace
-          sudo chmod -R 755 $HOME/workspace
+          # Create downloads directory for OpenHands (use a directory in the home folder)
+          mkdir -p $HOME/downloads
+          sudo chown -R $USER:$USER $HOME/downloads
+          sudo chmod -R 755 $HOME/downloads
 
       - name: Build OpenHands
         env:
@@ -173,9 +173,9 @@ jobs:
               tail -n 20 /tmp/openhands-e2e-test.log
             fi
 
-            # Check for specific error patterns that indicate a fatal error
-            if grep -q "EACCES: permission denied, mkdir '/workspace'" /tmp/openhands-e2e-test.log; then
-              echo "ERROR: Fatal error detected - Permission denied for /workspace directory"
+            # Check for permission denied errors
+            if grep -q "EACCES: permission denied" /tmp/openhands-e2e-test.log; then
+              echo "ERROR: Fatal error detected - Permission denied error"
               echo "Last 50 lines of the log:"
               tail -n 50 /tmp/openhands-e2e-test.log
               exit 1
