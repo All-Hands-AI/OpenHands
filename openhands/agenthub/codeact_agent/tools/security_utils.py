@@ -3,20 +3,43 @@ Security utility constants for tool risk descriptions.
 This file contains standardized risk description text for various tools.
 """
 
+from pathlib import Path
+
+from jinja2 import Environment, FileSystemLoader
+
+# Set up Jinja environment
+TEMPLATE_DIR = Path(__file__).parent / 'security_utils_templates'
+env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+
+
+# Load templates for each tool type
+def _load_template(template_name: str) -> str:
+    """Load and render a template from the templates directory.
+
+    Args:
+        template_name: The name of the template file without extension
+
+    Returns:
+        The rendered template as a string
+    """
+    template = env.get_template(f'{template_name}.j2')
+    return template.render()
+
+
 # Browser tool risk description
-BROWSER_RISK_DESC = "The LLM's assessment of the safety risk of this browser action. This helps the security analyzer determine whether user confirmation is needed."
+BROWSER_RISK_DESC = _load_template('browser')
 
 # Bash tool risk description
-BASH_RISK_DESC = "The LLM's assessment of the safety risk of this command. This helps the security analyzer determine whether user confirmation is needed."
+BASH_RISK_DESC = _load_template('bash')
 
 # IPython tool risk description
-IPYTHON_RISK_DESC = "The LLM's assessment of the safety risk of this Python code. This helps the security analyzer determine whether user confirmation is needed."
+IPYTHON_RISK_DESC = _load_template('ipython')
 
 # String replace editor tool risk description
-STR_REPLACE_EDITOR_RISK_DESC = "The LLM's assessment of the safety risk of this file operation. This helps the security analyzer determine whether user confirmation is needed."
+STR_REPLACE_EDITOR_RISK_DESC = _load_template('str_replace_editor')
 
 # LLM-based edit tool risk description
-LLM_BASED_EDIT_RISK_DESC = "The LLM's assessment of the safety risk of this edit operation. This helps the security analyzer determine whether user confirmation is needed."
+LLM_BASED_EDIT_RISK_DESC = _load_template('llm_based_edit')
 
 # Risk level enum values - common across all tools
 RISK_LEVELS = ['LOW', 'MEDIUM', 'HIGH']
