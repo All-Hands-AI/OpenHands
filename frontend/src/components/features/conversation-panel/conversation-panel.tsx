@@ -65,23 +65,24 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   // Listen for title updates via WebSocket
   React.useEffect(() => {
-    if (!events.length) return;
-
-    const latestEvent = events[events.length - 1];
+    if (!events.length) {
+      return;
+    }
+    const event = events[events.length - 1];
 
     // Check if this is a status update with a conversation title
     if (
-      typeof latestEvent === "object" &&
-      latestEvent !== null &&
-      "status_update" in latestEvent &&
-      latestEvent.status_update === true &&
-      "conversation_title" in latestEvent &&
-      typeof latestEvent.conversation_title === "string"
+      typeof event === "object" &&
+      event !== null &&
+      "status_update" in event &&
+      event.status_update === true &&
+      "conversation_title" in event &&
+      typeof event.conversation_title === "string"
     ) {
       // Invalidate the conversations query to refetch with updated titles
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     }
-  }, [events, queryClient]);
+  }, [events.length, queryClient]);
 
   // Set up infinite scroll
   const scrollContainerRef = useInfiniteScroll({
