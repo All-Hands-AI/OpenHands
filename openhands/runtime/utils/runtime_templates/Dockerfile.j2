@@ -344,6 +344,3 @@ RUN \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
     chown openhands:openhands /home/openhands/.bashrc
-
-# Ensure final user is openhands
-USER openhands
