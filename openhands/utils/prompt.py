@@ -4,7 +4,6 @@ from itertools import islice
 
 from jinja2 import Template
 
-from openhands.agenthub.codeact_agent.tools.bash import refine_prompt
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
