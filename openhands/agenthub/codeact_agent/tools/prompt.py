@@ -5,13 +5,13 @@ import sys
 def refine_prompt(prompt: str):
     """
     Refines the prompt based on the platform.
-    
+
     On Windows systems, replaces 'bash' with 'powershell' and 'execute_bash' with 'execute_powershell'
     to ensure commands work correctly on the Windows platform.
-    
+
     Args:
         prompt: The prompt text to refine
-        
+
     Returns:
         The refined prompt text
     """
