@@ -12702,5 +12702,37 @@
         "tr": "Depo yok",
         "de": "Kein Repository",
         "uk": "Немає репозиторію"
+    },
+    "ACTION$CONFIRM_DELETE": {
+        "en": "Confirm Delete",
+        "ja": "削除を確認",
+        "zh-CN": "确认删除",
+        "zh-TW": "確認刪除",
+        "ko-KR": "삭제 확인",
+        "fr": "Confirmer la suppression",
+        "es": "Confirmar eliminación",
+        "de": "Löschen bestätigen",
+        "it": "Conferma eliminazione",
+        "pt": "Confirmar exclusão",
+        "ar": "تأكيد الحذف",
+        "no": "Bekreft sletting",
+        "tr": "Silme Onayı",
+        "uk": "Підтвердити видалення"
+    },
+    "ACTION$CONFIRM_STOP": {
+        "en": "Confirm Stop",
+        "ja": "停止を確認",
+        "zh-CN": "确认停止",
+        "zh-TW": "確認停止",
+        "ko-KR": "중지 확인",
+        "fr": "Confirmer l'arrêt",
+        "es": "Confirmar detención",
+        "de": "Stopp bestätigen",
+        "it": "Conferma interruzione",
+        "pt": "Confirmar parada",
+        "ar": "تأكيد الإيقاف",
+        "no": "Bekreft stopp",
+        "tr": "Durdurmayı Onayla",
+        "uk": "Підтвердити зупинку"
     }
 }
