@@ -112,20 +112,37 @@ except Exception as e:
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
-          make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 > /tmp/openhands-e2e-test.log 2>&1 &
-
+          FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
+          
+          # Store the PID of the make run process
+          MAKE_PID=$!
+          echo "OpenHands started with PID: $MAKE_PID"
+          
           # Wait for the application to start
           echo "Waiting for OpenHands to start..."
-          max_attempts=10
+          max_attempts=15
           attempt=1
           
           while [ $attempt -le $max_attempts ]; do
             echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
             
+            # Check if the process is still running
+            if ! ps -p $MAKE_PID > /dev/null; then
+              echo "ERROR: OpenHands process has terminated unexpectedly"
+              echo "Last 50 lines of the log:"
+              tail -n 50 /tmp/openhands-e2e-test.log
+              exit 1
+            fi
+            
             # Check if frontend port is open
             if nc -z localhost 12000; then
-              echo "SUCCESS: Frontend port 12000 is open"
-              break
+              # Verify we can get HTML content
+              if curl -s http://localhost:12000 | grep -q "<html"; then
+                echo "SUCCESS: OpenHands is running and serving HTML content on port 12000"
+                break
+              else
+                echo "Port 12000 is open but not serving HTML content yet"
+              fi
             else
               echo "Frontend port 12000 is not open yet"
             fi
@@ -149,12 +166,15 @@ except Exception as e:
           done
           
           # Final verification that the app is running
-          if ! nc -z localhost 12000; then
-            echo "ERROR: OpenHands is not running on port 12000"
+          if ! nc -z localhost 12000 || ! curl -s http://localhost:12000 | grep -q "<html"; then
+            echo "ERROR: OpenHands is not running properly on port 12000"
             echo "Last 50 lines of the log:"
             tail -n 50 /tmp/openhands-e2e-test.log
             exit 1
           fi
+          
+          # Print success message
+          echo "OpenHands is running successfully on port 12000"
 
       - name: Run end-to-end tests
         run: |
