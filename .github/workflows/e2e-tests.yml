@@ -69,7 +69,7 @@ jobs:
           BROWSER_DOWNLOADS_PATH: $HOME/downloads
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
           DISABLE_SANDBOX: true
-          ENABLE_BROWSER: false
+          ENABLE_BROWSER: true
           INSTALL_PLAYWRIGHT: 1
         run: |
           # Check the Makefile to understand what make build and make run do
@@ -232,22 +232,9 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
-          # Install Playwright browsers directly before running tests
-          echo "Installing Playwright browsers directly in the test step..."
-          poetry run playwright install chromium
-          
-          # Verify Playwright browsers installation
-          if [ -d "$HOME/.cache/ms-playwright" ]; then
-            echo "Playwright browsers directory exists at $HOME/.cache/ms-playwright"
-            ls -la $HOME/.cache/ms-playwright
-          else
-            echo "ERROR: Playwright browsers directory not found after installation!"
-            exit 1
-          fi
-          
           # Run the Playwright tests
           cd tests/e2e
-          poetry run python -m pytest test_workflow.py -v --browser chromium
+          poetry run python -m pytest test_workflow.py -v
 
       - name: Upload test results
         if: always()
