@@ -80,8 +80,7 @@ def get_config(
 
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
-    if config_copy.search_api_key:
-        config.search_api_key = SecretStr(config_copy.search_api_key)
+    config.search_api_key = config_copy.search_api_key
     return config
 
 
