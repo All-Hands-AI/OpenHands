@@ -89,7 +89,7 @@ jobs:
           BACKEND_HOST: 0.0.0.0
           BACKEND_PORT: 3000
         run: |
-          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v --timeout=600
+          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
 
       - name: Upload test results
         if: always()

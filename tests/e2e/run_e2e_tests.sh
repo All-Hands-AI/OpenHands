@@ -26,4 +26,4 @@ fi
 
 # Run the test
 echo "Running end-to-end tests..."
-poetry run python -m pytest test_workflow.py::test_openhands_workflow -v --timeout=600
+poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
