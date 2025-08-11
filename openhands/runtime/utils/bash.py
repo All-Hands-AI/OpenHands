@@ -654,4 +654,3 @@ class BashSession:
             logger.debug(f'SLEEPING for {self.POLL_INTERVAL} seconds for next poll')
             time.sleep(self.POLL_INTERVAL)
         raise RuntimeError('Bash session was likely interrupted...')
-
