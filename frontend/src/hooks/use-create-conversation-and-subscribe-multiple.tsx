@@ -90,18 +90,18 @@ export const useCreateConversationAndSubscribeMultiple = () => {
   // Get conversation IDs that need polling
   const conversationIdsToWatch = Object.keys(createdConversations);
 
-  // Poll each conversation until it's ready using useQueries to avoid Rules of Hooks violation
+  // Poll each conversation until it's ready
   const conversationQueries = useQueries({
     queries: conversationIdsToWatch.map((conversationId) => ({
       queryKey: ["conversation-ready-poll", conversationId],
       queryFn: () => OpenHands.getConversation(conversationId),
       enabled: !!conversationId,
-      refetchInterval: (query: any) => {
+      refetchInterval: (query) => {
         const status = query.state.data?.status;
         if (status === "STARTING") {
-          return 3000; // Poll every 3 seconds while starting
+          return 3000; // Poll every 3 seconds while STARTING
         }
-        return false; // Stop polling once not starting
+        return false; // Stop polling once not STARTING
       },
       retry: false,
     })),
@@ -112,15 +112,12 @@ export const useCreateConversationAndSubscribeMultiple = () => {
     conversationQueries.forEach((query, index) => {
       const conversationId = conversationIdsToWatch[index];
       const conversationData = createdConversations[conversationId];
-      
+
       if (!query.data || !conversationData) return;
 
       const { status } = query.data;
-      
-      if (status === "RUNNING") {
-        // Dismiss the starting toast
-        toast.dismiss(`starting-${conversationId}`);
 
+      if (status === "RUNNING") {
         // Conversation is ready - subscribe to WebSocket
         subscribeToConversation({
           conversationId: conversationData.conversationId,
@@ -144,10 +141,12 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       } else if (status === "STOPPED") {
         // Dismiss the starting toast
         toast.dismiss(`starting-${conversationId}`);
-        
+
         // Conversation failed to start
-        console.warn(`Conversation ${conversationId} stopped before WebSocket connection could be established`);
-        
+        console.warn(
+          `Conversation ${conversationId} stopped before WebSocket connection could be established`,
+        );
+
         // Remove from created conversations (cleanup)
         setCreatedConversations((prev) => {
           const newCreated = { ...prev };
