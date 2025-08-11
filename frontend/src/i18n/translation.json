@@ -2415,6 +2415,22 @@
         "tr": "GitHub'da Görevler Öner",
         "uk": "Запропонувати завдання на GitHub"
     },
+    "SETTINGS$SOLVABILITY_ANALYSIS": {
+        "en": "Enable Solvability Analysis",
+        "ja": "解決可能性分析を有効にする",
+        "zh-CN": "启用可解决性分析",
+        "zh-TW": "啟用可解決性分析",
+        "ko-KR": "해결 가능성 분석 활성화",
+        "de": "Lösbarkeitsanalyse aktivieren",
+        "no": "Aktiver løsningsanalyse",
+        "it": "Abilita analisi di risolvibilità",
+        "pt": "Ativar análise de solucionabilidade",
+        "es": "Habilitar análisis de solvencia",
+        "ar": "تمكين تحليل القابلية للحل",
+        "fr": "Activer l'analyse de solvabilité",
+        "tr": "Çözünürlük Analizini Etkinleştir",
+        "uk": "Увімкнути аналіз розв'язності"
+    },
     "SETTINGS$SEARCH_API_KEY": {
         "en": "Search API Key (Tavily)",
         "ja": "検索APIキー (Tavily)",
