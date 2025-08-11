@@ -68,6 +68,7 @@ jobs:
           BACKEND_PORT: 3000
           BROWSER_DOWNLOADS_PATH: $HOME/downloads
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
+          SANDBOX_VOLUMES: $HOME/workspace:/workspace:rw
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -94,6 +95,8 @@ jobs:
           echo '[core]' > config.toml
           echo "workspace_base=\"$HOME/workspace\"" >> config.toml
           echo "browser_downloads_path=\"$HOME/downloads\"" >> config.toml
+          echo '[runtime]' >> config.toml
+          echo "sandbox_volumes=[\"$HOME/workspace:/workspace:rw\"]" >> config.toml
           mkdir -p $HOME/workspace $HOME/downloads
           chmod -R 777 $HOME/workspace $HOME/downloads
           cat config.toml
@@ -118,6 +121,10 @@ jobs:
           VENV_PATH=$(poetry env info -p)
           echo "Virtual environment path: $VENV_PATH"
           source $VENV_PATH/bin/activate
+
+          # Install Playwright browsers
+          echo "Installing Playwright browsers..."
+          python -m playwright install chromium
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
