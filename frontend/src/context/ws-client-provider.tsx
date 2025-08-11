@@ -166,16 +166,15 @@ export function WsClientProvider({
 
     // Handle status updates (including title updates)
     if (isStatusUpdate(event)) {
+      console.log('🔍 Status update received:', event);
       // Handle conversation title updates
-      if (
-        event.id === "CONVERSATION_TITLE_UPDATED" &&
-        "conversation_title" in event &&
-        typeof event.conversation_title === "string"
-      ) {
+      if (event.id === "CONVERSATION_TITLE_UPDATED") {
+        console.log('🎯 Title update detected, invalidating queries');
         // Invalidate the conversations query to refetch with updated titles
         queryClient.invalidateQueries({
           queryKey: ["user", "conversations", "paginated"],
         });
+        console.log('✅ Query invalidation triggered');
       }
     }
 
