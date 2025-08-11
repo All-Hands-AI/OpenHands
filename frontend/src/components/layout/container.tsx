@@ -14,6 +14,8 @@ interface ContainerProps {
     isBeta?: boolean;
     isLoading?: boolean;
     rightContent?: React.ReactNode;
+    onClick?(): void;
+    isActive?: boolean;
   }[];
   children: React.ReactNode;
   className?: React.HTMLAttributes<HTMLDivElement>["className"];
@@ -95,14 +97,25 @@ export function Container({
             onScroll={updateScrollButtons}
           >
             {labels.map(
-              ({ label: l, to, icon, isBeta, isLoading, rightContent }) => (
+              ({
+                label: l,
+                to,
+                icon,
+                isBeta,
+                isLoading,
+                rightContent,
+                onClick,
+                isActive,
+              }) => (
                 <NavTab
                   key={to}
                   to={to}
+                  onClick={onClick}
                   label={l}
                   icon={icon}
                   isBeta={isBeta}
                   isLoading={isLoading}
+                  isActive={isActive}
                   rightContent={rightContent}
                 />
               ),
