@@ -45,7 +45,7 @@ export function ActionSuggestions({
   return (
     <div className="flex flex-col gap-2 mb-2">
       {providersAreSet && conversation?.selected_repository && (
-        <div className="flex flex-row gap-2 justify-center w-full">
+        <div className="flex flex-row gap-2 w-full">
           {!hasPullRequest ? (
             <>
               <SuggestionItem
