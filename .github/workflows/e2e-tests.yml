@@ -49,10 +49,10 @@ jobs:
           # Create test results directory
           mkdir -p tests/e2e/test-results
 
-          # Create workspace directory for OpenHands
-          mkdir -p /workspace
-          sudo chown -R $USER:$USER /workspace
-          sudo chmod -R 755 /workspace
+          # Create workspace directory for OpenHands (use a directory in the home folder)
+          mkdir -p $HOME/workspace
+          sudo chown -R $USER:$USER $HOME/workspace
+          sudo chmod -R 755 $HOME/workspace
 
       - name: Build OpenHands
         env:
@@ -83,9 +83,11 @@ jobs:
           echo "Running make build..."
           make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
 
-          # Create a basic config.toml file
+          # Create a basic config.toml file with custom workspace path
           echo "Creating basic config.toml file..."
-          make setup-config-basic
+          echo '[core]' > config.toml
+          echo 'workspace_base="$HOME/workspace"' >> config.toml
+          cat config.toml
 
           # Print current directory for debugging
           echo "Current directory: $(pwd)"
