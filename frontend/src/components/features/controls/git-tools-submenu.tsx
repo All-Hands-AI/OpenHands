@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useDispatch } from "react-redux";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
@@ -10,6 +11,7 @@ import {
   getCreatePRPrompt,
   getCreateNewBranchPrompt,
 } from "#/utils/utils";
+import { setMessageToSend } from "#/state/conversation-slice";
 
 import ArrowUpIcon from "#/icons/u-arrow-up.svg?react";
 import ArrowDownIcon from "#/icons/u-arrow-down.svg?react";
@@ -22,32 +24,32 @@ const contextMenuListItemClassName =
 
 interface GitToolsSubmenuProps {
   onClose: () => void;
-  onSubmit: (message: string) => void;
 }
 
-export function GitToolsSubmenu({ onClose, onSubmit }: GitToolsSubmenuProps) {
+export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
   const { t } = useTranslation();
+  const dispatch = useDispatch();
   const { data: conversation } = useActiveConversation();
 
   const currentGitProvider = conversation?.git_provider as Provider;
 
   const onGitPull = () => {
-    onSubmit(getGitPullPrompt());
+    dispatch(setMessageToSend(getGitPullPrompt()));
     onClose();
   };
 
   const onGitPush = () => {
-    onSubmit(getGitPushPrompt(currentGitProvider));
+    dispatch(setMessageToSend(getGitPushPrompt(currentGitProvider)));
     onClose();
   };
 
   const onCreatePR = () => {
-    onSubmit(getCreatePRPrompt(currentGitProvider));
+    dispatch(setMessageToSend(getCreatePRPrompt(currentGitProvider)));
     onClose();
   };
 
   const onCreateNewBranch = () => {
-    onSubmit(getCreateNewBranchPrompt());
+    dispatch(setMessageToSend(getCreateNewBranchPrompt()));
     onClose();
   };
 

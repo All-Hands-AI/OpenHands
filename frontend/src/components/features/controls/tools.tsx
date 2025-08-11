@@ -9,11 +9,7 @@ import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { SystemMessageModal } from "../conversation-panel/system-message-modal";
 import { MicroagentsModal } from "../conversation-panel/microagents-modal";
 
-interface ToolsProps {
-  onSubmit: (message: string) => void;
-}
-
-export function Tools({ onSubmit }: ToolsProps) {
+export function Tools() {
   const { t } = useTranslation();
   const { conversationId } = useParams<{ conversationId: string }>();
   const { data: conversation } = useActiveConversation();
@@ -56,7 +52,6 @@ export function Tools({ onSubmit }: ToolsProps) {
           onClose={() => setContextMenuOpen(false)}
           onShowMicroagents={handleShowMicroagents}
           onShowAgentTools={handleShowAgentTools}
-          onSubmit={onSubmit}
         />
       )}
 

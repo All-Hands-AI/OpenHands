@@ -25,14 +25,12 @@ interface ToolsContextMenuProps {
   onClose: () => void;
   onShowMicroagents: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowAgentTools: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  onSubmit: (message: string) => void;
 }
 
 export function ToolsContextMenu({
   onClose,
   onShowMicroagents,
   onShowAgentTools,
-  onSubmit,
 }: ToolsContextMenuProps) {
   const { t } = useTranslation();
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
@@ -67,7 +65,7 @@ export function ToolsContextMenu({
             />
           </ContextMenuListItem>
           <div className="absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
-            <GitToolsSubmenu onClose={onClose} onSubmit={onSubmit} />
+            <GitToolsSubmenu onClose={onClose} />
           </div>
         </div>
       )}

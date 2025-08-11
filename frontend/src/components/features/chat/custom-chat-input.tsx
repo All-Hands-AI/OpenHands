@@ -336,7 +336,7 @@ export function CustomChatInput({
 
         <div className="w-full flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <Tools onSubmit={onSubmit} />
+            <Tools />
             <ServerStatus conversationStatus={conversationStatus} />
           </div>
           <AgentStatus
