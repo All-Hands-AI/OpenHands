@@ -127,17 +127,7 @@ jobs:
           # Verify Playwright browsers are installed
           echo "Verifying Playwright browsers installation..."
           
-          # Check if Playwright is installed in the current environment
-          PLAYWRIGHT_VERSION=$(poetry run python -c "import importlib.metadata; print(importlib.metadata.version('playwright'))" 2>/dev/null || echo "")
-          if [ -z "$PLAYWRIGHT_VERSION" ]; then
-            echo "Installing Playwright..."
-            poetry run pip install playwright
-          else
-            echo "Playwright $PLAYWRIGHT_VERSION is already installed."
-          fi
-          
-          # Check if browsers are actually installed and working for the current Playwright version
-          # This is more reliable than just checking if the directory exists
+          # Simple check if browsers are installed and working
           BROWSER_CHECK=$(poetry run python -c "
 import sys
 try:
@@ -155,16 +145,10 @@ except Exception as e:
 " 2>/dev/null || echo "error")
           
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
-            echo "Chromium browser not found or not working. Installing Playwright browsers..."
-            # Install Playwright browsers directly
-            poetry run playwright install --with-deps chromium
-            
-            # Verify installation was successful
-            poetry run python -c "
-from playwright.sync_api import sync_playwright
-with sync_playwright() as p:
-    print(f'Chromium executable path: {p.chromium.executable_path}')
-"
+            echo "ERROR: Chromium browser not found or not working after running 'make build'"
+            echo "This indicates that the Playwright installation in the Makefile failed."
+            echo "Check the build logs for more details."
+            exit 1
           else
             echo "Playwright browsers are properly installed and working."
           fi
