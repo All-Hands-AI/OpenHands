@@ -130,7 +130,9 @@ jobs:
             echo "Playwright browsers directory exists at $HOME/.cache/ms-playwright"
             ls -la $HOME/.cache/ms-playwright
           else
-            echo "WARNING: Playwright browsers directory not found. It should have been installed during 'make build'."
+            echo "WARNING: Playwright browsers directory not found. Installing Playwright browsers now..."
+            # Install Playwright browsers directly
+            poetry run playwright install --with-deps chromium
           fi
 
           # Start the application using make run with custom parameters
