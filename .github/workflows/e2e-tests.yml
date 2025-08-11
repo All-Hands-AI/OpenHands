@@ -81,6 +81,10 @@ jobs:
             find . -name "Makefile" | head -n 5
           fi
 
+          # Fix poetry.lock file if needed
+          echo "Fixing poetry.lock file if needed..."
+          poetry lock
+
           # Build OpenHands using make build
           echo "Running make build..."
           make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
@@ -108,6 +112,12 @@ jobs:
             echo "ERROR: frontend directory not found!"
             find . -type d -name "frontend" | head -n 5
           fi
+
+          # Find and activate the poetry virtual environment
+          echo "Finding and activating the poetry virtual environment..."
+          VENV_PATH=$(poetry env info -p)
+          echo "Virtual environment path: $VENV_PATH"
+          source $VENV_PATH/bin/activate
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
