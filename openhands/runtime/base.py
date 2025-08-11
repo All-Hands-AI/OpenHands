@@ -580,7 +580,7 @@ fi
 
         if not files:
             self.log(
-                'warning',
+                'debug',
                 f'No files found in {source_description} microagents directory: {microagents_dir}',
             )
             return loaded_microagents

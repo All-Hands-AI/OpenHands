@@ -703,22 +703,6 @@
         "de": "Geheimnis bearbeiten",
         "uk": "Редагувати секрет"
     },
-    "SECRETS$NO_SECRETS_FOUND": {
-        "en": "No secrets found",
-        "ja": "シークレットが見つかりません",
-        "zh-CN": "未找到密钥",
-        "zh-TW": "未找到密鑰",
-        "ko-KR": "비밀을 찾을 수 없습니다",
-        "no": "Ingen hemmeligheter funnet",
-        "it": "Nessun segreto trovato",
-        "pt": "Nenhum segredo encontrado",
-        "es": "No se encontraron secretos",
-        "ar": "لم يتم العثور على أسرار",
-        "fr": "Aucun secret trouvé",
-        "tr": "Gizli bulunamadı",
-        "de": "Keine Geheimnisse gefunden",
-        "uk": "Секретів не знайдено"
-    },
     "SECRETS$ADD_NEW_SECRET": {
         "en": "Add a new secret",
         "ja": "新しいシークレットを追加",
@@ -1246,6 +1230,22 @@
         "tr": "Bir Depoya Bağlan",
         "de": "Mit einem Repository verbinden",
         "uk": "Підключіть до репозиторій"
+    },
+    "HOME$CONNECT_TO_REPOSITORY_TOOLTIP": {
+        "en": "You can enter a public GitHub URL if you'd like to work from a public repo instead",
+        "ja": "代わりにパブリックリポジトリで作業したい場合は、パブリックGitHub URLを入力できます",
+        "zh-CN": "如果您想从公共仓库工作，可以输入公共GitHub URL",
+        "zh-TW": "如果您想從公共儲存庫工作，可以輸入公共GitHub URL",
+        "ko-KR": "대신 공개 저장소에서 작업하고 싶다면 공개 GitHub URL을 입력할 수 있습니다",
+        "no": "Du kan angi en offentlig GitHub URL hvis du vil jobbe fra et offentlig repo i stedet",
+        "it": "Puoi inserire un URL GitHub pubblico se preferisci lavorare da un repository pubblico",
+        "pt": "Você pode inserir um URL GitHub público se quiser trabalhar de um repositório público",
+        "es": "Puede ingresar una URL de GitHub pública si desea trabajar desde un repositorio público",
+        "ar": "يمكنك إدخال رابط GitHub عام إذا كنت تريد العمل من مستودع عام بدلاً من ذلك",
+        "fr": "Vous pouvez saisir une URL GitHub publique si vous souhaitez travailler à partir d'un dépôt public",
+        "tr": "Bunun yerine genel bir repo'dan çalışmak istiyorsanız genel bir GitHub URL'si girebilirsiniz",
+        "de": "Sie können eine öffentliche GitHub-URL eingeben, wenn Sie stattdessen von einem öffentlichen Repository arbeiten möchten",
+        "uk": "Ви можете ввести публічну GitHub URL, якщо хочете працювати з публічного репозиторію"
     },
     "HOME$LOADING": {
         "en": "Loading...",
@@ -3774,6 +3774,22 @@
         "no": "Socket ikke initialisert",
         "ja": "ソケットが初期化されていません",
         "uk": "Сокет не ініціалізовано"
+    },
+    "SESSION$TIMEOUT_MESSAGE": {
+        "en": "Session Timeout!",
+        "zh-CN": "会话超时！",
+        "de": "Sitzung abgelaufen!",
+        "zh-TW": "會話超時！",
+        "es": "¡Tiempo de sesión agotado!",
+        "fr": "Expiration de la session !",
+        "it": "Timeout della sessione!",
+        "pt": "Tempo limite da sessão!",
+        "ko-KR": "세션 시간 초과!",
+        "ar": "انتهت مهلة الجلسة!",
+        "tr": "Oturum Zaman Aşımı!",
+        "no": "Økten har tidsavbrutt!",
+        "ja": "セッションタイムアウト！",
+        "uk": "Час сеансу минув!"
     },
     "EXPLORER$UPLOAD_ERROR_MESSAGE": {
         "en": "Error uploading file",
@@ -11806,6 +11822,38 @@
         "tr": "OpenHands, talimatlarınıza göre mikro ajanı güncelleyecektir.",
         "de": "OpenHands aktualisiert den Microagenten basierend auf Ihren Anweisungen.",
         "uk": "OpenHands оновить мікроагента відповідно до ваших інструкцій."
+    },
+    "SETTINGS$GIT_USERNAME": {
+        "en": "Git Username",
+        "ja": "Gitユーザー名",
+        "zh-CN": "Git用户名",
+        "zh-TW": "Git使用者名稱",
+        "ko-KR": "Git 사용자 이름",
+        "no": "Git-brukernavn",
+        "it": "Nome utente Git",
+        "pt": "Nome de usuário Git",
+        "es": "Nombre de usuario Git",
+        "ar": "اسم مستخدم Git",
+        "fr": "Nom d'utilisateur Git",
+        "tr": "Git Kullanıcı Adı",
+        "de": "Git-Benutzername",
+        "uk": "Ім'я користувача Git"
+    },
+    "SETTINGS$GIT_EMAIL": {
+        "en": "Git Email",
+        "ja": "Gitメールアドレス",
+        "zh-CN": "Git电子邮件",
+        "zh-TW": "Git電子郵件",
+        "ko-KR": "Git 이메일",
+        "no": "Git-e-post",
+        "it": "Email Git",
+        "pt": "Email Git",
+        "es": "Correo electrónico Git",
+        "ar": "بريد Git الإلكتروني",
+        "fr": "Email Git",
+        "tr": "Git E-posta",
+        "de": "Git-E-Mail",
+        "uk": "Електронна пошта Git"
     },
     "PROJECT_MANAGEMENT$TITLE": {
         "en": "Project Management",
