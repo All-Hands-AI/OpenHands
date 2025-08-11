@@ -1,5 +1,7 @@
 FROM {{ base_image }}
 
+SHELL ["/bin/bash", "-c"]
+
 # Shared environment variables
 ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
     MAMBA_ROOT_PREFIX=/openhands/micromamba \
