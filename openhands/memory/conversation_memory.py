@@ -654,11 +654,17 @@ class ConversationMemory:
             # add Image Content as user message after the tool message
             # https://community.openai.com/t/allowing-images-in-non-user-messages/804176/13
             if message.contains_image:
-                return [Message(
-                    role='user',
-                    content=[content for content in message.content if isinstance(content, ImageContent)],
-                    vision_enabled=vision_is_active,
-                )]
+                return [
+                    Message(
+                        role='user',
+                        content=[
+                            content
+                            for content in message.content
+                            if isinstance(content, ImageContent)
+                        ],
+                        vision_enabled=vision_is_active,
+                    )
+                ]
 
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding
