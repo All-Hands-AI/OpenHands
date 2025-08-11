@@ -30,7 +30,7 @@ from evaluation.utils.shared import (
 from openhands.core.config import (
     LLMConfig,
     OpenHandsConfig,
-    get_parser,
+    get_evaluation_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
@@ -323,7 +323,7 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--input-file',
         type=str,
