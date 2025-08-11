@@ -1,7 +1,7 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
-from openhands.utils.prompt import refine_prompt
+from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
 

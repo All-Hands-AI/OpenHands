@@ -1,34 +1,13 @@
 import os
-import re
-import sys
 from dataclasses import dataclass, field
 from itertools import islice
 
 from jinja2 import Template
 
+from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
-
-
-def refine_prompt(prompt: str):
-    """
-    Refines the prompt based on the platform.
-    This function was moved from openhands.agenthub.codeact_agent.tools.bash
-    to break a circular import.
-    """
-    if sys.platform == 'win32':
-        # Replace 'bash' with 'powershell' including tool names like 'execute_bash'
-        # First replace 'execute_bash' with 'execute_powershell' to handle tool names
-        result = re.sub(
-            r'\bexecute_bash\b', 'execute_powershell', prompt, flags=re.IGNORECASE
-        )
-        # Then replace standalone 'bash' with 'powershell'
-        result = re.sub(
-            r'(?<!execute_)(?<!_)\bbash\b', 'powershell', result, flags=re.IGNORECASE
-        )
-        return result
-    return prompt
 
 
 @dataclass
