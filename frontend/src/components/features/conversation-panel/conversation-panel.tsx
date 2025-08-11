@@ -1,7 +1,7 @@
 import React from "react";
 import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
-import { useQueryClient } from "@tanstack/react-query";
+
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationCard } from "./conversation-card";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
@@ -16,7 +16,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
-import { useWsClient } from "#/context/ws-client-provider";
+
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -59,30 +59,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const { mutate: stopConversation } = useStopConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
-  // WebSocket client and query client for real-time updates
-  const { events } = useWsClient();
-  const queryClient = useQueryClient();
 
-  // Listen for title updates via WebSocket
-  React.useEffect(() => {
-    if (!events.length) {
-      return;
-    }
-    const event = events[events.length - 1];
-
-    // Check if this is a status update with a conversation title
-    if (
-      typeof event === "object" &&
-      event !== null &&
-      "status_update" in event &&
-      event.status_update === true &&
-      "conversation_title" in event &&
-      typeof event.conversation_title === "string"
-    ) {
-      // Invalidate the conversations query to refetch with updated titles
-      queryClient.invalidateQueries({ queryKey: ["conversations"] });
-    }
-  }, [events.length, queryClient]);
 
   // Set up infinite scroll
   const scrollContainerRef = useInfiniteScroll({

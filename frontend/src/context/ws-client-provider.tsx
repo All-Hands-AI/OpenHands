@@ -164,6 +164,19 @@ export function WsClientProvider({
   function handleMessage(event: Record<string, unknown>) {
     handleAssistantMessage(event);
 
+    // Handle status updates (including title updates)
+    if (isStatusUpdate(event)) {
+      // Handle conversation title updates
+      if (
+        event.id === "CONVERSATION_TITLE_UPDATED" &&
+        "conversation_title" in event &&
+        typeof event.conversation_title === "string"
+      ) {
+        // Invalidate the conversations query to refetch with updated titles
+        queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      }
+    }
+
     if (isOpenHandsEvent(event)) {
       const isStatusUpdateError =
         isStatusUpdate(event) && event.type === "error";

@@ -503,6 +503,7 @@ class StandaloneConversationManager(ConversationManager):
                     status_update_dict = {
                         'status_update': True,
                         'type': 'info',
+                        'id': 'CONVERSATION_TITLE_UPDATED',
                         'message': conversation_id,
                         'conversation_title': conversation.title,
                     }
