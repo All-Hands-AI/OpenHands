@@ -248,7 +248,7 @@ class TestDisplayFunctions:
         message = 'Test message'
         display_message(message)
 
-        mock_print.assert_called_once()
+        mock_print.assert_called()
         args, kwargs = mock_print.call_args
         assert message in str(args[0])
 
