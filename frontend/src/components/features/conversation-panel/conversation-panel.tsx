@@ -122,7 +122,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   return (
     <div
       ref={(node) => {
-        // Combine both refs
+        // TODO: Combine both refs somehow
         if (ref.current !== node) ref.current = node;
         if (scrollContainerRef.current !== node)
           scrollContainerRef.current = node;
