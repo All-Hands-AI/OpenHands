@@ -336,9 +336,6 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
             else:
                 print_formatted_text(message)
 
-        # Add spacing after the message
-        print_formatted_text('')
-
 
 def convert_markdown_to_html(text: str) -> str:
     """
