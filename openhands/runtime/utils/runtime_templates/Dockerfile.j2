@@ -86,6 +86,8 @@ RUN mkdir -p /openhands && \
     mkdir -p /openhands/poetry && \
     chown -R openhands:openhands /openhands
 
+{% endmacro %}
+
 
 # ================================================================
 # Define Docker installation macro
@@ -138,8 +140,6 @@ RUN mkdir -p /etc/docker && \
 {{ install_docker() }}
 {% endif %}
 # ================================================================
-
-{% endmacro %}
 
 {% macro setup_vscode_server() %}
 # Reference:
