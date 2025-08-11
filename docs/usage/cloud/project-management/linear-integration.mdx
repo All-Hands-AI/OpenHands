@@ -67,24 +67,27 @@ description: Complete guide for setting up Linear integration with OpenHands Clo
    - Sign in with your Git provider (GitHub, GitLab, or BitBucket)
    - **Important:** Make sure you're signing in with the same Git provider account that contains the repositories you want the OpenHands agent to work on.
 
-### Step 2: Configure Linear Integration
+### Step 2: View Available Workspaces
 
 1. **Access Integration Settings**
    - Navigate to **Settings** > **Integrations**
    - Locate **Linear** section
 
-2. **Configure Workspace**
-   - Click **Configure** button
-   - Enter your workspace name and click **Connect**
-      - If no integration exists, you'll be prompted to enter additional credentials required for the workspace integration:
-         - **Webhook Secret**: The webhook secret from Step 3 above
-         - **Service Account Email**: The service account email from Step 1 above
-         - **Service Account API Key**: The API key from Step 2 above
-         - Ensure **Active** toggle is enabled
+2. **Install Linear App**
+   - Click the **Install Linear App** button
+   - You'll be redirected to a page showing available Linear workspaces
 
-3. **Complete OAuth Flow**
+3. **Select Workspace**
+   - Choose the workspace you want to connect to
+   - If no integration exists, you'll be prompted to enter additional credentials required for the workspace integration:
+      - **Webhook Secret**: The webhook secret from Step 3 above
+      - **Service Account Email**: The service account email from Step 1 above
+      - **Service Account API Key**: The API key from Step 2 above
+      - Ensure **Active** toggle is enabled
+
+4. **Complete OAuth Flow**
    - You'll be redirected to Linear to complete OAuth verification
-   - Grant the necessary permissions to verify your workspace access. If you have access to multiple workspaces, select the correct one that you initially provided
+   - Grant the necessary permissions to verify your workspace access
    - If successful, you will be redirected back to the **Integrations** settings in the OpenHands Cloud UI
 
 ### Managing Your Integration

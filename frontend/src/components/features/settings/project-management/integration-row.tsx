@@ -10,6 +10,7 @@ import {
   ConfigureButton,
   ConfigureModal,
 } from "#/components/features/settings/project-management/configure-modal";
+import { LinearInstallButton } from "#/components/features/settings/project-management/linear-install-button";
 
 interface IntegrationRowProps {
   platform: "jira" | "jira-dc" | "linear";
@@ -88,23 +89,29 @@ export function IntegrationRow({
     <div className="flex items-center justify-between" data-testid={dataTestId}>
       <span className="font-medium">{platformName}</span>
       <div className="flex items-center gap-6">
-        <ConfigureButton
-          onClick={handleConfigure}
-          isDisabled={isLoading}
-          text={buttonText}
-          data-testid={`${platform}-configure-button`}
-        />
+        {platform === "linear" ? (
+          <LinearInstallButton data-testid={`${platform}-install-button`} />
+        ) : (
+          <ConfigureButton
+            onClick={handleConfigure}
+            isDisabled={isLoading}
+            text={buttonText}
+            data-testid={`${platform}-configure-button`}
+          />
+        )}
       </div>
-      <ConfigureModal
-        isOpen={isConfigureModalOpen}
-        onClose={() => setConfigureModalOpen(false)}
-        onConfirm={handleConfigureConfirm}
-        onLink={handleLink}
-        onUnlink={handleUnlink}
-        platformName={platformName}
-        platform={platform}
-        integrationData={integrationData}
-      />
+      {platform !== "linear" && (
+        <ConfigureModal
+          isOpen={isConfigureModalOpen}
+          onClose={() => setConfigureModalOpen(false)}
+          onConfirm={handleConfigureConfirm}
+          onLink={handleLink}
+          onUnlink={handleUnlink}
+          platformName={platformName}
+          platform={platform}
+          integrationData={integrationData}
+        />
+      )}
     </div>
   );
 }

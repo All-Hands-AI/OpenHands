@@ -11951,6 +11951,13 @@
         "de": "Konfigurieren",
         "uk": "Налаштувати"
     },
+    "PROJECT_MANAGEMENT$INSTALL_LINEAR_APP": {
+        "en": "Install Linear App",
+        "ja": "Linear アプリをインストール",
+        "zh-CN": "安装 Linear 应用",
+        "zh-TW": "安裝 Linear 應用",
+        "ko-KR": "Linear 앱 설치"
+    },
     "PROJECT_MANAGEMENT$EDIT_BUTTON_LABEL": {
         "en": "Edit",
         "ja": "編集",
