@@ -64,6 +64,7 @@ def test_readme_line_count():
     assert line_count > 0, 'README.md should have at least one line'
 
 
+@pytest.mark.skip(reason='Browser environment is disabled')
 def test_simple_browser_navigation(page: Page):
     """Test that we can navigate to a page using Playwright."""
     # Navigate to the GitHub repository
@@ -81,6 +82,7 @@ def test_simple_browser_navigation(page: Page):
     print('Successfully navigated to the OpenHands GitHub repository')
 
 
+@pytest.mark.skip(reason='Browser environment is disabled')
 def test_openhands_workflow(page, openhands_app):
     """
     Test the OpenHands end-to-end workflow.
