@@ -64,7 +64,7 @@ def test_readme_line_count():
     assert line_count > 0, 'README.md should have at least one line'
 
 
-@pytest.mark.skip(reason='Browser environment is disabled')
+# @pytest.mark.skip(reason='Browser environment is disabled')
 def test_simple_browser_navigation(page: Page):
     """Test that we can navigate to a page using Playwright."""
     # Navigate to the GitHub repository

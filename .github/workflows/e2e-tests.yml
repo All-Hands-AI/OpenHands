@@ -151,6 +151,17 @@ jobs:
           echo "Checking if frontend is reachable..."
           curl -v http://$FRONTEND_HOST:$FRONTEND_PORT > /tmp/frontend-check.log 2>&1 || echo "Frontend check failed"
           cat /tmp/frontend-check.log
+          
+          # Check if frontend is actually running and serving HTML content
+          echo "Checking if frontend is serving HTML content..."
+          if curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | grep -q "<html"; then
+            echo "SUCCESS: Frontend is serving HTML content"
+            curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | grep -o "<title>.*</title>" || echo "No title found"
+          else
+            echo "ERROR: Frontend is not serving HTML content"
+            echo "Frontend response:"
+            curl -s http://$FRONTEND_HOST:$FRONTEND_PORT | head -n 20
+          fi
 
           # Wait for the application to start with active polling
           echo "Waiting for OpenHands to start..."
