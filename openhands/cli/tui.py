@@ -340,16 +340,6 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
         print_formatted_text('')
 
 
-def display_agent_message(message: str) -> None:
-    """
-    Display an agent message in the terminal with markdown rendering and agent styling.
-
-    Args:
-        message: The message to display
-    """
-    display_message(message, is_agent_message=True)
-
-
 def convert_markdown_to_html(text: str) -> str:
     """
     Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
