@@ -10,19 +10,19 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: true
-        default: ''
+        default: ""
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
   group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 env:
   RELEVANT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
@@ -202,7 +202,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
@@ -264,7 +264,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
