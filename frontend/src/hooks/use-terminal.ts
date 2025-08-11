@@ -1,9 +1,10 @@
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "@xterm/xterm";
 import React from "react";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Command } from "#/state/command-slice";
 import { RootState } from "#/store";
+import { clearText } from "#/state/terminal-input-slice";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
@@ -48,7 +49,11 @@ export const useTerminal = ({
   commands,
 }: UseTerminalConfig = DEFAULT_TERMINAL_CONFIG) => {
   const { send } = useWsClient();
+  const dispatch = useDispatch();
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { textToInsert } = useSelector(
+    (state: RootState) => state.terminalInput,
+  );
   const terminal = React.useRef<Terminal | null>(null);
   const fitAddon = React.useRef<FitAddon | null>(null);
   const ref = React.useRef<HTMLDivElement>(null);
@@ -237,6 +242,16 @@ export const useTerminal = ({
       }
     };
   }, [disabled]);
+
+  React.useEffect(() => {
+    if (textToInsert && terminal.current && !disabled) {
+      terminal.current.write(textToInsert);
+      // NOTE: we do not add the inserted text to the command buffer here
+      // because the terminal handler logic would need to be refactored to support it.
+      // The text is visually inserted, and the user can then press enter.
+      dispatch(clearText());
+    }
+  }, [textToInsert, disabled, dispatch]);
 
   return ref;
 };

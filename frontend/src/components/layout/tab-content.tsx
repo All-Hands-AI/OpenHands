@@ -9,6 +9,7 @@ const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
 const TerminalTab = lazy(() => import("#/routes/terminal-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
+const AIChatTab = lazy(() => import("#/routes/ai-chat-tab"));
 
 interface TabContentProps {
   conversationPath: string;
@@ -25,6 +26,7 @@ export function TabContent({ conversationPath }: TabContentProps) {
   const isServedActive = currentPath === `${conversationPath}/served`;
   const isTerminalActive = currentPath === `${conversationPath}/terminal`;
   const isVSCodeActive = currentPath === `${conversationPath}/vscode`;
+  const isAIChatActive = currentPath === `${conversationPath}/ai-chat`;
 
   return (
     <div className="h-full w-full relative">
@@ -65,6 +67,11 @@ export function TabContent({ conversationPath }: TabContentProps) {
           className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}
         >
           <VSCodeTab />
+        </div>
+        <div
+          className={`absolute inset-0 ${isAIChatActive ? "block" : "hidden"}`}
+        >
+          <AIChatTab />
         </div>
       </Suspense>
     </div>

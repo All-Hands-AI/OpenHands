@@ -1,5 +1,6 @@
 import { DiGit } from "react-icons/di";
 import { FaServer, FaExternalLinkAlt } from "react-icons/fa";
+import { Sparkles } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { VscCode } from "react-icons/vsc";
@@ -71,6 +72,11 @@ export function ConversationTabs() {
           label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
           to: "terminal",
           icon: <TerminalIcon />,
+        },
+        {
+          label: "AI Chat",
+          to: "ai-chat",
+          icon: <Sparkles className="w-5 h-5" />,
         },
         { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
         {

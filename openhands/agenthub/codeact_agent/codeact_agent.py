@@ -25,6 +25,8 @@ from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig
+from openhands.events.event import EventSource
+from openhands.events.observation.user_chat import UserChatObservation
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
@@ -292,3 +294,36 @@ class CodeActAgent(Agent):
             response,
             mcp_tool_names=list(self.mcp_tools.keys()),
         )
+
+    def chat_step(self, state: State) -> UserChatObservation:
+        """
+        Handles a chat message from the user, which is not part of the main agent task.
+        This is used for features like "Natural Language to Command".
+        """
+        # Find the user's message
+        user_message = ""
+        for event in reversed(state.history):
+            if isinstance(event, MessageAction) and event.source == 'user_chat':
+                user_message = event.content
+                break
+
+        if not user_message:
+            return UserChatObservation(content="Could not find user message.")
+
+        system_prompt = (
+            "You are an expert in shell commands. The user will provide a task in "
+            "natural language. Your sole responsibility is to return the single, "
+            "most appropriate shell command to accomplish that task. Do not provide "
+            "any explanation, preamble, or markdown formatting. Just the command."
+        )
+
+        messages = [
+            Message(role="system", content=system_prompt),
+            Message(role="user", content=user_message),
+        ]
+
+        response = self.llm.completion(
+            messages=self.llm.format_messages_for_llm(messages)
+        )
+        command = response.choices[0].message.content
+        return UserChatObservation(content=command)

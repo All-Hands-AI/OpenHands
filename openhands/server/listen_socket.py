@@ -7,6 +7,7 @@ from socketio.exceptions import ConnectionRefusedError
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
+    MessageAction,
     NullAction,
 )
 from openhands.events.action.agent import RecallAction
@@ -18,6 +19,7 @@ from openhands.events.observation import (
 from openhands.events.observation.agent import (
     AgentStateChangedObservation,
 )
+from openhands.events.observation.user_chat import UserChatObservation
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.service_types import ProviderType
 from openhands.server.services.conversation_service import (
@@ -156,6 +158,98 @@ async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
 async def disconnect(connection_id: str) -> None:
     logger.info(f'sio:disconnect:{connection_id}')
     await conversation_manager.disconnect_from_session(connection_id)
+
+
+@sio.event
+async def ai_chat(connection_id: str, data: dict[str, Any]) -> None:
+    """Receives a chat message from the user, dispatches it to the agent, and streams back the response."""
+    try:
+        prompt = data['prompt']
+        logger.info(
+            f'Received chat message: {prompt} from connection_id: {connection_id}'
+        )
+
+        sid = conversation_manager._local_connection_id_to_session_id.get(
+            connection_id
+        )
+        if not sid:
+            logger.error(f'No session found for connection_id: {connection_id}')
+            await sio.emit(
+                'ai_chat_response',
+                {'error': 'No active session found.'},
+                to=connection_id,
+            )
+            return
+
+        agent_session = conversation_manager.get_agent_session(sid)
+        if not agent_session or not agent_session.controller:
+            logger.error(f'No agent session or controller for sid: {sid}')
+            await sio.emit(
+                'ai_chat_response',
+                {'error': 'Agent not initialized.'},
+                to=connection_id,
+            )
+            return
+
+        # The action to be dispatched
+        action = MessageAction(prompt, source='user_chat')
+        action_dict = event_to_dict(action)
+
+        # Future to wait for the response
+        future = asyncio.get_running_loop().create_future()
+
+        # Define a one-time subscriber to catch the response
+        def response_subscriber(event):
+            if (
+                isinstance(event, UserChatObservation)
+                and event.cause == action.id
+            ):
+                future.set_result(event.content)
+                # Clean up the subscriber
+                agent_session.event_stream.unsubscribe('chat_response_listener')
+
+        # Subscribe to the event stream
+        agent_session.event_stream.subscribe(
+            'chat_response_listener', response_subscriber
+        )
+
+        # Dispatch the action using the session's dispatch method
+        current_session = conversation_manager._local_agent_loops_by_sid.get(sid)
+        if not current_session:
+            raise RuntimeError(f"Could not find session for sid: {sid}")
+        await current_session.dispatch(action_dict)
+
+        # Wait for the response from the subscriber
+        try:
+            response_content = await asyncio.wait_for(future, timeout=60.0)
+            await sio.emit(
+                'ai_chat_response',
+                {'message': response_content},
+                to=connection_id,
+            )
+        except asyncio.TimeoutError:
+            logger.error(f'Timeout waiting for chat response for sid: {sid}')
+            await sio.emit(
+                'ai_chat_response',
+                {'error': 'Request timed out.'},
+                to=connection_id,
+            )
+            agent_session.event_stream.unsubscribe('chat_response_listener')
+
+    except KeyError:
+        logger.error(f'Missing "prompt" in chat message data: {data}')
+        await sio.emit(
+            'ai_chat_response',
+            {'error': 'Invalid message format, "prompt" is required.'},
+            to=connection_id,
+        )
+    except Exception as e:
+        logger.exception(f'Error processing chat message: {e}')
+        await sio.emit(
+            'ai_chat_response',
+            {'error': f'An internal error occurred: {e}'},
+            to=connection_id,
+        )
 
 
 def _invalid_session_api_key(query_params: dict[str, list[Any]]):

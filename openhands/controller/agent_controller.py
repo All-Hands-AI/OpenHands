@@ -345,7 +345,9 @@ class AgentController:
             return False
 
         if isinstance(event, Action):
-            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+            if isinstance(event, MessageAction) and (
+                event.source == EventSource.USER or event.source == 'user_chat'
+            ):
                 return True
             if (
                 isinstance(event, MessageAction)
@@ -814,6 +816,16 @@ class AgentController:
         except Exception as e:
             logger.warning('Control flag limits hit')
             await self._react_to_exception(e)
+            return
+
+        # We are handling a chat message, not a normal agent step
+        last_event = self.state.history[-1]
+        if (
+            isinstance(last_event, MessageAction)
+            and last_event.source == 'user_chat'
+        ):
+            observation = self.agent.chat_step(self.state)
+            self.event_stream.add_event(observation, EventSource.AGENT)
             return
 
         action: Action = NullAction()
