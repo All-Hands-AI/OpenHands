@@ -491,9 +491,6 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
 
-        print(f'event: {event}')
-        print(f'is_git_related_event: {self._is_git_related_event(event)}')
-
         # Check for branch changes if this is a git-related event
         if event and self._is_git_related_event(event):
             await self._update_conversation_branch(conversation)
