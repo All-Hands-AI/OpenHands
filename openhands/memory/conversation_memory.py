@@ -427,7 +427,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
             content = []
-            if obs.content.strip().startswith("data:image/png;"):
+            if obs.content.strip().startswith('data:image/png;'):
                 content.append(ImageContent(image_urls=[obs.content.strip()]))
             else:
                 content.append(TextContent(text=obs.content))
