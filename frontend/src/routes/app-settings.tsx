@@ -40,6 +40,10 @@ function AppSettingsScreen() {
   ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
     React.useState(false);
+  const [gitUserNameHasChanged, setGitUserNameHasChanged] =
+    React.useState(false);
+  const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -62,6 +66,13 @@ function AppSettingsScreen() {
       ?.toString();
     const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
 
+    const gitUserName =
+      formData.get("git-user-name-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_NAME;
+    const gitUserEmail =
+      formData.get("git-user-email-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_EMAIL;
+
     saveSettings(
       {
         LANGUAGE: language,
@@ -69,6 +80,8 @@ function AppSettingsScreen() {
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
+        GIT_USER_NAME: gitUserName,
+        GIT_USER_EMAIL: gitUserEmail,
       },
       {
         onSuccess: () => {
@@ -85,6 +98,8 @@ function AppSettingsScreen() {
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
+          setGitUserNameHasChanged(false);
+          setGitUserEmailHasChanged(false);
         },
       },
     );
@@ -127,12 +142,24 @@ function AppSettingsScreen() {
     setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
   };
 
+  const checkIfGitUserNameHasChanged = (value: string) => {
+    const currentValue = settings?.GIT_USER_NAME;
+    setGitUserNameHasChanged(value !== currentValue);
+  };
+
+  const checkIfGitUserEmailHasChanged = (value: string) => {
+    const currentValue = settings?.GIT_USER_EMAIL;
+    setGitUserEmailHasChanged(value !== currentValue);
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
     !proactiveConversationsSwitchHasChanged &&
-    !maxBudgetPerTaskHasChanged;
+    !maxBudgetPerTaskHasChanged &&
+    !gitUserNameHasChanged &&
+    !gitUserEmailHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -194,6 +221,34 @@ function AppSettingsScreen() {
             step={1}
             className="w-full max-w-[680px]" // Match the width of the language field
           />
+
+          <div className="border-t border-t-tertiary pt-6 mt-2 hidden">
+            <h3 className="text-lg font-medium mb-4">
+              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
+            </h3>
+            <div className="flex flex-col gap-6">
+              <SettingsInput
+                testId="git-user-name-input"
+                name="git-user-name-input"
+                type="text"
+                label={t(I18nKey.SETTINGS$GIT_USERNAME)}
+                defaultValue={settings.GIT_USER_NAME || ""}
+                onChange={checkIfGitUserNameHasChanged}
+                placeholder="Username for git commits"
+                className="w-full max-w-[680px]"
+              />
+              <SettingsInput
+                testId="git-user-email-input"
+                name="git-user-email-input"
+                type="email"
+                label={t(I18nKey.SETTINGS$GIT_EMAIL)}
+                defaultValue={settings.GIT_USER_EMAIL || ""}
+                onChange={checkIfGitUserEmailHasChanged}
+                placeholder="Email for git commits"
+                className="w-full max-w-[680px]"
+              />
+            </div>
+          </div>
         </div>
       )}
 

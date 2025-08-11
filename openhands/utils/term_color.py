@@ -10,6 +10,7 @@ class TermColor(Enum):
     SUCCESS = 'green'
     ERROR = 'red'
     INFO = 'blue'
+    GREY = 'dark_grey'
 
 
 def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:
