@@ -1,7 +1,4 @@
 import os
-import signal
-import subprocess
-import time
 
 import pytest
 from playwright.sync_api import Page, expect
@@ -27,87 +24,13 @@ def get_readme_line_count():
 
 @pytest.fixture(scope='module')
 def openhands_app():
-    """Start the OpenHands application before tests and stop it after."""
-    print('Starting OpenHands application...')
+    """
+    Fixture that assumes OpenHands is already running on localhost.
 
-    # Set environment variables
-    env = os.environ.copy()
-    env['INSTALL_DOCKER'] = '0'
-    env['RUNTIME'] = 'local'
-    env['FRONTEND_PORT'] = '12000'
-    env['FRONTEND_HOST'] = '0.0.0.0'
-    env['BACKEND_HOST'] = '0.0.0.0'
-
-    # Check for required environment variables and set defaults if needed
-    required_vars = ['GITHUB_TOKEN', 'LLM_MODEL', 'LLM_API_KEY']
-    for var in required_vars:
-        if var not in os.environ:
-            print(f'Warning: {var} not set, using default value for testing')
-            if var == 'GITHUB_TOKEN':
-                env[var] = 'test-token'
-            elif var == 'LLM_MODEL':
-                env[var] = 'gpt-4o'
-            elif var == 'LLM_API_KEY':
-                env[var] = 'test-key'
-        else:
-            env[var] = os.environ[var]
-
-    # Pass through optional environment variables
-    if 'LLM_BASE_URL' in os.environ:
-        env['LLM_BASE_URL'] = os.environ['LLM_BASE_URL']
-
-    # Get the path to the repository root directory
-    current_dir = os.getcwd()
-    # If we're in the tests/e2e directory, go up two levels to the repo root
-    if current_dir.endswith('tests/e2e'):
-        repo_root = os.path.abspath(os.path.join(current_dir, '../..'))
-    else:
-        # If we're already at the repo root or somewhere else, use current directory
-        repo_root = current_dir
-
-    print(f'Starting OpenHands from directory: {repo_root}')
-
-    # First build the application according to the development workflow
-    print('Building OpenHands application...')
-    build_log_file = open('/tmp/openhands-e2e-build.log', 'w')
-    build_process = subprocess.Popen(
-        ['make', 'build'],
-        env=env,
-        stdout=build_log_file,
-        stderr=subprocess.STDOUT,
-        cwd=repo_root,
-    )
-
-    # Wait for the build to complete
-    try:
-        build_process.wait(timeout=300)  # 5 minutes timeout for build
-        print(f'Build process completed with exit code: {build_process.returncode}')
-    except subprocess.TimeoutExpired:
-        build_process.kill()
-        print('Build process timed out and was killed')
-        raise Exception('Build process timed out')
-
-    build_log_file.close()
-
-    if build_process.returncode != 0:
-        raise Exception(
-            f'Build process failed with exit code: {build_process.returncode}'
-        )
-
-    # Start OpenHands in the background
-    print('Starting OpenHands application with "make run"...')
-    log_file = open('/tmp/openhands-e2e-test.log', 'w')
-    process = subprocess.Popen(
-        ['make', 'run'],
-        env=env,
-        stdout=log_file,
-        stderr=subprocess.STDOUT,
-        cwd=repo_root,
-    )
-
-    # Wait for the application to start
-    print('Waiting for OpenHands to start...')
-    time.sleep(90)  # Give it more time to start (90 seconds)
+    This fixture checks if the OpenHands application is running on the expected port
+    and raises an exception if it's not available.
+    """
+    print('Checking if OpenHands is running...')
 
     # Check if the application is running by trying to connect to the frontend port
     try:
@@ -119,34 +42,19 @@ def openhands_app():
         s.close()
 
         if result != 0:
-            print('Warning: Could not connect to OpenHands frontend on port 12000')
-            print('Waiting additional time...')
-            time.sleep(30)  # Wait an additional 30 seconds
+            raise Exception(
+                'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
+            )
+
+        print('OpenHands is running on port 12000')
     except Exception as e:
         print(f'Error checking if OpenHands is running: {e}')
+        raise
 
-    yield process
+    # No process to yield since we're not starting the app
+    yield None
 
-    # Stop OpenHands after tests
-    print('Stopping OpenHands application...')
-    process.send_signal(signal.SIGTERM)
-    try:
-        process.wait(timeout=30)  # Increased timeout to 30 seconds
-    except subprocess.TimeoutExpired:
-        print('Process did not terminate gracefully, killing it...')
-        process.kill()
-
-    log_file.close()
-
-    # Kill any remaining processes
-    try:
-        subprocess.run(['pkill', '-f', 'make run'], check=False)
-        subprocess.run(['pkill', '-f', 'python -m openhands'], check=False)
-        # Kill any other related processes
-        subprocess.run(['pkill', '-f', 'node'], check=False)
-        subprocess.run(['pkill', '-f', 'npm'], check=False)
-    except Exception as e:
-        print(f'Error cleaning up processes: {e}')
+    # No cleanup needed since we're not starting the app
 
 
 def test_readme_line_count():

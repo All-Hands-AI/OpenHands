@@ -31,24 +31,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install poetry via pipx
-        run: pipx install poetry
-
-      - name: Set up Python
-        uses: useblacksmith/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: 'poetry'
-
-      - name: Install system dependencies
+      - name: Install prerequisites for make build
         run: |
+          # Install system dependencies
           sudo apt-get update
           sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux
 
-      - name: Setup Node.js
-        uses: useblacksmith/setup-node@v5
-        with:
-          node-version: '22.x'
+          # Install poetry via pipx
+          pipx install poetry
+
+          # Set up Python
+          sudo apt-get install -y python3.12 python3.12-dev python3.12-venv
+
+          # Set up Node.js
+          curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+          sudo apt-get install -y nodejs
 
       - name: Setup workspace for end-to-end tests
         run: |
@@ -73,7 +70,27 @@ jobs:
           # Build OpenHands using make build
           make build > /tmp/openhands-e2e-build.log 2>&1
 
-      - name: Run full end-to-end tests
+          # Start OpenHands in the background
+          make run FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 &> /tmp/openhands-e2e-test.log &
+
+          # Wait for the application to start
+          echo "Waiting for OpenHands to start..."
+          sleep 90
+
+          # Check if the application is running
+          if nc -z localhost 12000; then
+            echo "OpenHands is running on port 12000"
+          else
+            echo "Warning: Could not connect to OpenHands frontend on port 12000"
+            echo "Waiting additional time..."
+            sleep 30
+            if ! nc -z localhost 12000; then
+              echo "Error: OpenHands failed to start"
+              exit 1
+            fi
+          fi
+
+      - name: Run end-to-end tests
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
@@ -108,3 +125,10 @@ jobs:
             /tmp/openhands-e2e-test.log
             /tmp/openhands-e2e-build.log
           retention-days: 30
+
+      - name: Cleanup
+        if: always()
+        run: |
+          # Stop OpenHands
+          pkill -f "make run" || true
+          pkill -f "python -m openhands" || true
