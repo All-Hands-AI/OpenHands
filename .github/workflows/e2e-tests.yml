@@ -221,6 +221,19 @@ jobs:
 
       - name: Run end-to-end tests
         run: |
+          # Install Playwright browsers directly before running tests
+          echo "Installing Playwright browsers directly in the test step..."
+          poetry run playwright install chromium
+          
+          # Verify Playwright browsers installation
+          if [ -d "$HOME/.cache/ms-playwright" ]; then
+            echo "Playwright browsers directory exists at $HOME/.cache/ms-playwright"
+            ls -la $HOME/.cache/ms-playwright
+          else
+            echo "ERROR: Playwright browsers directory not found after installation!"
+            exit 1
+          fi
+          
           # Run the Playwright tests
           cd tests/e2e
           poetry run python -m pytest test_workflow.py -v --browser chromium
