@@ -160,7 +160,17 @@ except Exception as e:
         run: |
           # Run the Playwright tests
           cd tests/e2e
-          poetry run python -m pytest test_workflow.py -v
+          
+          # Check if the application is running
+          if ! nc -z localhost 12000; then
+            echo "ERROR: OpenHands is not running on port 12000"
+            echo "Last 50 lines of the log:"
+            tail -n 50 /tmp/openhands-e2e-test.log
+            exit 1
+          fi
+          
+          # Run the tests with detailed output
+          poetry run python -m pytest test_workflow.py -v --no-header --capture=no
 
       - name: Upload test results
         if: always()

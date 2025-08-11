@@ -33,23 +33,47 @@ def openhands_app():
     print('Checking if OpenHands is running...')
 
     # Check if the application is running by trying to connect to the frontend port
-    try:
-        import socket
+    max_attempts = 3
+    for attempt in range(1, max_attempts + 1):
+        try:
+            import socket
+            import time
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.settimeout(1)
-        result = s.connect_ex(('localhost', 12000))
-        s.close()
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            result = s.connect_ex(('localhost', 12000))
+            s.close()
 
-        if result != 0:
-            raise Exception(
-                'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
-            )
-
-        print('OpenHands is running on port 12000')
-    except Exception as e:
-        print(f'Error checking if OpenHands is running: {e}')
-        raise
+            if result == 0:
+                print(f'OpenHands is running on port 12000 (attempt {attempt}/{max_attempts})')
+                # Verify we can get HTML content
+                import urllib.request
+                try:
+                    with urllib.request.urlopen('http://localhost:12000', timeout=5) as response:
+                        html = response.read().decode('utf-8')
+                        if '<html' in html:
+                            print('Successfully received HTML content from OpenHands')
+                            return  # Success
+                        else:
+                            print(f'WARNING: Port 12000 is open but not serving HTML content (attempt {attempt}/{max_attempts})')
+                except Exception as e:
+                    print(f'WARNING: Port 12000 is open but could not fetch HTML: {e} (attempt {attempt}/{max_attempts})')
+            else:
+                print(f'WARNING: OpenHands is not running on port 12000 (attempt {attempt}/{max_attempts})')
+            
+            if attempt < max_attempts:
+                print(f'Waiting 5 seconds before retry...')
+                time.sleep(5)
+        except Exception as e:
+            print(f'ERROR checking OpenHands: {e} (attempt {attempt}/{max_attempts})')
+            if attempt < max_attempts:
+                print(f'Waiting 5 seconds before retry...')
+                time.sleep(5)
+    
+    # If we get here, all attempts failed
+    raise Exception(
+        'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
+    )
 
     # No process to yield since we're not starting the app
     yield None
