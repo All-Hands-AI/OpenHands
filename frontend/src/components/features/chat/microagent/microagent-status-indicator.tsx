@@ -19,6 +19,8 @@ export function MicroagentStatusIndicator({
 
   const getStatusText = () => {
     switch (status) {
+      case MicroagentStatus.WAITING:
+        return t("MICROAGENT$STATUS_WAITING");
       case MicroagentStatus.CREATING:
         return t("MICROAGENT$STATUS_CREATING");
       case MicroagentStatus.COMPLETED:
@@ -35,6 +37,8 @@ export function MicroagentStatusIndicator({
 
   const getStatusIcon = () => {
     switch (status) {
+      case MicroagentStatus.WAITING:
+        return <Spinner size="sm" />;
       case MicroagentStatus.CREATING:
         return <Spinner size="sm" />;
       case MicroagentStatus.COMPLETED:

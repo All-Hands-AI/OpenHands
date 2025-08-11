@@ -1,5 +1,5 @@
 import React from "react";
-import { useQueries } from "@tanstack/react-query";
+import { useQueries, type Query } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Spinner } from "@heroui/react";
 import { useTranslation } from "react-i18next";
@@ -7,16 +7,16 @@ import { useCreateConversation } from "./mutation/use-create-conversation";
 import { useUserProviders } from "./use-user-providers";
 import { useConversationSubscriptions } from "#/context/conversation-subscriptions-provider";
 import { Provider } from "#/types/settings";
-import { CreateMicroagent } from "#/api/open-hands.types";
+import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import CloseIcon from "#/icons/close.svg?react";
+import { AxiosError } from "axios";
 
 interface ConversationData {
   conversationId: string;
   sessionApiKey: string | null;
   baseUrl: string;
-  onSuccessCallback?: (conversationId: string) => void;
   onEventCallback?: (event: unknown, conversationId: string) => void;
 }
 
@@ -96,7 +96,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       queryKey: ["conversation-ready-poll", conversationId],
       queryFn: () => OpenHands.getConversation(conversationId),
       enabled: !!conversationId,
-      refetchInterval: (query) => {
+      refetchInterval: (query: Query<Conversation | null, AxiosError>) => {
         const status = query.state.data?.status;
         if (status === "STARTING") {
           return 3000; // Poll every 3 seconds while STARTING
@@ -126,11 +126,6 @@ export const useCreateConversationAndSubscribeMultiple = () => {
           baseUrl: conversationData.baseUrl,
           onEvent: conversationData.onEventCallback,
         });
-
-        // Call the success callback
-        if (conversationData.onSuccessCallback) {
-          conversationData.onSuccessCallback(conversationId);
-        }
 
         // Remove from created conversations (cleanup)
         setCreatedConversations((prev) => {
@@ -194,6 +189,11 @@ export const useCreateConversationAndSubscribeMultiple = () => {
             // Show immediate toast to let user know something is happening
             renderConversationStartingToast(data.conversation_id);
 
+            // Call the success callback immediately
+            if (onSuccessCallback) {
+              onSuccessCallback(data.conversation_id);
+            }
+
             // Only handle immediate post-creation tasks here
             let baseUrl = "";
             if (data?.url && !data.url.startsWith("/")) {
@@ -211,7 +211,6 @@ export const useCreateConversationAndSubscribeMultiple = () => {
                 conversationId: data.conversation_id,
                 sessionApiKey: data.session_api_key,
                 baseUrl,
-                onSuccessCallback,
                 onEventCallback,
               },
             }));

@@ -185,6 +185,7 @@ export function ConversationSubscriptionsProvider({
           isOpenHandsEvent(event) &&
           isAgentStateChangeObservation(event)
         ) {
+          console.log("Agent state change event:", event);
           if (event.extras.agent_state === AgentState.FINISHED) {
             renderConversationFinishedToast(conversationId);
             unsubscribeFromConversation(conversationId);

@@ -1,4 +1,5 @@
 export enum MicroagentStatus {
+  WAITING = "waiting",
   CREATING = "creating",
   COMPLETED = "completed",
   ERROR = "error",

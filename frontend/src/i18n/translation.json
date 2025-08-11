@@ -191,6 +191,22 @@
         "de": "Erfolg! Ihr Microagent Pull Request ist bereit.",
         "uk": "Успіх! Ваш запит на витягування мікроагента готовий."
     },
+    "MICROAGENT$STATUS_WAITING": {
+        "en": "Waiting for runtime to start...",
+        "ja": "ランタイムの開始を待機中...",
+        "zh-CN": "等待运行时启动...",
+        "zh-TW": "等待運行時啟動...",
+        "ko-KR": "런타임 시작을 기다리는 중...",
+        "no": "Venter på at runtime skal starte...",
+        "it": "In attesa dell'avvio del runtime...",
+        "pt": "Aguardando o runtime iniciar...",
+        "es": "Esperando que inicie el runtime...",
+        "ar": "في انتظار بدء وقت التشغيل...",
+        "fr": "En attente du démarrage du runtime...",
+        "tr": "Çalışma zamanının başlaması bekleniyor...",
+        "de": "Warten auf den Start der Laufzeit...",
+        "uk": "Очікування запуску середовища виконання..."
+    },
     "MICROAGENT$STATUS_CREATING": {
         "en": "Modifying microagent...",
         "ja": "マイクロエージェントを変更中...",
