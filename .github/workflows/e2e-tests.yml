@@ -68,6 +68,7 @@ jobs:
           BACKEND_PORT: 3000
           BROWSER_DOWNLOADS_PATH: $HOME/downloads
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
+          DISABLE_SANDBOX: true
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -93,6 +94,8 @@ jobs:
           echo "Creating basic config.toml file..."
           echo '[core]' > config.toml
           echo "browser_downloads_path=\"$HOME/downloads\"" >> config.toml
+          echo '[sandbox]' >> config.toml
+          echo "volumes=\"$HOME/downloads:/tmp/downloads:rw\"" >> config.toml
           mkdir -p $HOME/downloads
           chmod -R 777 $HOME/downloads
           cat config.toml
