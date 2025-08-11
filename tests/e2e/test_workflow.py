@@ -92,6 +92,9 @@ def test_openhands_workflow(page, openhands_app):
     4. Ask a question about the README.md file
     5. Verify the agent's response
     """
+    # Create test-results directory if it doesn't exist
+    os.makedirs('test-results', exist_ok=True)
+
     # Get the actual line count of README.md for verification later
     line_count = get_readme_line_count()
     print(f'README.md has {line_count} lines')
@@ -101,10 +104,48 @@ def test_openhands_workflow(page, openhands_app):
     print('Navigating to OpenHands application...')
     page.goto('http://localhost:12000')
 
+    # First check if the page loaded at all
+    print('Checking if page loaded...')
+    try:
+        # Wait for any content to appear
+        page.wait_for_load_state('networkidle', timeout=30000)
+        print('Page loaded successfully')
+
+        # Take a screenshot for debugging
+        page.screenshot(path='test-results/page_loaded.png')
+        print('Screenshot saved as page_loaded.png')
+
+        # Print the page title
+        print(f'Page title: {page.title()}')
+
+        # Print the page URL
+        print(f'Page URL: {page.url}')
+
+        # Check if there's any content on the page
+        body_content = page.content()
+        print(f'Page content length: {len(body_content)} characters')
+        print(f'First 200 characters of page content: {body_content[:200]}')
+
+    except Exception as e:
+        print(f'Error checking page load: {e}')
+        page.screenshot(path='test-results/page_error.png')
+        raise
+
     # Wait for the page to load and the repository dropdown to be visible
     print('Waiting for repository dropdown to be visible...')
-    repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
-    expect(repo_dropdown).to_be_visible(timeout=30000)
+    try:
+        # First check if the app container is visible
+        app_container = page.locator('#app')
+        expect(app_container).to_be_visible(timeout=10000)
+        print('App container is visible')
+
+        # Now look for the repository dropdown
+        repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
+        expect(repo_dropdown).to_be_visible(timeout=20000)
+    except Exception as e:
+        print(f'Error finding repository dropdown: {e}')
+        page.screenshot(path='test-results/dropdown_error.png')
+        raise
 
     # Click on the repository dropdown
     print('Clicking on repository dropdown...')
