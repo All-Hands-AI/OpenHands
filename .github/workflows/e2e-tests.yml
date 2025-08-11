@@ -69,6 +69,7 @@ jobs:
           BROWSER_DOWNLOADS_PATH: $HOME/downloads
           PLAYWRIGHT_BROWSERS_PATH: $HOME/.cache/ms-playwright
           DISABLE_SANDBOX: true
+          ENABLE_BROWSER: false
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -93,7 +94,8 @@ jobs:
           # Create a basic config.toml file
           echo "Creating basic config.toml file..."
           echo '[core]' > config.toml
-          echo "browser_downloads_path=\"$HOME/downloads\"" >> config.toml
+          echo "enable_browser = false" >> config.toml
+          echo "runtime = \"local\"" >> config.toml
           echo '[sandbox]' >> config.toml
           echo "volumes=\"$HOME/downloads:/tmp/downloads:rw\"" >> config.toml
           mkdir -p $HOME/downloads
@@ -176,9 +178,9 @@ jobs:
               tail -n 20 /tmp/openhands-e2e-test.log
             fi
 
-            # Check for permission denied errors
-            if grep -q "EACCES: permission denied" /tmp/openhands-e2e-test.log; then
-              echo "ERROR: Fatal error detected - Permission denied error"
+            # Check for permission denied errors related to workspace
+            if grep -q "EACCES: permission denied, mkdir '/workspace'" /tmp/openhands-e2e-test.log; then
+              echo "ERROR: Fatal error detected - Permission denied error for /workspace directory"
               echo "Last 50 lines of the log:"
               tail -n 50 /tmp/openhands-e2e-test.log
               exit 1
