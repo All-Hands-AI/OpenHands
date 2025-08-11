@@ -45,7 +45,7 @@ export function NavTab({
       {({ isActive }) => (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-1 min-w-0">
-            <div className={cn(isActive || (isTabActive && "text-logo"))}>
+            <div className={cn((isActive || isTabActive) && "text-logo")}>
               {icon}
             </div>
             <span className="truncate">{label}</span>
