@@ -3,6 +3,8 @@ import { createRoutesStub } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
+import i18next from "i18next";
+import { I18nextProvider } from "react-i18next";
 import GitSettingsScreen from "#/routes/git-settings";
 import OpenHands from "#/api/open-hands";
 import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
@@ -46,22 +48,44 @@ const GitSettingsRouterStub = createRoutesStub([
 ]);
 
 const renderGitSettingsScreen = () => {
+  // Initialize i18next instance
+  i18next.init({
+    lng: "en",
+    resources: {
+      en: {
+        translation: {
+          GITHUB$TOKEN_HELP_TEXT: "Help text",
+          GITHUB$TOKEN_LABEL: "GitHub Token",
+          GITHUB$HOST_LABEL: "GitHub Host",
+          GITLAB$TOKEN_LABEL: "GitLab Token",
+          GITLAB$HOST_LABEL: "GitLab Host",
+          BITBUCKET$TOKEN_LABEL: "Bitbucket Token",
+          BITBUCKET$HOST_LABEL: "Bitbucket Host",
+        },
+      },
+    },
+  });
+
   const { rerender, ...rest } = render(
     <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />,
     {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
+        <I18nextProvider i18n={i18next}>
+          <QueryClientProvider client={queryClient}>
+            {children}
+          </QueryClientProvider>
+        </I18nextProvider>
       ),
     },
   );
 
   const rerenderGitSettingsScreen = () =>
     rerender(
-      <QueryClientProvider client={queryClient}>
-        <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />
-      </QueryClientProvider>,
+      <I18nextProvider i18n={i18next}>
+        <QueryClientProvider client={queryClient}>
+          <GitSettingsRouterStub initialEntries={["/settings/integrations"]} />
+        </QueryClientProvider>
+      </I18nextProvider>,
     );
 
   return {
@@ -351,14 +375,18 @@ describe("Form submission", () => {
     let disconnectButton = await screen.findByTestId(
       "disconnect-tokens-button",
     );
+    // When tokens are set (github and gitlab are not null), the button should be enabled
     await waitFor(() => expect(disconnectButton).not.toBeDisabled());
 
+    // Mock settings with no tokens set
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {},
     });
     queryClient.invalidateQueries();
 
     disconnectButton = await screen.findByTestId("disconnect-tokens-button");
+    // When no tokens are set, the button should be disabled
     await waitFor(() => expect(disconnectButton).toBeDisabled());
   });
 

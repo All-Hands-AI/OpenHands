@@ -10,7 +10,6 @@ import huggingface_hub
 import pandas as pd
 from datasets import load_dataset
 from PIL import Image
-from pydantic import SecretStr
 
 from evaluation.benchmarks.gaia.scorer import question_scorer
 from evaluation.benchmarks.gaia.utils import (
@@ -31,8 +30,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
     load_from_toml,
 )
 from openhands.core.config.utils import get_agent_config_arg
@@ -80,8 +79,7 @@ def get_config(
 
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
-    if config_copy.search_api_key:
-        config.search_api_key = SecretStr(config_copy.search_api_key)
+    config.search_api_key = config_copy.search_api_key
     return config
 
 
@@ -294,7 +292,7 @@ Here is the task:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--level',
         type=str,
