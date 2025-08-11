@@ -90,8 +90,8 @@ The `BatchedWebHookFileStore` extends the webhook functionality by batching mult
 
 2. **Batch Triggering**:
    - Batches are sent when one of the following conditions is met:
-     - A configurable timeout period has elapsed (controlled by `WEBHOOK_BATCH_TIMEOUT_SECONDS` environment variable, defaults to 5 seconds)
-     - The total size of batched content exceeds a configurable limit (controlled by `WEBHOOK_BATCH_SIZE_LIMIT_BYTES` environment variable, defaults to 1MB)
+     - A timeout period has elapsed (defaults to 5 seconds, configurable via constructor parameter)
+     - The total size of batched content exceeds a size limit (defaults to 1MB, configurable via constructor parameter)
      - The `flush()` method is explicitly called
 
 3. **Error Handling**:
@@ -119,6 +119,9 @@ file_store_web_hook_headers = '{"Authorization": "Bearer token"}'
 file_store_web_hook_batch = true
 ```
 
-**Environment Variables for Batched Webhook:**
-- `WEBHOOK_BATCH_TIMEOUT_SECONDS`: Time in seconds after which a batch is sent (default: 5)
-- `WEBHOOK_BATCH_SIZE_LIMIT_BYTES`: Size limit in bytes after which a batch is sent (default: 1048576 (1MB))
+**Batched Webhook Configuration:**
+The batched webhook behavior uses predefined constants with the following default values:
+- Batch timeout: 5 seconds
+- Batch size limit: 1MB (1048576 bytes)
+
+These values can be customized by passing `batch_timeout_seconds` and `batch_size_limit_bytes` parameters to the `BatchedWebHookFileStore` constructor.

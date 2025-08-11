@@ -1,4 +1,3 @@
-import os
 import threading
 from typing import Optional, Union
 
@@ -7,6 +6,10 @@ import tenacity
 
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR
+
+# Constants for batching configuration
+WEBHOOK_BATCH_TIMEOUT_SECONDS = 5.0
+WEBHOOK_BATCH_SIZE_LIMIT_BYTES = 1048576  # 1MB
 
 
 class BatchedWebHookFileStore(FileStore):
@@ -22,8 +25,8 @@ class BatchedWebHookFileStore(FileStore):
         file_store: The underlying FileStore implementation
         base_url: The base URL for webhook requests
         client: The HTTP client used to make webhook requests
-        batch_timeout_seconds: Time in seconds after which a batch is sent (default: 5)
-        batch_size_limit_bytes: Size limit in bytes after which a batch is sent (default: 1048576 (1MB))
+        batch_timeout_seconds: Time in seconds after which a batch is sent (default: WEBHOOK_BATCH_TIMEOUT_SECONDS)
+        batch_size_limit_bytes: Size limit in bytes after which a batch is sent (default: WEBHOOK_BATCH_SIZE_LIMIT_BYTES)
         _batch_lock: Lock for thread-safe access to the batch
         _batch: Dictionary of pending file updates
         _batch_timer: Timer for sending batches after timeout
@@ -56,9 +59,9 @@ class BatchedWebHookFileStore(FileStore):
             base_url: The base URL for webhook requests
             client: Optional HTTP client to use for requests. If None, a new client will be created.
             batch_timeout_seconds: Time in seconds after which a batch is sent.
-                If None, uses WEBHOOK_BATCH_TIMEOUT_SECONDS env var or defaults to 5.
+                If None, uses the default constant WEBHOOK_BATCH_TIMEOUT_SECONDS.
             batch_size_limit_bytes: Size limit in bytes after which a batch is sent.
-                If None, uses WEBHOOK_BATCH_SIZE_LIMIT_BYTES env var or defaults to 1MB.
+                If None, uses the default constant WEBHOOK_BATCH_SIZE_LIMIT_BYTES.
         """
         self.file_store = file_store
         self.base_url = base_url
@@ -66,14 +69,12 @@ class BatchedWebHookFileStore(FileStore):
             client = httpx.Client()
         self.client = client
 
-        # Get batch timeout from environment variable or use default
-        self.batch_timeout_seconds = batch_timeout_seconds or float(
-            os.environ.get('WEBHOOK_BATCH_TIMEOUT_SECONDS', '5.0')
+        # Use provided values or default constants
+        self.batch_timeout_seconds = (
+            batch_timeout_seconds or WEBHOOK_BATCH_TIMEOUT_SECONDS
         )
-
-        # Get batch size limit from environment variable or use default (1MB)
-        self.batch_size_limit_bytes = batch_size_limit_bytes or int(
-            os.environ.get('WEBHOOK_BATCH_SIZE_LIMIT_BYTES', '1048576')
+        self.batch_size_limit_bytes = (
+            batch_size_limit_bytes or WEBHOOK_BATCH_SIZE_LIMIT_BYTES
         )
 
         # Initialize batch state

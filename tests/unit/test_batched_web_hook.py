@@ -1,6 +1,5 @@
-import os
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import httpx
 import pytest
@@ -234,24 +233,3 @@ class TestBatchedWebHookFileStore:
 
         decoded = base64.b64decode(batch_payload[0]['content'].encode('ascii'))
         assert decoded == binary_content
-
-    def test_environment_variables(self):
-        # Test that environment variables are used for configuration
-        with patch.dict(
-            os.environ,
-            {
-                'WEBHOOK_BATCH_TIMEOUT_SECONDS': '10.0',
-                'WEBHOOK_BATCH_SIZE_LIMIT_BYTES': '2000',
-            },
-        ):
-            file_store = MockFileStore()
-            client = MagicMock(spec=httpx.Client)
-
-            batched_store = BatchedWebHookFileStore(
-                file_store=file_store,
-                base_url='http://example.com',
-                client=client,
-            )
-
-            assert batched_store.batch_timeout_seconds == 10.0
-            assert batched_store.batch_size_limit_bytes == 2000
