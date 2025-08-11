@@ -70,20 +70,51 @@ jobs:
           INSTALL_DOCKER: 0
           RUNTIME: local
         run: |
+          # Check the Makefile to understand what make build and make run do
+          echo "Checking Makefile contents:"
+          if [ -f "Makefile" ]; then
+            cat Makefile > /tmp/makefile-contents.log
+            echo "Makefile found, checking build and run targets:"
+            grep -A 10 "build:" Makefile || echo "No build target found"
+            grep -A 10 "run:" Makefile || echo "No run target found"
+          else
+            echo "ERROR: Makefile not found!"
+            find . -name "Makefile" | head -n 5
+          fi
+
           # Build OpenHands using make build
-          make build > /tmp/openhands-e2e-build.log 2>&1
+          echo "Running make build..."
+          make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
 
           # Start OpenHands in the background with more verbose logging
           echo "Starting OpenHands with verbose logging..."
+
+          # Print current directory for debugging
+          echo "Current directory: $(pwd)"
+          echo "Listing top-level directories:"
+          ls -la
+
           # Check frontend configuration
           echo "Checking frontend configuration..."
-          cat frontend/.env || echo "No .env file found"
-          cat frontend/vite.config.ts > /tmp/vite-config.log
+          if [ -d "frontend" ]; then
+            cat frontend/.env 2>/dev/null || echo "No .env file found"
+            cat frontend/vite.config.ts > /tmp/vite-config.log 2>/dev/null || echo "No vite.config.ts found"
+          else
+            echo "ERROR: frontend directory not found!"
+            find . -type d -name "frontend" | head -n 5
+          fi
 
           # First start the backend with detailed logging
-          cd backend && python -m openhands.server --verbose --port 3000 --host 0.0.0.0 > /tmp/openhands-backend.log 2>&1 &
-          echo "Backend started, waiting 10 seconds..."
-          sleep 10
+          echo "Starting backend..."
+          if [ -d "backend" ]; then
+            cd backend && python -m openhands.server --verbose --port 3000 --host 0.0.0.0 > /tmp/openhands-backend.log 2>&1 &
+            cd ..
+            echo "Backend started, waiting 10 seconds..."
+            sleep 10
+          else
+            echo "ERROR: backend directory not found!"
+            find . -type d -name "backend" | head -n 5
+          fi
 
           # Check if backend is reachable
           echo "Checking if backend is reachable..."
@@ -91,7 +122,13 @@ jobs:
           cat /tmp/backend-health-check.log
 
           # Then start the frontend with detailed logging
-          cd ../frontend && NODE_ENV=production VITE_BACKEND_URL=http://0.0.0.0:3000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+          echo "Starting frontend..."
+          if [ -d "frontend" ]; then
+            cd frontend && NODE_ENV=production VITE_BACKEND_URL=http://0.0.0.0:3000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+            cd ..
+          else
+            echo "ERROR: frontend directory not found!"
+          fi
           echo "Frontend started"
 
           # Wait a bit for the frontend to start
@@ -103,7 +140,21 @@ jobs:
           cat /tmp/frontend-check.log
 
           # Combine logs for artifact upload
-          cat /tmp/openhands-backend.log /tmp/openhands-frontend.log > /tmp/openhands-e2e-test.log
+          echo "Combining log files..."
+          touch /tmp/openhands-e2e-test.log
+          if [ -f "/tmp/openhands-backend.log" ]; then
+            echo "=== BACKEND LOG ===" >> /tmp/openhands-e2e-test.log
+            cat /tmp/openhands-backend.log >> /tmp/openhands-e2e-test.log
+          else
+            echo "Backend log file not found" >> /tmp/openhands-e2e-test.log
+          fi
+
+          if [ -f "/tmp/openhands-frontend.log" ]; then
+            echo "=== FRONTEND LOG ===" >> /tmp/openhands-e2e-test.log
+            cat /tmp/openhands-frontend.log >> /tmp/openhands-e2e-test.log
+          else
+            echo "Frontend log file not found" >> /tmp/openhands-e2e-test.log
+          fi
 
           # Wait for the application to start with active polling
           echo "Waiting for OpenHands to start..."
@@ -192,6 +243,7 @@ jobs:
             /tmp/backend-health-check.log
             /tmp/frontend-check.log
             /tmp/vite-config.log
+            /tmp/makefile-contents.log
           retention-days: 30
 
       - name: Cleanup
