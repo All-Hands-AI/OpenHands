@@ -3,39 +3,31 @@ name: End-to-End Tests
 on:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
+    branches:
+      - main
+      - develop
   workflow_dispatch:
-
-# If triggered by a PR, it will be in the same group
-concurrency:
-  group: ${{ github.workflow }}-${{ (github.head_ref && github.ref) || github.run_id }}
-  cancel-in-progress: true
 
 jobs:
   e2e-tests:
     if: contains(github.event.pull_request.labels.*.name, 'end-to-end') || github.event_name == 'workflow_dispatch'
-    runs-on: blacksmith-4vcpu-ubuntu-2204
+    runs-on: ubuntu-latest
     timeout-minutes: 30
 
     env:
-      RUNTIME: local
-      INSTALL_DOCKER: 0  # Skip Docker installation, use existing Docker
-      FRONTEND_PORT: 12000
-      FRONTEND_HOST: 0.0.0.0
-      BACKEND_HOST: 0.0.0.0
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
-      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      GITHUB_REPO_NAME: ${{ github.repository }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Install poetry via pipx
-        run: pipx install poetry
+        uses: abatilo/actions-poetry@v3
+        with:
+          poetry-version: 2.1.3
 
       - name: Set up Python
-        uses: useblacksmith/setup-python@v6
+        uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'poetry'
@@ -43,22 +35,23 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 netcat-openbsd tmux
+          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libgbm1 libasound2 netcat-openbsd
 
       - name: Setup Node.js
-        uses: useblacksmith/setup-node@v5
+        uses: actions/setup-node@v4
         with:
-          node-version: '22.x'
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
 
       - name: Setup workspace for end-to-end tests
         run: |
-          # Create workspace directory structure that the runner can write to
-          mkdir -p /tmp/openhands-workspace/.downloads
-          chmod -R 755 /tmp/openhands-workspace
+          # Create test results directory
+          mkdir -p tests/e2e/test-results
 
-          # Also create the actual /workspace directory for browser environment
-          sudo mkdir -p /workspace/.downloads
-          sudo chown -R $(id -u):$(id -g) /workspace
+          # Create workspace directory for OpenHands
+          mkdir -p /workspace
+          sudo chown -R $USER:$USER /workspace
           sudo chmod -R 755 /workspace
 
       - name: Build OpenHands
@@ -69,6 +62,10 @@ jobs:
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
           INSTALL_DOCKER: 0
           RUNTIME: local
+          FRONTEND_PORT: 12000
+          FRONTEND_HOST: 0.0.0.0
+          BACKEND_HOST: 0.0.0.0
+          BACKEND_PORT: 3000
         run: |
           # Check the Makefile to understand what make build and make run do
           echo "Checking Makefile contents:"
@@ -86,8 +83,9 @@ jobs:
           echo "Running make build..."
           make build > /tmp/openhands-e2e-build.log 2>&1 || echo "make build failed with exit code $?"
 
-          # Start OpenHands in the background with more verbose logging
-          echo "Starting OpenHands with verbose logging..."
+          # Create a basic config.toml file
+          echo "Creating basic config.toml file..."
+          make setup-config-basic
 
           # Print current directory for debugging
           echo "Current directory: $(pwd)"
@@ -104,57 +102,22 @@ jobs:
             find . -type d -name "frontend" | head -n 5
           fi
 
-          # First start the backend with detailed logging
-          echo "Starting backend..."
-          if [ -d "backend" ]; then
-            cd backend && python -m openhands.server --verbose --port 3000 --host 0.0.0.0 > /tmp/openhands-backend.log 2>&1 &
-            cd ..
-            echo "Backend started, waiting 10 seconds..."
-            sleep 10
-          else
-            echo "ERROR: backend directory not found!"
-            find . -type d -name "backend" | head -n 5
-          fi
+          # Start the application using make run with custom parameters
+          echo "Starting OpenHands using make run..."
+          make run BACKEND_HOST=$BACKEND_HOST BACKEND_PORT=$BACKEND_PORT FRONTEND_HOST=$FRONTEND_HOST FRONTEND_PORT=$FRONTEND_PORT > /tmp/openhands-e2e-test.log 2>&1 &
+
+          # Wait a bit for the application to start
+          sleep 10
 
           # Check if backend is reachable
           echo "Checking if backend is reachable..."
-          curl -v http://0.0.0.0:3000/api/health > /tmp/backend-health-check.log 2>&1 || echo "Backend health check failed"
+          curl -v http://$BACKEND_HOST:$BACKEND_PORT/api/health > /tmp/backend-health-check.log 2>&1 || echo "Backend health check failed"
           cat /tmp/backend-health-check.log
-
-          # Then start the frontend with detailed logging
-          echo "Starting frontend..."
-          if [ -d "frontend" ]; then
-            cd frontend && NODE_ENV=production VITE_BACKEND_URL=http://0.0.0.0:3000 npm run dev -- --port 12000 --host 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
-            cd ..
-          else
-            echo "ERROR: frontend directory not found!"
-          fi
-          echo "Frontend started"
-
-          # Wait a bit for the frontend to start
-          sleep 5
 
           # Check if frontend is reachable
           echo "Checking if frontend is reachable..."
-          curl -v http://0.0.0.0:12000 > /tmp/frontend-check.log 2>&1 || echo "Frontend check failed"
+          curl -v http://$FRONTEND_HOST:$FRONTEND_PORT > /tmp/frontend-check.log 2>&1 || echo "Frontend check failed"
           cat /tmp/frontend-check.log
-
-          # Combine logs for artifact upload
-          echo "Combining log files..."
-          touch /tmp/openhands-e2e-test.log
-          if [ -f "/tmp/openhands-backend.log" ]; then
-            echo "=== BACKEND LOG ===" >> /tmp/openhands-e2e-test.log
-            cat /tmp/openhands-backend.log >> /tmp/openhands-e2e-test.log
-          else
-            echo "Backend log file not found" >> /tmp/openhands-e2e-test.log
-          fi
-
-          if [ -f "/tmp/openhands-frontend.log" ]; then
-            echo "=== FRONTEND LOG ===" >> /tmp/openhands-e2e-test.log
-            cat /tmp/openhands-frontend.log >> /tmp/openhands-e2e-test.log
-          else
-            echo "Frontend log file not found" >> /tmp/openhands-e2e-test.log
-          fi
 
           # Wait for the application to start with active polling
           echo "Waiting for OpenHands to start..."
@@ -168,20 +131,20 @@ jobs:
             echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
 
             # Check if port is open
-            if nc -z localhost 12000; then
+            if nc -z localhost $FRONTEND_PORT; then
               # Check if we get a proper HTML response
-              if curl -s http://localhost:12000 | grep -q "<html"; then
-                echo "SUCCESS: OpenHands is running and responding on port 12000"
+              if curl -s http://localhost:$FRONTEND_PORT | grep -q "<html"; then
+                echo "SUCCESS: OpenHands is running and responding on port $FRONTEND_PORT"
 
                 # Try to get the page title for additional verification
-                page_title=$(curl -s http://localhost:12000 | grep -o "<title>.*</title>" || echo "No title found")
+                page_title=$(curl -s http://localhost:$FRONTEND_PORT | grep -o "<title>.*</title>" || echo "No title found")
                 echo "Page title: $page_title"
                 break
               else
-                echo "Port 12000 is open but not returning HTML content yet"
+                echo "Port $FRONTEND_PORT is open but not returning HTML content yet"
               fi
             else
-              echo "Port 12000 is not open yet"
+              echo "Port $FRONTEND_PORT is not open yet"
             fi
 
             # Show recent log output every 3 attempts
@@ -205,22 +168,10 @@ jobs:
           done
 
       - name: Run end-to-end tests
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          SANDBOX_VOLUMES: /tmp/openhands-workspace:/workspace:rw
-          SANDBOX_USER_ID: 1000
-          SANDBOX_RUNTIME: local
-          INSTALL_DOCKER: 0
-          RUNTIME: local
-          FRONTEND_PORT: 12000
-          FRONTEND_HOST: 0.0.0.0
-          BACKEND_HOST: 0.0.0.0
-          BACKEND_PORT: 3000
         run: |
-          cd tests/e2e && poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
+          # Run the Playwright tests
+          cd tests/e2e
+          poetry run python -m pytest test_workflow.py -v --browser chromium
 
       - name: Upload test results
         if: always()
