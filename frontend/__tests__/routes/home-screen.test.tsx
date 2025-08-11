@@ -35,12 +35,12 @@ const RouterStub = createRoutesStub([
 const selectRepository = async (repoName: string) => {
   const repoConnector = screen.getByTestId("repo-connector");
 
-  // First select the provider
-  const providerDropdown = await waitFor(() =>
-    screen.getByText("Select Provider"),
-  );
-  await userEvent.click(providerDropdown);
-  await userEvent.click(screen.getByText("Github"));
+  // Check if provider selector exists (only shows when multiple providers)
+  const providerDropdown = screen.queryByText("Select Provider");
+  if (providerDropdown) {
+    await userEvent.click(providerDropdown);
+    await userEvent.click(screen.getByText("Github"));
+  }
 
   // Then select the repository
   const dropdown = within(repoConnector).getByTestId("repo-dropdown");
@@ -64,7 +64,9 @@ const selectRepository = async (repoName: string) => {
 
   // Wait for the branch to be auto-selected
   await waitFor(() => {
-    expect(screen.getByText("main")).toBeInTheDocument();
+    // Specifically check the branch dropdown for "main"
+    const branchDropdown = screen.getByTestId("branch-dropdown");
+    expect(within(branchDropdown).getByText("main")).toBeInTheDocument();
   });
 };
 
@@ -152,6 +154,12 @@ describe("HomeScreen", () => {
       nextPage: null,
     });
 
+    // Mock the repository branches API call
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+      { name: "main", commit_sha: "123", protected: false },
+      { name: "develop", commit_sha: "456", protected: false },
+    ]);
+
     renderHomeScreen();
 
     const taskSuggestions = await screen.findByTestId("task-suggestions");
@@ -183,6 +191,12 @@ describe("HomeScreen", () => {
       data: MOCK_RESPOSITORIES,
       nextPage: null,
     });
+
+    // Mock the repository branches API call
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+      { name: "main", commit_sha: "123", protected: false },
+      { name: "develop", commit_sha: "456", protected: false },
+    ]);
 
     renderHomeScreen();
 

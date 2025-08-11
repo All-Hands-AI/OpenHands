@@ -9,6 +9,7 @@ export interface GitBranchDropdownProps {
   className?: string;
   errorMessage?: string;
   disabled?: boolean;
+  testId?: string;
   onChange?: (branchName: string | null) => void;
 }
 
@@ -19,6 +20,7 @@ export function GitBranchDropdown({
   className,
   errorMessage,
   disabled = false,
+  testId,
   onChange,
 }: GitBranchDropdownProps) {
   const { data: branches, isLoading } = useRepositoryBranches(
@@ -54,6 +56,7 @@ export function GitBranchDropdown({
 
   return (
     <ReactSelectDropdown
+      testId={testId}
       options={options}
       value={selectedOption}
       placeholder={displayPlaceholder}

@@ -7,6 +7,7 @@ export type SelectOption = SelectOptionBase;
 
 export interface ReactSelectDropdownProps {
   options: SelectOption[];
+  testId?: string;
   placeholder?: string;
   value?: SelectOption | null;
   defaultValue?: SelectOption | null;
@@ -21,6 +22,7 @@ export interface ReactSelectDropdownProps {
 
 export function ReactSelectDropdown({
   options,
+  testId,
   placeholder = "Select option...",
   value,
   defaultValue,
@@ -35,7 +37,7 @@ export function ReactSelectDropdown({
   const customStyles = useMemo(() => getCustomStyles<SelectOption>(), []);
 
   return (
-    <div className={cn("w-full", className)}>
+    <div data-testid={testId} className={cn("w-full", className)}>
       <Select
         options={options}
         value={value}

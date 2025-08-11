@@ -127,6 +127,7 @@ export function RepositorySelectionForm({
   // Render the branch selector
   const renderBranchSelector = () => (
     <GitBranchDropdown
+      testId="branch-dropdown"
       repositoryName={selectedRepository?.full_name}
       value={selectedBranch?.name || null}
       placeholder="Select branch..."
