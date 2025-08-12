@@ -110,9 +110,13 @@ jobs:
             echo "Playwright browsers are properly installed and working."
           fi
 
+          # Create workspace directory in a location we have permissions for
+          echo "Creating workspace directory..."
+          mkdir -p /tmp/openhands-workspace
+
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
-          FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
+          WORKSPACE_BASE=/tmp/openhands-workspace FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
           # Store the PID of the make run process
           MAKE_PID=$!

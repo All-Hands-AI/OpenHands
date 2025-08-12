@@ -45,31 +45,42 @@ def openhands_app():
             s.close()
 
             if result == 0:
-                print(f'OpenHands is running on port 12000 (attempt {attempt}/{max_attempts})')
+                print(
+                    f'OpenHands is running on port 12000 (attempt {attempt}/{max_attempts})'
+                )
                 # Verify we can get HTML content
                 import urllib.request
+
                 try:
-                    with urllib.request.urlopen('http://localhost:12000', timeout=5) as response:
+                    with urllib.request.urlopen(
+                        'http://localhost:12000', timeout=5
+                    ) as response:
                         html = response.read().decode('utf-8')
                         if '<html' in html:
                             print('Successfully received HTML content from OpenHands')
                             return  # Success
                         else:
-                            print(f'WARNING: Port 12000 is open but not serving HTML content (attempt {attempt}/{max_attempts})')
+                            print(
+                                f'WARNING: Port 12000 is open but not serving HTML content (attempt {attempt}/{max_attempts})'
+                            )
                 except Exception as e:
-                    print(f'WARNING: Port 12000 is open but could not fetch HTML: {e} (attempt {attempt}/{max_attempts})')
+                    print(
+                        f'WARNING: Port 12000 is open but could not fetch HTML: {e} (attempt {attempt}/{max_attempts})'
+                    )
             else:
-                print(f'WARNING: OpenHands is not running on port 12000 (attempt {attempt}/{max_attempts})')
-            
+                print(
+                    f'WARNING: OpenHands is not running on port 12000 (attempt {attempt}/{max_attempts})'
+                )
+
             if attempt < max_attempts:
-                print(f'Waiting 5 seconds before retry...')
+                print('Waiting 5 seconds before retry...')
                 time.sleep(5)
         except Exception as e:
             print(f'ERROR checking OpenHands: {e} (attempt {attempt}/{max_attempts})')
             if attempt < max_attempts:
-                print(f'Waiting 5 seconds before retry...')
+                print('Waiting 5 seconds before retry...')
                 time.sleep(5)
-    
+
     # If we get here, all attempts failed
     raise Exception(
         'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
