@@ -466,11 +466,9 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
 
-        # Cannot read binary files
-        if is_binary(action.path):
-            return ErrorObservation('ERROR_BINARY_FILE')
+        is_image_file = action.path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))
 
-        if action.impl_source == FileReadSource.OH_ACI:
+        if action.impl_source == FileReadSource.OH_ACI and not is_image_file:
             result_str, _ = _execute_file_editor(
                 self.file_editor,
                 command='view',
@@ -489,7 +487,7 @@ class ActionExecutor:
         working_dir = self.bash_session.cwd
         filepath = self._resolve_path(action.path, working_dir)
         try:
-            if filepath.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif')):
+            if is_image_file:
                 with open(filepath, 'rb') as file:
                     image_data = file.read()
                     encoded_image = base64.b64encode(image_data).decode('utf-8')
@@ -515,6 +513,10 @@ class ActionExecutor:
                     encoded_video = f'data:{mime_type};base64,{encoded_video}'
 
                 return FileReadObservation(path=filepath, content=encoded_video)
+
+            # Cannot read binary files
+            if is_binary(action.path):
+                return ErrorObservation('ERROR_BINARY_FILE')
 
             with open(filepath, 'r', encoding='utf-8') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
