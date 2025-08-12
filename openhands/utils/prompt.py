@@ -92,7 +92,6 @@ class PromptManager:
             # Check if this is a system prompt file (either by name or by context)
             is_system_prompt = (
                 'system_prompt' in template_name
-                or template_name == self.system_template_filename
             )
 
             if is_system_prompt:
