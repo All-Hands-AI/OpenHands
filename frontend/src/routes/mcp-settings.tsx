@@ -3,10 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { I18nKey } from "#/i18n/declaration";
-import {
-  displaySuccessToast,
-  displayErrorToast,
-} from "#/utils/custom-toast-handlers";
+
 import { MCPServerList } from "#/components/features/settings/mcp-settings/mcp-server-list";
 import { MCPServerForm } from "#/components/features/settings/mcp-settings/mcp-server-form";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
@@ -161,26 +158,7 @@ function MCPSettingsScreen() {
 
     setMcpConfig(newConfig);
     setConfirmationModalIsVisible(false);
-
-    // Auto-save after deletion
-    if (settings) {
-      const updatedSettings = {
-        ...settings,
-        MCP_CONFIG: newConfig,
-      };
-
-      saveSettings(updatedSettings, {
-        onSuccess: () => {
-          setIsDirty(false);
-          displaySuccessToast(t(I18nKey.SETTINGS$MCP_SERVER_DELETED));
-        },
-        onError: () => {
-          displayErrorToast(t(I18nKey.ERROR$GENERIC));
-          // Revert the local state on error
-          setMcpConfig(localMcpConfig);
-        },
-      });
-    }
+    setIsDirty(true);
   };
 
   const handleSaveSettings = () => {
