@@ -42,6 +42,7 @@ numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
 html2text = "*"
+markdown = "*"                                     # For markdown to HTML conversion
 deprecated = "*"
 pexpect = "*"
 jinja2 = "^3.1.3"
@@ -114,6 +115,7 @@ pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
 pytest = "^8.4.0"
+types-markdown = "^3.8.0.20250809"
 
 [tool.poetry.group.test]
 optional = true
