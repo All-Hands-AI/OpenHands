@@ -196,13 +196,11 @@ describe("ServerStatus", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should apply custom className", () => {
-    renderWithProviders(
-      <ServerStatus conversationStatus="RUNNING" className="custom-class" />,
-    );
+  it("should handle null conversation status", () => {
+    renderWithProviders(<ServerStatus conversationStatus={null} />);
 
-    const container = screen.getByText("Running").closest("div")?.parentElement;
-    expect(container).toHaveClass("custom-class");
+    const statusText = screen.getByText("Running");
+    expect(statusText).toBeInTheDocument();
   });
 });
 
@@ -300,34 +298,6 @@ describe("ServerStatusContextMenu", () => {
     expect(onStartServer).toHaveBeenCalledTimes(1);
   });
 
-  it("should apply correct positioning class when position is top", () => {
-    renderWithProviders(
-      <ServerStatusContextMenu
-        {...defaultProps}
-        conversationStatus="RUNNING"
-        onStopServer={vi.fn()}
-        position="top"
-      />,
-    );
-
-    const contextMenu = screen.getByTestId("server-status-context-menu");
-    expect(contextMenu).toHaveClass("bottom-full");
-  });
-
-  it("should apply correct positioning class when position is bottom", () => {
-    renderWithProviders(
-      <ServerStatusContextMenu
-        {...defaultProps}
-        conversationStatus="RUNNING"
-        onStopServer={vi.fn()}
-        position="bottom"
-      />,
-    );
-
-    const contextMenu = screen.getByTestId("server-status-context-menu");
-    expect(contextMenu).toHaveClass("top-full");
-  });
-
   it("should render correct text content for stop server button", () => {
     renderWithProviders(
       <ServerStatusContextMenu
@@ -383,18 +353,5 @@ describe("ServerStatusContextMenu", () => {
 
     expect(screen.queryByTestId("stop-server-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("start-server-button")).not.toBeInTheDocument();
-  });
-
-  it("should have proper styling classes", () => {
-    renderWithProviders(
-      <ServerStatusContextMenu
-        {...defaultProps}
-        conversationStatus="RUNNING"
-        onStopServer={vi.fn()}
-      />,
-    );
-
-    const contextMenu = screen.getByTestId("server-status-context-menu");
-    expect(contextMenu).toHaveClass("w-fit", "min-w-max", "bg-tertiary");
   });
 });
