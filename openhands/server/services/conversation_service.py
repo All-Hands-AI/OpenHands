@@ -62,7 +62,6 @@ async def initialize_conversation(
             git_provider=git_provider,
         )
 
-        # TODO: initialize and save LLM Registry here
 
         await conversation_store.save_metadata(convo_metadata)
         return convo_metadata
