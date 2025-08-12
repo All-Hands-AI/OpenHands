@@ -47,11 +47,13 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   };
 
   return (
-    <section
-      data-testid="task-suggestions"
-      className={cn("flex flex-col w-full", !hasSuggestedTasks && "gap-6")}
-    >
-      <div className="flex items-center gap-2">
+    <section data-testid="task-suggestions" className="flex flex-col w-full">
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          !hasSuggestedTasks && "mb-[14px]",
+        )}
+      >
         <h3 className="text-xs leading-4 text-white font-bold py-[14px] pl-4">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
         </h3>
