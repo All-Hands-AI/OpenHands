@@ -282,8 +282,7 @@ def prep_build_folder(
 
     # Copy the 'microagents' directory (Microagents)
     shutil.copytree(
-        Path(project_root, 'microagents'),
-        Path(build_folder, 'code', 'microagents')
+        Path(project_root, 'microagents'), Path(build_folder, 'code', 'microagents')
     )
 
     # Copy pyproject.toml and poetry.lock files
