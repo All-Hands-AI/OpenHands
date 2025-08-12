@@ -57,7 +57,6 @@ class PromptManager:
         system_prompt_filename: str = 'system_prompt.j2',
     ):
         self.prompt_dir: str = prompt_dir
-        # Create Jinja2 environment to support template inheritance
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
         self.system_template: Template = self._load_system_template(
             system_prompt_filename
