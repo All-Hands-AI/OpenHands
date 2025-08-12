@@ -60,8 +60,8 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
-          INSTALL_DOCKER: 0
-          RUNTIME: local
+          INSTALL_DOCKER: 1
+          RUNTIME: docker
           FRONTEND_PORT: 12000
           FRONTEND_HOST: 0.0.0.0
           BACKEND_HOST: 0.0.0.0
@@ -78,11 +78,11 @@ jobs:
           make build
 
           # Create a minimal config.toml file for e2e tests
-          # Note: We disable browser environment since e2e tests only test the web UI with Playwright
+          # Note: We enable browser environment and use docker runtime for e2e tests
           echo "Creating minimal config.toml file..."
           echo '[core]' > config.toml
-          echo "enable_browser = false" >> config.toml
-          echo "runtime = \"local\"" >> config.toml
+          echo "enable_browser = true" >> config.toml
+          echo "runtime = \"docker\"" >> config.toml
           cat config.toml
 
           # Verify Playwright browsers are installed (for e2e tests only)
@@ -111,13 +111,11 @@ jobs:
             echo "Playwright browsers are properly installed for e2e tests."
           fi
 
-          # Create workspace directory in a location we have permissions for
-          echo "Creating workspace directory..."
-          mkdir -p /tmp/openhands-workspace
+          # Docker runtime will handle workspace directory creation
 
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
-          WORKSPACE_BASE=/tmp/openhands-workspace FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
+          FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
           # Store the PID of the make run process
           MAKE_PID=$!
