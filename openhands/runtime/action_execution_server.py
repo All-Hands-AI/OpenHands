@@ -675,10 +675,10 @@ class ActionExecutor:
 
 
 if __name__ == '__main__':
-    logger.warning('Starting Action Execution Server')
-    logger.warning('Arguments passed to script:')
+    logger.debug('Starting Action Execution Server')
+    logger.debug('Arguments passed to script:')
     for i, arg in enumerate(sys.argv):
-        logger.warning(f'Argument {i}: {arg}')
+        logger.debug(f'Argument {i}: {arg}')
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
