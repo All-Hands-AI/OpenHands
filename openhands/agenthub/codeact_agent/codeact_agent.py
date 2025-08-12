@@ -102,10 +102,15 @@ class CodeActAgent(Agent):
     def _get_tools(self) -> list['ChatCompletionToolParam']:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
-        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-4', 'o3', 'o1', 'o4']
 
         use_short_tool_desc = False
         if self.llm is not None:
+            # For historical reasons, previously OpenAI enforces max function description length of 1k characters
+            # https://community.openai.com/t/function-call-description-max-length/529902
+            # But it no longer seems to be an issue recently
+            # https://community.openai.com/t/was-the-character-limit-for-schema-descriptions-upgraded/1225975
+            # Tested on GPT-5 and longer description still works. But we still keep the logic to be safe for older models.
             use_short_tool_desc = any(
                 model_substr in self.llm.config.model
                 for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS

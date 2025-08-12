@@ -91,7 +91,10 @@ class PromptManager:
             return Template(file.read())
 
     def get_system_message(self) -> str:
-        return self.system_template.render().strip()
+        from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+
+        system_message = self.system_template.render().strip()
+        return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
         """This is an initial user message that can be provided to the agent

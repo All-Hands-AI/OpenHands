@@ -2,6 +2,7 @@ import uuid
 from types import MappingProxyType
 from typing import Any
 
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
@@ -84,7 +85,16 @@ async def start_conversation(
     conversation_id: str,
     convo_metadata: ConversationMetadata,
     conversation_instructions: str | None,
-):
+    mcp_config: MCPConfig | None = None,
+) -> AgentLoopInfo:
+    logger.info(
+        'Creating conversation',
+        extra={
+            'signal': 'create_conversation',
+            'user_id': user_id,
+            'trigger': convo_metadata.trigger,
+        },
+    )
     logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
@@ -114,6 +124,9 @@ async def start_conversation(
     session_init_args['selected_branch'] = convo_metadata.selected_branch
     session_init_args['git_provider'] = convo_metadata.git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
+    if mcp_config:
+        session_init_args['mcp_config'] = mcp_config
+
     conversation_init_data = ConversationInitData(**session_init_args)
 
     conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
@@ -156,6 +169,7 @@ async def create_new_conversation(
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
+    mcp_config: MCPConfig | None = None,
 ) -> AgentLoopInfo:
     conversation_metadata = await initialize_conversation(
         user_id,
@@ -179,6 +193,7 @@ async def create_new_conversation(
         conversation_metadata.conversation_id,
         conversation_metadata,
         conversation_instructions,
+        mcp_config,
     )
 
 
