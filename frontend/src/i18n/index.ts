@@ -27,7 +27,7 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
-    load: "currentOnly",
+    load: "languageOnly", // Changed from "currentOnly" to strip region codes (e.g., "en-US" -> "en")
   });
 
 export default i18n;
