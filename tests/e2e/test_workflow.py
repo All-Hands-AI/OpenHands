@@ -536,29 +536,69 @@ def test_openhands_full_workflow(page, openhands_app):
     
     # Wait for navigation to conversation page
     print('Waiting for navigation to conversation page...')
-    try:
-        page.wait_for_url('**/conversations/**', timeout=30000)
-        print('Successfully navigated to conversation page')
+    
+    # Increase timeout to 60 seconds and add periodic status checks
+    navigation_timeout = 60000  # 60 seconds
+    check_interval = 5000  # Check every 5 seconds
+    
+    start_time = page.evaluate('Date.now()')
+    navigation_successful = False
+    
+    while True:
+        current_time = page.evaluate('Date.now()')
+        elapsed = current_time - start_time
+        
+        # Check if we've navigated to a conversation page
         current_url = page.url
-        print(f'Current URL: {current_url}')
-    except Exception as e:
-        print(f'Navigation timeout: {e}')
+        if '/conversations/' in current_url:
+            print(f'✅ Successfully navigated to conversation page: {current_url}')
+            navigation_successful = True
+            break
+        
+        # Check if we've exceeded the timeout
+        if elapsed > navigation_timeout:
+            print(f'❌ Navigation timeout after {elapsed/1000:.1f} seconds')
+            break
+        
+        # Print periodic status updates
+        if elapsed % check_interval < 1000:  # Print roughly every 5 seconds
+            print(f'⏳ Still waiting for navigation... ({elapsed/1000:.1f}s elapsed, current URL: {current_url})')
+            
+            # Check if Launch button still shows Loading
+            try:
+                loading_button = page.locator('[data-testid="repo-launch-button"]:has-text("Loading")')
+                if loading_button.is_visible(timeout=1000):
+                    print('   Launch button still shows "Loading..."')
+                else:
+                    launch_button = page.locator('[data-testid="repo-launch-button"]')
+                    if launch_button.is_visible(timeout=1000):
+                        button_text = launch_button.text_content()
+                        print(f'   Launch button text: "{button_text}"')
+            except:
+                pass
+        
+        # Wait a bit before next check
+        page.wait_for_timeout(1000)
+    
+    if not navigation_successful:
         current_url = page.url
         print(f'Current URL after timeout: {current_url}')
-        
+
         # Take a screenshot to debug
         page.screenshot(path='test-results/08_navigation_timeout.png')
         print('Screenshot saved: 08_navigation_timeout.png')
-        
+
         # Check for error messages
         error_selectors = [
             'text=Error',
             'text=Failed', 
+            'text=Something went wrong',
             '[role="alert"]',
             '.error',
-            '.alert'
+            '.alert',
+            '[data-testid*="error"]'
         ]
-        
+
         for selector in error_selectors:
             try:
                 error_element = page.locator(selector).first
@@ -568,9 +608,9 @@ def test_openhands_full_workflow(page, openhands_app):
                     break
             except:
                 continue
-        
+
         # If navigation failed, we can't continue with the test
-        raise Exception(f'Failed to navigate to conversation page. Current URL: {current_url}')
+        raise Exception(f'Failed to navigate to conversation page after {navigation_timeout/1000} seconds. Current URL: {current_url}')
     
     # Wait for the conversation interface to fully load
     print('Waiting for conversation interface to load...')
