@@ -27,7 +27,6 @@ export const DEFAULT_SETTINGS: Settings = {
     sse_servers: [],
     stdio_servers: [],
   },
-  SYSTEM_PROMPT: "system_prompt.j2",
   GIT_USER_NAME: "openhands",
   GIT_USER_EMAIL: "openhands@all-hands.dev",
 };

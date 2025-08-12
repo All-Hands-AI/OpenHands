@@ -16,7 +16,6 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
-import { SystemPromptSelector } from "#/components/features/settings/app-settings/system-prompt-selector";
 import { useConfig } from "#/hooks/query/use-config";
 import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
@@ -44,8 +43,6 @@ function AppSettingsScreen() {
     setSolvabilityAnalysisSwitchHasChanged,
   ] = React.useState(false);
   const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
-    React.useState(false);
-  const [systemPromptHasChanged, setSystemPromptHasChanged] =
     React.useState(false);
   const [gitUserNameHasChanged, setGitUserNameHasChanged] =
     React.useState(false);
@@ -76,9 +73,6 @@ function AppSettingsScreen() {
       ?.toString();
     const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
 
-    const systemPrompt =
-      formData.get("system-prompt-selector")?.toString() || "system_prompt.j2";
-
     const gitUserName =
       formData.get("git-user-name-input")?.toString() ||
       DEFAULT_SETTINGS.GIT_USER_NAME;
@@ -94,7 +88,6 @@ function AppSettingsScreen() {
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
         ENABLE_SOLVABILITY_ANALYSIS: enableSolvabilityAnalysis,
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
-        SYSTEM_PROMPT: systemPrompt,
         GIT_USER_NAME: gitUserName,
         GIT_USER_EMAIL: gitUserEmail,
       },
@@ -113,7 +106,6 @@ function AppSettingsScreen() {
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
-          setSystemPromptHasChanged(false);
           setGitUserNameHasChanged(false);
           setGitUserEmailHasChanged(false);
         },
@@ -165,11 +157,6 @@ function AppSettingsScreen() {
     setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
   };
 
-  const checkIfSystemPromptHasChanged = (value: string) => {
-    const currentValue = settings?.SYSTEM_PROMPT || "system_prompt.j2";
-    setSystemPromptHasChanged(value !== currentValue);
-  };
-
   const checkIfGitUserNameHasChanged = (value: string) => {
     const currentValue = settings?.GIT_USER_NAME;
     setGitUserNameHasChanged(value !== currentValue);
@@ -187,7 +174,6 @@ function AppSettingsScreen() {
     !proactiveConversationsSwitchHasChanged &&
     !solvabilityAnalysisSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged &&
-    !systemPromptHasChanged &&
     !gitUserNameHasChanged &&
     !gitUserEmailHasChanged;
 
@@ -261,12 +247,6 @@ function AppSettingsScreen() {
             min={1}
             step={1}
             className="w-full max-w-[680px]" // Match the width of the language field
-          />
-
-          <SystemPromptSelector
-            name="system-prompt-selector"
-            defaultValue={settings.SYSTEM_PROMPT || "system_prompt.j2"}
-            onChange={checkIfSystemPromptHasChanged}
           />
 
           <div className="border-t border-t-tertiary pt-6 mt-2">
