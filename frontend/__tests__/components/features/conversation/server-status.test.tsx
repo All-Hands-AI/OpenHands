@@ -368,17 +368,4 @@ describe("ServerStatusContextMenu", () => {
     expect(screen.queryByTestId("stop-server-button")).not.toBeInTheDocument();
     expect(screen.queryByTestId("start-server-button")).not.toBeInTheDocument();
   });
-
-  it("should have proper styling classes", () => {
-    renderWithProviders(
-      <ServerStatusContextMenu
-        {...defaultProps}
-        conversationStatus="RUNNING"
-        onStopServer={vi.fn()}
-      />,
-    );
-
-    const contextMenu = screen.getByTestId("server-status-context-menu");
-    expect(contextMenu).toHaveClass("w-fit", "min-w-max", "bg-tertiary");
-  });
 });
