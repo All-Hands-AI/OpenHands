@@ -715,8 +715,19 @@ async def update_conversation(
 def add_experiment_config_for_conversation(
     conversation_id: str, exp_config: ExperimentConfig
 ) -> bool:
+    exp_config_filepath = get_experiment_config_filename(conversation_id)
+    exists = False
     try:
-        exp_config_filepath = get_experiment_config_filename(conversation_id)
+        file_store.read(exp_config_filepath)
+        exists = True
+    except FileNotFoundError:
+        pass
+
+    # Don't modify again if it already exists
+    if exists:
+        return False
+
+    try:
         file_store.write(exp_config_filepath, exp_config.model_dump_json())
     except Exception as e:
         logger.info(f'Failed to write experiment config for {conversation_id}: {e}')
