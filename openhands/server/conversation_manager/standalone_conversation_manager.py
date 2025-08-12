@@ -469,6 +469,7 @@ class StandaloneConversationManager(ConversationManager):
         settings: Settings,
         event=None,
     ):
+        logger.info(f'_update_conversation_for_event called for conversation {conversation_id}, event: {event.__class__.__name__ if event else "None"}')
         conversation_store = await self._get_conversation_store(user_id)
         conversation = await conversation_store.get_metadata(conversation_id)
         conversation.last_updated_at = datetime.now(timezone.utc)
@@ -490,14 +491,20 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
         default_title = get_default_conversation_title(conversation_id)
+        logger.info(f'Title generation check for conversation {conversation_id}: current_title="{conversation.title}", default_title="{default_title}"')
+        
         if (
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
+            logger.info(f'Starting auto title generation for conversation {conversation_id}')
             title = await auto_generate_title(
                 conversation_id, user_id, self.file_store, settings
             )
+            logger.info(f'Auto title generation result for conversation {conversation_id}: title="{title}"')
+            
             if title and not title.isspace():
                 conversation.title = title
+                logger.info(f'Setting new title for conversation {conversation_id}: "{title}"')
                 try:
                     # Emit a status update to the client with the new title
                     status_update_dict = {
@@ -507,6 +514,7 @@ class StandaloneConversationManager(ConversationManager):
                         'message': conversation_id,
                         'conversation_title': conversation.title,
                     }
+                    logger.info(f'Emitting title update event for conversation {conversation_id} to room "room:{conversation_id}": {status_update_dict}')
                     await run_in_loop(
                         self.sio.emit(
                             'oh_event',
@@ -515,10 +523,14 @@ class StandaloneConversationManager(ConversationManager):
                         ),
                         self._loop,  # type:ignore
                     )
+                    logger.info(f'Successfully emitted title update event for conversation {conversation_id}')
                 except Exception as e:
-                    logger.error(f'Error emitting title update event: {e}')
+                    logger.error(f'Error emitting title update event for conversation {conversation_id}: {e}')
             else:
+                logger.info(f'Title generation failed or returned empty for conversation {conversation_id}, keeping default title: "{default_title}"')
                 conversation.title = default_title
+        else:
+            logger.info(f'Conversation {conversation_id} already has custom title "{conversation.title}", skipping auto generation')
 
         await conversation_store.save_metadata(conversation)
 

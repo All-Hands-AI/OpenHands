@@ -89,13 +89,18 @@ async def auto_generate_title(
     Returns:
         A generated title string
     """
+    logger.info(f'auto_generate_title called for conversation {conversation_id}, user_id: {user_id}')
     try:
         # Create an event store for the conversation
         event_store = EventStore(conversation_id, file_store, user_id)
+        logger.info(f'Created event store for conversation {conversation_id}')
 
         # Find the first user message
         first_user_message = None
+        event_count = 0
         for event in event_store.search_events():
+            event_count += 1
+            logger.debug(f'Checking event {event_count}: {event.__class__.__name__}, source: {event.source}')
             if (
                 event.source == EventSource.USER
                 and isinstance(event, MessageAction)
@@ -103,12 +108,17 @@ async def auto_generate_title(
                 and event.content.strip()
             ):
                 first_user_message = event.content
+                logger.info(f'Found first user message in conversation {conversation_id}: "{first_user_message[:100]}..."')
                 break
 
+        logger.info(f'Searched {event_count} events in conversation {conversation_id}')
+        
         if first_user_message:
+            logger.info(f'Processing first user message for title generation in conversation {conversation_id}')
             # Get LLM config from user settings
             try:
                 if settings and settings.llm_model:
+                    logger.info(f'Using LLM model {settings.llm_model} for title generation in conversation {conversation_id}')
                     # Create LLM config from settings
                     llm_config = LLMConfig(
                         model=settings.llm_model,
@@ -117,22 +127,31 @@ async def auto_generate_title(
                     )
 
                     # Try to generate title using LLM
+                    logger.info(f'Calling LLM for title generation in conversation {conversation_id}')
                     llm_title = await generate_conversation_title(
                         first_user_message, llm_config
                     )
                     if llm_title:
-                        logger.info(f'Generated title using LLM: {llm_title}')
+                        logger.info(f'Generated title using LLM for conversation {conversation_id}: "{llm_title}"')
                         return llm_title
+                    else:
+                        logger.warning(f'LLM returned empty title for conversation {conversation_id}')
+                else:
+                    logger.info(f'No LLM model configured for conversation {conversation_id}, skipping LLM title generation')
             except Exception as e:
-                logger.error(f'Error using LLM for title generation: {e}')
+                logger.error(f'Error using LLM for title generation in conversation {conversation_id}: {e}')
 
             # Fall back to simple truncation if LLM generation fails or is unavailable
+            logger.info(f'Falling back to truncation-based title for conversation {conversation_id}')
             first_user_message = first_user_message.strip()
             title = first_user_message[:30]
             if len(first_user_message) > 30:
                 title += '...'
-            logger.info(f'Generated title using truncation: {title}')
+            logger.info(f'Generated title using truncation for conversation {conversation_id}: "{title}"')
             return title
+        else:
+            logger.warning(f'No first user message found for conversation {conversation_id}, cannot generate title')
     except Exception as e:
-        logger.error(f'Error generating title: {str(e)}')
+        logger.error(f'Error generating title for conversation {conversation_id}: {str(e)}')
+    logger.info(f'Returning empty title for conversation {conversation_id}')
     return ''
