@@ -1295,6 +1295,22 @@
         "de": "Sind Sie sicher, dass Sie diesen Server löschen möchten?",
         "uk": "Ви впевнені, що хочете видалити цей сервер?"
     },
+    "SETTINGS$MCP_SERVER_DELETED": {
+        "en": "MCP server deleted successfully",
+        "ja": "MCPサーバーが正常に削除されました",
+        "zh-CN": "MCP服务器删除成功",
+        "zh-TW": "MCP伺服器刪除成功",
+        "ko-KR": "MCP 서버가 성공적으로 삭제되었습니다",
+        "no": "MCP-server slettet vellykket",
+        "it": "Server MCP eliminato con successo",
+        "pt": "Servidor MCP excluído com sucesso",
+        "es": "Servidor MCP eliminado exitosamente",
+        "ar": "تم حذف خادم MCP بنجاح",
+        "fr": "Serveur MCP supprimé avec succès",
+        "tr": "MCP sunucusu başarıyla silindi",
+        "de": "MCP-Server erfolgreich gelöscht",
+        "uk": "MCP сервер успішно видалено"
+    },
     "SETTINGS$MCP_ERROR_COMMAND_NO_SPACES": {
         "en": "Command cannot contain spaces",
         "ja": "コマンドにスペースを含めることはできません",
