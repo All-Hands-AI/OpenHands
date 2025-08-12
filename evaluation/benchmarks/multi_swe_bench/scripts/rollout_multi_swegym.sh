@@ -7,16 +7,23 @@
 
 MODEL=$1  # eg your llm config name in config.toml (eg: "llm.claude-3-5-sonnet-20241022-t05")
 EXP_NAME=$2 # "train-t05"
-N_WORKERS=${3:-64}
-N_RUNS=${4:-1}
+EVAL_DATASET=$3  # path to original dataset (jsonl file)
+N_WORKERS=${4:-64}
+N_RUNS=${5:-1}
 
 export EXP_NAME=$EXP_NAME
 # use 2x resources for rollout since some codebases are pretty resource-intensive
 export DEFAULT_RUNTIME_RESOURCE_FACTOR=2
 echo "MODEL: $MODEL"
 echo "EXP_NAME: $EXP_NAME"
-DATASET=""  # path to converte dataset
-VAL_DATASET=""  # path to original dataset
+echo "EVAL_DATASET: $EVAL_DATASET"
+# Generate DATASET path by adding _with_runtime_ before .jsonl extension
+DATASET="${EVAL_DATASET%.jsonl}_with_runtime_.jsonl"  # path to converted dataset
+
+# Create the converted dataset file
+echo "Creating converted dataset at: $DATASET"
+poetry run python ./evaluation/benchmarks/multi_swe_bench/scripts/data/data_change.py --input "$EVAL_DATASET" --output "$DATASET"
+
 SPLIT="train"
 export LANGUAGE=java
 
