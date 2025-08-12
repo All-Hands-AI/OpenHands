@@ -397,13 +397,20 @@ def test_openhands_full_workflow(page, openhands_app):
 
     # Try to find and click the repository option
     option_found = False
+    
+    # React Select creates options with specific structure - target the actual clickable option
     option_selectors = [
-        'text=All-Hands-AI/OpenHands',
+        # React Select option selectors (most specific first)
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("OpenHands")',
+        # Generic option selectors
         '[role="option"]:has-text("All-Hands-AI/OpenHands")',
         '[role="option"]:has-text("OpenHands")',
-        'li:has-text("All-Hands-AI/OpenHands")',
-        'li:has-text("OpenHands")',
-        '[data-testid*="OpenHands"]'
+        # Fallback selectors (but avoid aria-results span)
+        'div:has-text("All-Hands-AI/OpenHands"):not([id="aria-results"])',
+        'div:has-text("OpenHands"):not([id="aria-results"])'
     ]
 
     for selector in option_selectors:
@@ -416,13 +423,13 @@ def test_openhands_full_workflow(page, openhands_app):
                     option.click(force=True)
                     print('Successfully clicked option with force=True')
                     option_found = True
-                    page.wait_for_timeout(1000)  # Wait for selection to complete
+                    page.wait_for_timeout(2000)  # Wait longer for React Select to update
                     break
                 except Exception as force_error:
                     print(f'Force click failed: {force_error}, trying regular click...')
                     option.click()
                     option_found = True
-                    page.wait_for_timeout(1000)  # Wait for selection to complete
+                    page.wait_for_timeout(2000)  # Wait longer for React Select to update
                     break
         except Exception as e:
             print(f'Selector {selector} failed: {e}')
@@ -438,7 +445,24 @@ def test_openhands_full_workflow(page, openhands_app):
         print('Used keyboard navigation to select option')
         page.wait_for_timeout(1000)
 
+    # Verify that the repository selection actually worked
     page.wait_for_timeout(1000)
+    print('Verifying repository selection...')
+    try:
+        # Check if the React Select shows the selected repository
+        selected_value_element = page.locator('[data-testid="repo-dropdown"] .css-1jcgswf')
+        if selected_value_element.is_visible(timeout=2000):
+            selected_text = selected_value_element.text_content()
+            print(f'React Select selected value: "{selected_text}"')
+            if 'OpenHands' in selected_text:
+                print('✅ Repository selection verified - React Select shows OpenHands')
+            else:
+                print(f'⚠️ Repository selection may have failed - shows: {selected_text}')
+        else:
+            print('⚠️ Could not find React Select selected value element')
+    except Exception as e:
+        print(f'Error verifying repository selection: {e}')
+    
     page.screenshot(path='test-results/07_repo_selected.png')
     print('Screenshot saved: 07_repo_selected.png')
 
