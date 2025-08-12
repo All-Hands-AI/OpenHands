@@ -180,6 +180,11 @@ jobs:
           echo "OpenHands is running successfully on port 12000"
 
       - name: Run end-to-end tests
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
+          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
           # Run the Playwright tests
           cd tests/e2e

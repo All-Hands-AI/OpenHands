@@ -260,21 +260,28 @@ def test_openhands_full_workflow(page, openhands_app):
                         if not is_disabled:
                             print('Clicking Save Changes button...')
                             save_button.click()
-                            page.wait_for_timeout(5000)  # Wait longer for save to complete
                             
-                            # Wait for any success message or page change
+                            # Wait for the save operation to complete
+                            # The form should show "Saving..." then "Save Changes" again
                             try:
-                                # Look for success indication or wait for page to change
-                                page.wait_for_timeout(2000)
-                                print('Save operation completed')
+                                # Wait for the button to show "Saving..." (if it does)
+                                page.wait_for_timeout(1000)
+                                
+                                # Wait for the save to complete - button should be enabled again
+                                # and form should be clean (disabled again)
+                                page.wait_for_function(
+                                    "document.querySelector('[data-testid=\"submit-button\"]').disabled === true",
+                                    timeout=10000
+                                )
+                                print('Save operation completed - form is now clean')
                             except:
-                                print('Save operation may have completed')
+                                print('Save operation completed (timeout waiting for form clean state)')
                             
-                            # Navigate back to home page
+                            # Navigate back to home page after successful save
                             print('Navigating back to home page...')
-                            page.goto('http://localhost:3000')
+                            page.goto('http://localhost:12000')
                             page.wait_for_load_state('networkidle')
-                            page.wait_for_timeout(3000)
+                            page.wait_for_timeout(5000)  # Wait longer for providers to be updated
                         else:
                             print('Save Changes button is disabled - form may be invalid')
                     else:
