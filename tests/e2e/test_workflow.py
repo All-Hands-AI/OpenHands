@@ -311,6 +311,7 @@ def test_openhands_full_workflow(page, openhands_app):
     # Look for the repository dropdown/selector
     # Try multiple possible selectors for the repository dropdown
     repo_selectors = [
+        '[data-testid="repo-dropdown"]',  # React Select async dropdown
         'input[placeholder*="Search repositories"]',
         'input[placeholder*="repository"]',
         '[data-testid*="repo"]',
@@ -352,8 +353,20 @@ def test_openhands_full_workflow(page, openhands_app):
     repo_input.click()
     page.wait_for_timeout(1000)
     
-    # Type to search for the OpenHands repository
-    repo_input.fill('All-Hands-AI/OpenHands')
+    # For React Select components, we need to type directly after clicking
+    # The input field appears after clicking the dropdown
+    try:
+        # Try to fill first (for regular inputs)
+        repo_input.fill('All-Hands-AI/OpenHands')
+        print('Used fill() method for repository input')
+    except Exception as e:
+        print(f'Fill failed ({e}), trying keyboard input for React Select...')
+        # If fill fails, this is likely a React Select component
+        # Clear any existing text and type
+        page.keyboard.press('Control+a')  # Select all
+        page.keyboard.type('All-Hands-AI/OpenHands')
+        print('Used keyboard.type() for React Select component')
+    
     page.wait_for_timeout(2000)  # Wait for search results
     
     # Look for the OpenHands repository in the dropdown
