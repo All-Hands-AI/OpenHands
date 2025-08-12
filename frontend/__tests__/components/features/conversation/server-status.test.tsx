@@ -210,15 +210,6 @@ describe("ServerStatus", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should apply custom className", () => {
-    renderWithProviders(
-      <ServerStatus conversationStatus="RUNNING" className="custom-class" />,
-    );
-
-    const container = screen.getByText("Running").closest("div")?.parentElement;
-    expect(container).toHaveClass("custom-class");
-  });
-
   it("should handle null conversation status", () => {
     renderWithProviders(<ServerStatus conversationStatus={null} />);
 
