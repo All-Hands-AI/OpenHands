@@ -200,8 +200,8 @@ export const handlers = [
     if (body) {
       // Merge the submitted settings with the existing settings
       MOCK_USER_PREFERENCES.settings = {
-        ...MOCK_USER_PREFERENCES.settings || MOCK_DEFAULT_USER_SETTINGS,
-        ...body
+        ...(MOCK_USER_PREFERENCES.settings || MOCK_DEFAULT_USER_SETTINGS),
+        ...(body as Record<string, unknown>),
       };
       return HttpResponse.json(null, { status: 200 });
     }

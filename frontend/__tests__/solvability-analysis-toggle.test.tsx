@@ -4,7 +4,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import AppSettingsScreen from "#/routes/app-settings";
 import OpenHands from "#/api/open-hands";
-import { MOCK_DEFAULT_USER_SETTINGS, resetTestHandlersMockSettings } from "#/mocks/handlers";
+import {
+  MOCK_DEFAULT_USER_SETTINGS,
+  resetTestHandlersMockSettings,
+} from "#/mocks/handlers";
 
 const renderAppSettingsScreen = () =>
   render(<AppSettingsScreen />, {
@@ -51,7 +54,9 @@ describe("Solvability Analysis Toggle", () => {
     renderAppSettingsScreen();
 
     // Wait for the toggle to be rendered
-    const toggle = await screen.findByTestId("enable-solvability-analysis-switch");
+    const toggle = await screen.findByTestId(
+      "enable-solvability-analysis-switch",
+    );
     expect(toggle).not.toBeChecked();
 
     // Toggle it on
@@ -81,8 +86,13 @@ describe("Solvability Analysis Toggle", () => {
     // Invalidate the query to force a refetch
     await waitFor(() => {
       // The toggle should stay checked after saving
-      const updatedToggle = screen.getByTestId("enable-solvability-analysis-switch");
-      console.log("Toggle checked state:", updatedToggle.checked);
+      const updatedToggle = screen.getByTestId(
+        "enable-solvability-analysis-switch",
+      );
+      console.log(
+        "Toggle checked state:",
+        (updatedToggle as HTMLInputElement).checked,
+      );
       expect(updatedToggle).toBeChecked();
     });
   });
