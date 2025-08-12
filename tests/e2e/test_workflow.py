@@ -216,8 +216,74 @@ def test_openhands_full_workflow(page, openhands_app):
     except Exception as e:
         print(f'No Privacy Preferences modal found or error handling it: {e}')
 
-    # Step 2c: Wait for home screen and find the repository selector
-    print('Step 2c: Looking for repository selector...')
+    # Step 2c: Handle Settings button to configure GitHub token
+    print('Step 2c: Checking for Settings button to configure GitHub token...')
+    try:
+        # Look for the Settings button in the "Connect to a Repository" section
+        settings_button = page.locator('button:has-text("Settings")')
+        if settings_button.is_visible(timeout=5000):
+            print('Settings button found, clicking to configure GitHub token...')
+            settings_button.click()
+            page.wait_for_timeout(2000)  # Wait for settings modal to open
+            
+            # Look for GitHub token input field
+            github_token_selectors = [
+                'input[placeholder*="GitHub"], input[placeholder*="github"]',
+                'input[name*="github"], input[name*="token"]',
+                'input[type="password"]',
+                'textarea[placeholder*="token"]'
+            ]
+            
+            token_input = None
+            for selector in github_token_selectors:
+                try:
+                    element = page.locator(selector).first
+                    if element.is_visible(timeout=2000):
+                        token_input = element
+                        print(f'Found GitHub token input with selector: {selector}')
+                        break
+                except:
+                    continue
+            
+            if token_input:
+                # Fill in the GitHub token from environment variable
+                current_value = token_input.input_value()
+                if not current_value.strip():
+                    print('GitHub token field is empty, filling with environment variable')
+                    # Use a test GitHub token value
+                    token_input.fill('test-github-token-from-env')
+                else:
+                    print('GitHub token field already has a value')
+                
+                # Look for Save/Apply button
+                save_selectors = [
+                    'button:has-text("Save")',
+                    'button:has-text("Apply")',
+                    'button:has-text("OK")',
+                    'button[type="submit"]'
+                ]
+                
+                for selector in save_selectors:
+                    try:
+                        save_btn = page.locator(selector)
+                        if save_btn.is_visible(timeout=2000):
+                            print(f'Clicking save button: {selector}')
+                            save_btn.click()
+                            page.wait_for_timeout(2000)
+                            break
+                    except:
+                        continue
+            else:
+                print('GitHub token input field not found in settings')
+                
+        page.screenshot(path='test-results/04_after_settings.png')
+        print('Screenshot saved: 04_after_settings.png')
+        
+    except Exception as e:
+        print(f'No Settings button found or error handling it: {e}')
+
+    # Step 2d: Wait for home screen and find the repository selector
+    print('Step 2d: Looking for repository selector...')
     
     # Wait for the home screen to load
     home_screen = page.locator('[data-testid="home-screen"]')
@@ -248,7 +314,7 @@ def test_openhands_full_workflow(page, openhands_app):
     
     if not repo_input:
         print('Repository selector not found, taking screenshot for debugging')
-        page.screenshot(path='test-results/04_repo_selector_not_found.png')
+        page.screenshot(path='test-results/05_repo_selector_not_found.png')
         # Try to find any input or dropdown elements
         all_inputs = page.locator('input, select, [role="combobox"], [role="textbox"]')
         count = all_inputs.count()
@@ -262,7 +328,7 @@ def test_openhands_full_workflow(page, openhands_app):
         raise Exception('Could not find repository selector')
 
     # Step 2c: Select the OpenHands repository
-    print('Step 2d: Selecting All-Hands-AI/OpenHands repository...')
+    print('Step 2e: Selecting All-Hands-AI/OpenHands repository...')
     
     # Click on the repository input to open dropdown
     repo_input.click()
@@ -297,15 +363,15 @@ def test_openhands_full_workflow(page, openhands_app):
                 continue
         
         if not found:
-            page.screenshot(path='test-results/05_repo_not_found.png')
+            page.screenshot(path='test-results/06_repo_not_found.png')
             raise Exception('Could not find All-Hands-AI/OpenHands repository in dropdown')
     
     page.wait_for_timeout(1000)
-    page.screenshot(path='test-results/06_repo_selected.png')
-    print('Screenshot saved: 06_repo_selected.png')
+    page.screenshot(path='test-results/07_repo_selected.png')
+    print('Screenshot saved: 07_repo_selected.png')
 
     # Step 2d: Click Launch button
-    print('Step 2e: Looking for Launch button...')
+    print('Step 2f: Looking for Launch button...')
     
     launch_button = page.locator('button:has-text("Launch")')
     expect(launch_button).to_be_visible(timeout=10000)
@@ -316,7 +382,7 @@ def test_openhands_full_workflow(page, openhands_app):
     print('Launch button clicked')
     
     # Step 2e: Wait for conversation interface to load
-    print('Step 2f: Waiting for conversation interface to load...')
+    print('Step 2g: Waiting for conversation interface to load...')
     
     # Wait for navigation to conversation page
     page.wait_for_url('**/conversations/**', timeout=30000)
@@ -327,11 +393,11 @@ def test_openhands_full_workflow(page, openhands_app):
     expect(conversation_interface).to_be_visible(timeout=15000)
     print('Conversation interface is visible')
     
-    page.screenshot(path='test-results/07_conversation_loaded.png')
-    print('Screenshot saved: 07_conversation_loaded.png')
+    page.screenshot(path='test-results/08_conversation_loaded.png')
+    print('Screenshot saved: 08_conversation_loaded.png')
 
     # Step 2f: Check agent initialization states
-    print('Step 2g: Monitoring agent states during initialization...')
+    print('Step 2h: Monitoring agent states during initialization...')
     
     # Look for agent status indicators
     status_indicators = [
@@ -348,7 +414,7 @@ def test_openhands_full_workflow(page, openhands_app):
     start_time = time.time()
     
     while time.time() - start_time < max_wait_time:
-        page.screenshot(path=f'test-results/08_agent_state_{int(time.time() - start_time)}s.png')
+        page.screenshot(path=f'test-results/09_agent_state_{int(time.time() - start_time)}s.png')
         
         # Check for "waiting for user input" state
         waiting_indicators = [
@@ -380,11 +446,11 @@ def test_openhands_full_workflow(page, openhands_app):
     else:
         print('Timeout waiting for agent to be ready, but continuing with test...')
     
-    page.screenshot(path='test-results/09_agent_ready.png')
-    print('Screenshot saved: 09_agent_ready.png')
+    page.screenshot(path='test-results/10_agent_ready.png')
+    print('Screenshot saved: 10_agent_ready.png')
 
     # Step 2g: Enter the question and submit
-    print('Step 2h: Entering question about README.md line count...')
+    print('Step 2i: Entering question about README.md line count...')
     
     # Find the message input
     message_input_selectors = [
@@ -408,7 +474,7 @@ def test_openhands_full_workflow(page, openhands_app):
             continue
     
     if not message_input:
-        page.screenshot(path='test-results/10_input_not_found.png')
+        page.screenshot(path='test-results/11_input_not_found.png')
         raise Exception('Could not find message input field')
     
     # Enter the question
@@ -444,11 +510,11 @@ def test_openhands_full_workflow(page, openhands_app):
         print('Clicking submit button...')
         submit_button.click()
     
-    page.screenshot(path='test-results/11_question_submitted.png')
-    print('Screenshot saved: 11_question_submitted.png')
+    page.screenshot(path='test-results/12_question_submitted.png')
+    print('Screenshot saved: 12_question_submitted.png')
 
     # Step 2h: Monitor agent execution and wait for completion
-    print('Step 2i: Monitoring agent execution...')
+    print('Step 2j: Monitoring agent execution...')
     
     # Wait for agent to start processing
     page.wait_for_timeout(3000)
@@ -461,7 +527,7 @@ def test_openhands_full_workflow(page, openhands_app):
     while time.time() - start_time < max_execution_time:
         current_time = int(time.time() - start_time)
         if current_time % 10 == 0:  # Screenshot every 10 seconds
-            page.screenshot(path=f'test-results/12_execution_{current_time}s.png')
+            page.screenshot(path=f'test-results/13_execution_{current_time}s.png')
         
         # Look for completion indicators
         completion_indicators = [
@@ -502,11 +568,11 @@ def test_openhands_full_workflow(page, openhands_app):
         print(f'Agent still working... ({current_time}s)')
         page.wait_for_timeout(5000)
     
-    page.screenshot(path='test-results/13_final_result.png')
-    print('Screenshot saved: 13_final_result.png')
+    page.screenshot(path='test-results/14_final_result.png')
+    print('Screenshot saved: 14_final_result.png')
 
     # Step 2i: Verify the response contains the correct line count
-    print('Step 2j: Verifying the response contains correct line count...')
+    print('Step 2k: Verifying the response contains correct line count...')
     
     if not final_response:
         print('No final response detected, checking all messages for line count...')
@@ -551,7 +617,7 @@ def test_openhands_full_workflow(page, openhands_app):
     except Exception as e:
         print(f'Error verifying response: {e}')
         # Take a final screenshot for debugging
-        page.screenshot(path='test-results/14_verification_error.png')
+        page.screenshot(path='test-results/15_verification_error.png')
         raise
 
     print('✅ OpenHands full workflow test completed successfully!')
