@@ -408,17 +408,11 @@ def test_openhands_full_workflow(page, openhands_app):
     except:
         print('Could not click dropdown control, continuing...')
     
-    # Try multiple approaches to select the repository
+    # Try to find and click the repository option (using the working approach)
     option_selectors = [
-        # React Select specific selectors
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("All-Hands-AI/OpenHands")',
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
-        '.css-1jcgswf[data-value*="OpenHands"]',
-        '.css-1jcgswf:has-text("All-Hands-AI/OpenHands")',
-        # Generic selectors
+        'text=All-Hands-AI/OpenHands',
         '[role="option"]:has-text("All-Hands-AI/OpenHands")',
         '[role="option"]:has-text("OpenHands")',
-        'text=All-Hands-AI/OpenHands',
         'li:has-text("All-Hands-AI/OpenHands")',
         'li:has-text("OpenHands")',
         '[data-testid*="OpenHands"]'
@@ -429,49 +423,20 @@ def test_openhands_full_workflow(page, openhands_app):
             option = page.locator(selector).first
             if option.is_visible(timeout=3000):
                 print(f'Found repository option with selector: {selector}')
-                # Try different click approaches
-                try:
-                    option.click()
-                    print('Successfully clicked repository option')
-                    option_found = True
-                except:
-                    print('Normal click failed, trying force click...')
-                    try:
-                        option.click(force=True)
-                        print('Force click succeeded')
-                        option_found = True
-                    except Exception as force_error:
-                        print(f'Force click also failed: {force_error}')
-                        continue
-                
-                if option_found:
-                    page.wait_for_timeout(2000)  # Wait for selection to complete
-                    break
+                option.click()
+                option_found = True
+                page.wait_for_timeout(1000)  # Wait for selection to complete
+                break
         except Exception as e:
             print(f'Selector {selector} failed: {e}')
             continue
     
     if not option_found:
-        print('Could not find repository option in dropdown, trying keyboard navigation...')
-        # Try keyboard navigation
-        page.keyboard.press('ArrowDown')  # Navigate to first option
-        page.wait_for_timeout(500)
-        page.keyboard.press('Enter')  # Select the option
-        print('Used keyboard navigation to select repository')
+        print('Could not find repository option in dropdown')
+        # Try pressing Enter to select the current input (this was working!)
+        page.keyboard.press('Enter')
+        print('Pressed Enter to try to select current input')
         page.wait_for_timeout(1000)
-        
-        # If that doesn't work, try just pressing Enter to accept current input
-        if not option_found:
-            print('Trying Enter key to accept current input...')
-            page.keyboard.press('Enter')
-            page.wait_for_timeout(1000)
-            
-            # Also try Escape to close dropdown and Tab to move focus
-            print('Trying Escape + Tab to complete selection...')
-            page.keyboard.press('Escape')
-            page.wait_for_timeout(500)
-            page.keyboard.press('Tab')
-            page.wait_for_timeout(1000)
     
     page.wait_for_timeout(1000)
     
