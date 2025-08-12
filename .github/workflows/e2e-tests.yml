@@ -80,7 +80,7 @@ jobs:
           # Install Chromium Headless Shell for Playwright (needed for pytest-playwright)
           echo "Installing Chromium Headless Shell for Playwright..."
           poetry run playwright install chromium-headless-shell
-          
+
           # Verify Playwright browsers are installed (for e2e tests only)
           echo "Verifying Playwright browsers installation for e2e tests..."
           BROWSER_CHECK=$(poetry run python tests/e2e/check_playwright.py 2>/dev/null)
@@ -168,9 +168,6 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         run: |
-          # Run the Playwright tests
-          cd tests/e2e
-
           # Check if the application is running
           if ! nc -z localhost 12000; then
             echo "ERROR: OpenHands is not running on port 12000"
@@ -180,7 +177,7 @@ jobs:
           fi
 
           # Run the tests with detailed output
-          poetry run python -m pytest test_workflow.py -v --no-header --capture=no
+          poetry run python -m pytest tests/e2e/test_workflow.py -v --no-header --capture=no
 
       - name: Upload test results
         if: always()
