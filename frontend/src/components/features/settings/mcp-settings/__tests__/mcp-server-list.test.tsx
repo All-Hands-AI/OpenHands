@@ -34,17 +34,13 @@ describe("MCPServerList", () => {
         servers={mockServers}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     // Check that the table structure is rendered
     const table = screen.getByRole("table");
     expect(table).toBeInTheDocument();
-    expect(table).toHaveClass("w-full", "min-w-full", "table-fixed");
-
-    // Check that the overflow container is present
-    const overflowContainer = table.parentElement;
-    expect(overflowContainer).toHaveClass("overflow-x-auto");
+    expect(table).toHaveClass("w-full");
 
     // Check that server items are rendered
     const serverItems = screen.getAllByTestId("mcp-server-item");
@@ -66,7 +62,7 @@ describe("MCPServerList", () => {
         servers={[]}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     expect(screen.getByText("SETTINGS$MCP_NO_SERVERS")).toBeInTheDocument();
@@ -87,7 +83,7 @@ describe("MCPServerList", () => {
         servers={[longUrlServer]}
         onEdit={mockOnEdit}
         onDelete={mockOnDelete}
-      />
+      />,
     );
 
     // Check that action buttons are still present and accessible
@@ -97,8 +93,13 @@ describe("MCPServerList", () => {
     expect(editButton).toBeInTheDocument();
     expect(deleteButton).toBeInTheDocument();
 
-    // Check that the action column has proper flex-shrink-0 class to prevent shrinking
-    const actionCell = editButton.closest("td");
-    expect(actionCell).toHaveClass("flex-shrink-0");
+    // Check that the URL is properly truncated with title attribute for accessibility
+    const detailsCells = screen.getAllByTitle(longUrlServer.url);
+    expect(detailsCells).toHaveLength(2); // Name and Details columns both have the URL
+
+    // Check that both cells have truncate class
+    detailsCells.forEach((cell) => {
+      expect(cell).toHaveClass("truncate");
+    });
   });
 });
