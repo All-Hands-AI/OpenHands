@@ -145,7 +145,6 @@ class FileEditRuntimeMixin(FileEditRuntimeInterface):
         draft_editor_config = self.config.get_llm_config('draft_editor')
 
         # manually set the model name for the draft editor LLM to distinguish token costs
-        Metrics(model_name='draft_editor:' + draft_editor_config.model)
         if draft_editor_config.caching_prompt:
             logger.debug(
                 'It is not recommended to cache draft editor LLM prompts as it may incur high costs for the same prompt. '
