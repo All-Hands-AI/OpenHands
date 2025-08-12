@@ -77,6 +77,10 @@ jobs:
           echo "Running make build..."
           make build
 
+          # Install Chromium Headless Shell for Playwright (needed for pytest-playwright)
+          echo "Installing Chromium Headless Shell for Playwright..."
+          poetry run playwright install chromium-headless-shell
+          
           # Verify Playwright browsers are installed (for e2e tests only)
           echo "Verifying Playwright browsers installation for e2e tests..."
           BROWSER_CHECK=$(poetry run python tests/e2e/check_playwright.py 2>/dev/null)
