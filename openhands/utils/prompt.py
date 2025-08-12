@@ -87,19 +87,7 @@ class PromptManager:
             return self.env.get_template(template_name)
         except Exception:
             template_path = os.path.join(self.prompt_dir, template_name)
-
-            # Check if this is a system prompt file (either by name or by context)
-            is_system_prompt = (
-                'system_prompt' in template_name
-            )
-
-            if is_system_prompt:
-                raise FileNotFoundError(
-                    f'System prompt file "{template_name}" not found at {template_path}. '
-                    f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
-                )
-            else:
-                raise FileNotFoundError(f'Prompt file {template_path} not found')
+            raise FileNotFoundError(f'Prompt file {template_path} not found')
 
     def get_system_message(self) -> str:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
