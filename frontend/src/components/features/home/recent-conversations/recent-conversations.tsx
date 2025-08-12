@@ -1,16 +1,35 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { useUserConversations } from "#/hooks/query/use-user-conversations";
 import { RecentConversationsSkeleton } from "./recent-conversations-skeleton";
 import { RecentConversation } from "./recent-conversation";
 import { Conversation } from "#/api/open-hands.types";
+import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
+import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 
 export function RecentConversations() {
   const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const { data: conversations, isFetching, error } = useUserConversations();
+  const {
+    data: conversationsList,
+    isFetching,
+    error,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  } = usePaginatedConversations();
+
+  // Set up infinite scroll
+  const scrollContainerRef = useInfiniteScroll({
+    hasNextPage: !!hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    threshold: 200, // Load more when 200px from bottom
+  });
+
+  const conversations =
+    conversationsList?.pages.flatMap((page) => page.results) ?? [];
 
   // Get the conversations to display based on expanded state
   let displayedConversations: Conversation[] = [];
@@ -61,7 +80,7 @@ export function RecentConversations() {
         displayedConversations.length > 0 && (
           <div className="flex flex-col">
             <div className="transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar">
-              <div className="flex flex-col">
+              <div ref={scrollContainerRef} className="flex flex-col">
                 {displayedConversations.map((conversation) => (
                   <RecentConversation
                     key={conversation.conversation_id}
