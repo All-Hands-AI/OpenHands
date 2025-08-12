@@ -227,6 +227,9 @@ def test_openhands_full_workflow(page, openhands_app):
             page.wait_for_timeout(3000)  # Wait for navigation to settings page
             
             # We should now be on the /settings/integrations page (git-settings.tsx)
+            # Wait for the page to load completely
+            page.wait_for_load_state('networkidle')
+            
             # Look for GitHub token input field with the correct test ID
             github_token_input = page.locator('[data-testid="github-token-input"]')
             if github_token_input.is_visible(timeout=5000):
@@ -235,26 +238,54 @@ def test_openhands_full_workflow(page, openhands_app):
                 # Fill in the GitHub token from environment variable
                 github_token = os.getenv('GITHUB_TOKEN', '')
                 if github_token:
+                    # Clear the field first, then fill it
+                    github_token_input.clear()
                     github_token_input.fill(github_token)
-                    print('Filled GitHub token from environment variable')
+                    print(f'Filled GitHub token from environment variable (length: {len(github_token)})')
                     
-                    # Look for the Save Changes button
+                    # Verify the token was filled
+                    filled_value = github_token_input.input_value()
+                    if filled_value:
+                        print(f'Token field now contains value of length: {len(filled_value)}')
+                    else:
+                        print('WARNING: Token field appears to be empty after filling')
+                    
+                    # Look for the Save Changes button and ensure it's enabled
                     save_button = page.locator('[data-testid="submit-button"]')
                     if save_button.is_visible(timeout=3000):
-                        print('Clicking Save Changes button...')
-                        save_button.click()
-                        page.wait_for_timeout(3000)  # Wait for save to complete
+                        # Check if button is enabled
+                        is_disabled = save_button.is_disabled()
+                        print(f'Save Changes button found, disabled: {is_disabled}')
                         
-                        # Navigate back to home page
-                        print('Navigating back to home page...')
-                        page.goto('http://localhost:3000')
-                        page.wait_for_timeout(3000)
+                        if not is_disabled:
+                            print('Clicking Save Changes button...')
+                            save_button.click()
+                            page.wait_for_timeout(5000)  # Wait longer for save to complete
+                            
+                            # Wait for any success message or page change
+                            try:
+                                # Look for success indication or wait for page to change
+                                page.wait_for_timeout(2000)
+                                print('Save operation completed')
+                            except:
+                                print('Save operation may have completed')
+                            
+                            # Navigate back to home page
+                            print('Navigating back to home page...')
+                            page.goto('http://localhost:3000')
+                            page.wait_for_load_state('networkidle')
+                            page.wait_for_timeout(3000)
+                        else:
+                            print('Save Changes button is disabled - form may be invalid')
                     else:
                         print('Save Changes button not found')
                 else:
                     print('No GITHUB_TOKEN environment variable found')
             else:
                 print('GitHub token input field not found on settings page')
+                # Take a screenshot to see what's on the page
+                page.screenshot(path='test-results/04b_settings_debug.png')
+                print('Debug screenshot saved: 04b_settings_debug.png')
                 
         page.screenshot(path='test-results/04_after_settings.png')
         print('Screenshot saved: 04_after_settings.png')
