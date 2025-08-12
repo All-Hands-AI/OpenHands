@@ -363,7 +363,9 @@ Your primary role is to assist users by executing commands, modifying code, and 
     interactive_manager = PromptManager(
         prompt_dir=prompt_dir, system_prompt_filename='system_prompt_interactive.j2'
     )
-    interactive_template = interactive_manager._load_template('system_prompt_interactive.j2')
+    interactive_template = interactive_manager._load_template(
+        'system_prompt_interactive.j2'
+    )
     interactive_msg = interactive_template.render().strip()
     assert 'You are OpenHands agent' in interactive_msg
     assert '<ROLE>' in interactive_msg
@@ -375,7 +377,9 @@ Your primary role is to assist users by executing commands, modifying code, and 
     long_horizon_manager = PromptManager(
         prompt_dir=prompt_dir, system_prompt_filename='system_prompt_long_horizon.j2'
     )
-    long_horizon_template = long_horizon_manager._load_template('system_prompt_long_horizon.j2')
+    long_horizon_template = long_horizon_manager._load_template(
+        'system_prompt_long_horizon.j2'
+    )
     long_horizon_msg = long_horizon_template.render().strip()
     assert 'You are OpenHands agent' in long_horizon_msg
     assert '<ROLE>' in long_horizon_msg
