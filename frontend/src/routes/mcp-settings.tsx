@@ -144,19 +144,22 @@ function MCPSettingsScreen() {
   };
 
   const handleDeleteServer = (serverId: string) => {
-    const newConfig = { ...localMcpConfig };
-    const [serverType, indexStr] = serverId.split("-");
-    const index = parseInt(indexStr, 10);
+    setMcpConfig((prevConfig) => {
+      const newConfig = { ...prevConfig };
+      const [serverType, indexStr] = serverId.split("-");
+      const index = parseInt(indexStr, 10);
 
-    if (serverType === "sse") {
-      newConfig.sse_servers.splice(index, 1);
-    } else if (serverType === "stdio") {
-      newConfig.stdio_servers.splice(index, 1);
-    } else if (serverType === "shttp") {
-      newConfig.shttp_servers.splice(index, 1);
-    }
+      if (serverType === "sse") {
+        newConfig.sse_servers.splice(index, 1);
+      } else if (serverType === "stdio") {
+        newConfig.stdio_servers.splice(index, 1);
+      } else if (serverType === "shttp") {
+        newConfig.shttp_servers.splice(index, 1);
+      }
 
-    setMcpConfig(newConfig);
+      return newConfig;
+    });
+
     setConfirmationModalIsVisible(false);
     setIsDirty(true);
   };
