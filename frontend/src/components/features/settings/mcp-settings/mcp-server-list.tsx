@@ -22,17 +22,17 @@ interface MCPServerListProps {
 function MCPServerListItemSkeleton() {
   return (
     <tr className="flex w-full items-center border-t border-tertiary">
-      <td className="p-3 w-1/4" aria-label="Name loading">
+      <td className="p-3 w-1/4 min-w-[120px]" aria-label="Name loading">
         <div className="skeleton h-4 w-3/4" />
       </td>
-      <td className="p-3 w-1/4" aria-label="Type loading">
+      <td className="p-3 w-1/6 min-w-[100px]" aria-label="Type loading">
         <div className="skeleton h-4 w-1/2" />
       </td>
-      <td className="p-3 w-1/2" aria-label="Details loading">
+      <td className="p-3 flex-1 min-w-[200px]" aria-label="Details loading">
         <div className="skeleton h-4 w-full" />
       </td>
       <td
-        className="p-3 w-1/4 flex items-center justify-end gap-4"
+        className="p-3 w-24 min-w-[96px] flex items-center justify-end gap-4 flex-shrink-0"
         aria-label="Actions loading"
       >
         <div className="skeleton h-4 w-4" />
@@ -88,24 +88,24 @@ function MCPServerListItem({
       className="flex w-full items-center border-t border-tertiary"
     >
       <td
-        className="p-3 w-1/4 text-sm text-content-2 truncate"
+        className="p-3 w-1/4 min-w-[120px] text-sm text-content-2 truncate"
         title={serverName}
       >
         {serverName}
       </td>
 
-      <td className="p-3 w-1/4 text-sm text-content-2 truncate">
+      <td className="p-3 w-1/6 min-w-[100px] text-sm text-content-2 truncate">
         {getServerTypeLabel(server.type)}
       </td>
 
       <td
-        className="p-3 w-1/2 truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
+        className="p-3 flex-1 min-w-[200px] truncate overflow-hidden whitespace-nowrap text-sm text-content-2 opacity-80 italic"
         title={serverDescription}
       >
         {serverDescription}
       </td>
 
-      <td className="p-3 w-1/4 flex items-center justify-end gap-4">
+      <td className="p-3 w-24 min-w-[96px] flex items-center justify-end gap-4 flex-shrink-0">
         <button
           data-testid="edit-mcp-server-button"
           type="button"
@@ -148,34 +148,36 @@ export function MCPServerList({
 
   return (
     <div className="border border-tertiary rounded-md overflow-hidden">
-      <table className="w-full">
-        <thead className="bg-base-tertiary">
-          <tr className="flex w-full items-center">
-            <th className="w-1/4 text-left p-3 text-sm font-medium">
-              {t(I18nKey.SETTINGS$NAME)}
-            </th>
-            <th className="w-1/4 text-left p-3 text-sm font-medium">
-              {t(I18nKey.SETTINGS$MCP_SERVER_TYPE)}
-            </th>
-            <th className="w-1/2 text-left p-3 text-sm font-medium">
-              {t(I18nKey.SETTINGS$MCP_SERVER_DETAILS)}
-            </th>
-            <th className="w-1/4 text-right p-3 text-sm font-medium">
-              {t(I18nKey.SETTINGS$ACTIONS)}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {servers.map((server) => (
-            <MCPServerListItem
-              key={server.id}
-              server={server}
-              onEdit={() => onEdit(server)}
-              onDelete={() => onDelete(server.id)}
-            />
-          ))}
-        </tbody>
-      </table>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-full table-fixed">
+          <thead className="bg-base-tertiary">
+            <tr className="flex w-full items-center">
+              <th className="w-1/4 min-w-[120px] text-left p-3 text-sm font-medium">
+                {t(I18nKey.SETTINGS$NAME)}
+              </th>
+              <th className="w-1/6 min-w-[100px] text-left p-3 text-sm font-medium">
+                {t(I18nKey.SETTINGS$MCP_SERVER_TYPE)}
+              </th>
+              <th className="flex-1 min-w-[200px] text-left p-3 text-sm font-medium">
+                {t(I18nKey.SETTINGS$MCP_SERVER_DETAILS)}
+              </th>
+              <th className="w-24 min-w-[96px] text-right p-3 text-sm font-medium">
+                {t(I18nKey.SETTINGS$ACTIONS)}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {servers.map((server) => (
+              <MCPServerListItem
+                key={server.id}
+                server={server}
+                onEdit={() => onEdit(server)}
+                onDelete={() => onDelete(server.id)}
+              />
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
