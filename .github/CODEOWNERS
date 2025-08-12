@@ -2,7 +2,7 @@
 # See https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
 # Frontend code owners
-/frontend/ @rbren @amanape
+/frontend/ @amanape
 /openhands-ui/ @amanape
 
 # Evaluation code owners

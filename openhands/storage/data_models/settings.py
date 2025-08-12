@@ -46,6 +46,8 @@ class Settings(BaseModel):
     max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
+    git_user_name: str | None = None
+    git_user_email: str | None = None
 
     model_config = ConfigDict(
         validate_assignment=True,
