@@ -127,6 +127,7 @@ async def handle_commands(
     config: OpenHandsConfig,
     current_dir: str,
     settings_store: FileSettingsStore,
+    agent_state: str,
 ) -> tuple[bool, bool, bool, ExitReason]:
     close_repl = False
     reload_microagents = False
@@ -159,7 +160,9 @@ async def handle_commands(
     elif command == '/settings':
         await handle_settings_command(config, settings_store)
     elif command == '/resume':
-        close_repl, new_session_requested = await handle_resume_command(event_stream)
+        close_repl, new_session_requested = await handle_resume_command(
+            event_stream, agent_state
+        )
     elif command == '/mcp':
         await handle_mcp_command(config)
     else:
@@ -292,9 +295,19 @@ async def handle_settings_command(
 # This is a workaround to handle the resume command for the time being. Replace user message with the state change event once the issue is fixed.
 async def handle_resume_command(
     event_stream: EventStream,
+    agent_state: str,
 ) -> tuple[bool, bool]:
     close_repl = True
     new_session_requested = False
+
+    if agent_state != AgentState.PAUSED:
+        close_repl = False
+        print_formatted_text(
+            HTML(
+                '<ansired>Error: Agent is not paused. /resume command is only available when agent is paused.</ansired>'
+            )
+        )
+        return close_repl, new_session_requested
 
     event_stream.add_event(
         MessageAction(content='continue'),

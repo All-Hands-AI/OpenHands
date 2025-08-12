@@ -9,6 +9,7 @@ import { cn } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
+import { Tools } from "../controls/tools";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -344,7 +345,8 @@ export function CustomChatInput({
         </div>
 
         <div className="w-full flex items-center justify-between">
-          <div className="translate-x-[-6.5px]">
+          <div className="flex items-center gap-1">
+            <Tools />
             <ServerStatus conversationStatus={conversationStatus} />
           </div>
           <AgentStatus

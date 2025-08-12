@@ -1,14 +1,56 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MemoryRouter } from "react-router";
 import { renderWithProviders } from "test-utils";
 import type { Message } from "#/message";
 import { SUGGESTIONS } from "#/utils/suggestions";
 import { ChatInterface } from "#/components/features/chat/chat-interface";
 
+// Mock React Router hooks at the top level
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+    useRouteLoaderData: vi.fn(() => ({})),
+  };
+});
+
+// Mock other hooks that might be used by the component
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
+  useConversationNameContextMenu: () => ({
+    isOpen: false,
+    contextMenuRef: { current: null },
+    handleContextMenu: vi.fn(),
+    handleClose: vi.fn(),
+    handleRename: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
+
+// Helper function to render with Router context
+const renderChatInterfaceWithRouter = () =>
+  renderWithProviders(
+    <MemoryRouter>
+      <ChatInterface />
+    </MemoryRouter>,
+  );
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const renderChatInterface = (messages: Message[]) =>
-  renderWithProviders(<ChatInterface />);
+  renderWithProviders(
+    <MemoryRouter>
+      <ChatInterface />
+    </MemoryRouter>,
+  );
 
 describe("Empty state", () => {
   const { send: sendMock } = vi.hoisted(() => ({
@@ -24,11 +66,6 @@ describe("Empty state", () => {
   }));
 
   beforeAll(() => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({})),
-    }));
-
     vi.mock("#/context/socket", async (importActual) => ({
       ...(await importActual<typeof import("#/context/ws-client-provider")>()),
       useWsClient: useWsClientMock,
@@ -42,7 +79,7 @@ describe("Empty state", () => {
   it.todo("should render suggestions if empty");
 
   it("should render the default suggestions", () => {
-    renderWithProviders(<ChatInterface />);
+    renderChatInterfaceWithRouter();
 
     const suggestions = screen.getByTestId("suggestions");
     const repoSuggestions = Object.keys(SUGGESTIONS.repo);
@@ -67,7 +104,7 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      renderWithProviders(<ChatInterface />);
+      renderChatInterfaceWithRouter();
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -90,7 +127,7 @@ describe("Empty state", () => {
         isLoadingMessages: false,
       }));
       const user = userEvent.setup();
-      const { rerender } = renderWithProviders(<ChatInterface />);
+      const { rerender } = renderChatInterfaceWithRouter();
 
       const suggestions = screen.getByTestId("suggestions");
       const displayedSuggestions = within(suggestions).getAllByRole("button");
@@ -103,7 +140,11 @@ describe("Empty state", () => {
         status: "CONNECTED",
         isLoadingMessages: false,
       }));
-      rerender(<ChatInterface />);
+      rerender(
+        <MemoryRouter>
+          <ChatInterface />
+        </MemoryRouter>,
+      );
 
       await waitFor(() =>
         expect(sendMock).toHaveBeenCalledWith(expect.any(String)),
@@ -193,7 +234,11 @@ describe.skip("ChatInterface", () => {
       },
     ];
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     const imageCarousel = screen.getByTestId("image-carousel");
     expect(imageCarousel).toBeInTheDocument();
@@ -232,7 +277,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByTestId("continue-action-button")).toBeInTheDocument();
   });
@@ -260,10 +309,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render both GitHub buttons initially when ghToken is available", () => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
-    }));
+    // Note: This test may need adjustment since useRouteLoaderData is now globally mocked
 
     const messages: Message[] = [
       {
@@ -286,10 +332,7 @@ describe.skip("ChatInterface", () => {
   });
 
   it("should render only 'Push changes to PR' button after PR is created", async () => {
-    vi.mock("react-router", async (importActual) => ({
-      ...(await importActual<typeof import("react-router")>()),
-      useRouteLoaderData: vi.fn(() => ({ ghToken: "test-token" })),
-    }));
+    // Note: This test may need adjustment since useRouteLoaderData is now globally mocked
 
     const messages: Message[] = [
       {
@@ -308,7 +351,11 @@ describe.skip("ChatInterface", () => {
     await user.click(prButton);
 
     // Re-render to trigger state update
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     // Verify only one button is shown
     const pushToPrButton = screen.getByRole("button", {
@@ -358,7 +405,11 @@ describe.skip("ChatInterface", () => {
       pending: true,
     });
 
-    rerender(<ChatInterface />);
+    rerender(
+      <MemoryRouter>
+        <ChatInterface />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByTestId("feedback-actions")).toBeInTheDocument();
   });

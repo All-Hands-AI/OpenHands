@@ -8,7 +8,7 @@ export function HomeHeader() {
   return (
     <header className="flex flex-col items-center">
       <GuideMessage />
-      <div className="mt-[124px] flex flex-col gap-4 items-center">
+      <div className="mt-5 flex flex-col gap-4 items-center">
         <YellowHand
           className="w-[77px] h-[94px]"
           data-testid="yellow-hand-icon"
