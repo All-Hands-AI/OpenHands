@@ -77,15 +77,16 @@ jobs:
           echo "Running make build..."
           make build
 
-          # Create a minimal config.toml file
+          # Create a minimal config.toml file for e2e tests
+          # Note: We disable browser environment since e2e tests only test the web UI with Playwright
           echo "Creating minimal config.toml file..."
           echo '[core]' > config.toml
-          echo "enable_browser = true" >> config.toml
+          echo "enable_browser = false" >> config.toml
           echo "runtime = \"local\"" >> config.toml
           cat config.toml
 
-          # Verify Playwright browsers are installed
-          echo "Verifying Playwright browsers installation..."
+          # Verify Playwright browsers are installed (for e2e tests only)
+          echo "Verifying Playwright browsers installation for e2e tests..."
           BROWSER_CHECK=$(poetry run python -c "
           import sys
           try:
@@ -103,11 +104,11 @@ jobs:
           " 2>/dev/null || echo "error")
 
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
-            echo "ERROR: Chromium browser not found or not working after running 'make build'"
-            echo "This indicates that the Playwright installation in the Makefile failed."
+            echo "ERROR: Chromium browser not found or not working for e2e tests"
+            echo "This indicates that the Playwright installation failed."
             exit 1
           else
-            echo "Playwright browsers are properly installed and working."
+            echo "Playwright browsers are properly installed for e2e tests."
           fi
 
           # Create workspace directory in a location we have permissions for
