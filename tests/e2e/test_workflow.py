@@ -411,19 +411,31 @@ def test_openhands_full_workflow(page, openhands_app):
             option = page.locator(selector).first
             if option.is_visible(timeout=3000):
                 print(f'Found repository option with selector: {selector}')
-                option.click()
-                option_found = True
-                page.wait_for_timeout(1000)  # Wait for selection to complete
-                break
+                # Try force click first to bypass element interception
+                try:
+                    option.click(force=True)
+                    print('Successfully clicked option with force=True')
+                    option_found = True
+                    page.wait_for_timeout(1000)  # Wait for selection to complete
+                    break
+                except Exception as force_error:
+                    print(f'Force click failed: {force_error}, trying regular click...')
+                    option.click()
+                    option_found = True
+                    page.wait_for_timeout(1000)  # Wait for selection to complete
+                    break
         except Exception as e:
             print(f'Selector {selector} failed: {e}')
             continue
 
     if not option_found:
         print('Could not find repository option in dropdown')
-        # Try pressing Enter to select the current input
-        page.keyboard.press('Enter')
-        print('Pressed Enter to try to select current input')
+        # Try keyboard navigation as fallback
+        print('Trying keyboard navigation: Arrow Down + Enter')
+        page.keyboard.press('ArrowDown')  # Navigate to first option
+        page.wait_for_timeout(500)
+        page.keyboard.press('Enter')  # Select the option
+        print('Used keyboard navigation to select option')
         page.wait_for_timeout(1000)
 
     page.wait_for_timeout(1000)
