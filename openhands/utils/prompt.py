@@ -56,6 +56,9 @@ class PromptManager:
         prompt_dir: str,
         system_prompt_filename: str = 'system_prompt.j2',
     ):
+        if prompt_dir is None:
+            raise ValueError(.Prompt directory is not set.)
+
         self.prompt_dir: str = prompt_dir
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
         self.system_template: Template = self._load_system_template(
@@ -78,8 +81,6 @@ class PromptManager:
             )
 
     def _load_template(self, template_name: str) -> Template:
-        if self.prompt_dir is None:
-            raise ValueError('Prompt directory is not set')
         template_filename = f'{template_name}.j2'
         try:
             return self.env.get_template(template_filename)
