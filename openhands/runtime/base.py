@@ -900,7 +900,7 @@ fi
                         return TaskTrackingObservation(content=read_obs.content)
                     else:
                         return ErrorObservation(
-                            'Failed to read the task list. Please ensure it exists.'
+                            f'Failed to read the task list. Error: {read_obs.content}'
                         )
 
             return NullObservation('')

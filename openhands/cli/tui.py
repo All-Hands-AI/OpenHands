@@ -539,24 +539,27 @@ def display_task_tracking_action(event: TaskTrackingAction) -> None:
     # Format the command and task list for display
     display_text = f'Command: {event.command}'
 
-    if event.task_list:
-        display_text += f'\n\nTask List ({len(event.task_list)} items):'
-        for i, task in enumerate(event.task_list, 1):
-            status = task.get('status', 'unknown')
-            title = task.get('title', 'Untitled task')
-            task_id = task.get('id', f'task-{i}')
-            notes = task.get('notes', '')
+    if event.command == 'plan':
+        if event.task_list:
+            display_text += f'\n\nTask List ({len(event.task_list)} items):'
+            for i, task in enumerate(event.task_list, 1):
+                status = task.get('status', 'unknown')
+                title = task.get('title', 'Untitled task')
+                task_id = task.get('id', f'task-{i}')
+                notes = task.get('notes', '')
 
-            # Add status indicator with color
-            status_indicator = {'todo': '⏳', 'in_progress': '🔄', 'done': '✅'}.get(
-                status, '❓'
-            )
+                # Add status indicator with color
+                status_indicator = {
+                    'todo': '⏳',
+                    'in_progress': '🔄',
+                    'done': '✅',
+                }.get(status, '❓')
 
-            display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
-            if notes:
-                display_text += f'\n     Notes: {notes}'
-    else:
-        display_text += '\n\nTask List: Empty'
+                display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
+                if notes:
+                    display_text += f'\n     Notes: {notes}'
+        else:
+            display_text += '\n\nTask List: Empty'
 
     container = Frame(
         TextArea(
@@ -580,25 +583,6 @@ def display_task_tracking_observation(event: TaskTrackingObservation) -> None:
     )
 
     display_text = f'Result: {content}'
-
-    if event.task_list:
-        display_text += f'\n\nUpdated Task List ({len(event.task_list)} items):'
-        for i, task in enumerate(event.task_list, 1):
-            status = task.get('status', 'unknown')
-            title = task.get('title', 'Untitled task')
-            task_id = task.get('id', f'task-{i}')
-            notes = task.get('notes', '')
-
-            # Add status indicator with color
-            status_indicator = {'todo': '⏳', 'in_progress': '🔄', 'done': '✅'}.get(
-                status, '❓'
-            )
-
-            display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
-            if notes:
-                display_text += f'\n     Notes: {notes}'
-    else:
-        display_text += '\n\nTask List: Empty'
 
     container = Frame(
         TextArea(
