@@ -1,10 +1,13 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import AppSettingsScreen from "#/routes/app-settings";
 import OpenHands from "#/api/open-hands";
-import { MOCK_DEFAULT_USER_SETTINGS } from "#/mocks/handlers";
+import {
+  MOCK_DEFAULT_USER_SETTINGS,
+  resetTestHandlersMockSettings,
+} from "#/mocks/handlers";
 import { AvailableLanguages } from "#/i18n";
 import * as CaptureConsent from "#/utils/handle-capture-consent";
 import * as ToastHandlers from "#/utils/custom-toast-handlers";
@@ -60,6 +63,10 @@ describe("Content", () => {
 });
 
 describe("Form submission", () => {
+  beforeEach(() => {
+    resetTestHandlersMockSettings();
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -235,6 +242,59 @@ describe("Form submission", () => {
     expect(saveSettingsSpy).toHaveBeenCalled();
 
     await waitFor(() => expect(submit).toBeDisabled());
+  });
+
+  it("should save the solvability analysis toggle state correctly", async () => {
+    // Mock the API responses
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+
+    // Mock the initial settings with solvability analysis disabled
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      enable_solvability_analysis: false,
+    });
+
+    // Mock the config to show the solvability analysis toggle
+    vi.spyOn(OpenHands, "getConfig").mockResolvedValue({
+      APP_MODE: "saas",
+      GITHUB_CLIENT_ID: "fake-github-client-id",
+      POSTHOG_CLIENT_KEY: "fake-posthog-client-key",
+      STRIPE_PUBLISHABLE_KEY: "",
+      FEATURE_FLAGS: {
+        ENABLE_BILLING: false,
+        HIDE_LLM_SETTINGS: true,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
+      },
+    });
+
+    renderAppSettingsScreen();
+
+    // Wait for the toggle to be rendered
+    const toggle = await screen.findByTestId(
+      "enable-solvability-analysis-switch",
+    );
+    expect(toggle).not.toBeChecked();
+
+    // Toggle it on
+    await userEvent.click(toggle);
+    expect(toggle).toBeChecked();
+
+    // Submit the form
+    const submitButton = await screen.findByTestId("submit-button");
+    expect(submitButton).not.toBeDisabled();
+    await userEvent.click(submitButton);
+
+    // Verify the API was called with the correct value
+    await waitFor(() => {
+      expect(saveSettingsSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          enable_solvability_analysis: true,
+        }),
+      );
+    });
   });
 });
 
