@@ -537,9 +537,9 @@ def test_openhands_full_workflow(page, openhands_app):
     # Wait for navigation to conversation page
     print('Waiting for navigation to conversation page...')
     
-    # Increase timeout to 60 seconds and add periodic status checks
-    navigation_timeout = 60000  # 60 seconds
-    check_interval = 5000  # Check every 5 seconds
+    # Increase timeout to 5 minutes to account for Docker image building
+    navigation_timeout = 300000  # 5 minutes (300 seconds)
+    check_interval = 10000  # Check every 10 seconds
     
     start_time = page.evaluate('Date.now()')
     navigation_successful = False
@@ -561,21 +561,27 @@ def test_openhands_full_workflow(page, openhands_app):
             break
         
         # Print periodic status updates
-        if elapsed % check_interval < 1000:  # Print roughly every 5 seconds
+        if elapsed % check_interval < 1000:  # Print roughly every 10 seconds
             print(f'⏳ Still waiting for navigation... ({elapsed/1000:.1f}s elapsed, current URL: {current_url})')
             
             # Check if Launch button still shows Loading
             try:
                 loading_button = page.locator('[data-testid="repo-launch-button"]:has-text("Loading")')
                 if loading_button.is_visible(timeout=1000):
-                    print('   Launch button still shows "Loading..."')
+                    print('   🔄 Launch button still shows "Loading..." (likely Docker build in progress)')
                 else:
                     launch_button = page.locator('[data-testid="repo-launch-button"]')
                     if launch_button.is_visible(timeout=1000):
                         button_text = launch_button.text_content()
-                        print(f'   Launch button text: "{button_text}"')
+                        print(f'   📝 Launch button text: "{button_text}"')
             except:
                 pass
+            
+            # Provide helpful context about what might be happening
+            if elapsed > 60000:  # After 1 minute
+                print('   💡 Extended wait time is normal - Docker runtime image may be building')
+            if elapsed > 120000:  # After 2 minutes
+                print('   🐳 Docker build can take 3-5 minutes on first run or with new dependencies')
         
         # Wait a bit before next check
         page.wait_for_timeout(1000)
