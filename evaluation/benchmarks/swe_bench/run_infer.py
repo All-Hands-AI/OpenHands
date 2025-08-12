@@ -109,9 +109,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     if mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
-        if 'claude' in llm_model:
-            template_name = 'swe_default.j2'
-        elif 'gpt-4.1' in llm_model:
+        if 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
             template_name = (
