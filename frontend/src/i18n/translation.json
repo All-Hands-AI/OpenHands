@@ -2111,6 +2111,22 @@
         "tr": "İstemcinin hazır olması bekleniyor...",
         "uk": "Чекаємо на готовність клієнта..."
     },
+    "TERMINAL$CONSOLE": {
+        "en": "Console",
+        "ja": "コンソール",
+        "zh-CN": "控制台",
+        "zh-TW": "控制台",
+        "ko-KR": "콘솔",
+        "no": "Konsoll",
+        "it": "Console",
+        "pt": "Console",
+        "es": "Consola",
+        "ar": "وحدة التحكم",
+        "fr": "Console",
+        "tr": "Konsol",
+        "de": "Konsole",
+        "uk": "Консоль"
+    },
     "CODE_EDITOR$FILE_SAVED_SUCCESSFULLY": {
         "en": "File saved successfully",
         "zh-CN": "文件保存成功",

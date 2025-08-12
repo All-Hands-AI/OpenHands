@@ -7,7 +7,6 @@ const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
 const JupyterTab = lazy(() => import("#/routes/jupyter-tab"));
 const ServedTab = lazy(() => import("#/routes/served-tab"));
-const TerminalTab = lazy(() => import("#/routes/terminal-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
 interface TabContentProps {
@@ -23,7 +22,6 @@ export function TabContent({ conversationPath }: TabContentProps) {
   const isBrowserActive = currentPath === `${conversationPath}/browser`;
   const isJupyterActive = currentPath === `${conversationPath}/jupyter`;
   const isServedActive = currentPath === `${conversationPath}/served`;
-  const isTerminalActive = currentPath === `${conversationPath}/terminal`;
   const isVSCodeActive = currentPath === `${conversationPath}/vscode`;
 
   return (
@@ -55,11 +53,6 @@ export function TabContent({ conversationPath }: TabContentProps) {
           className={`absolute inset-0 ${isServedActive ? "block" : "hidden"}`}
         >
           <ServedTab />
-        </div>
-        <div
-          className={`absolute inset-0 ${isTerminalActive ? "block" : "hidden"}`}
-        >
-          <TerminalTab />
         </div>
         <div
           className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}

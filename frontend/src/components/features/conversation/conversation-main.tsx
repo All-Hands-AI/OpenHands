@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { ChatInterface } from "../chat/chat-interface";
 import { ConversationTabs } from "./conversation-tabs";
@@ -8,6 +8,7 @@ import {
 } from "#/components/layout/resizable-panel";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
+import Terminal from "../terminal/terminal";
 
 interface ChatInterfaceWrapperProps {
   isRightPanelShown: boolean;
@@ -31,6 +32,7 @@ export function ChatInterfaceWrapper({
 
 export function ConversationMain() {
   const [width, setWidth] = useState(window.innerWidth);
+  const [openTerminal, setOpenTerminal] = useState(false);
 
   function handleResize() {
     setWidth(window.innerWidth);
@@ -59,8 +61,16 @@ export function ConversationMain() {
           <ChatInterface />
         </div>
         {isRightPanelShown && (
-          <div className="h-full w-full min-h-[494px]">
-            <ConversationTabs />
+          <div className="h-full w-full min-h-[494px] flex flex-col gap-3">
+            <ConversationTabs
+              setOpenTerminal={setOpenTerminal}
+              openTerminal={openTerminal}
+            />
+            {openTerminal && (
+              <Suspense fallback={<div className="h-full" />}>
+                <Terminal onClose={() => setOpenTerminal(false)} />
+              </Suspense>
+            )}
           </div>
         )}
       </div>
@@ -78,7 +88,19 @@ export function ConversationMain() {
         firstChild={
           <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
         }
-        secondChild={<ConversationTabs />}
+        secondChild={
+          <div className="flex flex-col flex-1 gap-3">
+            <ConversationTabs
+              setOpenTerminal={setOpenTerminal}
+              openTerminal={openTerminal}
+            />
+            {openTerminal && (
+              <Suspense fallback={<div className="h-full" />}>
+                <Terminal onClose={() => setOpenTerminal(false)} />
+              </Suspense>
+            )}
+          </div>
+        }
       />
     );
   }
