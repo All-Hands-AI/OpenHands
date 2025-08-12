@@ -60,7 +60,7 @@ export function CustomChatInput({
   // Use the auto-resize hook
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
-    maxHeight: 80,
+    maxHeight: 450,
     value,
   });
 
@@ -308,7 +308,7 @@ export function CustomChatInput({
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[80px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
                     disabled && "cursor-not-allowed",
                   )}
                   contentEditable={!disabled}
