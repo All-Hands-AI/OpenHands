@@ -62,10 +62,12 @@ def create_runtime(
     event_stream = EventStream(session_id, file_store)
 
     # set up the security analyzer
+    security_analyzer = None
     if config.security.security_analyzer:
-        options.SecurityAnalyzers.get(
+        analyzer_cls = options.SecurityAnalyzers.get(
             config.security.security_analyzer, SecurityAnalyzer
-        )(event_stream)
+        )
+        security_analyzer = analyzer_cls(event_stream)
 
     # agent class
     if agent:

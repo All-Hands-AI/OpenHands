@@ -20,13 +20,44 @@ class SecurityAnalyzer:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
+        self._loop = None
 
         def sync_on_event(event: Event) -> None:
-            asyncio.create_task(self.on_event(event))
+            # Try to get the current event loop
+            try:
+                loop = asyncio.get_running_loop()
+                # We have a running loop, create task normally
+                asyncio.create_task(self.on_event(event))
+            except RuntimeError:
+                # No running loop in this thread, try to use the stored loop
+                if self._loop is not None:
+                    # Schedule the coroutine in the main event loop
+                    try:
+                        asyncio.run_coroutine_threadsafe(self.on_event(event), self._loop)
+                    except Exception as e:
+                        logger.error(f"Failed to schedule SecurityAnalyzer coroutine: {e}")
+                else:
+                    # No event loop available, run synchronously as a fallback
+                    # This is not ideal but prevents crashes
+                    try:
+                        # Create a new event loop just for this operation
+                        new_loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(new_loop)
+                        try:
+                            new_loop.run_until_complete(self.on_event(event))
+                        finally:
+                            new_loop.close()
+                            asyncio.set_event_loop(None)
+                    except Exception as e:
+                        logger.error(f"Failed to process SecurityAnalyzer event: {e}")
 
         self.event_stream.subscribe(
             EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
         )
+
+    def set_event_loop(self, loop: asyncio.AbstractEventLoop) -> None:
+        """Set the event loop to use for scheduling coroutines from other threads."""
+        self._loop = loop
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
