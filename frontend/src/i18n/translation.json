@@ -12206,5 +12206,21 @@
         "tr": "Depo yok",
         "de": "Kein Repository",
         "uk": "Немає репозиторію"
+    },
+    "COMMON$DROP_YOUR_FILES_HERE": {
+        "en": "Drop your files here",
+        "ja": "ここにファイルをドロップしてください",
+        "zh-CN": "将文件拖到此处",
+        "zh-TW": "將檔案拖到這裡",
+        "ko-KR": "여기에 파일을 놓으세요",
+        "no": "Slipp filene dine her",
+        "it": "Trascina i tuoi file qui",
+        "pt": "Solte seus arquivos aqui",
+        "es": "Suelta tus archivos aquí",
+        "ar": "أسقط ملفاتك هنا",
+        "fr": "Déposez vos fichiers ici",
+        "tr": "Dosyalarınızı buraya bırakın",
+        "de": "Legen Sie Ihre Dateien hier ab",
+        "uk": "Перетягніть ваші файли сюди"
     }
 }
