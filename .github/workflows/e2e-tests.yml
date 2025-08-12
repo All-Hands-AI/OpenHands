@@ -77,35 +77,13 @@ jobs:
           echo "Running make build..."
           make build
 
-          # Create a minimal config.toml file for e2e tests
-          # Note: We enable browser environment and use docker runtime for e2e tests
-          echo "Creating minimal config.toml file..."
-          echo '[core]' > config.toml
-          echo "enable_browser = true" >> config.toml
-          echo "runtime = \"docker\"" >> config.toml
-          cat config.toml
-
           # Verify Playwright browsers are installed (for e2e tests only)
           echo "Verifying Playwright browsers installation for e2e tests..."
-          BROWSER_CHECK=$(poetry run python -c "
-          import sys
-          try:
-              from playwright.sync_api import sync_playwright
-              with sync_playwright() as p:
-                  if p.chromium.executable_path:
-                      print('chromium_found')
-                      sys.exit(0)
-                  else:
-                      print('chromium_not_found')
-                      sys.exit(1)
-          except Exception as e:
-              print(f'error: {e}')
-              sys.exit(1)
-          " 2>/dev/null || echo "error")
+          BROWSER_CHECK=$(poetry run python tests/e2e/check_playwright.py 2>/dev/null)
 
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
             echo "ERROR: Chromium browser not found or not working for e2e tests"
-            echo "This indicates that the Playwright installation failed."
+            echo "$BROWSER_CHECK"
             exit 1
           else
             echo "Playwright browsers are properly installed for e2e tests."
