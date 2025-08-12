@@ -3,14 +3,12 @@ import copy
 import json
 import os
 import tempfile
-import glob
 from typing import Any, Literal
 
 import numpy as np
 import pandas as pd
 import toml
 from datasets import load_dataset
-from datasets import Features,Sequence,Value
 from jinja2 import Environment, FileSystemLoader
 
 import openhands.agenthub
@@ -18,14 +16,13 @@ from evaluation.benchmarks.nocode_bench.binary_patch_utils import (
     remove_binary_diffs,
     remove_binary_files_from_git,
 )
+from evaluation.benchmarks.nocode_bench.consistants import MAP_REPO_TO_CONFIG
 from evaluation.benchmarks.nocode_bench.resource.mapping import (
     get_instance_resource_factor,
 )
 from evaluation.benchmarks.nocode_bench.scripts.utils.evaluation_utils import (
     run_evaluation_nocode_bench,
 )
-
-from evaluation.benchmarks.nocode_bench.consistants import MAP_REPO_TO_CONFIG
 from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
@@ -40,13 +37,12 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     update_llm_config_for_completions_logging,
 )
-
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
-    get_llm_config_arg,
     get_evaluation_parser,
+    get_llm_config_arg,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -85,20 +81,18 @@ AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': codeact_user_response,
 }
 
-def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
-    return f'{instance.repo.split('/')[-1]}'
 
+def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
+    return f'{instance.repo.split("/")[-1]}'
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
-    mode = metadata.details['mode']
-    llm_model = metadata.llm_config.model
+    metadata.details['mode']
 
     # Determine the template file based on mode and LLM
 
     template_name = 'nc.j2'
-
 
     # Set up Jinja2 environment
     # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
@@ -131,7 +125,6 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         image_urls = assets['problem_statement']
         return MessageAction(content=instruction, image_urls=image_urls)
     return MessageAction(content=instruction)
-
 
 
 DEFAULT_DOCKER_IMAGE_PREFIX = os.environ.get(
@@ -228,6 +221,7 @@ def make_serializable(obj):
     else:
         return obj
 
+
 def initialize_runtime(
     runtime: Runtime,
     instance: pd.Series,  # this argument is not required
@@ -289,13 +283,14 @@ def initialize_runtime(
             else:
                 instance_dict = dict(instance)
 
-            if DATASET_TYPE == "nc_bench":
-                config = MAP_REPO_TO_CONFIG.get(instance['repo'], {}).get(instance['version'], [])
+            if DATASET_TYPE == 'nc_bench':
+                config = MAP_REPO_TO_CONFIG.get(instance['repo'], {}).get(
+                    instance['version'], []
+                )
                 docker_conda_env_name = config['conda_env']
-                instance_dict["conda_env"] = docker_conda_env_name
+                instance_dict['conda_env'] = docker_conda_env_name
 
             json.dump([instance_dict], f)
-
 
         # Copy the file to the desired location
         runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
@@ -360,8 +355,6 @@ def initialize_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-
-
     if DATASET_TYPE != 'Multimodal' and DATASET_TYPE != 'SWE-bench-Live':
         # Only for non-multimodal datasets, we need to activate the testbed environment for Python
         # SWE-Bench multimodal datasets and SWE-bench-Live are not using the testbed environment
@@ -374,7 +367,6 @@ def initialize_runtime(
             obs.exit_code == 0,
             f'Expected to find python interpreter, but got: {str(obs)}',
         )
-
 
     logger.info('-' * 30)
     logger.info('END Runtime Initialization Fn')
@@ -728,7 +720,6 @@ if __name__ == '__main__':
         f'Loaded dataset {args.dataset} with split {args.split}: {len(swe_bench_tests)} tasks'
     )
 
-
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -791,7 +782,6 @@ if __name__ == '__main__':
         ):
             for col in ['PASS2PASS', 'FAIL2PASS']:
                 instances[col] = instances[col].apply(lambda x: str(x))
-
 
         run_evaluation_nocode_bench(
             instances,

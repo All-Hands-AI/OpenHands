@@ -1,28 +1,33 @@
 import json
 import multiprocessing as mp
-from typing import TextIO, Callable, Awaitable
+from typing import Awaitable, Callable, TextIO
 
 import numpy as np
 import pandas as pd
 from pydantic import SecretStr
 from tqdm import tqdm
 
-from evaluation.utils.shared import EvalOutput, EvalMetadata, _process_instance_wrapper_mp, _process_instance_wrapper
+from evaluation.utils.shared import (
+    EvalMetadata,
+    EvalOutput,
+    _process_instance_wrapper,
+    _process_instance_wrapper_mp,
+)
 from openhands.core.logger import openhands_logger as logger
 
 
 def update_progress_nc(
-        result: EvalOutput,
-        pbar: tqdm,
-        output_fp: TextIO,
+    result: EvalOutput,
+    pbar: tqdm,
+    output_fp: TextIO,
 ):
     """Update the progress bar and write the result to the output file."""
     pbar.update(1)
-    pbar.set_description(f"Instance {result.instance_id}")
-    pbar.set_postfix_str(f"Test Result: {str(result.test_result)[:300]}...")
+    pbar.set_description(f'Instance {result.instance_id}')
+    pbar.set_postfix_str(f'Test Result: {str(result.test_result)[:300]}...')
     logger.info(
-        f"Finished evaluation for instance {result.instance_id}: "
-        f"{str(result.test_result)[:300]}...\n"
+        f'Finished evaluation for instance {result.instance_id}: '
+        f'{str(result.test_result)[:300]}...\n'
     )
 
     def make_serializable(obj):
@@ -57,26 +62,26 @@ def update_progress_nc(
             return obj
 
     try:
-        raw_data = result.model_dump(mode="python", round_trip=False)
+        raw_data = result.model_dump(mode='python', round_trip=False)
         safe_data = make_serializable(raw_data)
-        output_fp.write(json.dumps(safe_data, ensure_ascii=False) + "\n")
+        output_fp.write(json.dumps(safe_data, ensure_ascii=False) + '\n')
         output_fp.flush()
 
     except Exception as e:
-        logger.error(f"Failed to write full result: {e}")
+        logger.error(f'Failed to write full result: {e}')
 
         fallback = {
-            "instance_id": result.instance_id,
-            "model_patch": result.test_result.get("git_patch", ""),
+            'instance_id': result.instance_id,
+            'model_patch': result.test_result.get('git_patch', ''),
         }
         try:
-            output_fp.write(json.dumps(fallback, ensure_ascii=False) + "\n")
+            output_fp.write(json.dumps(fallback, ensure_ascii=False) + '\n')
             output_fp.flush()
             logger.info(
-                f"Wrote fallback result for instance {result.instance_id}: only instance_id and model_patch."
+                f'Wrote fallback result for instance {result.instance_id}: only instance_id and model_patch.'
             )
         except Exception as e2:
-            logger.error(f"Failed to write fallback result: {e2}")
+            logger.error(f'Failed to write fallback result: {e2}')
 
 
 def cleanup():
@@ -88,15 +93,15 @@ def cleanup():
 
 
 def run_evaluation_nocode_bench(
-        dataset: pd.DataFrame,
-        metadata: EvalMetadata | None,
-        output_file: str,
-        num_workers: int,
-        process_instance_func: Callable[
-            [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
-        ],
-        max_retries: int = 5,  # number of retries for each instance
-        timeout_seconds: int | None = None,
+    dataset: pd.DataFrame,
+    metadata: EvalMetadata | None,
+    output_file: str,
+    num_workers: int,
+    process_instance_func: Callable[
+        [pd.Series, EvalMetadata, bool], Awaitable[EvalOutput]
+    ],
+    max_retries: int = 5,  # number of retries for each instance
+    timeout_seconds: int | None = None,
 ):
     use_multiprocessing = num_workers > 1
 
