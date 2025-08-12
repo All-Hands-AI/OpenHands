@@ -75,7 +75,42 @@ def split_bash_commands(commands: str) -> list[str]:
         if remaining:
             result.append(remaining)
             logger.debug(f'BASH PARSING result.append(remaining): {result[-1]}')
+    
+    # Filter out comment-only commands when determining if there are multiple commands
+    # This ensures that comment lines don't trigger the multi-command error
+    non_comment_commands = [cmd for cmd in result if not _is_comment_only(cmd)]
+    
+    # If there's only one non-comment command, return it along with any comments
+    # This preserves the comments in the output but doesn't count them as separate commands
+    if len(non_comment_commands) <= 1:
+        # If we have no non-comment commands, return the original result
+        if not non_comment_commands and result:
+            return [result[0]]
+        # If we have exactly one non-comment command, combine all comments with it
+        elif non_comment_commands:
+            comments = [cmd for cmd in result if _is_comment_only(cmd)]
+            if comments:
+                # Combine all comments with the non-comment command
+                combined = "\n".join(comments + non_comment_commands)
+                return [combined]
+            else:
+                return non_comment_commands
+    
     return result
+
+
+def _is_comment_only(command: str) -> bool:
+    """Check if a command consists only of comments.
+    
+    Args:
+        command: The command string to check
+        
+    Returns:
+        True if the command contains only comments, False otherwise
+    """
+    # Split the command into lines and check if each line is a comment
+    lines = command.strip().split('\n')
+    return all(line.strip().startswith('#') for line in lines if line.strip())
 
 
 def escape_bash_special_chars(command: str) -> str:
@@ -501,7 +536,11 @@ class BashSession:
 
         # Check if the command is a single command or multiple commands
         splited_commands = split_bash_commands(command)
-        if len(splited_commands) > 1:
+        
+        # Filter out comment-only commands when checking for multiple commands
+        non_comment_commands = [cmd for cmd in splited_commands if not _is_comment_only(cmd)]
+        
+        if len(non_comment_commands) > 1:
             return ErrorObservation(
                 content=(
                     f'ERROR: Cannot execute multiple commands at once.\n'
