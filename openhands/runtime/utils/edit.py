@@ -24,7 +24,6 @@ from openhands.events.observation import (
 from openhands.linter import DefaultLinter
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
-from openhands.llm.metrics import Metrics
 from openhands.utils.chunk_localizer import Chunk, get_top_k_chunk_matches
 
 USER_MSG = """

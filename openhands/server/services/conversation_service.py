@@ -62,7 +62,6 @@ async def initialize_conversation(
             git_provider=git_provider,
         )
 
-
         await conversation_store.save_metadata(convo_metadata)
         return convo_metadata
 

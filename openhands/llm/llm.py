@@ -130,7 +130,6 @@ class LLM(RetryMixin, DebugMixin):
         config: LLMConfig,
         service_id: str,
         metrics: Metrics | None = None,
-        model_name: str = 'default',
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
         """Initializes the LLM. If LLMConfig is passed, its values will be the fallback.
@@ -142,8 +141,6 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
-        self.model_name = model_name
-
         self.cost_metric_supported: bool = True
         self.config: LLMConfig = copy.deepcopy(config)
         self.service_id = service_id
@@ -405,7 +402,7 @@ class LLM(RetryMixin, DebugMixin):
                 assert self.config.log_completions_folder is not None
                 log_file = os.path.join(
                     self.config.log_completions_folder,
-                    f'{self.model_name.replace("/", "__")}-{time.time()}.json',
+                    f'{self.config.model.replace("/", "__")}-{time.time()}.json',
                 )
 
                 # set up the dict to be logged
