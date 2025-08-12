@@ -1,5 +1,5 @@
 import asyncio
-from typing import Any
+from typing import Any, Optional
 from uuid import uuid4
 
 from fastapi import Request
@@ -20,12 +20,12 @@ class SecurityAnalyzer:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
-        self._loop = None
+        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
         def sync_on_event(event: Event) -> None:
             # Try to get the current event loop
             try:
-                loop = asyncio.get_running_loop()
+                asyncio.get_running_loop()
                 # We have a running loop, create task normally
                 asyncio.create_task(self.on_event(event))
             except RuntimeError:
@@ -33,9 +33,13 @@ class SecurityAnalyzer:
                 if self._loop is not None:
                     # Schedule the coroutine in the main event loop
                     try:
-                        asyncio.run_coroutine_threadsafe(self.on_event(event), self._loop)
+                        asyncio.run_coroutine_threadsafe(
+                            self.on_event(event), self._loop
+                        )
                     except Exception as e:
-                        logger.error(f"Failed to schedule SecurityAnalyzer coroutine: {e}")
+                        logger.error(
+                            f'Failed to schedule SecurityAnalyzer coroutine: {e}'
+                        )
                 else:
                     # No event loop available, run synchronously as a fallback
                     # This is not ideal but prevents crashes
@@ -49,7 +53,7 @@ class SecurityAnalyzer:
                             new_loop.close()
                             asyncio.set_event_loop(None)
                     except Exception as e:
-                        logger.error(f"Failed to process SecurityAnalyzer event: {e}")
+                        logger.error(f'Failed to process SecurityAnalyzer event: {e}')
 
         self.event_stream.subscribe(
             EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
