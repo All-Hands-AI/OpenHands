@@ -163,3 +163,11 @@
 2025-08-12T02:04:13Z ERR Failed to serve tunnel connection error="context canceled" connIndex=0 event=0 ip=198.41.192.57
 2025-08-12T02:04:13Z INF Retrying connection in up to 1m4s connIndex=0 event=0 ip=198.41.192.57
 2025-08-12T02:04:34Z ERR Connection terminated error="context canceled" connIndex=0
+2025-08-12T02:06:34Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:06:34Z ERR Failed to serve tunnel connection error="context canceled" connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:06:34Z INF Retrying connection in up to 1m4s connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:06:49Z ERR Connection terminated error="context canceled" connIndex=0
+2025-08-12T02:10:36Z INF Tunnel connection curve preferences: [X25519MLKEM768 CurveP256] connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:10:36Z ERR Failed to serve tunnel connection error="context canceled" connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:10:36Z INF Retrying connection in up to 1m4s connIndex=0 event=0 ip=198.41.192.57
+2025-08-12T02:10:39Z ERR Connection terminated error="context canceled" connIndex=0
