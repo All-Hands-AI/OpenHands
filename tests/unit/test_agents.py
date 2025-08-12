@@ -332,7 +332,6 @@ def test_mismatched_tool_call_events_and_auto_add_system_message(
 
     This also tests that the system message is automatically added to the event stream if SystemMessageAction is not present.
     """
-
     tool_call_metadata = Mock(
         spec=ToolCallMetadata,
         model_response=Mock(

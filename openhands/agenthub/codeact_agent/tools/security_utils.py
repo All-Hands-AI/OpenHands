@@ -1,5 +1,4 @@
-"""
-Security utility constants for tool risk descriptions.
+"""Security utility constants for tool risk descriptions.
 This file contains standardized risk description text for various tools.
 """
 

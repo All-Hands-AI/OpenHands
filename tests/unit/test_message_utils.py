@@ -57,8 +57,7 @@ def test_get_token_usage_for_event():
 
 
 def test_get_token_usage_for_event_id():
-    """
-    Test that we search backward from the event with the given id,
+    """Test that we search backward from the event with the given id,
     finding the first usage record that matches a response_id in that or previous events.
     """
     metrics = Metrics(model_name='test-model')
@@ -119,8 +118,7 @@ def test_get_token_usage_for_event_id():
 
 
 def test_get_token_usage_for_event_fallback():
-    """
-    Verify that if tool_call_metadata.model_response.id is missing or mismatched,
+    """Verify that if tool_call_metadata.model_response.id is missing or mismatched,
     but event.response_id is set to a valid usage ID, we find the usage record via fallback.
     """
     metrics = Metrics(model_name='fallback-test')
@@ -159,11 +157,9 @@ def test_get_token_usage_for_event_fallback():
 
 
 def test_get_token_usage_for_event_id_fallback():
-    """
-    Verify that get_token_usage_for_event_id also falls back to event.response_id
+    """Verify that get_token_usage_for_event_id also falls back to event.response_id
     if tool_call_metadata.model_response.id is missing or mismatched.
     """
-
     # NOTE: this should never happen (tm), but there is a hint in the code that it might:
     # message_utils.py: 166 ("(overwrites any previous message with the same response_id)")
     # so we'll handle it gracefully.

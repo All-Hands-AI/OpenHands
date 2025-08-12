@@ -95,8 +95,7 @@ def create_runtime(
 
 
 def get_provider_tokens():
-    """
-    Retrieve provider tokens from environment variables and return them as a dictionary.
+    """Retrieve provider tokens from environment variables and return them as a dictionary.
 
     Returns:
         A dictionary mapping ProviderType to ProviderToken if tokens are found, otherwise None.
@@ -127,8 +126,7 @@ def initialize_repository_for_runtime(
     immutable_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     selected_repository: str | None = None,
 ) -> str | None:
-    """
-    Initialize the repository for the runtime by cloning or initializing it,
+    """Initialize the repository for the runtime by cloning or initializing it,
     running setup scripts, and setting up git hooks if present.
 
     Args:

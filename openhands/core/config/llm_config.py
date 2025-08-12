@@ -96,8 +96,7 @@ class LLMConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
-        """
-        Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
+        """Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
 
         The default configuration is built from all non-dict keys in data.
         Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration,
@@ -116,7 +115,6 @@ class LLMConfig(BaseModel):
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-
         # Initialize the result mapping
         llm_mapping: dict[str, LLMConfig] = {}
 
