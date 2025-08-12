@@ -364,6 +364,11 @@ async def select_file(
     session = await shared.conversation_manager.attach_to_conversation(
         conversation_id, conversation.user_id
     )
+    if not file:
+        return JSONResponse(
+            status_code=400,
+            content={'error': 'File name is missing'},
+        )
     if not session:
         return JSONResponse(
             status_code=404,

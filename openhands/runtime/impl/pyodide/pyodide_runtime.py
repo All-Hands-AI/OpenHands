@@ -57,9 +57,8 @@ class PyodideRuntime(ActionExecutionClient):
     def _get_action_execution_server_host(self):
         if getattr(self, 'api_url', None):
             return self.api_url
-        else:
-            call_async_from_sync(self.connect())
-            return self.api_url
+        call_async_from_sync(self.connect)
+        return self.api_url
 
     async def connect(self):
         pyodide_mcp_config = self.config.dict_mcp_config['pyodide']

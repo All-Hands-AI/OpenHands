@@ -144,7 +144,10 @@ async def select_file(file: str, request: Request):
 
     workspace_path = runtime.config.workspace_mount_path_in_sandbox or ''
     raw_file = file
-    file = os.path.join(workspace_path + '/' + runtime.sid, file)
+    if file.startswith(f'/{runtime.sid}'):
+        file = os.path.join(workspace_path, file[1:])
+    else:
+        file = os.path.join(workspace_path + '/' + runtime.sid, file)
     read_action = FileReadAction(file)
     try:
         observation = await call_sync_from_async(runtime.run_action, read_action)
@@ -164,9 +167,12 @@ async def select_file(file: str, request: Request):
         if 'ERROR_BINARY_FILE' in observation.message:
             try:
                 workspace_base = shared_config.workspace_base or ''
-                openhand_file_path = os.path.join(
-                    workspace_base + '/' + runtime.sid, raw_file
-                )
+                if raw_file.startswith(f'/{runtime.sid}'):
+                    openhand_file_path = os.path.join(workspace_base, raw_file[1:])
+                else:
+                    openhand_file_path = os.path.join(
+                        workspace_base + '/' + runtime.sid, raw_file
+                    )
                 async with aiofiles.open(openhand_file_path, 'rb') as f:
                     binary_data = await f.read()
                     base64_encoded = safe_base64_encode(binary_data)

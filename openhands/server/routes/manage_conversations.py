@@ -645,6 +645,16 @@ async def delete_conversation(
     request: Request,
 ) -> bool:
     user_id = get_user_id(request)
+    conversation = await conversation_module._get_conversation_by_id(conversation_id)
+    if not conversation:
+        return True
+    if conversation.user_id != user_id:
+        return JSONResponse(
+            content={
+                'message': 'FORBIDDEN',
+            },
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
     # conversation_store = await ConversationStoreImpl.get_instance(
     #     config, user_id, get_github_user_id(request)
     # )
