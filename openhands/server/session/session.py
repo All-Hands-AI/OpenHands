@@ -150,20 +150,6 @@ class Session:
         if settings.sandbox_api_key:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
-        # Update agent config with system prompt setting
-        if settings.system_prompt:
-            # Update the agent config to use the selected system prompt
-            agent_configs = self.config.get_agent_configs()
-            if agent_cls in agent_configs:
-                agent_configs[agent_cls].system_prompt_filename = settings.system_prompt
-            else:
-                # If agent config doesn't exist, create a new one with the system prompt
-                from openhands.core.config.agent_config import AgentConfig
-
-                agent_configs[agent_cls] = AgentConfig(
-                    system_prompt_filename=settings.system_prompt
-                )
-
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
         self.logger.debug(
             f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
