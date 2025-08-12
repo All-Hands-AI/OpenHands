@@ -253,7 +253,7 @@ export function MCPServerForm({
             className="w-full max-w-[680px]"
             required
             defaultValue={server?.command || ""}
-            placeholder="python"
+            placeholder="npx"
           />
 
           <label className="flex flex-col gap-2.5 w-full max-w-[680px]">

@@ -21,7 +21,7 @@ interface MCPServerListProps {
 
 function MCPServerListItemSkeleton() {
   return (
-    <tr className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-center border-t border-tertiary">
+    <tr className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-start border-t border-tertiary">
       <td className="p-3" aria-label="Name loading">
         <div className="skeleton h-4 w-3/4" />
       </td>
@@ -92,7 +92,7 @@ function MCPServerListItem({
   return (
     <tr
       data-testid="mcp-server-item"
-      className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-center border-t border-tertiary"
+      className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-start border-t border-tertiary"
     >
       <td
         className="p-3 text-sm text-content-2 truncate min-w-0"
@@ -112,7 +112,7 @@ function MCPServerListItem({
         {serverDescription}
       </td>
 
-      <td className="p-3 flex items-center justify-end gap-4 whitespace-nowrap">
+      <td className="p-3 flex items-start justify-end gap-4 whitespace-nowrap">
         <button
           data-testid="edit-mcp-server-button"
           type="button"
@@ -157,7 +157,7 @@ export function MCPServerList({
     <div className="border border-tertiary rounded-md overflow-hidden">
       <table className="w-full">
         <thead className="bg-base-tertiary">
-          <tr className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-center">
+          <tr className="grid grid-cols-[1fr_auto_2fr_auto] gap-4 items-start">
             <th className="text-left p-3 text-sm font-medium">
               {t(I18nKey.SETTINGS$NAME)}
             </th>
