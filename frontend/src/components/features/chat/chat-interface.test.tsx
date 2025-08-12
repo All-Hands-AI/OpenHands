@@ -45,11 +45,31 @@ vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
   }),
 }));
 vi.mock("react-redux", () => ({
-  useSelector: vi.fn(() => ({
-    curAgentState: "AWAITING_USER_INPUT",
-    selectedRepository: null,
-    replayJson: null,
-  })),
+  useSelector: vi.fn((selector) => {
+    // Create a mock state object
+    const mockState = {
+      agent: {
+        curAgentState: "AWAITING_USER_INPUT",
+      },
+      initialQuery: {
+        selectedRepository: null,
+        replayJson: null,
+      },
+      conversation: {
+        messageToSend: null,
+        files: [],
+        images: [],
+        loadingFiles: [],
+        loadingImages: [],
+      },
+      status: {
+        curStatusMessage: null,
+      },
+    };
+
+    // Execute the selector function with our mock state
+    return selector(mockState);
+  }),
   useDispatch: vi.fn(() => vi.fn()),
 }));
 
