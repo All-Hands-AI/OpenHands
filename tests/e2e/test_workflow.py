@@ -353,14 +353,21 @@ def test_openhands_full_workflow(page, openhands_app):
     repo_input.click()
     page.wait_for_timeout(1000)
     
-    # Type the repository name to trigger the AsyncSelect search
-    print('Typing repository name to trigger API search...')
-    page.keyboard.type('All-Hands-AI/OpenHands')
-    print('Typed "All-Hands-AI/OpenHands" into search field')
+    # For React Select components, we need to type directly after clicking
+    # The input field appears after clicking the dropdown
+    try:
+        # Try to fill first (for regular inputs)
+        repo_input.fill('All-Hands-AI/OpenHands')
+        print('Used fill() method for repository input')
+    except Exception as e:
+        print(f'Fill failed ({e}), trying keyboard input for React Select...')
+        # If fill fails, this is likely a React Select component
+        # Clear any existing text and type
+        page.keyboard.press('Control+a')  # Select all
+        page.keyboard.type('All-Hands-AI/OpenHands')
+        print('Used keyboard.type() for React Select component')
     
-    # Wait longer for the API search to complete and return results
-    print('Waiting for API search to complete and dropdown options to appear...')
-    page.wait_for_timeout(8000)  # Give much more time for API call
+    page.wait_for_timeout(2000)  # Wait for search results
     
     # Check if the repository is already selected in the dropdown
     # The React Select component might auto-select the first matching result
@@ -384,132 +391,42 @@ def test_openhands_full_workflow(page, openhands_app):
     # Even if the text is in the input, we need to click the dropdown option to complete selection
     # Look for the OpenHands repository in the dropdown options
     print('Looking for OpenHands repository in dropdown options to complete selection...')
-    
+
     # Wait a bit more for the dropdown to populate
     page.wait_for_timeout(1000)
-    
+
     # Try to find and click the repository option
     option_found = False
-    
-    # First, ensure the dropdown is open by clicking the control
-    try:
-        dropdown_control = page.locator('[data-testid="repo-dropdown"] .css-tbq4n2-control').first
-        if dropdown_control.is_visible(timeout=2000):
-            print('Clicking dropdown control to ensure it is open...')
-            dropdown_control.click()
-            page.wait_for_timeout(1000)
-    except:
-        print('Could not click dropdown control, continuing...')
-    
-    # First, check if any dropdown options appeared at all
-    print('Checking if dropdown options appeared...')
-    try:
-        # Wait for any option to appear with a generous timeout
-        page.wait_for_selector('[role="option"]', timeout=15000)
-        print('✅ Dropdown options detected!')
-        
-        # Count how many options are available
-        options = page.locator('[role="option"]')
-        option_count = options.count()
-        print(f'Found {option_count} dropdown options')
-        
-        # Log the text of the first few options for debugging
-        for i in range(min(option_count, 3)):
-            try:
-                option_text = options.nth(i).text_content()
-                print(f'  Option {i}: "{option_text}"')
-            except:
-                print(f'  Option {i}: <could not get text>')
-                
-    except Exception as e:
-        print(f'❌ No dropdown options appeared within 15 seconds: {e}')
-        # Take a screenshot to see current state
-        page.screenshot(path='test-results/06_no_dropdown_options.png')
-        print('Screenshot saved: 06_no_dropdown_options.png')
-    
-    # Try to find and click the repository option
     option_selectors = [
-        # Most specific selectors first
+        'text=All-Hands-AI/OpenHands',
         '[role="option"]:has-text("All-Hands-AI/OpenHands")',
         '[role="option"]:has-text("OpenHands")',
-        # Text-based selectors
-        'text=All-Hands-AI/OpenHands',
-        'text=OpenHands',
-        # Generic selectors
         'li:has-text("All-Hands-AI/OpenHands")',
         'li:has-text("OpenHands")',
         '[data-testid*="OpenHands"]'
     ]
-    
-    for i, selector in enumerate(option_selectors):
+
+    for selector in option_selectors:
         try:
-            print(f'Trying selector {i+1}/{len(option_selectors)}: {selector}')
             option = page.locator(selector).first
-            if option.is_visible(timeout=5000):
-                print(f'✅ Found repository option with selector: {selector}')
+            if option.is_visible(timeout=3000):
+                print(f'Found repository option with selector: {selector}')
                 option.click()
                 option_found = True
-                print('✅ Successfully clicked repository option')
-                page.wait_for_timeout(2000)  # Wait for selection to complete
+                page.wait_for_timeout(1000)  # Wait for selection to complete
                 break
-            else:
-                print(f'❌ Option not visible: {selector}')
         except Exception as e:
-            print(f'❌ Selector {selector} failed: {e}')
+            print(f'Selector {selector} failed: {e}')
             continue
-    
+
     if not option_found:
-        print('❌ Could not find repository option in dropdown')
-        # Try pressing Enter to select the current input (this was working in the past!)
-        print('Trying Enter key to accept current input...')
+        print('Could not find repository option in dropdown')
+        # Try pressing Enter to select the current input
         page.keyboard.press('Enter')
         print('Pressed Enter to try to select current input')
-        page.wait_for_timeout(2000)
-    
-    # Verify that the repository selection was successful
-    print('Verifying repository selection...')
-    try:
-        # Check the input value to see if repository is selected
-        repo_input_value = repo_input.input_value()
-        print(f'Repository input value after selection attempt: "{repo_input_value}"')
-        
-        # Check if Launch button is now enabled
-        launch_button = page.locator('[data-testid="repo-launch-button"]')
-        is_launch_enabled = not launch_button.get_attribute('disabled')
-        print(f'Launch button enabled: {is_launch_enabled}')
-        
-        if not is_launch_enabled:
-            print('❌ Launch button is still disabled - repository selection failed')
-            # Take a screenshot for debugging
-            page.screenshot(path='test-results/06_repo_selection_failed.png')
-            print('Screenshot saved: 06_repo_selection_failed.png')
-        else:
-            print('✅ Launch button is enabled - repository selection successful!')
-            
-    except Exception as e:
-        print(f'Error verifying repository selection: {e}')
-    
+        page.wait_for_timeout(1000)
+
     page.wait_for_timeout(1000)
-    print('Verifying repository selection...')
-    try:
-        # Check if the input field shows the selected repository
-        selected_repo_input = page.locator('[data-testid="repo-dropdown"] input')
-        if selected_repo_input.is_visible(timeout=2000):
-            final_value = selected_repo_input.input_value()
-            print(f'Final repository input value: "{final_value}"')
-            if 'OpenHands' in final_value:
-                print('✅ Repository selection appears successful')
-            else:
-                print(f'⚠️ Repository selection may not be complete: {final_value}')
-        
-        # Also check if there's a selected value display
-        selected_display = page.locator('[data-testid="repo-dropdown"] .css-1jcgswf')
-        if selected_display.is_visible(timeout=2000):
-            display_text = selected_display.text_content()
-            print(f'Repository display text: "{display_text}"')
-    except Exception as e:
-        print(f'Could not verify repository selection: {e}')
-    
     page.screenshot(path='test-results/07_repo_selected.png')
     print('Screenshot saved: 07_repo_selected.png')
 
@@ -528,7 +445,8 @@ def test_openhands_full_workflow(page, openhands_app):
     launch_button.wait_for(state='attached', timeout=5000)
     
     # Check if button is enabled by waiting for it to not have disabled attribute
-    max_wait_attempts = 10
+    # Increase wait time significantly since you mentioned it takes a long time
+    max_wait_attempts = 30  # Increased from 10 to 30 (30 seconds total)
     button_enabled = False
     
     for attempt in range(max_wait_attempts):
@@ -541,10 +459,10 @@ def test_openhands_full_workflow(page, openhands_app):
                 break
             else:
                 print(f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
-                page.wait_for_timeout(1000)
+                page.wait_for_timeout(2000)  # Increased from 1000ms to 2000ms
         except Exception as e:
             print(f'Error checking button state (attempt {attempt + 1}): {e}')
-            page.wait_for_timeout(1000)
+            page.wait_for_timeout(2000)  # Increased from 1000ms to 2000ms
     
     if not button_enabled:
         print('Launch button is still disabled after waiting, taking debug screenshot...')
