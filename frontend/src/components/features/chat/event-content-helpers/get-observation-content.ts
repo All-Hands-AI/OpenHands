@@ -6,6 +6,7 @@ import {
   BrowseObservation,
   OpenHandsObservation,
   RecallObservation,
+  TaskTrackingObservation,
 } from "#/types/core/observations";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
@@ -102,6 +103,13 @@ const getRecallObservationContent = (event: RecallObservation): string => {
   return content;
 };
 
+const getTaskTrackingObservationContent = (
+  event: TaskTrackingObservation,
+): string => {
+  const content = event.content?.trim() || "Task tracking operation completed";
+  return `**Result:** ${content}`;
+};
+
 export const getObservationContent = (event: OpenHandsObservation): string => {
   switch (event.observation) {
     case "read":
@@ -118,6 +126,8 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
       return getBrowseObservationContent(event);
     case "recall":
       return getRecallObservationContent(event);
+    case "task_tracking":
+      return getTaskTrackingObservationContent(event);
     default:
       return getDefaultEventContent(event);
   }

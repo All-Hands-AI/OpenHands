@@ -7727,6 +7727,22 @@
         "tr": "Yoğunlaşma",
         "uk": "Конденсація"
     },
+    "ACTION_MESSAGE$TASK_TRACKING": {
+        "en": "Managing tasks",
+        "zh-CN": "管理任务",
+        "zh-TW": "管理任務",
+        "ko-KR": "작업 관리",
+        "ja": "タスク管理",
+        "no": "Administrerer oppgaver",
+        "ar": "إدارة المهام",
+        "de": "Aufgaben verwalten",
+        "fr": "Gestion des tâches",
+        "it": "Gestione delle attività",
+        "pt": "Gerenciando tarefas",
+        "es": "Gestionando tareas",
+        "tr": "Görevleri yönetiyor",
+        "uk": "Керування завданнями"
+    },
     "OBSERVATION_MESSAGE$RUN": {
         "en": "Ran <cmd>{{command}}</cmd>",
         "zh-CN": "运行 <cmd>{{command}}</cmd>",
@@ -7870,6 +7886,22 @@
         "tr": "Düşünce",
         "de": "Gedanke",
         "uk": "Думка"
+    },
+    "OBSERVATION_MESSAGE$TASK_TRACKING": {
+        "en": "Task tracking completed",
+        "zh-CN": "任务跟踪完成",
+        "zh-TW": "任務追蹤完成",
+        "ko-KR": "작업 추적 완료",
+        "ja": "タスク追跡完了",
+        "no": "Oppgavesporing fullført",
+        "ar": "تم إكمال تتبع المهام",
+        "de": "Aufgabenverfolgung abgeschlossen",
+        "fr": "Suivi des tâches terminé",
+        "it": "Tracciamento delle attività completato",
+        "pt": "Rastreamento de tarefas concluído",
+        "es": "Seguimiento de tareas completado",
+        "tr": "Görev takibi tamamlandı",
+        "uk": "Відстеження завдань завершено"
     },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",

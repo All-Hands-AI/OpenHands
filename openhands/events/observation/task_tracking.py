@@ -1,5 +1,4 @@
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 from openhands.core.schema import ObservationType
 from openhands.events.observation.observation import Observation
