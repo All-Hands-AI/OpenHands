@@ -121,7 +121,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
 
       const { status, url } = query.data;
 
-      let baseUrl = conversationData.baseUrl;
+      let { baseUrl } = conversationData;
       if (url && !url.startsWith("/")) {
         baseUrl = new URL(url).host;
       }
