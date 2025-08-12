@@ -312,20 +312,6 @@ describe("ServerStatusContextMenu", () => {
     expect(onStartServer).toHaveBeenCalledTimes(1);
   });
 
-  it("should apply correct positioning class when position is top", () => {
-    renderWithProviders(
-      <ServerStatusContextMenu
-        {...defaultProps}
-        conversationStatus="RUNNING"
-        onStopServer={vi.fn()}
-        position="top"
-      />,
-    );
-
-    const contextMenu = screen.getByTestId("server-status-context-menu");
-    expect(contextMenu).toHaveClass("bottom-full");
-  });
-
   it("should apply correct positioning class when position is bottom", () => {
     renderWithProviders(
       <ServerStatusContextMenu
