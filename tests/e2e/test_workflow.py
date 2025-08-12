@@ -545,8 +545,27 @@ def test_openhands_full_workflow(page, openhands_app):
     navigation_successful = False
     
     while True:
-        current_time = page.evaluate('Date.now()')
-        elapsed = current_time - start_time
+        try:
+            current_time = page.evaluate('Date.now()')
+            elapsed = current_time - start_time
+        except Exception as e:
+            # If execution context is destroyed, it likely means navigation is happening
+            if "Execution context was destroyed" in str(e) or "navigation" in str(e).lower():
+                print('🚀 Navigation detected (execution context destroyed) - checking URL...')
+                # Wait a moment for navigation to complete
+                page.wait_for_timeout(2000)
+                current_url = page.url
+                if '/conversations/' in current_url:
+                    print(f'✅ Successfully navigated to conversation page: {current_url}')
+                    navigation_successful = True
+                    break
+                else:
+                    print(f'⚠️ Navigation detected but not to conversation page: {current_url}')
+                    # Continue monitoring
+                    elapsed = 0  # Reset timer since we detected navigation activity
+            else:
+                print(f'⚠️ Unexpected error during navigation monitoring: {e}')
+                elapsed = 0  # Reset timer and continue
         
         # Check if we've navigated to a conversation page
         current_url = page.url
