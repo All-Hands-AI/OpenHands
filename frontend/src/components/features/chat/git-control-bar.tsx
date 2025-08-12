@@ -74,70 +74,66 @@ export function GitControlBar({
   const shouldShowTooltipForGitActions = !!tooltipMessage;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-row gap-2.5 items-center flex-wrap">
-        <GitControlBarTooltipWrapper
-          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
-          testId="git-control-bar-repo-button-tooltip"
-          shouldShowTooltip={!hasRepository}
-        >
-          <GitControlBarRepoButton
-            selectedRepository={selectedRepository}
-            gitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
+    <div className="flex flex-row gap-2.5 items-center flex-wrap">
+      <GitControlBarTooltipWrapper
+        tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
+        testId="git-control-bar-repo-button-tooltip"
+        shouldShowTooltip={!hasRepository}
+      >
+        <GitControlBarRepoButton
+          selectedRepository={selectedRepository}
+          gitProvider={gitProvider}
+        />
+      </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
-          testId="git-control-bar-branch-button-tooltip"
-          shouldShowTooltip={!hasRepository}
-        >
-          <GitControlBarBranchButton
-            selectedBranch={selectedBranch}
-            selectedRepository={selectedRepository}
-            gitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
-      </div>
+      <GitControlBarTooltipWrapper
+        tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
+        testId="git-control-bar-branch-button-tooltip"
+        shouldShowTooltip={!hasRepository}
+      >
+        <GitControlBarBranchButton
+          selectedBranch={selectedBranch}
+          selectedRepository={selectedRepository}
+          gitProvider={gitProvider}
+        />
+      </GitControlBarTooltipWrapper>
 
-      <div className="flex flex-row gap-2.5 items-center flex-wrap">
-        <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
-          testId="git-control-bar-pull-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
-        >
-          <GitControlBarPullButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-          />
-        </GitControlBarTooltipWrapper>
+      <GitControlBarTooltipWrapper
+        tooltipMessage={tooltipMessage}
+        testId="git-control-bar-pull-button-tooltip"
+        shouldShowTooltip={shouldShowTooltipForGitActions}
+      >
+        <GitControlBarPullButton
+          onSuggestionsClick={onSuggestionsClick}
+          isEnabled={isButtonEnabled}
+        />
+      </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
-          testId="git-control-bar-push-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
-        >
-          <GitControlBarPushButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-            hasRepository={hasRepository}
-            currentGitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
+      <GitControlBarTooltipWrapper
+        tooltipMessage={tooltipMessage}
+        testId="git-control-bar-push-button-tooltip"
+        shouldShowTooltip={shouldShowTooltipForGitActions}
+      >
+        <GitControlBarPushButton
+          onSuggestionsClick={onSuggestionsClick}
+          isEnabled={isButtonEnabled}
+          hasRepository={hasRepository}
+          currentGitProvider={gitProvider}
+        />
+      </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
-          testId="git-control-bar-pr-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
-        >
-          <GitControlBarPrButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-            hasRepository={hasRepository}
-            currentGitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
-      </div>
+      <GitControlBarTooltipWrapper
+        tooltipMessage={tooltipMessage}
+        testId="git-control-bar-pr-button-tooltip"
+        shouldShowTooltip={shouldShowTooltipForGitActions}
+      >
+        <GitControlBarPrButton
+          onSuggestionsClick={onSuggestionsClick}
+          isEnabled={isButtonEnabled}
+          hasRepository={hasRepository}
+          currentGitProvider={gitProvider}
+        />
+      </GitControlBarTooltipWrapper>
     </div>
   );
 }
