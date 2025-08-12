@@ -58,7 +58,8 @@ def openhands_app():
                         html = response.read().decode('utf-8')
                         if '<html' in html:
                             print('Successfully received HTML content from OpenHands')
-                            return  # Success
+                            yield None  # Success - yield the fixture value
+                            return
                         else:
                             print(
                                 f'WARNING: Port 12000 is open but not serving HTML content (attempt {attempt}/{max_attempts})'
@@ -85,11 +86,6 @@ def openhands_app():
     raise Exception(
         'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
     )
-
-    # No process to yield since we're not starting the app
-    yield None
-
-    # No cleanup needed since we're not starting the app
 
 
 def test_readme_line_count():
