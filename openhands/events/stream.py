@@ -141,9 +141,14 @@ class EventStream(EventStore):
         subscriber_id: EventStreamSubscriber,
         callback: Callable[[Event], None],
         callback_id: str,
+        callback_max_workers: int = 1,
     ) -> None:
         initializer = partial(self._init_thread_loop, subscriber_id, callback_id)
-        pool = ThreadPoolExecutor(max_workers=1, initializer=initializer)
+        pool = ThreadPoolExecutor(
+            max_workers=callback_max_workers, initializer=initializer
+        )
+        if callback_max_workers > 1:
+            logger.info(f'callback_max_workers: {callback_max_workers}')
         if subscriber_id not in self._subscribers:
             self._subscribers[subscriber_id] = {}
             self._thread_pools[subscriber_id] = {}
@@ -169,7 +174,7 @@ class EventStream(EventStore):
 
         self._clean_up_subscriber(subscriber_id, callback_id)
 
-    def add_event(self, event: Event, source: EventSource) -> None:
+    def add_event(self, event: Event, source: EventSource) -> Any:
         if event.id != Event.INVALID_ID:
             raise ValueError(
                 f'Event already has an ID:{event.id}. It was probably added back to the EventStream from inside a handler, triggering a loop.'
@@ -215,6 +220,7 @@ class EventStream(EventStore):
             ):
                 self._store_cache_page(current_write_page)
         self._queue.put(event)
+        return event
 
     def _store_cache_page(self, current_write_page: list[dict]):
         """Store a page in the cache. Reading individual events is slow when there are a lot of them, so we use pages."""

@@ -30,6 +30,7 @@ class PyodideRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         a2a_manager: A2AManager | None = None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ):
         super().__init__(
             config,
@@ -42,6 +43,7 @@ class PyodideRuntime(ActionExecutionClient):
             headless_mode,
             a2a_manager=a2a_manager,
             mnemonic=mnemonic,
+            callback_max_workers=callback_max_workers,
         )
         self.config = config
         self.status_callback = status_callback

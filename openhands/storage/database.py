@@ -1,12 +1,17 @@
 import json
-from typing import List, Optional
+from typing import TYPE_CHECKING, List, Optional
 
 import psycopg
 
 from openhands.core.database import db_pool
 from openhands.core.logger import openhands_logger as logger
+
+# from openhands.events.action.action import Action
 from openhands.storage.files import FileStore
 from openhands.storage.locations import parse_conversation_path
+
+if TYPE_CHECKING:
+    from openhands.events.action import Action
 
 
 class DatabaseFileStore(FileStore):
@@ -524,6 +529,127 @@ class DatabaseFileStore(FileStore):
                 )
                 result = cursor.fetchone()
                 return result is not None
+
+    def get_replay_actions(
+        self, space_id: int, space_section_id: int
+    ) -> List['Action']:
+        from openhands.events.action import (
+            AgentFinishAction,
+            CmdRunAction,
+            FileEditAction,
+            FileReadAction,
+            IPythonRunCellAction,
+            McpAction,
+        )
+
+        """Get parsed actions for conversation replay."""
+        with db_pool.get_connection_context() as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT metadata, event_id
+                    FROM space_section_actions
+                    WHERE space_id = %s
+                    AND space_section_id = %s
+                    AND metadata->>'source' = 'agent'
+                    AND metadata->>'action' IN ('call_tool_mcp')
+                    ORDER BY event_id ASC
+                    """,
+                    (space_id, space_section_id),
+                )
+
+                actions: List['Action'] = []
+                for metadata, event_id in cursor.fetchall():
+                    try:
+                        action_data = {
+                            'event_id': event_id,
+                            'action_type': metadata.get('action'),
+                            'args': metadata.get('args', {}),
+                            'timestamp': metadata.get('timestamp', ''),
+                            'tool_call_metadata': metadata.get(
+                                'tool_call_metadata', {}
+                            ),
+                        }
+                        action_obj: Action
+
+                        # Parse based on action type and create Action objects directly
+                        if action_data['action_type'] == 'call_tool_mcp':
+                            action_obj = McpAction(
+                                name=action_data['args'].get('name', ''),
+                                arguments=action_data['args'].get('arguments', '{}'),
+                                thought=action_data['args'].get('thought', '{}'),
+                            )
+
+                        elif action_data['action_type'] == 'edit':
+                            action_obj = FileEditAction(
+                                path=action_data['args'].get('path', ''),
+                                command=action_data['args'].get('command', 'create'),
+                                file_text=action_data['args'].get('file_text', ''),
+                                new_str=action_data['args'].get('new_str', ''),
+                                old_str=action_data['args'].get('old_str', ''),
+                                thought=action_data['args'].get('thought', ''),
+                            )
+
+                        elif action_data['action_type'] == 'read':
+                            action_obj = FileReadAction(
+                                path=action_data['args'].get('path', ''),
+                                view_range=action_data['args'].get('view_range', None),
+                                thought=action_data['args'].get('thought', ''),
+                            )
+
+                        elif action_data['action_type'] == 'run':  # Bash commands
+                            action_obj = CmdRunAction(
+                                command=action_data['args'].get('command', ''),
+                                thought=action_data['args'].get('thought', ''),
+                            )
+
+                        elif action_data['action_type'] == 'ipython':  # Jupyter code
+                            action_obj = IPythonRunCellAction(
+                                code=action_data['args'].get('code', ''),
+                                thought=action_data['args'].get('thought', ''),
+                            )
+
+                        elif action_data['action_type'] == 'finish':
+                            action_obj = AgentFinishAction(
+                                final_thought=action_data['args'].get(
+                                    'final_thought', ''
+                                ),
+                                task_completed=action_data['args'].get(
+                                    'task_completed', 'true'
+                                ),
+                            )
+                        else:
+                            continue  # Skip unknown action types
+
+                        # Add tool_call_metadata if it exists and is not empty
+                        tool_metadata = action_data.get('tool_call_metadata', {})
+
+                        if (
+                            tool_metadata
+                            and isinstance(tool_metadata, dict)
+                            and any(tool_metadata.values())
+                        ):
+                            from openhands.events.tool import ToolCallMetadata
+
+                            action_obj.tool_call_metadata = ToolCallMetadata(
+                                tool_call_id=tool_metadata.get('tool_call_id', ''),
+                                function_name=tool_metadata.get('function_name', ''),
+                                model_response=tool_metadata.get('model_response', {}),
+                                total_calls_in_response=tool_metadata.get(
+                                    'total_calls_in_response', 1
+                                ),
+                                enable_show_thought=True,
+                            )
+
+                        actions.append(action_obj)
+
+                    except Exception as e:
+                        logger.warning(
+                            f'Failed to parse action {event_id}: {e} {action_data}'
+                        )
+                        continue
+
+                return actions
 
 
 db_file_store = DatabaseFileStore()

@@ -13,3 +13,7 @@ class ResearchMode(str, Enum):
     FOLLOW_UP = 'follow_up'
     """Follow up mode.
     """
+
+    RERUN_SECTION = 'rerun_section'
+    """Rerun section mode.
+    """

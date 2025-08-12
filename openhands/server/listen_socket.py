@@ -206,6 +206,11 @@ async def connect(connection_id: str, environ):
         if conversation_configs
         else None
     )
+    space_section_id = (
+        conversation_configs.get('space_section_id', None)
+        if conversation_configs
+        else None
+    )
     thread_follow_up = (
         conversation_configs.get('thread_follow_up', None)
         if conversation_configs

@@ -108,6 +108,7 @@ class LocalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         mnemonic: str | None = None,
         a2a_manager: A2AManager | None = None,
+        callback_max_workers: int = 1,
     ):
         self.config = config
         self._user_id = os.getuid()
@@ -177,6 +178,7 @@ class LocalRuntime(ActionExecutionClient):
             headless_mode,
             a2a_manager=a2a_manager,
             mnemonic=mnemonic,
+            callback_max_workers=callback_max_workers,
         )
 
     def _get_action_execution_server_host(self):

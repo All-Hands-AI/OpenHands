@@ -54,6 +54,7 @@ class PromptManager:
         )
         self.system_prompt: str | None = None
         self.user_prompt: str | None = None
+        self.rerun_section_template: Template = self._load_template('rerun_section')
 
     def _load_template(self, template_name: str) -> Template:
         if self.prompt_dir is None:
@@ -89,6 +90,9 @@ class PromptManager:
 
     def get_followup_mode_message(self, **kwargs) -> str:
         return self.followup_mode_template.render(**kwargs).strip()
+
+    def get_rerun_section_message(self, **kwargs) -> str:
+        return self.rerun_section_template.render(**kwargs).strip()
 
     def get_example_user_message(self, session_id: str | None = None) -> str:
         """This is the initial user message provided to the agent

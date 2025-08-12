@@ -80,6 +80,7 @@ class ActionExecutionClient(Runtime):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         a2a_manager: A2AManager | None = None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ):
         self.session = HttpSession()
         self.action_semaphore = threading.Semaphore(1)  # Ensure one action at a time
@@ -100,6 +101,7 @@ class ActionExecutionClient(Runtime):
             git_provider_tokens,
             a2a_manager=a2a_manager,
             mnemonic=mnemonic,
+            callback_max_workers=callback_max_workers,
         )
 
     @abstractmethod

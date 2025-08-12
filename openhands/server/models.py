@@ -75,3 +75,25 @@ Mem0ConversationJob = Table(
     Column('error', String, nullable=True),
     Column('created_at', DateTime, default=func.now(), nullable=False),
 )
+
+SpaceSectionConfig = Table(
+    'space_section_configs',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('space_id', Integer, nullable=False),
+    Column('space_section_id', Integer, nullable=False),
+    Column('hash_config', String, nullable=False),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
+    Column('updated_at', DateTime, default=func.now(), nullable=False),
+)
+
+SpaceSectionAction = Table(
+    'space_section_actions',
+    metadata,
+    Column('id', Integer, primary_key=True, autoincrement=True),
+    Column('space_section_id', Integer, nullable=False),
+    Column('space_id', Integer, nullable=False),
+    Column('event_id', Integer, nullable=False),
+    Column('metadata', JSON, nullable=True),
+    Column('created_at', DateTime, default=func.now(), nullable=False),
+)

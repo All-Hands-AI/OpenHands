@@ -3,7 +3,7 @@ import os
 from collections import deque
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Optional, override
+from typing import Any, Optional, Union, override
 
 from httpx import request
 
@@ -142,8 +142,10 @@ class CodeActAgent(Agent):
     @override
     def set_system_prompt(self, system_prompt: str) -> None:
         self.system_prompt = system_prompt
+
         if self.prompt_manager:
             self.prompt_manager.set_system_message(system_prompt)
+            self.conversation_memory.prompt_manager.set_system_message(system_prompt)
         logger.info(
             f'New system prompt: {self.conversation_memory.process_initial_messages()}'
         )
@@ -190,6 +192,7 @@ class CodeActAgent(Agent):
                 if tool['function']['name'] not in existing_names
             ]
             selected_tools.extend(unique_mcp_tools)
+
         else:
             # For other modes, combine tools and search_tools with deduplication
             selected_tools = deepcopy(self.tools)
@@ -532,7 +535,7 @@ class CodeActAgent(Agent):
                 )
                 self.event_stream.add_event(action, EventSource.AGENT)
 
-    def step(self, state: State) -> Optional[Action]:
+    def step(self, state: State) -> Union[Optional['Action'], list['Action']]:
         """Performs one step using the CodeAct Agent.
 
         This includes gathering info on previous steps and prompting the model to make a command to execute.
@@ -550,6 +553,14 @@ class CodeActAgent(Agent):
         if self.session_id is None:
             self.session_id = state.session_id
         # Continue with pending actions if any
+        # if self.pending_actions:
+        #     return self.pending_actions.popleft()
+
+        if self.replay_actions:
+            actions = list(self.replay_actions)
+            self.replay_actions.clear()
+            return actions
+
         if self.pending_actions:
             return self.pending_actions.popleft()
 
@@ -600,12 +611,14 @@ class CodeActAgent(Agent):
         }
         params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
         # if chat mode, we need to use the search tools
+
         params['tools'] = self._select_tools_based_on_mode(research_mode)
         params['tools'] = check_tools(params['tools'], self.llm.config)
         if self.enable_streaming:
             params['stream_options'] = {'include_usage': True}
         logger.info(f'Messages: {messages}')
         last_message = messages[-1]
+
         response = None
         if (
             last_message.role == 'user'
@@ -663,11 +676,11 @@ class CodeActAgent(Agent):
                 if not self.streaming_llm
                 else self.streaming_llm.async_streaming_completion(**params)
             )
-            # Process streaming response and populate pending_actions
+        # Process streaming response and populate pending_actions
         if self.enable_streaming:
             call_async_from_sync(
                 self._handle_streaming_response,
-                15,
+                180,
                 response,
                 params['tools'],
                 research_mode,

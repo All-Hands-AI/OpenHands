@@ -286,55 +286,77 @@ def _extract_from_edit_event(event_dict: dict) -> str | None:
 
 def _extract_from_finish_event(event_dict: dict) -> str | None:
     """Extract content from finish action tool calls."""
-    tool_call_metadata = event_dict.get('tool_call_metadata', {})
-    model_response = tool_call_metadata.get('model_response', {})
-    choices = model_response.get('choices', [])
 
-    if choices and 'message' in choices[0]:
-        message_obj = choices[0]['message']
-        tool_calls = message_obj.get('tool_calls', [])
+    final_thought = event_dict.get('args', {}).get('final_thought', '')
+    return final_thought
+    # if final_thought:
+    #     try:
+    #         json_result = _try_extract_json(final_thought)
+    #         if json_result:
+    #             result = json.dumps(json_result)
+    #             return result
+    #     except json.JSONDecodeError:
+    #         pass
+    # thought = event_dict.get('args', {}).get('thought', '')
+    # if thought:
+    #     try:
+    #         json_result = _try_extract_json(thought)
+    #         if json_result:
+    #             result = json.dumps(json_result)
+    #             return result
+    #     except json.JSONDecodeError:
+    #         pass
 
-        content = message_obj.get('content', '')
-        if content and len(content.strip()) > 0:
-            # Try to extract JSON first
-            json_result = _try_extract_json(content)
-            if json_result:
-                result = json.dumps(json_result)
-                return result
+    # tool_call_metadata = event_dict.get('tool_call_metadata', {})
+    # model_response = tool_call_metadata.get('model_response', {})
+    # choices = model_response.get('choices', [])
 
-        # Extract the actual JSON from tool call arguments
-        if tool_calls and 'function' in tool_calls[0]:
-            arguments_str = tool_calls[0]['function'].get('arguments')
-            if arguments_str:
-                try:
-                    arguments_json = json.loads(arguments_str)
-                    # Extract the message field which contains the actual JSON result
-                    message_content = arguments_json.get('message', '')
+    # if choices and 'message' in choices[0]:
+    #     message_obj = choices[0]['message']
+    #     tool_calls = message_obj.get('tool_calls', [])
 
-                    # Try to parse the message as JSON
-                    try:
-                        final_json = json.loads(message_content)
-                        result = json.dumps(final_json)
-                        return result
-                    except json.JSONDecodeError:
-                        return message_content
-                except json.JSONDecodeError:
-                    return arguments_str
-    return None
+    #     content = message_obj.get('content', '')
+    #     if content and len(content.strip()) > 0:
+    #         # Try to extract JSON first
+    #         json_result = _try_extract_json(content)
+    #         if json_result:
+    #             result = json.dumps(json_result)
+    #             return result
+
+    #     # Extract the actual JSON from tool call arguments
+    #     if tool_calls and 'function' in tool_calls[0]:
+    #         arguments_str = tool_calls[0]['function'].get('arguments')
+    #         if arguments_str:
+    #             try:
+    #                 arguments_json = json.loads(arguments_str)
+    #                 # Extract the message field which contains the actual JSON result
+    #                 message_content = arguments_json.get('message', '')
+
+    #                 # Try to parse the message as JSON
+    #                 try:
+    #                     final_json = json.loads(message_content)
+    #                     result = json.dumps(final_json)
+    #                     return result
+    #                 except json.JSONDecodeError:
+    #                     return message_content
+    #             except json.JSONDecodeError:
+    #                 return arguments_str
+    # return None
 
 
 def _extract_from_message_event(event_dict: dict) -> str | None:
     """Extract content from regular agent messages."""
     content = _extract_content_from_event(event_dict)
-    if content and len(content.strip()) > 10:
-        # Try to extract JSON first
-        json_result = _try_extract_json(content)
-        if json_result:
-            result = json.dumps(json_result)
-            return result
-        else:
-            return content
-    return None
+    return content
+    # if content and len(content.strip()) > 10:
+    #     # Try to extract JSON first
+    #     json_result = _try_extract_json(content)
+    #     if json_result:
+    #         result = json.dumps(json_result)
+    #         return result
+    #     else:
+    #         return content
+    # return None
 
 
 def _extract_from_read_event(event_dict: dict) -> str | None:
@@ -439,7 +461,7 @@ def _try_extract_json(content: str) -> dict | None:
     json_patterns = [
         r'```json\s*\n?(.*?)\n?```',  # JSON in code blocks
         r'```\s*\n?(.*?)\n?```',  # General code blocks
-        r'\{.*?\}',  # JSON objects (including nested)
+        r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}',  # JSON objects with nested braces
     ]
 
     for pattern in json_patterns:
@@ -447,9 +469,33 @@ def _try_extract_json(content: str) -> dict | None:
         for match in matches:
             try:
                 clean_match = match.strip()
+                logger.debug(f'clean_match_json: {clean_match}')
                 if not clean_match.startswith('{'):
                     continue
-                return json.loads(clean_match)
+
+                # Try to parse as JSON
+                parsed_json = json.loads(clean_match)
+
+                # Validate it's actually a dictionary/object
+                if isinstance(parsed_json, dict):
+                    return parsed_json
             except json.JSONDecodeError:
                 continue
+
+    # Fallback: try to find any JSON-like structure in the content
+    try:
+        # Look for content that starts and ends with braces
+        brace_pattern = r'\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}'
+        matches = re.findall(brace_pattern, content, re.DOTALL)
+
+        for match in matches:
+            try:
+                parsed_json = json.loads(match)
+                if isinstance(parsed_json, dict):
+                    return parsed_json
+            except json.JSONDecodeError:
+                continue
+    except Exception:
+        pass
+
     return None

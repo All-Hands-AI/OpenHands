@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Optional, Type
+from collections import deque
+from typing import TYPE_CHECKING, Any, Optional, Type, Union
 
 from openhands.llm.streaming_llm import StreamingLLM
 
@@ -61,6 +62,8 @@ class Agent(ABC):
         self.output_config: dict | None = kwargs.get('output_config', None)
         self.space_id: int | None = None
         self.thread_follow_up: int | None = None
+        self.replay_actions: deque['Action'] | None = None
+        self.rerun_section: bool = kwargs.get('rerun_section', False)
 
     @property
     def complete(self) -> bool:
@@ -72,9 +75,12 @@ class Agent(ABC):
         return self._complete
 
     @abstractmethod
-    def step(self, state: 'State') -> Optional['Action']:
+    def step(self, state: 'State') -> Union[Optional['Action'], list['Action']]:
         """Starts the execution of the assigned instruction. This method should
         be implemented by subclasses to define the specific execution logic.
+
+        Returns:
+            Union[Optional[Action], list[Action]]: Single action or list of actions for concurrent execution
         """
         pass
 
@@ -234,3 +240,9 @@ class Agent(ABC):
 
     def set_thread_follow_up(self, thread_follow_up: int) -> None:
         self.thread_follow_up = thread_follow_up
+
+    def set_replay_actions(self, replay_actions: list['Action']) -> None:
+        self.replay_actions = deque(replay_actions)
+
+    def set_rerun_section(self, rerun_section: bool) -> None:
+        self.rerun_section = rerun_section

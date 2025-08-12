@@ -28,6 +28,7 @@ class E2BRuntime(Runtime):
         plugins: list[PluginRequirement] | None = None,
         sandbox: E2BSandbox | None = None,
         status_callback: Callable | None = None,
+        callback_max_workers: int = 1,
     ):
         super().__init__(
             config,
@@ -35,6 +36,7 @@ class E2BRuntime(Runtime):
             sid,
             plugins,
             status_callback=status_callback,
+            callback_max_workers=callback_max_workers,
         )
         if sandbox is None:
             self.sandbox = E2BSandbox()

@@ -187,6 +187,21 @@ class ConversationMemory:
             )
         ]
 
+    def process_initial_rerun_section_message(
+        self, with_caching: bool = False, **kwargs
+    ) -> list[Message]:
+        return [
+            Message(
+                role='system',
+                content=[
+                    TextContent(
+                        text=self.prompt_manager.get_rerun_section_message(**kwargs),
+                        cache_prompt=with_caching,
+                    )
+                ],
+            )
+        ]
+
     def process_initial_messages(
         self,
         with_caching: bool = False,

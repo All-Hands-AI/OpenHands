@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import uuid
@@ -33,7 +34,7 @@ from openhands.server.data_models.conversation_info import ConversationInfo
 from openhands.server.data_models.conversation_info_result_set import (
     ConversationInfoResultSet,
 )
-from openhands.server.modules import conversation_module
+from openhands.server.modules import conversation_module, space_section_module
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.shared import (
     ConversationStoreImpl,
@@ -50,6 +51,7 @@ from openhands.server.thesis_auth import (
     space_get_config_section,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
+from openhands.shared import get_hash
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.utils.async_utils import wait_all
@@ -272,6 +274,11 @@ async def new_conversation(request: Request, data: InitSessionRequest):
         knowledge_base = None
         raw_followup_conversation_id = None
         if space_section_id:
+            if space_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail='Space ID is required to create a new conversation',
+                )
             section_config = await space_get_config_section(space_section_id)
             if section_config:
                 # if initial_user_msg is None:
@@ -286,16 +293,34 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                         'prompt': section_config['chartPrompt'],
                         'output': section_config['outputConfig'],
                     }
-
-        # if space_id or thread_follow_up:
-        #     knowledge_base = await search_knowledge(
-        #         initial_user_msg, space_id, thread_follow_up, user_id
-        # )
-        # if knowledge and knowledge['data']['summary']:
-        #     initial_user_msg = (
-        #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
-        #         f"Question:\n{initial_user_msg}"
-        #     )
+                existed_config = await space_section_module._get_space_section_config(
+                    space_id, space_section_id
+                )
+                current_hash = get_hash(json.dumps(section_config))
+                logger.debug(f'current_hash: {current_hash}')
+                if existed_config and (existed_config['hash_config'] != current_hash):
+                    logger.debug(
+                        f'Remove the space section actions: {space_section_id}'
+                    )
+                    await space_section_module._delete_space_section_actions(
+                        space_id, space_section_id
+                    )
+                if not existed_config or (
+                    existed_config['hash_config'] != current_hash
+                ):
+                    logger.debug(f'Upsert the space section config: {space_section_id}')
+                    await space_section_module._upsert_space_section_config(
+                        space_id, space_section_id, current_hash
+                    )
+                    # if space_id or thread_follow_up:
+                    #     knowledge_base = await search_knowledge(
+                    #         initial_user_msg, space_id, thread_follow_up, user_id
+                    # )
+                    # if knowledge and knowledge['data']['summary']:
+                    #     initial_user_msg = (
+                    #         f"Reference information:\n{knowledge['data']['summary']}\n\n"
+                    #         f"Question:\n{initial_user_msg}"
+                    #     )
         if thread_follow_up:
             threadData = await get_thread_by_id(thread_follow_up)
             if threadData:

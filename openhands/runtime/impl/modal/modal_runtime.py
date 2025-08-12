@@ -55,6 +55,7 @@ class ModalRuntime(ActionExecutionClient):
         headless_mode: bool = True,
         a2a_manager: A2AManager | None = None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ):
         assert config.modal_api_token_id, 'Modal API token id is required'
         assert config.modal_api_token_secret, 'Modal API token secret is required'
@@ -105,6 +106,7 @@ class ModalRuntime(ActionExecutionClient):
             headless_mode,
             a2a_manager=a2a_manager,
             mnemonic=mnemonic,
+            callback_max_workers=callback_max_workers,
         )
 
     async def connect(self):

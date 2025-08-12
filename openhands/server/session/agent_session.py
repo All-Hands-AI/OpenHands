@@ -104,6 +104,7 @@ class AgentSession:
         replay_json: str | None = None,
         mnemonic: str | None = None,
         research_mode: str | None = None,
+        runtime_max_workers: int = 1,
     ):
         """Starts the Agent session
         Parameters:
@@ -144,6 +145,7 @@ class AgentSession:
                     selected_repository=selected_repository,
                     selected_branch=selected_branch,
                     mnemonic=mnemonic,
+                    callback_max_workers=runtime_max_workers,
                 )
             end_time = time.time()
             total_time = end_time - start_time
@@ -296,6 +298,7 @@ class AgentSession:
         selected_repository: Repository | None = None,
         selected_branch: str | None = None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ) -> bool:
         """Creates a runtime instance
 
@@ -326,6 +329,7 @@ class AgentSession:
                 git_provider_tokens=git_provider_tokens,
                 user_id=self.user_id,
                 a2a_manager=agent.a2a_manager,
+                callback_max_workers=callback_max_workers,
             )
         else:
             provider_handler = ProviderHandler(
@@ -346,6 +350,7 @@ class AgentSession:
                 a2a_manager=agent.a2a_manager,
                 env_vars=env_vars,
                 mnemonic=mnemonic,
+                callback_max_workers=callback_max_workers,
             )
             end_time = time.time()
             total_time = end_time - start_time

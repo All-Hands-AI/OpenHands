@@ -52,6 +52,7 @@ class RemoteRuntime(ActionExecutionClient):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         a2a_manager=None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ):
         super().__init__(
             config,
@@ -66,6 +67,7 @@ class RemoteRuntime(ActionExecutionClient):
             git_provider_tokens,
             a2a_manager=a2a_manager,
             mnemonic=mnemonic,
+            callback_max_workers=callback_max_workers,
         )
         if self.config.sandbox.api_key is None:
             raise ValueError(

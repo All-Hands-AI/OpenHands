@@ -128,12 +128,16 @@ class Runtime(FileEditRuntimeMixin):
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         a2a_manager: A2AManager | None = None,
         mnemonic: str | None = None,
+        callback_max_workers: int = 1,
     ):
         self.sid = sid
         self.event_stream = event_stream
         self.mnemonic = mnemonic
         self.event_stream.subscribe(
-            EventStreamSubscriber.RUNTIME, self.on_event, self.sid
+            EventStreamSubscriber.RUNTIME,
+            self.on_event,
+            self.sid,
+            callback_max_workers=callback_max_workers,
         )
         self.plugins = (
             copy.deepcopy(plugins) if plugins is not None and len(plugins) > 0 else []
