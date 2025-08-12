@@ -302,7 +302,6 @@ def update_progress(
     output_fp.flush()
 
 
-
 def assert_and_raise(condition: bool, msg: str):
     """Raise an EvalException if the condition is not met.
 
