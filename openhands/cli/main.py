@@ -138,6 +138,9 @@ async def run_session(
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
+    smart_confirm_mode = (
+        False  # Flag to enable smart confirm mode (only ask for HIGH risk)
+    )
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -197,7 +200,7 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents, is_paused, always_confirm_mode
+        nonlocal reload_microagents, is_paused, always_confirm_mode, smart_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -236,8 +239,21 @@ async def run_session(
                     )
                     return
 
+                # Check if smart confirm mode is enabled and action is low/medium risk
+                if smart_confirm_mode:
+                    pending_action = controller._pending_action
+                    if pending_action and hasattr(pending_action, 'safety_risk'):
+                        safety_risk = getattr(pending_action, 'safety_risk')
+                        if safety_risk in ['LOW', 'MEDIUM']:
+                            # Auto-confirm for low and medium risk actions
+                            event_stream.add_event(
+                                ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                                EventSource.USER,
+                            )
+                            return
+
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status in ('yes', 'always'):
+                if confirmation_status in ('yes', 'always', 'smart'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -255,9 +271,11 @@ async def run_session(
                         )
                     )
 
-                # Set the always_confirm_mode flag if the user wants to always confirm
+                # Set the confirmation mode flags based on user choice
                 if confirmation_status == 'always':
                     always_confirm_mode = True
+                elif confirmation_status == 'smart':
+                    smart_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
                 is_paused.clear()  # Revert the event state before prompting for user input
