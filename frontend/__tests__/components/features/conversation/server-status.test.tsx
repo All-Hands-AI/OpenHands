@@ -63,38 +63,24 @@ describe("ServerStatus", () => {
     vi.clearAllMocks();
   });
 
-  it("should render server status with running state", () => {
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
+  it("should render server status with different conversation statuses", () => {
+    // Test RUNNING status
+    const { rerender } = renderWithProviders(
+      <ServerStatus conversationStatus="RUNNING" />,
+    );
+    expect(screen.getByText("Running")).toBeInTheDocument();
 
-    const statusText = screen.getByText("Running");
-    expect(statusText).toBeInTheDocument();
-  });
+    // Test STOPPED status
+    rerender(<ServerStatus conversationStatus="STOPPED" />);
+    expect(screen.getByText("Server Stopped")).toBeInTheDocument();
 
-  it("should render server status with stopped state", () => {
-    renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
+    // Test STARTING status (shows "Running" due to agent state being RUNNING)
+    rerender(<ServerStatus conversationStatus="STARTING" />);
+    expect(screen.getByText("Running")).toBeInTheDocument();
 
-    const statusText = screen.getByText("Server Stopped");
-    expect(statusText).toBeInTheDocument();
-  });
-
-  it("should render server status with error state", () => {
-    // For this test, we'll need to mock the agent state differently
-    // Since we can't easily mock useSelector dynamically, we'll test the component
-    // with the default RUNNING state and verify the error handling logic
-    renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
-
-    // The component should render with the default RUNNING state
-    const statusText = screen.getByText("Running");
-    expect(statusText).toBeInTheDocument();
-  });
-
-  it("should render server status with starting state", () => {
-    // For this test, we'll test the component with STARTING conversation status
-    renderWithProviders(<ServerStatus conversationStatus="STARTING" />);
-
-    // The component should render with the default RUNNING state from agent
-    const statusText = screen.getByText("Running");
-    expect(statusText).toBeInTheDocument();
+    // Test null status (shows "Running" due to agent state being RUNNING)
+    rerender(<ServerStatus conversationStatus={null} />);
+    expect(screen.getByText("Running")).toBeInTheDocument();
   });
 
   it("should show context menu when clicked with RUNNING status", async () => {
@@ -217,13 +203,6 @@ describe("ServerStatus", () => {
 
     const container = screen.getByText("Running").closest("div")?.parentElement;
     expect(container).toHaveClass("custom-class");
-  });
-
-  it("should handle null conversation status", () => {
-    renderWithProviders(<ServerStatus conversationStatus={null} />);
-
-    const statusText = screen.getByText("Running");
-    expect(statusText).toBeInTheDocument();
   });
 });
 

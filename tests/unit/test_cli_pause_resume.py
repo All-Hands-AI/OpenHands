@@ -248,6 +248,7 @@ class TestCliCommandsPauseResume:
         config = MagicMock()
         current_dir = '/test/dir'
         settings_store = MagicMock()
+        agent_state = AgentState.PAUSED
 
         # Mock return value
         mock_handle_resume.return_value = (False, False)
@@ -266,10 +267,11 @@ class TestCliCommandsPauseResume:
             config,
             current_dir,
             settings_store,
+            agent_state,
         )
 
         # Check that handle_resume_command was called with correct args
-        mock_handle_resume.assert_called_once_with(event_stream)
+        mock_handle_resume.assert_called_once_with(event_stream, agent_state)
 
         # Check the return values
         assert close_repl is False

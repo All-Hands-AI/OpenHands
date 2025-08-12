@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
 import ArrowUpIcon from "#/icons/u-arrow-up.svg?react";
-import { cn } from "#/utils/utils";
+import { cn, getGitPushPrompt } from "#/utils/utils";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { I18nKey } from "#/i18n/declaration";
 import { Provider } from "#/types/settings";
@@ -24,21 +24,11 @@ export function GitControlBarPushButton({
   const { providers } = useUserProviders();
 
   const providersAreSet = providers.length > 0;
-  const isGitLab = currentGitProvider === "gitlab";
-  const isBitbucket = currentGitProvider === "bitbucket";
-
-  const getProviderName = () => {
-    if (isGitLab) return "GitLab";
-    if (isBitbucket) return "Bitbucket";
-    return "GitHub";
-  };
-
   const isButtonEnabled = isEnabled && providersAreSet && hasRepository;
 
   const handlePushClick = () => {
     posthog.capture("push_button_clicked");
-    const pushPrompt = `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a pull request. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`;
-    onSuggestionsClick(pushPrompt);
+    onSuggestionsClick(getGitPushPrompt(currentGitProvider));
   };
 
   return (

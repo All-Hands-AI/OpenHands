@@ -19,14 +19,22 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 # Mock classes for condensers
 class MockLLMSummarizingCondenserConfig:
-    def __init__(self, llm_config, type):
+    def __init__(self, llm_config, type, keep_first=4, max_size=120):
         self.llm_config = llm_config
         self.type = type
+        self.keep_first = keep_first
+        self.max_size = max_size
 
 
-class MockNoOpCondenserConfig:
+class MockConversationWindowCondenserConfig:
     def __init__(self, type):
         self.type = type
+
+
+class MockCondenserPipelineConfig:
+    def __init__(self, type, condensers):
+        self.type = type
+        self.condensers = condensers
 
 
 class TestDisplaySettings:
@@ -467,7 +475,13 @@ class TestModifyLLMSettingsAdvanced:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch(
+        'openhands.cli.settings.ConversationWindowCondenserConfig',
+        MockConversationWindowCondenserConfig,
+    )
+    @patch(
+        'openhands.cli.settings.CondenserPipelineConfig', MockCondenserPipelineConfig
+    )
     async def test_modify_llm_settings_advanced_success(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):
@@ -521,7 +535,10 @@ class TestModifyLLMSettingsAdvanced:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch(
+        'openhands.cli.settings.ConversationWindowCondenserConfig',
+        MockConversationWindowCondenserConfig,
+    )
     async def test_modify_llm_settings_advanced_user_cancels(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):
@@ -548,7 +565,10 @@ class TestModifyLLMSettingsAdvanced:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch(
+        'openhands.cli.settings.ConversationWindowCondenserConfig',
+        MockConversationWindowCondenserConfig,
+    )
     async def test_modify_llm_settings_advanced_invalid_agent(
         self,
         mock_print,
@@ -599,7 +619,10 @@ class TestModifyLLMSettingsAdvanced:
         'openhands.cli.settings.LLMSummarizingCondenserConfig',
         MockLLMSummarizingCondenserConfig,
     )
-    @patch('openhands.cli.settings.NoOpCondenserConfig', MockNoOpCondenserConfig)
+    @patch(
+        'openhands.cli.settings.ConversationWindowCondenserConfig',
+        MockConversationWindowCondenserConfig,
+    )
     async def test_modify_llm_settings_advanced_user_rejects_save(
         self, mock_confirm, mock_session, mock_list_agents, app_config, settings_store
     ):

@@ -47,7 +47,7 @@ describe("Content", () => {
       const apiKey = screen.getByTestId("llm-api-key-input");
 
       await waitFor(() => {
-        expect(provider).toHaveValue("Anthropic");
+        expect(provider).toHaveValue("OpenHands");
         expect(model).toHaveValue("claude-sonnet-4-20250514");
 
         expect(apiKey).toHaveValue("");
@@ -135,7 +135,7 @@ describe("Content", () => {
       );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
-      expect(model).toHaveValue("anthropic/claude-sonnet-4-20250514");
+      expect(model).toHaveValue("openhands/claude-sonnet-4-20250514");
       expect(baseUrl).toHaveValue("");
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
@@ -537,7 +537,7 @@ describe("Form submission", () => {
 
     // select provider
     await userEvent.click(provider);
-    const providerOption = screen.getByText("Anthropic");
+    const providerOption = screen.getByText("OpenHands");
     await userEvent.click(providerOption);
 
     // select model
@@ -550,7 +550,7 @@ describe("Form submission", () => {
 
     expect(saveSettingsSpy).toHaveBeenCalledWith(
       expect.objectContaining({
-        llm_model: "anthropic/claude-sonnet-4-20250514",
+        llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
         confirmation_mode: false,
       }),

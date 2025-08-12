@@ -1,4 +1,4 @@
-import { FaBitbucket, FaGithub, FaGitlab } from "react-icons/fa6";
+import { FaBitbucket, FaGithub, FaGitlab, FaUserShield } from "react-icons/fa6";
 import { FaCodeBranch } from "react-icons/fa";
 import { IconType } from "react-icons/lib";
 import { RepositorySelection } from "#/api/open-hands.types";
@@ -12,6 +12,7 @@ const providerIcon: Record<Provider, IconType> = {
   bitbucket: FaBitbucket,
   github: FaGithub,
   gitlab: FaGitlab,
+  enterprise_sso: FaUserShield,
 };
 
 export function ConversationRepoLink({
