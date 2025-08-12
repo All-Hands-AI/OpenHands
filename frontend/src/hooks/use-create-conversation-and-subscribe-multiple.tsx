@@ -119,7 +119,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
 
       if (!query.data || !conversationData) return;
 
-      const { status, url } = query.data;
+      const { status, url, session_api_key } = query.data;
 
       let { baseUrl } = conversationData;
       if (url && !url.startsWith("/")) {
@@ -129,8 +129,8 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       if (status === "RUNNING") {
         // Conversation is ready - subscribe to WebSocket
         subscribeToConversation({
-          conversationId: conversationData.conversationId,
-          sessionApiKey: conversationData.sessionApiKey,
+          conversationId: conversationId,
+          sessionApiKey: session_api_key,
           providersSet: providers,
           baseUrl,
           onEvent: conversationData.onEventCallback,
