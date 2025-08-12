@@ -737,16 +737,106 @@ def test_openhands_full_workflow(page, openhands_app):
     page.screenshot(path='test-results/09_agent_ready.png')
     print('Screenshot saved: 09_agent_ready.png')
 
-    # Step 2i: Enter the question and submit
+    # Step 2i: Wait for the agent to be ready
+    print('Waiting for agent to be ready (this may take 1-2 minutes)...')
+
+    # Wait for the status to change from "Connecting..." to "Agent is awaiting user input"
+    # The status is displayed in the status bar with a specific CSS class
+    status_selector = (
+        'div.flex.items-center.bg-base-secondary span.text-sm.text-stone-400'
+    )
+
+    # Wait for up to 3 minutes (180000ms) for the agent to be ready
+    max_wait_time = 180000  # 3 minutes in milliseconds
+    status_element = page.locator(status_selector)
+
+    # First, make sure the status element is visible
+    expect(status_element).to_be_visible(timeout=30000)
+
+    # Then wait for the status to change to "Agent is awaiting user input"
+    print(
+        'Status element found, waiting for status to change to "Agent is awaiting user input"...'
+    )
+
+    # Define a function to check if the agent is ready
+    def check_agent_ready():
+        status_text = status_element.text_content()
+        print(f'Current status: {status_text}')
+        return 'awaiting user input' in status_text.lower() if status_text else False
+
+    # Poll until the agent is ready or timeout is reached
+    start_time = page.evaluate('() => Date.now()')
+    while True:
+        if check_agent_ready():
+            print('Agent is ready!')
+            break
+
+        # Check if we've exceeded the maximum wait time
+        current_time = page.evaluate('() => Date.now()')
+        elapsed_time = current_time - start_time
+        if elapsed_time > max_wait_time:
+            # Take a screenshot for debugging
+            page.screenshot(path='test-results/agent_not_ready_timeout.png')
+            raise Exception(
+                f'Timed out waiting for agent to be ready after {max_wait_time / 1000} seconds'
+            )
+
+        # Wait a bit before checking again
+        page.wait_for_timeout(2000)  # Wait 2 seconds between checks
+
+    # Take a screenshot showing the ready state
+    page.screenshot(path='test-results/10_agent_ready.png')
+    print('Screenshot saved: 10_agent_ready.png')
+
+    # Now proceed with entering the question
     print('Step 2i: Entering question about README.md line count...')
 
     question = 'How many lines are there in the main README.md file?'
 
-    # Find the chat input and enter the question
-    chat_input = page.locator(
-        'textarea[placeholder*="message"], textarea[placeholder*="Message"]'
-    ).first
-    expect(chat_input).to_be_visible(timeout=10000)
+    # Find the chat input using multiple possible selectors
+    # The chat input might be different depending on the UI state
+    chat_input_selectors = [
+        'textarea[placeholder*="message"]',
+        'textarea[placeholder*="Message"]',
+        '[data-testid="message-input"]',
+        'textarea:not([disabled])',
+        'div[contenteditable="true"]',
+        '.chat-input textarea',
+        'form textarea',
+        'textarea',
+    ]
+
+    # Try each selector until we find a visible input
+    chat_input = None
+    for selector in chat_input_selectors:
+        try:
+            input_element = page.locator(selector).first
+            if input_element.is_visible(timeout=5000):
+                print(f'Found chat input element with selector: {selector}')
+                chat_input = input_element
+                break
+        except Exception as e:
+            print(f'Selector {selector} not found: {e}')
+            continue
+
+    if not chat_input:
+        # Take a screenshot for debugging
+        page.screenshot(path='test-results/chat_input_not_found.png')
+        print('Screenshot saved: chat_input_not_found.png')
+
+        # Try to find any visible elements to help debug
+        page.screenshot(path='test-results/debug_visible_elements.png')
+        print('Debug screenshot saved: debug_visible_elements.png')
+
+        # Check if there are any form elements
+        form_elements = page.locator('form').all()
+        print(f'Found {len(form_elements)} form elements')
+
+        # Check if there are any textarea elements
+        textarea_elements = page.locator('textarea').all()
+        print(f'Found {len(textarea_elements)} textarea elements')
+
+        raise Exception('Chat input field not found after trying multiple selectors')
 
     print(f'Entering question: {question}')
     chat_input.fill(question)
@@ -866,9 +956,9 @@ def test_openhands_full_workflow(page, openhands_app):
         print(f'Response with line count {readme_lines} not found')
         print('Checking all visible text on page...')
 
-        # Get all text content from the page
-        page_text = page.text_content()
-        if str(readme_lines) in page_text:
+        # Get all text content from the page - we need to use a selector
+        body_text = page.locator('body').text_content()
+        if str(readme_lines) in body_text:
             print(f'Line count {readme_lines} found somewhere on the page')
             response_found = True
         else:
@@ -877,7 +967,7 @@ def test_openhands_full_workflow(page, openhands_app):
             # Look for any number that might be the line count
             import re
 
-            numbers = re.findall(r'\b\d+\b', page_text)
+            numbers = re.findall(r'\b\d+\b', body_text)
             print(f'Numbers found on page: {numbers[:20]}')  # Show first 20 numbers
 
     # Final verification
