@@ -87,21 +87,21 @@ jobs:
           # Verify Playwright browsers are installed
           echo "Verifying Playwright browsers installation..."
           BROWSER_CHECK=$(poetry run python -c "
-import sys
-try:
-    from playwright.sync_api import sync_playwright
-    with sync_playwright() as p:
-        if p.chromium.executable_path:
-            print('chromium_found')
-            sys.exit(0)
-        else:
-            print('chromium_not_found')
-            sys.exit(1)
-except Exception as e:
-    print(f'error: {e}')
-    sys.exit(1)
-" 2>/dev/null || echo "error")
-          
+          import sys
+          try:
+              from playwright.sync_api import sync_playwright
+              with sync_playwright() as p:
+                  if p.chromium.executable_path:
+                      print('chromium_found')
+                      sys.exit(0)
+                  else:
+                      print('chromium_not_found')
+                      sys.exit(1)
+          except Exception as e:
+              print(f'error: {e}')
+              sys.exit(1)
+          " 2>/dev/null || echo "error")
+
           if [ "$BROWSER_CHECK" != "chromium_found" ]; then
             echo "ERROR: Chromium browser not found or not working after running 'make build'"
             echo "This indicates that the Playwright installation in the Makefile failed."
@@ -113,19 +113,19 @@ except Exception as e:
           # Start the application using make run with custom parameters
           echo "Starting OpenHands using make run..."
           FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
-          
+
           # Store the PID of the make run process
           MAKE_PID=$!
           echo "OpenHands started with PID: $MAKE_PID"
-          
+
           # Wait for the application to start
           echo "Waiting for OpenHands to start..."
           max_attempts=15
           attempt=1
-          
+
           while [ $attempt -le $max_attempts ]; do
             echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
-            
+
             # Check if the process is still running
             if ! ps -p $MAKE_PID > /dev/null; then
               echo "ERROR: OpenHands process has terminated unexpectedly"
@@ -133,7 +133,7 @@ except Exception as e:
               tail -n 50 /tmp/openhands-e2e-test.log
               exit 1
             fi
-            
+
             # Check if frontend port is open
             if nc -z localhost 12000; then
               # Verify we can get HTML content
@@ -146,16 +146,16 @@ except Exception as e:
             else
               echo "Frontend port 12000 is not open yet"
             fi
-            
+
             # Show log output on each attempt
             echo "Recent log output:"
             tail -n 20 /tmp/openhands-e2e-test.log
-            
+
             # Wait before next attempt
             echo "Waiting 10 seconds before next check..."
             sleep 10
             attempt=$((attempt + 1))
-            
+
             # Exit if we've reached the maximum number of attempts
             if [ $attempt -gt $max_attempts ]; then
               echo "ERROR: OpenHands failed to start after $max_attempts attempts"
@@ -164,7 +164,7 @@ except Exception as e:
               exit 1
             fi
           done
-          
+
           # Final verification that the app is running
           if ! nc -z localhost 12000 || ! curl -s http://localhost:12000 | grep -q "<html"; then
             echo "ERROR: OpenHands is not running properly on port 12000"
@@ -172,7 +172,7 @@ except Exception as e:
             tail -n 50 /tmp/openhands-e2e-test.log
             exit 1
           fi
-          
+
           # Print success message
           echo "OpenHands is running successfully on port 12000"
 
@@ -180,7 +180,7 @@ except Exception as e:
         run: |
           # Run the Playwright tests
           cd tests/e2e
-          
+
           # Check if the application is running
           if ! nc -z localhost 12000; then
             echo "ERROR: OpenHands is not running on port 12000"
@@ -188,7 +188,7 @@ except Exception as e:
             tail -n 50 /tmp/openhands-e2e-test.log
             exit 1
           fi
-          
+
           # Run the tests with detailed output
           poetry run python -m pytest test_workflow.py -v --no-header --capture=no
 
