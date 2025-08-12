@@ -466,7 +466,9 @@ class ActionExecutor:
     async def read(self, action: FileReadAction) -> Observation:
         assert self.bash_session is not None
 
-        is_image_file = action.path.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))
+        is_image_file = action.path.lower().endswith(
+            ('.png', '.jpg', '.jpeg', '.bmp', '.gif')
+        )
 
         if action.impl_source == FileReadSource.OH_ACI and not is_image_file:
             result_str, _ = _execute_file_editor(
