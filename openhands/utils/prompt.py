@@ -60,10 +60,9 @@ class PromptManager:
             raise ValueError('Prompt directory is not set')
 
         self.prompt_dir: str = prompt_dir
+        self.system_template_filename: str = system_prompt_filename
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
-        self.system_template: Template = self._load_template(
-            system_prompt_filename, is_system_prompt=True
-        )
+        self.system_template: Template = self._load_template(system_prompt_filename)
         self.user_template: Template = self._load_template('user_prompt.j2')
         self.additional_info_template: Template = self._load_template(
             'additional_info.j2'
@@ -72,15 +71,12 @@ class PromptManager:
             'microagent_info.j2'
         )
 
-    def _load_template(
-        self, template_name: str, is_system_prompt: bool = False
-    ) -> Template:
+    def _load_template(self, template_name: str) -> Template:
         """
         Load a template from the prompt directory.
 
         Args:
             template_name: Full filename of the template to load, including the .j2 extension.
-            is_system_prompt: If True, provides a more specific error message for system prompt files.
 
         Returns:
             The loaded Jinja2 template.
@@ -93,8 +89,13 @@ class PromptManager:
         except Exception:
             template_path = os.path.join(self.prompt_dir, template_name)
 
+            # Check if this is a system prompt file (either by name or by context)
+            is_system_prompt = (
+                'system_prompt' in template_name
+                or template_name == self.system_template_filename
+            )
+
             if is_system_prompt:
-                # Provide a more specific error message for system prompt files
                 raise FileNotFoundError(
                     f'System prompt file "{template_name}" not found at {template_path}. '
                     f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
