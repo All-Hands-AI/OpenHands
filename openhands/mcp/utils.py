@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
+    from openhands.memory.memory import Memory
 
 
 from mcp import McpError
@@ -20,7 +21,6 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.mcp.error_collector import mcp_error_collector
-from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
