@@ -93,13 +93,66 @@ describe("MCPServerList", () => {
     expect(editButton).toBeInTheDocument();
     expect(deleteButton).toBeInTheDocument();
 
-    // Check that the URL is properly truncated with title attribute for accessibility
+    // Check that the URL is properly displayed with title attribute for accessibility
     const detailsCells = screen.getAllByTitle(longUrlServer.url);
     expect(detailsCells).toHaveLength(2); // Name and Details columns both have the URL
 
-    // Check that both cells have truncate class
-    detailsCells.forEach((cell) => {
-      expect(cell).toHaveClass("truncate");
-    });
+    // Check that name cell has truncate class and details cell has break-all class
+    const [nameCell, detailsCell] = detailsCells;
+    expect(nameCell).toHaveClass("truncate");
+    expect(detailsCell).toHaveClass("break-all");
+  });
+
+  it("should display command and arguments for STDIO servers", () => {
+    const stdioServer = {
+      id: "stdio-1",
+      type: "stdio" as const,
+      name: "test-server",
+      command: "python",
+      args: ["-m", "test_module", "--verbose"],
+    };
+
+    const mockOnEdit = vi.fn();
+    const mockOnDelete = vi.fn();
+
+    render(
+      <MCPServerList
+        servers={[stdioServer]}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+      />,
+    );
+
+    // Check that the server details show command + arguments
+    const expectedDetails = "python -m test_module --verbose";
+    expect(screen.getByTitle(expectedDetails)).toBeInTheDocument();
+    expect(screen.getByText(expectedDetails)).toBeInTheDocument();
+  });
+
+  it("should fallback to server name for STDIO servers without command", () => {
+    const stdioServer = {
+      id: "stdio-2",
+      type: "stdio" as const,
+      name: "fallback-server",
+    };
+
+    const mockOnEdit = vi.fn();
+    const mockOnDelete = vi.fn();
+
+    render(
+      <MCPServerList
+        servers={[stdioServer]}
+        onEdit={mockOnEdit}
+        onDelete={mockOnDelete}
+      />,
+    );
+
+    // Check that the server details show the server name as fallback
+    // Both name and details columns will have the same value, so we expect 2 elements
+    const fallbackElements = screen.getAllByTitle("fallback-server");
+    expect(fallbackElements).toHaveLength(2);
+
+    const fallbackTextElements = screen.getAllByText("fallback-server");
+    expect(fallbackTextElements).toHaveLength(2);
   });
 });
