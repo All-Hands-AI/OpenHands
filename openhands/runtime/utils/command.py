@@ -26,9 +26,9 @@ def get_action_execution_server_startup_command(
     python_executable: str = 'python',
 ) -> list[str]:
     sandbox_config = app_config.sandbox
-    logger.info(f'app_config {vars(app_config)}')
-    logger.info(f'sandbox_config {vars(sandbox_config)}')
-    logger.info(f'override_user_id {override_user_id}')
+    logger.debug(f'app_config {vars(app_config)}')
+    logger.debug(f'sandbox_config {vars(sandbox_config)}')
+    logger.debug(f'override_user_id {override_user_id}')
 
     # Plugin args
     plugin_args = []
@@ -70,8 +70,8 @@ def get_action_execution_server_startup_command(
 
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')
-    logger.info(f'get_action_execution_server_startup_command: {base_cmd}')
-    logger.info(
+    logger.debug(f'get_action_execution_server_startup_command: {base_cmd}')
+    logger.debug(
         'get_action_execution_server_startup_command stack:\n%s',
         ''.join(traceback.format_stack()),
     )

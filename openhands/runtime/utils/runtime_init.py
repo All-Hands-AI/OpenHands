@@ -52,7 +52,7 @@ def init_user_and_working_directory(
     # Skip root since it is already created
     if username != 'root':
         # Check if the username already exists
-        logger.info(f'Attempting to create user `{username}` with UID {user_id}.')
+        logger.debug(f'Attempting to create user `{username}` with UID {user_id}.')
         existing_user_id = -1
         try:
             result = subprocess.run(
@@ -74,7 +74,7 @@ def init_user_and_working_directory(
         except subprocess.CalledProcessError as e:
             # Returncode 1 indicates, that the user does not exist yet
             if e.returncode == 1:
-                logger.info(
+                logger.debug(
                     f'User `{username}` does not exist. Proceeding with user creation.'
                 )
             else:
