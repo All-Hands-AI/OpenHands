@@ -574,6 +574,11 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             bool: True if model is vision capable. Return False if model not supported by litellm.
         """
+        
+        # Allow manual override via environment variable
+        if os.getenv('OPENHANDS_FORCE_VISION', '').lower() in ('1', 'true', 'yes', 'on'):
+            return True
+            
         # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
         # but model_info will have the correct value for some reason.
         # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
