@@ -89,10 +89,6 @@ describe("Solvability Analysis Toggle", () => {
       const updatedToggle = screen.getByTestId(
         "enable-solvability-analysis-switch",
       );
-      console.log(
-        "Toggle checked state:",
-        (updatedToggle as HTMLInputElement).checked,
-      );
       expect(updatedToggle).toBeChecked();
     });
   });
