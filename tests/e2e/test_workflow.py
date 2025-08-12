@@ -388,46 +388,76 @@ def test_openhands_full_workflow(page, openhands_app):
     except:
         repo_selected = False
     
-    if not repo_selected:
-        # Look for the OpenHands repository in the dropdown options
-        print('Looking for OpenHands repository in dropdown options...')
-        openhands_option = page.locator('text=All-Hands-AI/OpenHands').first
-        if openhands_option.is_visible(timeout=5000):
-            print('Found All-Hands-AI/OpenHands in dropdown, clicking...')
-            openhands_option.click()
-        else:
-            # Try alternative selectors
-            alt_selectors = [
-                '[data-testid*="OpenHands"]',
-                'li:has-text("OpenHands")',
-                '[role="option"]:has-text("OpenHands")'
-            ]
-            found = False
-            for selector in alt_selectors:
-                try:
-                    element = page.locator(selector).first
-                    if element.is_visible(timeout=2000):
-                        print(f'Found OpenHands repo with selector: {selector}')
-                        element.click()
-                        found = True
-                        break
-                except:
-                    continue
-            
-            if not found:
-                page.screenshot(path='test-results/06_repo_not_found.png')
-                print('Could not find All-Hands-AI/OpenHands repository in dropdown options')
-                print('Continuing anyway - repository might be selected already')
+    # Even if the text is in the input, we need to click the dropdown option to complete selection
+    # Look for the OpenHands repository in the dropdown options
+    print('Looking for OpenHands repository in dropdown options to complete selection...')
+    
+    # Wait a bit more for the dropdown to populate
+    page.wait_for_timeout(1000)
+    
+    # Try to find and click the repository option
+    option_found = False
+    option_selectors = [
+        'text=All-Hands-AI/OpenHands',
+        '[role="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[role="option"]:has-text("OpenHands")',
+        'li:has-text("All-Hands-AI/OpenHands")',
+        'li:has-text("OpenHands")',
+        '[data-testid*="OpenHands"]'
+    ]
+    
+    for selector in option_selectors:
+        try:
+            option = page.locator(selector).first
+            if option.is_visible(timeout=3000):
+                print(f'Found repository option with selector: {selector}')
+                option.click()
+                option_found = True
+                page.wait_for_timeout(1000)  # Wait for selection to complete
+                break
+        except Exception as e:
+            print(f'Selector {selector} failed: {e}')
+            continue
+    
+    if not option_found:
+        print('Could not find repository option in dropdown')
+        # Try pressing Enter to select the current input
+        page.keyboard.press('Enter')
+        print('Pressed Enter to try to select current input')
+        page.wait_for_timeout(1000)
     
     page.wait_for_timeout(1000)
     page.screenshot(path='test-results/07_repo_selected.png')
     print('Screenshot saved: 07_repo_selected.png')
 
-    # Step 2d: Click Launch button
-    print('Step 2f: Looking for Launch button...')
+    # Step 2f: Click Launch button (repository-specific)
+    print('Step 2f: Looking for repository Launch button...')
     
-    launch_button = page.locator('button:has-text("Launch")')
+    # Use the specific repository launch button, not the "Launch from Scratch" button
+    launch_button = page.locator('[data-testid="repo-launch-button"]')
+    
+    # Wait for the button to be visible and enabled
+    print('Waiting for repository Launch button to be enabled...')
     expect(launch_button).to_be_visible(timeout=10000)
+    
+    # Wait for the button to be enabled (not disabled)
+    # The button should become enabled once repository selection is complete
+    launch_button.wait_for(state='attached', timeout=5000)
+    
+    # Check if button is enabled by waiting for it to not have disabled attribute
+    try:
+        page.wait_for_function(
+            'document.querySelector("[data-testid=\\"repo-launch-button\\"]") && !document.querySelector("[data-testid=\\"repo-launch-button\\"]").disabled',
+            timeout=10000
+        )
+        print('Repository Launch button is now enabled')
+    except Exception as e:
+        print(f'Launch button may still be disabled: {e}')
+        # Take a screenshot to debug
+        page.screenshot(path='test-results/07b_launch_button_debug.png')
+        print('Debug screenshot saved: 07b_launch_button_debug.png')
+    
+    # Verify the button is enabled before clicking
     expect(launch_button).to_be_enabled()
     print('Launch button found and enabled, clicking...')
     
