@@ -99,6 +99,7 @@ export function ConversationSubscriptionsProvider({
     (conversationId: string) => {
       // Get a local reference to the socket data to avoid race conditions
       const socketData = conversationSockets[conversationId];
+      console.log(socketData);
 
       if (socketData) {
         const { socket } = socketData;

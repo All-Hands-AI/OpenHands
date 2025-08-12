@@ -152,27 +152,28 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                   : statusEntry,
               ),
             );
-
-            unsubscribeFromConversation(microagentConversationId);
           }
+
+          unsubscribeFromConversation(microagentConversationId);
         } else {
           // For any other event, transition from WAITING to CREATING if still waiting
-          const currentStatus = microagentStatuses.find(
-            (entry) => entry.conversationId === microagentConversationId,
-          )?.status;
+          setMicroagentStatuses((prev) => {
+            const currentStatus = prev.find(
+              (entry) => entry.conversationId === microagentConversationId,
+            )?.status;
 
-          if (currentStatus === MicroagentStatus.WAITING) {
-            setMicroagentStatuses((prev) =>
-              prev.map((statusEntry) =>
+            if (currentStatus === MicroagentStatus.WAITING) {
+              return prev.map((statusEntry) =>
                 statusEntry.conversationId === microagentConversationId
                   ? { ...statusEntry, status: MicroagentStatus.CREATING }
                   : statusEntry,
-              ),
-            );
-          }
+              );
+            }
+            return prev; // No change needed
+          });
         }
       },
-      [setMicroagentStatuses, microagentStatuses],
+      [setMicroagentStatuses, unsubscribeFromConversation],
     );
 
     const handleLaunchMicroagent = (

@@ -3,6 +3,7 @@ import { useQueries, type Query } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { Spinner } from "@heroui/react";
 import { useTranslation } from "react-i18next";
+import { AxiosError } from "axios";
 import { useCreateConversation } from "./mutation/use-create-conversation";
 import { useUserProviders } from "./use-user-providers";
 import { useConversationSubscriptions } from "#/context/conversation-subscriptions-provider";
@@ -11,7 +12,6 @@ import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
 import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
 import CloseIcon from "#/icons/close.svg?react";
-import { AxiosError } from "axios";
 
 interface ConversationData {
   conversationId: string;
