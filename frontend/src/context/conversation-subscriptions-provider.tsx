@@ -95,11 +95,10 @@ export function ConversationSubscriptionsProvider({
     [],
   );
 
-  const unsubscribeFromConversation = useCallback(
-    (conversationId: string) => {
-      // Get a local reference to the socket data to avoid race conditions
-      const socketData = conversationSockets[conversationId];
-      console.log(socketData);
+  const unsubscribeFromConversation = useCallback((conversationId: string) => {
+    // Use functional update to access current socket data and perform cleanup
+    setConversationSockets((prev) => {
+      const socketData = prev[conversationId];
 
       if (socketData) {
         const { socket } = socketData;
@@ -113,24 +112,23 @@ export function ConversationSubscriptionsProvider({
           socket.disconnect();
         }
 
-        // Update state to remove the socket
-        setConversationSockets((prev) => {
-          const newSockets = { ...prev };
-          delete newSockets[conversationId];
-          return newSockets;
-        });
-
-        // Remove from active IDs
-        setActiveConversationIds((prev) =>
-          prev.filter((id) => id !== conversationId),
-        );
-
         // Clean up event handler reference
         delete eventHandlersRef.current[conversationId];
+
+        // Remove the socket from state
+        const newSockets = { ...prev };
+        delete newSockets[conversationId];
+        return newSockets;
       }
-    },
-    [conversationSockets],
-  );
+
+      return prev; // No change if socket not found
+    });
+
+    // Remove from active IDs
+    setActiveConversationIds((prev) =>
+      prev.filter((id) => id !== conversationId),
+    );
+  }, []);
 
   const subscribeToConversation = useCallback(
     (options: {
@@ -186,7 +184,6 @@ export function ConversationSubscriptionsProvider({
           isOpenHandsEvent(event) &&
           isAgentStateChangeObservation(event)
         ) {
-          console.log("Agent state change event:", event);
           if (event.extras.agent_state === AgentState.FINISHED) {
             renderConversationFinishedToast(conversationId);
             unsubscribeFromConversation(conversationId);

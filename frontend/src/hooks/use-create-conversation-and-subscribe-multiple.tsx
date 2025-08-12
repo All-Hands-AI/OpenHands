@@ -107,6 +107,10 @@ export const useCreateConversationAndSubscribeMultiple = () => {
     })),
   });
 
+  // Extract stable values from queries for dependency array
+  const queryStatuses = conversationQueries.map((query) => query.data?.status);
+  const queryDataExists = conversationQueries.map((query) => !!query.data);
+
   // Effect to handle subscription when conversations are ready
   React.useEffect(() => {
     conversationQueries.forEach((query, index) => {
@@ -137,11 +141,6 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         // Dismiss the starting toast
         toast.dismiss(`starting-${conversationId}`);
 
-        // Conversation failed to start
-        console.warn(
-          `Conversation ${conversationId} stopped before WebSocket connection could be established`,
-        );
-
         // Remove from created conversations (cleanup)
         setCreatedConversations((prev) => {
           const newCreated = { ...prev };
@@ -151,7 +150,9 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       }
     });
   }, [
-    conversationQueries,
+    queryStatuses,
+    queryDataExists,
+    conversationIdsToWatch,
     createdConversations,
     subscribeToConversation,
     providers,
