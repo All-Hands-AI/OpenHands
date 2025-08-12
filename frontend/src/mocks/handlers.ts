@@ -198,7 +198,11 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+      // Merge the submitted settings with the existing settings
+      MOCK_USER_PREFERENCES.settings = {
+        ...MOCK_USER_PREFERENCES.settings || MOCK_DEFAULT_USER_SETTINGS,
+        ...body
+      };
       return HttpResponse.json(null, { status: 200 });
     }
 
