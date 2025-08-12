@@ -65,6 +65,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 ENABLE_LLM_EDITOR = os.environ.get('ENABLE_LLM_EDITOR', 'false').lower() == 'true'
+INSTRUCTION_TEMPLATE_NAME = os.environ.get('INSTRUCTION_TEMPLATE_NAME')
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 # Global variable to track dataset type
@@ -108,7 +109,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     llm_model = metadata.llm_config.model
 
     # Determine the template file based on mode and LLM
-    if mode.startswith('swt'):
+    if INSTRUCTION_TEMPLATE_NAME:
+        template_name = INSTRUCTION_TEMPLATE_NAME
+    elif mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
         if 'gpt-4.1' in llm_model:
