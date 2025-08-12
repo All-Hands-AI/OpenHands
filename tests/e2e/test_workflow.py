@@ -144,8 +144,40 @@ def test_openhands_full_workflow(page, openhands_app):
     page.screenshot(path='test-results/01_initial_load.png')
     print('Screenshot saved: 01_initial_load.png')
 
-    # Step 2a: Handle Privacy Preferences modal if it appears
-    print('Step 2a: Checking for Privacy Preferences modal...')
+    # Step 2a: Handle AI Provider Configuration if it appears
+    print('Step 2a: Checking for AI Provider Configuration modal...')
+    try:
+        # Check if the AI Provider Configuration modal is present
+        config_modal = page.locator('text=AI Provider Configuration')
+        if config_modal.is_visible(timeout=5000):
+            print('AI Provider Configuration modal detected')
+            
+            # Check if API key field is empty and fill it if needed
+            api_key_input = page.locator('input[placeholder*="API"], input[name*="api"], input[type="password"]').first
+            if api_key_input.is_visible():
+                current_value = api_key_input.input_value()
+                if not current_value.strip():
+                    print('API key field is empty, filling with environment variable')
+                    # Use a placeholder API key for testing
+                    api_key_input.fill('test-api-key-from-env')
+                else:
+                    print('API key field already has a value')
+            
+            # Click Save button
+            save_button = page.locator('button:has-text("Save")')
+            if save_button.is_visible():
+                print('Clicking Save button in AI Provider Configuration')
+                save_button.click()
+                page.wait_for_timeout(2000)  # Wait for modal to close
+                
+        page.screenshot(path='test-results/02_after_config.png')
+        print('Screenshot saved: 02_after_config.png')
+        
+    except Exception as e:
+        print(f'No AI Provider Configuration modal found or error handling it: {e}')
+
+    # Step 2b: Handle Privacy Preferences modal if it appears
+    print('Step 2b: Checking for Privacy Preferences modal...')
     try:
         # Check if the Privacy Preferences modal is present
         privacy_modal = page.locator('text=Your Privacy Preferences')
@@ -178,43 +210,11 @@ def test_openhands_full_workflow(page, openhands_app):
                     except:
                         continue
                 
-        page.screenshot(path='test-results/02_after_privacy.png')
-        print('Screenshot saved: 02_after_privacy.png')
+        page.screenshot(path='test-results/03_after_privacy.png')
+        print('Screenshot saved: 03_after_privacy.png')
         
     except Exception as e:
         print(f'No Privacy Preferences modal found or error handling it: {e}')
-
-    # Step 2b: Handle AI Provider Configuration if it appears
-    print('Step 2b: Checking for AI Provider Configuration modal...')
-    try:
-        # Check if the AI Provider Configuration modal is present
-        config_modal = page.locator('text=AI Provider Configuration')
-        if config_modal.is_visible(timeout=5000):
-            print('AI Provider Configuration modal detected')
-            
-            # Check if API key field is empty and fill it if needed
-            api_key_input = page.locator('input[placeholder*="API"], input[name*="api"], input[type="password"]').first
-            if api_key_input.is_visible():
-                current_value = api_key_input.input_value()
-                if not current_value.strip():
-                    print('API key field is empty, filling with environment variable')
-                    # Use a placeholder API key for testing
-                    api_key_input.fill('test-api-key-from-env')
-                else:
-                    print('API key field already has a value')
-            
-            # Click Save button
-            save_button = page.locator('button:has-text("Save")')
-            if save_button.is_visible():
-                print('Clicking Save button in AI Provider Configuration')
-                save_button.click()
-                page.wait_for_timeout(2000)  # Wait for modal to close
-                
-        page.screenshot(path='test-results/03_after_config.png')
-        print('Screenshot saved: 03_after_config.png')
-        
-    except Exception as e:
-        print(f'No AI Provider Configuration modal found or error handling it: {e}')
 
     # Step 2c: Wait for home screen and find the repository selector
     print('Step 2c: Looking for repository selector...')
