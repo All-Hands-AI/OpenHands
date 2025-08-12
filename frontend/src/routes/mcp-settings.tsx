@@ -1,19 +1,16 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
+import { useDeleteMcpServer } from "#/hooks/mutation/use-delete-mcp-server";
+import { useAddMcpServer } from "#/hooks/mutation/use-add-mcp-server";
+import { useUpdateMcpServer } from "#/hooks/mutation/use-update-mcp-server";
 import { I18nKey } from "#/i18n/declaration";
 
 import { MCPServerList } from "#/components/features/settings/mcp-settings/mcp-server-list";
 import { MCPServerForm } from "#/components/features/settings/mcp-settings/mcp-server-form";
 import { ConfirmationModal } from "#/components/shared/modals/confirmation-modal";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import {
-  MCPConfig,
-  MCPSSEServer,
-  MCPStdioServer,
-  MCPSHTTPServer,
-} from "#/types/settings";
+import { MCPConfig } from "#/types/settings";
 
 type MCPServerType = "sse" | "stdio" | "shttp";
 
@@ -31,7 +28,9 @@ interface MCPServerConfig {
 function MCPSettingsScreen() {
   const { t } = useTranslation();
   const { data: settings, isLoading } = useSettings();
-  const { mutate: saveSettings } = useSaveSettings();
+  const { mutate: deleteMcpServer } = useDeleteMcpServer();
+  const { mutate: addMcpServer } = useAddMcpServer();
+  const { mutate: updateMcpServer } = useUpdateMcpServer();
 
   const [view, setView] = React.useState<"list" | "add" | "edit">("list");
   const [editingServer, setEditingServer] =
@@ -41,7 +40,6 @@ function MCPSettingsScreen() {
   const [serverToDelete, setServerToDelete] = React.useState<string | null>(
     null,
   );
-  const [isDirty, setIsDirty] = React.useState(false);
 
   const mcpConfig: MCPConfig = settings?.MCP_CONFIG || {
     sse_servers: [],
@@ -49,23 +47,15 @@ function MCPSettingsScreen() {
     shttp_servers: [],
   };
 
-  const [localMcpConfig, setMcpConfig] = React.useState<MCPConfig>(mcpConfig);
-
-  React.useEffect(() => {
-    if (settings?.MCP_CONFIG) {
-      setMcpConfig(settings.MCP_CONFIG);
-    }
-  }, [settings?.MCP_CONFIG]);
-
   // Convert servers to a unified format for display
   const allServers: MCPServerConfig[] = [
-    ...localMcpConfig.sse_servers.map((server, index) => ({
+    ...mcpConfig.sse_servers.map((server, index) => ({
       id: `sse-${index}`,
       type: "sse" as const,
       url: typeof server === "string" ? server : server.url,
       api_key: typeof server === "object" ? server.api_key : undefined,
     })),
-    ...localMcpConfig.stdio_servers.map((server, index) => ({
+    ...mcpConfig.stdio_servers.map((server, index) => ({
       id: `stdio-${index}`,
       type: "stdio" as const,
       name: server.name,
@@ -73,7 +63,7 @@ function MCPSettingsScreen() {
       args: server.args,
       env: server.env,
     })),
-    ...localMcpConfig.shttp_servers.map((server, index) => ({
+    ...mcpConfig.shttp_servers.map((server, index) => ({
       id: `shttp-${index}`,
       type: "shttp" as const,
       url: typeof server === "string" ? server : server.url,
@@ -82,99 +72,31 @@ function MCPSettingsScreen() {
   ];
 
   const handleAddServer = (serverConfig: MCPServerConfig) => {
-    const newConfig = { ...localMcpConfig };
-
-    if (serverConfig.type === "sse") {
-      const server: MCPSSEServer = {
-        url: serverConfig.url!,
-        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
-      };
-      newConfig.sse_servers.push(server);
-    } else if (serverConfig.type === "stdio") {
-      const server: MCPStdioServer = {
-        name: serverConfig.name!,
-        command: serverConfig.command!,
-        ...(serverConfig.args && { args: serverConfig.args }),
-        ...(serverConfig.env && { env: serverConfig.env }),
-      };
-      newConfig.stdio_servers.push(server);
-    } else if (serverConfig.type === "shttp") {
-      const server: MCPSHTTPServer = {
-        url: serverConfig.url!,
-        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
-      };
-      newConfig.shttp_servers.push(server);
-    }
-
-    setMcpConfig(newConfig);
-    setIsDirty(true);
-    setView("list");
+    addMcpServer(serverConfig, {
+      onSuccess: () => {
+        setView("list");
+      },
+    });
   };
 
   const handleEditServer = (serverConfig: MCPServerConfig) => {
-    const newConfig = { ...localMcpConfig };
-    const [, indexStr] = serverConfig.id.split("-");
-    const index = parseInt(indexStr, 10);
-
-    if (serverConfig.type === "sse") {
-      const server: MCPSSEServer = {
-        url: serverConfig.url!,
-        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
-      };
-      newConfig.sse_servers[index] = server;
-    } else if (serverConfig.type === "stdio") {
-      const server: MCPStdioServer = {
-        name: serverConfig.name!,
-        command: serverConfig.command!,
-        ...(serverConfig.args && { args: serverConfig.args }),
-        ...(serverConfig.env && { env: serverConfig.env }),
-      };
-      newConfig.stdio_servers[index] = server;
-    } else if (serverConfig.type === "shttp") {
-      const server: MCPSHTTPServer = {
-        url: serverConfig.url!,
-        ...(serverConfig.api_key && { api_key: serverConfig.api_key }),
-      };
-      newConfig.shttp_servers[index] = server;
-    }
-
-    setMcpConfig(newConfig);
-    setIsDirty(true);
-    setView("list");
+    updateMcpServer(
+      {
+        serverId: serverConfig.id,
+        server: serverConfig,
+      },
+      {
+        onSuccess: () => {
+          setView("list");
+        },
+      },
+    );
   };
 
   const handleDeleteServer = (serverId: string) => {
-    setMcpConfig((prevConfig) => {
-      const newConfig = { ...prevConfig };
-      const [serverType, indexStr] = serverId.split("-");
-      const index = parseInt(indexStr, 10);
-
-      if (serverType === "sse") {
-        newConfig.sse_servers.splice(index, 1);
-      } else if (serverType === "stdio") {
-        newConfig.stdio_servers.splice(index, 1);
-      } else if (serverType === "shttp") {
-        newConfig.shttp_servers.splice(index, 1);
-      }
-
-      return newConfig;
-    });
-
-    setConfirmationModalIsVisible(false);
-    setIsDirty(true);
-  };
-
-  const handleSaveSettings = () => {
-    if (!settings) return;
-
-    const updatedSettings = {
-      ...settings,
-      MCP_CONFIG: localMcpConfig,
-    };
-
-    saveSettings(updatedSettings, {
+    deleteMcpServer(serverId, {
       onSuccess: () => {
-        setIsDirty(false);
+        setConfirmationModalIsVisible(false);
       },
     });
   };
@@ -232,19 +154,6 @@ function MCPSettingsScreen() {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />
-
-          {isDirty && (
-            <div className="flex justify-end">
-              <BrandButton
-                testId="save-mcp-settings-button"
-                type="button"
-                variant="primary"
-                onClick={handleSaveSettings}
-              >
-                {t(I18nKey.SETTINGS$SAVE_CHANGES)}
-              </BrandButton>
-            </div>
-          )}
         </>
       )}
 
