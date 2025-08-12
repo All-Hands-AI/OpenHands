@@ -653,6 +653,22 @@ class GitLabService(BaseGitService, GitService):
 
         return project_id
 
+    async def get_issue_discussions(
+        self, project_id: str, issue_iid: int
+    ) -> list[dict]:
+        """Get all discussion notes associated with an issue.
+
+        Args:
+            project_id: The ID or URL-encoded path of the project
+            issue_iid: The IID of the issue
+
+        Returns:
+            list[dict]: A list of discussion items, each containing notes
+        """
+        url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_iid}/discussions'
+        discussions, _ = await self._make_request(url)
+        return discussions
+
     async def get_microagent_content(
         self, repository: str, file_path: str
     ) -> MicroagentContentResponse:

@@ -408,6 +408,86 @@ async def test_gitlab_search_repositories_formats_search_query():
 
 
 @pytest.mark.asyncio
+async def test_gitlab_get_issue_discussions():
+    """Test that get_issue_discussions correctly fetches discussion notes for an issue."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock discussion data
+    mock_discussions = [
+        {
+            'id': '6a9c1750b37d513a43987b574953fceb50b03ce7',
+            'individual_note': False,
+            'notes': [
+                {
+                    'id': 1126,
+                    'type': 'DiscussionNote',
+                    'body': 'discussion text',
+                    'author': {
+                        'id': 1,
+                        'name': 'root',
+                        'username': 'root',
+                    },
+                    'created_at': '2023-08-03T21:54:39.668Z',
+                    'system': False,
+                },
+                {
+                    'id': 1129,
+                    'type': 'DiscussionNote',
+                    'body': 'reply to the discussion',
+                    'author': {
+                        'id': 1,
+                        'name': 'root',
+                        'username': 'root',
+                    },
+                    'created_at': '2023-08-04T13:38:02.127Z',
+                    'system': False,
+                },
+            ],
+        },
+        {
+            'id': '87805b7c09016a7058e91bdbe7b29d1f284a39e6',
+            'individual_note': True,
+            'notes': [
+                {
+                    'id': 1128,
+                    'type': None,
+                    'body': 'a single comment',
+                    'author': {
+                        'id': 1,
+                        'name': 'root',
+                        'username': 'root',
+                    },
+                    'created_at': '2023-08-04T09:17:22.520Z',
+                    'system': False,
+                },
+            ],
+        },
+    ]
+
+    with patch.object(service, '_make_request') as mock_request:
+        mock_request.return_value = (mock_discussions, {})
+
+        # Test get_issue_discussions
+        discussions = await service.get_issue_discussions(
+            project_id='123', issue_iid=456
+        )
+
+        # Verify the request was made with correct URL
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url = call_args[0][0]
+
+        assert url == f'{service.BASE_URL}/projects/123/issues/456/discussions'
+
+        # Verify we got the expected discussions
+        assert len(discussions) == 2
+        assert discussions[0]['id'] == '6a9c1750b37d513a43987b574953fceb50b03ce7'
+        assert len(discussions[0]['notes']) == 2
+        assert discussions[1]['id'] == '87805b7c09016a7058e91bdbe7b29d1f284a39e6'
+        assert len(discussions[1]['notes']) == 1
+
+
+@pytest.mark.asyncio
 async def test_gitlab_search_repositories_single_term_query():
     """Test that search_repositories handles single term queries correctly."""
     service = GitLabService(token=SecretStr('test-token'))
