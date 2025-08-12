@@ -313,15 +313,14 @@ def test_prompt_manager_custom_system_prompt_filename_not_found(prompt_dir):
 
 
 def test_jinja2_template_inheritance(prompt_dir):
-    """Test that Jinja2 template inclusion works correctly with system prompts.
+    """Test that PromptManager._load_template works with Jinja2 template inclusion.
 
     This test demonstrates that we can use {% include %} to import a base system_prompt.j2
-    into other templates without defining any blocks in the base template.
+    into other templates without defining any blocks in the base template, and that
+    PromptManager._load_template can load these templates correctly.
     """
-    from jinja2 import Environment, FileSystemLoader
-
     # Create base system prompt template (no blocks defined here)
-    with open(os.path.join(prompt_dir, 'base_system_prompt.j2'), 'w') as f:
+    with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
         f.write("""You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.
 
 <ROLE>
@@ -330,8 +329,8 @@ Your primary role is to assist users by executing commands, modifying code, and 
 """)
 
     # Create interactive system prompt that imports the base template and adds content
-    with open(os.path.join(prompt_dir, 'test_interactive.j2'), 'w') as f:
-        f.write("""{% include "base_system_prompt.j2" %}
+    with open(os.path.join(prompt_dir, 'system_prompt_interactive.j2'), 'w') as f:
+        f.write("""{% include "system_prompt.j2" %}
 
 <INTERACTION_RULES>
 1. Always respond in a friendly, helpful manner
@@ -341,8 +340,8 @@ Your primary role is to assist users by executing commands, modifying code, and 
 """)
 
     # Create long horizon system prompt that imports the base template and adds content
-    with open(os.path.join(prompt_dir, 'test_long_horizon.j2'), 'w') as f:
-        f.write("""{% include "base_system_prompt.j2" %}
+    with open(os.path.join(prompt_dir, 'system_prompt_long_horizon.j2'), 'w') as f:
+        f.write("""{% include "system_prompt.j2" %}
 
 <TASK_MANAGEMENT>
 1. Break down complex tasks into smaller steps
@@ -351,19 +350,20 @@ Your primary role is to assist users by executing commands, modifying code, and 
 </TASK_MANAGEMENT>
 """)
 
-    # Test using direct Jinja2 Environment (bypassing PromptManager issues)
-    env = Environment(loader=FileSystemLoader(prompt_dir))
-
-    # Test base system prompt
-    base_template = env.get_template('base_system_prompt.j2')
+    # Test PromptManager._load_template with base system prompt
+    base_manager = PromptManager(prompt_dir=prompt_dir)
+    base_template = base_manager._load_template('system_prompt.j2')
     base_msg = base_template.render().strip()
     assert 'You are OpenHands agent' in base_msg
     assert '<ROLE>' in base_msg
     assert '<INTERACTION_RULES>' not in base_msg
     assert '<TASK_MANAGEMENT>' not in base_msg
 
-    # Test interactive system prompt
-    interactive_template = env.get_template('test_interactive.j2')
+    # Test PromptManager._load_template with interactive system prompt
+    interactive_manager = PromptManager(
+        prompt_dir=prompt_dir, system_prompt_filename='system_prompt_interactive.j2'
+    )
+    interactive_template = interactive_manager._load_template('system_prompt_interactive.j2')
     interactive_msg = interactive_template.render().strip()
     assert 'You are OpenHands agent' in interactive_msg
     assert '<ROLE>' in interactive_msg
@@ -371,8 +371,11 @@ Your primary role is to assist users by executing commands, modifying code, and 
     assert 'Ask clarifying questions when needed' in interactive_msg
     assert '<TASK_MANAGEMENT>' not in interactive_msg
 
-    # Test long horizon system prompt
-    long_horizon_template = env.get_template('test_long_horizon.j2')
+    # Test PromptManager._load_template with long horizon system prompt
+    long_horizon_manager = PromptManager(
+        prompt_dir=prompt_dir, system_prompt_filename='system_prompt_long_horizon.j2'
+    )
+    long_horizon_template = long_horizon_manager._load_template('system_prompt_long_horizon.j2')
     long_horizon_msg = long_horizon_template.render().strip()
     assert 'You are OpenHands agent' in long_horizon_msg
     assert '<ROLE>' in long_horizon_msg
@@ -381,6 +384,6 @@ Your primary role is to assist users by executing commands, modifying code, and 
     assert 'Track progress through a TODO list' in long_horizon_msg
 
     # Clean up
-    os.remove(os.path.join(prompt_dir, 'base_system_prompt.j2'))
-    os.remove(os.path.join(prompt_dir, 'test_interactive.j2'))
-    os.remove(os.path.join(prompt_dir, 'test_long_horizon.j2'))
+    os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
+    os.remove(os.path.join(prompt_dir, 'system_prompt_interactive.j2'))
+    os.remove(os.path.join(prompt_dir, 'system_prompt_long_horizon.j2'))
