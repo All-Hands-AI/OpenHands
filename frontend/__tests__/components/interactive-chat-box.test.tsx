@@ -1,9 +1,20 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { MemoryRouter } from "react-router";
 import { InteractiveChatBox } from "#/components/features/chat/interactive-chat-box";
 import { renderWithProviders } from "../../test-utils";
 import { AgentState } from "#/types/agent-state";
+
+// Mock React Router hooks
+vi.mock("react-router", async () => {
+  const actual = await vi.importActual("react-router");
+  return {
+    ...actual,
+    useNavigate: () => vi.fn(),
+    useParams: () => ({ conversationId: "test-conversation-id" }),
+  };
+});
 
 // Mock the useActiveConversation hook
 vi.mock("#/hooks/query/use-active-conversation", () => ({
@@ -14,9 +25,37 @@ vi.mock("#/hooks/query/use-active-conversation", () => ({
   }),
 }));
 
+// Mock other hooks that might be used by the component
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-name-context-menu", () => ({
+  useConversationNameContextMenu: () => ({
+    isOpen: false,
+    contextMenuRef: { current: null },
+    handleContextMenu: vi.fn(),
+    handleClose: vi.fn(),
+    handleRename: vi.fn(),
+    handleDelete: vi.fn(),
+  }),
+}));
+
 describe("InteractiveChatBox", () => {
   const onSubmitMock = vi.fn();
   const onStopMock = vi.fn();
+
+  // Helper function to render with Router context
+  const renderInteractiveChatBox = (props: any, options: any = {}) => {
+    return renderWithProviders(
+      <MemoryRouter>
+        <InteractiveChatBox {...props} />
+      </MemoryRouter>,
+      options,
+    );
+  };
 
   beforeAll(() => {
     global.URL.createObjectURL = vi
@@ -29,14 +68,14 @@ describe("InteractiveChatBox", () => {
   });
 
   it("should render", () => {
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: false,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -51,15 +90,15 @@ describe("InteractiveChatBox", () => {
   });
 
   it("should set custom values", () => {
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        value="Hello, world!"
-        isWaitingForUserInput={true}
-        hasSubstantiveAgentActions={true}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        value: "Hello, world!",
+        isWaitingForUserInput: true,
+        hasSubstantiveAgentActions: true,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -75,14 +114,14 @@ describe("InteractiveChatBox", () => {
 
   it("should display the image previews when images are uploaded", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: false,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -112,14 +151,14 @@ describe("InteractiveChatBox", () => {
 
   it("should remove the image preview when the close button is clicked", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: false,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -147,14 +186,14 @@ describe("InteractiveChatBox", () => {
 
   it("should call onSubmit with the message and images", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: false,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -188,14 +227,14 @@ describe("InteractiveChatBox", () => {
 
   it("should disable the submit button when agent is loading", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={false}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: false,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -214,14 +253,14 @@ describe("InteractiveChatBox", () => {
 
   it("should display the stop button when agent is running and call onStop when clicked", async () => {
     const user = userEvent.setup();
-    renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmitMock}
-        onStop={onStopMock}
-        isWaitingForUserInput={false}
-        hasSubstantiveAgentActions={true}
-        optimisticUserMessage={false}
-      />,
+    renderInteractiveChatBox(
+      {
+        onSubmit: onSubmitMock,
+        onStop: onStopMock,
+        isWaitingForUserInput: false,
+        hasSubstantiveAgentActions: true,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -243,15 +282,15 @@ describe("InteractiveChatBox", () => {
     const onSubmit = vi.fn();
     const onStop = vi.fn();
 
-    const { rerender } = renderWithProviders(
-      <InteractiveChatBox
-        onSubmit={onSubmit}
-        onStop={onStop}
-        value="test message"
-        isWaitingForUserInput={true}
-        hasSubstantiveAgentActions={true}
-        optimisticUserMessage={false}
-      />,
+    const { rerender } = renderInteractiveChatBox(
+      {
+        onSubmit: onSubmit,
+        onStop: onStop,
+        value: "test message",
+        isWaitingForUserInput: true,
+        hasSubstantiveAgentActions: true,
+        optimisticUserMessage: false,
+      },
       {
         preloadedState: {
           agent: {
@@ -277,14 +316,16 @@ describe("InteractiveChatBox", () => {
 
     // Simulate parent component updating the value prop
     rerender(
-      <InteractiveChatBox
-        onSubmit={onSubmit}
-        onStop={onStop}
-        value=""
-        isWaitingForUserInput={true}
-        hasSubstantiveAgentActions={true}
-        optimisticUserMessage={false}
-      />,
+      <MemoryRouter>
+        <InteractiveChatBox
+          onSubmit={onSubmit}
+          onStop={onStop}
+          value=""
+          isWaitingForUserInput={true}
+          hasSubstantiveAgentActions={true}
+          optimisticUserMessage={false}
+        />
+      </MemoryRouter>,
     );
 
     // Verify the text input was cleared

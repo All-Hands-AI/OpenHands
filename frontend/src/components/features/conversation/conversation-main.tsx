@@ -54,7 +54,7 @@ export function ConversationMain() {
       <div className="flex flex-col gap-3 overflow-auto w-full">
         <div
           className={cn(
-            "rounded-xl overflow-hidden w-full bg-base min-h-[494px]",
+            "overflow-hidden w-full bg-base min-h-[494px]",
             !isRightPanelShown && "h-full",
           )}
         >
@@ -83,7 +83,7 @@ export function ConversationMain() {
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
         initialSize={500}
-        firstClassName="rounded-xl overflow-hidden bg-base"
+        firstClassName="overflow-hidden bg-base"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={
           <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
@@ -107,7 +107,7 @@ export function ConversationMain() {
 
   return (
     <div className="flex flex-col gap-3 overflow-auto w-full h-full">
-      <div className="rounded-xl overflow-hidden w-full h-full bg-base">
+      <div className="overflow-hidden w-full h-full bg-base">
         <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
       </div>
     </div>

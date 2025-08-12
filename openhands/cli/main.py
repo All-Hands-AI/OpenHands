@@ -45,11 +45,12 @@ from openhands.controller import AgentController
 from openhands.controller.agent import Agent
 from openhands.core.config import (
     OpenHandsConfig,
-    parse_arguments,
     setup_config_from_args,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
-from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import (
+    OpenHandsMCPConfigImpl,
+)
 from openhands.core.config.utils import finalize_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.loop import run_agent_until_done
@@ -127,12 +128,13 @@ async def run_session(
     conversation_instructions: str | None = None,
     session_name: str | None = None,
     skip_banner: bool = False,
+    conversation_id: str | None = None,
 ) -> bool:
     reload_microagents = False
     new_session_requested = False
     exit_reason = ExitReason.INTENTIONAL
 
-    sid = generate_sid(config, session_name)
+    sid = conversation_id or generate_sid(config, session_name)
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
@@ -188,6 +190,7 @@ async def run_session(
                 config,
                 current_dir,
                 settings_store,
+                agent_state,
             )
 
             if close_repl:
@@ -520,10 +523,8 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     print_formatted_text('')
 
 
-async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
+async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     """Runs the agent in CLI mode."""
-    args = parse_arguments()
-
     # Set log level from command line argument if provided
     if args.log_level and isinstance(args.log_level, str):
         log_level = getattr(logging, str(args.log_level).upper())
@@ -571,13 +572,9 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop) -> None:
 
     # Use settings from settings store if available and override with command line arguments
     if settings:
-        # Handle agent configuration
-        if args.agent_cls:
-            config.default_agent = str(args.agent_cls)
-        else:
-            # settings.agent is not None because we check for it in setup_config_from_args
-            assert settings.agent is not None
-            config.default_agent = settings.agent
+        # settings.agent is not None because we check for it in setup_config_from_args
+        assert settings.agent is not None
+        config.default_agent = settings.agent
 
         # Handle LLM configuration with proper precedence:
         # 1. CLI parameters (-l) have highest precedence (already handled in setup_config_from_args)
@@ -702,6 +699,7 @@ After reviewing the file, please ask the user what they would like to do with it
         task_str,
         session_name=args.name,
         skip_banner=banner_shown,
+        conversation_id=args.conversation,
     )
 
     # If a new session was requested, run it
@@ -714,18 +712,19 @@ After reviewing the file, please ask the user what they would like to do with it
     get_runtime_cls(config.runtime).teardown(config)
 
 
-def main():
+def run_cli_command(args):
+    """Run the CLI command with proper error handling and cleanup."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        loop.run_until_complete(main_with_loop(loop))
+        loop.run_until_complete(main_with_loop(loop, args))
     except KeyboardInterrupt:
         print_formatted_text('⚠️ Session was interrupted: interrupted\n')
     except ConnectionRefusedError as e:
-        print(f'Connection refused: {e}')
+        print_formatted_text(f'Connection refused: {e}')
         sys.exit(1)
     except Exception as e:
-        print(f'An error occurred: {e}')
+        print_formatted_text(f'An error occurred: {e}')
         sys.exit(1)
     finally:
         try:
@@ -738,9 +737,5 @@ def main():
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print(f'Error during cleanup: {e}')
+            print_formatted_text(f'Error during cleanup: {e}')
             sys.exit(1)
-
-
-if __name__ == '__main__':
-    main()

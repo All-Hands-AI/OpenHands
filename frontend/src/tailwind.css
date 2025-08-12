@@ -81,6 +81,32 @@
   scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
 }
 
+/* Always visible scrollbar for chat interface */
+.custom-scrollbar-always::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-thumb {
+  background: rgba(208, 217, 250, 0.3);
+  border-radius: 3px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-scrollbar-always::-webkit-scrollbar-thumb:hover {
+  background: rgba(208, 217, 250, 0.5);
+}
+
+/* Firefox scrollbar styling for always visible */
+.custom-scrollbar-always {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(208, 217, 250, 0.3) transparent;
+}
+
 /* Custom styles for contenteditable */
 .chat-input:empty:before {
   content: attr(data-placeholder);

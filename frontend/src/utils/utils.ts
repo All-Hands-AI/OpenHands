@@ -104,6 +104,24 @@ export const formatTimestamp = (timestamp: string) =>
     second: "2-digit",
   });
 
+export const shouldUseInstallationRepos = (
+  provider: Provider,
+  app_mode: "saas" | "oss" | undefined,
+) => {
+  if (!provider) return false;
+
+  switch (provider) {
+    case "bitbucket":
+      return true;
+    case "gitlab":
+      return false;
+    case "github":
+      return app_mode === "saas";
+    default:
+      return false;
+  }
+};
+
 export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
   switch (gitProvider) {
     case "github":
@@ -276,3 +294,55 @@ export const constructBranchUrl = (
       return "";
   }
 };
+
+// Git Action Prompts
+
+/**
+ * Generate a git pull prompt
+ * @returns The git pull prompt
+ */
+export const getGitPullPrompt = (): string =>
+  "Please pull the latest code from the repository.";
+
+/**
+ * Generate a git push prompt
+ * @param gitProvider The git provider
+ * @returns The git push prompt
+ */
+export const getGitPushPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the changes to a remote branch on ${providerName}, but do NOT create a ${pr}. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`;
+};
+
+/**
+ * Generate a create pull request prompt
+ * @param gitProvider The git provider
+ * @returns The create PR prompt
+ */
+export const getCreatePRPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+  const prShort = getPRShort(gitProvider === "gitlab");
+
+  return `Please push the changes to ${providerName} and open a ${pr}. If you're on a default branch (e.g., main, master, deploy), create a new branch with a descriptive name otherwise use the current branch. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
+
+/**
+ * Generate a push to existing PR prompt
+ * @param gitProvider The git provider
+ * @returns The push to PR prompt
+ */
+export const getPushToPRPrompt = (gitProvider: Provider): string => {
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the latest changes to the existing ${pr}.`;
+};
+
+/**
+ * Generate a create new branch prompt
+ * @returns The create new branch prompt
+ */
+export const getCreateNewBranchPrompt = (): string =>
+  "Please create a new branch with a descriptive name related to the work you plan to do.";
