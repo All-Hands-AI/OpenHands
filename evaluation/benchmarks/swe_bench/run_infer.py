@@ -65,7 +65,6 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 ENABLE_LLM_EDITOR = os.environ.get('ENABLE_LLM_EDITOR', 'false').lower() == 'true'
-INSTRUCTION_TEMPLATE_NAME = os.environ.get('INSTRUCTION_TEMPLATE_NAME')
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 # Global variable to track dataset type
@@ -109,8 +108,8 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     llm_model = metadata.llm_config.model
 
     # Determine the template file based on mode and LLM
-    if INSTRUCTION_TEMPLATE_NAME:
-        template_name = INSTRUCTION_TEMPLATE_NAME
+    if metadata.instruction_template_name:
+        template_name = metadata.instruction_template_name
     elif mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
@@ -125,6 +124,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
+    logger.debug(f'Using instruction template file: {template_name}')
     # Set up Jinja2 environment
     # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
     prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
