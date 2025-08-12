@@ -33,9 +33,13 @@ function MCPSettingsScreen() {
   const { mutate: saveSettings } = useSaveSettings();
 
   const [view, setView] = React.useState<"list" | "add" | "edit">("list");
-  const [editingServer, setEditingServer] = React.useState<MCPServerConfig | null>(null);
-  const [confirmationModalIsVisible, setConfirmationModalIsVisible] = React.useState(false);
-  const [serverToDelete, setServerToDelete] = React.useState<string | null>(null);
+  const [editingServer, setEditingServer] =
+    React.useState<MCPServerConfig | null>(null);
+  const [confirmationModalIsVisible, setConfirmationModalIsVisible] =
+    React.useState(false);
+  const [serverToDelete, setServerToDelete] = React.useState<string | null>(
+    null,
+  );
   const [isDirty, setIsDirty] = React.useState(false);
 
   const mcpConfig: MCPConfig = settings?.MCP_CONFIG || {
@@ -197,9 +201,9 @@ function MCPSettingsScreen() {
     return (
       <div className="px-11 py-9 flex flex-col gap-5">
         <div className="animate-pulse">
-          <div className="h-6 bg-gray-300 rounded w-1/4 mb-4"></div>
-          <div className="h-4 bg-gray-300 rounded w-1/2 mb-8"></div>
-          <div className="h-10 bg-gray-300 rounded w-32"></div>
+          <div className="h-6 bg-gray-300 rounded w-1/4 mb-4" />
+          <div className="h-4 bg-gray-300 rounded w-1/2 mb-8" />
+          <div className="h-10 bg-gray-300 rounded w-32" />
         </div>
       </div>
     );
