@@ -57,7 +57,7 @@ class PromptManager:
         system_prompt_filename: str = 'system_prompt.j2',
     ):
         if prompt_dir is None:
-            raise ValueError(.Prompt directory is not set.)
+            raise ValueError('Prompt directory is not set')
 
         self.prompt_dir: str = prompt_dir
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
