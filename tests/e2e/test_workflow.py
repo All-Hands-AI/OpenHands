@@ -163,15 +163,15 @@ def test_openhands_web_interface(page, openhands_app):
     # Check for basic UI elements
     print('Checking for basic UI elements...')
     try:
-        # Check if the app container is visible
-        app_container = page.locator('#app')
-        expect(app_container).to_be_visible(timeout=10000)
-        print('App container is visible')
+        # Check if the root layout container is visible
+        root_layout = page.locator('[data-testid="root-layout"]')
+        expect(root_layout).to_be_visible(timeout=10000)
+        print('Root layout container is visible')
 
-        # Check for main content area
-        main_content = page.locator('main, .main, [role="main"]').first
-        expect(main_content).to_be_visible(timeout=10000)
-        print('Main content area is visible')
+        # Check for the root outlet (main content area)
+        root_outlet = page.locator('#root-outlet')
+        expect(root_outlet).to_be_visible(timeout=10000)
+        print('Root outlet (main content area) is visible')
 
         # Take a screenshot of the loaded interface
         page.screenshot(path='test-results/interface_loaded.png')
