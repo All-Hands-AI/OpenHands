@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from "react";
-import type { HTMLProps } from "../../../shared/types";
+import type { BaseProps, HTMLProps } from "../../../shared/types";
 import { cn } from "../../../shared/utils/cn";
 import { type IconProps } from "../../icon/Icon";
 import { AccordionHeader } from "./AccordionHeader";
@@ -11,10 +11,10 @@ export type AccordionItemProps = HTMLProps<"div"> & {
   value: string;
   label: React.ReactNode;
   onExpandedChange(value: boolean): void;
-};
+} & BaseProps;
 export type AccordionItemPropsPublic = Omit<
   AccordionItemProps,
-  "expanded" | "onExpandedChange"
+  "expanded" | "onExpandedChange" | "className" | "style" | "testId"
 >;
 
 export const AccordionItem = ({

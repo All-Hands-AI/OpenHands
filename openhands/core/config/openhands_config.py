@@ -57,6 +57,8 @@ class OpenHandsConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         mcp_host: Host for OpenHands' default MCP server
         mcp: MCP configuration settings.
+        git_user_name: Git user name for commits made by the agent.
+        git_user_email: Git user email for commits made by the agent.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -70,6 +72,7 @@ class OpenHandsConfig(BaseModel):
     file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
+    file_store_web_hook_batch: bool = Field(default=False)
     enable_browser: bool = Field(default=True)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
@@ -112,6 +115,13 @@ class OpenHandsConfig(BaseModel):
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    git_user_name: str = Field(
+        default='openhands', description='Git user name for commits made by the agent'
+    )
+    git_user_email: str = Field(
+        default='openhands@all-hands.dev',
+        description='Git user email for commits made by the agent',
+    )
 
     defaults_dict: ClassVar[dict] = {}
 

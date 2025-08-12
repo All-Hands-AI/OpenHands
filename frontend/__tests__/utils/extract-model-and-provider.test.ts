@@ -82,5 +82,11 @@ describe("extractModelAndProvider", () => {
       model: "claude-opus-4-20250514",
       separator: "/",
     });
+
+    expect(extractModelAndProvider("claude-opus-4-1-20250805")).toEqual({
+      provider: "anthropic",
+      model: "claude-opus-4-1-20250805",
+      separator: "/",
+    });
   });
 });

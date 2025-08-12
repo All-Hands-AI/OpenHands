@@ -212,7 +212,7 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
-    enable_browser: bool = True,
+    enable_browser: bool = False,
 ) -> tuple[Runtime, OpenHandsConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -260,10 +260,11 @@ def _load_runtime(
         config.mcp = override_mcp_config
 
     file_store = file_store = get_file_store(
-        config.file_store,
-        config.file_store_path,
-        config.file_store_web_hook_url,
-        config.file_store_web_hook_headers,
+        file_store_type=config.file_store,
+        file_store_path=config.file_store_path,
+        file_store_web_hook_url=config.file_store_web_hook_url,
+        file_store_web_hook_headers=config.file_store_web_hook_headers,
+        file_store_web_hook_batch=config.file_store_web_hook_batch,
     )
     event_stream = EventStream(sid, file_store)
 
