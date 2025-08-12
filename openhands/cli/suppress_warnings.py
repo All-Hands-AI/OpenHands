@@ -49,6 +49,22 @@ def suppress_cli_warnings():
         category=RuntimeWarning,
     )
 
+    # Suppress pydub SyntaxWarnings from invalid escape sequences in regex patterns
+    warnings.filterwarnings(
+        'ignore',
+        message='invalid escape sequence.*',
+        category=SyntaxWarning,
+        module='pydub.utils',
+    )
+
+    # Suppress pydub DeprecationWarning about audioop module
+    warnings.filterwarnings(
+        'ignore',
+        message="'audioop' is deprecated and slated for removal in Python 3.13",
+        category=DeprecationWarning,
+        module='pydub.utils',
+    )
+
 
 # Apply warning suppressions when module is imported
 suppress_cli_warnings()
