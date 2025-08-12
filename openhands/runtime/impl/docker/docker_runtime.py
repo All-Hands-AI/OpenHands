@@ -9,6 +9,7 @@ import docker
 import httpx
 import tenacity
 from docker.models.containers import Container
+from docker.types import DriverConfig, Mount
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.exceptions import (
@@ -258,6 +259,9 @@ class DockerRuntime(ActionExecutionClient):
                     container_path = parts[1]
                     # Default mode is 'rw' if not specified
                     mount_mode = parts[2] if len(parts) > 2 else 'rw'
+                    # Skip overlay mounts here; they will be handled separately via Mount objects
+                    if 'overlay' in mount_mode:
+                        continue
 
                     volumes[host_path] = {
                         'bind': container_path,
@@ -285,6 +289,72 @@ class DockerRuntime(ActionExecutionClient):
             )
 
         return volumes
+
+    def _process_overlay_mounts(self) -> list[Mount]:
+        """Process overlay mounts specified in sandbox.volumes with mode containing 'overlay'.
+
+        Returns:
+            List of docker.types.Mount objects configured with overlay driver providing
+            read-only lowerdir with per-container copy-on-write upper/work layers.
+        """
+        overlay_mounts: list[Mount] = []
+
+        # No volumes configured
+        if self.config.sandbox.volumes is None:
+            return overlay_mounts
+
+        # Base directory for overlay upper/work layers from env var
+        overlay_base = os.environ.get('SANDBOX_VOLUME_OVERLAYS')
+        if not overlay_base:
+            # If no base path provided, skip overlay processing
+            return overlay_mounts
+
+        os.makedirs(overlay_base, exist_ok=True)
+
+        mount_specs = self.config.sandbox.volumes.split(',')
+
+        for idx, mount_spec in enumerate(mount_specs):
+            parts = mount_spec.split(':')
+            if len(parts) < 2:
+                continue
+            host_path = os.path.abspath(parts[0])
+            container_path = parts[1]
+            mount_mode = parts[2] if len(parts) > 2 else 'rw'
+
+            if 'overlay' not in mount_mode:
+                continue
+
+            # Prepare upper and work directories unique to this container and mount
+            overlay_dir = os.path.join(overlay_base, self.container_name, f'{idx}')
+            upper_dir = os.path.join(overlay_dir, 'upper')
+            work_dir = os.path.join(overlay_dir, 'work')
+            os.makedirs(upper_dir, exist_ok=True)
+            os.makedirs(work_dir, exist_ok=True)
+
+            driver_cfg = DriverConfig(
+                name='local',
+                options={
+                    'type': 'overlay',
+                    'device': 'overlay',
+                    'o': f'lowerdir={host_path},upperdir={upper_dir},workdir={work_dir}',
+                },
+            )
+
+            mount = Mount(
+                target=container_path,
+                source='',  # Anonymous volume
+                type='volume',
+                labels={
+                    'app': 'openhands',
+                    'role': 'worker',
+                    'container': self.container_name,
+                },
+                driver_config=driver_cfg,
+            )
+
+            overlay_mounts.append(mount)
+
+        return overlay_mounts
 
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
@@ -409,6 +479,9 @@ class DockerRuntime(ActionExecutionClient):
         try:
             if self.runtime_container_image is None:
                 raise ValueError('Runtime container image is not set')
+            # Process overlay mounts (read-only lower with per-container COW)
+            overlay_mounts = self._process_overlay_mounts()
+
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -421,6 +494,7 @@ class DockerRuntime(ActionExecutionClient):
                 detach=True,
                 environment=environment,
                 volumes=volumes,  # type: ignore
+                mounts=overlay_mounts,  # type: ignore
                 device_requests=device_requests,
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
@@ -609,7 +683,8 @@ class DockerRuntime(ActionExecutionClient):
 
     def pause(self) -> None:
         """Pause the runtime by stopping the container.
-        This is different from container.stop() as it ensures environment variables are properly preserved."""
+        This is different from container.stop() as it ensures environment variables are properly preserved.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 
@@ -622,7 +697,8 @@ class DockerRuntime(ActionExecutionClient):
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
-        This is different from container.start() as it ensures environment variables are properly restored."""
+        This is different from container.start() as it ensures environment variables are properly restored.
+        """
         if not self.container:
             raise RuntimeError('Container not initialized')
 
