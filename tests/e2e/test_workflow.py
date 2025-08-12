@@ -222,65 +222,45 @@ def test_openhands_full_workflow(page, openhands_app):
         # Look for the Settings button in the "Connect to a Repository" section
         settings_button = page.locator('button:has-text("Settings")')
         if settings_button.is_visible(timeout=5000):
-            print('Settings button found, clicking to configure GitHub token...')
+            print('Settings button found, clicking to navigate to settings page...')
             settings_button.click()
-            page.wait_for_timeout(2000)  # Wait for settings modal to open
+            page.wait_for_timeout(3000)  # Wait for navigation to settings page
             
-            # Look for GitHub token input field
-            github_token_selectors = [
-                'input[placeholder*="GitHub"], input[placeholder*="github"]',
-                'input[name*="github"], input[name*="token"]',
-                'input[type="password"]',
-                'textarea[placeholder*="token"]'
-            ]
-            
-            token_input = None
-            for selector in github_token_selectors:
-                try:
-                    element = page.locator(selector).first
-                    if element.is_visible(timeout=2000):
-                        token_input = element
-                        print(f'Found GitHub token input with selector: {selector}')
-                        break
-                except:
-                    continue
-            
-            if token_input:
+            # We should now be on the /settings/integrations page (git-settings.tsx)
+            # Look for GitHub token input field with the correct test ID
+            github_token_input = page.locator('[data-testid="github-token-input"]')
+            if github_token_input.is_visible(timeout=5000):
+                print('Found GitHub token input field on settings page')
+                
                 # Fill in the GitHub token from environment variable
-                current_value = token_input.input_value()
-                if not current_value.strip():
-                    print('GitHub token field is empty, filling with environment variable')
-                    # Use a test GitHub token value
-                    token_input.fill('test-github-token-from-env')
+                github_token = os.getenv('GITHUB_TOKEN', '')
+                if github_token:
+                    github_token_input.fill(github_token)
+                    print('Filled GitHub token from environment variable')
+                    
+                    # Look for the Save Changes button
+                    save_button = page.locator('[data-testid="submit-button"]')
+                    if save_button.is_visible(timeout=3000):
+                        print('Clicking Save Changes button...')
+                        save_button.click()
+                        page.wait_for_timeout(3000)  # Wait for save to complete
+                        
+                        # Navigate back to home page
+                        print('Navigating back to home page...')
+                        page.goto('http://localhost:3000')
+                        page.wait_for_timeout(3000)
+                    else:
+                        print('Save Changes button not found')
                 else:
-                    print('GitHub token field already has a value')
-                
-                # Look for Save/Apply button
-                save_selectors = [
-                    'button:has-text("Save")',
-                    'button:has-text("Apply")',
-                    'button:has-text("OK")',
-                    'button[type="submit"]'
-                ]
-                
-                for selector in save_selectors:
-                    try:
-                        save_btn = page.locator(selector)
-                        if save_btn.is_visible(timeout=2000):
-                            print(f'Clicking save button: {selector}')
-                            save_btn.click()
-                            page.wait_for_timeout(2000)
-                            break
-                    except:
-                        continue
+                    print('No GITHUB_TOKEN environment variable found')
             else:
-                print('GitHub token input field not found in settings')
+                print('GitHub token input field not found on settings page')
                 
         page.screenshot(path='test-results/04_after_settings.png')
         print('Screenshot saved: 04_after_settings.png')
         
     except Exception as e:
-        print(f'No Settings button found or error handling it: {e}')
+        print(f'Error handling Settings button: {e}')
 
     # Step 2d: Wait for home screen and find the repository selector
     print('Step 2d: Looking for repository selector...')
