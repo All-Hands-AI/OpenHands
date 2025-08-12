@@ -49,7 +49,7 @@ RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'tru
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
 # TODO: 适应所有的语言
-DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', '')
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'mswebench')
 LANGUAGE = os.environ.get('LANGUAGE', 'java')
 logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
@@ -303,12 +303,7 @@ def get_instance_docker_image(instance: pd.Series):
         instance_id = instance.get('instance_id', '')
         tag_suffix = instance_id.split('-')[-1] if instance_id else ''
         container_tag = f'pr-{tag_suffix}'
-        # pdb.set_trace()
-        return f'mswebench/{container_name}:{container_tag}'
-        # return "kong/insomnia:pr-8284"
-        # return "'sweb.eval.x86_64.local_insomnia"
-        # return "local_insomnia_why"
-        # return "local/kong-insomnia:pr-8117"
+        return f'{DOCKER_IMAGE_PREFIX}/{container_name}:{container_tag}'
 
 
 def get_config(

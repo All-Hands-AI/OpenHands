@@ -15,8 +15,8 @@ export EXP_NAME=$EXP_NAME
 export DEFAULT_RUNTIME_RESOURCE_FACTOR=2
 echo "MODEL: $MODEL"
 echo "EXP_NAME: $EXP_NAME"
-DATASET="/home/juan-all-hands/dev/OpenHands-versabench-m/evaluation/benchmarks/versabench/versabench_cache/Multi-SWE-bench/java/all/all_updated_clean.jsonl"  # change this to the "/SWE-Gym-Lite" if you want to rollout the lite subset
-EVAL_DATASET="/home/juan-all-hands/dev/OpenHands-versabench-m/evaluation/benchmarks/versabench/versabench_cache/Multi-SWE-bench/java/all/all.jsonl"  # change this to the "/SWE-Gym-Lite" if you want to rollout the lite subset
+DATASET=""  # path to converte dataset
+VAL_DATASET=""  # path to original dataset
 SPLIT="train"
 export LANGUAGE=java
 
@@ -27,7 +27,6 @@ else
     echo "ALLHANDS_API_KEY is set. Continuing rollout and evaluation with remote runtime..."
     export RUNTIME=remote
     export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
-    export EVAL_DOCKER_IMAGE_PREFIX=""
 fi
 
 #EVAL_LIMIT=3000
@@ -53,9 +52,8 @@ EVAL_NOTE="$OPENHANDS_VERSION-no-hint-$EXP_NAME"
 function run_eval() {
   local eval_note=$1
   export LANGUAGE=java
-  export EVAL_DOCKER_IMAGE_PREFIX=""
   echo "About to run command"
-  COMMAND="LANGUAGE=java; EVAL_DOCKER_IMAGE_PREFIX=\"\" ; poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
+  COMMAND="LANGUAGE=java;  poetry run python evaluation/benchmarks/multi_swe_bench/run_infer.py \
     --agent-cls CodeActAgent \
     --llm-config $MODEL \
     --max-iterations $MAX_ITER \
@@ -105,7 +103,6 @@ for run_idx in $(seq 1 $N_RUNS); do
     while true; do
         echo "### Evaluating on $OUTPUT_FILE ... ###"
         OUTPUT_CONFIG_FILE="${OUTPUT_FILE%.jsonl}_config.json"
-        export EVAL_DOCKER_IMAGE_PREFIX="" 
         export EVAL_SKIP_BUILD_ERRORS=true
         pip install multi-swe-bench --quiet --disable-pip-version-check > /dev/null 2>&1
         COMMAND="poetry run python ./evaluation/benchmarks/multi_swe_bench/scripts/eval/update_multi_swe_bench_config.py --input $OUTPUT_FILE --output $OUTPUT_CONFIG_FILE --dataset $EVAL_DATASET;
