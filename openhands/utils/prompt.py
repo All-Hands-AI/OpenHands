@@ -64,18 +64,17 @@ class PromptManager:
         self.system_template: Template = self._load_template(
             system_prompt_filename, is_system_prompt=True
         )
-        self.user_template: Template = self._load_template('user_prompt')
-        self.additional_info_template: Template = self._load_template('additional_info')
-        self.microagent_info_template: Template = self._load_template('microagent_info')
+        self.user_template: Template = self._load_template('user_prompt.j2')
+        self.additional_info_template: Template = self._load_template('additional_info.j2')
+        self.microagent_info_template: Template = self._load_template('microagent_info.j2')
 
     def _load_template(self, template_name: str, is_system_prompt: bool = False) -> Template:
         """
         Load a template from the prompt directory.
         
         Args:
-            template_name: Name of the template to load. For non-system prompts, '.j2' will be appended.
-            is_system_prompt: If True, template_name is treated as a full filename.
-                             If False, '.j2' is appended to template_name.
+            template_name: Full filename of the template to load, including the .j2 extension.
+            is_system_prompt: If True, provides a more specific error message for system prompt files.
         
         Returns:
             The loaded Jinja2 template.
@@ -83,9 +82,6 @@ class PromptManager:
         Raises:
             FileNotFoundError: If the template file is not found.
         """
-        if not is_system_prompt:
-            template_name = f'{template_name}.j2'
-            
         try:
             return self.env.get_template(template_name)
         except Exception:
