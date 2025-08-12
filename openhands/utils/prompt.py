@@ -61,32 +61,44 @@ class PromptManager:
 
         self.prompt_dir: str = prompt_dir
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
-        self.system_template: Template = self._load_system_template(
-            system_prompt_filename
+        self.system_template: Template = self._load_template(
+            system_prompt_filename, is_system_prompt=True
         )
         self.user_template: Template = self._load_template('user_prompt')
         self.additional_info_template: Template = self._load_template('additional_info')
         self.microagent_info_template: Template = self._load_template('microagent_info')
 
-    def _load_system_template(self, system_prompt_filename: str) -> Template:
-        """Load the system prompt template using the specified filename."""
+    def _load_template(self, template_name: str, is_system_prompt: bool = False) -> Template:
+        """
+        Load a template from the prompt directory.
+        
+        Args:
+            template_name: Name of the template to load. For non-system prompts, '.j2' will be appended.
+            is_system_prompt: If True, template_name is treated as a full filename.
+                             If False, '.j2' is appended to template_name.
+        
+        Returns:
+            The loaded Jinja2 template.
+            
+        Raises:
+            FileNotFoundError: If the template file is not found.
+        """
+        if not is_system_prompt:
+            template_name = f'{template_name}.j2'
+            
         try:
-            return self.env.get_template(system_prompt_filename)
+            return self.env.get_template(template_name)
         except Exception:
-            # Provide a more specific error message for system prompt files
-            template_path = os.path.join(self.prompt_dir, system_prompt_filename)
-            raise FileNotFoundError(
-                f'System prompt file "{system_prompt_filename}" not found at {template_path}. '
-                f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
-            )
-
-    def _load_template(self, template_name: str) -> Template:
-        template_filename = f'{template_name}.j2'
-        try:
-            return self.env.get_template(template_filename)
-        except Exception:
-            template_path = os.path.join(self.prompt_dir, template_filename)
-            raise FileNotFoundError(f'Prompt file {template_path} not found')
+            template_path = os.path.join(self.prompt_dir, template_name)
+            
+            if is_system_prompt:
+                # Provide a more specific error message for system prompt files
+                raise FileNotFoundError(
+                    f'System prompt file "{template_name}" not found at {template_path}. '
+                    f'Please ensure the file exists in the prompt directory: {self.prompt_dir}'
+                )
+            else:
+                raise FileNotFoundError(f'Prompt file {template_path} not found')
 
     def get_system_message(self) -> str:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
