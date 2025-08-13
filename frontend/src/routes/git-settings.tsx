@@ -7,6 +7,7 @@ import { useLogout } from "#/hooks/mutation/use-logout";
 import { GitHubTokenInput } from "#/components/features/settings/git-settings/github-token-input";
 import { GitLabTokenInput } from "#/components/features/settings/git-settings/gitlab-token-input";
 import { BitbucketTokenInput } from "#/components/features/settings/git-settings/bitbucket-token-input";
+import { GiteaTokenInput } from "#/components/features/settings/git-settings/gitea-token-input";
 import { ConfigureGitHubRepositoriesAnchor } from "#/components/features/settings/git-settings/configure-github-repositories-anchor";
 import { InstallSlackAppAnchor } from "#/components/features/settings/git-settings/install-slack-app-anchor";
 import { I18nKey } from "#/i18n/declaration";
@@ -37,6 +38,8 @@ function GitSettingsScreen() {
     React.useState(false);
   const [bitbucketTokenInputHasValue, setBitbucketTokenInputHasValue] =
     React.useState(false);
+  const [giteaTokenInputHasValue, setGiteaTokenInputHasValue] =
+    React.useState(false);
 
   const [githubHostInputHasValue, setGithubHostInputHasValue] =
     React.useState(false);
@@ -44,15 +47,19 @@ function GitSettingsScreen() {
     React.useState(false);
   const [bitbucketHostInputHasValue, setBitbucketHostInputHasValue] =
     React.useState(false);
+  const [giteaHostInputHasValue, setGiteaHostInputHasValue] =
+    React.useState(false);
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const existingGitlabHost = settings?.PROVIDER_TOKENS_SET.gitlab;
   const existingBitbucketHost = settings?.PROVIDER_TOKENS_SET.bitbucket;
+  const existingGiteaHost = settings?.PROVIDER_TOKENS_SET.gitea;
 
   const isSaas = config?.APP_MODE === "saas";
   const isGitHubTokenSet = providers.includes("github");
   const isGitLabTokenSet = providers.includes("gitlab");
   const isBitbucketTokenSet = providers.includes("bitbucket");
+  const isGiteaTokenSet = providers.includes("gitea");
 
   const formAction = async (formData: FormData) => {
     const disconnectButtonClicked =
@@ -67,16 +74,19 @@ function GitSettingsScreen() {
     const gitlabToken = formData.get("gitlab-token-input")?.toString() || "";
     const bitbucketToken =
       formData.get("bitbucket-token-input")?.toString() || "";
+    const giteaToken = formData.get("gitea-token-input")?.toString() || "";
     const githubHost = formData.get("github-host-input")?.toString() || "";
     const gitlabHost = formData.get("gitlab-host-input")?.toString() || "";
     const bitbucketHost =
       formData.get("bitbucket-host-input")?.toString() || "";
+    const giteaHost = formData.get("gitea-host-input")?.toString() || "";
 
     // Create providers object with all tokens
     const providerTokens: Record<string, { token: string; host: string }> = {
       github: { token: githubToken, host: githubHost },
       gitlab: { token: gitlabToken, host: gitlabHost },
       bitbucket: { token: bitbucketToken, host: bitbucketHost },
+      gitea: { token: giteaToken, host: giteaHost },
     };
 
     saveGitProviders(
@@ -95,9 +105,11 @@ function GitSettingsScreen() {
           setGithubTokenInputHasValue(false);
           setGitlabTokenInputHasValue(false);
           setBitbucketTokenInputHasValue(false);
+          setGiteaTokenInputHasValue(false);
           setGithubHostInputHasValue(false);
           setGitlabHostInputHasValue(false);
           setBitbucketHostInputHasValue(false);
+          setGiteaHostInputHasValue(false);
         },
       },
     );
@@ -107,9 +119,11 @@ function GitSettingsScreen() {
     !githubTokenInputHasValue &&
     !gitlabTokenInputHasValue &&
     !bitbucketTokenInputHasValue &&
+    !giteaTokenInputHasValue &&
     !githubHostInputHasValue &&
     !gitlabHostInputHasValue &&
-    !bitbucketHostInputHasValue;
+    !bitbucketHostInputHasValue &&
+    !giteaHostInputHasValue;
   const shouldRenderExternalConfigureButtons = isSaas && config.APP_SLUG;
   const shouldRenderProjectManagementIntegrations =
     config?.FEATURE_FLAGS?.ENABLE_JIRA ||
@@ -196,6 +210,20 @@ function GitSettingsScreen() {
                 bitbucketHostSet={existingBitbucketHost}
               />
             )}
+
+            {!isSaas && (
+              <GiteaTokenInput
+                name="gitea-token-input"
+                isGiteaTokenSet={isGiteaTokenSet}
+                onChange={(value) => {
+                  setGiteaTokenInputHasValue(!!value);
+                }}
+                onGiteaHostChange={(value) => {
+                  setGiteaHostInputHasValue(!!value);
+                }}
+                giteaHostSet={existingGiteaHost}
+              />
+            )}
           </div>
         </div>
       )}
@@ -211,7 +239,7 @@ function GitSettingsScreen() {
               type="submit"
               variant="secondary"
               isDisabled={
-                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet
+                !isGitHubTokenSet && !isGitLabTokenSet && !isBitbucketTokenSet && !isGiteaTokenSet
               }
             >
               {t(I18nKey.GIT$DISCONNECT_TOKENS)}

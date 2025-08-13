@@ -18,6 +18,7 @@ class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
     BITBUCKET = 'bitbucket'
+    GITEA = 'gitea'
     ENTERPRISE_SSO = 'enterprise_sso'
 
 
@@ -71,6 +72,16 @@ class SuggestedTask(BaseModel):
                 'tokenEnvVar': 'BITBUCKET_TOKEN',
                 'ciSystem': 'Bitbucket Pipelines',
                 'ciProvider': 'Bitbucket',
+                'requestVerb': 'pull request',
+            }
+        elif self.git_provider == ProviderType.GITEA:
+            return {
+                'requestType': 'Pull Request',
+                'requestTypeShort': 'PR',
+                'apiName': 'Gitea API',
+                'tokenEnvVar': 'GITEA_TOKEN',
+                'ciSystem': 'Gitea Actions',
+                'ciProvider': 'Gitea',
                 'requestVerb': 'pull request',
             }
 

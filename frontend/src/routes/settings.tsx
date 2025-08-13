@@ -4,7 +4,6 @@ import SettingsIcon from "#/icons/settings.svg?react";
 import { cn } from "#/utils/utils";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
-import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
@@ -33,7 +32,7 @@ const OSS_NAV_ITEMS = [
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
 ];
 
-export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
+export const clientLoader = async ({ request }: { request: Request }) => {
   const url = new URL(request.url);
   const { pathname } = url;
 
