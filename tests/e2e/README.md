@@ -29,10 +29,10 @@ To run the full end-to-end test suite locally, you can use the provided script:
 
 ```bash
 cd tests/e2e
-./run_e2e_tests_new.sh
+./run_e2e_tests.sh
 ```
 
-This script runs the full workflow test which includes:
+This script runs the tests in sequence:
 1. GitHub token configuration
 2. Conversation start
 
@@ -48,8 +48,7 @@ poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v
 # Run the conversation start test
 poetry run pytest test_e2e_workflow.py::test_conversation_start -v
 
-# Run the full workflow test
-poetry run pytest test_e2e_workflow.py::test_full_workflow -v
+
 ```
 
 ### Running with Visible Browser
@@ -58,16 +57,16 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 
 ```bash
 cd tests/e2e
-./run_visible_browser_test_new.sh test_github_token_configuration
-./run_visible_browser_test_new.sh test_conversation_start
-./run_visible_browser_test_new.sh test_full_workflow
+./run_visible_browser_test.sh test_github_token_configuration
+./run_visible_browser_test.sh test_conversation_start
+
 ```
 
 You can also run a simple navigation test to verify your setup:
 
 ```bash
 cd tests/e2e
-./run_visible_browser_test_new.sh test_simple_browser_navigation
+./run_visible_browser_test.sh test_simple_browser_navigation
 ```
 
 Or run the tests directly with pytest:
@@ -109,9 +108,7 @@ The conversation start test (`test_conversation_start`) performs the following s
 6. Asks "How many lines are there in the main README.md file?"
 7. Waits for and verifies the agent's response
 
-### Full Workflow Test
 
-The full workflow test (`test_full_workflow`) combines the GitHub token configuration and conversation start tests into a single test that runs them in sequence.
 
 ### Simple Browser Navigation Test
 

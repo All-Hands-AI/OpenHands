@@ -177,7 +177,8 @@ jobs:
           fi
 
           # Run the tests with detailed output
-          poetry run python -m pytest tests/e2e/test_workflow.py -v --no-header --capture=no
+          cd tests/e2e
+          poetry run python -m pytest test_e2e_workflow.py::test_github_token_configuration test_e2e_workflow.py::test_conversation_start -v --no-header --capture=no
 
       - name: Upload test results
         if: always()

@@ -51,10 +51,7 @@ elif [[ "$1" == "test_conversation_start" ]]; then
   # Run the conversation start test
   echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start"
   poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start
-elif [[ "$1" == "test_full_workflow" ]]; then
-  # Run the full workflow test
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_full_workflow"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_full_workflow
+
 elif [[ "$1" == "test_simple_browser_navigation" ]]; then
   # Run the simple browser navigation test
   echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_simple_browser_navigation"

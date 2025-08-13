@@ -37,43 +37,30 @@ mkdir -p test-results
 # Run the tests in sequence with a visible browser
 echo "Running end-to-end tests with visible browser..."
 
-# Option 1: Run the full workflow test (all steps in one test)
-echo "Running full workflow test..."
-poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_full_workflow
+# Run the tests in sequence
+echo "Step 1: Running GitHub token configuration test..."
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_github_token_configuration
 
 # Check if the test passed
 if [ $? -ne 0 ]; then
-    echo "Full workflow test failed"
+    echo "GitHub token configuration test failed"
     echo "Please check the test output and screenshots in the test-results directory"
     exit 1
 fi
 
-echo "Full workflow test passed successfully!"
+echo "GitHub token configuration test passed"
 
-# Option 2: Run individual tests separately (uncomment to use)
-# echo "Step 1: Running GitHub token configuration test..."
-# poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_github_token_configuration
-#
-# # Check if the test passed
-# if [ $? -ne 0 ]; then
-#     echo "GitHub token configuration test failed"
-#     echo "Please check the test output and screenshots in the test-results directory"
-#     exit 1
-# fi
-#
-# echo "GitHub token configuration test passed"
-#
-# # Step 2: Run the conversation start test
-# echo "Step 2: Running conversation start test..."
-# poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start
-#
-# # Check if the test passed
-# if [ $? -ne 0 ]; then
-#     echo "Conversation start test failed"
-#     echo "Please check the test output and screenshots in the test-results directory"
-#     exit 1
-# fi
-#
-# echo "Conversation start test passed"
-#
-# echo "All end-to-end tests passed successfully!"
+# Step 2: Run the conversation start test
+echo "Step 2: Running conversation start test..."
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start
+
+# Check if the test passed
+if [ $? -ne 0 ]; then
+    echo "Conversation start test failed"
+    echo "Please check the test output and screenshots in the test-results directory"
+    exit 1
+fi
+
+echo "Conversation start test passed"
+
+echo "All end-to-end tests passed successfully!"
