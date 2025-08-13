@@ -30,8 +30,41 @@ vi.mock("react-redux", () => ({
       curAgentState: AgentState.RUNNING,
     };
   }),
-  useDispatch: vi.fn(() => vi.fn()),
   Provider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Mock the custom hooks
+const mockStopConversationMutate = vi.fn();
+const mockStartConversationMutate = vi.fn();
+
+vi.mock("#/hooks/mutation/use-stop-conversation", () => ({
+  useStopConversation: () => ({
+    mutate: mockStopConversationMutate,
+  }),
+}));
+
+vi.mock("#/hooks/mutation/use-start-conversation", () => ({
+  useStartConversation: () => ({
+    mutate: mockStartConversationMutate,
+  }),
+}));
+
+vi.mock("#/hooks/use-conversation-id", () => ({
+  useConversationId: () => ({
+    conversationId: "test-conversation-id",
+  }),
+}));
+
+vi.mock("#/hooks/query/use-active-conversation", () => ({
+  useActiveConversation: () => ({
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock("#/hooks/use-user-providers", () => ({
+  useUserProviders: () => ({
+    providers: [],
+  }),
 }));
 
 // Mock react-i18next
@@ -130,11 +163,11 @@ describe("ServerStatus", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("should dispatch stop conversation action when stop server is clicked", async () => {
+  it("should call stop conversation mutation when stop server is clicked", async () => {
     const user = userEvent.setup();
-    const mockDispatch = vi.fn();
-    const { useDispatch } = await import("react-redux");
-    vi.mocked(useDispatch).mockReturnValue(mockDispatch);
+
+    // Clear previous calls
+    mockStopConversationMutate.mockClear();
 
     renderWithProviders(<ServerStatus conversationStatus="RUNNING" />);
 
@@ -144,14 +177,17 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    expect(mockDispatch).toHaveBeenCalled();
+    expect(mockStopConversationMutate).toHaveBeenCalledWith(
+      { conversationId: "test-conversation-id" },
+      expect.any(Object),
+    );
   });
 
-  it("should dispatch start conversation action when start server is clicked", async () => {
+  it("should call start conversation mutation when start server is clicked", async () => {
     const user = userEvent.setup();
-    const mockDispatch = vi.fn();
-    const { useDispatch } = await import("react-redux");
-    vi.mocked(useDispatch).mockReturnValue(mockDispatch);
+
+    // Clear previous calls
+    mockStartConversationMutate.mockClear();
 
     renderWithProviders(<ServerStatus conversationStatus="STOPPED" />);
 
@@ -161,7 +197,13 @@ describe("ServerStatus", () => {
     const startButton = screen.getByTestId("start-server-button");
     await user.click(startButton);
 
-    expect(mockDispatch).toHaveBeenCalled();
+    expect(mockStartConversationMutate).toHaveBeenCalledWith(
+      {
+        conversationId: "test-conversation-id",
+        providers: [],
+      },
+      expect.any(Object),
+    );
   });
 
   it("should close context menu after stop server action", async () => {

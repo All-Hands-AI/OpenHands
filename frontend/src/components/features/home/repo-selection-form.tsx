@@ -11,6 +11,12 @@ import { Provider } from "#/types/settings";
 import { GitProviderDropdown } from "../../common/git-provider-dropdown";
 import { GitRepositoryDropdown } from "../../common/git-repository-dropdown";
 import { GitBranchDropdown } from "../../common/git-branch-dropdown";
+import { I18nKey } from "#/i18n/declaration";
+import RepoForkedIcon from "#/icons/repo-forked.svg?react";
+import {
+  providerDropdownStyles,
+  repoBranchDropdownStyles,
+} from "#/components/common/react-select-styles";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -20,6 +26,7 @@ export function RepositorySelectionForm({
   onRepoSelection,
 }: RepositorySelectionFormProps) {
   const navigate = useNavigate();
+
   const [selectedRepository, setSelectedRepository] =
     React.useState<GitRepository | null>(null);
   const [selectedBranch, setSelectedBranch] = React.useState<Branch | null>(
@@ -27,15 +34,20 @@ export function RepositorySelectionForm({
   );
   const [selectedProvider, setSelectedProvider] =
     React.useState<Provider | null>(null);
+
   const { providers } = useUserProviders();
+
   const { data: branches, isLoading: isLoadingBranches } =
     useRepositoryBranches(selectedRepository?.full_name || null);
+
   const {
     mutate: createConversation,
     isPending,
     isSuccess,
   } = useCreateConversation();
+
   const isCreatingConversationElsewhere = useIsCreatingConversation();
+
   const { t } = useTranslation();
 
   // Auto-select provider if there's only one
@@ -54,6 +66,10 @@ export function RepositorySelectionForm({
   const hasNoBranches = !isLoadingBranches && branches && branches.length === 0;
 
   const handleProviderSelection = (provider: Provider | null) => {
+    if (provider === selectedProvider) {
+      return;
+    }
+
     setSelectedProvider(provider);
     setSelectedRepository(null); // Reset repository selection when provider changes
     setSelectedBranch(null); // Reset branch selection when provider changes
@@ -70,22 +86,17 @@ export function RepositorySelectionForm({
   };
 
   // Render the provider dropdown
-  const renderProviderSelector = () => {
-    // Only render if there are multiple providers
-    if (providers.length <= 1) {
-      return null;
-    }
-
-    return (
-      <GitProviderDropdown
-        providers={providers}
-        value={selectedProvider}
-        placeholder="Select Provider"
-        className="max-w-[500px]"
-        onChange={handleProviderSelection}
-      />
-    );
-  };
+  const renderProviderSelector = () => (
+    <GitProviderDropdown
+      providers={providers}
+      value={selectedProvider}
+      placeholder="Select Provider"
+      className="max-w-[124px]"
+      onChange={handleProviderSelection}
+      styles={providerDropdownStyles}
+      classNamePrefix="provider-dropdown"
+    />
+  );
 
   // Effect to auto-select main/master branch when branches are loaded
   React.useEffect(() => {
@@ -119,7 +130,9 @@ export function RepositorySelectionForm({
         placeholder="Search repositories..."
         disabled={!selectedProvider}
         onChange={handleRepoSelection}
-        className="max-w-[500px]"
+        className="max-w-auto"
+        styles={repoBranchDropdownStyles}
+        classNamePrefix="repo-branch-dropdown"
       />
     );
   };
@@ -134,12 +147,28 @@ export function RepositorySelectionForm({
       className="max-w-[500px]"
       disabled={!selectedRepository}
       onChange={handleBranchSelection}
+      styles={repoBranchDropdownStyles}
+      classNamePrefix="repo-branch-dropdown"
     />
   );
 
   return (
     <div className="flex flex-col gap-4">
-      {renderProviderSelector()}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-[10px]">
+          <RepoForkedIcon width={24} height={24} />
+          <span className="leading-5 font-bold text-base text-white">
+            {t(I18nKey.COMMON$OPEN_REPOSITORY)}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-white font-normal leading-5">
+          {t(I18nKey.HOME$SELECT_OR_INSERT_URL)}
+        </span>
+        {renderProviderSelector()}
+      </div>
       {renderRepositorySelector()}
       {renderBranchSelector()}
 

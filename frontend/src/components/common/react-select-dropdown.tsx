@@ -1,9 +1,11 @@
+import Select, {
+  StylesConfig,
+  GroupBase,
+  SelectComponentsConfig,
+} from "react-select";
 import { useMemo } from "react";
-import Select from "react-select";
 import { cn } from "#/utils/utils";
-import { SelectOptionBase, getCustomStyles } from "./react-select-styles";
-
-export type SelectOption = SelectOptionBase;
+import { SelectOption, getCustomStyles } from "./react-select-styles";
 
 export interface ReactSelectDropdownProps {
   options: SelectOption[];
@@ -18,6 +20,13 @@ export interface ReactSelectDropdownProps {
   isSearchable?: boolean;
   isLoading?: boolean;
   onChange?: (option: SelectOption | null) => void;
+  styles?: StylesConfig<SelectOption, false>;
+  components?: SelectComponentsConfig<
+    SelectOption,
+    false,
+    GroupBase<SelectOption>
+  >;
+  classNamePrefix?: string;
 }
 
 export function ReactSelectDropdown({
@@ -33,8 +42,11 @@ export function ReactSelectDropdown({
   isSearchable = true,
   isLoading = false,
   onChange,
+  styles,
+  components,
+  classNamePrefix,
 }: ReactSelectDropdownProps) {
-  const customStyles = useMemo(() => getCustomStyles<SelectOption>(), []);
+  const defaultStyles = useMemo(() => getCustomStyles<SelectOption>(), []);
 
   return (
     <div data-testid={testId} className={cn("w-full", className)}>
@@ -48,8 +60,11 @@ export function ReactSelectDropdown({
         isSearchable={isSearchable}
         isLoading={isLoading}
         onChange={onChange}
-        styles={customStyles}
-        className="w-full"
+        styles={styles || defaultStyles}
+        components={{
+          ...components,
+        }}
+        classNamePrefix={classNamePrefix}
       />
       {errorMessage && (
         <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
