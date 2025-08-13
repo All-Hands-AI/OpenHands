@@ -154,47 +154,49 @@ function GitSettingsScreen() {
             </div>
           )}
 
-          {!isSaas && (
-            <GitHubTokenInput
-              name="github-token-input"
-              isGitHubTokenSet={isGitHubTokenSet}
-              onChange={(value) => {
-                setGithubTokenInputHasValue(!!value);
-              }}
-              onGitHubHostChange={(value) => {
-                setGithubHostInputHasValue(!!value);
-              }}
-              githubHostSet={existingGithubHost}
-            />
-          )}
+          <div className="flex flex-col gap-4">
+            {!isSaas && (
+              <GitHubTokenInput
+                name="github-token-input"
+                isGitHubTokenSet={isGitHubTokenSet}
+                onChange={(value) => {
+                  setGithubTokenInputHasValue(!!value);
+                }}
+                onGitHubHostChange={(value) => {
+                  setGithubHostInputHasValue(!!value);
+                }}
+                githubHostSet={existingGithubHost}
+              />
+            )}
 
-          {!isSaas && (
-            <GitLabTokenInput
-              name="gitlab-token-input"
-              isGitLabTokenSet={isGitLabTokenSet}
-              onChange={(value) => {
-                setGitlabTokenInputHasValue(!!value);
-              }}
-              onGitLabHostChange={(value) => {
-                setGitlabHostInputHasValue(!!value);
-              }}
-              gitlabHostSet={existingGitlabHost}
-            />
-          )}
+            {!isSaas && (
+              <GitLabTokenInput
+                name="gitlab-token-input"
+                isGitLabTokenSet={isGitLabTokenSet}
+                onChange={(value) => {
+                  setGitlabTokenInputHasValue(!!value);
+                }}
+                onGitLabHostChange={(value) => {
+                  setGitlabHostInputHasValue(!!value);
+                }}
+                gitlabHostSet={existingGitlabHost}
+              />
+            )}
 
-          {!isSaas && (
-            <BitbucketTokenInput
-              name="bitbucket-token-input"
-              isBitbucketTokenSet={isBitbucketTokenSet}
-              onChange={(value) => {
-                setBitbucketTokenInputHasValue(!!value);
-              }}
-              onBitbucketHostChange={(value) => {
-                setBitbucketHostInputHasValue(!!value);
-              }}
-              bitbucketHostSet={existingBitbucketHost}
-            />
-          )}
+            {!isSaas && (
+              <BitbucketTokenInput
+                name="bitbucket-token-input"
+                isBitbucketTokenSet={isBitbucketTokenSet}
+                onChange={(value) => {
+                  setBitbucketTokenInputHasValue(!!value);
+                }}
+                onBitbucketHostChange={(value) => {
+                  setBitbucketHostInputHasValue(!!value);
+                }}
+                bitbucketHostSet={existingBitbucketHost}
+              />
+            )}
+          </div>
         </div>
       )}
 

@@ -10,8 +10,7 @@ CLIENT = httpx.Client()
 
 @dataclass
 class HttpSession:
-    """
-    request.Session is reusable after it has been closed. This behavior makes it
+    """request.Session is reusable after it has been closed. This behavior makes it
     likely to leak file descriptors (Especially when combined with tenacity).
     We wrap the session to make it unusable after being closed
     """
