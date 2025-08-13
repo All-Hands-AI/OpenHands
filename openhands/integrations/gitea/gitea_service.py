@@ -72,10 +72,17 @@ class GiteaService(BaseGitService, GitService):
             if latest_token:
                 self.token = latest_token
 
-        return {
-            'Authorization': f'token {self.token.get_secret_value() if self.token else ""}',
+        headers = {
             'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'User-Agent': 'OpenHands-Gitea-Integration/1.0',
         }
+
+        if self.token:
+            # Gitea supports both 'token' and 'Bearer' authorization
+            headers['Authorization'] = f'token {self.token.get_secret_value()}'
+
+        return headers
 
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
@@ -179,12 +186,14 @@ class GiteaService(BaseGitService, GitService):
             'order': order,
         }
 
+        # Use is_private parameter instead of private for public repositories
         if public:
-            params['private'] = 'false'
+            params['is_private'] = False
 
         response, _ = await self._make_request(url, params)
         repositories = []
 
+        # The response structure has 'data' array containing repositories
         for repo in response.get('data', []):
             repositories.append(self._convert_to_repository(repo))
 
@@ -203,7 +212,10 @@ class GiteaService(BaseGitService, GitService):
         response, _ = await self._make_request(url, params)
         repositories = []
 
-        for repo in response:
+        # Handle both array response and object with data array
+        repo_list = response if isinstance(response, list) else response.get('data', [])
+
+        for repo in repo_list:
             repositories.append(self._convert_to_repository(repo))
 
         return repositories
@@ -220,14 +232,17 @@ class GiteaService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/user/repos'
         params = {
             'page': page,
-            'limit': per_page,
+            'limit': min(per_page, 100),  # Gitea max limit is 100
             'sort': sort,
         }
 
         response, _ = await self._make_request(url, params)
         repositories = []
 
-        for repo in response:
+        # Handle both array response and object with data array
+        repo_list = response if isinstance(response, list) else response.get('data', [])
+
+        for repo in repo_list:
             repositories.append(self._convert_to_repository(repo))
 
         return repositories
@@ -246,32 +261,48 @@ class GiteaService(BaseGitService, GitService):
                 issues_params = {'state': 'open', 'type': 'issues', 'limit': 5}
                 issues_response, _ = await self._make_request(issues_url, issues_params)
 
-                for issue in issues_response:
-                    tasks.append(
-                        SuggestedTask(
-                            git_provider=ProviderType.GITEA,
-                            task_type=TaskType.OPEN_ISSUE,
-                            repo=repo.full_name,
-                            issue_number=issue['number'],
-                            title=issue['title'],
+                # Handle both array response and object with data array
+                issues_list = (
+                    issues_response
+                    if isinstance(issues_response, list)
+                    else issues_response.get('data', [])
+                )
+
+                for issue in issues_list:
+                    if issue.get('number') and issue.get('title'):
+                        tasks.append(
+                            SuggestedTask(
+                                git_provider=ProviderType.GITEA,
+                                task_type=TaskType.OPEN_ISSUE,
+                                repo=repo.full_name,
+                                issue_number=issue['number'],
+                                title=issue['title'],
+                            )
                         )
-                    )
 
                 # Get open PRs
                 prs_url = f'{self.BASE_URL}/repos/{repo.full_name}/pulls'
                 prs_params = {'state': 'open', 'limit': 5}
                 prs_response, _ = await self._make_request(prs_url, prs_params)
 
-                for pr in prs_response:
-                    tasks.append(
-                        SuggestedTask(
-                            git_provider=ProviderType.GITEA,
-                            task_type=TaskType.OPEN_PR,
-                            repo=repo.full_name,
-                            issue_number=pr['number'],
-                            title=pr['title'],
+                # Handle both array response and object with data array
+                prs_list = (
+                    prs_response
+                    if isinstance(prs_response, list)
+                    else prs_response.get('data', [])
+                )
+
+                for pr in prs_list:
+                    if pr.get('number') and pr.get('title'):
+                        tasks.append(
+                            SuggestedTask(
+                                git_provider=ProviderType.GITEA,
+                                task_type=TaskType.OPEN_PR,
+                                repo=repo.full_name,
+                                issue_number=pr['number'],
+                                title=pr['title'],
+                            )
                         )
-                    )
 
             except Exception as e:
                 logger.warning(f'Error fetching tasks for {repo.full_name}: {e}')
@@ -294,12 +325,14 @@ class GiteaService(BaseGitService, GitService):
 
         branches = []
         for branch in response:
+            # Extract commit information safely
+            commit = branch.get('commit', {})
             branches.append(
                 Branch(
                     name=branch['name'],
-                    commit_sha=branch['commit']['id'],
+                    commit_sha=commit.get('id', ''),
                     protected=branch.get('protected', False),
-                    last_push_date=branch['commit'].get('timestamp'),
+                    last_push_date=commit.get('timestamp'),
                 )
             )
 
