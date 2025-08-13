@@ -68,9 +68,6 @@ MAX_RECENT_THOUGHTS = 5
 displayed_commands: set[str] = set()
 MAX_DISPLAYED_COMMANDS = 10
 
-# Global variable to store current action risk for display synchronization
-current_action_risk: str | None = None
-
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -446,25 +443,8 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
-    global displayed_commands, current_action_risk
+    global displayed_commands
     
-    # Get safety risk information if available
-    safety_risk = getattr(event, 'safety_risk', None)
-    
-    # If no risk info on event, use the global current action risk
-    if safety_risk is None:
-        safety_risk = current_action_risk
-    
-    # If still no risk info, use fallback detection for testing
-    if safety_risk is None:
-        command = event.command.lower()
-        if any(dangerous in command for dangerous in ['rm -rf', 'sudo', 'chmod 777', 'dd if=', 'mkfs', 'format']):
-            safety_risk = 'HIGH'
-        elif any(risky in command for risky in ['rm ', 'mv ', 'cp ', 'wget', 'curl', 'pip install', 'npm install']):
-            safety_risk = 'MEDIUM'
-        elif any(safe in command for safe in ['ls', 'cat', 'echo', 'pwd', 'whoami', 'date']):
-            safety_risk = 'LOW'
-
     # Create a unique identifier for this command to prevent duplicates
     command_id = f"{event.command}_{getattr(event, 'id', '')}"
     
@@ -482,19 +462,9 @@ def display_command(event: CmdRunAction) -> None:
         displayed_commands.clear()
         displayed_commands.update(displayed_commands_list[-MAX_DISPLAYED_COMMANDS:])
 
-    # Create command frame with risk info in header
+    # Create simple command frame without risk information
     command_text = f'$ {event.command}'
     
-    # Add risk information to the title
-    if safety_risk:
-        title = f'Command [Action Risk: {safety_risk.title()}]'
-        # Use risk-appropriate border color
-        risk_color = get_risk_color(safety_risk)
-        border_style = f'fg:{risk_color}'
-    else:
-        title = 'Command'
-        border_style = 'ansiblue'
-
     container = Frame(
         TextArea(
             text=command_text,
@@ -502,25 +472,11 @@ def display_command(event: CmdRunAction) -> None:
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title=title,
-        style=border_style,
+        title='Command',
+        style='ansiblue',
     )
     print_formatted_text('')
     print_container(container)
-    
-    # Display subtle risk indicator below the command frame if present
-    if safety_risk:
-        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
-        risk_color = get_risk_color(safety_risk)
-        
-        # Create a very subtle, small risk indicator
-        risk_text = f'  {risk_emoji} {safety_risk.lower()}'
-        
-        # Use HTML formatting for dimmed colored text
-        from prompt_toolkit.formatted_text import HTML
-        formatted_risk = HTML(f'<style fg="{risk_color}" dim="true">{risk_text}</style>')
-        
-        print_formatted_text(formatted_risk, style=DEFAULT_STYLE)
 
 
 def display_command_output(output: str) -> None:
@@ -893,15 +849,11 @@ async def read_prompt_input(
 
 
 async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) -> str:
-    global current_action_risk
     try:
         # Get risk information from the pending action
         safety_risk = None
         if pending_action and hasattr(pending_action, 'safety_risk'):
             safety_risk = getattr(pending_action, 'safety_risk')
-        
-        # Store the risk globally for display synchronization
-        current_action_risk = safety_risk
 
         # Only show confirmation dialog for HIGH risk commands
         # For MEDIUM and LOW risk, auto-proceed (risk will be shown in action frame)
