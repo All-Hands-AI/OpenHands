@@ -724,6 +724,9 @@ def run_cli_command(args):
         print_formatted_text(f'Connection refused: {e}')
         sys.exit(1)
     except Exception as e:
+        import traceback
+
+        traceback.print_exc()
         print_formatted_text(f'An error occurred: {e}')
         sys.exit(1)
     finally:
