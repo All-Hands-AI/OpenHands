@@ -21,11 +21,13 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.stream import EventStream
 from openhands.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.prompt import (
@@ -40,6 +42,12 @@ from openhands.utils.prompt import (
 def file_store():
     """Create a temporary file store for testing."""
     return InMemoryFileStore({})
+
+
+@pytest.fixture
+def mock_llm_registry(file_store):
+    """Create a mock LLMRegistry for testing."""
+    return MagicMock(spec=LLMRegistry)
 
 
 @pytest.fixture
@@ -90,24 +98,29 @@ def mock_agent():
 
 
 @pytest.mark.asyncio
-async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
+async def test_memory_on_event_exception_handling(
+    memory, event_stream, mock_agent, mock_llm_registry
+):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
     # Create a mock runtime
     runtime = MagicMock(spec=ActionExecutionClient)
     runtime.event_stream = event_stream
 
     # Mock Memory method to raise an exception
-    with patch.object(
-        memory, '_on_workspace_context_recall', side_effect=Exception('Test error')
+    with (
+        patch.object(
+            memory, '_on_workspace_context_recall', side_effect=Exception('Test error')
+        ),
+        patch('openhands.core.main.create_agent', return_value=mock_agent),
     ):
         state = await run_controller(
             config=OpenHandsConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
+            llm_registry=mock_llm_registry,
         )
 
         # Verify that the controller's last error was set
@@ -118,7 +131,7 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
 
 @pytest.mark.asyncio
 async def test_memory_on_workspace_context_recall_exception_handling(
-    memory, event_stream, mock_agent
+    memory, event_stream, mock_agent, mock_llm_registry
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
     # Create a mock runtime
@@ -126,19 +139,22 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     runtime.event_stream = event_stream
 
     # Mock Memory._on_workspace_context_recall to raise an exception
-    with patch.object(
-        memory,
-        '_find_microagent_knowledge',
-        side_effect=Exception('Test error from _find_microagent_knowledge'),
+    with (
+        patch.object(
+            memory,
+            '_find_microagent_knowledge',
+            side_effect=Exception('Test error from _find_microagent_knowledge'),
+        ),
+        patch('openhands.core.main.create_agent', return_value=mock_agent),
     ):
         state = await run_controller(
             config=OpenHandsConfig(),
             initial_user_action=MessageAction(content='Test message'),
             runtime=runtime,
             sid='test',
-            agent=mock_agent,
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
+            llm_registry=mock_llm_registry,
         )
 
         # Verify that the controller's last error was set
@@ -593,12 +609,14 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
 
 @pytest.mark.asyncio
 async def test_conversation_instructions_plumbed_to_memory(
-    mock_agent, event_stream, file_store
+    mock_agent, event_stream, file_store, mock_llm_registry
 ):
     # Setup
     session = AgentSession(
         sid='test-session',
         file_store=file_store,
+        llm_registry=mock_llm_registry,
+        convo_stats=ConversationStats(file_store, 'test-session', None),
     )
 
     # Create a mock runtime and set it up

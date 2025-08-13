@@ -83,6 +83,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.utils.utils import create_registry_and_convo_stats
 
 
 async def cleanup_session(
@@ -147,9 +148,16 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    agent = create_agent(config)
+    llm_registry, convo_stats, config = create_registry_and_convo_stats(
+        config,
+        sid,
+        None,
+    )
+
+    agent = create_agent(config, llm_registry)
     runtime = create_runtime(
         config,
+        llm_registry,
         sid=sid,
         headless_mode=True,
         agent=agent,
@@ -161,7 +169,7 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    controller, initial_state = create_controller(agent, runtime, config)
+    controller, initial_state = create_controller(agent, runtime, config, convo_stats)
 
     event_stream = runtime.event_stream
 

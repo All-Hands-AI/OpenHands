@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import socketio
 
 from openhands.core.config import OpenHandsConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -135,6 +136,16 @@ class ConversationManager(ABC):
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> list[AgentLoopInfo]:
         """Get the AgentLoopInfo for conversations."""
+
+    @abstractmethod
+    async def request_llm_completion(
+        self,
+        sid: str,
+        service_id: str,
+        llm_config: LLMConfig,
+        messages: list[dict[str, str]],
+    ) -> str:
+        """Request extraneous llm completions for a conversation"""
 
     @classmethod
     @abstractmethod
