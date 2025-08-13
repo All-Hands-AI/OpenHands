@@ -39,10 +39,10 @@ class ExperimentManager:
     ) -> OpenHandsConfig:
         exp_config = load_experiment_config(conversation_id)
         logger.info(f'Got experiment config: {exp_config}')
-        if exp_config:
+        if exp_config and exp_config.config:
             agent_cfg = config.get_agent_config(config.default_agent)
             try:
-                for attr, value in exp_config.model_dump(exclude_unset=True).items():
+                for attr, value in exp_config.config.items():
                     logger.info(f'checking attrib: {attr}')
                     if hasattr(agent_cfg, attr):
                         logger.info(f'setting attrib: {attr}')
