@@ -194,6 +194,7 @@ class CLIRuntime(Runtime):
         self.setup_git_config(
             git_user_name=self.config.git_user_name,
             git_user_email=self.config.git_user_email,
+            is_local_runtime=True,
         )
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:

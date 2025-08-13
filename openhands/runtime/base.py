@@ -911,6 +911,7 @@ fi
         self,
         git_user_name: str = 'openhands',
         git_user_email: str = 'openhands@all-hands.dev',
+        is_local_runtime: bool = False,
     ) -> None:
         """Configure git user settings after runtime connection.
         
@@ -920,10 +921,10 @@ fi
         Args:
             git_user_name: Git user name for commits
             git_user_email: Git user email for commits
+            is_local_runtime: Whether this is a local runtime (affects config strategy)
         """
         import sys
         
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
         
         commands = []

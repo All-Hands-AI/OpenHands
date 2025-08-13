@@ -53,6 +53,8 @@ def setup_git_config(
 - **Local Runtime (Unix)**: Uses file-based git config with bash environment variable  
 - **Remote/Container Runtime**: Uses global git config
 
+The runtime type is determined by the `is_local_runtime` parameter passed to `setup_git_config()`, eliminating the need to rely on environment variables.
+
 ### Runtime Integration
 
 Each runtime implementation calls `setup_git_config()` after successful connection:
@@ -62,6 +64,7 @@ Each runtime implementation calls `setup_git_config()` after successful connecti
 self.setup_git_config(
     git_user_name=self.config.git_user_name,
     git_user_email=self.config.git_user_email,
+    is_local_runtime=True,  # For local/CLI runtimes
 )
 ```
 
