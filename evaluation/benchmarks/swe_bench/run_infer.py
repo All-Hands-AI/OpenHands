@@ -28,6 +28,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     assert_and_raise,
+    check_maximum_retries_exceeded,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -42,8 +43,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -79,6 +80,8 @@ def set_dataset_type(dataset_name: str) -> str:
         DATASET_TYPE = 'SWE-Gym'
     elif 'swe-bench-live' in name_lower:
         DATASET_TYPE = 'SWE-bench-Live'
+    elif 'swe-rebench' in name_lower:
+        DATASET_TYPE = 'SWE-rebench'
     elif 'multimodal' in name_lower:
         DATASET_TYPE = 'Multimodal'
     else:
@@ -108,11 +111,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     if mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
-        if 'claude' in llm_model:
-            template_name = 'swe_claude.j2'
-        elif 'gemini' in llm_model:
-            template_name = 'swe_gemini.j2'
-        elif 'gpt-4.1' in llm_model:
+        if 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
             template_name = (
@@ -181,6 +180,8 @@ def get_instance_docker_image(
             docker_image_prefix = 'docker.io/starryzhang/'
         elif DATASET_TYPE == 'SWE-bench':
             docker_image_prefix = 'docker.io/swebench/'
+        elif DATASET_TYPE == 'SWE-rebench':
+            docker_image_prefix = 'docker.io/swerebench/'
         repo, name = instance_id.split('__')
         image_name = f'{docker_image_prefix.rstrip("/")}/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
         logger.debug(f'Using official SWE-Bench image: {image_name}')
@@ -227,6 +228,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
+        enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
         # do not mount workspace
@@ -320,6 +322,8 @@ def initialize_runtime(
         # inject the instance swe entry
         if DATASET_TYPE == 'SWE-bench-Live':
             entry_script_path = 'instance_swe_entry_live.sh'
+        elif DATASET_TYPE == 'SWE-rebench':
+            entry_script_path = 'instance_swe_entry_rebench.sh'
         else:
             entry_script_path = 'instance_swe_entry.sh'
         runtime.copy_to(
@@ -732,7 +736,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
@@ -970,3 +974,5 @@ if __name__ == '__main__':
         logger.info(
             f'Done! Total {len(added_instance_ids)} instances added to {output_file}'
         )
+        # Check if any instances reached maximum retries
+        check_maximum_retries_exceeded(metadata.eval_output_dir)

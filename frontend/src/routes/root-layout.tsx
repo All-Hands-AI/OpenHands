@@ -26,6 +26,7 @@ import { useAutoLogin } from "#/hooks/use-auto-login";
 import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
+import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -80,6 +81,7 @@ export default function MainApp() {
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
+    authUrl: config.data?.AUTH_URL,
   });
 
   // When on TOS page, we don't use the GitHub auth URL
@@ -197,23 +199,29 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="bg-base p-3 h-screen md:min-w-[1024px] flex flex-col md:flex-row gap-3"
+      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
     >
       <Sidebar />
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
+        {config.data?.MAINTENANCE && (
+          <div className="flex-shrink-0">
+            <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
+          </div>
+        )}
+        <div id="root-outlet" className="flex-1 relative overflow-auto">
+          <EmailVerificationGuard>
+            <Outlet />
+          </EmailVerificationGuard>
+        </div>
       </div>
 
       {renderAuthModal && (
         <AuthModal
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
+          providersConfigured={config.data?.PROVIDERS_CONFIGURED}
+          authUrl={config.data?.AUTH_URL}
         />
       )}
       {renderReAuthModal && <ReauthModal />}

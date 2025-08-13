@@ -73,7 +73,7 @@ describe("TaskCard", () => {
         OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
     });
 
     it("should call create conversation with suggest task trigger and selected suggested task", async () => {
@@ -88,9 +88,15 @@ describe("TaskCard", () => {
         MOCK_RESPOSITORIES[0].full_name,
         MOCK_RESPOSITORIES[0].git_provider,
         undefined,
-        [],
+        {
+          git_provider: "github",
+          issue_number: 123,
+          repo: "repo1",
+          task_type: "MERGE_CONFLICTS",
+          title: "Task 1",
+        },
         undefined,
-        MOCK_TASK_1,
+        undefined,
         undefined,
       );
     });
@@ -104,5 +110,30 @@ describe("TaskCard", () => {
 
     expect(launchButton).toHaveTextContent(/Loading/i);
     expect(launchButton).toBeDisabled();
+  });
+
+  it("should navigate to the conversation page after creating a conversation", async () => {
+    const createConversationSpy = vi.spyOn(OpenHands, "createConversation");
+    createConversationSpy.mockResolvedValue({
+      conversation_id: "test-conversation-id",
+      title: "Test Conversation",
+      selected_repository: "repo1",
+      selected_branch: "main",
+      git_provider: "github",
+      last_updated_at: "2023-01-01T00:00:00Z",
+      created_at: "2023-01-01T00:00:00Z",
+      status: "RUNNING",
+      runtime_status: "STATUS$READY",
+      url: null,
+      session_api_key: null
+    });
+
+    renderTaskCard();
+
+    const launchButton = screen.getByTestId("task-launch-button");
+    await userEvent.click(launchButton);
+
+    // Wait for navigation to the conversation page
+    await screen.findByTestId("conversation-screen");
   });
 });

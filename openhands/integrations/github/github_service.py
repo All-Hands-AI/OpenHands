@@ -1,3 +1,4 @@
+import base64
 import json
 import os
 from datetime import datetime
@@ -15,6 +16,8 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    InstallationsService,
+    OwnerType,
     ProviderType,
     Repository,
     RequestMethod,
@@ -23,11 +26,12 @@ from openhands.integrations.service_types import (
     UnknownException,
     User,
 )
+from openhands.microagent.types import MicroagentContentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService(BaseGitService, GitService):
+class GitHubService(BaseGitService, GitService, InstallationsService):
     """Default implementation of GitService for GitHub integration.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
@@ -72,7 +76,9 @@ class GitHubService(BaseGitService, GitService):
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
-            self.token = await self.get_latest_token()
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
@@ -84,6 +90,36 @@ class GitHubService(BaseGitService, GitService):
 
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
+
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'file'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['name']
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return f'{microagents_path}/{item["name"]}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
 
     async def _make_request(
         self,
@@ -189,14 +225,66 @@ class GitHubService(BaseGitService, GitService):
         ts = repo.get('pushed_at')
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """
+        Parse a GitHub API repository response into a Repository object.
+
+        Args:
+            repo: Repository data from GitHub API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        return Repository(
+            id=str(repo.get('id')),  # type: ignore[arg-type]
+            full_name=repo.get('full_name'),  # type: ignore[arg-type]
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('owner', {}).get('type') == 'Organization'
+                else OwnerType.USER
+            ),
+            link_header=link_header,
+        )
+
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
+    ):
+        params = {'page': str(page), 'per_page': str(per_page)}
+        if installation_id:
+            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+            response, headers = await self._make_request(url, params)
+            response = response.get('repositories', [])
+        else:
+            url = f'{self.BASE_URL}/user/repos'
+            params['sort'] = sort
+            response, headers = await self._make_request(url, params)
+
+        next_link: str = headers.get('Link', '')
+        return [
+            self._parse_repository(repo, link_header=next_link) for repo in response
+        ]
+
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
         all_repos: list[dict] = []
 
         if app_mode == AppMode.SAAS:
             # Get all installation IDs and fetch repos for each one
-            installation_ids = await self.get_installation_ids()
+            installation_ids = await self.get_installations()
 
             # Iterate through each installation ID
             for installation_id in installation_ids:
@@ -227,49 +315,47 @@ class GitHubService(BaseGitService, GitService):
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
         # Convert to Repository objects
-        return [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True),
-            )
-            for repo in all_repos
-        ]
+        return [self._parse_repository(repo) for repo in all_repos]
 
-    async def get_installation_ids(self) -> list[int]:
+    async def get_installations(self) -> list[str]:
         url = f'{self.BASE_URL}/user/installations'
         response, _ = await self._make_request(url)
         installations = response.get('installations', [])
-        return [i['id'] for i in installations]
+        return [str(i['id']) for i in installations]
 
     async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        # Add is:public to the query to ensure we only search for public repositories
-        query_with_visibility = f'{query} is:public'
         params = {
-            'q': query_with_visibility,
             'per_page': per_page,
             'sort': sort,
             'order': order,
         }
 
+        if public:
+            url_parts = query.split('/')
+            if len(url_parts) < 4:
+                return []
+
+            org = url_parts[3]
+            repo_name = url_parts[4]
+            # Add is:public to the query to ensure we only search for public repositories
+            params['q'] = f'in:name {org}/{repo_name} is:public'
+
+        # Perhaps we should go through all orgs and the search for repos under every org
+        # Currently it will only search user repos, and org repos when '/' is in the name
+        if not public and '/' in query:
+            org, repo_query = query.split('/', 1)
+            query_with_user = f'org:{org} in:name {repo_query}'
+            params['q'] = query_with_user
+        elif not public:
+            user = await self.get_user()
+            params['q'] = f'in:name {query} user:{user.login}'
+
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
-
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-            )
-            for repo in repo_items
-        ]
+        repos = [self._parse_repository(repo) for repo in repo_items]
 
         return repos
 
@@ -406,13 +492,7 @@ class GitHubService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/repos/{repository}'
         repo, _ = await self._make_request(url)
 
-        return Repository(
-            id=str(repo.get('id')),
-            full_name=repo.get('full_name'),
-            stargazers_count=repo.get('stargazers_count'),
-            git_provider=ProviderType.GITHUB,
-            is_public=not repo.get('private', True),
-        )
+        return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
@@ -468,6 +548,7 @@ class GitHubService(BaseGitService, GitService):
         title: str,
         body: str | None = None,
         draft: bool = True,
+        labels: list[str] | None = None,
     ) -> str:
         """
         Creates a PR using user credentials
@@ -479,6 +560,7 @@ class GitHubService(BaseGitService, GitService):
             title: The title of the pull request (optional, defaults to a generic title)
             body: The body/description of the pull request (optional)
             draft: Whether to create the PR as a draft (optional, defaults to False)
+            labels: A list of labels to apply to the pull request (optional)
 
         Returns:
             - PR URL when successful
@@ -505,8 +587,40 @@ class GitHubService(BaseGitService, GitService):
             url=url, params=payload, method=RequestMethod.POST
         )
 
+        # Add labels if provided (PRs are a type of issue in GitHub's API)
+        if labels and len(labels) > 0:
+            pr_number = response['number']
+            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'
+            labels_payload = {'labels': labels}
+            await self._make_request(
+                url=labels_url, params=labels_payload, method=RequestMethod.POST
+            )
+
         # Return the HTML URL of the created PR
         return response['html_url']
+
+    async def get_microagent_content(
+        self, repository: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Fetch individual file content from GitHub repository.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            file_path: Path to the file within the repository
+
+        Returns:
+            MicroagentContentResponse with parsed content and triggers
+
+        Raises:
+            RuntimeError: If file cannot be fetched or doesn't exist
+        """
+        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
+
+        file_data, _ = await self._make_request(file_url)
+        file_content = base64.b64decode(file_data['content']).decode('utf-8')
+
+        # Parse the content to extract triggers from frontmatter
+        return self._parse_microagent_content(file_content, file_path)
 
 
 github_service_cls = os.environ.get(

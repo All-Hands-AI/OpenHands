@@ -12,6 +12,9 @@ if TYPE_CHECKING:
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
 from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+from openhands.agenthub.codeact_agent.tools.condensation_request import (
+    CondensationRequestTool,
+)
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
@@ -103,10 +106,15 @@ class CodeActAgent(Agent):
     def _get_tools(self) -> list['ChatCompletionToolParam']:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
-        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-4', 'o3', 'o1', 'o4']
 
         use_short_tool_desc = False
         if self.llm is not None:
+            # For historical reasons, previously OpenAI enforces max function description length of 1k characters
+            # https://community.openai.com/t/function-call-description-max-length/529902
+            # But it no longer seems to be an issue recently
+            # https://community.openai.com/t/was-the-character-limit-for-schema-descriptions-upgraded/1225975
+            # Tested on GPT-5 and longer description still works. But we still keep the logic to be safe for older models.
             use_short_tool_desc = any(
                 model_substr in self.llm.config.model
                 for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
@@ -119,6 +127,8 @@ class CodeActAgent(Agent):
             tools.append(ThinkTool)
         if self.config.enable_finish:
             tools.append(FinishTool)
+        if self.config.enable_condensation_request:
+            tools.append(CondensationRequestTool)
         if self.config.enable_browsing:
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')
@@ -156,6 +166,13 @@ class CodeActAgent(Agent):
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
+        - CondensationAction(...) - condense conversation history by forgetting specified events and optionally providing a summary
+        - FileReadAction(path, ...) - read file content from specified path
+        - FileEditAction(path, ...) - edit file using LLM-based (deprecated) or ACI-based editing
+        - AgentThinkAction(thought) - log agent's thought/reasoning process
+        - CondensationRequestAction() - request condensation of conversation history
+        - BrowseInteractiveAction(browser_actions) - interact with browser using specified actions
+        - MCPAction(name, arguments) - interact with MCP server tools
         """
         # Continue with pending actions if any
         if self.pending_actions:
@@ -188,7 +205,11 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        params['extra_body'] = {
+            'metadata': state.to_llm_metadata(
+                model_name=self.llm.config.model, agent_name=self.name
+            )
+        }
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)

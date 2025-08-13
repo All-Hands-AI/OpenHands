@@ -89,8 +89,8 @@ def test_prep_build_folder(temp_dir):
             extra_deps=None,
         )
 
-    # make sure that the code was copied
-    shutil_mock.copytree.assert_called_once()
+    # make sure that the code (openhands/) and microagents folder were copied
+    assert shutil_mock.copytree.call_count == 2
     assert shutil_mock.copy2.call_count == 2
 
     # Now check dockerfile is in the folder
@@ -101,7 +101,7 @@ def test_prep_build_folder(temp_dir):
 
 def test_get_hash_for_lock_files():
     with patch('builtins.open', mock_open(read_data='mock-data'.encode())):
-        hash = get_hash_for_lock_files('some_base_image')
+        hash = get_hash_for_lock_files('some_base_image', enable_browser=True)
         # Since we mocked open to always return "mock_data", the hash is the result
         # of hashing the name of the base image followed by "mock-data" twice
         md5 = hashlib.md5()
@@ -109,6 +109,31 @@ def test_get_hash_for_lock_files():
         for _ in range(2):
             md5.update('mock-data'.encode())
         assert hash == truncate_hash(md5.hexdigest())
+
+
+def test_get_hash_for_lock_files_different_enable_browser():
+    with patch('builtins.open', mock_open(read_data='mock-data'.encode())):
+        hash_true = get_hash_for_lock_files('some_base_image', enable_browser=True)
+        hash_false = get_hash_for_lock_files('some_base_image', enable_browser=False)
+
+        # Hash with enable_browser=True should not include the enable_browser value
+        md5_true = hashlib.md5()
+        md5_true.update('some_base_image'.encode())
+        for _ in range(2):
+            md5_true.update('mock-data'.encode())
+        expected_hash_true = truncate_hash(md5_true.hexdigest())
+
+        # Hash with enable_browser=False should include the enable_browser value
+        md5_false = hashlib.md5()
+        md5_false.update('some_base_image'.encode())
+        md5_false.update('False'.encode())  # enable_browser=False is included
+        for _ in range(2):
+            md5_false.update('mock-data'.encode())
+        expected_hash_false = truncate_hash(md5_false.hexdigest())
+
+        assert hash_true == expected_hash_true
+        assert hash_false == expected_hash_false
+        assert hash_true != hash_false  # They should be different
 
 
 def test_get_hash_for_source_files():
@@ -247,7 +272,7 @@ def test_build_runtime_image_from_scratch():
             == f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag_mock-source-tag'
         )
         mock_prep_build_folder.assert_called_once_with(
-            ANY, base_image, BuildFromImageType.SCRATCH, None
+            ANY, base_image, BuildFromImageType.SCRATCH, None, True
         )
 
 
@@ -342,6 +367,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_exist():
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-lock-tag',
             BuildFromImageType.LOCK,
             None,
+            True,
         )
 
 
@@ -401,6 +427,7 @@ def test_build_runtime_image_exact_hash_not_exist_and_lock_not_exist_and_version
             f'{get_runtime_image_repo()}:{OH_VERSION}_mock-versioned-tag',
             BuildFromImageType.VERSIONED,
             None,
+            True,
         )
 
 

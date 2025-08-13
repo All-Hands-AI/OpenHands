@@ -5,7 +5,7 @@ import platform
 import sys
 from ast import literal_eval
 from types import UnionType
-from typing import MutableMapping, get_args, get_origin
+from typing import Any, MutableMapping, get_args, get_origin, get_type_hints
 from uuid import uuid4
 
 import toml
@@ -15,14 +15,11 @@ from pydantic import BaseModel, SecretStr, ValidationError
 from openhands import __version__
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.arg_utils import get_headless_parser
 from openhands.core.config.condenser_config import (
     CondenserConfig,
     condenser_config_from_toml_section,
     create_condenser_config,
-)
-from openhands.core.config.config_utils import (
-    OH_DEFAULT_AGENT,
-    OH_MAX_ITERATIONS,
 )
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
@@ -75,6 +72,7 @@ def load_from_env(
             # e.g. LLM_BASE_URL
             env_var_name = (prefix + field_name).upper()
 
+            cast_value: Any
             if isinstance(field_value, BaseModel):
                 set_attr_from_env(field_value, prefix=field_name + '_')
 
@@ -94,7 +92,7 @@ def load_from_env(
                     # Attempt to cast the env var to type hinted in the dataclass
                     if field_type is bool:
                         cast_value = str(value).lower() in ['true', '1']
-                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS                                                                                                                                     │
+                    # parse dicts and lists like SANDBOX_RUNTIME_STARTUP_ENV_VARS and SANDBOX_RUNTIME_EXTRA_BUILD_ARGS
                     elif (
                         get_origin(field_type) is dict
                         or get_origin(field_type) is list
@@ -102,6 +100,20 @@ def load_from_env(
                         or field_type is list
                     ):
                         cast_value = literal_eval(value)
+                        # If it's a list of Pydantic models
+                        if get_origin(field_type) is list:
+                            inner_type = get_args(field_type)[
+                                0
+                            ]  # e.g., MCPSHTTPServerConfig
+                            if isinstance(inner_type, type) and issubclass(
+                                inner_type, BaseModel
+                            ):
+                                cast_value = [
+                                    inner_type(**item)
+                                    if isinstance(item, dict)
+                                    else item
+                                    for item in cast_value
+                                ]
                     else:
                         if field_type is not None:
                             cast_value = field_type(value)
@@ -154,8 +166,22 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         core_config = toml_config['core']
 
     # Process core section if present
+    cfg_type_hints = get_type_hints(cfg.__class__)
     for key, value in core_config.items():
         if hasattr(cfg, key):
+            # Get expected type of the attribute
+            expected_type = cfg_type_hints.get(key, None)
+
+            # Check if expected_type is a Union that includes SecretStr and value is str, e.g. search_api_key
+            if expected_type:
+                origin = get_origin(expected_type)
+                args = get_args(expected_type)
+
+                if origin is UnionType and SecretStr in args and isinstance(value, str):
+                    value = SecretStr(value)
+                elif expected_type is SecretStr and isinstance(value, str):
+                    value = SecretStr(value)
+
             setattr(cfg, key, value)
         else:
             logger.openhands_logger.warning(
@@ -210,9 +236,9 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             logger.openhands_logger.warning(
                 f'Cannot parse [sandbox] config from toml, values have not been applied.\nError: {e}'
             )
-        except ValueError:
+        except ValueError as e:
             # Re-raise ValueError from SandboxConfig.from_toml_section
-            raise ValueError('Error in [sandbox] section in config.toml')
+            raise ValueError('Error in [sandbox] section in config.toml') from e
 
     # Process MCP sections if present
     if 'mcp' in toml_config:
@@ -323,7 +349,7 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
     if cfg.workspace_base is not None or cfg.workspace_mount_path is not None:
         logger.openhands_logger.warning(
             'DEPRECATED: The WORKSPACE_BASE and WORKSPACE_MOUNT_PATH environment variables are deprecated. '
-            "Please use RUNTIME_MOUNT instead, e.g. 'RUNTIME_MOUNT=/my/host/dir:/workspace:rw'"
+            "Please use SANDBOX_VOLUMES instead, e.g. 'SANDBOX_VOLUMES=/my/host/dir:/workspace:rw'"
         )
     if cfg.sandbox.volumes is not None:
         # Split by commas to handle multiple mounts
@@ -501,7 +527,14 @@ def get_llm_config_arg(
     if llm_config_arg.startswith('llm.'):
         llm_config_arg = llm_config_arg[4:]
 
-    logger.openhands_logger.debug(f'Loading llm config from {llm_config_arg}')
+    logger.openhands_logger.debug(
+        f'Loading llm config "{llm_config_arg}" from {toml_file}'
+    )
+
+    # Check if the file exists
+    if not os.path.exists(toml_file):
+        logger.openhands_logger.debug(f'Config file not found: {toml_file}')
+        return None
 
     # load the toml file
     try:
@@ -519,7 +552,10 @@ def get_llm_config_arg(
     # update the llm config with the specified section
     if 'llm' in toml_config and llm_config_arg in toml_config['llm']:
         return LLMConfig(**toml_config['llm'][llm_config_arg])
-    logger.openhands_logger.debug(f'Loading from toml failed for {llm_config_arg}')
+
+    logger.openhands_logger.debug(
+        f'LLM config "{llm_config_arg}" not found in {toml_file}'
+    )
     return None
 
 
@@ -635,136 +671,9 @@ def get_condenser_config_arg(
         return None
 
 
-# Command line arguments
-def get_parser() -> argparse.ArgumentParser:
-    """Get the argument parser."""
-    parser = argparse.ArgumentParser(description='Run the agent via CLI')
-
-    # Add version argument
-    parser.add_argument(
-        '-v', '--version', action='store_true', help='Show version information'
-    )
-
-    parser.add_argument(
-        '--config-file',
-        type=str,
-        default='config.toml',
-        help='Path to the config file (default: config.toml in the current directory)',
-    )
-    parser.add_argument(
-        '-d',
-        '--directory',
-        type=str,
-        help='The working directory for the agent',
-    )
-    parser.add_argument(
-        '-t',
-        '--task',
-        type=str,
-        default='',
-        help='The task for the agent to perform',
-    )
-    parser.add_argument(
-        '-f',
-        '--file',
-        type=str,
-        help='Path to a file containing the task. Overrides -t if both are provided.',
-    )
-    parser.add_argument(
-        '-c',
-        '--agent-cls',
-        default=OH_DEFAULT_AGENT,
-        type=str,
-        help='Name of the default agent to use',
-    )
-    parser.add_argument(
-        '-i',
-        '--max-iterations',
-        default=OH_MAX_ITERATIONS,
-        type=int,
-        help='The maximum number of iterations to run the agent',
-    )
-    parser.add_argument(
-        '-b',
-        '--max-budget-per-task',
-        type=float,
-        help='The maximum budget allowed per task, beyond which the agent will stop.',
-    )
-    # --eval configs are for evaluations only
-    parser.add_argument(
-        '--eval-output-dir',
-        default='evaluation/evaluation_outputs/outputs',
-        type=str,
-        help='The directory to save evaluation output',
-    )
-    parser.add_argument(
-        '--eval-n-limit',
-        default=None,
-        type=int,
-        help='The number of instances to evaluate',
-    )
-    parser.add_argument(
-        '--eval-num-workers',
-        default=4,
-        type=int,
-        help='The number of workers to use for evaluation',
-    )
-    parser.add_argument(
-        '--eval-note',
-        default=None,
-        type=str,
-        help='The note to add to the evaluation directory',
-    )
-    parser.add_argument(
-        '-l',
-        '--llm-config',
-        default=None,
-        type=str,
-        help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
-    )
-    parser.add_argument(
-        '--agent-config',
-        default=None,
-        type=str,
-        help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
-    )
-    parser.add_argument(
-        '-n',
-        '--name',
-        help='Session name',
-        type=str,
-        default='',
-    )
-    parser.add_argument(
-        '--eval-ids',
-        default=None,
-        type=str,
-        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
-    )
-    parser.add_argument(
-        '--no-auto-continue',
-        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
-        action='store_true',
-        default=False,
-    )
-    parser.add_argument(
-        '--selected-repo',
-        help='GitHub repository to clone (format: owner/repo)',
-        type=str,
-        default=None,
-    )
-    parser.add_argument(
-        '--override-cli-mode',
-        help='Override the default settings for CLI mode',
-        type=bool,
-        default=False,
-    )
-    return parser
-
-
 def parse_arguments() -> argparse.Namespace:
     """Parse command line arguments."""
-    parser = get_parser()
+    parser = get_headless_parser()
     args = parser.parse_args()
 
     if args.version:
@@ -821,33 +730,65 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
     """Load config from toml and override with command line arguments.
 
     Common setup used by both CLI and main.py entry points.
+
+    Configuration precedence (from highest to lowest):
+    1. CLI parameters (e.g., -l for LLM config)
+    2. config.toml in current directory (or --config-file location if specified)
+    3. ~/.openhands/settings.json and ~/.openhands/config.toml
     """
     # Load base config from toml and env vars
     config = load_openhands_config(config_file=args.config_file)
 
     # Override with command line arguments if provided
     if args.llm_config:
-        # if we didn't already load it, get it from the toml file
+        logger.openhands_logger.debug(f'CLI specified LLM config: {args.llm_config}')
+
+        # Check if the LLM config is NOT in the loaded configs
         if args.llm_config not in config.llms:
-            llm_config = get_llm_config_arg(args.llm_config)
+            # Try to load from the specified config file
+            llm_config = get_llm_config_arg(args.llm_config, args.config_file)
+
+            # If not found in the specified config file, try the user's config.toml
+            if llm_config is None and args.config_file != os.path.join(
+                os.path.expanduser('~'), '.openhands', 'config.toml'
+            ):
+                user_config = os.path.join(
+                    os.path.expanduser('~'), '.openhands', 'config.toml'
+                )
+                if os.path.exists(user_config):
+                    logger.openhands_logger.debug(
+                        f"Trying to load LLM config '{args.llm_config}' from user config: {user_config}"
+                    )
+                    llm_config = get_llm_config_arg(args.llm_config, user_config)
         else:
+            # If it's already in the loaded configs, use that
             llm_config = config.llms[args.llm_config]
+            logger.openhands_logger.debug(
+                f"Using LLM config '{args.llm_config}' from loaded configuration"
+            )
         if llm_config is None:
-            raise ValueError(f'Invalid toml file, cannot read {args.llm_config}')
+            raise ValueError(
+                f"Cannot find LLM configuration '{args.llm_config}' in any config file"
+            )
+
+        # Set this as the default LLM config (highest precedence)
         config.set_llm_config(llm_config)
+        logger.openhands_logger.debug(
+            f'Set LLM config from CLI parameter: {args.llm_config}'
+        )
 
     # Override default agent if provided
-    if args.agent_cls:
+    if hasattr(args, 'agent_cls') and args.agent_cls:
         config.default_agent = args.agent_cls
 
     # Set max iterations and max budget per task if provided, otherwise fall back to config values
-    if args.max_iterations is not None:
+    if hasattr(args, 'max_iterations') and args.max_iterations is not None:
         config.max_iterations = args.max_iterations
-    if args.max_budget_per_task is not None:
+    if hasattr(args, 'max_budget_per_task') and args.max_budget_per_task is not None:
         config.max_budget_per_task = args.max_budget_per_task
 
     # Read selected repository in config for use by CLI and main.py
-    if args.selected_repo is not None:
+    if hasattr(args, 'selected_repo') and args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
     # Set workspace base folder if provided
