@@ -37,8 +37,8 @@ describe("Translations", () => {
       // Test another unsupported region code
       await i18n.changeLanguage("ja-JP");
 
-      // With nonExplicitSupportedLngs: false, i18next will still try to find
-      // the base language if it exists in supportedLngs
+      // Even with nonExplicitSupportedLngs: false, i18next still falls back to base language
+      // if it exists in supportedLngs, but importantly, it won't make a 404 request first
       expect(i18n.language).toBe("ja");
 
       // Test that supported languages still work
