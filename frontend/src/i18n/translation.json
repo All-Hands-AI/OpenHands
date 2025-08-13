@@ -831,21 +831,21 @@
         "de": "Konfiguration bearbeiten",
         "uk": "Редагувати налаштування"
     },
-    "SETTINGS$MCP_CONFIRM_CHANGES": {
-        "en": "Confirm Changes",
-        "ja": "変更を確定",
-        "zh-CN": "确认更改",
-        "zh-TW": "確認變更",
-        "ko-KR": "변경 사항 확인",
-        "no": "Bekreft endringer",
-        "it": "Conferma modifiche",
-        "pt": "Confirmar alterações",
-        "es": "Confirmar cambios",
-        "ar": "تأكيد التغييرات",
-        "fr": "Confirmer les modifications",
-        "tr": "Değişiklikleri Onayla",
-        "de": "Änderungen bestätigen",
-        "uk": "Підтвердити зміни"
+    "SETTINGS$MCP_PREVIEW_CHANGES": {
+        "en": "Preview Changes",
+        "ja": "変更内容をプレビュー",
+        "zh-CN": "预览更改",
+        "zh-TW": "預覽變更",
+        "ko-KR": "변경 사항 미리보기",
+        "no": "Forhåndsvis endringer",
+        "it": "Anteprima modifiche",
+        "pt": "Visualizar alterações",
+        "es": "Vista previa de los cambios",
+        "ar": "معاينة التغييرات",
+        "fr": "Aperçu des modifications",
+        "tr": "Değişiklikleri Önizle",
+        "de": "Änderungen anzeigen",
+        "uk": "Переглянути зміни"
     },
     "SETTINGS$MCP_CONFIG_DESCRIPTION": {
     "en": "Edit the JSON configuration for MCP servers below. The configuration must include both sse_servers and stdio_servers arrays. For full configuration details and integration examples, see the <a>documentation</a>.",
@@ -1150,22 +1150,6 @@
         "tr": "Geçersiz JSON",
         "de": "Ungültiges JSON",
         "uk": "Невірний JSON"
-    },
-    "SETTINGS$MCP_DEFAULT_CONFIG": {
-        "en": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "ja": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "zh-CN": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "zh-TW": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "ko-KR": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "no": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "it": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "pt": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "es": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "ar": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "fr": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "tr": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "de": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}",
-        "uk": "{\n  \"sse_servers\": [],\n  \"stdio_servers\": []\n}"
     },
     "HOME$CONNECT_PROVIDER_MESSAGE": {
         "en": "To get started with suggested tasks, please connect your GitHub, GitLab, or Bitbucket account.",
@@ -2366,6 +2350,22 @@
         "fr": "Paramètres Git",
         "tr": "Git Ayarları",
         "uk": "Git налаштування"
+    },
+    "SETTINGS$GIT_SETTINGS_DESCRIPTION": {
+        "en": "Configure the username and email that OpenHands uses to commit changes.",
+        "ja": "OpenHandsがコミットに使用するユーザー名とメールを設定します。",
+        "zh-CN": "配置OpenHands用于提交更改的用户名和电子邮件。",
+        "zh-TW": "配置OpenHands用於提交更改的用戶名和電子郵件。",
+        "ko-KR": "OpenHands가 변경 사항을 커밋할 때 사용하는 사용자 이름과 이메일을 구성합니다.",
+        "de": "Konfigurieren Sie den Benutzernamen und die E-Mail, die OpenHands zum Committen von Änderungen verwendet.",
+        "no": "Konfigurer brukernavnet og e-posten som OpenHands bruker for å committe endringer.",
+        "it": "Configura il nome utente e l'email che OpenHands utilizza per committare le modifiche.",
+        "pt": "Configure o nome de usuário e o email que o OpenHands usa para fazer commits de alterações.",
+        "es": "Configure el nombre de usuario y el correo electrónico que OpenHands utiliza para confirmar cambios.",
+        "ar": "قم بتكوين اسم المستخدم والبريد الإلكتروني الذي يستخدمه OpenHands لارتكاب التغييرات.",
+        "fr": "Configurez le nom d'utilisateur et l'email qu'OpenHands utilise pour valider les modifications.",
+        "tr": "OpenHands'ın değişiklikleri commit etmek için kullandığı kullanıcı adını ve e-postayı yapılandırın.",
+        "uk": "Налаштуйте ім'я користувача та електронну пошту, які OpenHands використовує для фіксації змін."
     },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
