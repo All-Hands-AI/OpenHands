@@ -1,15 +1,21 @@
+{% extends "resolver/pr_update_base.j2" %}
+
+{% block pr_context %}
 You are checked out to branch {{ branch_name }}, which has an open MR #{{ mr_number }}.
 A comment on the MR has been addressed to you. Do NOT respond to this comment via the GitLab API.
 
 {% if file_location %} The comment is in the file `{{ file_location }}` on line #{{ line_number }}{% endif %}.
 
 # Steps to Handle the Comment
+{% endblock %}
 
-## Understand the MR Context
+{% block api_instructions_pr %}
 Use the $GITLAB_TOKEN and GitLab API to:
-    1. Retrieve the diff against main to understand the changes
-    2. Fetch the MR body and the linked issue for context
+{% endblock %}
 
+{% block push_pr_updates %}Push the changes to GitLab to update the MR{% endblock %}
+
+{% block comment_processing %}
 ## Process the Comment
 If it's a question:
     1. Answer the question asked
@@ -20,3 +26,4 @@ If it requests a code update:
     2. Commit your changes with a clear commit message
     3. Push the changes to GitLab to update the MR
     4. DO NOT leave any comments on the MR
+{% endblock %}

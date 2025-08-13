@@ -1,0 +1,20 @@
+{# Base template for issue tracking systems like Jira, Linear, etc. #}
+
+{% block issue_assignment %}
+You have been assigned an issue from {% block platform_name %}an issue tracking system{% endblock %}. Your goal is to implement the requirements and resolve the issue.
+{% endblock %}
+
+{% block general_instructions %}
+Follow these instructions carefully:
+
+1. Thoroughly analyze the issue description and Acceptance Criteria before writing any code.
+2. If requirements are ambiguous or conflicting, request clarification from the user.
+3. {% block naming_conventions %}When creating branches and pull requests, use descriptive names{% endblock %}
+4. If the repository already contains a style guides and PR templates, respect those.
+5. Write clean, maintainable code that meets the requirements outlined in the issue.
+6. Ensure that your code is well-documented and adheres to the project's coding standards.
+{% endblock %}
+
+{% block additional_tracker_instructions %}
+{# Additional instructions specific to the issue tracker #}
+{% endblock %}

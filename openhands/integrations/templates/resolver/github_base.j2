@@ -1,0 +1,16 @@
+{% extends "resolver/base_prompt.j2" %}
+
+{# GitHub-specific base template #}
+
+{% block api_instructions %}
+1. {% block github_api_task %}Use the $GITHUB_TOKEN and GitHub API to read issue title, body, and comments if you need more context{% endblock %}
+{% endblock %}
+
+{% block push_instructions %}Push the branch to GitHub{% endblock %}
+
+{% block pr_creation %}Use the `create_pr` tool to open a new PR{% endblock %}
+
+{% block pr_description %}The PR description should:
+   - Follow the repository's PR template (check `.github/pull_request_template.md` if it exists)
+   - Mention that it "fixes" or "closes" the issue number
+   - Include all required sections from the template{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "resolver/base_prompt.j2" %}
+
+{# GitLab-specific base template #}
+
+{% block api_instructions %}
+1. {% block gitlab_api_task %}Use the $GITLAB_TOKEN and GitLab API to read issue title, body, and comments if you need more context{% endblock %}
+{% endblock %}
+
+{% block push_instructions %}Push the branch to GitLab{% endblock %}
+
+{% block pr_creation %}Use the `create_mr` tool to open a new MR{% endblock %}
+
+{% block pr_description %}The MR description should:
+   - Follow the repository's MR template (check `.gitlab/merge_request_templates/` or `.github/pull_request_template.md` if it exists)
+   - Mention that it "fixes" or "closes" the issue number
+   - Include all required sections from the template{% endblock %}

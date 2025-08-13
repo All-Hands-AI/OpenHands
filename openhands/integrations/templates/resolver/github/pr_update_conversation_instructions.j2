@@ -1,22 +1,16 @@
+{% extends "resolver/pr_update_base.j2" %}
+
+{% block pr_context %}
 You are checked out to branch {{ branch_name }}, which has an open PR #{{ pr_number }}.
 A comment on the PR has been addressed to you. Do NOT respond to this comment via the GitHub API.
 
 {% if file_location %} The comment is in the file `{{ file_location }}` on line #{{ line_number }}{% endif %}.
 
 # Steps to Handle the Comment
+{% endblock %}
 
-## Understand the PR Context
+{% block api_instructions_pr %}
 Use the $GITHUB_TOKEN and GitHub API to:
-    1. Retrieve the diff against main to understand the changes
-    2. Fetch the PR body and the linked issue for context
+{% endblock %}
 
-## Process the Comment
-If it's a question:
-    1. Answer the question asked
-    2. DO NOT leave any comments on the PR
-
-If it requests a code update:
-    1. Modify the code accordingly in the current branch
-    2. Commit your changes with a clear commit message
-    3. Push the changes to GitHub to update the PR
-    4. DO NOT leave any comments on the PR
+{% block push_pr_updates %}Push the changes to GitHub to update the PR{% endblock %}
