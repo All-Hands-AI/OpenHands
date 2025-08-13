@@ -1,7 +1,7 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
@@ -27,7 +27,8 @@ import { ConversationMain } from "#/components/features/conversation/conversatio
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 import { Controls } from "#/components/features/controls/controls";
 import { ConversationTabProvider } from "#/components/features/conversation/conversation-tabs/use-conversation-tabs";
-import { ConversationTabs2 } from "#/components/features/conversation/conversation-tabs/conversation-tabs2";
+import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
+import { RootState } from "#/store";
 
 function AppContent() {
   useConversationConfig();
@@ -36,6 +37,9 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const isRightPanelShown = useSelector(
+    (state: RootState) => state.conversation.isRightPanelShown,
+  );
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
@@ -84,8 +88,12 @@ function AppContent() {
             <div data-testid="app-route" className="flex flex-col h-full gap-3">
               <div className="flex items-center justify-between gap-4.5">
                 <ConversationName />
-                <ConversationTabs2 />
-                <div className="h-full w-0.25 bg-[#525252]" />
+                {isRightPanelShown && (
+                  <>
+                    <ConversationTabs />
+                    <div className="h-full w-0.25 bg-[#525252]" />
+                  </>
+                )}
                 <ChatActions />
               </div>
 

@@ -1,7 +1,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { ChatInterface } from "../chat/chat-interface";
-import { ConversationTabs } from "./conversation-tabs/conversation-tabs";
+import { ConversationTabContent } from "./conversation-tabs/conversation-tab-content";
 import {
   Orientation,
   ResizablePanel,
@@ -63,7 +63,7 @@ export function ConversationMain() {
         </div>
         {isRightPanelShown && (
           <div className="h-full w-full min-h-[494px] flex flex-col gap-3">
-            <ConversationTabs />
+            <ConversationTabContent />
             {terminalOpen && (
               <Suspense fallback={<div className="h-full" />}>
                 <Terminal />
@@ -88,7 +88,7 @@ export function ConversationMain() {
         }
         secondChild={
           <div className="flex flex-col flex-1 gap-3">
-            <ConversationTabs />
+            <ConversationTabContent />
             {terminalOpen && (
               <Suspense fallback={<div className="h-full" />}>
                 <Terminal />
