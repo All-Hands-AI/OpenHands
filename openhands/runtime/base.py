@@ -194,7 +194,7 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
-        
+
         # Configure git settings
         self._setup_git_config()
 
@@ -912,31 +912,37 @@ fi
 
     def _setup_git_config(self) -> None:
         """Configure git user settings during initial environment setup.
-        
+
         This method is called automatically during setup_initial_env() to ensure
         git configuration is applied to the runtime environment.
         """
         # Get git configuration from config
-        git_user_name = getattr(self.config, 'git_user_name', 'openhands')
-        git_user_email = getattr(self.config, 'git_user_email', 'openhands@all-hands.dev')
-        
+        git_user_name = self.config.git_user_name
+        git_user_email = self.config.git_user_email
+
         # Skip git configuration for CLI runtime to preserve user's local git settings
-        is_cli_runtime = getattr(self.config, 'is_cli_runtime', False)
+        is_cli_runtime = self.config.runtime == 'cli'
         if is_cli_runtime:
-            logger.debug('Skipping git configuration for CLI runtime - using user\'s local git config')
+            logger.debug(
+                "Skipping git configuration for CLI runtime - using user's local git config"
+            )
             return
-            
+
         # All runtimes (except CLI) use global git config
         cmd = f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
-        
+
         # Execute git configuration command
         try:
             action = CmdRunAction(command=cmd)
             obs = self.run(action)
-            if obs.exit_code != 0:
-                logger.warning(f'Git config command failed: {cmd}, error: {obs.content}')
+            if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
+                logger.warning(
+                    f'Git config command failed: {cmd}, error: {obs.content}'
+                )
             else:
-                logger.debug(f'Successfully configured git: name={git_user_name}, email={git_user_email}')
+                logger.info(
+                    f'Successfully configured git: name={git_user_name}, email={git_user_email}'
+                )
         except Exception as e:
             logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
 

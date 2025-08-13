@@ -130,9 +130,6 @@ class CLIRuntime(Runtime):
             user_id,
             git_provider_tokens,
         )
-        
-        # Mark this as a CLI runtime to skip git configuration
-        self.config.is_cli_runtime = True
 
         # Set up workspace
         if self.config.workspace_base is not None:
