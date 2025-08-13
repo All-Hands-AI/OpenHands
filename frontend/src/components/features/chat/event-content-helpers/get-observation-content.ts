@@ -83,7 +83,7 @@ const getRecallObservationContent = (event: RecallObservation): string => {
   ) {
     content += `\n\n**Triggered Microagent Knowledge:**`;
     for (const knowledge of event.extras.microagent_knowledge) {
-      content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n\`\`\`\n${knowledge.content}\n\`\`\``;
+      content += `\n\n- **${knowledge.name}** (triggered by keyword: ${knowledge.trigger})\n\n${knowledge.content}`;
     }
   }
 
