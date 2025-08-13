@@ -79,58 +79,58 @@ def _update_cmd_output_metadata(
 
 def handle_observation_deprecated_extras(extras: dict) -> dict:
     # These are deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
-    if 'exit_code' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), exit_code=extras.pop('exit_code')
+    if "exit_code" in extras:
+        extras["metadata"] = _update_cmd_output_metadata(
+            extras.get("metadata", None), exit_code=extras.pop("exit_code")
         )
-    if 'command_id' in extras:
-        extras['metadata'] = _update_cmd_output_metadata(
-            extras.get('metadata', None), pid=extras.pop('command_id')
+    if "command_id" in extras:
+        extras["metadata"] = _update_cmd_output_metadata(
+            extras.get("metadata", None), pid=extras.pop("command_id")
         )
 
     # formatted_output_and_error has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/6671
-    if 'formatted_output_and_error' in extras:
-        extras.pop('formatted_output_and_error')
+    if "formatted_output_and_error" in extras:
+        extras.pop("formatted_output_and_error")
     return extras
 
 
 def observation_from_dict(observation: dict) -> Observation:
     observation = observation.copy()
-    if 'observation' not in observation:
+    if "observation" not in observation:
         raise KeyError(f"'observation' key is not found in {observation=}")
-    observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation['observation'])
+    observation_class = OBSERVATION_TYPE_TO_CLASS.get(observation["observation"])
     if observation_class is None:
         raise KeyError(
             f"'{observation['observation']=}' is not defined. Available observations: {OBSERVATION_TYPE_TO_CLASS.keys()}"
         )
-    observation.pop('observation')
-    observation.pop('message', None)
-    content = observation.pop('content', '')
-    extras = copy.deepcopy(observation.pop('extras', {}))
+    observation.pop("observation")
+    observation.pop("message", None)
+    content = observation.pop("content", "")
+    extras = copy.deepcopy(observation.pop("extras", {}))
 
     extras = handle_observation_deprecated_extras(extras)
 
     # convert metadata to CmdOutputMetadata if it is a dict
     if observation_class is CmdOutputObservation:
-        if 'metadata' in extras and isinstance(extras['metadata'], dict):
-            extras['metadata'] = CmdOutputMetadata(**extras['metadata'])
-        elif 'metadata' in extras and isinstance(extras['metadata'], CmdOutputMetadata):
+        if "metadata" in extras and isinstance(extras["metadata"], dict):
+            extras["metadata"] = CmdOutputMetadata(**extras["metadata"])
+        elif "metadata" in extras and isinstance(extras["metadata"], CmdOutputMetadata):
             pass
         else:
-            extras['metadata'] = CmdOutputMetadata()
+            extras["metadata"] = CmdOutputMetadata()
 
     if observation_class is RecallObservation:
         # handle the Enum conversion
-        if 'recall_type' in extras:
-            extras['recall_type'] = RecallType(extras['recall_type'])
+        if "recall_type" in extras:
+            extras["recall_type"] = RecallType(extras["recall_type"])
 
         # convert dicts in microagent_knowledge to MicroagentKnowledge objects
-        if 'microagent_knowledge' in extras and isinstance(
-            extras['microagent_knowledge'], list
+        if "microagent_knowledge" in extras and isinstance(
+            extras["microagent_knowledge"], list
         ):
-            extras['microagent_knowledge'] = [
+            extras["microagent_knowledge"] = [
                 MicroagentKnowledge(**item) if isinstance(item, dict) else item
-                for item in extras['microagent_knowledge']
+                for item in extras["microagent_knowledge"]
             ]
 
     obs = observation_class(content=content, **extras)

@@ -9,9 +9,9 @@ def test_single_line_input():
     config = OpenHandsConfig()
     config.cli_multiline_input = False
 
-    with patch('builtins.input', return_value='hello world'):
+    with patch("builtins.input", return_value="hello world"):
         result = read_input(config.cli_multiline_input)
-        assert result == 'hello world'
+        assert result == "hello world"
 
 
 def test_multiline_input():
@@ -20,8 +20,8 @@ def test_multiline_input():
     config.cli_multiline_input = True
 
     # Simulate multiple lines of input followed by /exit
-    mock_inputs = ['line 1', 'line 2', 'line 3', '/exit']
+    mock_inputs = ["line 1", "line 2", "line 3", "/exit"]
 
-    with patch('builtins.input', side_effect=mock_inputs):
+    with patch("builtins.input", side_effect=mock_inputs):
         result = read_input(config.cli_multiline_input)
-        assert result == 'line 1\nline 2\nline 3'
+        assert result == "line 1\nline 2\nline 3"

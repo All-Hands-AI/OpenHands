@@ -15,24 +15,24 @@ from openhands.server.types import AppMode
 
 
 class ProviderType(Enum):
-    GITHUB = 'github'
-    GITLAB = 'gitlab'
-    BITBUCKET = 'bitbucket'
-    ENTERPRISE_SSO = 'enterprise_sso'
+    GITHUB = "github"
+    GITLAB = "gitlab"
+    BITBUCKET = "bitbucket"
+    ENTERPRISE_SSO = "enterprise_sso"
 
 
 class TaskType(str, Enum):
-    MERGE_CONFLICTS = 'MERGE_CONFLICTS'
-    FAILING_CHECKS = 'FAILING_CHECKS'
-    UNRESOLVED_COMMENTS = 'UNRESOLVED_COMMENTS'
-    OPEN_ISSUE = 'OPEN_ISSUE'
-    OPEN_PR = 'OPEN_PR'
-    CREATE_MICROAGENT = 'CREATE_MICROAGENT'
+    MERGE_CONFLICTS = "MERGE_CONFLICTS"
+    FAILING_CHECKS = "FAILING_CHECKS"
+    UNRESOLVED_COMMENTS = "UNRESOLVED_COMMENTS"
+    OPEN_ISSUE = "OPEN_ISSUE"
+    OPEN_PR = "OPEN_PR"
+    CREATE_MICROAGENT = "CREATE_MICROAGENT"
 
 
 class OwnerType(str, Enum):
-    USER = 'user'
-    ORGANIZATION = 'organization'
+    USER = "user"
+    ORGANIZATION = "organization"
 
 
 class SuggestedTask(BaseModel):
@@ -45,36 +45,36 @@ class SuggestedTask(BaseModel):
     def get_provider_terms(self) -> dict:
         if self.git_provider == ProviderType.GITHUB:
             return {
-                'requestType': 'Pull Request',
-                'requestTypeShort': 'PR',
-                'apiName': 'GitHub API',
-                'tokenEnvVar': 'GITHUB_TOKEN',
-                'ciSystem': 'GitHub Actions',
-                'ciProvider': 'GitHub',
-                'requestVerb': 'pull request',
+                "requestType": "Pull Request",
+                "requestTypeShort": "PR",
+                "apiName": "GitHub API",
+                "tokenEnvVar": "GITHUB_TOKEN",
+                "ciSystem": "GitHub Actions",
+                "ciProvider": "GitHub",
+                "requestVerb": "pull request",
             }
         elif self.git_provider == ProviderType.GITLAB:
             return {
-                'requestType': 'Merge Request',
-                'requestTypeShort': 'MR',
-                'apiName': 'GitLab API',
-                'tokenEnvVar': 'GITLAB_TOKEN',
-                'ciSystem': 'CI pipelines',
-                'ciProvider': 'GitLab',
-                'requestVerb': 'merge request',
+                "requestType": "Merge Request",
+                "requestTypeShort": "MR",
+                "apiName": "GitLab API",
+                "tokenEnvVar": "GITLAB_TOKEN",
+                "ciSystem": "CI pipelines",
+                "ciProvider": "GitLab",
+                "requestVerb": "merge request",
             }
         elif self.git_provider == ProviderType.BITBUCKET:
             return {
-                'requestType': 'Pull Request',
-                'requestTypeShort': 'PR',
-                'apiName': 'Bitbucket API',
-                'tokenEnvVar': 'BITBUCKET_TOKEN',
-                'ciSystem': 'Bitbucket Pipelines',
-                'ciProvider': 'Bitbucket',
-                'requestVerb': 'pull request',
+                "requestType": "Pull Request",
+                "requestTypeShort": "PR",
+                "apiName": "Bitbucket API",
+                "tokenEnvVar": "BITBUCKET_TOKEN",
+                "ciSystem": "Bitbucket Pipelines",
+                "ciProvider": "Bitbucket",
+                "requestVerb": "pull request",
             }
 
-        raise ValueError(f'Provider {self.git_provider} for suggested task prompts')
+        raise ValueError(f"Provider {self.git_provider} for suggested task prompts")
 
     def get_prompt_for_task(
         self,
@@ -84,20 +84,20 @@ class SuggestedTask(BaseModel):
         repo = self.repo
 
         env = Environment(
-            loader=FileSystemLoader('openhands/integrations/templates/suggested_task')
+            loader=FileSystemLoader("openhands/integrations/templates/suggested_task")
         )
 
         template = None
         if task_type == TaskType.MERGE_CONFLICTS:
-            template = env.get_template('merge_conflict_prompt.j2')
+            template = env.get_template("merge_conflict_prompt.j2")
         elif task_type == TaskType.FAILING_CHECKS:
-            template = env.get_template('failing_checks_prompt.j2')
+            template = env.get_template("failing_checks_prompt.j2")
         elif task_type == TaskType.UNRESOLVED_COMMENTS:
-            template = env.get_template('unresolved_comments_prompt.j2')
+            template = env.get_template("unresolved_comments_prompt.j2")
         elif task_type == TaskType.OPEN_ISSUE:
-            template = env.get_template('open_issue_prompt.j2')
+            template = env.get_template("open_issue_prompt.j2")
         else:
-            raise ValueError(f'Unsupported task type: {task_type}')
+            raise ValueError(f"Unsupported task type: {task_type}")
 
         terms = self.get_provider_terms()
 
@@ -171,14 +171,14 @@ class MicroagentParseError(ValueError):
 
 
 class RequestMethod(Enum):
-    POST = 'post'
-    GET = 'get'
+    POST = "post"
+    GET = "get"
 
 
 class BaseGitService(ABC):
     @property
     def provider(self) -> str:
-        raise NotImplementedError('Subclasses must implement the provider property')
+        raise NotImplementedError("Subclasses must implement the provider property")
 
     # Method used to satisfy mypy for abstract class definition
     @abstractmethod
@@ -239,40 +239,40 @@ class BaseGitService(ABC):
         AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
     ):
         if e.response.status_code == 401:
-            return AuthenticationError(f'Invalid {self.provider} token')
+            return AuthenticationError(f"Invalid {self.provider} token")
         elif e.response.status_code == 404:
             return ResourceNotFoundError(
-                f'Resource not found on {self.provider} API: {e}'
+                f"Resource not found on {self.provider} API: {e}"
             )
         elif e.response.status_code == 429:
-            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
-            return RateLimitError('GitHub API rate limit exceeded')
+            logger.warning(f"Rate limit exceeded on {self.provider} API: {e}")
+            return RateLimitError("GitHub API rate limit exceeded")
 
-        logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException(f'Unknown error: {e}')
+        logger.warning(f"Status error on {self.provider} API: {e}")
+        return UnknownException(f"Unknown error: {e}")
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
-        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
+        logger.warning(f"HTTP error on {self.provider} API: {type(e).__name__} : {e}")
+        return UnknownException(f"HTTP error {type(e).__name__} : {e}")
 
     def _determine_microagents_path(self, repository_name: str) -> str:
         """Determine the microagents directory path based on repository name."""
-        actual_repo_name = repository_name.split('/')[-1]
+        actual_repo_name = repository_name.split("/")[-1]
 
         # Check for special repository names that use a different structure
-        if actual_repo_name == '.openhands' or actual_repo_name == 'openhands-config':
+        if actual_repo_name == ".openhands" or actual_repo_name == "openhands-config":
             # For repository name ".openhands", scan "microagents" folder
-            return 'microagents'
+            return "microagents"
         else:
             # Default behavior: look for .openhands/microagents directory
-            return '.openhands/microagents'
+            return ".openhands/microagents"
 
     def _create_microagent_response(
         self, file_name: str, path: str
     ) -> MicroagentResponse:
         """Create a microagent response from basic file information."""
         # Extract name without extension
-        name = file_name.replace('.md', '').replace('.cursorrules', 'cursorrules')
+        name = file_name.replace(".md", "").replace(".cursorrules", "cursorrules")
 
         return MicroagentResponse(
             name=name,
@@ -315,9 +315,9 @@ class BaseGitService(ABC):
             )
 
         except Exception as e:
-            logger.error(f'Error parsing microagent content for {file_path}: {str(e)}')
+            logger.error(f"Error parsing microagent content for {file_path}: {str(e)}")
             raise MicroagentParseError(
-                f'Failed to parse microagent file {file_path}: {str(e)}'
+                f"Failed to parse microagent file {file_path}: {str(e)}"
             )
 
     async def _fetch_cursorrules_content(self, repository: str) -> Any | None:
@@ -347,11 +347,11 @@ class BaseGitService(ABC):
         try:
             cursorrules_content = await self._fetch_cursorrules_content(repository)
             if cursorrules_content:
-                return self._create_microagent_response('.cursorrules', '.cursorrules')
+                return self._create_microagent_response(".cursorrules", ".cursorrules")
         except ResourceNotFoundError:
-            logger.debug(f'No .cursorrules file found in {repository}')
+            logger.debug(f"No .cursorrules file found in {repository}")
         except Exception as e:
-            logger.warning(f'Error checking .cursorrules file in {repository}: {e}')
+            logger.warning(f"Error checking .cursorrules file in {repository}: {e}")
 
         return None
 
@@ -378,12 +378,12 @@ class BaseGitService(ABC):
 
             # Handle different response structures
             items = response
-            if isinstance(response, dict) and 'values' in response:
+            if isinstance(response, dict) and "values" in response:
                 # Bitbucket format
-                items = response['values']
-            elif isinstance(response, dict) and 'nodes' in response:
+                items = response["values"]
+            elif isinstance(response, dict) and "nodes" in response:
                 # GraphQL format (if used)
-                items = response['nodes']
+                items = response["nodes"]
 
             for item in items:
                 if self._is_valid_microagent_file(item):
@@ -397,14 +397,14 @@ class BaseGitService(ABC):
                         )
                     except Exception as e:
                         logger.warning(
-                            f'Error processing microagent {item.get("name", "unknown")}: {str(e)}'
+                            f"Error processing microagent {item.get('name', 'unknown')}: {str(e)}"
                         )
         except ResourceNotFoundError:
             logger.info(
-                f'No microagents directory found in {repository} at {microagents_path}'
+                f"No microagents directory found in {repository} at {microagents_path}"
             )
         except Exception as e:
-            logger.warning(f'Error fetching microagents directory: {str(e)}')
+            logger.warning(f"Error fetching microagents directory: {str(e)}")
 
         return microagents
 

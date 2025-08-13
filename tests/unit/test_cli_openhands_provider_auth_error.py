@@ -40,21 +40,21 @@ def mock_controller():
 @pytest_asyncio.fixture
 def mock_config():
     config = MagicMock()
-    config.runtime = 'local'
+    config.runtime = "local"
     config.cli_multiline_input = False
-    config.workspace_base = '/test/dir'
+    config.workspace_base = "/test/dir"
 
     # Set up LLM config to use OpenHands provider
     llm_config = MagicMock()
-    llm_config.model = 'openhands/o3'  # Use OpenHands provider with o3 model
+    llm_config.model = "openhands/o3"  # Use OpenHands provider with o3 model
     llm_config.api_key = MagicMock()
-    llm_config.api_key.get_secret_value.return_value = 'invalid-api-key'
+    llm_config.api_key.get_secret_value.return_value = "invalid-api-key"
     config.llm = llm_config
 
     # Mock search_api_key with get_secret_value method
     search_api_key_mock = MagicMock()
     search_api_key_mock.get_secret_value.return_value = (
-        ''  # Empty string, not starting with 'tvly-'
+        ""  # Empty string, not starting with 'tvly-'
     )
     config.search_api_key = search_api_key_mock
 
@@ -74,17 +74,17 @@ def mock_settings_store():
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.display_runtime_initialization_message')
-@patch('openhands.cli.main.display_initialization_animation')
-@patch('openhands.cli.main.create_agent')
-@patch('openhands.cli.main.add_mcp_tools_to_agent')
-@patch('openhands.cli.main.create_runtime')
-@patch('openhands.cli.main.create_controller')
-@patch('openhands.cli.main.create_memory')
-@patch('openhands.cli.main.run_agent_until_done')
-@patch('openhands.cli.main.cleanup_session')
-@patch('openhands.cli.main.initialize_repository_for_runtime')
-@patch('openhands.llm.llm.litellm_completion')
+@patch("openhands.cli.main.display_runtime_initialization_message")
+@patch("openhands.cli.main.display_initialization_animation")
+@patch("openhands.cli.main.create_agent")
+@patch("openhands.cli.main.add_mcp_tools_to_agent")
+@patch("openhands.cli.main.create_runtime")
+@patch("openhands.cli.main.create_controller")
+@patch("openhands.cli.main.create_memory")
+@patch("openhands.cli.main.run_agent_until_done")
+@patch("openhands.cli.main.cleanup_session")
+@patch("openhands.cli.main.initialize_repository_for_runtime")
+@patch("openhands.llm.llm.litellm_completion")
 async def test_openhands_provider_authentication_error(
     mock_litellm_completion,
     mock_initialize_repo,
@@ -119,7 +119,7 @@ async def test_openhands_provider_authentication_error(
     loop = asyncio.get_running_loop()
 
     # Mock initialize_repository_for_runtime to return a valid path
-    mock_initialize_repo.return_value = '/test/dir'
+    mock_initialize_repo.return_value = "/test/dir"
 
     # Mock objects returned by the setup functions
     mock_agent = AsyncMock()
@@ -140,24 +140,24 @@ async def test_openhands_provider_authentication_error(
     # Mock the litellm_completion function to raise an AuthenticationError
     # This simulates the exact error seen in the user's issue
     auth_error_message = (
-        'litellm.AuthenticationError: AuthenticationError: Litellm_proxyException - '
-        'Authentication Error, Invalid proxy server token passed. Received API Key = sk-...7hlQ, '
-        'Key Hash (Token) =e316fa114498880be11f2e236d6f482feee5e324a4a148b98af247eded5290c4. '
-        'Unable to find token in cache or `LiteLLM_VerificationTokenTable`'
+        "litellm.AuthenticationError: AuthenticationError: Litellm_proxyException - "
+        "Authentication Error, Invalid proxy server token passed. Received API Key = sk-...7hlQ, "
+        "Key Hash (Token) =e316fa114498880be11f2e236d6f482feee5e324a4a148b98af247eded5290c4. "
+        "Unable to find token in cache or `LiteLLM_VerificationTokenTable`"
     )
     mock_litellm_completion.side_effect = AuthenticationError(
-        message=auth_error_message, llm_provider='litellm_proxy', model='o3'
+        message=auth_error_message, llm_provider="litellm_proxy", model="o3"
     )
 
     with patch(
-        'openhands.cli.main.read_prompt_input', new_callable=AsyncMock
+        "openhands.cli.main.read_prompt_input", new_callable=AsyncMock
     ) as mock_read_prompt:
         # Set up read_prompt_input to return a string that will trigger the command handler
-        mock_read_prompt.return_value = '/exit'
+        mock_read_prompt.return_value = "/exit"
 
         # Mock handle_commands to return values that will exit the loop
         with patch(
-            'openhands.cli.main.handle_commands', new_callable=AsyncMock
+            "openhands.cli.main.handle_commands", new_callable=AsyncMock
         ) as mock_handle_commands:
             mock_handle_commands.return_value = (
                 True,
@@ -166,16 +166,16 @@ async def test_openhands_provider_authentication_error(
             )  # close_repl, reload_microagents, new_session_requested
 
             # Mock logger.error to capture the error message
-            with patch('openhands.core.logger.openhands_logger.error'):
+            with patch("openhands.core.logger.openhands_logger.error"):
                 # Run the function with an initial action that will trigger the OpenHands provider
-                initial_action_content = 'Hello, I need help with a task'
+                initial_action_content = "Hello, I need help with a task"
 
                 # Run the function
                 result = await cli.run_session(
                     loop,
                     mock_config,
                     mock_settings_store,
-                    '/test/dir',
+                    "/test/dir",
                     initial_action_content,
                 )
 

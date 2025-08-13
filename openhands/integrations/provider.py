@@ -50,22 +50,22 @@ class ProviderToken(BaseModel):
         if isinstance(token_value, cls):
             return token_value
         elif isinstance(token_value, dict):
-            token_str = token_value.get('token', '')
+            token_str = token_value.get("token", "")
             # Override with emtpy string if it was set to None
             # Cannot pass None to SecretStr
             if token_str is None:
-                token_str = ''  # type: ignore[unreachable]
-            user_id = token_value.get('user_id')
-            host = token_value.get('host')
+                token_str = ""  # type: ignore[unreachable]
+            user_id = token_value.get("user_id")
+            host = token_value.get("host")
             return cls(token=SecretStr(token_str), user_id=user_id, host=host)
 
         else:
-            raise ValueError('Unsupported Provider token type')
+            raise ValueError("Unsupported Provider token type")
 
 
 class CustomSecret(BaseModel):
-    secret: SecretStr = Field(default_factory=lambda: SecretStr(''))
-    description: str = Field(default='')
+    secret: SecretStr = Field(default_factory=lambda: SecretStr(""))
+    description: str = Field(default="")
 
     model_config = ConfigDict(
         frozen=True,  # Makes the entire model immutable
@@ -78,32 +78,32 @@ class CustomSecret(BaseModel):
         if isinstance(secret_value, CustomSecret):
             return secret_value
         elif isinstance(secret_value, dict):
-            secret = secret_value.get('secret', '')
-            description = secret_value.get('description', '')
+            secret = secret_value.get("secret", "")
+            description = secret_value.get("description", "")
             return cls(secret=SecretStr(secret), description=description)
 
         else:
-            raise ValueError('Unsupport Provider token type')
+            raise ValueError("Unsupport Provider token type")
 
 
 PROVIDER_TOKEN_TYPE = MappingProxyType[ProviderType, ProviderToken]
 CUSTOM_SECRETS_TYPE = MappingProxyType[str, CustomSecret]
 PROVIDER_TOKEN_TYPE_WITH_JSON_SCHEMA = Annotated[
     PROVIDER_TOKEN_TYPE,
-    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+    WithJsonSchema({"type": "object", "additionalProperties": {"type": "string"}}),
 ]
 CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA = Annotated[
     CUSTOM_SECRETS_TYPE,
-    WithJsonSchema({'type': 'object', 'additionalProperties': {'type': 'string'}}),
+    WithJsonSchema({"type": "object", "additionalProperties": {"type": "string"}}),
 ]
 
 
 class ProviderHandler:
     # Class variable for provider domains
     PROVIDER_DOMAINS: dict[ProviderType, str] = {
-        ProviderType.GITHUB: 'github.com',
-        ProviderType.GITLAB: 'gitlab.com',
-        ProviderType.BITBUCKET: 'bitbucket.org',
+        ProviderType.GITHUB: "github.com",
+        ProviderType.GITLAB: "gitlab.com",
+        ProviderType.BITBUCKET: "bitbucket.org",
     }
 
     def __init__(
@@ -115,7 +115,7 @@ class ProviderHandler:
     ):
         if not isinstance(provider_tokens, MappingProxyType):
             raise TypeError(
-                f'provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}'
+                f"provider_tokens must be a MappingProxyType, got {type(provider_tokens).__name__}"
             )
 
         self.service_class_map: dict[ProviderType, type[GitService]] = {
@@ -155,7 +155,7 @@ class ProviderHandler:
                 return await service.get_user()
             except Exception:
                 continue
-        raise AuthenticationError('Need valid provider token')
+        raise AuthenticationError("Need valid provider token")
 
     async def _get_latest_provider_token(
         self, provider: ProviderType
@@ -169,7 +169,7 @@ class ProviderHandler:
         try:
             return await service.get_installations()
         except Exception as e:
-            logger.warning(f'Failed to get github installations {e}')
+            logger.warning(f"Failed to get github installations {e}")
 
         return []
 
@@ -178,7 +178,7 @@ class ProviderHandler:
         try:
             return await service.get_installations()
         except Exception as e:
-            logger.warning(f'Failed to get bitbucket workspaces {e}')
+            logger.warning(f"Failed to get bitbucket workspaces {e}")
 
         return []
 
@@ -191,17 +191,14 @@ class ProviderHandler:
         per_page: int | None,
         installation_id: str | None,
     ) -> list[Repository]:
-        """
-        Get repositories from providers
-        """
-
+        """Get repositories from providers"""
         """
         Get repositories from providers
         """
 
         if selected_provider:
             if not page or not per_page:
-                logger.error('Failed to provider params for paginating repos')
+                logger.error("Failed to provider params for paginating repos")
                 return []
 
             service = self._get_service(selected_provider)
@@ -210,7 +207,7 @@ class ProviderHandler:
                     page, per_page, sort, installation_id
                 )
             except Exception as e:
-                logger.warning(f'Error fetching repos from {selected_provider}: {e}')
+                logger.warning(f"Error fetching repos from {selected_provider}: {e}")
 
             return []
 
@@ -221,14 +218,12 @@ class ProviderHandler:
                 service_repos = await service.get_all_repositories(sort, app_mode)
                 all_repos.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error fetching repos from {provider}: {e}')
+                logger.warning(f"Error fetching repos from {provider}: {e}")
 
         return all_repos
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
-        """
-        Get suggested tasks from providers
-        """
+        """Get suggested tasks from providers"""
         tasks: list[SuggestedTask] = []
         for provider in self.provider_tokens:
             try:
@@ -236,7 +231,7 @@ class ProviderHandler:
                 service_repos = await service.get_suggested_tasks()
                 tasks.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error fetching repos from {provider}: {e}')
+                logger.warning(f"Error fetching repos from {provider}: {e}")
 
         return tasks
 
@@ -258,7 +253,7 @@ class ProviderHandler:
                 return self._deduplicate_repositories(user_repos)
             except Exception as e:
                 logger.warning(
-                    f'Error searching repos from select provider {selected_provider}: {e}'
+                    f"Error searching repos from select provider {selected_provider}: {e}"
                 )
 
             return []
@@ -273,7 +268,7 @@ class ProviderHandler:
                 )
                 all_repos.extend(service_repos)
             except Exception as e:
-                logger.warning(f'Error searching repos from {provider}: {e}')
+                logger.warning(f"Error searching repos from {provider}: {e}")
                 continue
 
         return all_repos
@@ -284,7 +279,7 @@ class ProviderHandler:
         custom_host_exists = custom_host and custom_host in query
         default_host_exists = self.PROVIDER_DOMAINS[provider] in query
 
-        return query.startswith(('http://', 'https://')) and (
+        return query.startswith(("http://", "https://")) and (
             custom_host_exists or default_host_exists
         )
 
@@ -303,8 +298,7 @@ class ProviderHandler:
         event_stream: EventStream,
         env_vars: dict[ProviderType, SecretStr] | None = None,
     ) -> None:
-        """
-        This ensures that the latest provider tokens are masked from the event stream
+        """This ensures that the latest provider tokens are masked from the event stream
         It is called when the provider tokens are first initialized in the runtime or when tokens are re-exported with the latest working ones
 
         Args:
@@ -320,8 +314,7 @@ class ProviderHandler:
     def expose_env_vars(
         self, env_secrets: dict[ProviderType, SecretStr]
     ) -> dict[str, str]:
-        """
-        Return string values instead of typed values for environment secrets
+        """Return string values instead of typed values for environment secrets
         Called just before exporting secrets to runtime, or setting secrets in the event stream
         """
         exposed_envs = {}
@@ -353,8 +346,7 @@ class ProviderHandler:
         providers: list[ProviderType] | None = None,
         get_latest: bool = False,
     ) -> dict[ProviderType, SecretStr] | dict[str, str]:
-        """
-        Retrieves the provider tokens from ProviderHandler object
+        """Retrieves the provider tokens from ProviderHandler object
         This is used when initializing/exporting new provider tokens in the runtime
 
         Args:
@@ -362,7 +354,6 @@ class ProviderHandler:
             providers: Return provider tokens for the list passed in, otherwise return all available providers
             get_latest: Get the latest working token for the providers if True, otherwise get the existing ones
         """
-
         if not self.provider_tokens:
             return {}
 
@@ -375,7 +366,7 @@ class ProviderHandler:
                 token = (
                     self.provider_tokens[provider].token
                     if self.provider_tokens
-                    else SecretStr('')
+                    else SecretStr("")
                 )
 
                 if get_latest:
@@ -393,11 +384,9 @@ class ProviderHandler:
     def check_cmd_action_for_provider_token_ref(
         cls, event: Action
     ) -> list[ProviderType]:
-        """
-        Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
+        """Detect if agent run action is using a provider token (e.g $GITHUB_TOKEN)
         Returns a list of providers which are called by the agent
         """
-
         if not isinstance(event, CmdRunAction):
             return []
 
@@ -410,10 +399,8 @@ class ProviderHandler:
 
     @classmethod
     def get_provider_env_key(cls, provider: ProviderType) -> str:
-        """
-        Map ProviderType value to the environment variable name in the runtime
-        """
-        return f'{provider.value}_token'.lower()
+        """Map ProviderType value to the environment variable name in the runtime"""
+        return f"{provider.value}_token".lower()
 
     async def verify_repo_provider(
         self, repository: str, specified_provider: ProviderType | None = None
@@ -425,26 +412,25 @@ class ProviderHandler:
                 service = self._get_service(specified_provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
-                errors.append(f'{specified_provider.value}: {str(e)}')
+                errors.append(f"{specified_provider.value}: {str(e)}")
 
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
                 return await service.get_repository_details_from_repo_name(repository)
             except Exception as e:
-                errors.append(f'{provider.value}: {str(e)}')
+                errors.append(f"{provider.value}: {str(e)}")
 
         # Log all accumulated errors before raising AuthenticationError
         logger.error(
-            f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
+            f"Failed to access repository {repository} with all available providers. Errors: {'; '.join(errors)}"
         )
-        raise AuthenticationError(f'Unable to access repo {repository}')
+        raise AuthenticationError(f"Unable to access repo {repository}")
 
     async def get_branches(
         self, repository: str, specified_provider: ProviderType | None = None
     ) -> list[Branch]:
-        """
-        Get branches for a repository
+        """Get branches for a repository
 
         Args:
             repository: The repository name
@@ -462,7 +448,7 @@ class ProviderHandler:
                 return branches
             except Exception as e:
                 logger.warning(
-                    f'Error fetching branches from {specified_provider}: {e}'
+                    f"Error fetching branches from {specified_provider}: {e}"
                 )
 
         for provider in self.provider_tokens:
@@ -474,11 +460,11 @@ class ProviderHandler:
                 if all_branches:
                     break
             except Exception as e:
-                logger.warning(f'Error fetching branches from {provider}: {e}')
+                logger.warning(f"Error fetching branches from {provider}: {e}")
 
         # Sort branches by last push date (newest first)
         all_branches.sort(
-            key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True
+            key=lambda b: b.last_push_date if b.last_push_date else "", reverse=True
         )
 
         # Move main/master branch to the top if it exists
@@ -486,7 +472,7 @@ class ProviderHandler:
         other_branches = []
 
         for branch in all_branches:
-            if branch.name.lower() in ['main', 'master']:
+            if branch.name.lower() in ["main", "master"]:
                 main_branches.append(branch)
             else:
                 other_branches.append(branch)
@@ -516,20 +502,20 @@ class ProviderHandler:
                     return result
                 # If we got an empty array, continue checking other providers
                 logger.debug(
-                    f'No microagents found on {provider} for {repository}, trying other providers'
+                    f"No microagents found on {provider} for {repository}, trying other providers"
                 )
             except Exception as e:
-                errors.append(f'{provider.value}: {str(e)}')
+                errors.append(f"{provider.value}: {str(e)}")
                 logger.warning(
-                    f'Error fetching microagents from {provider} for {repository}: {e}'
+                    f"Error fetching microagents from {provider} for {repository}: {e}"
                 )
 
         # If all providers failed or returned empty results, return empty array
         if errors:
             logger.error(
-                f'Failed to fetch microagents for {repository} with all available providers. Errors: {"; ".join(errors)}'
+                f"Failed to fetch microagents for {repository} with all available providers. Errors: {'; '.join(errors)}"
             )
-            raise AuthenticationError(f'Unable to fetch microagents for {repository}')
+            raise AuthenticationError(f"Unable to fetch microagents for {repository}")
 
         # All providers returned empty arrays
         return []
@@ -560,35 +546,35 @@ class ProviderHandler:
                     return result
                 # If we got empty content, continue checking other providers
                 logger.debug(
-                    f'No content found on {provider} for {repository}/{file_path}, trying other providers'
+                    f"No content found on {provider} for {repository}/{file_path}, trying other providers"
                 )
             except ResourceNotFoundError:
                 logger.debug(
-                    f'File not found on {provider} for {repository}/{file_path}, trying other providers'
+                    f"File not found on {provider} for {repository}/{file_path}, trying other providers"
                 )
                 continue
             except MicroagentParseError as e:
                 # Parsing errors are specific to the provider, add to errors list
-                errors.append(f'{provider.value}: {str(e)}')
+                errors.append(f"{provider.value}: {str(e)}")
                 logger.warning(
-                    f'Error parsing microagent content from {provider} for {repository}: {e}'
+                    f"Error parsing microagent content from {provider} for {repository}: {e}"
                 )
             except Exception as e:
                 # For other errors (auth, rate limit, etc.), add to errors list
-                errors.append(f'{provider.value}: {str(e)}')
+                errors.append(f"{provider.value}: {str(e)}")
                 logger.warning(
-                    f'Error fetching microagent content from {provider} for {repository}: {e}'
+                    f"Error fetching microagent content from {provider} for {repository}: {e}"
                 )
 
         # If all providers failed or returned empty results, raise an error
         if errors:
             logger.error(
-                f'Failed to fetch microagent content for {repository} with all available providers. Errors: {"; ".join(errors)}'
+                f"Failed to fetch microagent content for {repository} with all available providers. Errors: {'; '.join(errors)}"
             )
 
         # All providers returned empty content or file not found
         raise AuthenticationError(
-            f'Microagent file {file_path} not found in {repository}'
+            f"Microagent file {file_path} not found in {repository}"
         )
 
     async def get_authenticated_git_url(self, repo_name: str) -> str:
@@ -603,7 +589,7 @@ class ProviderHandler:
         try:
             repository = await self.verify_repo_provider(repo_name)
         except AuthenticationError:
-            raise Exception('Git provider authentication issue when getting remote URL')
+            raise Exception("Git provider authentication issue when getting remote URL")
 
         provider = repository.git_provider
         repo_name = repository.full_name
@@ -621,22 +607,22 @@ class ProviderHandler:
                 token_value = git_token.get_secret_value()
                 if provider == ProviderType.GITLAB:
                     remote_url = (
-                        f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
+                        f"https://oauth2:{token_value}@{domain}/{repo_name}.git"
                     )
                 elif provider == ProviderType.BITBUCKET:
                     # For Bitbucket, handle username:app_password format
-                    if ':' in token_value:
+                    if ":" in token_value:
                         # App token format: username:app_password
-                        remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                        remote_url = f"https://{token_value}@{domain}/{repo_name}.git"
                     else:
                         # Access token format: use x-token-auth
-                        remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
+                        remote_url = f"https://x-token-auth:{token_value}@{domain}/{repo_name}.git"
                 else:
                     # GitHub
-                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
+                    remote_url = f"https://{token_value}@{domain}/{repo_name}.git"
             else:
-                remote_url = f'https://{domain}/{repo_name}.git'
+                remote_url = f"https://{domain}/{repo_name}.git"
         else:
-            remote_url = f'https://{domain}/{repo_name}.git'
+            remote_url = f"https://{domain}/{repo_name}.git"
 
         return remote_url

@@ -14,14 +14,14 @@ class ExtendedConfig(RootModel[dict[str, Any]]):
     def __str__(self) -> str:
         # Use the root dict to build a string representation.
         root_dict: dict[str, Any] = self.model_dump()
-        attr_str = [f'{k}={repr(v)}' for k, v in root_dict.items()]
-        return f'ExtendedConfig({", ".join(attr_str)})'
+        attr_str = [f"{k}={repr(v)}" for k, v in root_dict.items()]
+        return f"ExtendedConfig({', '.join(attr_str)})"
 
     def __repr__(self) -> str:
         return self.__str__()
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'ExtendedConfig':
+    def from_dict(cls, data: dict[str, Any]) -> "ExtendedConfig":
         # Create an instance directly by wrapping the input dict.
         return cls(data)
 

@@ -21,15 +21,15 @@ class ListObjectsV2OutputDict(TypedDict):
 
 class S3FileStore(FileStore):
     def __init__(self, bucket_name: str | None) -> None:
-        access_key = os.getenv('AWS_ACCESS_KEY_ID')
-        secret_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-        secure = os.getenv('AWS_S3_SECURE', 'true').lower() == 'true'
-        endpoint = self._ensure_url_scheme(secure, os.getenv('AWS_S3_ENDPOINT'))
+        access_key = os.getenv("AWS_ACCESS_KEY_ID")
+        secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+        secure = os.getenv("AWS_S3_SECURE", "true").lower() == "true"
+        endpoint = self._ensure_url_scheme(secure, os.getenv("AWS_S3_ENDPOINT"))
         if bucket_name is None:
-            bucket_name = os.environ['AWS_S3_BUCKET']
+            bucket_name = os.environ["AWS_S3_BUCKET"]
         self.bucket: str = bucket_name
         self.client: Any = boto3.client(
-            's3',
+            "s3",
             aws_access_key_id=access_key,
             aws_secret_access_key=secret_key,
             endpoint_url=endpoint,
@@ -39,15 +39,15 @@ class S3FileStore(FileStore):
     def write(self, path: str, contents: str | bytes) -> None:
         try:
             as_bytes = (
-                contents.encode('utf-8') if isinstance(contents, str) else contents
+                contents.encode("utf-8") if isinstance(contents, str) else contents
             )
             self.client.put_object(Bucket=self.bucket, Key=path, Body=as_bytes)
         except botocore.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == 'AccessDenied':
+            if e.response["Error"]["Code"] == "AccessDenied":
                 raise FileNotFoundError(
                     f"Error: Access denied to bucket '{self.bucket}'."
                 )
-            elif e.response['Error']['Code'] == 'NoSuchBucket':
+            elif e.response["Error"]["Code"] == "NoSuchBucket":
                 raise FileNotFoundError(
                     f"Error: The bucket '{self.bucket}' does not exist."
                 )
@@ -60,15 +60,15 @@ class S3FileStore(FileStore):
             response: GetObjectOutputDict = self.client.get_object(
                 Bucket=self.bucket, Key=path
             )
-            with response['Body'] as stream:
-                return str(stream.read().decode('utf-8'))
+            with response["Body"] as stream:
+                return str(stream.read().decode("utf-8"))
         except botocore.exceptions.ClientError as e:
             # Catch all S3-related errors
-            if e.response['Error']['Code'] == 'NoSuchBucket':
+            if e.response["Error"]["Code"] == "NoSuchBucket":
                 raise FileNotFoundError(
                     f"Error: The bucket '{self.bucket}' does not exist."
                 )
-            elif e.response['Error']['Code'] == 'NoSuchKey':
+            elif e.response["Error"]["Code"] == "NoSuchKey":
                 raise FileNotFoundError(
                     f"Error: The object key '{path}' does not exist in bucket '{self.bucket}'."
                 )
@@ -82,10 +82,10 @@ class S3FileStore(FileStore):
             )
 
     def list(self, path: str) -> list[str]:
-        if not path or path == '/':
-            path = ''
-        elif not path.endswith('/'):
-            path += '/'
+        if not path or path == "/":
+            path = ""
+        elif not path.endswith("/"):
+            path += "/"
         # The delimiter logic screens out directories, so we can't use it. :(
         # For example, given a structure:
         #   foo/bar/zap.txt
@@ -98,15 +98,15 @@ class S3FileStore(FileStore):
         response: ListObjectsV2OutputDict = self.client.list_objects_v2(
             Bucket=self.bucket, Prefix=path
         )
-        contents = response.get('Contents')
+        contents = response.get("Contents")
         if not contents:
             return []
-        paths = [obj['Key'] for obj in contents]
+        paths = [obj["Key"] for obj in contents]
         for sub_path in paths:
             if sub_path == path:
                 continue
             try:
-                index = sub_path.index('/', prefix_len + 1)
+                index = sub_path.index("/", prefix_len + 1)
                 if index != prefix_len:
                     results.add(sub_path[: index + 1])
             except ValueError:
@@ -116,31 +116,31 @@ class S3FileStore(FileStore):
     def delete(self, path: str) -> None:
         try:
             # Sanitize path
-            if not path or path == '/':
-                path = ''
-            if path.endswith('/'):
+            if not path or path == "/":
+                path = ""
+            if path.endswith("/"):
                 path = path[:-1]
 
             # Try to delete any child resources (Assume the path is a directory)
             response = self.client.list_objects_v2(
-                Bucket=self.bucket, Prefix=f'{path}/'
+                Bucket=self.bucket, Prefix=f"{path}/"
             )
-            for content in response.get('Contents') or []:
-                self.client.delete_object(Bucket=self.bucket, Key=content['Key'])
+            for content in response.get("Contents") or []:
+                self.client.delete_object(Bucket=self.bucket, Key=content["Key"])
 
             # Next try to delete item as a file
             self.client.delete_object(Bucket=self.bucket, Key=path)
 
         except botocore.exceptions.ClientError as e:
-            if e.response['Error']['Code'] == 'NoSuchBucket':
+            if e.response["Error"]["Code"] == "NoSuchBucket":
                 raise FileNotFoundError(
                     f"Error: The bucket '{self.bucket}' does not exist."
                 )
-            elif e.response['Error']['Code'] == 'AccessDenied':
+            elif e.response["Error"]["Code"] == "AccessDenied":
                 raise FileNotFoundError(
                     f"Error: Access denied to bucket '{self.bucket}'."
                 )
-            elif e.response['Error']['Code'] == 'NoSuchKey':
+            elif e.response["Error"]["Code"] == "NoSuchKey":
                 raise FileNotFoundError(
                     f"Error: The object key '{path}' does not exist in bucket '{self.bucket}'."
                 )
@@ -157,9 +157,9 @@ class S3FileStore(FileStore):
         if not url:
             return None
         if secure:
-            if not url.startswith('https://'):
-                url = 'https://' + url.removeprefix('http://')
+            if not url.startswith("https://"):
+                url = "https://" + url.removeprefix("http://")
         else:
-            if not url.startswith('http://'):
-                url = 'http://' + url.removeprefix('https://')
+            if not url.startswith("http://"):
+                url = "http://" + url.removeprefix("https://")
         return url

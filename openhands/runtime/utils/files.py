@@ -38,7 +38,7 @@ def resolve_path(
 
     # If the path is outside the workspace, deny it
     if not abs_path_in_sandbox.is_relative_to(workspace_mount_path_in_sandbox):
-        raise PermissionError(f'File access not permitted: {file_path}')
+        raise PermissionError(f"File access not permitted: {file_path}")
 
     # Get path relative to the root of the workspace inside the sandbox
     path_in_workspace = abs_path_in_sandbox.relative_to(
@@ -86,15 +86,15 @@ async def read_file(
         )
 
     try:
-        with open(whole_path, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+        with open(whole_path, "r", encoding="utf-8") as file:  # noqa: ASYNC101
             lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
-        return ErrorObservation(f'File not found: {path}')
+        return ErrorObservation(f"File not found: {path}")
     except UnicodeDecodeError:
-        return ErrorObservation(f'File could not be decoded as utf-8: {path}')
+        return ErrorObservation(f"File could not be decoded as utf-8: {path}")
     except IsADirectoryError:
-        return ErrorObservation(f'Path is a directory: {path}. You can only read files')
-    code_view = ''.join(lines)
+        return ErrorObservation(f"Path is a directory: {path}. You can only read files")
+    code_view = "".join(lines)
     return FileReadObservation(path=path, content=code_view)
 
 
@@ -102,9 +102,9 @@ def insert_lines(
     to_insert: list[str], original: list[str], start: int = 0, end: int = -1
 ) -> list[str]:
     """Insert the new content to the original content based on start and end"""
-    new_lines = [''] if start == 0 else original[:start]
-    new_lines += [i + '\n' for i in to_insert]
-    new_lines += [''] if end == -1 else original[end:]
+    new_lines = [""] if start == 0 else original[:start]
+    new_lines += [i + "\n" for i in to_insert]
+    new_lines += [""] if end == -1 else original[end:]
     return new_lines
 
 
@@ -117,7 +117,7 @@ async def write_file(
     start: int = 0,
     end: int = -1,
 ) -> Observation:
-    insert = content.split('\n')
+    insert = content.split("\n")
 
     try:
         whole_path = resolve_path(
@@ -125,26 +125,26 @@ async def write_file(
         )
         if not os.path.exists(os.path.dirname(whole_path)):
             os.makedirs(os.path.dirname(whole_path))
-        mode = 'w' if not os.path.exists(whole_path) else 'r+'
+        mode = "w" if not os.path.exists(whole_path) else "r+"
         try:
-            with open(whole_path, mode, encoding='utf-8') as file:  # noqa: ASYNC101
-                if mode != 'w':
+            with open(whole_path, mode, encoding="utf-8") as file:  # noqa: ASYNC101
+                if mode != "w":
                     all_lines = file.readlines()
                     new_file = insert_lines(insert, all_lines, start, end)
                 else:
-                    new_file = [i + '\n' for i in insert]
+                    new_file = [i + "\n" for i in insert]
 
                 file.seek(0)
                 file.writelines(new_file)
                 file.truncate()
         except FileNotFoundError:
-            return ErrorObservation(f'File not found: {path}')
+            return ErrorObservation(f"File not found: {path}")
         except IsADirectoryError:
             return ErrorObservation(
-                f'Path is a directory: {path}. You can only write to files'
+                f"Path is a directory: {path}. You can only write to files"
             )
         except UnicodeDecodeError:
-            return ErrorObservation(f'File could not be decoded as utf-8: {path}')
+            return ErrorObservation(f"File could not be decoded as utf-8: {path}")
     except PermissionError as e:
-        return ErrorObservation(f'Permission error on {path}: {e}')
-    return FileWriteObservation(content='', path=path)
+        return ErrorObservation(f"Permission error on {path}: {e}")
+    return FileWriteObservation(content="", path=path)

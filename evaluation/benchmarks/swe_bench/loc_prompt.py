@@ -61,9 +61,9 @@ Note: Your thinking should be thorough and so it's fine if it's very long.
 """
 
 FAKE_USER_MSG_FOR_LOC = (
-    'Verify if the found locations contain all the necessary information to address the issue, and check for any relevant references in other parts of the codebase that may not have appeared in the search results. '
-    'If not, continue searching for additional locations related to the issue.\n'
-    'Verify that you have carefully analyzed the impact of the found locations on the repository, especially their dependencies. '
-    'If you think you have solved the task, please send your final answer (including the former answer and reranking) to user through message and then call `finish` to finish.\n'
-    'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
+    "Verify if the found locations contain all the necessary information to address the issue, and check for any relevant references in other parts of the codebase that may not have appeared in the search results. "
+    "If not, continue searching for additional locations related to the issue.\n"
+    "Verify that you have carefully analyzed the impact of the found locations on the repository, especially their dependencies. "
+    "If you think you have solved the task, please send your final answer (including the former answer and reranking) to user through message and then call `finish` to finish.\n"
+    "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n"
 )

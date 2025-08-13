@@ -9,7 +9,7 @@ from openhands.events.action.action import Action, ActionSecurityRisk
 class MCPAction(Action):
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
-    thought: str = ''
+    thought: str = ""
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
@@ -17,16 +17,16 @@ class MCPAction(Action):
     @property
     def message(self) -> str:
         return (
-            f'I am interacting with the MCP server with name:\n'
-            f'```\n{self.name}\n```\n'
-            f'and arguments:\n'
-            f'```\n{self.arguments}\n```'
+            f"I am interacting with the MCP server with name:\n"
+            f"```\n{self.name}\n```\n"
+            f"and arguments:\n"
+            f"```\n{self.arguments}\n```"
         )
 
     def __str__(self) -> str:
-        ret = '**MCPAction**\n'
+        ret = "**MCPAction**\n"
         if self.thought:
-            ret += f'THOUGHT: {self.thought}\n'
-        ret += f'NAME: {self.name}\n'
-        ret += f'ARGUMENTS: {self.arguments}'
+            ret += f"THOUGHT: {self.thought}\n"
+        ret += f"NAME: {self.name}\n"
+        ret += f"ARGUMENTS: {self.arguments}"
         return ret

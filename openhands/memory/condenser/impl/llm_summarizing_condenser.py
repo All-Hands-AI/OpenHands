@@ -30,12 +30,12 @@ class LLMSummarizingCondenser(RollingCondenser):
     ):
         if keep_first >= max_size // 2:
             raise ValueError(
-                f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
+                f"keep_first ({keep_first}) must be less than half of max_size ({max_size})"
             )
         if keep_first < 0:
-            raise ValueError(f'keep_first ({keep_first}) cannot be negative')
+            raise ValueError(f"keep_first ({keep_first}) cannot be negative")
         if max_size < 1:
-            raise ValueError(f'max_size ({max_size}) cannot be non-positive')
+            raise ValueError(f"max_size ({max_size}) cannot be non-positive")
 
         self.max_size = max_size
         self.keep_first = keep_first
@@ -58,7 +58,7 @@ class LLMSummarizingCondenser(RollingCondenser):
         summary_event = (
             view[self.keep_first]
             if isinstance(view[self.keep_first], AgentCondensationObservation)
-            else AgentCondensationObservation('No events summarized')
+            else AgentCondensationObservation("No events summarized")
         )
 
         # Identify events to be forgotten (those not in head or tail)
@@ -109,36 +109,36 @@ COMPLETED: 15 haikus written for results [T,H,T,H,T,H,T,T,H,T,H,T,H,T,H]
 PENDING: 5 more haikus needed
 CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
-        prompt += '\n\n'
+        prompt += "\n\n"
 
         # Add the previous summary if it exists. We'll always have a summary
         # event, but the types aren't precise enought to guarantee that it has a
         # message attribute.
         summary_event_content = self._truncate(
-            summary_event.message if summary_event.message else ''
+            summary_event.message if summary_event.message else ""
         )
-        prompt += f'<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n'
+        prompt += f"<PREVIOUS SUMMARY>\n{summary_event_content}\n</PREVIOUS SUMMARY>\n"
 
-        prompt += '\n\n'
+        prompt += "\n\n"
 
         # Add all events that are being forgotten. We use the string
         # representation defined by the event, and truncate it if necessary.
         for forgotten_event in forgotten_events:
             event_content = self._truncate(str(forgotten_event))
-            prompt += f'<EVENT id={forgotten_event.id}>\n{event_content}\n</EVENT>\n'
+            prompt += f"<EVENT id={forgotten_event.id}>\n{event_content}\n</EVENT>\n"
 
-        prompt += 'Now summarize the events using the rules above.'
+        prompt += "Now summarize the events using the rules above."
 
-        messages = [Message(role='user', content=[TextContent(text=prompt)])]
+        messages = [Message(role="user", content=[TextContent(text=prompt)])]
 
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
-            extra_body={'metadata': self.llm_metadata},
+            extra_body={"metadata": self.llm_metadata},
         )
         summary = response.choices[0].message.content
 
-        self.add_metadata('response', response.model_dump())
-        self.add_metadata('metrics', self.llm.metrics.get())
+        self.add_metadata("response", response.model_dump())
+        self.add_metadata("metrics", self.llm.metrics.get())
 
         return Condensation(
             action=CondensationAction(

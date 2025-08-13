@@ -12,11 +12,11 @@ from openhands.server.session.conversation import ServerConversation
 from openhands.server.utils import get_conversation
 
 app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+    prefix="/api/conversations/{conversation_id}", dependencies=get_dependencies()
 )
 
 
-@app.route('/security/{path:path}', methods=['GET', 'POST', 'PUT', 'DELETE'])
+@app.route("/security/{path:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def security_api(
     request: Request, conversation: ServerConversation = Depends(get_conversation)
 ) -> Response:
@@ -36,7 +36,7 @@ async def security_api(
     if not conversation.security_analyzer:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail='Security analyzer not initialized',
+            detail="Security analyzer not initialized",
         )
 
     return await conversation.security_analyzer.handle_api_request(request)

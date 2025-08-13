@@ -25,8 +25,8 @@ def mock_sio():
 @pytest.fixture
 def default_llm_config():
     return LLMConfig(
-        model='gpt-4o',
-        api_key='test_key',
+        model="gpt-4o",
+        api_key="test_key",
         num_retries=2,
         retry_min_wait=1,
         retry_max_wait=2,
@@ -34,37 +34,37 @@ def default_llm_config():
 
 
 @pytest.mark.asyncio
-@patch('openhands.llm.llm.litellm_completion')
+@patch("openhands.llm.llm.litellm_completion")
 async def test_notify_on_llm_retry(
     mock_litellm_completion, mock_sio, default_llm_config
 ):
     config = OpenHandsConfig()
     config.set_llm_config(default_llm_config)
     session = Session(
-        sid='..sid..',
+        sid="..sid..",
         file_store=InMemoryFileStore({}),
         config=config,
         sio=mock_sio,
-        user_id='..uid..',
+        user_id="..uid..",
     )
     session.queue_status_message = AsyncMock()
 
-    with patch('time.sleep') as _mock_sleep:
+    with patch("time.sleep") as _mock_sleep:
         mock_litellm_completion.side_effect = [
             RateLimitError(
-                'Rate limit exceeded', llm_provider='test_provider', model='test_model'
+                "Rate limit exceeded", llm_provider="test_provider", model="test_model"
             ),
-            {'choices': [{'message': {'content': 'Retry successful'}}]},
+            {"choices": [{"message": {"content": "Retry successful"}}]},
         ]
-    llm = session._create_llm('..cls..')
+    llm = session._create_llm("..cls..")
 
     llm.completion(
-        messages=[{'role': 'user', 'content': 'Hello!'}],
+        messages=[{"role": "user", "content": "Hello!"}],
         stream=False,
     )
 
     assert mock_litellm_completion.call_count == 2
     session.queue_status_message.assert_called_once_with(
-        'info', RuntimeStatus.LLM_RETRY, ANY
+        "info", RuntimeStatus.LLM_RETRY, ANY
     )
     await session.close()

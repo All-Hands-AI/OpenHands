@@ -45,11 +45,11 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 # Don't make this configurable for now, unless we have other competitive agents
-AGENT_CLASS = 'CodeActAgent'
+AGENT_CLASS = "CodeActAgent"
 
 
 class IssueResolver:
-    GITLAB_CI = os.getenv('GITLAB_CI') == 'true'
+    GITLAB_CI = os.getenv("GITLAB_CI") == "true"
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the IssueResolver with the given parameters.
@@ -70,24 +70,23 @@ class IssueResolver:
             comment_id: Optional ID of a specific comment to focus on.
             base_domain: The base domain for the git server.
         """
-
-        parts = args.selected_repo.rsplit('/', 1)
+        parts = args.selected_repo.rsplit("/", 1)
         if len(parts) < 2:
-            raise ValueError('Invalid repository format. Expected owner/repo')
+            raise ValueError("Invalid repository format. Expected owner/repo")
         owner, repo = parts
 
         token = (
             args.token
-            or os.getenv('GITHUB_TOKEN')
-            or os.getenv('GITLAB_TOKEN')
-            or os.getenv('BITBUCKET_TOKEN')
+            or os.getenv("GITHUB_TOKEN")
+            or os.getenv("GITLAB_TOKEN")
+            or os.getenv("BITBUCKET_TOKEN")
         )
-        username = args.username if args.username else os.getenv('GIT_USERNAME')
+        username = args.username if args.username else os.getenv("GIT_USERNAME")
         if not username:
-            raise ValueError('Username is required.')
+            raise ValueError("Username is required.")
 
         if not token:
-            raise ValueError('Token is required.')
+            raise ValueError("Token is required.")
 
         platform = call_async_from_sync(
             identify_token,
@@ -98,7 +97,7 @@ class IssueResolver:
 
         repo_instruction = None
         if args.repo_instruction_file:
-            with open(args.repo_instruction_file, 'r') as f:
+            with open(args.repo_instruction_file, "r") as f:
                 repo_instruction = f.read()
 
         issue_type = args.issue_type
@@ -106,30 +105,30 @@ class IssueResolver:
         # Read the prompt template
         prompt_file = args.prompt_file
         if prompt_file is None:
-            if issue_type == 'issue':
+            if issue_type == "issue":
                 prompt_file = os.path.join(
-                    os.path.dirname(__file__), 'prompts/resolve/basic-with-tests.jinja'
+                    os.path.dirname(__file__), "prompts/resolve/basic-with-tests.jinja"
                 )
             else:
                 prompt_file = os.path.join(
-                    os.path.dirname(__file__), 'prompts/resolve/basic-followup.jinja'
+                    os.path.dirname(__file__), "prompts/resolve/basic-followup.jinja"
                 )
-        with open(prompt_file, 'r') as f:
+        with open(prompt_file, "r") as f:
             user_instructions_prompt_template = f.read()
 
         with open(
-            prompt_file.replace('.jinja', '-conversation-instructions.jinja')
+            prompt_file.replace(".jinja", "-conversation-instructions.jinja")
         ) as f:
             conversation_instructions_prompt_template = f.read()
 
         base_domain = args.base_domain
         if base_domain is None:
             base_domain = (
-                'github.com'
+                "github.com"
                 if platform == ProviderType.GITHUB
-                else 'gitlab.com'
+                else "gitlab.com"
                 if platform == ProviderType.GITLAB
-                else 'bitbucket.org'
+                else "bitbucket.org"
             )
 
         self.output_dir = args.output_dir
@@ -185,16 +184,16 @@ class IssueResolver:
         is_experimental: bool,
         runtime: str | None = None,
     ) -> OpenHandsConfig:
-        config.default_agent = 'CodeActAgent'
+        config.default_agent = "CodeActAgent"
         # Use provided runtime or fallback to config value or default to 'docker'
-        config.runtime = runtime or config.runtime or 'docker'
+        config.runtime = runtime or config.runtime or "docker"
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
         # do not mount workspace
         config.workspace_base = workspace_base
         config.workspace_mount_path = workspace_base
-        config.agents = {'CodeActAgent': AgentConfig(disabled_microagents=['github'])}
+        config.agents = {"CodeActAgent": AgentConfig(disabled_microagents=["github"])}
 
         cls.update_sandbox_config(
             config,
@@ -214,7 +213,7 @@ class IssueResolver:
         is_experimental: bool,
     ) -> None:
         if runtime_container_image is not None and base_container_image is not None:
-            raise ValueError('Cannot provide both runtime and base container images.')
+            raise ValueError("Cannot provide both runtime and base container images.")
 
         if (
             runtime_container_image is None
@@ -222,7 +221,7 @@ class IssueResolver:
             and not is_experimental
         ):
             runtime_container_image = (
-                f'ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik'
+                f"ghcr.io/all-hands-ai/runtime:{openhands.__version__}-nikolaik"
             )
 
         # Convert container image values to string or None
@@ -246,9 +245,9 @@ class IssueResolver:
         # Configure sandbox for GitLab CI environment
         if cls.GITLAB_CI:
             sandbox_config.local_runtime_url = os.getenv(
-                'LOCAL_RUNTIME_URL', 'http://localhost'
+                "LOCAL_RUNTIME_URL", "http://localhost"
             )
-            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+            user_id = os.getuid() if hasattr(os, "getuid") else 1000
             if user_id == 0:
                 sandbox_config.user_id = get_unique_uid()
 
@@ -273,37 +272,37 @@ class IssueResolver:
         This function is called before the runtime is used to run the agent.
         It sets up git configuration and runs the setup script if it exists.
         """
-        logger.info('-' * 30)
-        logger.info('BEGIN Runtime Completion Fn')
-        logger.info('-' * 30)
+        logger.info("-" * 30)
+        logger.info("BEGIN Runtime Completion Fn")
+        logger.info("-" * 30)
         obs: Observation
 
-        action = CmdRunAction(command='cd /workspace')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        action = CmdRunAction(command="cd /workspace")
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to change directory to /workspace.\n{obs}')
+            raise RuntimeError(f"Failed to change directory to /workspace.\n{obs}")
 
         if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
-            action = CmdRunAction(command='sudo chown -R 1001:0 /workspace/*')
-            logger.info(action, extra={'msg_type': 'ACTION'})
+            action = CmdRunAction(command="sudo chown -R 1001:0 /workspace/*")
+            logger.info(action, extra={"msg_type": "ACTION"})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.info(obs, extra={"msg_type": "OBSERVATION"})
 
         action = CmdRunAction(command='git config --global core.pager ""')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to set git config.\n{obs}')
+            raise RuntimeError(f"Failed to set git config.\n{obs}")
 
         # Run setup script if it exists
-        logger.info('Checking for .openhands/setup.sh script...')
+        logger.info("Checking for .openhands/setup.sh script...")
         runtime.maybe_run_setup_script()
 
         # Setup git hooks if they exist
-        logger.info('Checking for .openhands/pre-commit.sh script...')
+        logger.info("Checking for .openhands/pre-commit.sh script...")
         runtime.maybe_setup_git_hooks()
 
     async def complete_runtime(
@@ -317,80 +316,80 @@ class IssueResolver:
         If you need to do something in the sandbox to get the correctness metric after
         the agent has run, modify this function.
         """
-        logger.info('-' * 30)
-        logger.info('BEGIN Runtime Completion Fn')
-        logger.info('-' * 30)
+        logger.info("-" * 30)
+        logger.info("BEGIN Runtime Completion Fn")
+        logger.info("-" * 30)
         obs: Observation
 
-        action = CmdRunAction(command='cd /workspace')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        action = CmdRunAction(command="cd /workspace")
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
             raise RuntimeError(
-                f'Failed to change directory to /workspace. Observation: {obs}'
+                f"Failed to change directory to /workspace. Observation: {obs}"
             )
 
         action = CmdRunAction(command='git config --global core.pager ""')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to set git config. Observation: {obs}')
+            raise RuntimeError(f"Failed to set git config. Observation: {obs}")
 
         action = CmdRunAction(
-            command='git config --global --add safe.directory /workspace'
+            command="git config --global --add safe.directory /workspace"
         )
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to set git config. Observation: {obs}')
+            raise RuntimeError(f"Failed to set git config. Observation: {obs}")
 
         if self.platform == ProviderType.GITLAB and self.GITLAB_CI:
-            action = CmdRunAction(command='sudo git add -A')
+            action = CmdRunAction(command="sudo git add -A")
         else:
-            action = CmdRunAction(command='git add -A')
+            action = CmdRunAction(command="git add -A")
 
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+        logger.info(obs, extra={"msg_type": "OBSERVATION"})
         if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
-            raise RuntimeError(f'Failed to git add. Observation: {obs}')
+            raise RuntimeError(f"Failed to git add. Observation: {obs}")
 
         n_retries = 0
         git_patch = None
         while n_retries < 5:
-            action = CmdRunAction(command=f'git diff --no-color --cached {base_commit}')
+            action = CmdRunAction(command=f"git diff --no-color --cached {base_commit}")
             action.set_hard_timeout(600 + 100 * n_retries)
-            logger.info(action, extra={'msg_type': 'ACTION'})
+            logger.info(action, extra={"msg_type": "ACTION"})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.info(obs, extra={"msg_type": "OBSERVATION"})
             n_retries += 1
             if isinstance(obs, CmdOutputObservation):
                 if obs.exit_code == 0:
                     git_patch = obs.content.strip()
                     break
                 else:
-                    logger.info('Failed to get git diff, retrying...')
+                    logger.info("Failed to get git diff, retrying...")
                     await asyncio.sleep(10)
             elif isinstance(obs, ErrorObservation):
-                logger.error(f'Error occurred: {obs.content}. Retrying...')
+                logger.error(f"Error occurred: {obs.content}. Retrying...")
                 await asyncio.sleep(10)
             else:
-                raise ValueError(f'Unexpected observation type: {type(obs)}')
+                raise ValueError(f"Unexpected observation type: {type(obs)}")
 
-        logger.info('-' * 30)
-        logger.info('END Runtime Completion Fn')
-        logger.info('-' * 30)
-        return {'git_patch': git_patch}
+        logger.info("-" * 30)
+        logger.info("END Runtime Completion Fn")
+        logger.info("-" * 30)
+        return {"git_patch": git_patch}
 
     @staticmethod
     def build_workspace_base(
         output_dir: str, issue_type: str, issue_number: int
     ) -> str:
         workspace_base = os.path.join(
-            output_dir, 'workspace', f'{issue_type}_{issue_number}'
+            output_dir, "workspace", f"{issue_type}_{issue_number}"
         )
         return os.path.abspath(workspace_base)
 
@@ -403,15 +402,15 @@ class IssueResolver:
     ) -> ResolverOutput:
         # Setup the logger properly, so you can run multi-processing to parallelize processing
         if reset_logger:
-            log_dir = os.path.join(self.output_dir, 'infer_logs')
+            log_dir = os.path.join(self.output_dir, "infer_logs")
             reset_logger_for_multiprocessing(logger, str(issue.number), log_dir)
         else:
-            logger.info(f'Starting fixing issue {issue.number}.')
+            logger.info(f"Starting fixing issue {issue.number}.")
 
         # write the repo to the workspace
         if os.path.exists(self.workspace_base):
             shutil.rmtree(self.workspace_base)
-        shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
+        shutil.copytree(os.path.join(self.output_dir, "repo"), self.workspace_base)
 
         runtime = create_runtime(self.app_config)
         await runtime.connect()
@@ -444,18 +443,18 @@ class IssueResolver:
                 conversation_instructions=conversation_instructions,
             )
             if state is None:
-                raise RuntimeError('Failed to run the agent.')
+                raise RuntimeError("Failed to run the agent.")
         except (ValueError, RuntimeError) as e:
-            error_msg = f'Agent failed with error: {str(e)}'
+            error_msg = f"Agent failed with error: {str(e)}"
             logger.error(error_msg)
             state = None
             last_error: str | None = error_msg
 
         # Get git patch
         return_val = await self.complete_runtime(runtime, base_commit)
-        git_patch = return_val['git_patch']
+        git_patch = return_val["git_patch"]
         logger.info(
-            f'Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------'
+            f"Got git diff for instance {issue.number}:\n--------\n{git_patch}\n--------"
         )
 
         # Serialize histories and set defaults for failed state
@@ -464,8 +463,8 @@ class IssueResolver:
             metrics = None
             success = False
             comment_success = None
-            result_explanation = 'Agent failed to run'
-            last_error = 'Agent failed to run or crashed'
+            result_explanation = "Agent failed to run"
+            last_error = "Agent failed to run or crashed"
         else:
             histories = [dataclasses.asdict(event) for event in state.history]
             metrics = state.metrics.get() if state.metrics else None
@@ -474,13 +473,13 @@ class IssueResolver:
                 issue, state.history, git_patch
             )
 
-            if issue_handler.issue_type == 'pr' and comment_success:
-                success_log = 'I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n'
+            if issue_handler.issue_type == "pr" and comment_success:
+                success_log = "I have updated the PR and resolved some of the issues that were cited in the pull request review. Specifically, I identified the following revision requests, and all the ones that I think I successfully resolved are checked off. All the unchecked ones I was not able to resolve, so manual intervention may be required:\n"
                 try:
                     explanations = json.loads(result_explanation)
                 except json.JSONDecodeError:
                     logger.error(
-                        f'Failed to parse result_explanation as JSON: {result_explanation}'
+                        f"Failed to parse result_explanation as JSON: {result_explanation}"
                     )
                     explanations = [
                         str(result_explanation)
@@ -490,12 +489,12 @@ class IssueResolver:
                     comment_success, explanations
                 ):
                     status = (
-                        colored('[X]', 'red')
+                        colored("[X]", "red")
                         if success_indicator
-                        else colored('[ ]', 'red')
+                        else colored("[ ]", "red")
                     )
-                    bullet_point = colored('-', 'yellow')
-                    success_log += f'\n{bullet_point} {status}: {explanation}'
+                    bullet_point = colored("-", "yellow")
+                    success_log += f"\n{bullet_point} {status}: {explanation}"
                 logger.info(success_log)
             last_error = state.last_error if state.last_error else None
 
@@ -523,10 +522,10 @@ class IssueResolver:
 
         if not issues:
             raise ValueError(
-                f'No issues found for issue number {self.issue_number}. Please verify that:\n'
-                f'1. The issue/PR #{self.issue_number} exists in the repository {self.owner}/{self.repo}\n'
-                f'2. You have the correct permissions to access it\n'
-                f'3. The repository name is spelled correctly'
+                f"No issues found for issue number {self.issue_number}. Please verify that:\n"
+                f"1. The issue/PR #{self.issue_number} exists in the repository {self.owner}/{self.repo}\n"
+                f"2. You have the correct permissions to access it\n"
+                f"3. The repository name is spelled correctly"
             )
 
         return issues[0]
@@ -540,114 +539,113 @@ class IssueResolver:
         Args:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
-
         issue = self.extract_issue()
 
         if self.comment_id is not None:
             if (
-                self.issue_type == 'pr'
+                self.issue_type == "pr"
                 and not issue.review_comments
                 and not issue.review_threads
                 and not issue.thread_comments
             ):
                 raise ValueError(
-                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
+                    f"Comment ID {self.comment_id} did not have a match for issue {issue.number}"
                 )
 
-            if self.issue_type == 'issue' and not issue.thread_comments:
+            if self.issue_type == "issue" and not issue.thread_comments:
                 raise ValueError(
-                    f'Comment ID {self.comment_id} did not have a match for issue {issue.number}'
+                    f"Comment ID {self.comment_id} did not have a match for issue {issue.number}"
                 )
 
         # TEST METADATA
-        model_name = self.app_config.get_llm_config().model.split('/')[-1]
+        model_name = self.app_config.get_llm_config().model.split("/")[-1]
 
         pathlib.Path(self.output_dir).mkdir(parents=True, exist_ok=True)
-        pathlib.Path(os.path.join(self.output_dir, 'infer_logs')).mkdir(
+        pathlib.Path(os.path.join(self.output_dir, "infer_logs")).mkdir(
             parents=True, exist_ok=True
         )
-        logger.info(f'Using output directory: {self.output_dir}')
+        logger.info(f"Using output directory: {self.output_dir}")
 
         # checkout the repo
-        repo_dir = os.path.join(self.output_dir, 'repo')
+        repo_dir = os.path.join(self.output_dir, "repo")
         if not os.path.exists(repo_dir):
             checkout_output = subprocess.check_output(  # noqa: ASYNC101
                 [
-                    'git',
-                    'clone',
+                    "git",
+                    "clone",
                     self.issue_handler.get_clone_url(),
-                    f'{self.output_dir}/repo',
+                    f"{self.output_dir}/repo",
                 ]
-            ).decode('utf-8')
-            if 'fatal' in checkout_output:
-                raise RuntimeError(f'Failed to clone repository: {checkout_output}')
+            ).decode("utf-8")
+            if "fatal" in checkout_output:
+                raise RuntimeError(f"Failed to clone repository: {checkout_output}")
 
         # get the commit id of current repo for reproducibility
         base_commit = (
-            subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-            .decode('utf-8')
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)  # noqa: ASYNC101
+            .decode("utf-8")
             .strip()
         )
-        logger.info(f'Base commit: {base_commit}')
+        logger.info(f"Base commit: {base_commit}")
 
         if self.repo_instruction is None:
             # Check for .openhands_instructions file in the workspace directory
             openhands_instructions_path = os.path.join(
-                repo_dir, '.openhands_instructions'
+                repo_dir, ".openhands_instructions"
             )
             if os.path.exists(openhands_instructions_path):
-                with open(openhands_instructions_path, 'r') as f:  # noqa: ASYNC101
+                with open(openhands_instructions_path, "r") as f:  # noqa: ASYNC101
                     self.repo_instruction = f.read()
 
         # OUTPUT FILE
-        output_file = os.path.join(self.output_dir, 'output.jsonl')
-        logger.info(f'Writing output to {output_file}')
+        output_file = os.path.join(self.output_dir, "output.jsonl")
+        logger.info(f"Writing output to {output_file}")
 
         # Check if this issue was already processed
         if os.path.exists(output_file):
-            with open(output_file, 'r') as f:  # noqa: ASYNC101
+            with open(output_file, "r") as f:  # noqa: ASYNC101
                 for line in f:
                     data = ResolverOutput.model_validate_json(line)
                     if data.issue.number == self.issue_number:
                         logger.warning(
-                            f'Issue {self.issue_number} was already processed. Skipping.'
+                            f"Issue {self.issue_number} was already processed. Skipping."
                         )
                         return
 
-        output_fp = open(output_file, 'a')  # noqa: ASYNC101
+        output_fp = open(output_file, "a")  # noqa: ASYNC101
 
         logger.info(
-            f'Resolving issue {self.issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {self.max_iterations}.'
+            f"Resolving issue {self.issue_number} with Agent {AGENT_CLASS}, model {model_name}, max iterations {self.max_iterations}."
         )
 
         try:
             # checkout to pr branch if needed
-            if self.issue_type == 'pr':
+            if self.issue_type == "pr":
                 branch_to_use = issue.head_branch
                 logger.info(
-                    f'Checking out to PR branch {branch_to_use} for issue {issue.number}'
+                    f"Checking out to PR branch {branch_to_use} for issue {issue.number}"
                 )
 
                 if not branch_to_use:
-                    raise ValueError('Branch name cannot be None')
+                    raise ValueError("Branch name cannot be None")
 
                 # Fetch the branch first to ensure it exists locally
-                fetch_cmd = ['git', 'fetch', 'origin', branch_to_use]
+                fetch_cmd = ["git", "fetch", "origin", branch_to_use]
                 subprocess.check_output(  # noqa: ASYNC101
                     fetch_cmd,
                     cwd=repo_dir,
                 )
 
                 # Checkout the branch
-                checkout_cmd = ['git', 'checkout', branch_to_use]
+                checkout_cmd = ["git", "checkout", branch_to_use]
                 subprocess.check_output(  # noqa: ASYNC101
                     checkout_cmd,
                     cwd=repo_dir,
                 )
 
                 base_commit = (
-                    subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo_dir)  # noqa: ASYNC101
-                    .decode('utf-8')
+                    subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo_dir)  # noqa: ASYNC101
+                    .decode("utf-8")
                     .strip()
                 )
 
@@ -657,9 +655,9 @@ class IssueResolver:
                 self.issue_handler,
                 reset_logger,
             )
-            output_fp.write(output.model_dump_json() + '\n')
+            output_fp.write(output.model_dump_json() + "\n")
             output_fp.flush()
 
         finally:
             output_fp.close()
-            logger.info('Finished.')
+            logger.info("Finished.")

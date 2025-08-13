@@ -21,16 +21,16 @@ class ResponseLatency(BaseModel):
 class TokenUsage(BaseModel):
     """Metric tracking detailed token usage per completion call."""
 
-    model: str = Field(default='')
+    model: str = Field(default="")
     prompt_tokens: int = Field(default=0)
     completion_tokens: int = Field(default=0)
     cache_read_tokens: int = Field(default=0)
     cache_write_tokens: int = Field(default=0)
     context_window: int = Field(default=0)
     per_turn_token: int = Field(default=0)
-    response_id: str = Field(default='')
+    response_id: str = Field(default="")
 
-    def __add__(self, other: 'TokenUsage') -> 'TokenUsage':
+    def __add__(self, other: "TokenUsage") -> "TokenUsage":
         """Add two TokenUsage instances together."""
         return TokenUsage(
             model=self.model,
@@ -53,7 +53,7 @@ class Metrics:
       - A list of TokenUsage (one per call).
     """
 
-    def __init__(self, model_name: str = 'default') -> None:
+    def __init__(self, model_name: str = "default") -> None:
         self._accumulated_cost: float = 0.0
         self._max_budget_per_task: float | None = None
         self._costs: list[Cost] = []
@@ -67,7 +67,7 @@ class Metrics:
             cache_read_tokens=0,
             cache_write_tokens=0,
             context_window=0,
-            response_id='',
+            response_id="",
         )
 
     @property
@@ -77,7 +77,7 @@ class Metrics:
     @accumulated_cost.setter
     def accumulated_cost(self, value: float) -> None:
         if value < 0:
-            raise ValueError('Total cost cannot be negative.')
+            raise ValueError("Total cost cannot be negative.")
         self._accumulated_cost = value
 
     @property
@@ -94,7 +94,7 @@ class Metrics:
 
     @property
     def response_latencies(self) -> list[ResponseLatency]:
-        if not hasattr(self, '_response_latencies'):
+        if not hasattr(self, "_response_latencies"):
             self._response_latencies = []
         return self._response_latencies
 
@@ -104,7 +104,7 @@ class Metrics:
 
     @property
     def token_usages(self) -> list[TokenUsage]:
-        if not hasattr(self, '_token_usages'):
+        if not hasattr(self, "_token_usages"):
             self._token_usages = []
         return self._token_usages
 
@@ -115,7 +115,7 @@ class Metrics:
     @property
     def accumulated_token_usage(self) -> TokenUsage:
         """Get the accumulated token usage, initializing it if it doesn't exist."""
-        if not hasattr(self, '_accumulated_token_usage'):
+        if not hasattr(self, "_accumulated_token_usage"):
             self._accumulated_token_usage = TokenUsage(
                 model=self.model_name,
                 prompt_tokens=0,
@@ -123,13 +123,13 @@ class Metrics:
                 cache_read_tokens=0,
                 cache_write_tokens=0,
                 context_window=0,
-                response_id='',
+                response_id="",
             )
         return self._accumulated_token_usage
 
     def add_cost(self, value: float) -> None:
         if value < 0:
-            raise ValueError('Added cost cannot be negative.')
+            raise ValueError("Added cost cannot be negative.")
         self._accumulated_cost += value
         self._costs.append(Cost(cost=value, model=self.model_name))
 
@@ -150,7 +150,6 @@ class Metrics:
         response_id: str,
     ) -> None:
         """Add a single usage record."""
-
         # Token each turn for calculating context usage.
         per_turn_token = prompt_tokens + completion_tokens
 
@@ -175,10 +174,10 @@ class Metrics:
             cache_write_tokens=cache_write_tokens,
             context_window=context_window,
             per_turn_token=per_turn_token,
-            response_id='',
+            response_id="",
         )
 
-    def merge(self, other: 'Metrics') -> None:
+    def merge(self, other: "Metrics") -> None:
         """Merge 'other' metrics into this one."""
         self._accumulated_cost += other.accumulated_cost
 
@@ -199,29 +198,29 @@ class Metrics:
     def get(self) -> dict:
         """Return the metrics in a dictionary."""
         return {
-            'accumulated_cost': self._accumulated_cost,
-            'max_budget_per_task': self._max_budget_per_task,
-            'accumulated_token_usage': self.accumulated_token_usage.model_dump(),
-            'costs': [cost.model_dump() for cost in self._costs],
-            'response_latencies': [
+            "accumulated_cost": self._accumulated_cost,
+            "max_budget_per_task": self._max_budget_per_task,
+            "accumulated_token_usage": self.accumulated_token_usage.model_dump(),
+            "costs": [cost.model_dump() for cost in self._costs],
+            "response_latencies": [
                 latency.model_dump() for latency in self._response_latencies
             ],
-            'token_usages': [usage.model_dump() for usage in self._token_usages],
+            "token_usages": [usage.model_dump() for usage in self._token_usages],
         }
 
     def log(self) -> str:
         """Log the metrics."""
         metrics = self.get()
-        logs = ''
+        logs = ""
         for key, value in metrics.items():
-            logs += f'{key}: {value}\n'
+            logs += f"{key}: {value}\n"
         return logs
 
-    def copy(self) -> 'Metrics':
+    def copy(self) -> "Metrics":
         """Create a deep copy of the Metrics object."""
         return copy.deepcopy(self)
 
-    def diff(self, baseline: 'Metrics') -> 'Metrics':
+    def diff(self, baseline: "Metrics") -> "Metrics":
         """Calculate the difference between current metrics and a baseline.
 
         This is useful for tracking metrics for specific operations like delegates.
@@ -269,10 +268,10 @@ class Metrics:
             - base_usage.cache_write_tokens,
             context_window=current_usage.context_window,
             per_turn_token=0,
-            response_id='',
+            response_id="",
         )
 
         return result
 
     def __repr__(self) -> str:
-        return f'Metrics({self.get()}'
+        return f"Metrics({self.get()}"

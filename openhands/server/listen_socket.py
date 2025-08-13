@@ -35,44 +35,44 @@ from openhands.storage.conversation.conversation_validator import (
 @sio.event
 async def connect(connection_id: str, environ: dict) -> None:
     try:
-        logger.info(f'sio:connect: {connection_id}')
-        query_params = parse_qs(environ.get('QUERY_STRING', ''))
-        latest_event_id_str = query_params.get('latest_event_id', [-1])[0]
+        logger.info(f"sio:connect: {connection_id}")
+        query_params = parse_qs(environ.get("QUERY_STRING", ""))
+        latest_event_id_str = query_params.get("latest_event_id", [-1])[0]
         try:
             latest_event_id = int(latest_event_id_str)
         except ValueError:
             logger.debug(
-                f'Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1'
+                f"Invalid latest_event_id value: {latest_event_id_str}, defaulting to -1"
             )
             latest_event_id = -1
-        conversation_id = query_params.get('conversation_id', [None])[0]
+        conversation_id = query_params.get("conversation_id", [None])[0]
         logger.info(
-            f'Socket request for conversation {conversation_id} with connection_id {connection_id}'
+            f"Socket request for conversation {conversation_id} with connection_id {connection_id}"
         )
-        raw_list = query_params.get('providers_set', [])
+        raw_list = query_params.get("providers_set", [])
         providers_list = []
         for item in raw_list:
-            providers_list.extend(item.split(',') if isinstance(item, str) else [])
+            providers_list.extend(item.split(",") if isinstance(item, str) else [])
         providers_list = [p for p in providers_list if p]
         providers_set = [ProviderType(p) for p in providers_list]
 
         if not conversation_id:
-            logger.error('No conversation_id in query params')
-            raise ConnectionRefusedError('No conversation_id in query params')
+            logger.error("No conversation_id in query params")
+            raise ConnectionRefusedError("No conversation_id in query params")
 
         if _invalid_session_api_key(query_params):
-            raise ConnectionRefusedError('invalid_session_api_key')
+            raise ConnectionRefusedError("invalid_session_api_key")
 
-        cookies_str = environ.get('HTTP_COOKIE', '')
+        cookies_str = environ.get("HTTP_COOKIE", "")
         # Get Authorization header from the environment
         # Headers in WSGI/ASGI are prefixed with 'HTTP_' and have dashes replaced with underscores
-        authorization_header = environ.get('HTTP_AUTHORIZATION', None)
+        authorization_header = environ.get("HTTP_AUTHORIZATION", None)
         conversation_validator = create_conversation_validator()
         user_id = await conversation_validator.validate(
             conversation_id, cookies_str, authorization_header
         )
         logger.info(
-            f'User {user_id} is allowed to connect to conversation {conversation_id}'
+            f"User {user_id} is allowed to connect to conversation {conversation_id}"
         )
 
         try:
@@ -81,12 +81,12 @@ async def connect(connection_id: str, environ: dict) -> None:
             )
         except FileNotFoundError as e:
             logger.error(
-                f'Failed to create EventStore for conversation {conversation_id}: {e}'
+                f"Failed to create EventStore for conversation {conversation_id}: {e}"
             )
-            raise ConnectionRefusedError(f'Failed to access conversation events: {e}')
+            raise ConnectionRefusedError(f"Failed to access conversation events: {e}")
 
         logger.info(
-            f'Replaying event stream for conversation {conversation_id} with connection_id {connection_id}...'
+            f"Replaying event stream for conversation {conversation_id} with connection_id {connection_id}..."
         )
         agent_state_changed = None
 
@@ -95,7 +95,7 @@ async def connect(connection_id: str, environ: dict) -> None:
 
         # Process all available events
         async for event in async_store:
-            logger.debug(f'oh_event: {event.__class__.__name__}')
+            logger.debug(f"oh_event: {event.__class__.__name__}")
 
             if isinstance(
                 event,
@@ -105,16 +105,16 @@ async def connect(connection_id: str, environ: dict) -> None:
             elif isinstance(event, AgentStateChangedObservation):
                 agent_state_changed = event
             else:
-                await sio.emit('oh_event', event_to_dict(event), to=connection_id)
+                await sio.emit("oh_event", event_to_dict(event), to=connection_id)
 
         # Send the agent state changed event last if we have one
         if agent_state_changed:
             await sio.emit(
-                'oh_event', event_to_dict(agent_state_changed), to=connection_id
+                "oh_event", event_to_dict(agent_state_changed), to=connection_id
             )
 
         logger.info(
-            f'Finished replaying event stream for conversation {conversation_id}'
+            f"Finished replaying event stream for conversation {conversation_id}"
         )
 
         conversation_init_data = await setup_init_convo_settings(
@@ -129,10 +129,10 @@ async def connect(connection_id: str, environ: dict) -> None:
         )
 
         if agent_loop_info is None:
-            raise ConnectionRefusedError('Failed to join conversation')
+            raise ConnectionRefusedError("Failed to join conversation")
 
         logger.info(
-            f'Successfully joined conversation {conversation_id} with connection_id {connection_id}'
+            f"Successfully joined conversation {conversation_id} with connection_id {connection_id}"
         )
     except ConnectionRefusedError:
         # Close the broken connection after sending an error message
@@ -154,15 +154,15 @@ async def oh_action(connection_id: str, data: dict[str, Any]) -> None:
 
 @sio.event
 async def disconnect(connection_id: str) -> None:
-    logger.info(f'sio:disconnect:{connection_id}')
+    logger.info(f"sio:disconnect:{connection_id}")
     await conversation_manager.disconnect_from_session(connection_id)
 
 
 def _invalid_session_api_key(query_params: dict[str, list[Any]]):
-    session_api_key = os.getenv('SESSION_API_KEY')
+    session_api_key = os.getenv("SESSION_API_KEY")
     if not session_api_key:
         return False
-    query_api_keys = query_params['session_api_key']
+    query_api_keys = query_params["session_api_key"]
     if not query_api_keys:
         return True
     return query_api_keys[0] != session_api_key

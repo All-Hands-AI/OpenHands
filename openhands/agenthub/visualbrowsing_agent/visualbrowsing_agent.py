@@ -24,9 +24,9 @@ from openhands.runtime.plugins import (
 
 def get_error_prefix(obs: BrowserOutputObservation) -> str:
     # temporary fix for OneStopMarket to ignore timeout errors
-    if 'timeout' in obs.last_browser_action_error:
-        return ''
-    return f'## Error from previous action:\n{obs.last_browser_action_error}\n'
+    if "timeout" in obs.last_browser_action_error:
+        return ""
+    return f"## Error from previous action:\n{obs.last_browser_action_error}\n"
 
 
 def create_goal_prompt(
@@ -42,9 +42,9 @@ Review the current state of the page and all other information to find the best 
     goal_image_urls = []
     if image_urls is not None:
         for idx, url in enumerate(image_urls):
-            goal_txt = goal_txt + f'Images: Goal input image ({idx + 1})\n'
+            goal_txt = goal_txt + f"Images: Goal input image ({idx + 1})\n"
             goal_image_urls.append(url)
-    goal_txt += '\n'
+    goal_txt += "\n"
     return goal_txt, goal_image_urls
 
 
@@ -63,24 +63,24 @@ def create_observation_prompt(
     # screenshot + som: will be a non-empty string if present in observation
     screenshot_url = None
     if (som_screenshot is not None) and (len(som_screenshot) > 0):
-        txt_observation += 'Image: Current page screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.\n'
+        txt_observation += "Image: Current page screenshot (Note that only visible portion of webpage is present in the screenshot. You may need to scroll to view the remaining portion of the web-page.\n"
         screenshot_url = som_screenshot
     else:
-        logger.info('SOM Screenshot not present in observation!')
-    txt_observation += '\n'
+        logger.info("SOM Screenshot not present in observation!")
+    txt_observation += "\n"
     return txt_observation, screenshot_url
 
 
 def get_tabs(obs: BrowserOutputObservation) -> str:
-    prompt_pieces = ['\n## Currently open tabs:']
+    prompt_pieces = ["\n## Currently open tabs:"]
     for page_index, page_url in enumerate(obs.open_pages_urls):
-        active_or_not = ' (active tab)' if page_index == obs.active_page_index else ''
+        active_or_not = " (active tab)" if page_index == obs.active_page_index else ""
         prompt_piece = f"""\
 Tab {page_index}{active_or_not}:
 URL: {page_url}
 """
         prompt_pieces.append(prompt_piece)
-    return '\n'.join(prompt_pieces) + '\n'
+    return "\n".join(prompt_pieces) + "\n"
 
 
 def get_axtree(axtree_txt: str) -> str:
@@ -92,7 +92,7 @@ Note: [bid] is the unique alpha-numeric identifier at the beginning of lines for
 Note: You can only interact with visible elements. If the "visible" tag is not present, the element is not visible on the page.
 
 """
-    return f'\n## AXTree:\n{bid_info}{visible_tag_info}{axtree_txt}\n'
+    return f"\n## AXTree:\n{bid_info}{visible_tag_info}{axtree_txt}\n"
 
 
 def get_action_prompt(action_set: HighLevelActionSet) -> str:
@@ -104,22 +104,22 @@ Note: This action set allows you to interact with your environment. Most of them
         with_long_description=False,
         with_examples=False,
     )
-    action_prompt = f'# Action space:\n{action_set_generic_info}{action_description}\n'
+    action_prompt = f"# Action space:\n{action_set_generic_info}{action_description}\n"
     return action_prompt
 
 
 def get_history_prompt(prev_actions: list[BrowseInteractiveAction]) -> str:
-    history_prompt = ['# History of all previous interactions with the task:\n']
+    history_prompt = ["# History of all previous interactions with the task:\n"]
     for i in range(len(prev_actions)):
-        history_prompt.append(f'## step {i + 1}')
+        history_prompt.append(f"## step {i + 1}")
         history_prompt.append(
-            f'\nOuput thought and action: {prev_actions[i].thought} ```{prev_actions[i].browser_actions}```\n'
+            f"\nOuput thought and action: {prev_actions[i].thought} ```{prev_actions[i].browser_actions}```\n"
         )
-    return '\n'.join(history_prompt) + '\n'
+    return "\n".join(history_prompt) + "\n"
 
 
 class VisualBrowsingAgent(Agent):
-    VERSION = '1.0'
+    VERSION = "1.0"
     """
     VisualBrowsing Agent that can uses webpage screenshots during browsing.
     """
@@ -141,11 +141,11 @@ class VisualBrowsingAgent(Agent):
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
         action_subsets = [
-            'chat',
-            'bid',
-            'nav',
-            'tab',
-            'infeas',
+            "chat",
+            "bid",
+            "nav",
+            "tab",
+            "infeas",
         ]
         self.action_space = HighLevelActionSet(
             subsets=action_subsets,
@@ -196,10 +196,10 @@ Note:
         """
         messages: list[Message] = []
         prev_actions = []
-        cur_axtree_txt = ''
-        error_prefix = ''
-        focused_element = ''
-        tabs = ''
+        cur_axtree_txt = ""
+        error_prefix = ""
+        focused_element = ""
+        tabs = ""
         last_obs = None
         last_action = None
         set_of_marks = None  # Initialize set_of_marks to None
@@ -209,7 +209,7 @@ Note:
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
             return BrowseInteractiveAction(
-                browser_actions='noop(1000)', return_axtree=True
+                browser_actions="noop(1000)", return_axtree=True
             )
 
         for event in state.view:
@@ -218,7 +218,7 @@ Note:
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                return AgentFinishAction(outputs={"content": event.content})
             elif isinstance(event, Observation):
                 # Only process BrowserOutputObservation and skip other observation types
                 if not isinstance(event, BrowserOutputObservation):
@@ -245,9 +245,9 @@ Note:
                     self.error_accumulator += 1
                     if self.error_accumulator > 5:
                         return MessageAction(
-                            'Too many errors encountered. Task failed.'
+                            "Too many errors encountered. Task failed."
                         )
-            focused_element = '## Focused element:\nNone\n'
+            focused_element = "## Focused element:\nNone\n"
             if last_obs.focused_element_bid is not None:
                 focused_element = (
                     f"## Focused element:\nbid='{last_obs.focused_element_bid}'\n"
@@ -269,24 +269,24 @@ Note:
                 cur_axtree_txt = get_axtree(axtree_txt=cur_axtree_txt)
             except Exception as e:
                 logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
+                    "Error when trying to process the accessibility tree: %s", e
                 )
-                return MessageAction('Error encountered when browsing.')
+                return MessageAction("Error encountered when browsing.")
             set_of_marks = last_obs.set_of_marks
         goal, image_urls = state.get_current_user_intent()
 
         if goal is None:
-            goal = state.inputs['task']
+            goal = state.inputs["task"]
         goal_txt, goal_images = create_goal_prompt(goal, image_urls)
         observation_txt, som_screenshot = create_observation_prompt(
             cur_axtree_txt, tabs, focused_element, error_prefix, set_of_marks
         )
         human_prompt: list[TextContent | ImageContent] = [
-            TextContent(type='text', text=goal_txt)
+            TextContent(type="text", text=goal_txt)
         ]
         if len(goal_images) > 0:
             human_prompt.append(ImageContent(image_urls=goal_images))
-        human_prompt.append(TextContent(type='text', text=observation_txt))
+        human_prompt.append(TextContent(type="text", text=observation_txt))
         if som_screenshot is not None:
             human_prompt.append(ImageContent(image_urls=[som_screenshot]))
         remaining_content = f"""
@@ -296,21 +296,21 @@ Note:
 {self.abstract_example}\
 {self.concrete_example}\
 """
-        human_prompt.append(TextContent(type='text', text=remaining_content))
+        human_prompt.append(TextContent(type="text", text=remaining_content))
 
         system_msg = """\
 You are an agent trying to solve a web task based on the content of the page and user instructions. You can interact with the page and explore, and send messages to the user when you finish the task. Each time you submit an action it will be sent to the browser and you will receive a new page.
 """.strip()
 
-        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
-        messages.append(Message(role='user', content=human_prompt))
+        messages.append(Message(role="system", content=[TextContent(text=system_msg)]))
+        messages.append(Message(role="user", content=human_prompt))
 
         flat_messages = self.llm.format_messages_for_llm(messages)
 
         response = self.llm.completion(
             messages=flat_messages,
             temperature=0.0,
-            stop=[')```', ')\n```'],
+            stop=[")```", ")\n```"],
         )
 
         return self.response_parser.parse(response)

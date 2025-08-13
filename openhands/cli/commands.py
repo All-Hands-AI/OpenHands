@@ -63,11 +63,11 @@ async def collect_input(config: OpenHandsConfig, prompt_text: str) -> str | None
     Returns:
         str | None: User input string, or None if user cancelled
     """
-    print_formatted_text(prompt_text, end=' ')
-    user_input = await read_prompt_input(config, '', multiline=False)
+    print_formatted_text(prompt_text, end=" ")
+    user_input = await read_prompt_input(config, "", multiline=False)
 
     # Check for cancellation
-    if user_input.strip().lower() in ['/exit', '/cancel', 'cancel']:
+    if user_input.strip().lower() in ["/exit", "/cancel", "cancel"]:
         return None
 
     return user_input.strip()
@@ -75,7 +75,7 @@ async def collect_input(config: OpenHandsConfig, prompt_text: str) -> str | None
 
 def restart_cli() -> None:
     """Restart the CLI by replacing the current process."""
-    print_formatted_text('🔄 Restarting OpenHands CLI...')
+    print_formatted_text("🔄 Restarting OpenHands CLI...")
 
     # Get the current Python executable and script arguments
     python_executable = sys.executable
@@ -86,16 +86,16 @@ def restart_cli() -> None:
     try:
         os.execv(python_executable, [python_executable] + script_args)
     except Exception as e:
-        print_formatted_text(f'❌ Failed to restart CLI: {e}')
+        print_formatted_text(f"❌ Failed to restart CLI: {e}")
         print_formatted_text(
-            'Please restart OpenHands manually for changes to take effect.'
+            "Please restart OpenHands manually for changes to take effect."
         )
 
 
 async def prompt_for_restart(config: OpenHandsConfig) -> bool:
     """Prompt user if they want to restart the CLI and return their choice."""
-    print_formatted_text('📝 MCP server configuration updated successfully!')
-    print_formatted_text('The changes will take effect after restarting OpenHands.')
+    print_formatted_text("📝 MCP server configuration updated successfully!")
+    print_formatted_text("The changes will take effect after restarting OpenHands.")
 
     prompt_session = create_prompt_session(config)
 
@@ -104,14 +104,14 @@ async def prompt_for_restart(config: OpenHandsConfig) -> bool:
             with patch_stdout():
                 response = await prompt_session.prompt_async(
                     HTML(
-                        '<gold>Would you like to restart OpenHands now? (y/n): </gold>'
+                        "<gold>Would you like to restart OpenHands now? (y/n): </gold>"
                     )
                 )
-                response = response.strip().lower() if response else ''
+                response = response.strip().lower() if response else ""
 
-                if response in ['y', 'yes']:
+                if response in ["y", "yes"]:
                     return True
-                elif response in ['n', 'no']:
+                elif response in ["n", "no"]:
                     return False
                 else:
                     print_formatted_text('Please enter "y" for yes or "n" for no.')
@@ -134,7 +134,7 @@ async def handle_commands(
     new_session_requested = False
     exit_reason = ExitReason.ERROR
 
-    if command == '/exit':
+    if command == "/exit":
         close_repl = handle_exit_command(
             config,
             event_stream,
@@ -143,27 +143,27 @@ async def handle_commands(
         )
         if close_repl:
             exit_reason = ExitReason.INTENTIONAL
-    elif command == '/help':
+    elif command == "/help":
         handle_help_command()
-    elif command == '/init':
+    elif command == "/init":
         close_repl, reload_microagents = await handle_init_command(
             config, event_stream, current_dir
         )
-    elif command == '/status':
+    elif command == "/status":
         handle_status_command(usage_metrics, sid)
-    elif command == '/new':
+    elif command == "/new":
         close_repl, new_session_requested = handle_new_command(
             config, event_stream, usage_metrics, sid
         )
         if close_repl:
             exit_reason = ExitReason.INTENTIONAL
-    elif command == '/settings':
+    elif command == "/settings":
         await handle_settings_command(config, settings_store)
-    elif command == '/resume':
+    elif command == "/resume":
         close_repl, new_session_requested = await handle_resume_command(
             event_stream, agent_state
         )
-    elif command == '/mcp':
+    elif command == "/mcp":
         await handle_mcp_command(config)
     else:
         close_repl = True
@@ -182,7 +182,7 @@ def handle_exit_command(
     close_repl = False
 
     confirm_exit = (
-        cli_confirm(config, '\nTerminate session?', ['Yes, proceed', 'No, dismiss'])
+        cli_confirm(config, "\nTerminate session?", ["Yes, proceed", "No, dismiss"])
         == 0
     )
 
@@ -215,7 +215,7 @@ async def handle_init_command(
     close_repl = False
     reload_microagents = False
 
-    if config.runtime in ('local', 'cli'):
+    if config.runtime in ("local", "cli"):
         init_repo = await init_repository(config, current_dir)
         if init_repo:
             event_stream.add_event(
@@ -226,7 +226,7 @@ async def handle_init_command(
             close_repl = True
     else:
         print_formatted_text(
-            '\nRepository initialization through the CLI is only supported for CLI and local runtimes.\n'
+            "\nRepository initialization through the CLI is only supported for CLI and local runtimes.\n"
         )
 
     return close_repl, reload_microagents
@@ -248,8 +248,8 @@ def handle_new_command(
     new_session_requested = (
         cli_confirm(
             config,
-            '\nCurrent session will be terminated and you will lose the conversation history.\n\nContinue?',
-            ['Yes, proceed', 'No, dismiss'],
+            "\nCurrent session will be terminated and you will lose the conversation history.\n\nContinue?",
+            ["Yes, proceed", "No, dismiss"],
         )
         == 0
     )
@@ -273,12 +273,12 @@ async def handle_settings_command(
     display_settings(config)
     modify_settings = cli_confirm(
         config,
-        '\nWhich settings would you like to modify?',
+        "\nWhich settings would you like to modify?",
         [
-            'LLM (Basic)',
-            'LLM (Advanced)',
-            'Search API (Optional)',
-            'Go back',
+            "LLM (Basic)",
+            "LLM (Advanced)",
+            "Search API (Optional)",
+            "Go back",
         ],
     )
 
@@ -304,13 +304,13 @@ async def handle_resume_command(
         close_repl = False
         print_formatted_text(
             HTML(
-                '<ansired>Error: Agent is not paused. /resume command is only available when agent is paused.</ansired>'
+                "<ansired>Error: Agent is not paused. /resume command is only available when agent is paused.</ansired>"
             )
         )
         return close_repl, new_session_requested
 
     event_stream.add_event(
-        MessageAction(content='continue'),
+        MessageAction(content="continue"),
         EventSource.USER,
     )
 
@@ -323,7 +323,7 @@ async def handle_resume_command(
 
 
 async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
-    repo_file_path = Path(current_dir) / '.openhands' / 'microagents' / 'repo.md'
+    repo_file_path = Path(current_dir) / ".openhands" / "microagents" / "repo.md"
     init_repo = False
 
     if repo_file_path.exists():
@@ -334,7 +334,7 @@ async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
             )
 
             print_formatted_text(
-                'Repository instructions file (repo.md) already exists.\n'
+                "Repository instructions file (repo.md) already exists.\n"
             )
 
             container = Frame(
@@ -344,36 +344,36 @@ async def init_repository(config: OpenHandsConfig, current_dir: str) -> bool:
                     style=COLOR_GREY,
                     wrap_lines=True,
                 ),
-                title='Repository Instructions (repo.md)',
-                style=f'fg:{COLOR_GREY}',
+                title="Repository Instructions (repo.md)",
+                style=f"fg:{COLOR_GREY}",
             )
             print_container(container)
-            print_formatted_text('')  # Add a newline after the frame
+            print_formatted_text("")  # Add a newline after the frame
 
             init_repo = (
                 cli_confirm(
                     config,
-                    'Do you want to re-initialize?',
-                    ['Yes, re-initialize', 'No, dismiss'],
+                    "Do you want to re-initialize?",
+                    ["Yes, re-initialize", "No, dismiss"],
                 )
                 == 0
             )
 
             if init_repo:
-                write_to_file(repo_file_path, '')
+                write_to_file(repo_file_path, "")
         except Exception:
-            print_formatted_text('Error reading repository instructions file (repo.md)')
+            print_formatted_text("Error reading repository instructions file (repo.md)")
             init_repo = False
     else:
         print_formatted_text(
-            '\nRepository instructions file will be created by exploring the repository.\n'
+            "\nRepository instructions file will be created by exploring the repository.\n"
         )
 
         init_repo = (
             cli_confirm(
                 config,
-                'Do you want to proceed?',
-                ['Yes, create', 'No, dismiss'],
+                "Do you want to proceed?",
+                ["Yes, create", "No, dismiss"],
             )
             == 0
         )
@@ -398,24 +398,24 @@ def check_folder_security_agreement(config: OpenHandsConfig, current_dir: str) -
         security_frame = Frame(
             TextArea(
                 text=(
-                    f' Do you trust the files in this folder?\n\n'
-                    f'   {current_dir}\n\n'
-                    ' OpenHands may read and execute files in this folder with your permission.'
+                    f" Do you trust the files in this folder?\n\n"
+                    f"   {current_dir}\n\n"
+                    " OpenHands may read and execute files in this folder with your permission."
                 ),
                 style=COLOR_GREY,
                 read_only=True,
                 wrap_lines=True,
             ),
-            style=f'fg:{COLOR_GREY}',
+            style=f"fg:{COLOR_GREY}",
         )
 
         clear()
         print_container(security_frame)
-        print_formatted_text('')
+        print_formatted_text("")
 
         confirm = (
             cli_confirm(
-                config, 'Do you wish to continue?', ['Yes, proceed', 'No, exit']
+                config, "Do you wish to continue?", ["Yes, proceed", "No, exit"]
             )
             == 0
         )
@@ -432,13 +432,13 @@ async def handle_mcp_command(config: OpenHandsConfig) -> None:
     """Handle MCP command with interactive menu."""
     action = cli_confirm(
         config,
-        'MCP Server Configuration',
+        "MCP Server Configuration",
         [
-            'List configured servers',
-            'Add new server',
-            'Remove server',
-            'View errors',
-            'Go back',
+            "List configured servers",
+            "Add new server",
+            "Remove server",
+            "View errors",
+            "Go back",
         ],
     )
 
@@ -465,38 +465,38 @@ def display_mcp_servers(config: OpenHandsConfig) -> None:
 
     if total_count == 0:
         print_formatted_text(
-            'No custom MCP servers configured. See the documentation to learn more:\n'
-            '  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers'
+            "No custom MCP servers configured. See the documentation to learn more:\n"
+            "  https://docs.all-hands.dev/usage/how-to/cli-mode#using-mcp-servers"
         )
     else:
         print_formatted_text(
-            f'Configured MCP servers:\n'
-            f'  • SSE servers: {sse_count}\n'
-            f'  • Stdio servers: {stdio_count}\n'
-            f'  • SHTTP servers: {shttp_count}\n'
-            f'  • Total: {total_count}'
+            f"Configured MCP servers:\n"
+            f"  • SSE servers: {sse_count}\n"
+            f"  • Stdio servers: {stdio_count}\n"
+            f"  • SHTTP servers: {shttp_count}\n"
+            f"  • Total: {total_count}"
         )
 
         # Show details for each type if they exist
         if sse_count > 0:
-            print_formatted_text('SSE Servers:')
+            print_formatted_text("SSE Servers:")
             for idx, sse_server in enumerate(mcp_config.sse_servers, 1):
-                print_formatted_text(f'  {idx}. {sse_server.url}')
-            print_formatted_text('')
+                print_formatted_text(f"  {idx}. {sse_server.url}")
+            print_formatted_text("")
 
         if stdio_count > 0:
-            print_formatted_text('Stdio Servers:')
+            print_formatted_text("Stdio Servers:")
             for idx, stdio_server in enumerate(mcp_config.stdio_servers, 1):
                 print_formatted_text(
-                    f'  {idx}. {stdio_server.name} ({stdio_server.command})'
+                    f"  {idx}. {stdio_server.name} ({stdio_server.command})"
                 )
-            print_formatted_text('')
+            print_formatted_text("")
 
         if shttp_count > 0:
-            print_formatted_text('SHTTP Servers:')
+            print_formatted_text("SHTTP Servers:")
             for idx, shttp_server in enumerate(mcp_config.shttp_servers, 1):
-                print_formatted_text(f'  {idx}. {shttp_server.url}')
-            print_formatted_text('')
+                print_formatted_text(f"  {idx}. {shttp_server.url}")
+            print_formatted_text("")
 
 
 def handle_mcp_errors_command() -> None:
@@ -507,19 +507,19 @@ def handle_mcp_errors_command() -> None:
 def get_config_file_path() -> Path:
     """Get the path to the config file. By default, we use config.toml in the current working directory. If not found, we use ~/.openhands/config.toml."""
     # Check if config.toml exists in the current directory
-    current_dir = Path.cwd() / 'config.toml'
+    current_dir = Path.cwd() / "config.toml"
     if current_dir.exists():
         return current_dir
 
     # Fallback to the user's home directory
-    return Path.home() / '.openhands' / 'config.toml'
+    return Path.home() / ".openhands" / "config.toml"
 
 
 def load_config_file(file_path: Path) -> dict:
     """Load the config file, creating it if it doesn't exist."""
     if file_path.exists():
         try:
-            with open(file_path, 'r') as f:
+            with open(file_path, "r") as f:
                 return toml.load(f)
         except Exception:
             pass
@@ -531,14 +531,14 @@ def load_config_file(file_path: Path) -> dict:
 
 def save_config_file(config_data: dict, file_path: Path) -> None:
     """Save the config file."""
-    with open(file_path, 'w') as f:
+    with open(file_path, "w") as f:
         toml.dump(config_data, f)
 
 
 def _ensure_mcp_config_structure(config_data: dict) -> None:
     """Ensure MCP configuration structure exists in config data."""
-    if 'mcp' not in config_data:
-        config_data['mcp'] = {}
+    if "mcp" not in config_data:
+        config_data["mcp"] = {}
 
 
 def _add_server_to_config(server_type: str, server_config: dict) -> Path:
@@ -547,10 +547,10 @@ def _add_server_to_config(server_type: str, server_config: dict) -> Path:
     config_data = load_config_file(config_file_path)
     _ensure_mcp_config_structure(config_data)
 
-    if server_type not in config_data['mcp']:
-        config_data['mcp'][server_type] = []
+    if server_type not in config_data["mcp"]:
+        config_data["mcp"][server_type] = []
 
-    config_data['mcp'][server_type].append(server_config)
+    config_data["mcp"][server_type].append(server_config)
     save_config_file(config_data, config_file_path)
 
     return config_file_path
@@ -561,12 +561,12 @@ async def add_mcp_server(config: OpenHandsConfig) -> None:
     # Choose transport type
     transport_type = cli_confirm(
         config,
-        'Select MCP server transport type:',
+        "Select MCP server transport type:",
         [
-            'SSE (Server-Sent Events)',
-            'Stdio (Standard Input/Output)',
-            'SHTTP (Streamable HTTP)',
-            'Cancel',
+            "SSE (Server-Sent Events)",
+            "Stdio (Standard Input/Output)",
+            "SHTTP (Streamable HTTP)",
+            "Cancel",
         ],
     )
 
@@ -581,25 +581,25 @@ async def add_mcp_server(config: OpenHandsConfig) -> None:
         elif transport_type == 2:  # SHTTP
             await add_shttp_server(config)
     except Exception as e:
-        print_formatted_text(f'Error adding MCP server: {e}')
+        print_formatted_text(f"Error adding MCP server: {e}")
 
 
 async def add_sse_server(config: OpenHandsConfig) -> None:
     """Add an SSE MCP server."""
-    print_formatted_text('Adding SSE MCP Server')
+    print_formatted_text("Adding SSE MCP Server")
 
     while True:  # Retry loop for the entire form
         # Collect all inputs
-        url = await collect_input(config, '\nEnter server URL:')
+        url = await collect_input(config, "\nEnter server URL:")
         if url is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         api_key = await collect_input(
-            config, '\nEnter API key (optional, press Enter to skip):'
+            config, "\nEnter API key (optional, press Enter to skip):"
         )
         if api_key is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         # Convert empty string to None for optional field
@@ -612,22 +612,22 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
 
         except ValidationError as e:
             # Show all errors at once
-            print_formatted_text('❌ Please fix the following errors:')
+            print_formatted_text("❌ Please fix the following errors:")
             for error in e.errors():
-                field = error['loc'][0] if error['loc'] else 'unknown'
-                print_formatted_text(f'  • {field}: {error["msg"]}')
+                field = error["loc"][0] if error["loc"] else "unknown"
+                print_formatted_text(f"  • {field}: {error['msg']}")
 
-            if cli_confirm(config, '\nTry again?') != 0:
-                print_formatted_text('Operation cancelled.')
+            if cli_confirm(config, "\nTry again?") != 0:
+                print_formatted_text("Operation cancelled.")
                 return
 
     # Save to config file
-    server_config = {'url': server.url}
+    server_config = {"url": server.url}
     if server.api_key:
-        server_config['api_key'] = server.api_key
+        server_config["api_key"] = server.api_key
 
-    config_file_path = _add_server_to_config('sse_servers', server_config)
-    print_formatted_text(f'✓ SSE MCP server added to {config_file_path}: {server.url}')
+    config_file_path = _add_server_to_config("sse_servers", server_config)
+    print_formatted_text(f"✓ SSE MCP server added to {config_file_path}: {server.url}")
 
     # Prompt for restart
     if await prompt_for_restart(config):
@@ -636,21 +636,21 @@ async def add_sse_server(config: OpenHandsConfig) -> None:
 
 async def add_stdio_server(config: OpenHandsConfig) -> None:
     """Add a Stdio MCP server."""
-    print_formatted_text('Adding Stdio MCP Server')
+    print_formatted_text("Adding Stdio MCP Server")
 
     # Get existing server names to check for duplicates
     existing_names = [server.name for server in config.mcp.stdio_servers]
 
     while True:  # Retry loop for the entire form
         # Collect all inputs
-        name = await collect_input(config, '\nEnter server name:')
+        name = await collect_input(config, "\nEnter server name:")
         if name is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         command = await collect_input(config, "\nEnter command (e.g., 'uvx', 'npx'):")
         if command is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         args_input = await collect_input(
@@ -658,22 +658,22 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
             '\nEnter arguments (optional, e.g., "-y server-package arg1"):',
         )
         if args_input is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         env_input = await collect_input(
             config,
-            '\nEnter environment variables (KEY=VALUE format, comma-separated, optional):',
+            "\nEnter environment variables (KEY=VALUE format, comma-separated, optional):",
         )
         if env_input is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         # Check for duplicate server names
         if name in existing_names:
             print_formatted_text(f"❌ Server name '{name}' already exists.")
-            if cli_confirm(config, '\nTry again?') != 0:
-                print_formatted_text('Operation cancelled.')
+            if cli_confirm(config, "\nTry again?") != 0:
+                print_formatted_text("Operation cancelled.")
                 return
             continue
 
@@ -689,28 +689,28 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
 
         except ValidationError as e:
             # Show all errors at once
-            print_formatted_text('❌ Please fix the following errors:')
+            print_formatted_text("❌ Please fix the following errors:")
             for error in e.errors():
-                field = error['loc'][0] if error['loc'] else 'unknown'
-                print_formatted_text(f'  • {field}: {error["msg"]}')
+                field = error["loc"][0] if error["loc"] else "unknown"
+                print_formatted_text(f"  • {field}: {error['msg']}")
 
-            if cli_confirm(config, '\nTry again?') != 0:
-                print_formatted_text('Operation cancelled.')
+            if cli_confirm(config, "\nTry again?") != 0:
+                print_formatted_text("Operation cancelled.")
                 return
 
     # Save to config file
     server_config: dict[str, Any] = {
-        'name': server.name,
-        'command': server.command,
+        "name": server.name,
+        "command": server.command,
     }
     if server.args:
-        server_config['args'] = server.args
+        server_config["args"] = server.args
     if server.env:
-        server_config['env'] = server.env
+        server_config["env"] = server.env
 
-    config_file_path = _add_server_to_config('stdio_servers', server_config)
+    config_file_path = _add_server_to_config("stdio_servers", server_config)
     print_formatted_text(
-        f'✓ Stdio MCP server added to {config_file_path}: {server.name}'
+        f"✓ Stdio MCP server added to {config_file_path}: {server.name}"
     )
 
     # Prompt for restart
@@ -720,20 +720,20 @@ async def add_stdio_server(config: OpenHandsConfig) -> None:
 
 async def add_shttp_server(config: OpenHandsConfig) -> None:
     """Add an SHTTP MCP server."""
-    print_formatted_text('Adding SHTTP MCP Server')
+    print_formatted_text("Adding SHTTP MCP Server")
 
     while True:  # Retry loop for the entire form
         # Collect all inputs
-        url = await collect_input(config, '\nEnter server URL:')
+        url = await collect_input(config, "\nEnter server URL:")
         if url is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         api_key = await collect_input(
-            config, '\nEnter API key (optional, press Enter to skip):'
+            config, "\nEnter API key (optional, press Enter to skip):"
         )
         if api_key is None:
-            print_formatted_text('Operation cancelled.')
+            print_formatted_text("Operation cancelled.")
             return
 
         # Convert empty string to None for optional field
@@ -746,23 +746,23 @@ async def add_shttp_server(config: OpenHandsConfig) -> None:
 
         except ValidationError as e:
             # Show all errors at once
-            print_formatted_text('❌ Please fix the following errors:')
+            print_formatted_text("❌ Please fix the following errors:")
             for error in e.errors():
-                field = error['loc'][0] if error['loc'] else 'unknown'
-                print_formatted_text(f'  • {field}: {error["msg"]}')
+                field = error["loc"][0] if error["loc"] else "unknown"
+                print_formatted_text(f"  • {field}: {error['msg']}")
 
-            if cli_confirm(config, '\nTry again?') != 0:
-                print_formatted_text('Operation cancelled.')
+            if cli_confirm(config, "\nTry again?") != 0:
+                print_formatted_text("Operation cancelled.")
                 return
 
     # Save to config file
-    server_config = {'url': server.url}
+    server_config = {"url": server.url}
     if server.api_key:
-        server_config['api_key'] = server.api_key
+        server_config["api_key"] = server.api_key
 
-    config_file_path = _add_server_to_config('shttp_servers', server_config)
+    config_file_path = _add_server_to_config("shttp_servers", server_config)
     print_formatted_text(
-        f'✓ SHTTP MCP server added to {config_file_path}: {server.url}'
+        f"✓ SHTTP MCP server added to {config_file_path}: {server.url}"
     )
 
     # Prompt for restart
@@ -779,28 +779,28 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
 
     # Add SSE servers
     for sse_server in mcp_config.sse_servers:
-        servers.append(('SSE', sse_server.url, sse_server))
+        servers.append(("SSE", sse_server.url, sse_server))
 
     # Add Stdio servers
     for stdio_server in mcp_config.stdio_servers:
-        servers.append(('Stdio', stdio_server.name, stdio_server))
+        servers.append(("Stdio", stdio_server.name, stdio_server))
 
     # Add SHTTP servers
     for shttp_server in mcp_config.shttp_servers:
-        servers.append(('SHTTP', shttp_server.url, shttp_server))
+        servers.append(("SHTTP", shttp_server.url, shttp_server))
 
     if not servers:
-        print_formatted_text('No MCP servers configured to remove.')
+        print_formatted_text("No MCP servers configured to remove.")
         return
 
     # Create choices for the user
     choices = []
     for server_type, identifier, _ in servers:
-        choices.append(f'{server_type}: {identifier}')
-    choices.append('Cancel')
+        choices.append(f"{server_type}: {identifier}")
+    choices.append("Cancel")
 
     # Let user choose which server to remove
-    choice = cli_confirm(config, 'Select MCP server to remove:', choices)
+    choice = cli_confirm(config, "Select MCP server to remove:", choices)
 
     if choice == len(choices) - 1:  # Cancel
         return
@@ -812,7 +812,7 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
     confirm = cli_confirm(
         config,
         f'Are you sure you want to remove {server_type} server "{identifier}"?',
-        ['Yes, remove', 'Cancel'],
+        ["Yes, remove", "Cancel"],
     )
 
     if confirm == 1:  # Cancel
@@ -826,21 +826,21 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
 
     removed = False
 
-    if server_type == 'SSE' and 'sse_servers' in config_data['mcp']:
-        config_data['mcp']['sse_servers'] = [
-            s for s in config_data['mcp']['sse_servers'] if s.get('url') != identifier
+    if server_type == "SSE" and "sse_servers" in config_data["mcp"]:
+        config_data["mcp"]["sse_servers"] = [
+            s for s in config_data["mcp"]["sse_servers"] if s.get("url") != identifier
         ]
         removed = True
-    elif server_type == 'Stdio' and 'stdio_servers' in config_data['mcp']:
-        config_data['mcp']['stdio_servers'] = [
+    elif server_type == "Stdio" and "stdio_servers" in config_data["mcp"]:
+        config_data["mcp"]["stdio_servers"] = [
             s
-            for s in config_data['mcp']['stdio_servers']
-            if s.get('name') != identifier
+            for s in config_data["mcp"]["stdio_servers"]
+            if s.get("name") != identifier
         ]
         removed = True
-    elif server_type == 'SHTTP' and 'shttp_servers' in config_data['mcp']:
-        config_data['mcp']['shttp_servers'] = [
-            s for s in config_data['mcp']['shttp_servers'] if s.get('url') != identifier
+    elif server_type == "SHTTP" and "shttp_servers" in config_data["mcp"]:
+        config_data["mcp"]["shttp_servers"] = [
+            s for s in config_data["mcp"]["shttp_servers"] if s.get("url") != identifier
         ]
         removed = True
 

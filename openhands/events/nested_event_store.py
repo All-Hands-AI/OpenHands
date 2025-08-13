@@ -13,9 +13,7 @@ from openhands.events.serialization.event import event_from_dict
 
 @dataclass
 class NestedEventStore(EventStoreABC):
-    """
-    A stored list of events backing a conversation
-    """
+    """A stored list of events backing a conversation"""
 
     base_url: str
     sid: str
@@ -32,22 +30,22 @@ class NestedEventStore(EventStoreABC):
     ) -> Iterable[Event]:
         while True:
             search_params = {
-                'start_id': start_id,
-                'reverse': reverse,
+                "start_id": start_id,
+                "reverse": reverse,
             }
             if limit is not None:
-                search_params['limit'] = min(100, limit)
+                search_params["limit"] = min(100, limit)
             search_str = urlencode(search_params)
-            url = f'{self.base_url}/events?{search_str}'
+            url = f"{self.base_url}/events?{search_str}"
             headers = {}
             if self.session_api_key:
-                headers['X-Session-API-Key'] = self.session_api_key
+                headers["X-Session-API-Key"] = self.session_api_key
             response = httpx.get(url, headers=headers)
             if response.status_code == status.HTTP_404_NOT_FOUND:
                 # Follow pattern of event store not throwing errors on not found
                 return
             result_set = response.json()
-            for result in result_set['events']:
+            for result in result_set["events"]:
                 event = event_from_dict(result)
                 start_id = max(start_id, event.id + 1)
                 if end_id == event.id:
@@ -61,19 +59,19 @@ class NestedEventStore(EventStoreABC):
                     limit -= 1
                     if limit <= 0:
                         return
-            if not result_set['has_more']:
+            if not result_set["has_more"]:
                 return
 
     def get_event(self, id: int) -> Event:
         events = list(self.search_events(start_id=id, limit=1))
         if not events:
-            raise FileNotFoundError('no_event')
+            raise FileNotFoundError("no_event")
         return events[0]
 
     def get_latest_event(self) -> Event:
         events = list(self.search_events(reverse=True, limit=1))
         if not events:
-            raise FileNotFoundError('no_event')
+            raise FileNotFoundError("no_event")
         return events[0]
 
     def get_latest_event_id(self) -> int:

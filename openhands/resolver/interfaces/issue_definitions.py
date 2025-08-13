@@ -18,7 +18,7 @@ from openhands.resolver.utils import extract_image_urls
 
 class ServiceContext:
     issue_type: ClassVar[str]
-    default_git_patch: ClassVar[str] = 'No changes made yet'
+    default_git_patch: ClassVar[str] = "No changes made yet"
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
@@ -31,7 +31,7 @@ class ServiceContext:
 
 # Strategy context interface
 class ServiceContextPR(ServiceContext):
-    issue_type: ClassVar[str] = 'pr'
+    issue_type: ClassVar[str] = "pr"
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig):
         super().__init__(strategy, llm_config)
@@ -69,7 +69,7 @@ class ServiceContextPR(ServiceContext):
                         review_thread, issues_context, last_message, git_patch
                     )
                 else:
-                    success, explanation = False, 'Missing context or message'
+                    success, explanation = False, "Missing context or message"
                 success_list.append(success)
                 explanation_list.append(explanation)
         # Handle PRs with only thread comments (no file-specific review comments)
@@ -81,7 +81,7 @@ class ServiceContextPR(ServiceContext):
             else:
                 success, explanation = (
                     False,
-                    'Missing thread comments, context or message',
+                    "Missing thread comments, context or message",
                 )
             success_list.append(success)
             explanation_list.append(explanation)
@@ -94,17 +94,17 @@ class ServiceContextPR(ServiceContext):
             else:
                 success, explanation = (
                     False,
-                    'Missing review comments, context or message',
+                    "Missing review comments, context or message",
                 )
             success_list.append(success)
             explanation_list.append(explanation)
         else:
             # No review comments, thread comments, or file-level review comments found
-            return False, None, 'No feedback was found to process'
+            return False, None, "No feedback was found to process"
 
         # Return overall success (all must be true) and explanations
         if not success_list:
-            return False, None, 'No feedback was processed'
+            return False, None, "No feedback was processed"
         return all(success_list), success_list, json.dumps(explanation_list)
 
     def get_converted_issues(
@@ -152,9 +152,9 @@ class ServiceContextPR(ServiceContext):
             images.extend(extract_image_urls(review_thread_str))
 
         # Format thread comments if they exist
-        thread_context = ''
+        thread_context = ""
         if issue.thread_comments:
-            thread_context = '\n---\n'.join(issue.thread_comments)
+            thread_context = "\n---\n".join(issue.thread_comments)
             images.extend(extract_image_urls(thread_context))
 
         user_instruction = user_instruction_template.render(
@@ -172,14 +172,14 @@ class ServiceContextPR(ServiceContext):
 
     def _check_feedback_with_llm(self, prompt: str) -> tuple[bool, str]:
         """Helper function to check feedback with LLM and parse response."""
-        response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
+        response = self.llm.completion(messages=[{"role": "user", "content": prompt}])
 
         answer = response.choices[0].message.content.strip()
-        pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
+        pattern = r"--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)"
         match = re.search(pattern, answer)
         if match:
-            return match.group(1).lower() == 'true', match.group(2).strip()
-        return False, f'Failed to decode answer from LLM response: {answer}'
+            return match.group(1).lower() == "true", match.group(2).strip()
+        return False, f"Failed to decode answer from LLM response: {answer}"
 
     def _check_review_thread(
         self,
@@ -194,9 +194,9 @@ class ServiceContextPR(ServiceContext):
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                '../prompts/guess_success/pr-feedback-check.jinja',
+                "../prompts/guess_success/pr-feedback-check.jinja",
             ),
-            'r',
+            "r",
         ) as f:
             template = jinja2.Template(f.read())
 
@@ -218,14 +218,14 @@ class ServiceContextPR(ServiceContext):
         git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if thread comments feedback has been addressed."""
-        thread_context = '\n---\n'.join(thread_comments)
+        thread_context = "\n---\n".join(thread_comments)
 
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                '../prompts/guess_success/pr-thread-check.jinja',
+                "../prompts/guess_success/pr-thread-check.jinja",
             ),
-            'r',
+            "r",
         ) as f:
             template = jinja2.Template(f.read())
 
@@ -246,14 +246,14 @@ class ServiceContextPR(ServiceContext):
         git_patch: str | None = None,
     ) -> tuple[bool, str]:
         """Check if review comments feedback has been addressed."""
-        review_context = '\n---\n'.join(review_comments)
+        review_context = "\n---\n".join(review_comments)
 
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                '../prompts/guess_success/pr-review-check.jinja',
+                "../prompts/guess_success/pr-review-check.jinja",
             ),
-            'r',
+            "r",
         ) as f:
             template = jinja2.Template(f.read())
 
@@ -268,7 +268,7 @@ class ServiceContextPR(ServiceContext):
 
 
 class ServiceContextIssue(ServiceContext):
-    issue_type: ClassVar[str] = 'issue'
+    issue_type: ClassVar[str] = "issue"
 
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         super().__init__(strategy, llm_config)
@@ -343,9 +343,9 @@ class ServiceContextIssue(ServiceContext):
     ) -> tuple[str, str, list[str]]:
         """Generate instruction for the agent."""
         # Format thread comments if they exist
-        thread_context = ''
+        thread_context = ""
         if issue.thread_comments:
-            thread_context = '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
+            thread_context = "\n\nIssue Thread Comments:\n" + "\n---\n".join(
                 issue.thread_comments
             )
 
@@ -355,7 +355,7 @@ class ServiceContextIssue(ServiceContext):
 
         user_instructions_template = jinja2.Template(user_instructions_prompt_template)
         user_instructions = user_instructions_template.render(
-            body=issue.title + '\n\n' + issue.body + thread_context
+            body=issue.title + "\n\n" + issue.body + thread_context
         )  # Issue body and comments
 
         conversation_instructions_template = jinja2.Template(
@@ -381,16 +381,16 @@ class ServiceContextIssue(ServiceContext):
         # Include thread comments in the prompt if they exist
         issue_context = issue.body
         if issue.thread_comments:
-            issue_context += '\n\nIssue Thread Comments:\n' + '\n---\n'.join(
+            issue_context += "\n\nIssue Thread Comments:\n" + "\n---\n".join(
                 issue.thread_comments
             )
 
         with open(
             os.path.join(
                 os.path.dirname(__file__),
-                '../prompts/guess_success/issue-success-check.jinja',
+                "../prompts/guess_success/issue-success-check.jinja",
             ),
-            'r',
+            "r",
         ) as f:
             template = jinja2.Template(f.read())
         prompt = template.render(
@@ -399,15 +399,15 @@ class ServiceContextIssue(ServiceContext):
             git_patch=git_patch or self.default_git_patch,
         )
 
-        response = self.llm.completion(messages=[{'role': 'user', 'content': prompt}])
+        response = self.llm.completion(messages=[{"role": "user", "content": prompt}])
 
         answer = response.choices[0].message.content.strip()
-        pattern = r'--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)'
+        pattern = r"--- success\n*(true|false)\n*--- explanation*\n((?:.|\n)*)"
         match = re.search(pattern, answer)
         if match:
-            return match.group(1).lower() == 'true', None, match.group(2)
+            return match.group(1).lower() == "true", None, match.group(2)
 
-        return False, None, f'Failed to decode answer from LLM response: {answer}'
+        return False, None, f"Failed to decode answer from LLM response: {answer}"
 
     def get_converted_issues(
         self, issue_numbers: list[int] | None = None, comment_id: int | None = None

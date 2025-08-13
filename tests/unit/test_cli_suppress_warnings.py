@@ -17,17 +17,17 @@ class TestWarningSuppressionCLI:
 
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
+        with patch("sys.stderr", captured_output):
             # Trigger Pydantic serialization warning
             warnings.warn(
-                'Pydantic serializer warnings: PydanticSerializationUnexpectedValue',
+                "Pydantic serializer warnings: PydanticSerializationUnexpectedValue",
                 UserWarning,
                 stacklevel=2,
             )
 
         # Should be suppressed (no output to stderr)
         output = captured_output.getvalue()
-        assert 'Pydantic serializer warnings' not in output
+        assert "Pydantic serializer warnings" not in output
 
     def test_suppress_deprecated_method_warnings(self):
         """Test that deprecated method warnings are suppressed."""
@@ -36,17 +36,17 @@ class TestWarningSuppressionCLI:
 
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
+        with patch("sys.stderr", captured_output):
             # Trigger deprecated method warning
             warnings.warn(
-                'Call to deprecated method get_events. (Use search_events instead)',
+                "Call to deprecated method get_events. (Use search_events instead)",
                 DeprecationWarning,
                 stacklevel=2,
             )
 
         # Should be suppressed (no output to stderr)
         output = captured_output.getvalue()
-        assert 'deprecated method' not in output
+        assert "deprecated method" not in output
 
     def test_suppress_expected_fields_warnings(self):
         """Test that expected fields warnings are suppressed."""
@@ -55,17 +55,17 @@ class TestWarningSuppressionCLI:
 
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
+        with patch("sys.stderr", captured_output):
             # Trigger expected fields warning
             warnings.warn(
-                'Expected 9 fields but got 5: Expected `Message`',
+                "Expected 9 fields but got 5: Expected `Message`",
                 UserWarning,
                 stacklevel=2,
             )
 
         # Should be suppressed (no output to stderr)
         output = captured_output.getvalue()
-        assert 'Expected 9 fields' not in output
+        assert "Expected 9 fields" not in output
 
     def test_regular_warnings_not_suppressed(self):
         """Test that regular warnings are NOT suppressed."""
@@ -74,17 +74,17 @@ class TestWarningSuppressionCLI:
 
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
+        with patch("sys.stderr", captured_output):
             # Trigger a regular warning that should NOT be suppressed
             warnings.warn(
-                'This is a regular warning that should appear',
+                "This is a regular warning that should appear",
                 UserWarning,
                 stacklevel=2,
             )
 
         # Should NOT be suppressed (should appear in stderr)
         output = captured_output.getvalue()
-        assert 'regular warning' in output
+        assert "regular warning" in output
 
     def test_module_import_applies_suppression(self):
         """Test that importing the module automatically applies suppression."""
@@ -100,14 +100,14 @@ class TestWarningSuppressionCLI:
 
         # Capture stderr to check if warnings are printed
         captured_output = StringIO()
-        with patch('sys.stderr', captured_output):
+        with patch("sys.stderr", captured_output):
             warnings.warn(
-                'Pydantic serializer warnings: test', UserWarning, stacklevel=2
+                "Pydantic serializer warnings: test", UserWarning, stacklevel=2
             )
 
         # Should be suppressed (no output to stderr)
         output = captured_output.getvalue()
-        assert 'Pydantic serializer warnings' not in output
+        assert "Pydantic serializer warnings" not in output
 
     def test_warning_filters_are_applied(self):
         """Test that warning filters are properly applied."""
@@ -125,6 +125,6 @@ class TestWarningSuppressionCLI:
 
         # Check that our specific patterns are in the filters
         assert any(
-            'Pydantic serializer warnings' in str(msg) for msg in filter_messages
+            "Pydantic serializer warnings" in str(msg) for msg in filter_messages
         )
-        assert any('deprecated method' in str(msg) for msg in filter_messages)
+        assert any("deprecated method" in str(msg) for msg in filter_messages)

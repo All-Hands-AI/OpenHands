@@ -11,24 +11,24 @@ _VIEW_DESCRIPTION = """Reads a file or list directories from the local filesyste
 """
 
 ViewTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='view',
+        name="view",
         description=_VIEW_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'path': {
-                    'type': 'string',
-                    'description': 'The absolute path to the file to read or directory to list',
+            "type": "object",
+            "properties": {
+                "path": {
+                    "type": "string",
+                    "description": "The absolute path to the file to read or directory to list",
                 },
-                'view_range': {
-                    'description': 'Optional parameter of `view` command when `path` points to a *file*. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
-                    'items': {'type': 'integer'},
-                    'type': 'array',
+                "view_range": {
+                    "description": "Optional parameter of `view` command when `path` points to a *file*. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.",
+                    "items": {"type": "integer"},
+                    "type": "array",
                 },
             },
-            'required': ['path'],
+            "required": ["path"],
         },
     ),
 )

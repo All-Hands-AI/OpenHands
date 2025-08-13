@@ -34,7 +34,7 @@ class IssueHandlerFactory:
         self.llm_config = llm_config
 
     def create(self) -> ServiceContextIssue | ServiceContextPR:
-        if self.issue_type == 'issue':
+        if self.issue_type == "issue":
             if self.platform == ProviderType.GITHUB:
                 return ServiceContextIssue(
                     GithubIssueHandler(
@@ -69,8 +69,8 @@ class IssueHandlerFactory:
                     self.llm_config,
                 )
             else:
-                raise ValueError(f'Unsupported platform: {self.platform}')
-        elif self.issue_type == 'pr':
+                raise ValueError(f"Unsupported platform: {self.platform}")
+        elif self.issue_type == "pr":
             if self.platform == ProviderType.GITHUB:
                 return ServiceContextPR(
                     GithubPRHandler(
@@ -105,6 +105,6 @@ class IssueHandlerFactory:
                     self.llm_config,
                 )
             else:
-                raise ValueError(f'Unsupported platform: {self.platform}')
+                raise ValueError(f"Unsupported platform: {self.platform}")
         else:
-            raise ValueError(f'Invalid issue type: {self.issue_type}')
+            raise ValueError(f"Invalid issue type: {self.issue_type}")

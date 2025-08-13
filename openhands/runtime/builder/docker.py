@@ -18,20 +18,20 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         self.docker_client = docker_client
 
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').replace('-', '.')
+        server_version = version_info.get("Version", "").replace("-", ".")
         self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
+            version_info.get("Components")[0].get("Name").startswith("Podman")
         )
         if (
-            tuple(map(int, server_version.split('.')[:2])) < (18, 9)
+            tuple(map(int, server_version.split(".")[:2])) < (18, 9)
             and not self.is_podman
         ):
             raise AgentRuntimeBuildError(
-                'Docker server version must be >= 18.09 to use BuildKit'
+                "Docker server version must be >= 18.09 to use BuildKit"
             )
 
-        if self.is_podman and tuple(map(int, server_version.split('.')[:2])) < (4, 9):
-            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
+        if self.is_podman and tuple(map(int, server_version.split(".")[:2])) < (4, 9):
+            raise AgentRuntimeBuildError("Podman server version must be >= 4.9.0")
 
         self.rolling_logger = RollingLogger(max_lines=10)
 
@@ -40,7 +40,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """Check if Docker Buildx is available"""
         try:
             result = subprocess.run(
-                ['docker' if not is_podman else 'podman', 'buildx', 'version'],
+                ["docker" if not is_podman else "podman", "buildx", "version"],
                 capture_output=True,
                 text=True,
             )
@@ -78,17 +78,17 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         """
         self.docker_client = docker.from_env()
         version_info = self.docker_client.version()
-        server_version = version_info.get('Version', '').split('+')[0].replace('-', '.')
+        server_version = version_info.get("Version", "").split("+")[0].replace("-", ".")
         self.is_podman = (
-            version_info.get('Components')[0].get('Name').startswith('Podman')
+            version_info.get("Components")[0].get("Name").startswith("Podman")
         )
-        if tuple(map(int, server_version.split('.'))) < (18, 9) and not self.is_podman:
+        if tuple(map(int, server_version.split("."))) < (18, 9) and not self.is_podman:
             raise AgentRuntimeBuildError(
-                'Docker server version must be >= 18.09 to use BuildKit'
+                "Docker server version must be >= 18.09 to use BuildKit"
             )
 
-        if self.is_podman and tuple(map(int, server_version.split('.'))) < (4, 9):
-            raise AgentRuntimeBuildError('Podman server version must be >= 4.9.0')
+        if self.is_podman and tuple(map(int, server_version.split("."))) < (4, 9):
+            raise AgentRuntimeBuildError("Podman server version must be >= 4.9.0")
 
         if not DockerRuntimeBuilder.check_buildx(self.is_podman):
             # when running openhands in a container, there might not be a "docker"
@@ -96,20 +96,20 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             # since the official openhands app image is built from debian, we use
             # debian way to install docker binary
             logger.info(
-                'No docker binary available inside openhands-app container, trying to download online...'
+                "No docker binary available inside openhands-app container, trying to download online..."
             )
             commands = [
-                'apt-get update',
-                'apt-get install -y ca-certificates curl gnupg',
-                'install -m 0755 -d /etc/apt/keyrings',
-                'curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc',
-                'chmod a+r /etc/apt/keyrings/docker.asc',
+                "apt-get update",
+                "apt-get install -y ca-certificates curl gnupg",
+                "install -m 0755 -d /etc/apt/keyrings",
+                "curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc",
+                "chmod a+r /etc/apt/keyrings/docker.asc",
                 'echo \
                   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
                   $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
                   tee /etc/apt/sources.list.d/docker.list > /dev/null',
-                'apt-get update',
-                'apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin',
+                "apt-get update",
+                "apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
             ]
             for cmd in commands:
                 try:
@@ -117,36 +117,36 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         cmd, shell=True, check=True, stdout=subprocess.DEVNULL
                     )
                 except subprocess.CalledProcessError as e:
-                    logger.error(f'Image build failed:\n{e}')
-                    logger.error(f'Command output:\n{e.output}')
+                    logger.error(f"Image build failed:\n{e}")
+                    logger.error(f"Command output:\n{e.output}")
                     raise
-            logger.info('Downloaded and installed docker binary')
+            logger.info("Downloaded and installed docker binary")
 
         target_image_hash_name = tags[0]
-        target_image_repo, target_image_source_tag = target_image_hash_name.split(':')
-        target_image_tag = tags[1].split(':')[1] if len(tags) > 1 else None
+        target_image_repo, target_image_source_tag = target_image_hash_name.split(":")
+        target_image_tag = tags[1].split(":")[1] if len(tags) > 1 else None
 
         buildx_cmd = [
-            'docker' if not self.is_podman else 'podman',
-            'buildx',
-            'build',
-            '--progress=plain',
-            f'--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}',
-            f'--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}',
-            f'--tag={target_image_hash_name}',
-            '--load',
+            "docker" if not self.is_podman else "podman",
+            "buildx",
+            "build",
+            "--progress=plain",
+            f"--build-arg=OPENHANDS_RUNTIME_VERSION={oh_version}",
+            f"--build-arg=OPENHANDS_RUNTIME_BUILD_TIME={datetime.datetime.now().isoformat()}",
+            f"--tag={target_image_hash_name}",
+            "--load",
         ]
 
         # Include the platform argument only if platform is specified
         if platform:
-            buildx_cmd.append(f'--platform={platform}')
+            buildx_cmd.append(f"--platform={platform}")
 
-        cache_dir = '/tmp/.buildx-cache'
+        cache_dir = "/tmp/.buildx-cache"
         if use_local_cache and self._is_cache_usable(cache_dir):
             buildx_cmd.extend(
                 [
-                    f'--cache-from=type=local,src={cache_dir}',
-                    f'--cache-to=type=local,dest={cache_dir},mode=max',
+                    f"--cache-from=type=local,src={cache_dir}",
+                    f"--cache-to=type=local,dest={cache_dir},mode=max",
                 ]
             )
 
@@ -156,10 +156,10 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         buildx_cmd.append(path)  # must be last!
 
         self.rolling_logger.start(
-            f'================ {buildx_cmd[0].upper()} BUILD STARTED ================'
+            f"================ {buildx_cmd[0].upper()} BUILD STARTED ================"
         )
 
-        builder_cmd = ['docker', 'buildx', 'use', 'default']
+        builder_cmd = ["docker", "buildx", "use", "default"]
         subprocess.Popen(
             builder_cmd,
             stdout=subprocess.PIPE,
@@ -177,7 +177,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             )
 
             if process.stdout:
-                for line in iter(process.stdout.readline, ''):
+                for line in iter(process.stdout.readline, ""):
                     line = line.strip()
                     if line:
                         self._output_logs(line)
@@ -193,55 +193,55 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 )
 
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
-            logger.error(f'Command output:\n{e.output}')
+            logger.error(f"Image build failed:\n{e}")  # TODO: {e} is empty
+            logger.error(f"Command output:\n{e.output}")
             if self.rolling_logger.is_enabled():
                 logger.error(
-                    'Docker build output:\n' + self.rolling_logger.all_lines
+                    "Docker build output:\n" + self.rolling_logger.all_lines
                 )  # Show the error
             raise
 
         except subprocess.TimeoutExpired:
-            logger.error('Image build timed out')
+            logger.error("Image build timed out")
             raise
 
         except FileNotFoundError as e:
-            logger.error(f'Python executable not found: {e}')
+            logger.error(f"Python executable not found: {e}")
             raise
 
         except PermissionError as e:
             logger.error(
-                f'Permission denied when trying to execute the build command:\n{e}'
+                f"Permission denied when trying to execute the build command:\n{e}"
             )
             raise
 
         except Exception as e:
-            logger.error(f'An unexpected error occurred during the build process: {e}')
+            logger.error(f"An unexpected error occurred during the build process: {e}")
             raise
 
-        logger.info(f'Image [{target_image_hash_name}] build finished.')
+        logger.info(f"Image [{target_image_hash_name}] build finished.")
 
         if target_image_tag:
             image = self.docker_client.images.get(target_image_hash_name)
             image.tag(target_image_repo, target_image_tag)
             logger.info(
-                f'Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]'
+                f"Re-tagged image [{target_image_hash_name}] with more generic tag [{target_image_tag}]"
             )
 
         # Check if the image is built successfully
         image = self.docker_client.images.get(target_image_hash_name)
         if image is None:
             raise AgentRuntimeBuildError(
-                f'Build failed: Image {target_image_hash_name} not found'
+                f"Build failed: Image {target_image_hash_name} not found"
             )
 
         tags_str = (
-            f'{target_image_source_tag}, {target_image_tag}'
+            f"{target_image_source_tag}, {target_image_tag}"
             if target_image_tag
             else target_image_source_tag
         )
         logger.info(
-            f'Image {target_image_repo} with tags [{tags_str}] built successfully'
+            f"Image {target_image_repo} with tags [{tags_str}] built successfully"
         )
         return target_image_hash_name
 
@@ -255,30 +255,30 @@ class DockerRuntimeBuilder(RuntimeBuilder):
             bool: Whether the Docker image exists in the registry or in the local store
         """
         if not image_name:
-            logger.error(f'Invalid image name: `{image_name}`')
+            logger.error(f"Invalid image name: `{image_name}`")
             return False
 
         try:
-            logger.debug(f'Checking, if image exists locally:\n{image_name}')
+            logger.debug(f"Checking, if image exists locally:\n{image_name}")
             self.docker_client.images.get(image_name)
-            logger.debug('Image found locally.')
+            logger.debug("Image found locally.")
             return True
         except docker.errors.ImageNotFound:
             if not pull_from_repo:
                 logger.debug(
-                    f'Image {image_name} {colorize("not found", TermColor.WARNING)} locally'
+                    f"Image {image_name} {colorize('not found', TermColor.WARNING)} locally"
                 )
                 return False
             try:
                 logger.debug(
-                    'Image not found locally. Trying to pull it, please wait...'
+                    "Image not found locally. Trying to pull it, please wait..."
                 )
 
                 layers: dict[str, dict[str, str]] = {}
                 previous_layer_count = 0
 
-                if ':' in image_name:
-                    image_repo, image_tag = image_name.split(':', 1)
+                if ":" in image_name:
+                    image_repo, image_tag = image_name.split(":", 1)
                 else:
                     image_repo = image_name
                     image_tag = None
@@ -288,18 +288,18 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 ):
                     self._output_build_progress(line, layers, previous_layer_count)
                     previous_layer_count = len(layers)
-                logger.debug('Image pulled')
+                logger.debug("Image pulled")
                 return True
             except docker.errors.ImageNotFound:
-                logger.debug('Could not find image locally or in registry.')
+                logger.debug("Could not find image locally or in registry.")
                 return False
             except Exception as e:
-                msg = f'Image {colorize("could not be pulled", TermColor.ERROR)}: '
+                msg = f"Image {colorize('could not be pulled', TermColor.ERROR)}: "
                 ex_msg = str(e)
-                if 'Not Found' in ex_msg:
-                    msg += 'image not found in registry.'
+                if "Not Found" in ex_msg:
+                    msg += "image not found in registry."
                 else:
-                    msg += f'{ex_msg}'
+                    msg += f"{ex_msg}"
                 logger.debug(msg)
                 return False
 
@@ -312,58 +312,58 @@ class DockerRuntimeBuilder(RuntimeBuilder):
     def _output_build_progress(
         self, current_line: dict, layers: dict, previous_layer_count: int
     ) -> None:
-        if 'id' in current_line and 'progressDetail' in current_line:
-            layer_id = current_line['id']
+        if "id" in current_line and "progressDetail" in current_line:
+            layer_id = current_line["id"]
             if layer_id not in layers:
-                layers[layer_id] = {'status': '', 'progress': '', 'last_logged': 0}
+                layers[layer_id] = {"status": "", "progress": "", "last_logged": 0}
 
-            if 'status' in current_line:
-                layers[layer_id]['status'] = current_line['status']
+            if "status" in current_line:
+                layers[layer_id]["status"] = current_line["status"]
 
-            if 'progress' in current_line:
-                layers[layer_id]['progress'] = current_line['progress']
+            if "progress" in current_line:
+                layers[layer_id]["progress"] = current_line["progress"]
 
-            if 'progressDetail' in current_line:
-                progress_detail = current_line['progressDetail']
-                if 'total' in progress_detail and 'current' in progress_detail:
-                    total = progress_detail['total']
-                    current = progress_detail['current']
+            if "progressDetail" in current_line:
+                progress_detail = current_line["progressDetail"]
+                if "total" in progress_detail and "current" in progress_detail:
+                    total = progress_detail["total"]
+                    current = progress_detail["current"]
                     percentage = min(
                         (current / total) * 100, 100
                     )  # Ensure it doesn't exceed 100%
                 else:
                     percentage = (
-                        100 if layers[layer_id]['status'] == 'Download complete' else 0
+                        100 if layers[layer_id]["status"] == "Download complete" else 0
                     )
 
             if self.rolling_logger.is_enabled():
                 self.rolling_logger.move_back(previous_layer_count)
                 for lid, layer_data in sorted(layers.items()):
                     self.rolling_logger.replace_current_line()
-                    status = layer_data['status']
-                    progress = layer_data['progress']
-                    if status == 'Download complete':
+                    status = layer_data["status"]
+                    progress = layer_data["progress"]
+                    if status == "Download complete":
                         self.rolling_logger.write_immediately(
-                            f'Layer {lid}: Download complete'
+                            f"Layer {lid}: Download complete"
                         )
-                    elif status == 'Already exists':
+                    elif status == "Already exists":
                         self.rolling_logger.write_immediately(
-                            f'Layer {lid}: Already exists'
+                            f"Layer {lid}: Already exists"
                         )
                     else:
                         self.rolling_logger.write_immediately(
-                            f'Layer {lid}: {progress} {status}'
+                            f"Layer {lid}: {progress} {status}"
                         )
             elif percentage != 0 and (
-                percentage - layers[layer_id]['last_logged'] >= 10 or percentage == 100
+                percentage - layers[layer_id]["last_logged"] >= 10 or percentage == 100
             ):
                 logger.debug(
-                    f'Layer {layer_id}: {layers[layer_id]["progress"]} {layers[layer_id]["status"]}'
+                    f"Layer {layer_id}: {layers[layer_id]['progress']} {layers[layer_id]['status']}"
                 )
 
-            layers[layer_id]['last_logged'] = percentage
-        elif 'status' in current_line:
-            logger.debug(current_line['status'])
+            layers[layer_id]["last_logged"] = percentage
+        elif "status" in current_line:
+            logger.debug(current_line["status"])
 
     def _prune_old_cache_files(self, cache_dir: str, max_age_days: int = 7) -> None:
         """Prune cache files older than the specified number of days.
@@ -383,11 +383,11 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                         file_age = current_time - os.path.getmtime(file_path)
                         if file_age > max_age_seconds:
                             os.remove(file_path)
-                            logger.debug(f'Removed old cache file: {file_path}')
+                            logger.debug(f"Removed old cache file: {file_path}")
                     except Exception as e:
-                        logger.warning(f'Error processing cache file {file_path}: {e}')
+                        logger.warning(f"Error processing cache file {file_path}: {e}")
         except Exception as e:
-            logger.warning(f'Error during build cache pruning: {e}')
+            logger.warning(f"Error during build cache pruning: {e}")
 
     def _is_cache_usable(self, cache_dir: str) -> bool:
         """Check if the cache directory is usable (exists and is writable).
@@ -401,18 +401,18 @@ class DockerRuntimeBuilder(RuntimeBuilder):
         if not os.path.exists(cache_dir):
             try:
                 os.makedirs(cache_dir, exist_ok=True)
-                logger.debug(f'Created cache directory: {cache_dir}')
+                logger.debug(f"Created cache directory: {cache_dir}")
             except OSError as e:
-                logger.debug(f'Failed to create cache directory {cache_dir}: {e}')
+                logger.debug(f"Failed to create cache directory {cache_dir}: {e}")
                 return False
 
         if not os.access(cache_dir, os.W_OK):
             logger.warning(
-                f'Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds.'
+                f"Cache directory {cache_dir} is not writable. Caches will not be used for Docker builds."
             )
             return False
 
         self._prune_old_cache_files(cache_dir)
 
-        logger.debug(f'Cache directory {cache_dir} is usable')
+        logger.debug(f"Cache directory {cache_dir} is usable")
         return True

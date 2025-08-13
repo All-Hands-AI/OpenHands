@@ -111,54 +111,54 @@ Example Usage:
 
 
 _STRUCTURE_EXPLORER_PARAMETERS = {
-    'type': 'object',
-    'properties': {
-        'start_entities': {
-            'description': (
-                'List of entities (e.g., class, function, file, or directory paths) to begin the search from.\n'
+    "type": "object",
+    "properties": {
+        "start_entities": {
+            "description": (
+                "List of entities (e.g., class, function, file, or directory paths) to begin the search from.\n"
                 'Entities representing classes or functions must be formatted as "file_path:QualifiedName" (e.g., `interface/C.py:C.method_a.inner_func`).\n'
-                'For files or directories, provide only the file or directory path (e.g., `src/module_a.py` or `src/`).'
+                "For files or directories, provide only the file or directory path (e.g., `src/module_a.py` or `src/`)."
             ),
-            'type': 'array',
-            'items': {'type': 'string'},
+            "type": "array",
+            "items": {"type": "string"},
         },
-        'direction': {
-            'description': (
-                'Direction of traversal in the code graph; allowed options are: `upstream`, `downstream`, `both`.\n'
+        "direction": {
+            "description": (
+                "Direction of traversal in the code graph; allowed options are: `upstream`, `downstream`, `both`.\n"
                 "- 'upstream': Traversal to explore dependencies that the specified entities rely on (how they depend on others).\n"
                 "- 'downstream': Traversal to explore the effects or interactions of the specified entities on others (how others depend on them).\n"
                 "- 'both': Traversal on both direction."
             ),
-            'type': 'string',
-            'enum': ['upstream', 'downstream', 'both'],
-            'default': 'downstream',
+            "type": "string",
+            "enum": ["upstream", "downstream", "both"],
+            "default": "downstream",
         },
-        'traversal_depth': {
-            'description': (
-                'Maximum depth of traversal. A value of -1 indicates unlimited depth (subject to a maximum limit).'
-                'Must be either `-1` or a non-negative integer (≥ 0).'
+        "traversal_depth": {
+            "description": (
+                "Maximum depth of traversal. A value of -1 indicates unlimited depth (subject to a maximum limit)."
+                "Must be either `-1` or a non-negative integer (≥ 0)."
             ),
-            'type': 'integer',
-            'default': 2,
+            "type": "integer",
+            "default": 2,
         },
-        'entity_type_filter': {
-            'description': (
+        "entity_type_filter": {
+            "description": (
                 "List of entity types (e.g., 'class', 'function', 'file', 'directory') to include in the traversal. If None, all entity types are included."
             ),
-            'type': ['array', 'null'],
-            'items': {'type': 'string'},
-            'default': None,
+            "type": ["array", "null"],
+            "items": {"type": "string"},
+            "default": None,
         },
-        'dependency_type_filter': {
-            'description': (
+        "dependency_type_filter": {
+            "description": (
                 "List of dependency types (e.g., 'contains', 'imports', 'invokes', 'inherits') to include in the traversal. If None, all dependency types are included."
             ),
-            'type': ['array', 'null'],
-            'items': {'type': 'string'},
-            'default': None,
+            "type": ["array", "null"],
+            "items": {"type": "string"},
+            "default": None,
         },
     },
-    'required': ['start_entities'],
+    "required": ["start_entities"],
 }
 
 
@@ -176,9 +176,9 @@ def create_explore_tree_structure_tool(
         else _DETAILED_TREE_EXAMPLE
     )
     return ChatCompletionToolParam(
-        type='function',
+        type="function",
         function=ChatCompletionToolParamFunctionChunk(
-            name='explore_tree_structure',
+            name="explore_tree_structure",
             description=description + example,
             parameters=_STRUCTURE_EXPLORER_PARAMETERS,
         ),

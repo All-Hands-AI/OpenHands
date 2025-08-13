@@ -45,7 +45,7 @@ def file_store():
 @pytest.fixture
 def event_stream(file_store):
     """Create a test event stream."""
-    return EventStream(sid='test_sid', file_store=file_store)
+    return EventStream(sid="test_sid", file_store=file_store)
 
 
 @pytest.fixture
@@ -53,7 +53,7 @@ def memory(event_stream):
     """Create a test memory instance."""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    memory = Memory(event_stream, 'test_sid')
+    memory = Memory(event_stream, "test_sid")
     yield memory
     loop.close()
 
@@ -62,7 +62,7 @@ def memory(event_stream):
 def prompt_dir(tmp_path):
     # Copy contents from "openhands/agenthub/codeact_agent" to the temp directory
     shutil.copytree(
-        'openhands/agenthub/codeact_agent/prompts', tmp_path, dirs_exist_ok=True
+        "openhands/agenthub/codeact_agent/prompts", tmp_path, dirs_exist_ok=True
     )
 
     # Return the temporary directory path
@@ -78,7 +78,7 @@ def mock_agent():
     agent.llm.config = OpenHandsConfig().get_llm_config()
 
     # Add a proper system message mock
-    system_message = SystemMessageAction(content='Test system message')
+    system_message = SystemMessageAction(content="Test system message")
     system_message._source = EventSource.AGENT
     system_message._id = -1  # Set invalid ID to avoid the ID check
     agent.get_system_message.return_value = system_message
@@ -98,22 +98,22 @@ async def test_memory_on_event_exception_handling(memory, event_stream, mock_age
 
     # Mock Memory method to raise an exception
     with patch.object(
-        memory, '_on_workspace_context_recall', side_effect=Exception('Test error')
+        memory, "_on_workspace_context_recall", side_effect=Exception("Test error")
     ):
         state = await run_controller(
             config=OpenHandsConfig(),
-            initial_user_action=MessageAction(content='Test message'),
+            initial_user_action=MessageAction(content="Test message"),
             runtime=runtime,
-            sid='test',
+            sid="test",
             agent=mock_agent,
-            fake_user_response_fn=lambda _: 'repeat',
+            fake_user_response_fn=lambda _: "repeat",
             memory=memory,
         )
 
         # Verify that the controller's last error was set
         assert state.iteration_flag.current_value == 0
         assert state.agent_state == AgentState.ERROR
-        assert state.last_error == 'Error: Exception'
+        assert state.last_error == "Error: Exception"
 
 
 @pytest.mark.asyncio
@@ -128,23 +128,23 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     # Mock Memory._on_workspace_context_recall to raise an exception
     with patch.object(
         memory,
-        '_find_microagent_knowledge',
-        side_effect=Exception('Test error from _find_microagent_knowledge'),
+        "_find_microagent_knowledge",
+        side_effect=Exception("Test error from _find_microagent_knowledge"),
     ):
         state = await run_controller(
             config=OpenHandsConfig(),
-            initial_user_action=MessageAction(content='Test message'),
+            initial_user_action=MessageAction(content="Test message"),
             runtime=runtime,
-            sid='test',
+            sid="test",
             agent=mock_agent,
-            fake_user_response_fn=lambda _: 'repeat',
+            fake_user_response_fn=lambda _: "repeat",
             memory=memory,
         )
 
         # Verify that the controller's last error was set
         assert state.iteration_flag.current_value == 0
         assert state.agent_state == AgentState.ERROR
-        assert state.last_error == 'Error: Exception'
+        assert state.last_error == "Error: Exception"
 
 
 @pytest.mark.asyncio
@@ -161,7 +161,7 @@ async def test_memory_with_microagents():
     # Initialize Memory to use the global microagents dir
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        sid="test-session",
     )
 
     # Verify microagents were loaded - at least one microagent should be loaded
@@ -169,12 +169,12 @@ async def test_memory_with_microagents():
     assert len(memory.knowledge_microagents) > 0
 
     # Check for the derived name 'flarglebargle'
-    derived_name = 'flarglebargle'
+    derived_name = "flarglebargle"
     assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
-        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
+        query="Hello, flarglebargle!", recall_type=RecallType.KNOWLEDGE
     )
 
     # Set the source to USER
@@ -218,17 +218,17 @@ async def test_memory_with_microagents():
     # Check against the derived name
     assert flarglebargle_knowledge is not None
     assert flarglebargle_knowledge.name == derived_name
-    assert flarglebargle_knowledge.trigger == 'flarglebargle'
-    assert 'magic word' in flarglebargle_knowledge.content
+    assert flarglebargle_knowledge.trigger == "flarglebargle"
+    assert "magic word" in flarglebargle_knowledge.content
 
 
 def test_memory_repository_info(prompt_dir, file_store):
     """Test that Memory adds repository info to RecallObservations."""
     # real event stream
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(sid="test-session", file_store=file_store)
 
     # Create a test repo microagent first
-    repo_microagent_name = 'test_repo_microagent'
+    repo_microagent_name = "test_repo_microagent"
     repo_microagent_content = """---
 name: test_repo
 type: repo
@@ -239,32 +239,32 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
 """
 
     # Create a temporary repo microagent file
-    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    os.makedirs(os.path.join(prompt_dir, "micro"), exist_ok=True)
     with open(
-        os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'), 'w'
+        os.path.join(prompt_dir, "micro", f"{repo_microagent_name}.md"), "w"
     ) as f:
         f.write(repo_microagent_content)
 
     # Patch the global microagents directory to use our test directory
-    test_microagents_dir = os.path.join(prompt_dir, 'micro')
-    with patch('openhands.memory.memory.GLOBAL_MICROAGENTS_DIR', test_microagents_dir):
+    test_microagents_dir = os.path.join(prompt_dir, "micro")
+    with patch("openhands.memory.memory.GLOBAL_MICROAGENTS_DIR", test_microagents_dir):
         # Initialize Memory
         memory = Memory(
             event_stream=event_stream,
-            sid='test-session',
+            sid="test-session",
         )
 
         # Set repository info
-        memory.set_repository_info('owner/repo', '/workspace/repo')
+        memory.set_repository_info("owner/repo", "/workspace/repo")
 
         # Create and add the first user message
-        user_message = MessageAction(content='First user message')
+        user_message = MessageAction(content="First user message")
         user_message._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(user_message, EventSource.USER)
 
         # Create and add the microagent action
         microagent_action = RecallAction(
-            query='First user message', recall_type=RecallType.WORKSPACE_CONTEXT
+            query="First user message", recall_type=RecallType.WORKSPACE_CONTEXT
         )
         microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(microagent_action, EventSource.USER)
@@ -286,12 +286,12 @@ REPOSITORY INSTRUCTIONS: This is a test repository.
         # Get the first RecallObservation
         observation = microagent_obs_events[0]
         assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
-        assert observation.repo_name == 'owner/repo'
-        assert observation.repo_directory == '/workspace/repo'
-        assert 'This is a test repository' in observation.repo_instructions
+        assert observation.repo_name == "owner/repo"
+        assert observation.repo_directory == "/workspace/repo"
+        assert "This is a test repository" in observation.repo_instructions
 
     # Clean up
-    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent_name}.md'))
+    os.remove(os.path.join(prompt_dir, "micro", f"{repo_microagent_name}.md"))
 
 
 @pytest.mark.asyncio
@@ -303,7 +303,7 @@ async def test_memory_with_agent_microagents():
     # Initialize Memory to use the global microagents dir
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        sid="test-session",
     )
 
     # Verify microagents were loaded - at least one microagent should be loaded
@@ -311,12 +311,12 @@ async def test_memory_with_agent_microagents():
     assert len(memory.knowledge_microagents) > 0
 
     # Check for the derived name 'flarglebargle'
-    derived_name = 'flarglebargle'
+    derived_name = "flarglebargle"
     assert derived_name in memory.knowledge_microagents
 
     # Create a microagent action with the trigger word
     microagent_action = RecallAction(
-        query='Hello, flarglebargle!', recall_type=RecallType.KNOWLEDGE
+        query="Hello, flarglebargle!", recall_type=RecallType.KNOWLEDGE
     )
 
     # Set the source to AGENT
@@ -360,8 +360,8 @@ async def test_memory_with_agent_microagents():
     # Check against the derived name
     assert flarglebargle_knowledge is not None
     assert flarglebargle_knowledge.name == derived_name
-    assert flarglebargle_knowledge.trigger == 'flarglebargle'
-    assert 'magic word' in flarglebargle_knowledge.content
+    assert flarglebargle_knowledge.trigger == "flarglebargle"
+    assert "magic word" in flarglebargle_knowledge.content
 
 
 @pytest.mark.asyncio
@@ -373,30 +373,30 @@ async def test_custom_secrets_descriptions():
     # Initialize Memory
     memory = Memory(
         event_stream=event_stream,
-        sid='test-session',
+        sid="test-session",
     )
 
     # Create a mock runtime with custom secrets descriptions
     mock_runtime = MagicMock()
-    mock_runtime.web_hosts = {'test-host.example.com': 8080}
-    mock_runtime.additional_agent_instructions = 'Test instructions'
+    mock_runtime.web_hosts = {"test-host.example.com": 8080}
+    mock_runtime.additional_agent_instructions = "Test instructions"
 
     # Define custom secrets descriptions
     custom_secrets = {
-        'API_KEY': 'API key for external service',
-        'DATABASE_URL': 'Connection string for the database',
-        'SECRET_TOKEN': 'Authentication token for secure operations',
+        "API_KEY": "API key for external service",
+        "DATABASE_URL": "Connection string for the database",
+        "SECRET_TOKEN": "Authentication token for secure operations",
     }
 
     # Set runtime info with custom secrets
-    memory.set_runtime_info(mock_runtime, custom_secrets, '/workspace')
+    memory.set_runtime_info(mock_runtime, custom_secrets, "/workspace")
 
     # Set repository info
-    memory.set_repository_info('test-owner/test-repo', '/workspace/test-repo')
+    memory.set_repository_info("test-owner/test-repo", "/workspace/test-repo")
 
     # Create a workspace context recall action
     recall_action = RecallAction(
-        query='Initial message', recall_type=RecallType.WORKSPACE_CONTEXT
+        query="Initial message", recall_type=RecallType.WORKSPACE_CONTEXT
     )
     recall_action._source = EventSource.USER  # type: ignore[attr-defined]
 
@@ -424,12 +424,12 @@ async def test_custom_secrets_descriptions():
     assert observation.custom_secrets_descriptions == custom_secrets
 
     # Verify repository info is included
-    assert observation.repo_name == 'test-owner/test-repo'
-    assert observation.repo_directory == '/workspace/test-repo'
+    assert observation.repo_name == "test-owner/test-repo"
+    assert observation.repo_directory == "/workspace/test-repo"
 
     # Verify runtime info is included
-    assert observation.runtime_hosts == {'test-host.example.com': 8080}
-    assert observation.additional_agent_instructions == 'Test instructions'
+    assert observation.runtime_hosts == {"test-host.example.com": 8080}
+    assert observation.additional_agent_instructions == "Test instructions"
 
 
 def test_custom_secrets_descriptions_serialization(prompt_dir):
@@ -439,63 +439,63 @@ def test_custom_secrets_descriptions_serialization(prompt_dir):
 
     # Create a RuntimeInfo with custom_secrets_descriptions
     custom_secrets = {
-        'API_KEY': 'API key for external service',
-        'DATABASE_URL': 'Connection string for the database',
-        'SECRET_TOKEN': 'Authentication token for secure operations',
+        "API_KEY": "API key for external service",
+        "DATABASE_URL": "Connection string for the database",
+        "SECRET_TOKEN": "Authentication token for secure operations",
     }
     runtime_info = RuntimeInfo(
-        date='2025-05-15',
-        available_hosts={'test-host.example.com': 8080},
-        additional_agent_instructions='Test instructions',
+        date="2025-05-15",
+        available_hosts={"test-host.example.com": 8080},
+        additional_agent_instructions="Test instructions",
         custom_secrets_descriptions=custom_secrets,
-        working_dir='/workspace',
+        working_dir="/workspace",
     )
 
     # Create a RepositoryInfo
     repository_info = RepositoryInfo(
-        repo_name='test-owner/test-repo',
-        repo_directory='/workspace/test-repo',
-        branch_name='main',
+        repo_name="test-owner/test-repo",
+        repo_directory="/workspace/test-repo",
+        branch_name="main",
     )
 
     conversation_instructions = ConversationInstructions(
-        content='additional agent context for the task'
+        content="additional agent context for the task"
     )
 
     # Build the workspace context message
     workspace_context = prompt_manager.build_workspace_context(
         repository_info=repository_info,
         runtime_info=runtime_info,
-        repo_instructions='Test repository instructions',
+        repo_instructions="Test repository instructions",
         conversation_instructions=conversation_instructions,
     )
 
     # Verify that the workspace context includes the custom_secrets_descriptions
-    assert '<CUSTOM_SECRETS>' in workspace_context
+    assert "<CUSTOM_SECRETS>" in workspace_context
     for secret_name, secret_description in custom_secrets.items():
-        assert f'$**{secret_name}**' in workspace_context
+        assert f"$**{secret_name}**" in workspace_context
         assert secret_description in workspace_context
 
-    assert '<CONVERSATION_INSTRUCTIONS>' in workspace_context
-    assert 'additional agent context for the task' in workspace_context
+    assert "<CONVERSATION_INSTRUCTIONS>" in workspace_context
+    assert "additional agent context for the task" in workspace_context
 
 
 def test_serialization_deserialization_with_custom_secrets():
     """Test that RecallObservation can be serialized and deserialized with custom_secrets_descriptions."""
     # This simulates an older version of the RecallObservation
     legacy_observation = {
-        'message': 'Added workspace context',
-        'observation': 'recall',
-        'content': 'Test content',
-        'extras': {
-            'recall_type': 'workspace_context',
-            'repo_name': 'test-owner/test-repo',
-            'repo_directory': '/workspace/test-repo',
-            'repo_instructions': 'Test repository instructions',
-            'runtime_hosts': {'test-host.example.com': 8080},
-            'additional_agent_instructions': 'Test instructions',
-            'date': '2025-05-15',
-            'microagent_knowledge': [],  # Intentionally omitting custom_secrets_descriptions
+        "message": "Added workspace context",
+        "observation": "recall",
+        "content": "Test content",
+        "extras": {
+            "recall_type": "workspace_context",
+            "repo_name": "test-owner/test-repo",
+            "repo_directory": "/workspace/test-repo",
+            "repo_instructions": "Test repository instructions",
+            "runtime_hosts": {"test-host.example.com": 8080},
+            "additional_agent_instructions": "Test instructions",
+            "date": "2025-05-15",
+            "microagent_knowledge": [],  # Intentionally omitting custom_secrets_descriptions
         },
     }
 
@@ -503,22 +503,22 @@ def test_serialization_deserialization_with_custom_secrets():
 
     # Verify that the observation was created successfully
     assert legacy_observation.recall_type == RecallType.WORKSPACE_CONTEXT
-    assert legacy_observation.repo_name == 'test-owner/test-repo'
-    assert legacy_observation.repo_directory == '/workspace/test-repo'
+    assert legacy_observation.repo_name == "test-owner/test-repo"
+    assert legacy_observation.repo_directory == "/workspace/test-repo"
 
 
 def test_memory_multiple_repo_microagents(prompt_dir, file_store):
     """Test that Memory loads and concatenates multiple repo microagents correctly."""
     # Create real event stream
-    event_stream = EventStream(sid='test-session', file_store=file_store)
+    event_stream = EventStream(sid="test-session", file_store=file_store)
 
     # Create two test repo microagents
-    repo_microagent1_name = 'test_repo_microagent1'
+    repo_microagent1_name = "test_repo_microagent1"
     repo_microagent1_content = """---
 REPOSITORY INSTRUCTIONS: This is the first test repository.
 """
 
-    repo_microagent2_name = 'test_repo_microagent2'
+    repo_microagent2_name = "test_repo_microagent2"
     repo_microagent2_content = """---
 name: test_repo2
 type: repo
@@ -529,37 +529,37 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
 """
 
     # Create temporary repo microagent files
-    os.makedirs(os.path.join(prompt_dir, 'micro'), exist_ok=True)
+    os.makedirs(os.path.join(prompt_dir, "micro"), exist_ok=True)
     with open(
-        os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'), 'w'
+        os.path.join(prompt_dir, "micro", f"{repo_microagent1_name}.md"), "w"
     ) as f:
         f.write(repo_microagent1_content)
 
     with open(
-        os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'), 'w'
+        os.path.join(prompt_dir, "micro", f"{repo_microagent2_name}.md"), "w"
     ) as f:
         f.write(repo_microagent2_content)
 
     # Patch the global microagents directory to use our test directory
-    test_microagents_dir = os.path.join(prompt_dir, 'micro')
-    with patch('openhands.memory.memory.GLOBAL_MICROAGENTS_DIR', test_microagents_dir):
+    test_microagents_dir = os.path.join(prompt_dir, "micro")
+    with patch("openhands.memory.memory.GLOBAL_MICROAGENTS_DIR", test_microagents_dir):
         # Initialize Memory
         memory = Memory(
             event_stream=event_stream,
-            sid='test-session',
+            sid="test-session",
         )
 
         # Set repository info
-        memory.set_repository_info('owner/repo', '/workspace/repo')
+        memory.set_repository_info("owner/repo", "/workspace/repo")
 
         # Create and add the first user message
-        user_message = MessageAction(content='First user message')
+        user_message = MessageAction(content="First user message")
         user_message._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(user_message, EventSource.USER)
 
         # Create and add the microagent action
         microagent_action = RecallAction(
-            query='First user message', recall_type=RecallType.WORKSPACE_CONTEXT
+            query="First user message", recall_type=RecallType.WORKSPACE_CONTEXT
         )
         microagent_action._source = EventSource.USER  # type: ignore[attr-defined]
         event_stream.add_event(microagent_action, EventSource.USER)
@@ -581,14 +581,14 @@ REPOSITORY INSTRUCTIONS: This is the second test repository.
         # Get the first RecallObservation
         observation = microagent_obs_events[0]
         assert observation.recall_type == RecallType.WORKSPACE_CONTEXT
-        assert observation.repo_name == 'owner/repo'
-        assert observation.repo_directory == '/workspace/repo'
-        assert 'This is the first test repository' in observation.repo_instructions
-        assert 'This is the second test repository' in observation.repo_instructions
+        assert observation.repo_name == "owner/repo"
+        assert observation.repo_directory == "/workspace/repo"
+        assert "This is the first test repository" in observation.repo_instructions
+        assert "This is the second test repository" in observation.repo_instructions
 
     # Clean up
-    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent1_name}.md'))
-    os.remove(os.path.join(prompt_dir, 'micro', f'{repo_microagent2_name}.md'))
+    os.remove(os.path.join(prompt_dir, "micro", f"{repo_microagent1_name}.md"))
+    os.remove(os.path.join(prompt_dir, "micro", f"{repo_microagent2_name}.md"))
 
 
 @pytest.mark.asyncio
@@ -597,7 +597,7 @@ async def test_conversation_instructions_plumbed_to_memory(
 ):
     # Setup
     session = AgentSession(
-        sid='test-session',
+        sid="test-session",
         file_store=file_store,
     )
 
@@ -624,19 +624,19 @@ async def test_conversation_instructions_plumbed_to_memory(
     # Patch AgentController
     with (
         patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
+            "openhands.server.session.agent_session.AgentController", SpyAgentController
         ),
     ):
         await session.start(
-            runtime_name='test-runtime',
+            runtime_name="test-runtime",
             config=OpenHandsConfig(),
             agent=mock_agent,
             max_iterations=10,
-            conversation_instructions='instructions for conversation',
+            conversation_instructions="instructions for conversation",
         )
 
         # Use the memory instance from the session, not the fixture
         assert (
             session.memory.conversation_instructions.content
-            == 'instructions for conversation'
+            == "instructions for conversation"
         )

@@ -19,18 +19,18 @@ from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
 
-TEST_IN_CI = os.getenv('TEST_IN_CI', 'False').lower() in ['true', '1', 'yes']
-TEST_RUNTIME = os.getenv('TEST_RUNTIME', 'docker').lower()
-RUN_AS_OPENHANDS = os.getenv('RUN_AS_OPENHANDS', 'True').lower() in ['true', '1', 'yes']
-test_mount_path = ''
+TEST_IN_CI = os.getenv("TEST_IN_CI", "False").lower() in ["true", "1", "yes"]
+TEST_RUNTIME = os.getenv("TEST_RUNTIME", "docker").lower()
+RUN_AS_OPENHANDS = os.getenv("RUN_AS_OPENHANDS", "True").lower() in ["true", "1", "yes"]
+test_mount_path = ""
 project_dir = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-sandbox_test_folder = '/workspace'
+sandbox_test_folder = "/workspace"
 
 
 def _get_runtime_sid(runtime: Runtime) -> str:
-    logger.debug(f'\nruntime.sid: {runtime.sid}')
+    logger.debug(f"\nruntime.sid: {runtime.sid}")
     return runtime.sid
 
 
@@ -50,7 +50,7 @@ def _remove_folder(folder: str) -> bool:
                 success = True
             except OSError:
                 pass
-        logger.debug(f'\nCleanup: `{folder}`: ' + ('[OK]' if success else '[FAILED]'))
+        logger.debug(f"\nCleanup: `{folder}`: " + ("[OK]" if success else "[FAILED]"))
     return success
 
 
@@ -67,9 +67,9 @@ def _reset_cwd() -> None:
     # Try to change back to project directory
     try:
         os.chdir(project_dir)
-        logger.info(f'Changed back to project directory `{project_dir}')
+        logger.info(f"Changed back to project directory `{project_dir}")
     except Exception as e:
-        logger.error(f'Failed to change back to project directory: {e}')
+        logger.error(f"Failed to change back to project directory: {e}")
 
 
 # *****************************************************************************
@@ -79,11 +79,11 @@ def _reset_cwd() -> None:
 @pytest.fixture(autouse=True)
 def print_method_name(request):
     print(
-        '\n\n########################################################################'
+        "\n\n########################################################################"
     )
-    print(f'Running test: {request.node.name}')
+    print(f"Running test: {request.node.name}")
     print(
-        '########################################################################\n\n'
+        "########################################################################\n\n"
     )
 
 
@@ -101,10 +101,10 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
     - str: The temporary directory path that was created
     """
     temp_dir = tmp_path_factory.mktemp(
-        'rt_' + str(random.randint(100000, 999999)), numbered=False
+        "rt_" + str(random.randint(100000, 999999)), numbered=False
     )
 
-    logger.info(f'\n*** {request.node.name}\n>> temp folder: {temp_dir}\n')
+    logger.info(f"\n*** {request.node.name}\n>> temp folder: {temp_dir}\n")
 
     # Set permissions to ensure the directory is writable and deletable
     os.chmod(temp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)  # 0777 permissions
@@ -122,37 +122,37 @@ def temp_dir(tmp_path_factory: TempPathFactory, request) -> str:
 # Depending on TEST_RUNTIME, feed the appropriate box class(es) to the test.
 def get_runtime_classes() -> list[type[Runtime]]:
     runtime = TEST_RUNTIME
-    if runtime.lower() == 'docker' or runtime.lower() == 'eventstream':
+    if runtime.lower() == "docker" or runtime.lower() == "eventstream":
         return [DockerRuntime]
-    elif runtime.lower() == 'local':
+    elif runtime.lower() == "local":
         return [LocalRuntime]
-    elif runtime.lower() == 'remote':
+    elif runtime.lower() == "remote":
         return [RemoteRuntime]
-    elif runtime.lower() == 'cli':
+    elif runtime.lower() == "cli":
         return [CLIRuntime]
     else:
-        raise ValueError(f'Invalid runtime: {runtime}')
+        raise ValueError(f"Invalid runtime: {runtime}")
 
 
 def get_run_as_openhands() -> list[bool]:
     print(
-        '\n\n########################################################################'
+        "\n\n########################################################################"
     )
-    print('USER: ' + 'openhands' if RUN_AS_OPENHANDS else 'root')
+    print("USER: " + "openhands" if RUN_AS_OPENHANDS else "root")
     print(
-        '########################################################################\n\n'
+        "########################################################################\n\n"
     )
     return [RUN_AS_OPENHANDS]
 
 
-@pytest.fixture(scope='module')  # for xdist
+@pytest.fixture(scope="module")  # for xdist
 def runtime_setup_module():
     _reset_cwd()
     yield
     _reset_cwd()
 
 
-@pytest.fixture(scope='session')  # not for xdist
+@pytest.fixture(scope="session")  # not for xdist
 def runtime_setup_session():
     _reset_cwd()
     yield
@@ -161,7 +161,7 @@ def runtime_setup_session():
 
 # This assures that all tests run together per runtime, not alternating between them,
 # which cause errors (especially outside GitHub actions).
-@pytest.fixture(scope='module', params=get_runtime_classes())
+@pytest.fixture(scope="module", params=get_runtime_classes())
 def runtime_cls(request):
     time.sleep(1)
     return request.param
@@ -169,34 +169,34 @@ def runtime_cls(request):
 
 # TODO: We will change this to `run_as_user` when `ServerRuntime` is deprecated.
 # since `DockerRuntime` supports running as an arbitrary user.
-@pytest.fixture(scope='module', params=get_run_as_openhands())
+@pytest.fixture(scope="module", params=get_run_as_openhands())
 def run_as_openhands(request):
     time.sleep(1)
     return request.param
 
 
-@pytest.fixture(scope='module', params=None)
+@pytest.fixture(scope="module", params=None)
 def base_container_image(request):
     time.sleep(1)
-    env_image = os.environ.get('SANDBOX_BASE_CONTAINER_IMAGE')
+    env_image = os.environ.get("SANDBOX_BASE_CONTAINER_IMAGE")
     if env_image:
         request.param = env_image
     else:
-        if not hasattr(request, 'param'):  # prevent runtime AttributeError
+        if not hasattr(request, "param"):  # prevent runtime AttributeError
             request.param = None
-        if request.param is None and hasattr(request.config, 'sandbox'):
+        if request.param is None and hasattr(request.config, "sandbox"):
             try:
                 request.param = request.config.sandbox.getoption(
-                    '--base_container_image'
+                    "--base_container_image"
                 )
             except ValueError:
                 request.param = None
         if request.param is None:
             request.param = pytest.param(
-                'nikolaik/python-nodejs:python3.12-nodejs22',
-                'golang:1.23-bookworm',
+                "nikolaik/python-nodejs:python3.12-nodejs22",
+                "golang:1.23-bookworm",
             )
-    print(f'Container image: {request.param}')
+    print(f"Container image: {request.param}")
     return request.param
 
 
@@ -214,7 +214,7 @@ def _load_runtime(
     override_mcp_config: MCPConfig | None = None,
     enable_browser: bool = False,
 ) -> tuple[Runtime, OpenHandsConfig]:
-    sid = 'rt_' + str(random.randint(100000, 999999))
+    sid = "rt_" + str(random.randint(100000, 999999))
 
     # AgentSkills need to be initialized **before** Jupyter
     # otherwise Jupyter will not access the proper dependencies installed by AgentSkills
@@ -229,7 +229,7 @@ def _load_runtime(
     # Folder where all tests create their own folder
     global test_mount_path
     if use_workspace:
-        test_mount_path = os.path.join(config.workspace_base, 'rt')
+        test_mount_path = os.path.join(config.workspace_base, "rt")
     elif temp_dir is not None:
         test_mount_path = temp_dir
     else:
@@ -238,13 +238,13 @@ def _load_runtime(
     config.workspace_mount_path = test_mount_path
 
     # Mounting folder specific for this test inside the sandbox
-    config.workspace_mount_path_in_sandbox = f'{sandbox_test_folder}'
-    print('\nPaths used:')
-    print(f'use_host_network: {config.sandbox.use_host_network}')
-    print(f'workspace_base: {config.workspace_base}')
-    print(f'workspace_mount_path: {config.workspace_mount_path}')
+    config.workspace_mount_path_in_sandbox = f"{sandbox_test_folder}"
+    print("\nPaths used:")
+    print(f"use_host_network: {config.sandbox.use_host_network}")
+    print(f"workspace_base: {config.workspace_base}")
+    print(f"workspace_mount_path: {config.workspace_mount_path}")
     print(
-        f'workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n'
+        f"workspace_mount_path_in_sandbox: {config.workspace_mount_path_in_sandbox}\n"
     )
 
     config.sandbox.browsergym_eval_env = browsergym_eval_env
@@ -281,7 +281,7 @@ def _load_runtime(
     if isinstance(runtime, CLIRuntime):
         config.workspace_mount_path_in_sandbox = str(runtime.workspace_root)
         logger.info(
-            f'Adjusted workspace_mount_path_in_sandbox for CLIRuntime to: {config.workspace_mount_path_in_sandbox}'
+            f"Adjusted workspace_mount_path_in_sandbox for CLIRuntime to: {config.workspace_mount_path_in_sandbox}"
         )
 
     call_async_from_sync(runtime.connect)
@@ -291,7 +291,7 @@ def _load_runtime(
 
 # Export necessary function
 __all__ = [
-    '_load_runtime',
-    '_get_host_folder',
-    '_remove_folder',
+    "_load_runtime",
+    "_get_host_folder",
+    "_remove_folder",
 ]

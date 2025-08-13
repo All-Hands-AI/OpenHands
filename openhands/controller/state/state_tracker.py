@@ -72,7 +72,7 @@ class StateTracker:
         # If state is None, we create a brand new state and still load the event stream so we can restore the history
         if state is None:
             self.state = State(
-                session_id=id.removesuffix('-delegate'),
+                session_id=id.removesuffix("-delegate"),
                 user_id=self.user_id,
                 inputs={},
                 iteration_flag=IterationControlFlag(
@@ -92,7 +92,7 @@ class StateTracker:
             self.state.start_id = 0
 
             logger.info(
-                f'AgentController {id} - created new state. start_id: {self.state.start_id}'
+                f"AgentController {id} - created new state. start_id: {self.state.start_id}"
             )
         else:
             self.state = state
@@ -100,7 +100,7 @@ class StateTracker:
                 self.state.start_id = 0
 
             logger.info(
-                f'AgentController {id} initializing history from event {self.state.start_id}',
+                f"AgentController {id} initializing history from event {self.state.start_id}",
             )
 
         # Share the state metrics with the agent's LLM metrics
@@ -130,7 +130,7 @@ class StateTracker:
         # sanity check
         if start_id > end_id + 1:
             logger.warning(
-                f'start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.',
+                f"start_id {start_id} is greater than end_id + 1 ({end_id + 1}). History will be empty.",
             )
             self.state.history = []
             return
@@ -162,7 +162,7 @@ class StateTracker:
                 # Match with most recent unmatched delegate action
                 if not delegate_action_ids:
                     logger.warning(
-                        f'Found AgentDelegateObservation without matching action at id={event.id}',
+                        f"Found AgentDelegateObservation without matching action at id={event.id}",
                     )
                     continue
 
@@ -242,41 +242,33 @@ class StateTracker:
             self.state.budget_flag.increase_limit(headless_mode)
 
     def get_metrics_snapshot(self):
-        """
-        Deep copy of metrics
+        """Deep copy of metrics
         This serves as a snapshot for the parent's metrics at the time a delegate is created
         It will be stored and used to compute local metrics for the delegate
         (since delegates now accumulate metrics from where its parent left off)
         """
-
         return self.state.metrics.copy()
 
     def save_state(self):
-        """
-        Save's current state to persistent store
-        """
+        """Save's current state to persistent store"""
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
     def run_control_flags(self):
-        """
-        Performs one step of the control flags
-        """
+        """Performs one step of the control flags"""
         self.state.iteration_flag.step()
         if self.state.budget_flag:
             self.state.budget_flag.step()
 
     def sync_budget_flag_with_metrics(self):
-        """
-        Ensures that budget flag is up to date with accumulated costs from llm completions
+        """Ensures that budget flag is up to date with accumulated costs from llm completions
         Budget flag will monitor for when budget is exceeded
         """
         if self.state.budget_flag:
             self.state.budget_flag.current_value = self.state.metrics.accumulated_cost
 
     def merge_metrics(self, metrics: Metrics):
-        """
-        Merges metrics with the state metrics
+        """Merges metrics with the state metrics
 
         NOTE: this should be refactored in the future. We should have services (draft llm, title autocomplete, condenser, etc)
         use their own LLMs, but the metrics object should be shared. This way we have one source of truth for accumulated costs from

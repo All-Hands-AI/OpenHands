@@ -25,11 +25,11 @@ from openhands.microagent.types import MicroagentType
 
 def _create_test_microagents(test_dir: str):
     """Create test microagent files in the given directory."""
-    microagents_dir = Path(test_dir) / '.openhands' / 'microagents'
+    microagents_dir = Path(test_dir) / ".openhands" / "microagents"
     microagents_dir.mkdir(parents=True, exist_ok=True)
 
     # Create test knowledge agent
-    knowledge_dir = microagents_dir / 'knowledge'
+    knowledge_dir = microagents_dir / "knowledge"
     knowledge_dir.mkdir(exist_ok=True)
     knowledge_agent = """---
 name: test_knowledge_agent
@@ -45,7 +45,7 @@ triggers:
 
 Testing best practices and guidelines.
 """
-    (knowledge_dir / 'knowledge.md').write_text(knowledge_agent)
+    (knowledge_dir / "knowledge.md").write_text(knowledge_agent)
 
     # Create test repo agent
     repo_agent = """---
@@ -59,14 +59,14 @@ agent: CodeActAgent
 
 Repository-specific test instructions.
 """
-    (microagents_dir / 'repo.md').write_text(repo_agent)
+    (microagents_dir / "repo.md").write_text(repo_agent)
 
     # Create legacy repo instructions
     legacy_instructions = """# Legacy Instructions
 
 These are legacy repository instructions.
 """
-    (Path(test_dir) / '.openhands_instructions').write_text(legacy_instructions)
+    (Path(test_dir) / ".openhands_instructions").write_text(legacy_instructions)
 
 
 def test_load_microagents_with_trailing_slashes(
@@ -89,15 +89,15 @@ def test_load_microagents_with_trailing_slashes(
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'knowledge/knowledge'
-        assert 'test' in agent.triggers
-        assert 'pytest' in agent.triggers
+        assert agent.name == "knowledge/knowledge"
+        assert "test" in agent.triggers
+        assert "pytest" in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'repo' in repo_names
-        assert 'repo_legacy' in repo_names
+        assert "repo" in repo_names
+        assert "repo_legacy" in repo_names
 
     finally:
         _close_test_runtime(runtime)
@@ -106,7 +106,7 @@ def test_load_microagents_with_trailing_slashes(
 def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents from a selected repository."""
     # Create test files in a repository-like structure
-    repo_dir = Path(temp_dir) / 'OpenHands'
+    repo_dir = Path(temp_dir) / "OpenHands"
     repo_dir.mkdir(parents=True)
     _create_test_microagents(str(repo_dir))
 
@@ -114,7 +114,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
     try:
         # Load microagents with selected repository
         loaded_agents = runtime.get_microagents_from_selected_repo(
-            'All-Hands-AI/OpenHands'
+            "All-Hands-AI/OpenHands"
         )
 
         # Verify all agents are loaded
@@ -126,15 +126,15 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
         # Check knowledge agents
         assert len(knowledge_agents) == 1
         agent = knowledge_agents[0]
-        assert agent.name == 'knowledge/knowledge'
-        assert 'test' in agent.triggers
-        assert 'pytest' in agent.triggers
+        assert agent.name == "knowledge/knowledge"
+        assert "test" in agent.triggers
+        assert "pytest" in agent.triggers
 
         # Check repo agents (including legacy)
         assert len(repo_agents) == 2  # repo.md + .openhands_instructions
         repo_names = {a.name for a in repo_agents}
-        assert 'repo' in repo_names
-        assert 'repo_legacy' in repo_names
+        assert "repo" in repo_names
+        assert "repo_legacy" in repo_names
 
     finally:
         _close_test_runtime(runtime)
@@ -143,7 +143,7 @@ def test_load_microagents_with_selected_repo(temp_dir, runtime_cls, run_as_openh
 def test_load_microagents_with_missing_files(temp_dir, runtime_cls, run_as_openhands):
     """Test loading microagents when some files are missing."""
     # Create only repo.md, no other files
-    microagents_dir = Path(temp_dir) / '.openhands' / 'microagents'
+    microagents_dir = Path(temp_dir) / ".openhands" / "microagents"
     microagents_dir.mkdir(parents=True, exist_ok=True)
 
     repo_agent = """---
@@ -157,7 +157,7 @@ agent: CodeActAgent
 
 Repository-specific test instructions.
 """
-    (microagents_dir / 'repo.md').write_text(repo_agent)
+    (microagents_dir / "repo.md").write_text(repo_agent)
 
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
@@ -174,7 +174,7 @@ Repository-specific test instructions.
         assert len(repo_agents) == 1
 
         agent = repo_agents[0]
-        assert agent.name == 'repo'
+        assert agent.name == "repo"
 
     finally:
         _close_test_runtime(runtime)
@@ -197,7 +197,7 @@ inputs:
 This is a test task microagent with a variable: ${test_var}.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
@@ -205,8 +205,8 @@ This is a test task microagent with a variable: ${test_var}.
 
         assert isinstance(agent, TaskMicroagent)
         assert agent.type == MicroagentType.TASK
-        assert agent.name == 'test_task'
-        assert '/test_task' in agent.triggers
+        assert agent.name == "test_task"
+        assert "/test_task" in agent.triggers
         assert "If the user didn't provide any of these variables" in agent.content
 
 
@@ -227,7 +227,7 @@ inputs:
 This is a test with variables: ${var1}, ${var2}, and ${var3}.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
@@ -235,7 +235,7 @@ This is a test with variables: ${var1}, ${var2}, and ${var3}.
 
         assert isinstance(agent, TaskMicroagent)
         variables = agent.extract_variables(agent.content)
-        assert set(variables) == {'var1', 'var2', 'var3'}
+        assert set(variables) == {"var1", "var2", "var3"}
         assert agent.requires_user_input()
 
 
@@ -253,7 +253,7 @@ triggers:
 This is a test knowledge microagent.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
@@ -279,14 +279,14 @@ inputs:
 This is a test task microagent.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
         agent = BaseMicroagent.load(f.name)
 
         assert isinstance(agent, TaskMicroagent)
-        assert '/test_task' in agent.triggers
+        assert "/test_task" in agent.triggers
 
 
 def test_task_microagent_no_duplicate_trigger():
@@ -307,17 +307,17 @@ inputs:
 This is a test task microagent.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
         agent = BaseMicroagent.load(f.name)
 
         assert isinstance(agent, TaskMicroagent)
-        assert agent.triggers.count('/test_task') == 1  # No duplicates
+        assert agent.triggers.count("/test_task") == 1  # No duplicates
         assert len(agent.triggers) == 2
-        assert 'another_trigger' in agent.triggers
-        assert '/test_task' in agent.triggers
+        assert "another_trigger" in agent.triggers
+        assert "/test_task" in agent.triggers
 
 
 def test_task_microagent_match_trigger():
@@ -337,17 +337,17 @@ inputs:
 This is a test task microagent.
 """
 
-    with tempfile.NamedTemporaryFile(suffix='.md') as f:
+    with tempfile.NamedTemporaryFile(suffix=".md") as f:
         f.write(content.encode())
         f.flush()
 
         agent = BaseMicroagent.load(f.name)
 
         assert isinstance(agent, TaskMicroagent)
-        assert agent.match_trigger('/test_task') == '/test_task'
-        assert agent.match_trigger('  /test_task  ') == '/test_task'
-        assert agent.match_trigger('This contains /test_task') == '/test_task'
-        assert agent.match_trigger('/other_task') is None
+        assert agent.match_trigger("/test_task") == "/test_task"
+        assert agent.match_trigger("  /test_task  ") == "/test_task"
+        assert agent.match_trigger("This contains /test_task") == "/test_task"
+        assert agent.match_trigger("/other_task") is None
 
 
 def test_default_tools_microagent_exists():
@@ -357,26 +357,26 @@ def test_default_tools_microagent_exists():
 
     project_root = os.path.dirname(openhands.__file__)
     parent_dir = os.path.dirname(project_root)
-    microagents_dir = os.path.join(parent_dir, 'microagents')
+    microagents_dir = os.path.join(parent_dir, "microagents")
 
     # Check that the default-tools.md file exists
-    default_tools_path = os.path.join(microagents_dir, 'default-tools.md')
+    default_tools_path = os.path.join(microagents_dir, "default-tools.md")
     assert os.path.exists(default_tools_path), (
-        f'default-tools.md not found at {default_tools_path}'
+        f"default-tools.md not found at {default_tools_path}"
     )
 
     # Read the file and check its content
-    with open(default_tools_path, 'r') as f:
+    with open(default_tools_path, "r") as f:
         content = f.read()
 
     # Verify it's a repo microagent (always activated)
-    assert 'type: repo' in content, 'default-tools.md should be a repo microagent'
+    assert "type: repo" in content, "default-tools.md should be a repo microagent"
 
     # Verify it has the fetch tool configured
-    assert 'name: "fetch"' in content, 'default-tools.md should have a fetch tool'
-    assert 'command: "uvx"' in content, 'default-tools.md should use uvx command'
+    assert 'name: "fetch"' in content, "default-tools.md should have a fetch tool"
+    assert 'command: "uvx"' in content, "default-tools.md should use uvx command"
     assert 'args: ["mcp-server-fetch"]' in content, (
-        'default-tools.md should use mcp-server-fetch'
+        "default-tools.md should use mcp-server-fetch"
     )
 
 
@@ -396,7 +396,7 @@ async def test_add_mcp_tools_from_microagents():
 
     # Configure the mock memory to return a microagent MCP config
     mock_stdio_server = MCPStdioServerConfig(
-        name='test-tool', command='test-command', args=['test-arg1', 'test-arg2']
+        name="test-tool", command="test-command", args=["test-arg1", "test-arg2"]
     )
     mock_microagent_mcp_config = MCPConfig(stdio_servers=[mock_stdio_server])
     mock_memory.get_microagent_mcp_tools.return_value = [mock_microagent_mcp_config]
@@ -407,16 +407,16 @@ async def test_add_mcp_tools_from_microagents():
 
     # Mock the fetch_mcp_tools_from_config function to return a mock tool
     mock_tool = {
-        'type': 'function',
-        'function': {
-            'name': 'test-tool',
-            'description': 'Test tool description',
-            'parameters': {},
+        "type": "function",
+        "function": {
+            "name": "test-tool",
+            "description": "Test tool description",
+            "parameters": {},
         },
     }
 
     with patch(
-        'openhands.mcp.utils.fetch_mcp_tools_from_config',
+        "openhands.mcp.utils.fetch_mcp_tools_from_config",
         new=AsyncMock(return_value=[mock_tool]),
     ):
         # Call the function with the OpenHandsConfig instead of MCPConfig
@@ -430,7 +430,7 @@ async def test_add_mcp_tools_from_microagents():
         args, kwargs = mock_runtime.get_mcp_config.call_args
         assert len(args) == 1
         assert len(args[0]) == 1
-        assert args[0][0].name == 'test-tool'
+        assert args[0][0].name == "test-tool"
 
         # Verify that the agent's set_mcp_tools was called with the mock tool
         mock_agent.set_mcp_tools.assert_called_once_with([mock_tool])

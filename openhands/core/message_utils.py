@@ -3,8 +3,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 
 
 def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | None:
-    """
-    Returns at most one token usage record for either:
+    """Returns at most one token usage record for either:
       - `tool_call_metadata.model_response.id`, if possible
       - otherwise event.response_id, if set
 
@@ -12,7 +11,7 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     """
     # 1) Use the tool_call_metadata's response.id if present
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
-        tool_response_id = event.tool_call_metadata.model_response.get('id')
+        tool_response_id = event.tool_call_metadata.model_response.get("id")
         if tool_response_id:
             usage_rec = next(
                 (u for u in metrics.token_usages if u.response_id == tool_response_id),
@@ -34,8 +33,7 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
 def get_token_usage_for_event_id(
     events: list[Event], event_id: int, metrics: Metrics
 ) -> TokenUsage | None:
-    """
-    Starting from the event with .id == event_id and moving backwards in `events`,
+    """Starting from the event with .id == event_id and moving backwards in `events`,
     find the first TokenUsage record (if any) associated either with:
       - tool_call_metadata.model_response.id, or
       - event.response_id

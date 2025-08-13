@@ -1,5 +1,4 @@
-"""
-This module monitors the app for shutdown signals. This exists because the atexit module
+"""This module monitors the app for shutdown signals. This exists because the atexit module
 does not play nocely with stareltte / uvicorn shutdown signals.
 """
 
@@ -23,7 +22,7 @@ def _register_signal_handler(sig: signal.Signals) -> None:
     original_handler = None
 
     def handler(sig_: int, frame: FrameType | None) -> None:
-        logger.debug(f'shutdown_signal:{sig_}')
+        logger.debug(f"shutdown_signal:{sig_}")
         global _should_exit
         if not _should_exit:
             _should_exit = True
@@ -32,7 +31,7 @@ def _register_signal_handler(sig: signal.Signals) -> None:
                 try:
                     callable()
                 except Exception:
-                    logger.exception('Error calling shutdown listener')
+                    logger.exception("Error calling shutdown listener")
             if original_handler:
                 original_handler(sig_, frame)  # type: ignore[unreachable]
 
@@ -45,15 +44,15 @@ def _register_signal_handlers() -> None:
         return
     _should_exit = False
 
-    logger.debug('_register_signal_handlers')
+    logger.debug("_register_signal_handlers")
 
     # Check if we're in the main thread of the main interpreter
     if threading.current_thread() is threading.main_thread():
-        logger.debug('_register_signal_handlers:main_thread')
+        logger.debug("_register_signal_handlers:main_thread")
         for sig in HANDLED_SIGNALS:
             _register_signal_handler(sig)
     else:
-        logger.debug('_register_signal_handlers:not_main_thread')
+        logger.debug("_register_signal_handlers:not_main_thread")
 
 
 def should_exit() -> bool:

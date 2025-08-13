@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-"""
-Get git changes in the current working directory relative to the remote origin if possible.
+"""Get git changes in the current working directory relative to the remote origin if possible.
 NOTE: Since this is run as a script, there should be no imports from project files!
 """
 
@@ -15,11 +14,11 @@ def run(cmd: str, cwd: str) -> str:
     result = subprocess.run(
         args=cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd
     )
-    byte_content = result.stderr or result.stdout or b''
+    byte_content = result.stderr or result.stdout or b""
 
     if result.returncode != 0:
         raise RuntimeError(
-            f'error_running_cmd:{result.returncode}:{byte_content.decode()}'
+            f"error_running_cmd:{result.returncode}:{byte_content.decode()}"
         )
     return byte_content.decode().strip()
 
@@ -27,8 +26,8 @@ def run(cmd: str, cwd: str) -> str:
 def get_valid_ref(repo_dir: str) -> str | None:
     refs = []
     try:
-        current_branch = run('git --no-pager rev-parse --abbrev-ref HEAD', repo_dir)
-        refs.append(f'origin/{current_branch}')
+        current_branch = run("git --no-pager rev-parse --abbrev-ref HEAD", repo_dir)
+        refs.append(f"origin/{current_branch}")
     except RuntimeError:
         pass
 
@@ -39,7 +38,7 @@ def get_valid_ref(repo_dir: str) -> str | None:
             .strip()
         )
         ref_non_default_branch = f'$(git --no-pager merge-base HEAD "$(git --no-pager rev-parse --abbrev-ref origin/{default_branch})")'
-        ref_default_branch = f'origin/{default_branch}'
+        ref_default_branch = f"origin/{default_branch}"
         refs.append(ref_non_default_branch)
         refs.append(ref_default_branch)
     except RuntimeError:
@@ -47,14 +46,14 @@ def get_valid_ref(repo_dir: str) -> str | None:
 
     # compares with empty tree
     ref_new_repo = (
-        '$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)'
+        "$(git --no-pager rev-parse --verify 4b825dc642cb6eb9a060e54bf8d69288fbee4904)"
     )
     refs.append(ref_new_repo)
 
     # Find a ref that exists...
     for ref in refs:
         try:
-            result = run(f'git --no-pager rev-parse --verify {ref}', repo_dir)
+            result = run(f"git --no-pager rev-parse --verify {ref}", repo_dir)
             return result
         except RuntimeError:
             # invalid ref - try next
@@ -72,12 +71,12 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
 
     # Get changed files
     changed_files = run(
-        f'git --no-pager diff --name-status {ref}', repo_dir
+        f"git --no-pager diff --name-status {ref}", repo_dir
     ).splitlines()
     changes = []
     for line in changed_files:
         if not line.strip():
-            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
+            raise RuntimeError(f"unexpected_value_in_git_diff:{changed_files}")
 
         # Handle different output formats from git diff --name-status
         # Depending on git config, format can be either:
@@ -86,37 +85,37 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         # * "R100    old_file.txt    new_file.txt" (rename with similarity percentage)
         parts = line.split()
         if len(parts) < 2:
-            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
+            raise RuntimeError(f"unexpected_value_in_git_diff:{changed_files}")
 
         status = parts[0].strip()
 
         # Handle rename operations (status starts with 'R' followed by similarity percentage)
-        if status.startswith('R') and len(parts) == 3:
+        if status.startswith("R") and len(parts) == 3:
             # Rename: convert to delete (old path) + add (new path)
             old_path = parts[1].strip()
             new_path = parts[2].strip()
             changes.append(
                 {
-                    'status': 'D',
-                    'path': old_path,
+                    "status": "D",
+                    "path": old_path,
                 }
             )
             changes.append(
                 {
-                    'status': 'A',
-                    'path': new_path,
+                    "status": "A",
+                    "path": new_path,
                 }
             )
             continue
 
         # Handle copy operations (status starts with 'C' followed by similarity percentage)
-        elif status.startswith('C') and len(parts) == 3:
+        elif status.startswith("C") and len(parts) == 3:
             # Copy: only add the new path (original remains)
             new_path = parts[2].strip()
             changes.append(
                 {
-                    'status': 'A',
-                    'path': new_path,
+                    "status": "A",
+                    "path": new_path,
                 }
             )
             continue
@@ -125,31 +124,31 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
         elif len(parts) == 2:
             path = parts[1].strip()
         else:
-            raise RuntimeError(f'unexpected_value_in_git_diff:{changed_files}')
+            raise RuntimeError(f"unexpected_value_in_git_diff:{changed_files}")
 
-        if status == '??':
-            status = 'A'
-        elif status == '*':
-            status = 'M'
+        if status == "??":
+            status = "A"
+        elif status == "*":
+            status = "M"
 
         # Check for valid single-character status codes
-        if status in {'M', 'A', 'D', 'U'}:
+        if status in {"M", "A", "D", "U"}:
             changes.append(
                 {
-                    'status': status,
-                    'path': path,
+                    "status": status,
+                    "path": path,
                 }
             )
         else:
-            raise RuntimeError(f'unexpected_status_in_git_diff:{changed_files}')
+            raise RuntimeError(f"unexpected_status_in_git_diff:{changed_files}")
 
     # Get untracked files
     untracked_files = run(
-        'git --no-pager ls-files --others --exclude-standard', repo_dir
+        "git --no-pager ls-files --others --exclude-standard", repo_dir
     ).splitlines()
     for path in untracked_files:
         if path:
-            changes.append({'status': 'A', 'path': path})
+            changes.append({"status": "A", "path": path})
 
     return changes
 
@@ -157,7 +156,7 @@ def get_changes_in_repo(repo_dir: str) -> list[dict[str, str]]:
 def get_git_changes(cwd: str) -> list[dict[str, str]]:
     git_dirs = {
         os.path.dirname(f)[2:]
-        for f in glob.glob('./*/.git', root_dir=cwd, recursive=True)
+        for f in glob.glob("./*/.git", root_dir=cwd, recursive=True)
     }
 
     # First try the workspace directory
@@ -168,7 +167,7 @@ def get_git_changes(cwd: str) -> list[dict[str, str]]:
         change
         for change in changes
         if next(
-            iter(git_dir for git_dir in git_dirs if change['path'].startswith(git_dir)),
+            iter(git_dir for git_dir in git_dirs if change["path"].startswith(git_dir)),
             None,
         )
         is None
@@ -178,17 +177,17 @@ def get_git_changes(cwd: str) -> list[dict[str, str]]:
     for git_dir in git_dirs:
         git_dir_changes = get_changes_in_repo(str(Path(cwd, git_dir)))
         for change in git_dir_changes:
-            change['path'] = git_dir + '/' + change['path']
+            change["path"] = git_dir + "/" + change["path"]
             changes.append(change)
 
-    changes.sort(key=lambda change: change['path'])
+    changes.sort(key=lambda change: change["path"])
 
     return changes
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     try:
         changes = get_git_changes(os.getcwd())
         print(json.dumps(changes))
     except Exception as e:
-        print(json.dumps({'error': str(e)}))
+        print(json.dumps({"error": str(e)}))

@@ -21,25 +21,25 @@ from openhands.events.event import FileEditSource, FileReadSource
 def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
     """Helper function to create a mock response with a tool call."""
     return ModelResponse(
-        id='mock-id',
+        id="mock-id",
         choices=[
             {
-                'message': {
-                    'tool_calls': [
+                "message": {
+                    "tool_calls": [
                         {
-                            'function': {
-                                'name': function_name,
-                                'arguments': json.dumps(arguments),
+                            "function": {
+                                "name": function_name,
+                                "arguments": json.dumps(arguments),
                             },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
+                            "id": "mock-tool-call-id",
+                            "type": "function",
                         }
                     ],
-                    'content': None,
-                    'role': 'assistant',
+                    "content": None,
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'tool_calls',
+                "index": 0,
+                "finish_reason": "tool_calls",
             }
         ],
     )
@@ -48,18 +48,18 @@ def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
 def test_execute_bash_valid():
     """Test execute_bash with valid arguments."""
     response = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false'}
+        "execute_bash", {"command": "ls", "is_input": "false"}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
-    assert actions[0].command == 'ls'
+    assert actions[0].command == "ls"
     assert actions[0].is_input is False
 
     # Test with timeout parameter
-    with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
+    with patch.object(CmdRunAction, "set_hard_timeout") as mock_set_hard_timeout:
         response_with_timeout = create_mock_response(
-            'execute_bash', {'command': 'ls', 'is_input': 'false', 'timeout': 30}
+            "execute_bash", {"command": "ls", "is_input": "false", "timeout": 30}
         )
         actions_with_timeout = response_to_actions(response_with_timeout)
 
@@ -68,13 +68,13 @@ def test_execute_bash_valid():
 
         assert len(actions_with_timeout) == 1
         assert isinstance(actions_with_timeout[0], CmdRunAction)
-        assert actions_with_timeout[0].command == 'ls'
+        assert actions_with_timeout[0].command == "ls"
         assert actions_with_timeout[0].is_input is False
 
 
 def test_execute_bash_missing_command():
     """Test execute_bash with missing command argument."""
-    response = create_mock_response('execute_bash', {'is_input': 'false'})
+    response = create_mock_response("execute_bash", {"is_input": "false"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
@@ -82,7 +82,7 @@ def test_execute_bash_missing_command():
 
 def test_execute_ipython_cell_valid():
     """Test execute_ipython_cell with valid arguments."""
-    response = create_mock_response('execute_ipython_cell', {'code': "print('hello')"})
+    response = create_mock_response("execute_ipython_cell", {"code": "print('hello')"})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], IPythonRunCellAction)
@@ -91,7 +91,7 @@ def test_execute_ipython_cell_valid():
 
 def test_execute_ipython_cell_missing_code():
     """Test execute_ipython_cell with missing code argument."""
-    response = create_mock_response('execute_ipython_cell', {})
+    response = create_mock_response("execute_ipython_cell", {})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -100,14 +100,14 @@ def test_execute_ipython_cell_missing_code():
 def test_edit_file_valid():
     """Test edit_file with valid arguments."""
     response = create_mock_response(
-        'edit_file',
-        {'path': '/path/to/file', 'content': 'file content', 'start': 1, 'end': 10},
+        "edit_file",
+        {"path": "/path/to/file", "content": "file content", "start": 1, "end": 10},
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileEditAction)
-    assert actions[0].path == '/path/to/file'
-    assert actions[0].content == 'file content'
+    assert actions[0].path == "/path/to/file"
+    assert actions[0].content == "file content"
     assert actions[0].start == 1
     assert actions[0].end == 10
 
@@ -115,13 +115,13 @@ def test_edit_file_valid():
 def test_edit_file_missing_required():
     """Test edit_file with missing required arguments."""
     # Missing path
-    response = create_mock_response('edit_file', {'content': 'content'})
+    response = create_mock_response("edit_file", {"content": "content"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)
 
     # Missing content
-    response = create_mock_response('edit_file', {'path': '/path/to/file'})
+    response = create_mock_response("edit_file", {"path": "/path/to/file"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "content"' in str(exc_info.value)
@@ -131,41 +131,41 @@ def test_str_replace_editor_valid():
     """Test str_replace_editor with valid arguments."""
     # Test view command
     response = create_mock_response(
-        'str_replace_editor', {'command': 'view', 'path': '/path/to/file'}
+        "str_replace_editor", {"command": "view", "path": "/path/to/file"}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileReadAction)
-    assert actions[0].path == '/path/to/file'
+    assert actions[0].path == "/path/to/file"
     assert actions[0].impl_source == FileReadSource.OH_ACI
 
     # Test other commands
     response = create_mock_response(
-        'str_replace_editor',
+        "str_replace_editor",
         {
-            'command': 'str_replace',
-            'path': '/path/to/file',
-            'old_str': 'old',
-            'new_str': 'new',
+            "command": "str_replace",
+            "path": "/path/to/file",
+            "old_str": "old",
+            "new_str": "new",
         },
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], FileEditAction)
-    assert actions[0].path == '/path/to/file'
+    assert actions[0].path == "/path/to/file"
     assert actions[0].impl_source == FileEditSource.OH_ACI
 
 
 def test_str_replace_editor_missing_required():
     """Test str_replace_editor with missing required arguments."""
     # Missing command
-    response = create_mock_response('str_replace_editor', {'path': '/path/to/file'})
+    response = create_mock_response("str_replace_editor", {"path": "/path/to/file"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "command"' in str(exc_info.value)
 
     # Missing path
-    response = create_mock_response('str_replace_editor', {'command': 'view'})
+    response = create_mock_response("str_replace_editor", {"command": "view"})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "path"' in str(exc_info.value)
@@ -173,7 +173,7 @@ def test_str_replace_editor_missing_required():
 
 def test_browser_valid():
     """Test browser with valid arguments."""
-    response = create_mock_response('browser', {'code': "click('button-1')"})
+    response = create_mock_response("browser", {"code": "click('button-1')"})
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseInteractiveAction)
@@ -183,7 +183,7 @@ def test_browser_valid():
 
 def test_browser_missing_code():
     """Test browser with missing code argument."""
-    response = create_mock_response('browser', {})
+    response = create_mock_response("browser", {})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -192,31 +192,31 @@ def test_browser_missing_code():
 def test_invalid_json_arguments():
     """Test handling of invalid JSON in arguments."""
     response = ModelResponse(
-        id='mock-id',
+        id="mock-id",
         choices=[
             {
-                'message': {
-                    'tool_calls': [
+                "message": {
+                    "tool_calls": [
                         {
-                            'function': {
-                                'name': 'execute_bash',
-                                'arguments': 'invalid json',
+                            "function": {
+                                "name": "execute_bash",
+                                "arguments": "invalid json",
                             },
-                            'id': 'mock-tool-call-id',
-                            'type': 'function',
+                            "id": "mock-tool-call-id",
+                            "type": "function",
                         }
                     ],
-                    'content': None,
-                    'role': 'assistant',
+                    "content": None,
+                    "role": "assistant",
                 },
-                'index': 0,
-                'finish_reason': 'tool_calls',
+                "index": 0,
+                "finish_reason": "tool_calls",
             }
         ],
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
-    assert 'Failed to parse tool call arguments' in str(exc_info.value)
+    assert "Failed to parse tool call arguments" in str(exc_info.value)
 
 
 def test_unexpected_argument_handling():
@@ -226,13 +226,13 @@ def test_unexpected_argument_handling():
     (old_str_prefix) causes a TypeError.
     """
     response = create_mock_response(
-        'str_replace_editor',
+        "str_replace_editor",
         {
-            'command': 'str_replace',
-            'path': '/test/file.py',
-            'old_str': 'def test():\n    pass',
-            'new_str': 'def test():\n    return True',
-            'old_str_prefix': 'some prefix',  # Unexpected argument
+            "command": "str_replace",
+            "path": "/test/file.py",
+            "old_str": "def test():\n    pass",
+            "new_str": "def test():\n    return True",
+            "old_str_prefix": "some prefix",  # Unexpected argument
         },
     )
 
@@ -241,5 +241,5 @@ def test_unexpected_argument_handling():
         response_to_actions(response)
 
     # Verify the error message mentions the unexpected argument
-    assert 'old_str_prefix' in str(exc_info.value)
-    assert 'Unexpected argument' in str(exc_info.value)
+    assert "old_str_prefix" in str(exc_info.value)
+    assert "Unexpected argument" in str(exc_info.value)

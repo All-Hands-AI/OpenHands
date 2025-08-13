@@ -12,7 +12,7 @@ class LogStream:
 
     def write(self, message: str) -> None:
         if message and not message.isspace():
-            logger.info(f'[Memory usage] {message.strip()}')
+            logger.info(f"[Memory usage] {message.strip()}")
 
     def flush(self) -> None:
         pass
@@ -45,15 +45,15 @@ class MemoryMonitor:
                     include_children=True,  # Include child processes
                     multiprocess=True,  # Monitor all processes
                     stream=self.log_stream,  # Redirect output to logger
-                    backend='psutil_pss',
+                    backend="psutil_pss",
                 )
-                logger.info(f'Memory usage across time: {mem_usage}')
+                logger.info(f"Memory usage across time: {mem_usage}")
             except Exception as e:
-                logger.error(f'Memory monitoring failed: {e}')
+                logger.error(f"Memory monitoring failed: {e}")
 
         self._monitoring_thread = threading.Thread(target=monitor_process, daemon=True)
         self._monitoring_thread.start()
-        logger.info('Memory monitoring started')
+        logger.info("Memory monitoring started")
 
     def stop_monitoring(self) -> None:
         """Stop monitoring memory usage."""
@@ -63,4 +63,4 @@ class MemoryMonitor:
         if self._monitoring_thread is not None:
             self._stop_monitoring.set()
             self._monitoring_thread = None
-            logger.info('Memory monitoring stopped')
+            logger.info("Memory monitoring stopped")

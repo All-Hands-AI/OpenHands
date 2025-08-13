@@ -8,7 +8,7 @@ To use third-party runtimes, install OpenHands with the third_party_runtimes ext
 
 Available third-party runtimes:
 - daytona: Daytona cloud development environment
-- e2b: E2B secure sandbox environment  
+- e2b: E2B secure sandbox environment
 - modal: Modal cloud compute platform
 - runloop: Runloop AI sandbox environment
 """

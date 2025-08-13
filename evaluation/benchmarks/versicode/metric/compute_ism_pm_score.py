@@ -1,5 +1,4 @@
-"""
-评测block的预测能力
+"""评测block的预测能力
 1、判断是否包含正确的函数名
 2、判断是否合法
 3、计算ISM，和PM
@@ -15,15 +14,14 @@ import tokenize
 
 def is_code_valid(code):
     try:
-        compile(code, '<string>', 'exec')
+        compile(code, "<string>", "exec")
         return True
     except Exception:
         return False
 
 
 def longest_common_prefix_between_lists_with_elements(list1, list2):
-    """
-    计算两个字符串列表中元素的最长前缀匹配长度
+    """计算两个字符串列表中元素的最长前缀匹配长度
     :param list1:
     :param list2:
     :return:
@@ -46,8 +44,7 @@ def longest_common_prefix_between_lists_with_elements(list1, list2):
 
 
 def get_token(ans_code: str, output_code: str):
-    """
-    对代码进行词法分析，分解成标识符，返回两个标识符列表
+    """对代码进行词法分析，分解成标识符，返回两个标识符列表
     :param ans_code:
     :param output_code:
     :return:
@@ -55,14 +52,14 @@ def get_token(ans_code: str, output_code: str):
     output_flag = True
     ans_flag = True
     try:
-        tokens_ans = tokenize.tokenize(io.BytesIO(ans_code.encode('utf-8')).readline)
+        tokens_ans = tokenize.tokenize(io.BytesIO(ans_code.encode("utf-8")).readline)
     except Exception:
         tokens_ans = ans_code.splitlines()
         ans_flag = False
 
     try:
         tokens_output = tokenize.tokenize(
-            io.BytesIO(output_code.encode('utf-8')).readline
+            io.BytesIO(output_code.encode("utf-8")).readline
         )
     except Exception:
         tokens_output = output_code.splitlines()
@@ -94,39 +91,37 @@ def get_token(ans_code: str, output_code: str):
 
 
 def get_token_per_line(code: str):
-    """
-    对每一行代码进行词法分析，记录每一行的标识符
+    """对每一行代码进行词法分析，记录每一行的标识符
     :param code: 代码字符串
     :return: 每一行的标识符列表组成的列表
     """
-    lines = code.split('\n')  # 将代码按行分割成列表
+    lines = code.split("\n")  # 将代码按行分割成列表
     identifiers_per_line = []  # 用于存储每一行的标识符列表的列表
 
     for line in lines:
-        tokens = tokenize.tokenize(io.BytesIO(line.encode('utf-8')).readline)
+        tokens = tokenize.tokenize(io.BytesIO(line.encode("utf-8")).readline)
         identifiers = []
         try:
             for token in tokens:
                 if token.type == tokenize.NAME:
                     identifiers.append(token.string)
         except Exception:
-            identifiers = line.split(' ')
+            identifiers = line.split(" ")
         identifiers_per_line.append(identifiers)
 
     return identifiers_per_line
 
 
 def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list:
-    """
-    计算ISM，返回一个有序的得分列表
+    """计算ISM，返回一个有序的得分列表
     :return:
     """
     score_list = []
     for code in model_output_list:
-        if '```python' in code:
-            code = code.replace('```python', '')
-            code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
+        if "```python" in code:
+            code = code.replace("```python", "")
+            code = code.replace("```", "")
+        if not re.search(rf"\b{re.escape(answer_name)}\b", code) or not is_code_valid(
             code
         ):
             score_list.append(0)
@@ -157,8 +152,7 @@ def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list
 def get_ISM_without_verification(
     answer_code: str, model_output_list: list, answer_name: str
 ) -> list:
-    """
-    计算ISM，返回一个有序的得分列表
+    """计算ISM，返回一个有序的得分列表
     :return:
     """
     score_list = []
@@ -190,8 +184,7 @@ def get_ISM_without_verification(
 
 
 def longest_common_prefix_with_lengths(list1, list2):
-    """
-    计算两个二维列表中每个子列表的最长前缀匹配长度，并记录拥有最长前缀匹配长度的两个子列表的长度
+    """计算两个二维列表中每个子列表的最长前缀匹配长度，并记录拥有最长前缀匹配长度的两个子列表的长度
     :param list1: 第一个二维列表
     :param list2: 第二个二维列表
     :return: 最长前缀匹配长度以及拥有最长前缀匹配长度的两个子列表的长度
@@ -216,16 +209,15 @@ def longest_common_prefix_with_lengths(list1, list2):
 
 
 def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
-    """
-    计算PM，返回一个有序的得分列表
+    """计算PM，返回一个有序的得分列表
     :return:
     """
     score_list = []
     for code in model_output_list:
-        if '```python' in code:
-            code = code.replace('```python', '')
-            code = code.replace('```', '')
-        if not re.search(rf'\b{re.escape(answer_name)}\b', code) or not is_code_valid(
+        if "```python" in code:
+            code = code.replace("```python", "")
+            code = code.replace("```", "")
+        if not re.search(rf"\b{re.escape(answer_name)}\b", code) or not is_code_valid(
             code
         ):
             # if answer_name not in code or is_code_valid(code) == False:
@@ -254,8 +246,7 @@ def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
 
 
 def get_score(score_list: list, k):
-    """
-    计算score@n,k
+    """计算score@n,k
     :param score_list:
     :param k:
     :return:
@@ -272,15 +263,15 @@ def get_score(score_list: list, k):
 
 
 k = 1
-task = 'block'  # block or line
-json_name = f'Versicode_{task}_completion.json'
+task = "block"  # block or line
+json_name = f"Versicode_{task}_completion.json"
 
-folder_path = f'../data/result_data/{task}_completion'
+folder_path = f"../data/result_data/{task}_completion"
 model_list = os.listdir(folder_path)
 
 for model in model_list:
     model_json_path = os.path.join(folder_path, model, json_name)
-    with open(model_json_path, 'r', encoding='utf-8') as fr:
+    with open(model_json_path, "r", encoding="utf-8") as fr:
         lodict = json.load(fr)
     data_dict = lodict
     data_list = data_dict
@@ -290,15 +281,15 @@ for model in model_list:
 
     for data in data_list:
         # model_output_list = eval(data['model_output'])
-        model_output_list = eval(data['model_output_clear'])[:1]
+        model_output_list = eval(data["model_output_clear"])[:1]
         temp_list = []
         for o in model_output_list:
-            temp_out = o.replace('```python', '')
-            temp_out = temp_out.replace('```', '')
+            temp_out = o.replace("```python", "")
+            temp_out = temp_out.replace("```", "")
             temp_list.append(temp_out)
         model_output_list = temp_list
-        answer_code = data['code']
-        answer_name = data['core_token']
+        answer_code = data["code"]
+        answer_name = data["core_token"]
         #
         # answer_code = data['new_code']  #code editing
         # answer_name = data['new_name']    #code editing
@@ -330,8 +321,8 @@ for model in model_list:
         # print(f"ISM分数：{ISM_score}")
         # print(f"PM分数：{PM_score}")
 
-    print(f'{model}, {task} completion task, ISM@{k} score: {sum_ISM / data_len}')
-    print(f'{model}, {task} completion task, PM@{k} score: {sum_PM / data_len}')
+    print(f"{model}, {task} completion task, ISM@{k} score: {sum_ISM / data_len}")
+    print(f"{model}, {task} completion task, PM@{k} score: {sum_PM / data_len}")
 
 
 # def get_token(ans_code:str, output_code:str):

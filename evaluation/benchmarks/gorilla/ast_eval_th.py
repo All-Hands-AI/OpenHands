@@ -44,7 +44,7 @@ def ast_parse(candidate):
     LANGUAGE = Language(tspython.language())
     parser = Parser(LANGUAGE)
 
-    candidate_tree = parser.parse(bytes(candidate, 'utf8')).root_node
+    candidate_tree = parser.parse(bytes(candidate, "utf8")).root_node
     return candidate_tree
 
 
@@ -54,7 +54,7 @@ def get_args(node):
         return []
     args_list = []
     for child in node.children[0].children[0].children[1].children:
-        if 'repo_or_dir' in child.text.decode() or 'model' in child.text.decode():
+        if "repo_or_dir" in child.text.decode() or "model" in child.text.decode():
             args_list.append(child.children[2].text)
     return args_list
 
@@ -85,19 +85,19 @@ def ast_check(candidate_subtree_list, base_tree_list):
 
 def process_response(question_id, output, api_database, qa_pairs, ast_database):
     # Index the "api_call" domain
-    output = output.split('api_call')
+    output = output.split("api_call")
     if len(output) == 1:
         return False, False
     else:
-        output = output[1].split('api_provider')[0]
-    if ':' not in output:
+        output = output[1].split("api_provider")[0]
+    if ":" not in output:
         start = 0
     else:
-        start = output.index(':')
-    if ')' not in output:
+        start = output.index(":")
+    if ")" not in output:
         end = -2
     else:
-        end = output.rindex(')')
+        end = output.rindex(")")
     api_call = output[start + 2 : end + 1]
 
     # Parse the api_call into AST tree
@@ -112,7 +112,7 @@ def process_response(question_id, output, api_database, qa_pairs, ast_database):
     # We index our reference api_call
     ref_api_call = api_database[database_index]
     # Check for functionality
-    if ref_api_call['domain'] == qa_pairs[question_id - 1]['domain']:
+    if ref_api_call["domain"] == qa_pairs[question_id - 1]["domain"]:
         return True, False
     else:
         return False, False

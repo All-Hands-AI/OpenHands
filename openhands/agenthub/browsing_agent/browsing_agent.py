@@ -24,10 +24,10 @@ from openhands.runtime.plugins import (
 )
 
 USE_NAV = (
-    os.environ.get('USE_NAV', 'true') == 'true'
+    os.environ.get("USE_NAV", "true") == "true"
 )  # only disable NAV actions when running webarena and miniwob benchmarks
 USE_CONCISE_ANSWER = (
-    os.environ.get('USE_CONCISE_ANSWER', 'false') == 'true'
+    os.environ.get("USE_CONCISE_ANSWER", "false") == "true"
 )  # only return concise answer when running webarena and miniwob benchmarks
 
 if not USE_NAV and USE_CONCISE_ANSWER:
@@ -37,7 +37,7 @@ else:
 
 
 def get_error_prefix(last_browser_action: str) -> str:
-    return f'IMPORTANT! Last action is incorrect:\n{last_browser_action}\nThink again with the current observation of the page.\n'
+    return f"IMPORTANT! Last action is incorrect:\n{last_browser_action}\nThink again with the current observation of the page.\n"
 
 
 def get_system_message(goal: str, action_space: str) -> str:
@@ -92,7 +92,7 @@ In order to accomplish my goal I need to click on the button with bid 12
 
 
 class BrowsingAgent(Agent):
-    VERSION = '1.0'
+    VERSION = "1.0"
     """
     An agent that interacts with the browser.
     """
@@ -113,9 +113,9 @@ class BrowsingAgent(Agent):
         super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
-        action_subsets = ['chat', 'bid']
+        action_subsets = ["chat", "bid"]
         if USE_NAV:
-            action_subsets.append('nav')
+            action_subsets.append("nav")
         self.action_space = HighLevelActionSet(
             subsets=action_subsets,
             strict=False,  # less strict on the parsing of the actions
@@ -144,9 +144,9 @@ class BrowsingAgent(Agent):
         """
         messages: list[Message] = []
         prev_actions = []
-        cur_url = ''
-        cur_axtree_txt = ''
-        error_prefix = ''
+        cur_url = ""
+        cur_axtree_txt = ""
+        error_prefix = ""
         last_obs = None
         last_action = None
 
@@ -154,7 +154,7 @@ class BrowsingAgent(Agent):
             # for webarena and miniwob++ eval, we need to retrieve the initial observation already in browser env
             # initialize and retrieve the first observation by issuing an noop OP
             # For non-benchmark browsing, the browser env starts with a blank page, and the agent is expected to first navigate to desired websites
-            return BrowseInteractiveAction(browser_actions='noop()')
+            return BrowseInteractiveAction(browser_actions="noop()")
 
         for event in state.view:
             if isinstance(event, BrowseInteractiveAction):
@@ -162,14 +162,14 @@ class BrowsingAgent(Agent):
                 last_action = event
             elif isinstance(event, MessageAction) and event.source == EventSource.AGENT:
                 # agent has responded, task finished.
-                return AgentFinishAction(outputs={'content': event.content})
+                return AgentFinishAction(outputs={"content": event.content})
             elif isinstance(event, Observation):
                 last_obs = event
 
         if EVAL_MODE:
             prev_actions = prev_actions[1:]  # remove the first noop action
 
-        prev_action_str = '\n'.join(prev_actions)
+        prev_action_str = "\n".join(prev_actions)
         # if the final BrowserInteractiveAction exec BrowserGym's send_msg_to_user,
         # we should also send a message back to the user in OpenHands and call it a day
         if (
@@ -184,7 +184,7 @@ class BrowsingAgent(Agent):
                 error_prefix = get_error_prefix(last_obs.last_browser_action)
                 self.error_accumulator += 1
                 if self.error_accumulator > 5:
-                    return MessageAction('Too many errors encountered. Task failed.')
+                    return MessageAction("Too many errors encountered. Task failed.")
 
             cur_url = last_obs.url
 
@@ -197,27 +197,27 @@ class BrowsingAgent(Agent):
                 )
             except Exception as e:
                 logger.error(
-                    'Error when trying to process the accessibility tree: %s', e
+                    "Error when trying to process the accessibility tree: %s", e
                 )
-                return MessageAction('Error encountered when browsing.')
+                return MessageAction("Error encountered when browsing.")
 
         goal, _ = state.get_current_user_intent()
 
         if goal is None:
-            goal = state.inputs['task']
+            goal = state.inputs["task"]
 
         system_msg = get_system_message(
             goal,
             self.action_space.describe(with_long_description=False, with_examples=True),
         )
 
-        messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
+        messages.append(Message(role="system", content=[TextContent(text=system_msg)]))
 
         prompt = get_prompt(error_prefix, cur_url, cur_axtree_txt, prev_action_str)
-        messages.append(Message(role='user', content=[TextContent(text=prompt)]))
+        messages.append(Message(role="user", content=[TextContent(text=prompt)]))
 
         response = self.llm.completion(
             messages=self.llm.format_messages_for_llm(messages),
-            stop=[')```', ')\n```'],
+            stop=[")```", ")\n```"],
         )
         return self.response_parser.parse(response)

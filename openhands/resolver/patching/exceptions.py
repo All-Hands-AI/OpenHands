@@ -6,7 +6,7 @@ class HunkException(PatchingException):
     def __init__(self, msg: str, hunk: int | None = None) -> None:
         self.hunk = hunk
         if hunk is not None:
-            super().__init__('{msg}, in hunk #{n}'.format(msg=msg, n=hunk))
+            super().__init__("{msg}, in hunk #{n}".format(msg=msg, n=hunk))
         else:
             super().__init__(msg)
 

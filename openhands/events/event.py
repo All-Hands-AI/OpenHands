@@ -7,28 +7,28 @@ from openhands.llm.metrics import Metrics
 
 
 class EventSource(str, Enum):
-    AGENT = 'agent'
-    USER = 'user'
-    ENVIRONMENT = 'environment'
+    AGENT = "agent"
+    USER = "user"
+    ENVIRONMENT = "environment"
 
 
 class FileEditSource(str, Enum):
-    LLM_BASED_EDIT = 'llm_based_edit'
-    OH_ACI = 'oh_aci'  # openhands-aci
+    LLM_BASED_EDIT = "llm_based_edit"
+    OH_ACI = "oh_aci"  # openhands-aci
 
 
 class FileReadSource(str, Enum):
-    OH_ACI = 'oh_aci'  # openhands-aci
-    DEFAULT = 'default'
+    OH_ACI = "oh_aci"  # openhands-aci
+    DEFAULT = "default"
 
 
 class RecallType(str, Enum):
     """The type of information that can be retrieved from microagents."""
 
-    WORKSPACE_CONTEXT = 'workspace_context'
+    WORKSPACE_CONTEXT = "workspace_context"
     """Workspace context (repo instructions, runtime, etc.)"""
 
-    KNOWLEDGE = 'knowledge'
+    KNOWLEDGE = "knowledge"
     """A knowledge microagent."""
 
 
@@ -38,22 +38,22 @@ class Event:
 
     @property
     def message(self) -> str | None:
-        if hasattr(self, '_message'):
-            msg = getattr(self, '_message')
+        if hasattr(self, "_message"):
+            msg = getattr(self, "_message")
             return str(msg) if msg is not None else None
-        return ''
+        return ""
 
     @property
     def id(self) -> int:
-        if hasattr(self, '_id'):
-            id_val = getattr(self, '_id')
+        if hasattr(self, "_id"):
+            id_val = getattr(self, "_id")
             return int(id_val) if id_val is not None else Event.INVALID_ID
         return Event.INVALID_ID
 
     @property
     def timestamp(self) -> str | None:
-        if hasattr(self, '_timestamp') and isinstance(self._timestamp, str):
-            ts = getattr(self, '_timestamp')
+        if hasattr(self, "_timestamp") and isinstance(self._timestamp, str):
+            ts = getattr(self, "_timestamp")
             return str(ts) if ts is not None else None
         return None
 
@@ -64,22 +64,22 @@ class Event:
 
     @property
     def source(self) -> EventSource | None:
-        if hasattr(self, '_source'):
-            src = getattr(self, '_source')
+        if hasattr(self, "_source"):
+            src = getattr(self, "_source")
             return EventSource(src) if src is not None else None
         return None
 
     @property
     def cause(self) -> int | None:
-        if hasattr(self, '_cause'):
-            cause_val = getattr(self, '_cause')
+        if hasattr(self, "_cause"):
+            cause_val = getattr(self, "_cause")
             return int(cause_val) if cause_val is not None else None
         return None
 
     @property
     def timeout(self) -> float | None:
-        if hasattr(self, '_timeout'):
-            timeout_val = getattr(self, '_timeout')
+        if hasattr(self, "_timeout"):
+            timeout_val = getattr(self, "_timeout")
             return float(timeout_val) if timeout_val is not None else None
         return None
 
@@ -94,20 +94,20 @@ class Event:
             from openhands.core.logger import openhands_logger as logger
 
             logger.warning(
-                'Timeout greater than 600 seconds may not be supported by '
-                'the runtime. Consider setting a lower timeout.'
+                "Timeout greater than 600 seconds may not be supported by "
+                "the runtime. Consider setting a lower timeout."
             )
 
         # Check if .blocking is an attribute of the event
-        if hasattr(self, 'blocking'):
+        if hasattr(self, "blocking"):
             # .blocking needs to be set to True if .timeout is set
             self.blocking = blocking
 
     # optional metadata, LLM call cost of the edit
     @property
     def llm_metrics(self) -> Metrics | None:
-        if hasattr(self, '_llm_metrics'):
-            metrics = getattr(self, '_llm_metrics')
+        if hasattr(self, "_llm_metrics"):
+            metrics = getattr(self, "_llm_metrics")
             return metrics if isinstance(metrics, Metrics) else None
         return None
 
@@ -118,8 +118,8 @@ class Event:
     # optional field, metadata about the tool call, if the event has a tool call
     @property
     def tool_call_metadata(self) -> ToolCallMetadata | None:
-        if hasattr(self, '_tool_call_metadata'):
-            metadata = getattr(self, '_tool_call_metadata')
+        if hasattr(self, "_tool_call_metadata"):
+            metadata = getattr(self, "_tool_call_metadata")
             return metadata if isinstance(metadata, ToolCallMetadata) else None
         return None
 
@@ -130,7 +130,7 @@ class Event:
     # optional field, the id of the response from the LLM
     @property
     def response_id(self) -> str | None:
-        if hasattr(self, '_response_id'):
+        if hasattr(self, "_response_id"):
             return self._response_id  # type: ignore[attr-defined]
         return None
 

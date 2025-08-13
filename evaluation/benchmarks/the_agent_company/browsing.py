@@ -24,15 +24,13 @@ class ActionType(Enum):
 
 @dataclass
 class Selector:
-    """
-    Represents either a direct anchor ID or a descriptive selector
-    """
+    """Represents either a direct anchor ID or a descriptive selector"""
 
     value: str
     is_anchor: bool = False
 
     def __str__(self) -> str:
-        return f'{self.value}'
+        return f"{self.value}"
 
 
 @dataclass
@@ -67,7 +65,7 @@ class NoopAction(BrowserAction):
         self.milliseconds = milliseconds
 
     def to_instruction(self) -> str:
-        return f'noop({self.milliseconds})'
+        return f"noop({self.milliseconds})"
 
 
 @dataclass
@@ -106,17 +104,17 @@ def parse_content_to_elements(content: str) -> dict[str, str]:
     current_anchor = None
     description_lines = []
 
-    for line in content.split('\n'):
+    for line in content.split("\n"):
         line = line.strip()
         if not line:
             continue
 
         # Check for anchor line
-        anchor_match = re.match(r'\[(\d+)\](.*)', line)
+        anchor_match = re.match(r"\[(\d+)\](.*)", line)
         if anchor_match:
             # Save previous element if it exists
             if current_anchor and description_lines:
-                elements[current_anchor] = ' '.join(description_lines)
+                elements[current_anchor] = " ".join(description_lines)
 
             # Start new element
             current_anchor = anchor_match.group(1)
@@ -128,7 +126,7 @@ def parse_content_to_elements(content: str) -> dict[str, str]:
 
     # Save last element
     if current_anchor and description_lines:
-        elements[current_anchor] = ' '.join(description_lines)
+        elements[current_anchor] = " ".join(description_lines)
 
     return elements
 
@@ -149,8 +147,7 @@ def find_matching_anchor(content: str, selector: str) -> str | None:
 
 
 def resolve_action(action: BrowserAction, content: str) -> BrowserAction:
-    """
-    Resolve any descriptive selectors in the action to anchor IDs based on the content.
+    """Resolve any descriptive selectors in the action to anchor IDs based on the content.
     Returns a new action with resolved selectors.
     """
     if isinstance(action, (InputAction, ClickAction)):
@@ -163,7 +160,7 @@ def resolve_action(action: BrowserAction, content: str) -> BrowserAction:
                 else:
                     return ClickAction(new_selector)
             else:
-                logger.error(f'NO MATCH FOUND FOR SELECTOR, {action.selector}')
+                logger.error(f"NO MATCH FOUND FOR SELECTOR, {action.selector}")
                 return None
     return action
 
@@ -172,40 +169,39 @@ def pre_login(
     runtime: Runtime,
     services: list[str],
     save_screenshots=True,
-    screenshots_dir='screenshots',
+    screenshots_dir="screenshots",
 ):
-    """
-    Logs in to all the websites that are needed for the evaluation.
+    """Logs in to all the websites that are needed for the evaluation.
     Once logged in, the sessions would be cached in the browser, so OpenHands
     agent doesn't need to log in to these websites again.
     """
     owncloud_login_actions = [
-        GotoAction('http://the-agent-company.com:8092'),
+        GotoAction("http://the-agent-company.com:8092"),
         NoopAction(1000),
-        InputAction("textbox '', clickable, focused, required", 'theagentcompany'),
+        InputAction("textbox '', clickable, focused, required", "theagentcompany"),
         NoopAction(1000),
-        InputAction("textbox '', clickable, required", 'theagentcompany'),
+        InputAction("textbox '', clickable, required", "theagentcompany"),
         NoopAction(1000),
         ClickAction("button '', clickable"),
         NoopAction(1000),
     ]
 
     rocketchat_login_actions = [
-        GotoAction('http://the-agent-company.com:3000'),
+        GotoAction("http://the-agent-company.com:3000"),
         NoopAction(1000),
-        InputAction("textbox '', clickable, focused", 'theagentcompany'),
+        InputAction("textbox '', clickable, focused", "theagentcompany"),
         NoopAction(1000),
-        InputAction("textbox '', clickable", 'theagentcompany'),
+        InputAction("textbox '', clickable", "theagentcompany"),
         NoopAction(1000),
         ClickAction("button 'Login', clickable"),
     ]
 
     gitlab_login_actions = [
-        GotoAction('http://the-agent-company.com:8929/users/sign_in'),
+        GotoAction("http://the-agent-company.com:8929/users/sign_in"),
         NoopAction(1000),
-        InputAction("textbox 'Username or primary email'", 'root'),
+        InputAction("textbox 'Username or primary email'", "root"),
         NoopAction(1000),
-        InputAction("textbox 'Password'", 'theagentcompany'),
+        InputAction("textbox 'Password'", "theagentcompany"),
         NoopAction(1000),
         ClickAction("button 'Sign in', clickable"),
     ]
@@ -213,25 +209,25 @@ def pre_login(
     # devnote: plane reset is not stable, and sometimes it fails to launch
     # in which case the login action will fail, and then we would skip the task
     plane_login_actions = [
-        GotoAction('http://the-agent-company.com:8091'),
+        GotoAction("http://the-agent-company.com:8091"),
         NoopAction(1000),
         InputAction(
             "textbox 'Email', clickable, focused",
-            'agent@company.com',
+            "agent@company.com",
         ),
         NoopAction(1000),
         ClickAction("button 'Continue'"),
         NoopAction(1000),
-        InputAction("textbox 'Enter password', clickable", 'theagentcompany'),
+        InputAction("textbox 'Enter password', clickable", "theagentcompany"),
         NoopAction(1000),
         ClickAction("button 'Go to workspace'"),
     ]
 
     all_login_actions = [
-        ('owncloud', owncloud_login_actions),
-        ('rocketchat', rocketchat_login_actions),
-        ('gitlab', gitlab_login_actions),
-        ('plane', plane_login_actions),
+        ("owncloud", owncloud_login_actions),
+        ("rocketchat", rocketchat_login_actions),
+        ("gitlab", gitlab_login_actions),
+        ("plane", plane_login_actions),
     ]
 
     for website_name, login_actions in all_login_actions:
@@ -253,9 +249,9 @@ def pre_login(
                 action = resolve_action(action, obs.get_agent_obs_text())
 
             if not action:
-                logger.error(f'FAILED TO RESOLVE ACTION, {action}')
+                logger.error(f"FAILED TO RESOLVE ACTION, {action}")
                 raise Exception(
-                    'FAILED TO RESOLVE ACTION, maybe the service is not available'
+                    "FAILED TO RESOLVE ACTION, maybe the service is not available"
                 )
 
             # Convert the action to an instruction string
@@ -263,13 +259,13 @@ def pre_login(
 
             browser_action = BrowseInteractiveAction(browser_actions=instruction)
             browser_action.set_hard_timeout(10000)
-            logger.info(browser_action, extra={'msg_type': 'ACTION'})
+            logger.info(browser_action, extra={"msg_type": "ACTION"})
             obs: BrowserOutputObservation = runtime.run_action(browser_action)
-            logger.debug(obs, extra={'msg_type': 'OBSERVATION'})
+            logger.debug(obs, extra={"msg_type": "OBSERVATION"})
             if save_screenshots:
                 image_data = base64.b64decode(
-                    obs.screenshot.replace('data:image/png;base64,', '')
+                    obs.screenshot.replace("data:image/png;base64,", "")
                 )
-                with open(os.path.join(directory, f'{image_id}.png'), 'wb') as file:
+                with open(os.path.join(directory, f"{image_id}.png"), "wb") as file:
                     file.write(image_data)
                     image_id += 1

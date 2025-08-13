@@ -24,93 +24,93 @@ class _StorageTest(ABC):
 
     def get_store(self) -> FileStore:
         try:
-            self.store.delete('')
+            self.store.delete("")
         except Exception:
             pass
         return self.store
 
     def test_basic_fileops(self):
-        filename = 'test.txt'
+        filename = "test.txt"
         store = self.get_store()
-        store.write(filename, 'Hello, world!')
-        self.assertEqual(store.read(filename), 'Hello, world!')
-        self.assertEqual(store.list(''), [filename])
+        store.write(filename, "Hello, world!")
+        self.assertEqual(store.read(filename), "Hello, world!")
+        self.assertEqual(store.list(""), [filename])
         store.delete(filename)
         with self.assertRaises(FileNotFoundError):
             store.read(filename)
 
     def test_complex_path_fileops(self):
-        filenames = ['foo.bar.baz', './foo/bar/baz', 'foo/bar/baz', '/foo/bar/baz']
+        filenames = ["foo.bar.baz", "./foo/bar/baz", "foo/bar/baz", "/foo/bar/baz"]
         store = self.get_store()
         for filename in filenames:
-            store.write(filename, 'Hello, world!')
-            self.assertEqual(store.read(filename), 'Hello, world!')
+            store.write(filename, "Hello, world!")
+            self.assertEqual(store.read(filename), "Hello, world!")
             store.delete(filename)
             with self.assertRaises(FileNotFoundError):
                 store.read(filename)
 
     def test_list(self):
         store = self.get_store()
-        store.write('foo.txt', 'Hello, world!')
-        store.write('bar.txt', 'Hello, world!')
-        store.write('baz.txt', 'Hello, world!')
-        file_names = store.list('')
+        store.write("foo.txt", "Hello, world!")
+        store.write("bar.txt", "Hello, world!")
+        store.write("baz.txt", "Hello, world!")
+        file_names = store.list("")
         file_names.sort()
-        self.assertEqual(file_names, ['bar.txt', 'baz.txt', 'foo.txt'])
-        store.delete('foo.txt')
-        store.delete('bar.txt')
-        store.delete('baz.txt')
+        self.assertEqual(file_names, ["bar.txt", "baz.txt", "foo.txt"])
+        store.delete("foo.txt")
+        store.delete("bar.txt")
+        store.delete("baz.txt")
 
     def test_deep_list(self):
         store = self.get_store()
-        store.write('foo/bar/baz.txt', 'Hello, world!')
-        store.write('foo/bar/qux.txt', 'Hello, world!')
-        store.write('foo/bar/quux.txt', 'Hello, world!')
-        self.assertEqual(store.list(''), ['foo/'])
-        self.assertEqual(store.list('foo'), ['foo/bar/'])
-        file_names = store.list('foo/bar')
+        store.write("foo/bar/baz.txt", "Hello, world!")
+        store.write("foo/bar/qux.txt", "Hello, world!")
+        store.write("foo/bar/quux.txt", "Hello, world!")
+        self.assertEqual(store.list(""), ["foo/"])
+        self.assertEqual(store.list("foo"), ["foo/bar/"])
+        file_names = store.list("foo/bar")
         file_names.sort()
         self.assertEqual(
-            file_names, ['foo/bar/baz.txt', 'foo/bar/quux.txt', 'foo/bar/qux.txt']
+            file_names, ["foo/bar/baz.txt", "foo/bar/quux.txt", "foo/bar/qux.txt"]
         )
-        store.delete('foo/bar/baz.txt')
-        store.delete('foo/bar/qux.txt')
-        store.delete('foo/bar/quux.txt')
+        store.delete("foo/bar/baz.txt")
+        store.delete("foo/bar/qux.txt")
+        store.delete("foo/bar/quux.txt")
 
     def test_directory_deletion(self):
         store = self.get_store()
         # Create a directory structure
-        store.write('foo/bar/baz.txt', 'Hello, world!')
-        store.write('foo/bar/qux.txt', 'Hello, world!')
-        store.write('foo/other.txt', 'Hello, world!')
-        store.write('foo/bar/subdir/file.txt', 'Hello, world!')
+        store.write("foo/bar/baz.txt", "Hello, world!")
+        store.write("foo/bar/qux.txt", "Hello, world!")
+        store.write("foo/other.txt", "Hello, world!")
+        store.write("foo/bar/subdir/file.txt", "Hello, world!")
 
         # Verify initial structure
-        self.assertEqual(store.list(''), ['foo/'])
-        self.assertEqual(sorted(store.list('foo')), ['foo/bar/', 'foo/other.txt'])
+        self.assertEqual(store.list(""), ["foo/"])
+        self.assertEqual(sorted(store.list("foo")), ["foo/bar/", "foo/other.txt"])
         self.assertEqual(
-            sorted(store.list('foo/bar')),
-            ['foo/bar/baz.txt', 'foo/bar/qux.txt', 'foo/bar/subdir/'],
+            sorted(store.list("foo/bar")),
+            ["foo/bar/baz.txt", "foo/bar/qux.txt", "foo/bar/subdir/"],
         )
 
         # Delete a directory
-        store.delete('foo/bar')
+        store.delete("foo/bar")
 
         # Verify directory and its contents are gone, but other files remain
-        self.assertEqual(store.list(''), ['foo/'])
-        self.assertEqual(store.list('foo'), ['foo/other.txt'])
+        self.assertEqual(store.list(""), ["foo/"])
+        self.assertEqual(store.list("foo"), ["foo/other.txt"])
 
         # Delete root directory
-        store.delete('foo')
+        store.delete("foo")
 
         # Verify everything is gone
-        self.assertEqual(store.list(''), [])
+        self.assertEqual(store.list(""), [])
 
 
 class TestLocalFileStore(TestCase, _StorageTest):
     def setUp(self):
         # Create a unique temporary directory for each test instance
-        self.temp_dir = tempfile.mkdtemp(prefix='openhands_test_')
+        self.temp_dir = tempfile.mkdtemp(prefix="openhands_test_")
         self.store = LocalFileStore(self.temp_dir)
 
     def tearDown(self):
@@ -119,7 +119,7 @@ class TestLocalFileStore(TestCase, _StorageTest):
             shutil.rmtree(self.temp_dir, ignore_errors=True)
         except Exception as e:
             logging.warning(
-                f'Failed to remove temporary directory {self.temp_dir}: {e}'
+                f"Failed to remove temporary directory {self.temp_dir}: {e}"
             )
 
 
@@ -130,21 +130,21 @@ class TestInMemoryFileStore(TestCase, _StorageTest):
 
 class TestGoogleCloudFileStore(TestCase, _StorageTest):
     def setUp(self):
-        with patch('google.cloud.storage.Client', _MockGoogleCloudClient):
-            self.store = GoogleCloudFileStore('dear-liza')
+        with patch("google.cloud.storage.Client", _MockGoogleCloudClient):
+            self.store = GoogleCloudFileStore("dear-liza")
 
 
 class TestS3FileStore(TestCase, _StorageTest):
     def setUp(self):
-        with patch('boto3.client', lambda service, **kwargs: _MockS3Client()):
-            self.store = S3FileStore('dear-liza')
+        with patch("boto3.client", lambda service, **kwargs: _MockS3Client()):
+            self.store = S3FileStore("dear-liza")
 
 
 # I would have liked to use cloud-storage-mocker here but the python versions were incompatible :(
 # If we write tests for the S3 storage class I would definitely recommend we use moto.
 class _MockGoogleCloudClient:
     def bucket(self, name: str):
-        assert name == 'dear-liza'
+        assert name == "dear-liza"
         return _MockGoogleCloudBucket()
 
 
@@ -157,7 +157,7 @@ class _MockGoogleCloudBucket:
 
     def list_blobs(self, prefix: str | None = None) -> list[_MockGoogleCloudBlob]:
         blobs = list(self.blobs_by_path.values())
-        if prefix and prefix != '/':
+        if prefix and prefix != "/":
             blobs = [blob for blob in blobs if blob.name.startswith(prefix)]
         return blobs
 
@@ -169,16 +169,16 @@ class _MockGoogleCloudBlob:
     content: str | bytes | None = None
 
     def open(self, op: str):
-        if op == 'r':
+        if op == "r":
             if self.content is None:
                 raise FileNotFoundError()
             return StringIO(self.content)
-        if op == 'w':
+        if op == "w":
             return _MockGoogleCloudBlobWriter(self)
 
     def delete(self):
         if self.name not in self.bucket.blobs_by_path:
-            raise NotFound('Blob not found')
+            raise NotFound("Blob not found")
         del self.bucket.blobs_by_path[self.name]
 
 
@@ -215,57 +215,57 @@ class _MockS3Client:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
                 {
-                    'Error': {
-                        'Code': 'NoSuchBucket',
-                        'Message': f"The bucket '{Bucket}' does not exist",
+                    "Error": {
+                        "Code": "NoSuchBucket",
+                        "Message": f"The bucket '{Bucket}' does not exist",
                     }
                 },
-                'GetObject',
+                "GetObject",
             )
         if Key not in self.objects_by_bucket[Bucket]:
             raise botocore.exceptions.ClientError(
                 {
-                    'Error': {
-                        'Code': 'NoSuchKey',
-                        'Message': f"The specified key '{Key}' does not exist",
+                    "Error": {
+                        "Code": "NoSuchKey",
+                        "Message": f"The specified key '{Key}' does not exist",
                     }
                 },
-                'GetObject',
+                "GetObject",
             )
         content = self.objects_by_bucket[Bucket][Key].content
         if isinstance(content, bytes):
-            return {'Body': BytesIO(content)}
-        return {'Body': StringIO(content)}
+            return {"Body": BytesIO(content)}
+        return {"Body": StringIO(content)}
 
-    def list_objects_v2(self, Bucket: str, Prefix: str = '') -> dict:
+    def list_objects_v2(self, Bucket: str, Prefix: str = "") -> dict:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
                 {
-                    'Error': {
-                        'Code': 'NoSuchBucket',
-                        'Message': f"The bucket '{Bucket}' does not exist",
+                    "Error": {
+                        "Code": "NoSuchBucket",
+                        "Message": f"The bucket '{Bucket}' does not exist",
                     }
                 },
-                'ListObjectsV2',
+                "ListObjectsV2",
             )
         objects = self.objects_by_bucket[Bucket]
         contents = [
-            {'Key': key}
+            {"Key": key}
             for key in objects.keys()
             if not Prefix or key.startswith(Prefix)
         ]
-        return {'Contents': contents} if contents else {}
+        return {"Contents": contents} if contents else {}
 
     def delete_object(self, Bucket: str, Key: str) -> None:
         if Bucket not in self.objects_by_bucket:
             raise botocore.exceptions.ClientError(
                 {
-                    'Error': {
-                        'Code': 'NoSuchBucket',
-                        'Message': f"The bucket '{Bucket}' does not exist",
+                    "Error": {
+                        "Code": "NoSuchBucket",
+                        "Message": f"The bucket '{Bucket}' does not exist",
                     }
                 },
-                'DeleteObject',
+                "DeleteObject",
             )
         self.objects_by_bucket[Bucket].pop(Key, None)
 

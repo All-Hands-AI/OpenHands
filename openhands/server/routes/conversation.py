@@ -17,11 +17,11 @@ from openhands.server.utils import get_conversation, get_conversation_metadata
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 app = APIRouter(
-    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
+    prefix="/api/conversations/{conversation_id}", dependencies=get_dependencies()
 )
 
 
-@app.get('/config')
+@app.get("/config")
 async def get_remote_runtime_config(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -30,17 +30,17 @@ async def get_remote_runtime_config(
     Currently, this is the session ID and runtime ID (if available).
     """
     runtime = conversation.runtime
-    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
-    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    runtime_id = runtime.runtime_id if hasattr(runtime, "runtime_id") else None
+    session_id = runtime.sid if hasattr(runtime, "sid") else None
     return JSONResponse(
         content={
-            'runtime_id': runtime_id,
-            'session_id': session_id,
+            "runtime_id": runtime_id,
+            "session_id": session_id,
         }
     )
 
 
-@app.get('/vscode-url')
+@app.get("/vscode-url")
 async def get_vscode_url(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -56,23 +56,23 @@ async def get_vscode_url(
     """
     try:
         runtime: Runtime = conversation.runtime
-        logger.debug(f'Runtime type: {type(runtime)}')
-        logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
+        logger.debug(f"Runtime type: {type(runtime)}")
+        logger.debug(f"Runtime VSCode URL: {runtime.vscode_url}")
         return JSONResponse(
-            status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url}
+            status_code=status.HTTP_200_OK, content={"vscode_url": runtime.vscode_url}
         )
     except Exception as e:
-        logger.error(f'Error getting VSCode URL: {e}')
+        logger.error(f"Error getting VSCode URL: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
-                'vscode_url': None,
-                'error': f'Error getting VSCode URL: {e}',
+                "vscode_url": None,
+                "error": f"Error getting VSCode URL: {e}",
             },
         )
 
 
-@app.get('/web-hosts')
+@app.get("/web-hosts")
 async def get_hosts(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -88,21 +88,21 @@ async def get_hosts(
     """
     try:
         runtime: Runtime = conversation.runtime
-        logger.debug(f'Runtime type: {type(runtime)}')
-        logger.debug(f'Runtime hosts: {runtime.web_hosts}')
-        return JSONResponse(status_code=200, content={'hosts': runtime.web_hosts})
+        logger.debug(f"Runtime type: {type(runtime)}")
+        logger.debug(f"Runtime hosts: {runtime.web_hosts}")
+        return JSONResponse(status_code=200, content={"hosts": runtime.web_hosts})
     except Exception as e:
-        logger.error(f'Error getting runtime hosts: {e}')
+        logger.error(f"Error getting runtime hosts: {e}")
         return JSONResponse(
             status_code=500,
             content={
-                'hosts': None,
-                'error': f'Error getting runtime hosts: {e}',
+                "hosts": None,
+                "error": f"Error getting runtime hosts: {e}",
             },
         )
 
 
-@app.get('/events')
+@app.get("/events")
 async def search_events(
     conversation_id: str,
     start_id: int = 0,
@@ -114,6 +114,7 @@ async def search_events(
     user_id: str | None = Depends(get_user_id),
 ):
     """Search through the event stream with filtering and pagination.
+
     Args:
         conversation_id: The conversation ID
         start_id: Starting ID in the event stream. Defaults to 0
@@ -123,6 +124,7 @@ async def search_events(
         limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
         metadata: Conversation metadata (injected by dependency)
         user_id: User ID (injected by dependency)
+
     Returns:
         dict: Dictionary containing:
             - events: List of matching events
@@ -133,7 +135,7 @@ async def search_events(
     """
     if limit < 0 or limit > 100:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail='Invalid limit'
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid limit"
         )
 
     # Create an event store to access the events directly
@@ -161,18 +163,18 @@ async def search_events(
 
     events_json = [event_to_dict(event) for event in events]
     return {
-        'events': events_json,
-        'has_more': has_more,
+        "events": events_json,
+        "has_more": has_more,
     }
 
 
-@app.post('/events')
+@app.post("/events")
 async def add_event(
     request: Request, conversation: ServerConversation = Depends(get_conversation)
 ):
     data = await request.json()
     await conversation_manager.send_event_to_conversation(conversation.sid, data)
-    return JSONResponse({'success': True})
+    return JSONResponse({"success": True})
 
 
 class MicroagentResponse(BaseModel):
@@ -186,7 +188,7 @@ class MicroagentResponse(BaseModel):
     tools: list[str] = []
 
 
-@app.get('/microagents')
+@app.get("/microagents")
 async def get_microagents(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> JSONResponse:
@@ -204,7 +206,7 @@ async def get_microagents(
         if not agent_session:
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
-                content={'error': 'Agent session not found for this conversation'},
+                content={"error": "Agent session not found for this conversation"},
             )
 
         # Access the memory to get the microagents
@@ -213,7 +215,7 @@ async def get_microagents(
             return JSONResponse(
                 status_code=status.HTTP_404_NOT_FOUND,
                 content={
-                    'error': 'Memory is not yet initialized for this conversation'
+                    "error": "Memory is not yet initialized for this conversation"
                 },
             )
 
@@ -225,7 +227,7 @@ async def get_microagents(
             microagents.append(
                 MicroagentResponse(
                     name=name,
-                    type='repo',
+                    type="repo",
                     content=r_agent.content,
                     triggers=[],
                     inputs=r_agent.metadata.inputs,
@@ -243,7 +245,7 @@ async def get_microagents(
             microagents.append(
                 MicroagentResponse(
                     name=name,
-                    type='knowledge',
+                    type="knowledge",
                     content=k_agent.content,
                     triggers=k_agent.triggers,
                     inputs=k_agent.metadata.inputs,
@@ -258,11 +260,11 @@ async def get_microagents(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'microagents': [m.dict() for m in microagents]},
+            content={"microagents": [m.dict() for m in microagents]},
         )
     except Exception as e:
-        logger.error(f'Error getting microagents: {e}')
+        logger.error(f"Error getting microagents: {e}")
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={'error': f'Error getting microagents: {e}'},
+            content={"error": f"Error getting microagents: {e}"},
         )

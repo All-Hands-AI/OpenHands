@@ -8,9 +8,9 @@ from .grep import GrepTool
 from .view import ViewTool
 
 __all__ = [
-    'ViewTool',
-    'GrepTool',
-    'GlobTool',
+    "ViewTool",
+    "GrepTool",
+    "GlobTool",
 ]
 
 # Define the list of read-only tools

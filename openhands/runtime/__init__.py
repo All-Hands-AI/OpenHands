@@ -12,12 +12,12 @@ from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
 _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
-    'eventstream': DockerRuntime,
-    'docker': DockerRuntime,
-    'remote': RemoteRuntime,
-    'local': LocalRuntime,
-    'kubernetes': KubernetesRuntime,
-    'cli': CLIRuntime,
+    "eventstream": DockerRuntime,
+    "docker": DockerRuntime,
+    "remote": RemoteRuntime,
+    "local": LocalRuntime,
+    "kubernetes": KubernetesRuntime,
+    "cli": CLIRuntime,
 }
 
 # Try to import third-party runtimes if available
@@ -29,7 +29,7 @@ _THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
 try:
     import third_party.runtime.impl
 
-    third_party_base = 'third_party.runtime.impl'
+    third_party_base = "third_party.runtime.impl"
 
     # List of potential third-party runtime modules to try
     # These are discovered from the third_party directory structure
@@ -49,13 +49,13 @@ try:
     # Try to import each discovered runtime
     for runtime_name in potential_runtimes:
         try:
-            module_path = f'{third_party_base}.{runtime_name}.{runtime_name}_runtime'
+            module_path = f"{third_party_base}.{runtime_name}.{runtime_name}_runtime"
             module = importlib.import_module(module_path)
 
             # Try different class name patterns
             possible_class_names = [
-                f'{runtime_name.upper()}Runtime',  # E2BRuntime
-                f'{runtime_name.capitalize()}Runtime',  # E2bRuntime, DaytonaRuntime, etc.
+                f"{runtime_name.upper()}Runtime",  # E2BRuntime
+                f"{runtime_name.capitalize()}Runtime",  # E2bRuntime, DaytonaRuntime, etc.
             ]
 
             runtime_class = None
@@ -76,7 +76,7 @@ try:
             # Other exceptions mean the library is present but broken, which should be logged
             from openhands.core.logger import openhands_logger as logger
 
-            logger.warning(f'Failed to import third-party runtime {module_path}: {e}')
+            logger.warning(f"Failed to import third-party runtime {module_path}: {e}")
             pass
 
 except ImportError:
@@ -88,8 +88,7 @@ _ALL_RUNTIME_CLASSES = {**_DEFAULT_RUNTIME_CLASSES, **_THIRD_PARTY_RUNTIME_CLASS
 
 
 def get_runtime_cls(name: str) -> type[Runtime]:
-    """
-    If name is one of the predefined runtime names (e.g. 'docker'), return its class.
+    """If name is one of the predefined runtime names (e.g. 'docker'), return its class.
     Otherwise attempt to resolve name as subclass of Runtime and return it.
     Raise on invalid selections.
     """
@@ -100,19 +99,19 @@ def get_runtime_cls(name: str) -> type[Runtime]:
     except Exception as e:
         known_keys = _ALL_RUNTIME_CLASSES.keys()
         raise ValueError(
-            f'Runtime {name} not supported, known are: {known_keys}'
+            f"Runtime {name} not supported, known are: {known_keys}"
         ) from e
 
 
 # Build __all__ list dynamically based on available runtimes
 __all__ = [
-    'Runtime',
-    'RemoteRuntime',
-    'DockerRuntime',
-    'KubernetesRuntime',
-    'CLIRuntime',
-    'LocalRuntime',
-    'get_runtime_cls',
+    "Runtime",
+    "RemoteRuntime",
+    "DockerRuntime",
+    "KubernetesRuntime",
+    "CLIRuntime",
+    "LocalRuntime",
+    "get_runtime_cls",
 ]
 
 # Add third-party runtimes to __all__ if they're available

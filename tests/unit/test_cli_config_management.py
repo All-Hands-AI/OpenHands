@@ -25,7 +25,7 @@ class TestMCPServerManagement:
         self.config.cli = MagicMock()
         self.config.cli.vi_mode = False
 
-    @patch('openhands.cli.commands.print_formatted_text')
+    @patch("openhands.cli.commands.print_formatted_text")
     def test_display_mcp_servers_no_servers(self, mock_print):
         """Test displaying MCP servers when none are configured."""
         self.config.mcp = MCPConfig()  # Empty config
@@ -34,14 +34,14 @@ class TestMCPServerManagement:
 
         mock_print.assert_called_once()
         call_args = mock_print.call_args[0][0]
-        assert 'No custom MCP servers configured' in call_args
+        assert "No custom MCP servers configured" in call_args
 
-    @patch('openhands.cli.commands.print_formatted_text')
+    @patch("openhands.cli.commands.print_formatted_text")
     def test_display_mcp_servers_with_servers(self, mock_print):
         """Test displaying MCP servers when some are configured."""
         self.config.mcp = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')],
-            stdio_servers=[MCPStdioServerConfig(name='test-stdio', command='python')],
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")],
+            stdio_servers=[MCPStdioServerConfig(name="test-stdio", command="python")],
         )
 
         display_mcp_servers(self.config)
@@ -51,35 +51,35 @@ class TestMCPServerManagement:
 
         # Check that the summary is printed
         first_call = mock_print.call_args_list[0][0][0]
-        assert 'Configured MCP servers:' in first_call
-        assert 'SSE servers: 1' in first_call
-        assert 'Stdio servers: 1' in first_call
+        assert "Configured MCP servers:" in first_call
+        assert "SSE servers: 1" in first_call
+        assert "Stdio servers: 1" in first_call
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.commands.cli_confirm')
-    @patch('openhands.cli.commands.print_formatted_text')
+    @patch("openhands.cli.commands.cli_confirm")
+    @patch("openhands.cli.commands.print_formatted_text")
     async def test_remove_mcp_server_no_servers(self, mock_print, mock_cli_confirm):
         """Test removing MCP server when none are configured."""
         self.config.mcp = MCPConfig()  # Empty config
 
         await remove_mcp_server(self.config)
 
-        mock_print.assert_called_once_with('No MCP servers configured to remove.')
+        mock_print.assert_called_once_with("No MCP servers configured to remove.")
         mock_cli_confirm.assert_not_called()
 
     @pytest.mark.asyncio
-    @patch('openhands.cli.commands.cli_confirm')
-    @patch('openhands.cli.commands.load_config_file')
-    @patch('openhands.cli.commands.save_config_file')
-    @patch('openhands.cli.commands.print_formatted_text')
+    @patch("openhands.cli.commands.cli_confirm")
+    @patch("openhands.cli.commands.load_config_file")
+    @patch("openhands.cli.commands.save_config_file")
+    @patch("openhands.cli.commands.print_formatted_text")
     async def test_remove_mcp_server_success(
         self, mock_print, mock_save, mock_load, mock_cli_confirm
     ):
         """Test successfully removing an MCP server."""
         # Set up config with servers
         self.config.mcp = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')],
-            stdio_servers=[MCPStdioServerConfig(name='test-stdio', command='python')],
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")],
+            stdio_servers=[MCPStdioServerConfig(name="test-stdio", command="python")],
         )
 
         # Mock user selections
@@ -87,9 +87,9 @@ class TestMCPServerManagement:
 
         # Mock config file operations
         mock_load.return_value = {
-            'mcp': {
-                'sse_servers': [{'url': 'http://test.com'}],
-                'stdio_servers': [{'name': 'test-stdio', 'command': 'python'}],
+            "mcp": {
+                "sse_servers": [{"url": "http://test.com"}],
+                "stdio_servers": [{"name": "test-stdio", "command": "python"}],
             }
         }
 
@@ -101,6 +101,6 @@ class TestMCPServerManagement:
 
         # Check that success message was printed
         success_calls = [
-            call for call in mock_print.call_args_list if 'removed' in str(call[0][0])
+            call for call in mock_print.call_args_list if "removed" in str(call[0][0])
         ]
         assert len(success_calls) >= 1

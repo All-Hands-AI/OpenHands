@@ -14,16 +14,15 @@ from starlette.types import ASGIApp
 
 
 class LocalhostCORSMiddleware(CORSMiddleware):
-    """
-    Custom CORS middleware that allows any request from localhost/127.0.0.1 domains,
+    """Custom CORS middleware that allows any request from localhost/127.0.0.1 domains,
     while using standard CORS rules for other origins.
     """
 
     def __init__(self, app: ASGIApp) -> None:
-        allow_origins_str = os.getenv('PERMITTED_CORS_ORIGINS')
+        allow_origins_str = os.getenv("PERMITTED_CORS_ORIGINS")
         if allow_origins_str:
             allow_origins = tuple(
-                origin.strip() for origin in allow_origins_str.split(',')
+                origin.strip() for origin in allow_origins_str.split(",")
             )
         else:
             allow_origins = ()
@@ -31,17 +30,17 @@ class LocalhostCORSMiddleware(CORSMiddleware):
             app,
             allow_origins=allow_origins,
             allow_credentials=True,
-            allow_methods=['*'],
-            allow_headers=['*'],
+            allow_methods=["*"],
+            allow_headers=["*"],
         )
 
     def is_allowed_origin(self, origin: str) -> bool:
         if origin and not self.allow_origins and not self.allow_origin_regex:
             parsed = urlparse(origin)
-            hostname = parsed.hostname or ''
+            hostname = parsed.hostname or ""
 
             # Allow any localhost/127.0.0.1 origin regardless of port
-            if hostname in ['localhost', '127.0.0.1']:
+            if hostname in ["localhost", "127.0.0.1"]:
                 return True
 
         # For missing origin or other origins, use the parent class's logic
@@ -50,23 +49,21 @@ class LocalhostCORSMiddleware(CORSMiddleware):
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to disable caching for all routes by adding appropriate headers
-    """
+    """Middleware to disable caching for all routes by adding appropriate headers"""
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint
     ) -> Response:
         response = await call_next(request)
-        if request.url.path.startswith('/assets'):
+        if request.url.path.startswith("/assets"):
             # The content of the assets directory has fingerprinted file names so we cache aggressively
-            response.headers['Cache-Control'] = 'public, max-age=2592000, immutable'
+            response.headers["Cache-Control"] = "public, max-age=2592000, immutable"
         else:
-            response.headers['Cache-Control'] = (
-                'no-cache, no-store, must-revalidate, max-age=0'
+            response.headers["Cache-Control"] = (
+                "no-cache, no-store, must-revalidate, max-age=0"
             )
-            response.headers['Pragma'] = 'no-cache'
-            response.headers['Expires'] = '0'
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
         return response
 
 
@@ -122,13 +119,13 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not ok:
             return JSONResponse(
                 status_code=429,
-                content={'message': 'Too many requests'},
-                headers={'Retry-After': '1'},
+                content={"message": "Too many requests"},
+                headers={"Retry-After": "1"},
             )
         return await call_next(request)
 
     def is_rate_limited_request(self, request: StarletteRequest) -> bool:
-        if request.url.path.startswith('/assets'):
+        if request.url.path.startswith("/assets"):
             return False
         # Put Other non rate limited checks here
         return True

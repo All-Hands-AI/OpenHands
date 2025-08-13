@@ -3,4 +3,4 @@ from openhands.agenthub.visualbrowsing_agent.visualbrowsing_agent import (
 )
 from openhands.controller.agent import Agent
 
-Agent.register('VisualBrowsingAgent', VisualBrowsingAgent)
+Agent.register("VisualBrowsingAgent", VisualBrowsingAgent)

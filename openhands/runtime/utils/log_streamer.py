@@ -29,12 +29,12 @@ class LogStreamer:
             self.stdout_thread.daemon = True
             self.stdout_thread.start()
         except Exception as e:
-            self.log('error', f'Failed to initialize log streaming: {e}')
+            self.log("error", f"Failed to initialize log streaming: {e}")
 
     def _stream_logs(self) -> None:
         """Stream logs from the Docker container to stdout."""
         if not self.log_generator:
-            self.log('error', 'Log generator not initialized')
+            self.log("error", "Log generator not initialized")
             return
 
         try:
@@ -42,14 +42,14 @@ class LogStreamer:
                 if self._stop_event.is_set():
                     break
                 if log_line:
-                    decoded_line = log_line.decode('utf-8').rstrip()
-                    self.log('debug', f'[inside container] {decoded_line}')
+                    decoded_line = log_line.decode("utf-8").rstrip()
+                    self.log("debug", f"[inside container] {decoded_line}")
         except Exception as e:
-            self.log('error', f'Error streaming docker logs to stdout: {e}')
+            self.log("error", f"Error streaming docker logs to stdout: {e}")
 
     def __del__(self) -> None:
         if (
-            hasattr(self, 'stdout_thread')
+            hasattr(self, "stdout_thread")
             and self.stdout_thread
             and self.stdout_thread.is_alive()
         ):

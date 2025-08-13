@@ -22,22 +22,22 @@ class ShellConfigManager:
 
     # Shell configuration templates
     ALIAS_TEMPLATES = {
-        'bash': Template("""
+        "bash": Template("""
 # OpenHands CLI aliases
 alias openhands="{{ command }}"
 alias oh="{{ command }}"
 """),
-        'zsh': Template("""
+        "zsh": Template("""
 # OpenHands CLI aliases
 alias openhands="{{ command }}"
 alias oh="{{ command }}"
 """),
-        'fish': Template("""
+        "fish": Template("""
 # OpenHands CLI aliases
 alias openhands="{{ command }}"
 alias oh="{{ command }}"
 """),
-        'powershell': Template("""
+        "powershell": Template("""
 # OpenHands CLI aliases
 function openhands { {{ command }} $args }
 function oh { {{ command }} $args }
@@ -46,41 +46,41 @@ function oh { {{ command }} $args }
 
     # Shell configuration file patterns
     SHELL_CONFIG_PATTERNS = {
-        'bash': ['.bashrc', '.bash_profile'],
-        'zsh': ['.zshrc'],
-        'fish': ['.config/fish/config.fish'],
-        'csh': ['.cshrc'],
-        'tcsh': ['.tcshrc'],
-        'ksh': ['.kshrc'],
-        'powershell': [
-            'Documents/PowerShell/Microsoft.PowerShell_profile.ps1',
-            'Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1',
-            '.config/powershell/Microsoft.PowerShell_profile.ps1',
+        "bash": [".bashrc", ".bash_profile"],
+        "zsh": [".zshrc"],
+        "fish": [".config/fish/config.fish"],
+        "csh": [".cshrc"],
+        "tcsh": [".tcshrc"],
+        "ksh": [".kshrc"],
+        "powershell": [
+            "Documents/PowerShell/Microsoft.PowerShell_profile.ps1",
+            "Documents/WindowsPowerShell/Microsoft.PowerShell_profile.ps1",
+            ".config/powershell/Microsoft.PowerShell_profile.ps1",
         ],
     }
 
     # Regex patterns for detecting existing aliases
     ALIAS_PATTERNS = {
-        'bash': [
-            r'^\s*alias\s+openhands\s*=',
-            r'^\s*alias\s+oh\s*=',
+        "bash": [
+            r"^\s*alias\s+openhands\s*=",
+            r"^\s*alias\s+oh\s*=",
         ],
-        'zsh': [
-            r'^\s*alias\s+openhands\s*=',
-            r'^\s*alias\s+oh\s*=',
+        "zsh": [
+            r"^\s*alias\s+openhands\s*=",
+            r"^\s*alias\s+oh\s*=",
         ],
-        'fish': [
-            r'^\s*alias\s+openhands\s*=',
-            r'^\s*alias\s+oh\s*=',
+        "fish": [
+            r"^\s*alias\s+openhands\s*=",
+            r"^\s*alias\s+oh\s*=",
         ],
-        'powershell': [
-            r'^\s*function\s+openhands\s*\{',
-            r'^\s*function\s+oh\s*\{',
+        "powershell": [
+            r"^\s*function\s+openhands\s*\{",
+            r"^\s*function\s+oh\s*\{",
         ],
     }
 
     def __init__(
-        self, command: str = 'uvx --python 3.12 --from openhands-ai openhands'
+        self, command: str = "uvx --python 3.12 --from openhands-ai openhands"
     ):
         """Initialize the shell config manager.
 
@@ -88,7 +88,7 @@ function oh { {{ command }} $args }
             command: The command that aliases should point to.
         """
         self.command = command
-        self.is_windows = platform.system() == 'Windows'
+        self.is_windows = platform.system() == "Windows"
 
     def detect_shell(self) -> Optional[str]:
         """Detect the current shell using shellingham.
@@ -133,15 +133,15 @@ function oh { {{ command }} $args }
         if self.is_windows:
             # Windows fallback to PowerShell
             ps_profile = (
-                home / 'Documents' / 'PowerShell' / 'Microsoft.PowerShell_profile.ps1'
+                home / "Documents" / "PowerShell" / "Microsoft.PowerShell_profile.ps1"
             )
             return ps_profile
         else:
             # Unix fallback to bash
-            bashrc = home / '.bashrc'
+            bashrc = home / ".bashrc"
             if bashrc.exists():
                 return bashrc
-            return home / '.bash_profile'
+            return home / ".bash_profile"
 
     def get_shell_type_from_path(self, config_path: Path) -> str:
         """Determine shell type from configuration file path.
@@ -154,16 +154,16 @@ function oh { {{ command }} $args }
         """
         path_str = str(config_path).lower()
 
-        if 'powershell' in path_str:
-            return 'powershell'
-        elif '.zshrc' in path_str:
-            return 'zsh'
-        elif 'fish' in path_str:
-            return 'fish'
-        elif '.bashrc' in path_str or '.bash_profile' in path_str:
-            return 'bash'
+        if "powershell" in path_str:
+            return "powershell"
+        elif ".zshrc" in path_str:
+            return "zsh"
+        elif "fish" in path_str:
+            return "fish"
+        elif ".bashrc" in path_str or ".bash_profile" in path_str:
+            return "bash"
         else:
-            return 'bash'  # Default fallback
+            return "bash"  # Default fallback
 
     def aliases_exist(self, config_path: Optional[Path] = None) -> bool:
         """Check if OpenHands aliases already exist in the shell config.
@@ -181,10 +181,10 @@ function oh { {{ command }} $args }
             return False
 
         shell_type = self.get_shell_type_from_path(config_path)
-        patterns = self.ALIAS_PATTERNS.get(shell_type, self.ALIAS_PATTERNS['bash'])
+        patterns = self.ALIAS_PATTERNS.get(shell_type, self.ALIAS_PATTERNS["bash"])
 
         try:
-            with open(config_path, 'r', encoding='utf-8', errors='ignore') as f:
+            with open(config_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
 
             for pattern in patterns:
@@ -218,19 +218,19 @@ function oh { {{ command }} $args }
             # Get the appropriate template
             shell_type = self.get_shell_type_from_path(config_path)
             template = self.ALIAS_TEMPLATES.get(
-                shell_type, self.ALIAS_TEMPLATES['bash']
+                shell_type, self.ALIAS_TEMPLATES["bash"]
             )
 
             # Render the aliases
             aliases_content = template.render(command=self.command)
 
             # Append to the config file
-            with open(config_path, 'a', encoding='utf-8') as f:
+            with open(config_path, "a", encoding="utf-8") as f:
                 f.write(aliases_content)
 
             return True
         except Exception as e:
-            print(f'Error adding aliases: {e}')
+            print(f"Error adding aliases: {e}")
             return False
 
     def get_reload_command(self, config_path: Optional[Path] = None) -> str:
@@ -247,17 +247,17 @@ function oh { {{ command }} $args }
 
         shell_type = self.get_shell_type_from_path(config_path)
 
-        if shell_type == 'zsh':
-            return 'source ~/.zshrc'
-        elif shell_type == 'fish':
-            return 'source ~/.config/fish/config.fish'
-        elif shell_type == 'powershell':
-            return '. $PROFILE'
+        if shell_type == "zsh":
+            return "source ~/.zshrc"
+        elif shell_type == "fish":
+            return "source ~/.config/fish/config.fish"
+        elif shell_type == "powershell":
+            return ". $PROFILE"
         else:  # bash and others
-            if '.bash_profile' in str(config_path):
-                return 'source ~/.bash_profile'
+            if ".bash_profile" in str(config_path):
+                return "source ~/.bash_profile"
             else:
-                return 'source ~/.bashrc'
+                return "source ~/.bashrc"
 
 
 # Convenience functions that use the ShellConfigManager
@@ -285,13 +285,13 @@ def alias_setup_declined() -> bool:
     Returns:
         True if user has declined alias setup, False otherwise.
     """
-    marker_file = Path.home() / '.openhands' / '.cli_alias_setup_declined'
+    marker_file = Path.home() / ".openhands" / ".cli_alias_setup_declined"
     return marker_file.exists()
 
 
 def mark_alias_setup_declined() -> None:
     """Mark that the user has declined alias setup."""
-    openhands_dir = Path.home() / '.openhands'
+    openhands_dir = Path.home() / ".openhands"
     openhands_dir.mkdir(exist_ok=True)
-    marker_file = openhands_dir / '.cli_alias_setup_declined'
+    marker_file = openhands_dir / ".cli_alias_setup_declined"
     marker_file.touch()

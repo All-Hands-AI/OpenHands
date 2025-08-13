@@ -35,56 +35,56 @@ def response_to_actions(
     mcp_tool_names: list[str] | None = None,
 ) -> list[Action]:
     actions: list[Action] = []
-    assert len(response.choices) == 1, 'Only one choice is supported for now'
+    assert len(response.choices) == 1, "Only one choice is supported for now"
     choice = response.choices[0]
     assistant_msg = choice.message
 
-    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
+    if hasattr(assistant_msg, "tool_calls") and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
-        thought = ''
+        thought = ""
         if isinstance(assistant_msg.content, str):
             thought = assistant_msg.content
         elif isinstance(assistant_msg.content, list):
             for msg in assistant_msg.content:
-                if msg['type'] == 'text':
-                    thought += msg['text']
+                if msg["type"] == "text":
+                    thought += msg["text"]
 
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
-            logger.debug(f'Tool call in function_calling.py: {tool_call}')
+            logger.debug(f"Tool call in function_calling.py: {tool_call}")
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
                 raise RuntimeError(
-                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
+                    f"Failed to parse tool call arguments: {tool_call.function.arguments}"
                 ) from e
 
             # ================================================
             # LocAgent's Tools
             # ================================================
             ALL_FUNCTIONS = [
-                'explore_tree_structure',
-                'search_code_snippets',
-                'get_entity_contents',
+                "explore_tree_structure",
+                "search_code_snippets",
+                "get_entity_contents",
             ]
             if tool_call.function.name in ALL_FUNCTIONS:
                 # We implement this in agent_skills, which can be used via Jupyter
                 func_name = tool_call.function.name
-                code = f'print({func_name}(**{arguments}))'
-                logger.debug(f'TOOL CALL: {func_name} with code: {code}')
+                code = f"print({func_name}(**{arguments}))"
+                logger.debug(f"TOOL CALL: {func_name} with code: {code}")
                 action = IPythonRunCellAction(code=code)
 
             # ================================================
             # AgentFinishAction
             # ================================================
-            elif tool_call.function.name == FinishTool['function']['name']:
+            elif tool_call.function.name == FinishTool["function"]["name"]:
                 action = AgentFinishAction(
-                    final_thought=arguments.get('message', ''),
+                    final_thought=arguments.get("message", ""),
                 )
             else:
                 raise FunctionCallNotExistsError(
-                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
+                    f"Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool."
                 )
 
             # We only add thought to the first action
@@ -101,7 +101,7 @@ def response_to_actions(
     else:
         actions.append(
             MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else '',
+                content=str(assistant_msg.content) if assistant_msg.content else "",
                 wait_for_response=True,
             )
         )

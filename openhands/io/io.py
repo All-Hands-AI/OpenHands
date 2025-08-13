@@ -8,28 +8,25 @@ def read_input(cli_multiline_input: bool = False) -> str:
         print('Enter your message (enter "/exit" on a new line to finish):')
         lines = []
         while True:
-            line = input('>> ').rstrip()
-            if line == '/exit':  # finish input
+            line = input(">> ").rstrip()
+            if line == "/exit":  # finish input
                 break
             lines.append(line)
-        return '\n'.join(lines)
+        return "\n".join(lines)
     else:
-        return input('>> ').rstrip()
+        return input(">> ").rstrip()
 
 
 def read_task_from_file(file_path: str) -> str:
     """Read task from the specified file."""
-    with open(file_path, 'r', encoding='utf-8') as file:
+    with open(file_path, "r", encoding="utf-8") as file:
         return file.read()
 
 
 def read_task(args: argparse.Namespace, cli_multiline_input: bool) -> str:
-    """
-    Read the task from the CLI args, file, or stdin.
-    """
-
+    """Read the task from the CLI args, file, or stdin."""
     # Determine the task
-    task_str = ''
+    task_str = ""
     if args.file:
         task_str = read_task_from_file(args.file)
     elif args.task:

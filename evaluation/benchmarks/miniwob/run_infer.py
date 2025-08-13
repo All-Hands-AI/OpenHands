@@ -43,11 +43,11 @@ from openhands.runtime.browser.browser_env import (
 )
 from openhands.utils.async_utils import call_async_from_sync
 
-SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
+SUPPORTED_AGENT_CLS = {"BrowsingAgent", "CodeActAgent"}
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
-    'BrowsingAgent': 'Continue the task. IMPORTANT: do not talk to the user until you have finished the task',
+    "CodeActAgent": codeact_user_response,
+    "BrowsingAgent": "Continue the task. IMPORTANT: do not talk to the user until you have finished the task",
 }
 
 
@@ -56,11 +56,11 @@ def get_config(
     env_id: str,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'xingyaoww/od-eval-miniwob:v1.0'
+    sandbox_config.base_container_image = "xingyaoww/od-eval-miniwob:v1.0"
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'docker'),
+        runtime=os.environ.get("RUNTIME", "docker"),
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -82,28 +82,28 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command='mkdir -p /workspace')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="mkdir -p /workspace")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    logger.info(obs, extra={"msg_type": "OBSERVATION"})
     goal = obs.content
 
     # Run noop to get the initial browser observation (e.g., the page URL & content)
-    action = BrowseInteractiveAction(browser_actions='noop(1000)')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = BrowseInteractiveAction(browser_actions="noop(1000)")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    logger.info(obs, extra={"msg_type": "OBSERVATION"})
 
-    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
     return goal, obs
 
 
@@ -116,17 +116,17 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
     obs: CmdOutputObservation
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    logger.info(obs, extra={"msg_type": "OBSERVATION"})
 
-    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
     return {
-        'rewards': json.loads(obs.content),
+        "rewards": json.loads(obs.content),
     }
 
 
@@ -140,17 +140,17 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
         reset_logger_for_multiprocessing(logger, env_id, log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {env_id}.')
+        logger.info(f"Starting evaluation for instance {env_id}.")
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
     task_str, obs = initialize_runtime(runtime)
 
     task_str += (
-        f'\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}'
+        f"\nInitial browser state (output of `noop(1000)`):\n{obs.get_agent_obs_text()}"
     )
 
     state: State | None = asyncio.run(
@@ -172,20 +172,20 @@ def process_instance(
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
-        raise ValueError('State should not be None.')
+        raise ValueError("State should not be None.")
 
     metrics = state.metrics.get() if state.metrics else None
 
     # Instruction is the first message from the USER
-    instruction = ''
+    instruction = ""
     for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
             break
 
     return_val = complete_runtime(runtime)
-    logger.info(f'Return value from complete_runtime: {return_val}')
-    reward = max(return_val['rewards'], default=0)
+    logger.info(f"Return value from complete_runtime: {return_val}")
+    reward = max(return_val["rewards"], default=0)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -201,21 +201,21 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
-            'reward': reward,
+            "reward": reward,
         },
     )
     return output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments()
 
     dataset = pd.DataFrame(
         {
-            'instance_id': [
+            "instance_id": [
                 id
                 for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/miniwob')
+                if id.startswith("browsergym/miniwob")
             ]
         }
     )
@@ -226,17 +226,17 @@ if __name__ == '__main__':
         # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
 
     metadata = make_metadata(
         llm_config,
-        'miniwob',
+        "miniwob",
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
     run_evaluation(

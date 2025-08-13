@@ -75,7 +75,7 @@ def create_runtime(
 
     # runtime and tools
     runtime_cls = get_runtime_cls(config.runtime)
-    logger.debug(f'Initializing runtime: {runtime_cls.__name__}')
+    logger.debug(f"Initializing runtime: {runtime_cls.__name__}")
     runtime: Runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
@@ -87,31 +87,30 @@ def create_runtime(
 
     # Log the plugins that have been registered with the runtime for debugging purposes
     logger.debug(
-        f'Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}'
+        f"Runtime created with plugins: {[plugin.name for plugin in runtime.plugins]}"
     )
 
     return runtime
 
 
 def get_provider_tokens():
-    """
-    Retrieve provider tokens from environment variables and return them as a dictionary.
+    """Retrieve provider tokens from environment variables and return them as a dictionary.
 
     Returns:
         A dictionary mapping ProviderType to ProviderToken if tokens are found, otherwise None.
     """
     # Collect provider tokens from environment variables if available
     provider_tokens = {}
-    if 'GITHUB_TOKEN' in os.environ:
-        github_token = SecretStr(os.environ['GITHUB_TOKEN'])
+    if "GITHUB_TOKEN" in os.environ:
+        github_token = SecretStr(os.environ["GITHUB_TOKEN"])
         provider_tokens[ProviderType.GITHUB] = ProviderToken(token=github_token)
 
-    if 'GITLAB_TOKEN' in os.environ:
-        gitlab_token = SecretStr(os.environ['GITLAB_TOKEN'])
+    if "GITLAB_TOKEN" in os.environ:
+        gitlab_token = SecretStr(os.environ["GITLAB_TOKEN"])
         provider_tokens[ProviderType.GITLAB] = ProviderToken(token=gitlab_token)
 
-    if 'BITBUCKET_TOKEN' in os.environ:
-        bitbucket_token = SecretStr(os.environ['BITBUCKET_TOKEN'])
+    if "BITBUCKET_TOKEN" in os.environ:
+        bitbucket_token = SecretStr(os.environ["BITBUCKET_TOKEN"])
         provider_tokens[ProviderType.BITBUCKET] = ProviderToken(token=bitbucket_token)
 
     # Wrap provider tokens in UserSecrets if any tokens were found
@@ -126,8 +125,7 @@ def initialize_repository_for_runtime(
     immutable_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
     selected_repository: str | None = None,
 ) -> str | None:
-    """
-    Initialize the repository for the runtime by cloning or initializing it,
+    """Initialize the repository for the runtime by cloning or initializing it,
     running setup scripts, and setting up git hooks if present.
 
     Args:
@@ -142,7 +140,7 @@ def initialize_repository_for_runtime(
     if not immutable_provider_tokens:
         immutable_provider_tokens = get_provider_tokens()
 
-    logger.debug(f'Selected repository {selected_repository}.')
+    logger.debug(f"Selected repository {selected_repository}.")
 
     # Clone or initialize the repository using the runtime
     repo_directory = call_async_from_sync(
@@ -229,13 +227,13 @@ def create_controller(
     initial_state = None
     try:
         logger.debug(
-            f'Trying to restore agent state from session {event_stream.sid} if available'
+            f"Trying to restore agent state from session {event_stream.sid} if available"
         )
         initial_state = State.restore_from_session(
             event_stream.sid, event_stream.file_store
         )
     except Exception as e:
-        logger.debug(f'Cannot restore agent state: {e}')
+        logger.debug(f"Cannot restore agent state: {e}")
 
     controller = AgentController(
         agent=agent,
@@ -261,7 +259,7 @@ def generate_sid(config: OpenHandsConfig, session_name: str | None = None) -> st
     session_name = session_name or str(uuid.uuid4())
     jwt_secret = config.jwt_secret
 
-    hash_str = hashlib.sha256(f'{session_name}{jwt_secret}'.encode('utf-8')).hexdigest()
+    hash_str = hashlib.sha256(f"{session_name}{jwt_secret}".encode("utf-8")).hexdigest()
 
     # Limit total session ID length to 32 characters for Kubernetes compatibility:
     # - 'openhands-runtime-' (18 chars) + session_id (32 chars) = 50 chars
@@ -269,10 +267,10 @@ def generate_sid(config: OpenHandsConfig, session_name: str | None = None) -> st
     if len(session_name) > 16:
         # If session_name is too long, use first 16 chars + 15-char hash for better readability
         # e.g., "vscode-extension" -> "vscode-extensio-{15-char-hash}"
-        session_id = f'{session_name[:16]}-{hash_str[:15]}'
+        session_id = f"{session_name[:16]}-{hash_str[:15]}"
     else:
         # If session_name is short enough, use it + remaining space for hash
         remaining_chars = 32 - len(session_name) - 1  # -1 for the dash
-        session_id = f'{session_name}-{hash_str[:remaining_chars]}'
+        session_id = f"{session_name}-{hash_str[:remaining_chars]}"
 
     return session_id[:32]  # Ensure we never exceed 32 characters

@@ -7,9 +7,9 @@ from openhands.memory.condenser.condenser import (
 )
 
 __all__ = [
-    'Condenser',
-    'get_condensation_metadata',
-    'CONDENSER_REGISTRY',
-    'View',
-    'Condensation',
+    "Condenser",
+    "get_condensation_metadata",
+    "CONDENSER_REGISTRY",
+    "View",
+    "Condensation",
 ]

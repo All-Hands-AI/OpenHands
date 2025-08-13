@@ -15,34 +15,34 @@ from openhands.resolver.issue_handler_factory import IssueHandlerFactory
 @pytest.fixture
 def llm_config():
     return LLMConfig(
-        model='test-model',
-        api_key=SecretStr('test-key'),
+        model="test-model",
+        api_key=SecretStr("test-key"),
     )
 
 
 @pytest.fixture
 def factory_params(llm_config):
     return {
-        'owner': 'test-owner',
-        'repo': 'test-repo',
-        'token': 'test-token',
-        'username': 'test-user',
-        'base_domain': 'github.com',
-        'llm_config': llm_config,
+        "owner": "test-owner",
+        "repo": "test-repo",
+        "token": "test-token",
+        "username": "test-user",
+        "base_domain": "github.com",
+        "llm_config": llm_config,
     }
 
 
 test_cases = [
     # platform, issue_type, expected_context_type, expected_handler_type
-    (ProviderType.GITHUB, 'issue', ServiceContextIssue, GithubIssueHandler),
-    (ProviderType.GITHUB, 'pr', ServiceContextPR, GithubPRHandler),
-    (ProviderType.GITLAB, 'issue', ServiceContextIssue, GitlabIssueHandler),
-    (ProviderType.GITLAB, 'pr', ServiceContextPR, GitlabPRHandler),
+    (ProviderType.GITHUB, "issue", ServiceContextIssue, GithubIssueHandler),
+    (ProviderType.GITHUB, "pr", ServiceContextPR, GithubPRHandler),
+    (ProviderType.GITLAB, "issue", ServiceContextIssue, GitlabIssueHandler),
+    (ProviderType.GITLAB, "pr", ServiceContextPR, GitlabPRHandler),
 ]
 
 
 @pytest.mark.parametrize(
-    'platform,issue_type,expected_context_type,expected_handler_type', test_cases
+    "platform,issue_type,expected_context_type,expected_handler_type", test_cases
 )
 def test_handler_creation(
     factory_params,
@@ -63,8 +63,8 @@ def test_handler_creation(
 
 def test_invalid_issue_type(factory_params):
     factory = IssueHandlerFactory(
-        **factory_params, platform=ProviderType.GITHUB, issue_type='invalid'
+        **factory_params, platform=ProviderType.GITHUB, issue_type="invalid"
     )
 
-    with pytest.raises(ValueError, match='Invalid issue type: invalid'):
+    with pytest.raises(ValueError, match="Invalid issue type: invalid"):
         factory.create()

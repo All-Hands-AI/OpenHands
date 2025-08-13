@@ -1,11 +1,8 @@
-"""
-Utilities for handling binary files and patch generation in SWE-bench evaluation.
-"""
+"""Utilities for handling binary files and patch generation in SWE-bench evaluation."""
 
 
 def remove_binary_diffs(patch_text):
-    """
-    Remove binary file diffs from a git patch.
+    """Remove binary file diffs from a git patch.
 
     Args:
         patch_text (str): The git patch text
@@ -19,12 +16,12 @@ def remove_binary_diffs(patch_text):
     is_binary_block = False
 
     for line in lines:
-        if line.startswith('diff --git '):
+        if line.startswith("diff --git "):
             if block and not is_binary_block:
                 cleaned_lines.extend(block)
             block = [line]
             is_binary_block = False
-        elif 'Binary files' in line:
+        elif "Binary files" in line:
             is_binary_block = True
             block.append(line)
         else:
@@ -32,12 +29,11 @@ def remove_binary_diffs(patch_text):
 
     if block and not is_binary_block:
         cleaned_lines.extend(block)
-    return '\n'.join(cleaned_lines)
+    return "\n".join(cleaned_lines)
 
 
 def remove_binary_files_from_git():
-    """
-    Generate a bash command to remove binary files from git staging.
+    """Generate a bash command to remove binary files from git staging.
 
     Returns:
         str: A bash command that removes binary files from git staging

@@ -41,14 +41,14 @@ def parse_pdf(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
-    print(f'[Reading PDF file from {file_path}]')
+    print(f"[Reading PDF file from {file_path}]")
     content = PyPDF2.PdfReader(file_path)
-    text = ''
+    text = ""
     for page_idx in range(len(content.pages)):
         text += (
-            f'@@ Page {page_idx + 1} @@\n'
+            f"@@ Page {page_idx + 1} @@\n"
             + content.pages[page_idx].extract_text()
-            + '\n\n'
+            + "\n\n"
         )
     print(text.strip())
 
@@ -59,11 +59,11 @@ def parse_docx(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
-    print(f'[Reading DOCX file from {file_path}]')
+    print(f"[Reading DOCX file from {file_path}]")
     content = docx.Document(file_path)
-    text = ''
+    text = ""
     for i, para in enumerate(content.paragraphs):
-        text += f'@@ Page {i + 1} @@\n' + para.text + '\n\n'
+        text += f"@@ Page {i + 1} @@\n" + para.text + "\n\n"
     print(text)
 
 
@@ -73,7 +73,7 @@ def parse_latex(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
-    print(f'[Reading LaTex file from {file_path}]')
+    print(f"[Reading LaTex file from {file_path}]")
     with open(file_path) as f:
         data = f.read()
     text = LatexNodes2Text().latex_to_text(data)
@@ -81,8 +81,8 @@ def parse_latex(file_path: str) -> None:
 
 
 def _base64_img(file_path: str) -> str:
-    with open(file_path, 'rb') as image_file:
-        encoded_image = base64.b64encode(image_file.read()).decode('utf-8')
+    with open(file_path, "rb") as image_file:
+        encoded_image = base64.b64encode(image_file.read()).decode("utf-8")
     return encoded_image
 
 
@@ -97,8 +97,8 @@ def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
         if not success:
             break
         if frame_count % frame_interval == 0:
-            _, buffer = cv2.imencode('.jpg', frame)
-            base64_frames.append(base64.b64encode(buffer).decode('utf-8'))
+            _, buffer = cv2.imencode(".jpg", frame)
+            base64_frames.append(base64.b64encode(buffer).decode("utf-8"))
         frame_count += 1
     video.release()
     return base64_frames
@@ -107,40 +107,40 @@ def _base64_video(file_path: str, frame_interval: int = 10) -> list[str]:
 def _prepare_image_messages(task: str, base64_image: str) -> list[dict[str, Any]]:
     return [
         {
-            'role': 'user',
-            'content': [
-                {'type': 'text', 'text': task},
+            "role": "user",
+            "content": [
+                {"type": "text", "text": task},
                 {
-                    'type': 'image_url',
-                    'image_url': {'url': f'data:image/jpeg;base64,{base64_image}'},
+                    "type": "image_url",
+                    "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
                 },
             ],
         }
     ]
 
 
-def parse_audio(file_path: str, model: str = 'whisper-1') -> None:
+def parse_audio(file_path: str, model: str = "whisper-1") -> None:
     """Parses the content of an audio file and prints it.
 
     Args:
         file_path: str: The path to the audio file to transcribe.
         model: str: The audio model to use for transcription. Defaults to 'whisper-1'.
     """
-    print(f'[Transcribing audio file from {file_path}]')
+    print(f"[Transcribing audio file from {file_path}]")
     try:
         # TODO: record the COST of the API call
-        with open(file_path, 'rb') as audio_file:
+        with open(file_path, "rb") as audio_file:
             transcript = _get_openai_client().audio.translations.create(
                 model=model, file=audio_file
             )
         print(transcript.text)
 
     except Exception as e:
-        print(f'Error transcribing audio file: {e}')
+        print(f"Error transcribing audio file: {e}")
 
 
 def parse_image(
-    file_path: str, task: str = 'Describe this image as detail as possible.'
+    file_path: str, task: str = "Describe this image as detail as possible."
 ) -> None:
     """Parses the content of an image file and prints the description.
 
@@ -148,7 +148,7 @@ def parse_image(
         file_path: str: The path to the file to open.
         task: str: The task description for the API call. Defaults to 'Describe this image as detail as possible.'.
     """
-    print(f'[Reading image file from {file_path}]')
+    print(f"[Reading image file from {file_path}]")
     # TODO: record the COST of the API call
     try:
         base64_image = _base64_img(file_path)
@@ -161,12 +161,12 @@ def parse_image(
         print(content)
 
     except Exception as error:
-        print(f'Error with the request: {error}')
+        print(f"Error with the request: {error}")
 
 
 def parse_video(
     file_path: str,
-    task: str = 'Describe this image as detail as possible.',
+    task: str = "Describe this image as detail as possible.",
     frame_interval: int = 30,
 ) -> None:
     """Parses the content of an image file and prints the description.
@@ -178,10 +178,10 @@ def parse_video(
 
     """
     print(
-        f'[Processing video file from {file_path} with frame interval {frame_interval}]'
+        f"[Processing video file from {file_path} with frame interval {frame_interval}]"
     )
 
-    task = task or 'This is one frame from a video, please summarize this frame.'
+    task = task or "This is one frame from a video, please summarize this frame."
     base64_frames = _base64_video(file_path)
     selected_frames = base64_frames[::frame_interval]
 
@@ -189,12 +189,12 @@ def parse_video(
         new_interval = len(base64_frames) // 30
         selected_frames = base64_frames[::new_interval]
 
-    print(f'Totally {len(selected_frames)} would be analyze...\n')
+    print(f"Totally {len(selected_frames)} would be analyze...\n")
 
     idx = 0
     for base64_frame in selected_frames:
         idx += 1
-        print(f'Process the {file_path}, current No. {idx * frame_interval} frame...')
+        print(f"Process the {file_path}, current No. {idx * frame_interval} frame...")
         # TODO: record the COST of the API call
         try:
             response = _get_openai_client().chat.completions.create(
@@ -208,7 +208,7 @@ def parse_video(
             print(current_frame_content)
 
         except Exception as error:
-            print(f'Error with the request: {error}')
+            print(f"Error with the request: {error}")
 
 
 def parse_pptx(file_path: str) -> None:
@@ -217,29 +217,29 @@ def parse_pptx(file_path: str) -> None:
     Args:
         file_path: str: The path to the file to open.
     """
-    print(f'[Reading PowerPoint file from {file_path}]')
+    print(f"[Reading PowerPoint file from {file_path}]")
     try:
         pres = Presentation(str(file_path))
         text = []
         for slide_idx, slide in enumerate(pres.slides):
-            text.append(f'@@ Slide {slide_idx + 1} @@')
+            text.append(f"@@ Slide {slide_idx + 1} @@")
             for shape in slide.shapes:
-                if hasattr(shape, 'text'):
+                if hasattr(shape, "text"):
                     text.append(shape.text)
-        print('\n'.join(text))
+        print("\n".join(text))
 
     except Exception as e:
-        print(f'Error reading PowerPoint file: {e}')
+        print(f"Error reading PowerPoint file: {e}")
 
 
 __all__ = [
-    'parse_pdf',
-    'parse_docx',
-    'parse_latex',
-    'parse_pptx',
+    "parse_pdf",
+    "parse_docx",
+    "parse_latex",
+    "parse_pptx",
 ]
 
 # This is called from OpenHands's side
 # If SANDBOX_ENV_OPENAI_API_KEY is set, we will be able to use these tools in the sandbox environment
 if _get_openai_api_key() and _get_openai_base_url():
-    __all__ += ['parse_audio', 'parse_video', 'parse_image']
+    __all__ += ["parse_audio", "parse_video", "parse_image"]

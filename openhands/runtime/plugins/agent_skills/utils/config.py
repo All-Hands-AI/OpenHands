@@ -10,19 +10,19 @@ from openai import OpenAI
 # AFTER the agentskills is imported (the case for DockerRuntime)
 # ==================================================================================================
 def _get_openai_api_key() -> str:
-    return os.getenv('OPENAI_API_KEY', os.getenv('SANDBOX_ENV_OPENAI_API_KEY', ''))
+    return os.getenv("OPENAI_API_KEY", os.getenv("SANDBOX_ENV_OPENAI_API_KEY", ""))
 
 
 def _get_openai_base_url() -> str:
-    return os.getenv('OPENAI_BASE_URL', 'https://api.openai.com/v1')
+    return os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
 
 def _get_openai_model() -> str:
-    return os.getenv('OPENAI_MODEL', 'gpt-4o')
+    return os.getenv("OPENAI_MODEL", "gpt-4o")
 
 
 def _get_max_token() -> int:
-    return int(os.getenv('MAX_TOKEN', '500'))
+    return int(os.getenv("MAX_TOKEN", "500"))
 
 
 def _get_openai_client() -> OpenAI:

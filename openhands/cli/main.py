@@ -116,7 +116,7 @@ async def cleanup_session(
         await controller.close()
 
     except Exception as e:
-        logger.error(f'Error during session cleanup: {e}')
+        logger.error(f"Error during session cleanup: {e}")
 
 
 async def run_session(
@@ -144,7 +144,7 @@ async def run_session(
 
     # Show Initialization loader
     loop.run_in_executor(
-        None, display_initialization_animation, 'Initializing...', is_loaded
+        None, display_initialization_animation, "Initializing...", is_loaded
     )
 
     agent = create_agent(config)
@@ -237,7 +237,7 @@ async def run_session(
                     return
 
                 confirmation_status = await read_confirmation_input(config)
-                if confirmation_status in ('yes', 'always'):
+                if confirmation_status in ("yes", "always"):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -251,12 +251,12 @@ async def run_session(
                     # Notify the user
                     print_formatted_text(
                         HTML(
-                            '<skyblue>Okay, please tell me what I should do next/instead.</skyblue>'
+                            "<skyblue>Okay, please tell me what I should do next/instead.</skyblue>"
                         )
                     )
 
                 # Set the always_confirm_mode flag if the user wants to always confirm
-                if confirmation_status == 'always':
+                if confirmation_status == "always":
                     always_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
@@ -323,7 +323,7 @@ async def run_session(
     if not skip_banner:
         display_banner(session_id=sid)
 
-    welcome_message = ''
+    welcome_message = ""
 
     # Display number of MCP servers configured
     if agent.config.enable_mcp:
@@ -333,49 +333,49 @@ async def run_session(
             + len(runtime.config.mcp.shttp_servers)
         )
         if total_mcp_servers > 0:
-            mcp_line = f'Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers.'
+            mcp_line = f"Using {len(runtime.config.mcp.stdio_servers)} stdio MCP servers, {len(runtime.config.mcp.sse_servers)} SSE MCP servers and {len(runtime.config.mcp.shttp_servers)} SHTTP MCP servers."
 
             # Check for MCP errors and add indicator to the same line
             if agent.config.enable_mcp and mcp_error_collector.has_errors():
                 mcp_line += (
-                    ' ✗ MCP errors detected (type /mcp → select View errors to view)'
+                    " ✗ MCP errors detected (type /mcp → select View errors to view)"
                 )
 
-            welcome_message += mcp_line + '\n\n'
+            welcome_message += mcp_line + "\n\n"
 
-    welcome_message += 'What do you want to build?'  # from the application
-    initial_message = ''  # from the user
+    welcome_message += "What do you want to build?"  # from the application
+    initial_message = ""  # from the user
 
     if task_content:
         initial_message = task_content
 
     # If we loaded a state, we are resuming a previous session
     if initial_state is not None:
-        logger.info(f'Resuming session: {sid}')
+        logger.info(f"Resuming session: {sid}")
 
         if initial_state.last_error:
             # If the last session ended in an error, provide a message.
             error_message = initial_state.last_error
 
             # Check if it's an authentication error
-            if 'ERROR_LLM_AUTHENTICATION' in error_message:
+            if "ERROR_LLM_AUTHENTICATION" in error_message:
                 # Start with base authentication error message
-                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+                initial_message = "Authentication error with the LLM provider. Please check your API key."
 
                 # Add OpenHands-specific guidance if using an OpenHands model
                 llm_config = config.get_llm_config()
-                if llm_config.model.startswith('openhands/'):
+                if llm_config.model.startswith("openhands/"):
                     initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
             else:
                 # For other errors, use the standard message
                 initial_message = (
-                    'NOTE: the last session ended with an error.'
+                    "NOTE: the last session ended with an error."
                     "Let's get back on track. Do NOT resume your task. Ask me about it."
                 )
         else:
             # If we are resuming, we already have a task
-            initial_message = ''
-            welcome_message += '\nLoading previous conversation.'
+            initial_message = ""
+            welcome_message += "\nLoading previous conversation."
 
     # Show OpenHands welcome
     display_welcome_message(welcome_message)
@@ -388,7 +388,7 @@ async def run_session(
         event_stream.add_event(MessageAction(content=initial_message), EventSource.USER)
     else:
         # No session restored, no initial action: prompt for the user's first message
-        asyncio.create_task(prompt_for_next_task(''))
+        asyncio.create_task(prompt_for_next_task(""))
 
     await run_agent_until_done(
         controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
@@ -397,9 +397,9 @@ async def run_session(
     await cleanup_session(loop, agent, runtime, controller)
 
     if exit_reason == ExitReason.INTENTIONAL:
-        print_formatted_text('✅ Session terminated successfully.\n')
+        print_formatted_text("✅ Session terminated successfully.\n")
     else:
-        print_formatted_text(f'⚠️ Session was interrupted: {exit_reason.value}\n')
+        print_formatted_text(f"⚠️ Session was interrupted: {exit_reason.value}\n")
 
     return new_session_requested
 
@@ -411,21 +411,21 @@ async def run_setup_flow(config: OpenHandsConfig, settings_store: FileSettingsSt
         bool: True if settings were successfully configured, False otherwise.
     """
     # Display the banner with ASCII art first
-    display_banner(session_id='setup')
+    display_banner(session_id="setup")
 
     print_formatted_text(
-        HTML('<grey>No settings found. Starting initial setup...</grey>\n')
+        HTML("<grey>No settings found. Starting initial setup...</grey>\n")
     )
 
     # Use the existing settings modification function for basic setup
     await modify_llm_settings_basic(config, settings_store)
 
     # Ask if user wants to configure search API settings
-    print_formatted_text('')
+    print_formatted_text("")
     setup_search = cli_confirm(
         config,
-        'Would you like to configure Search API settings (optional)?',
-        ['Yes', 'No'],
+        "Would you like to configure Search API settings (optional)?",
+        ["Yes", "No"],
     )
 
     if setup_search == 0:  # Yes
@@ -443,54 +443,54 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
     Args:
         config: OpenHands configuration
     """
-    print_formatted_text('')
-    print_formatted_text(HTML('<gold>🚀 Welcome to OpenHands CLI!</gold>'))
-    print_formatted_text('')
+    print_formatted_text("")
+    print_formatted_text(HTML("<gold>🚀 Welcome to OpenHands CLI!</gold>"))
+    print_formatted_text("")
 
     # Show the normal setup flow
     print_formatted_text(
-        HTML('<grey>Would you like to set up convenient shell aliases?</grey>')
+        HTML("<grey>Would you like to set up convenient shell aliases?</grey>")
     )
-    print_formatted_text('')
+    print_formatted_text("")
     print_formatted_text(
-        HTML('<grey>This will add the following aliases to your shell profile:</grey>')
+        HTML("<grey>This will add the following aliases to your shell profile:</grey>")
     )
     print_formatted_text(
         HTML(
-            '<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+            "<grey>  • <b>openhands</b> → uvx --python 3.12 --from openhands-ai openhands</grey>"
         )
     )
     print_formatted_text(
         HTML(
-            '<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>'
+            "<grey>  • <b>oh</b> → uvx --python 3.12 --from openhands-ai openhands</grey>"
         )
     )
-    print_formatted_text('')
+    print_formatted_text("")
     print_formatted_text(
         HTML(
-            '<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>'
+            "<ansiyellow>⚠️  Note: This requires uv to be installed first.</ansiyellow>"
         )
     )
     print_formatted_text(
         HTML(
-            '<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>'
+            "<ansiyellow>   Installation guide: https://docs.astral.sh/uv/getting-started/installation</ansiyellow>"
         )
     )
-    print_formatted_text('')
+    print_formatted_text("")
 
     # Use cli_confirm to get user choice
     choice = cli_confirm(
         config,
-        'Set up shell aliases?',
-        ['Yes, set up aliases', 'No, skip this step'],
+        "Set up shell aliases?",
+        ["Yes, set up aliases", "No, skip this step"],
     )
 
     if choice == 0:  # User chose "Yes"
         success = add_aliases_to_shell_config()
         if success:
-            print_formatted_text('')
+            print_formatted_text("")
             print_formatted_text(
-                HTML('<ansigreen>✅ Aliases added successfully!</ansigreen>')
+                HTML("<ansigreen>✅ Aliases added successfully!</ansigreen>")
             )
 
             # Get the appropriate reload command using the shell config manager
@@ -499,28 +499,28 @@ def run_alias_setup_flow(config: OpenHandsConfig) -> None:
 
             print_formatted_text(
                 HTML(
-                    f'<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>'
+                    f"<grey>Run <b>{reload_cmd}</b> (or restart your terminal) to use the new aliases.</grey>"
                 )
             )
         else:
-            print_formatted_text('')
+            print_formatted_text("")
             print_formatted_text(
                 HTML(
-                    '<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>'
+                    "<ansired>❌ Failed to add aliases. You can set them up manually later.</ansired>"
                 )
             )
     else:  # User chose "No"
         # Mark that the user has declined alias setup
         mark_alias_setup_declined()
 
-        print_formatted_text('')
+        print_formatted_text("")
         print_formatted_text(
             HTML(
-                '<grey>Skipped alias setup. You can run this setup again anytime.</grey>'
+                "<grey>Skipped alias setup. You can run this setup again anytime.</grey>"
             )
         )
 
-    print_formatted_text('')
+    print_formatted_text("")
 
 
 async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
@@ -532,17 +532,17 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     else:
         # Set default log level to WARNING if no LOG_LEVEL environment variable is set
         # (command line argument takes precedence over environment variable)
-        env_log_level = os.getenv('LOG_LEVEL')
+        env_log_level = os.getenv("LOG_LEVEL")
         if not env_log_level:
             logger.setLevel(logging.WARNING)
 
     # If `config.toml` does not exist in current directory, use the file under home directory
     if not os.path.exists(args.config_file):
         home_config_file = os.path.join(
-            os.path.expanduser('~'), '.openhands', 'config.toml'
+            os.path.expanduser("~"), ".openhands", "config.toml"
         )
         logger.info(
-            f'Config file {args.config_file} does not exist, using default config file in home directory: {home_config_file}.'
+            f"Config file {args.config_file} does not exist, using default config file in home directory: {home_config_file}."
         )
         args.config_file = home_config_file
 
@@ -591,7 +591,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
             and settings.llm_model
             and settings.llm_api_key
         ):
-            logger.debug('Using LLM configuration from settings.json')
+            logger.debug("Using LLM configuration from settings.json")
             llm_config.model = settings.llm_model
             llm_config.api_key = settings.llm_api_key
             llm_config.base_url = settings.llm_base_url
@@ -603,7 +603,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
         # Load search API key from settings if available and not already set from config.toml
         if settings.search_api_key and not config.search_api_key:
             config.search_api_key = settings.search_api_key
-            logger.debug('Using search API key from settings.json')
+            logger.debug("Using search API key from settings.json")
 
         if settings.enable_default_condenser:
             # TODO: Make this generic?
@@ -611,13 +611,13 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
             agent_config = config.get_agent_config(config.default_agent)
             agent_config.condenser = LLMSummarizingCondenserConfig(
                 llm_config=llm_config,
-                type='llm',
+                type="llm",
             )
             config.set_agent_config(agent_config)
             config.enable_default_condenser = True
         else:
             agent_config = config.get_agent_config(config.default_agent)
-            agent_config.condenser = NoOpCondenserConfig(type='noop')
+            agent_config.condenser = NoOpCondenserConfig(type="noop")
             config.set_agent_config(agent_config)
             config.enable_default_condenser = False
 
@@ -625,12 +625,12 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     val_override = args.override_cli_mode
     should_override_cli_defaults = (
         val_override is True
-        or (isinstance(val_override, str) and val_override.lower() in ('true', '1'))
+        or (isinstance(val_override, str) and val_override.lower() in ("true", "1"))
         or (isinstance(val_override, int) and val_override == 1)
     )
 
     if not should_override_cli_defaults:
-        config.runtime = 'cli'
+        config.runtime = "cli"
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
@@ -662,7 +662,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     current_dir = config.workspace_base
 
     if not current_dir:
-        raise ValueError('Workspace base directory not specified')
+        raise ValueError("Workspace base directory not specified")
 
     if not check_folder_security_agreement(config, current_dir):
         # User rejected, exit application
@@ -672,7 +672,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
     if args.file:
         # For CLI usage, we want to enhance the file content with a prompt
         # that instructs the agent to read and understand the file first
-        with open(args.file, 'r', encoding='utf-8') as file:
+        with open(args.file, "r", encoding="utf-8") as file:
             file_content = file.read()
 
         # Create a prompt that instructs the agent to read and understand the file first
@@ -719,12 +719,12 @@ def run_cli_command(args):
     try:
         loop.run_until_complete(main_with_loop(loop, args))
     except KeyboardInterrupt:
-        print_formatted_text('⚠️ Session was interrupted: interrupted\n')
+        print_formatted_text("⚠️ Session was interrupted: interrupted\n")
     except ConnectionRefusedError as e:
-        print_formatted_text(f'Connection refused: {e}')
+        print_formatted_text(f"Connection refused: {e}")
         sys.exit(1)
     except Exception as e:
-        print_formatted_text(f'An error occurred: {e}')
+        print_formatted_text(f"An error occurred: {e}")
         sys.exit(1)
     finally:
         try:
@@ -737,5 +737,5 @@ def run_cli_command(args):
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
             loop.close()
         except Exception as e:
-            print_formatted_text(f'Error during cleanup: {e}')
+            print_formatted_text(f"Error during cleanup: {e}")
             sys.exit(1)

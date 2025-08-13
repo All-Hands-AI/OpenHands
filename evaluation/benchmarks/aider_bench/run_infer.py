@@ -37,8 +37,8 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 # Configure visibility of unit tests to the Agent.
-USE_UNIT_TESTS = os.environ.get('USE_UNIT_TESTS', 'false').lower() == 'true'
-SKIP_NUM = os.environ.get('SKIP_NUM')
+USE_UNIT_TESTS = os.environ.get("USE_UNIT_TESTS", "false").lower() == "true"
+SKIP_NUM = os.environ.get("SKIP_NUM")
 SKIP_NUM = (
     int(SKIP_NUM) if SKIP_NUM and SKIP_NUM.isdigit() and int(SKIP_NUM) >= 0 else None
 )
@@ -48,11 +48,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.11-bookworm'
+    sandbox_config.base_container_image = "python:3.11-bookworm"
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'docker'),
+        runtime=os.environ.get("RUNTIME", "docker"),
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -66,8 +66,8 @@ def get_config(
     # copy 'draft_editor' config if exists
     config_copy = copy.deepcopy(config)
     load_from_toml(config_copy)
-    if 'draft_editor' in config_copy.llms:
-        config.set_llm_config(config_copy.llms['draft_editor'], 'draft_editor')
+    if "draft_editor" in config_copy.llms:
+        config.set_llm_config(config_copy.llms["draft_editor"], "draft_editor")
 
     return config
 
@@ -80,37 +80,37 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f'\n{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}\n')
+    logger.info(f"\n{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}\n")
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command='mkdir -p /workspace')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="mkdir -p /workspace")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command='cd /workspace')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="cd /workspace")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     with tempfile.TemporaryDirectory() as tmpdir:
-        file_path = os.path.join(tmpdir, f'{instance.instance_name}.py')
-        with open(file_path, 'w') as f:
+        file_path = os.path.join(tmpdir, f"{instance.instance_name}.py")
+        with open(file_path, "w") as f:
             f.write(instance.signature)
         runtime.copy_to(
             file_path,
-            '/workspace',
+            "/workspace",
         )
         if USE_UNIT_TESTS:
-            file_path = os.path.join(tmpdir, f'{instance.instance_name}_test.py')
-            with open(file_path, 'w') as f:
+            file_path = os.path.join(tmpdir, f"{instance.instance_name}_test.py")
+            with open(file_path, "w") as f:
                 f.write(instance.test)
             runtime.copy_to(
                 file_path,
-                '/workspace',
+                "/workspace",
             )
-    logger.info(f'\n{"-" * 50} END Runtime Initialization Fn {"-" * 50}\n')
+    logger.info(f"\n{'-' * 50} END Runtime Initialization Fn {'-' * 50}\n")
 
 
 def complete_runtime(
@@ -123,37 +123,37 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f'\n{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}\n')
+    logger.info(f"\n{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}\n")
     obs: CmdOutputObservation
 
     # Rewriting the test file to ignore any changes Agent may have made.
-    script_name = f'{instance.instance_name}_test.py'
+    script_name = f"{instance.instance_name}_test.py"
     with tempfile.TemporaryDirectory() as tmpdir:
         file_path = os.path.join(tmpdir, script_name)
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             f.write(instance.test)
         runtime.copy_to(
             file_path,
-            '/workspace',
+            "/workspace",
         )
-        logger.info(f'Running test file: {script_name}')
+        logger.info(f"Running test file: {script_name}")
 
-    action = CmdRunAction(command=f'python3 -m unittest {script_name}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"python3 -m unittest {script_name}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    logger.info(obs, extra={"msg_type": "OBSERVATION"})
 
     exit_code = 1
     if isinstance(obs, CmdOutputObservation):
         exit_code = obs.exit_code
 
-    logger.info(f'\n{"-" * 50} END Runtime Completion Fn {"-" * 50}\n')
+    logger.info(f"\n{'-' * 50} END Runtime Completion Fn {'-' * 50}\n")
 
     runtime.close()
 
     return {
-        'test_output': obs.content,
-        'exit_code': exit_code,
+        "test_output": obs.content,
+        "exit_code": exit_code,
     }
 
 
@@ -166,11 +166,11 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
         reset_logger_for_multiprocessing(logger, str(instance.instance_id), log_dir)
     else:
         logger.info(
-            f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
+            f"\nStarting evaluation for instance {str(instance.instance_id)}.\n"
         )
 
     # =============================================
@@ -181,20 +181,20 @@ def process_instance(
     logger.info(instance)
     instruction = instance.instruction
     instruction += INSTRUCTIONS_ADDENDUM.format(
-        signature_file=f'{instance.instance_name}.py',
+        signature_file=f"{instance.instance_name}.py",
     )
     if USE_UNIT_TESTS:
         logger.info(
-            f'\nInstruction to run test_file: {instance.instance_name}_test.py\n'
+            f"\nInstruction to run test_file: {instance.instance_name}_test.py\n"
         )
         instruction += (
-            f'Use `python -m unittest {instance.instance_name}_test.py` to run the test_file '
-            'and verify the correctness of your solution. DO NOT EDIT the test file.\n\n'
+            f"Use `python -m unittest {instance.instance_name}_test.py` to run the test_file "
+            "and verify the correctness of your solution. DO NOT EDIT the test file.\n\n"
         )
 
     instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided '
-        'to you AND NEVER ASK FOR HUMAN HELP.\n'
+        "IMPORTANT: You should ONLY interact with the environment provided "
+        "to you AND NEVER ASK FOR HUMAN HELP.\n"
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += INST_SUFFIXES[metadata.agent_class]
@@ -217,29 +217,29 @@ def process_instance(
         )
     )
     if state is None:
-        raise ValueError('State should not be None.')
+        raise ValueError("State should not be None.")
 
     # # =============================================
     # # result evaluation
     # # =============================================
 
     return_val = complete_runtime(runtime, instance)
-    exit_code = return_val['exit_code']
-    test_output = return_val['test_output']
+    exit_code = return_val["exit_code"]
+    test_output = return_val["test_output"]
 
     errors = []
     test_cases = None
-    if test_output.find('SyntaxError') != -1:
-        errors += 'SyntaxError'
-    elif test_output.find('IndentationError') != -1:
-        errors += 'IndentationError'
+    if test_output.find("SyntaxError") != -1:
+        errors += "SyntaxError"
+    elif test_output.find("IndentationError") != -1:
+        errors += "IndentationError"
     else:
-        test_cases = test_output[: test_output.find('\r')]
+        test_cases = test_output[: test_output.find("\r")]
 
     test_result = {
-        'exit_code': exit_code,
-        'test_cases': test_cases,
-        'errors': errors,
+        "exit_code": exit_code,
+        "test_cases": test_cases,
+        "errors": errors,
     }
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
@@ -262,10 +262,10 @@ def process_instance(
     return output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments()
-    dataset = load_dataset('RajMaheshwari/Exercism-Python')
-    aider_bench_tests = dataset['train'].to_pandas()
+    dataset = load_dataset("RajMaheshwari/Exercism-Python")
+    aider_bench_tests = dataset["train"].to_pandas()
 
     llm_config = None
     if args.llm_config:
@@ -274,23 +274,23 @@ if __name__ == '__main__':
         llm_config.modify_params = False
 
     if llm_config is None:
-        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
 
     metadata = make_metadata(
         llm_config,
-        'AiderBench',
+        "AiderBench",
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
 
     # Parse dataset IDs if provided
     eval_ids = None
     if args.eval_ids:
-        eval_ids = str(args.eval_ids).split(',')
-        logger.info(f'\nUsing specific dataset IDs: {eval_ids}\n')
+        eval_ids = str(args.eval_ids).split(",")
+        logger.info(f"\nUsing specific dataset IDs: {eval_ids}\n")
 
     instances = prepare_dataset(
         aider_bench_tests,

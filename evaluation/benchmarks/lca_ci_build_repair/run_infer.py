@@ -46,11 +46,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.12-bookworm'
+    sandbox_config.base_container_image = "python:3.12-bookworm"
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='docker',
+        runtime="docker",
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -70,20 +70,20 @@ def load_bench_config():
     script_dir = os.path.dirname(
         os.path.abspath(__file__)
     )  # Get the absolute path of the script
-    config_path = os.path.join(script_dir, 'config.yaml')
-    yaml = ruamel.yaml.YAML(typ='rt')
-    with open(config_path, 'r') as file:
+    config_path = os.path.join(script_dir, "config.yaml")
+    yaml = ruamel.yaml.YAML(typ="rt")
+    with open(config_path, "r") as file:
         return yaml.load(file)
 
 
 bench_config = load_bench_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
+    "CodeActAgent": codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have completed the task, please finish the interaction using the "finish" tool.\n'
+    "CodeActAgent": 'When you think you have completed the task, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -95,89 +95,89 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
     obs: CmdOutputObservation
 
-    lca_path = bench_config['LCA_PATH']
+    lca_path = bench_config["LCA_PATH"]
     lca_ci_path = os.path.join(
-        lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark'
+        lca_path, "lca-baselines", "ci-builds-repair", "ci-builds-repair-benchmark"
     )
 
-    repo_name = instance['repo_name']
-    repos_path = bench_config['repos_folder']
-    repo_owner = instance['repo_owner']
-    repo_path = os.path.join(repos_path, f'{repo_owner}__{repo_name}')
-    model_name = bench_config['model_name']
+    repo_name = instance["repo_name"]
+    repos_path = bench_config["repos_folder"]
+    repo_owner = instance["repo_owner"]
+    repo_path = os.path.join(repos_path, f"{repo_owner}__{repo_name}")
+    model_name = bench_config["model_name"]
 
-    action = CmdRunAction(command=f'mkdir {lca_path}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"mkdir {lca_path}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command=f'cd {lca_path}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"cd {lca_path}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    lca_repo_url = 'https://github.com/juanmichelini/lca-baselines'
-    action = CmdRunAction(command=f'git clone {lca_repo_url}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    lca_repo_url = "https://github.com/juanmichelini/lca-baselines"
+    action = CmdRunAction(command=f"git clone {lca_repo_url}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command=f'cd {lca_ci_path}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"cd {lca_ci_path}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command='git switch open-hands-integration')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="git switch open-hands-integration")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     script_dir = os.path.dirname(
         os.path.abspath(__file__)
     )  # Get the absolute path of the script
-    config_path = os.path.join(script_dir, 'config.yaml')
-    with open(config_path, 'r') as file:
+    config_path = os.path.join(script_dir, "config.yaml")
+    with open(config_path, "r") as file:
         config_as_text = file.read()
 
     commandf = f"echo '{config_as_text}' > config.yaml"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
 
-    token_gh = bench_config['token_gh']
-    commandf = f'export TOKEN_GH={token_gh}'
+    token_gh = bench_config["token_gh"]
+    commandf = f"export TOKEN_GH={token_gh}"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
 
-    action = CmdRunAction(command='poetry install')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="poetry install")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
 
     # Set up the task environment
-    commandf = f'poetry run python run_get_datapoint.py --model-name {model_name} --id {instance["id"]} > branch_name.txt'
+    commandf = f"poetry run python run_get_datapoint.py --model-name {model_name} --id {instance['id']} > branch_name.txt"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     if obs.exit_code != 0:
-        print(f'run_get_datapoint.py failed at {instance["id"]} with {obs.content}')
+        print(f"run_get_datapoint.py failed at {instance['id']} with {obs.content}")
     assert obs.exit_code == 0
 
-    commandf = 'cat branch_name.txt'
+    commandf = "cat branch_name.txt"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
-    bench_config['user_branch_name'] = obs.content
+    bench_config["user_branch_name"] = obs.content
 
     # Navigate to the task's code path
-    action = CmdRunAction(command=f'cd {repo_path}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"cd {repo_path}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
 
-    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
 def complete_runtime(
@@ -190,44 +190,44 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
     obs: CmdOutputObservation
 
-    model_name = bench_config['model_name']
+    model_name = bench_config["model_name"]
 
-    lca_path = bench_config['LCA_PATH']
+    lca_path = bench_config["LCA_PATH"]
     lca_ci_path = os.path.join(
-        lca_path, 'lca-baselines', 'ci-builds-repair', 'ci-builds-repair-benchmark'
+        lca_path, "lca-baselines", "ci-builds-repair", "ci-builds-repair-benchmark"
     )
 
-    user_branch_name = bench_config['user_branch_name']
+    user_branch_name = bench_config["user_branch_name"]
 
-    token_gh = bench_config['token_gh']
-    commandf = f'export TOKEN_GH={token_gh}'
+    token_gh = bench_config["token_gh"]
+    commandf = f"export TOKEN_GH={token_gh}"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
 
     # Navigate to the lca-baseslines scripts path
-    action = CmdRunAction(command=f'cd {lca_ci_path}')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command=f"cd {lca_ci_path}")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    commandf = f'poetry run python run_push_datapoint.py --id {instance["id"]} --model-name {model_name} --user-branch-name {user_branch_name} > single_output.json'
-    logger.info(f'Running push script: {commandf}')
+    commandf = f"poetry run python run_push_datapoint.py --id {instance['id']} --model-name {model_name} --user-branch-name {user_branch_name} > single_output.json"
+    logger.info(f"Running push script: {commandf}")
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     # assert obs.exit_code == 0
 
-    commandf = 'cat single_output.json'
+    commandf = "cat single_output.json"
     action = CmdRunAction(command=commandf)
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     result = json.loads(obs.content)
 
-    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
 
     return result
 
@@ -237,17 +237,17 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
+        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        reset_logger_for_multiprocessing(logger, instance["instance_id"], log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
+        logger.info(f"Starting evaluation for instance {instance['instance_id']}.")
 
-    repo_name = instance['repo_name']
-    repo_workflow = instance['workflow_path']
-    repo_logs = instance['logs']
-    repos_path = bench_config['repos_folder']
-    repo_owner = instance['repo_owner']
-    repo_path = os.path.join(repos_path, f'{repo_owner}__{repo_name}')
+    repo_name = instance["repo_name"]
+    repo_workflow = instance["workflow_path"]
+    repo_logs = instance["logs"]
+    repos_path = bench_config["repos_folder"]
+    repo_owner = instance["repo_owner"]
+    repo_path = os.path.join(repos_path, f"{repo_owner}__{repo_name}")
 
     # Prepare the task instruction
     instruction_no_oracle = f"""
@@ -313,7 +313,7 @@ Phase 7. VERIFICATION: Test your implementation thoroughly.
      7.2.3 The functions you changed
    7.4 If any tests fail, revise your implementation until all tests pass
 
-Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance['sha_fail']}.
+Phase 8. REVIEW: Carefully re-read the problem description and compare your changes with the base commit {instance["sha_fail"]}.
    8.1 Ensure you've fully addressed all requirements.
 
 Once all phases are done, announce: 'Agent Task Complete'.
@@ -346,7 +346,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance['instance_id'],
+        instance_id=instance["instance_id"],
         # instance=instance.to_dict(orient='recorods'),
         instruction=instruction_no_oracle,
         metadata=metadata,
@@ -357,30 +357,30 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
     return output
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = get_evaluation_parser()
     parser.add_argument(
-        '-s',
-        '--eval-split',
+        "-s",
+        "--eval-split",
         type=str,
-        default='test',
-        choices=['test'],
-        help='data split to evaluate on, must be test',
+        default="test",
+        choices=["test"],
+        help="data split to evaluate on, must be test",
     )
     args, _ = parser.parse_known_args()
 
     data_split = args.eval_split
 
     bench = load_dataset(
-        'JetBrains-Research/lca-ci-builds-repair', split=data_split
+        "JetBrains-Research/lca-ci-builds-repair", split=data_split
     ).to_pandas()
     # todo: see why 126 is giving problems on inference
     # todo: see why 145 is giving problems on eval
-    bench = bench[bench['id'] != 126]
-    bench = bench[bench['id'] != 145]
+    bench = bench[bench["id"] != 126]
+    bench = bench[bench["id"] != 145]
     # bench = bench.iloc[0:56]
     # add column instnace_id for compatibility with oh repo, old id column must be kept for lca repo
-    bench['instance_id'] = bench['id'].astype(str)
+    bench["instance_id"] = bench["id"].astype(str)
 
     llm_config = None
     if args.llm_config:
@@ -388,17 +388,17 @@ if __name__ == '__main__':
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
 
     metadata = make_metadata(
         llm_config,
-        f'jetbrains-lca-ci--{data_split}',
+        f"jetbrains-lca-ci--{data_split}",
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
     instances = prepare_dataset(bench, output_file, args.eval_n_limit)
 
     run_evaluation(

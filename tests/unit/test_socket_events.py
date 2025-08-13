@@ -8,11 +8,11 @@ from openhands.server.listen_socket import oh_action, oh_user_action
 @pytest.mark.asyncio
 async def test_oh_user_action():
     """Test that oh_user_action correctly forwards data to the conversation manager."""
-    connection_id = 'test_connection_id'
-    test_data = {'action': 'test_action', 'data': 'test_data'}
+    connection_id = "test_connection_id"
+    test_data = {"action": "test_action", "data": "test_data"}
 
     # Mock the conversation_manager
-    with patch('openhands.server.listen_socket.conversation_manager') as mock_manager:
+    with patch("openhands.server.listen_socket.conversation_manager") as mock_manager:
         mock_manager.send_to_event_stream = AsyncMock()
 
         # Call the function
@@ -27,11 +27,11 @@ async def test_oh_user_action():
 @pytest.mark.asyncio
 async def test_oh_action():
     """Test that oh_action (legacy handler) correctly forwards data to the conversation manager."""
-    connection_id = 'test_connection_id'
-    test_data = {'action': 'test_action', 'data': 'test_data'}
+    connection_id = "test_connection_id"
+    test_data = {"action": "test_action", "data": "test_data"}
 
     # Mock the conversation_manager
-    with patch('openhands.server.listen_socket.conversation_manager') as mock_manager:
+    with patch("openhands.server.listen_socket.conversation_manager") as mock_manager:
         mock_manager.send_to_event_stream = AsyncMock()
 
         # Call the function

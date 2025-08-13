@@ -11,9 +11,9 @@ from openhands.events.serialization.observation import (
 )
 
 __all__ = [
-    'action_from_dict',
-    'event_from_dict',
-    'event_to_dict',
-    'event_to_trajectory',
-    'observation_from_dict',
+    "action_from_dict",
+    "event_from_dict",
+    "event_to_dict",
+    "event_to_trajectory",
+    "observation_from_dict",
 ]

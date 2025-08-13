@@ -24,19 +24,18 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         workspace_base=None,
         workspace_mount_path=None,
         replay_trajectory_path=str(
-            (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
+            (Path(__file__).parent / "trajs" / f"{trajectory_name}.json").resolve()
         ),
     )
 
 
 def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
-    """
-    A simple replay test that involves simple terminal operations and edits
+    """A simple replay test that involves simple terminal operations and edits
     (creating a simple 2048 game), using the default agent
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = str(
-        (Path(__file__).parent / 'trajs' / 'basic.json').resolve()
+        (Path(__file__).parent / "trajs" / "basic.json").resolve()
     )
     config.security.confirmation_mode = False
 
@@ -54,8 +53,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
-    """
-    A simple replay test that involves simple terminal operations and edits
+    """A simple replay test that involves simple terminal operations and edits
     (writing a Vue.js App), using the default agent
 
     Note:
@@ -66,7 +64,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config('basic_gui_mode')
+    config = _get_config("basic_gui_mode")
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
@@ -85,8 +83,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
-    """
-    Replay requires a consistent initial state to start with, otherwise it might
+    """Replay requires a consistent initial state to start with, otherwise it might
     be producing garbage. The trajectory used in this test assumes existence of
     a file named 'game_2048.py', which doesn't exist when we replay the trajectory
     (so called inconsistent initial states). This test demonstrates how this would
@@ -95,7 +92,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = str(
-        (Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve()
+        (Path(__file__).parent / "trajs" / "wrong_initial_state.json").resolve()
     )
     config.security.confirmation_mode = False
 
@@ -121,8 +118,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
-    """
-    Replay a trajectory that involves interactions, i.e. with user messages
+    """Replay a trajectory that involves interactions, i.e. with user messages
     in the middle. This tests two things:
     1) The controller should be able to replay all actions without human
     interference (no asking for user input).
@@ -130,7 +126,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config('basic_interactions')
+    config = _get_config("basic_interactions")
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
@@ -149,7 +145,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     user_messages = [
         "what's 1+1?",
         "No, I mean by Goldbach's conjecture!",
-        'Finish please',
+        "Finish please",
     ]
     i = 0
     for event in state.history:

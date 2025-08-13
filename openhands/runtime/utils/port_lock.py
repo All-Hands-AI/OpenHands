@@ -24,9 +24,9 @@ class PortLock:
     def __init__(self, port: int, lock_dir: Optional[str] = None):
         self.port = port
         self.lock_dir = lock_dir or os.path.join(
-            tempfile.gettempdir(), 'openhands_port_locks'
+            tempfile.gettempdir(), "openhands_port_locks"
         )
-        self.lock_file_path = os.path.join(self.lock_dir, f'port_{port}.lock')
+        self.lock_file_path = os.path.join(self.lock_dir, f"port_{port}.lock")
         self.lock_fd: Optional[int] = None
         self._locked = False
 
@@ -60,10 +60,10 @@ class PortLock:
                         self._locked = True
 
                         # Write port number to lock file for debugging
-                        os.write(self.lock_fd, f'{self.port}\n'.encode())
+                        os.write(self.lock_fd, f"{self.port}\n".encode())
                         os.fsync(self.lock_fd)
 
-                        logger.debug(f'Acquired lock for port {self.port}')
+                        logger.debug(f"Acquired lock for port {self.port}")
                         return True
                     except (OSError, IOError):
                         # Lock is held by another process, wait a bit
@@ -86,10 +86,10 @@ class PortLock:
                         self._locked = True
 
                         # Write port number to lock file for debugging
-                        os.write(self.lock_fd, f'{self.port}\n'.encode())
+                        os.write(self.lock_fd, f"{self.port}\n".encode())
                         os.fsync(self.lock_fd)
 
-                        logger.debug(f'Acquired lock for port {self.port}')
+                        logger.debug(f"Acquired lock for port {self.port}")
                         return True
                     except OSError:
                         # Lock file already exists, wait a bit
@@ -99,7 +99,7 @@ class PortLock:
                 return False
 
         except Exception as e:
-            logger.debug(f'Failed to acquire lock for port {self.port}: {e}')
+            logger.debug(f"Failed to acquire lock for port {self.port}: {e}")
             if self.lock_fd:
                 try:
                     os.close(self.lock_fd)
@@ -123,16 +123,16 @@ class PortLock:
                     os.unlink(self.lock_file_path)
                 except FileNotFoundError:
                     pass
-                logger.debug(f'Released lock for port {self.port}')
+                logger.debug(f"Released lock for port {self.port}")
             except Exception as e:
-                logger.warning(f'Error releasing lock for port {self.port}: {e}')
+                logger.warning(f"Error releasing lock for port {self.port}: {e}")
             finally:
                 self.lock_fd = None
                 self._locked = False
 
-    def __enter__(self) -> 'PortLock':
+    def __enter__(self) -> "PortLock":
         if not self.acquire():
-            raise OSError(f'Could not acquire lock for port {self.port}')
+            raise OSError(f"Could not acquire lock for port {self.port}")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -147,7 +147,7 @@ def find_available_port_with_lock(
     min_port: int = 30000,
     max_port: int = 39999,
     max_attempts: int = 20,
-    bind_address: str = '0.0.0.0',
+    bind_address: str = "0.0.0.0",
     lock_timeout: float = 1.0,
 ) -> Optional[tuple[int, PortLock]]:
     """Find an available port and acquire a lock for it.
@@ -177,7 +177,7 @@ def find_available_port_with_lock(
         if lock.acquire(timeout=lock_timeout):
             # Check if port is actually available
             if _check_port_available(port, bind_address):
-                logger.debug(f'Found and locked available port {port}')
+                logger.debug(f"Found and locked available port {port}")
                 return port, lock
             else:
                 # Port is locked but not available (maybe in TIME_WAIT state)
@@ -200,7 +200,7 @@ def find_available_port_with_lock(
         if lock.acquire(timeout=lock_timeout):
             # Check if port is actually available
             if _check_port_available(port, bind_address):
-                logger.debug(f'Found and locked available port {port}')
+                logger.debug(f"Found and locked available port {port}")
                 return port, lock
             else:
                 # Port is locked but not available
@@ -210,12 +210,12 @@ def find_available_port_with_lock(
         time.sleep(0.001)
 
     logger.error(
-        f'Could not find and lock available port in range {min_port}-{max_port} after {max_attempts} attempts'
+        f"Could not find and lock available port in range {min_port}-{max_port} after {max_attempts} attempts"
     )
     return None
 
 
-def _check_port_available(port: int, bind_address: str = '0.0.0.0') -> bool:
+def _check_port_available(port: int, bind_address: str = "0.0.0.0") -> bool:
     """Check if a port is available by trying to bind to it."""
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -236,7 +236,7 @@ def cleanup_stale_locks(max_age_seconds: int = 300) -> int:
     Returns:
         Number of lock files cleaned up
     """
-    lock_dir = os.path.join(tempfile.gettempdir(), 'openhands_port_locks')
+    lock_dir = os.path.join(tempfile.gettempdir(), "openhands_port_locks")
     if not os.path.exists(lock_dir):
         return 0
 
@@ -245,7 +245,7 @@ def cleanup_stale_locks(max_age_seconds: int = 300) -> int:
 
     try:
         for filename in os.listdir(lock_dir):
-            if filename.startswith('port_') and filename.endswith('.lock'):
+            if filename.startswith("port_") and filename.endswith(".lock"):
                 lock_path = os.path.join(lock_dir, filename)
                 try:
                     # Check if lock file is old
@@ -254,7 +254,7 @@ def cleanup_stale_locks(max_age_seconds: int = 300) -> int:
                         # Try to remove stale lock
                         os.unlink(lock_path)
                         cleaned += 1
-                        logger.debug(f'Cleaned up stale lock file: {filename}')
+                        logger.debug(f"Cleaned up stale lock file: {filename}")
                 except (OSError, FileNotFoundError):
                     # File might have been removed by another process
                     pass
@@ -263,6 +263,6 @@ def cleanup_stale_locks(max_age_seconds: int = 300) -> int:
         pass
 
     if cleaned > 0:
-        logger.info(f'Cleaned up {cleaned} stale port lock files')
+        logger.info(f"Cleaned up {cleaned} stale port lock files")
 
     return cleaned

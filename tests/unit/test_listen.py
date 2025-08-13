@@ -11,7 +11,7 @@ class MockStaticFiles:
 
 # Patch necessary components before importing from listen
 with (
-    patch('fastapi.staticfiles.StaticFiles', MockStaticFiles),
+    patch("fastapi.staticfiles.StaticFiles", MockStaticFiles),
 ):
     from openhands.server.file_config import (
         is_extension_allowed,
@@ -23,13 +23,13 @@ def test_load_file_upload_config():
     config = OpenHandsConfig(
         file_uploads_max_file_size_mb=10,
         file_uploads_restrict_file_types=True,
-        file_uploads_allowed_extensions=['.txt', '.pdf'],
+        file_uploads_allowed_extensions=[".txt", ".pdf"],
     )
     max_size, restrict_types, allowed_extensions = load_file_upload_config(config)
 
     assert max_size == 10
     assert restrict_types is True
-    assert set(allowed_extensions) == {'.txt', '.pdf'}
+    assert set(allowed_extensions) == {".txt", ".pdf"}
 
 
 def test_load_file_upload_config_invalid_max_size():
@@ -38,39 +38,39 @@ def test_load_file_upload_config_invalid_max_size():
         file_uploads_restrict_file_types=False,
         file_uploads_allowed_extensions=[],
     )
-    with patch('openhands.server.shared.config', config):
+    with patch("openhands.server.shared.config", config):
         max_size, restrict_types, allowed_extensions = load_file_upload_config()
 
         assert max_size == 0  # Should default to 0 when invalid
         assert restrict_types is False
-        assert allowed_extensions == ['.*']  # Should default to '.*' when empty
+        assert allowed_extensions == [".*"]  # Should default to '.*' when empty
 
 
 def test_is_extension_allowed():
     with (
-        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
-        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.txt', '.pdf']),
+        patch("openhands.server.file_config.RESTRICT_FILE_TYPES", True),
+        patch("openhands.server.file_config.ALLOWED_EXTENSIONS", [".txt", ".pdf"]),
     ):
-        assert is_extension_allowed('file.txt')
-        assert is_extension_allowed('file.pdf')
-        assert not is_extension_allowed('file.doc')
-        assert not is_extension_allowed('file')
+        assert is_extension_allowed("file.txt")
+        assert is_extension_allowed("file.pdf")
+        assert not is_extension_allowed("file.doc")
+        assert not is_extension_allowed("file")
 
 
 def test_is_extension_allowed_no_restrictions():
-    with patch('openhands.server.file_config.RESTRICT_FILE_TYPES', False):
-        assert is_extension_allowed('file.txt')
-        assert is_extension_allowed('file.pdf')
-        assert is_extension_allowed('file.doc')
-        assert is_extension_allowed('file')
+    with patch("openhands.server.file_config.RESTRICT_FILE_TYPES", False):
+        assert is_extension_allowed("file.txt")
+        assert is_extension_allowed("file.pdf")
+        assert is_extension_allowed("file.doc")
+        assert is_extension_allowed("file")
 
 
 def test_is_extension_allowed_wildcard():
     with (
-        patch('openhands.server.file_config.RESTRICT_FILE_TYPES', True),
-        patch('openhands.server.file_config.ALLOWED_EXTENSIONS', ['.*']),
+        patch("openhands.server.file_config.RESTRICT_FILE_TYPES", True),
+        patch("openhands.server.file_config.ALLOWED_EXTENSIONS", [".*"]),
     ):
-        assert is_extension_allowed('file.txt')
-        assert is_extension_allowed('file.pdf')
-        assert is_extension_allowed('file.doc')
-        assert is_extension_allowed('file')
+        assert is_extension_allowed("file.txt")
+        assert is_extension_allowed("file.pdf")
+        assert is_extension_allowed("file.doc")
+        assert is_extension_allowed("file")

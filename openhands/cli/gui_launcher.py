@@ -21,8 +21,8 @@ def _format_docker_command_for_logging(cmd: list[str]) -> str:
     Returns:
         str: The formatted command string in grey HTML color
     """
-    cmd_str = ' '.join(cmd)
-    return f'<grey>Running Docker command: {cmd_str}</grey>'
+    cmd_str = " ".join(cmd)
+    return f"<grey>Running Docker command: {cmd_str}</grey>"
 
 
 def check_docker_requirements() -> bool:
@@ -32,13 +32,13 @@ def check_docker_requirements() -> bool:
         bool: True if Docker is available and running, False otherwise.
     """
     # Check if Docker is installed
-    if not shutil.which('docker'):
+    if not shutil.which("docker"):
         print_formatted_text(
-            HTML('<ansired>❌ Docker is not installed or not in PATH.</ansired>')
+            HTML("<ansired>❌ Docker is not installed or not in PATH.</ansired>")
         )
         print_formatted_text(
             HTML(
-                '<grey>Please install Docker first: https://docs.docker.com/get-docker/</grey>'
+                "<grey>Please install Docker first: https://docs.docker.com/get-docker/</grey>"
             )
         )
         return False
@@ -46,21 +46,21 @@ def check_docker_requirements() -> bool:
     # Check if Docker daemon is running
     try:
         result = subprocess.run(
-            ['docker', 'info'], capture_output=True, text=True, timeout=10
+            ["docker", "info"], capture_output=True, text=True, timeout=10
         )
         if result.returncode != 0:
             print_formatted_text(
-                HTML('<ansired>❌ Docker daemon is not running.</ansired>')
+                HTML("<ansired>❌ Docker daemon is not running.</ansired>")
             )
             print_formatted_text(
-                HTML('<grey>Please start Docker and try again.</grey>')
+                HTML("<grey>Please start Docker and try again.</grey>")
             )
             return False
     except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
         print_formatted_text(
-            HTML('<ansired>❌ Failed to check Docker status.</ansired>')
+            HTML("<ansired>❌ Failed to check Docker status.</ansired>")
         )
-        print_formatted_text(HTML(f'<grey>Error: {e}</grey>'))
+        print_formatted_text(HTML(f"<grey>Error: {e}</grey>"))
         return False
 
     return True
@@ -68,7 +68,7 @@ def check_docker_requirements() -> bool:
 
 def ensure_config_dir_exists() -> Path:
     """Ensure the OpenHands configuration directory exists and return its path."""
-    config_dir = Path.home() / '.openhands'
+    config_dir = Path.home() / ".openhands"
     config_dir.mkdir(exist_ok=True)
     return config_dir
 
@@ -81,9 +81,9 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         gpu: If True, enable GPU support by mounting all GPUs into the container via nvidia-docker.
     """
     print_formatted_text(
-        HTML('<ansiblue>🚀 Launching OpenHands GUI server...</ansiblue>')
+        HTML("<ansiblue>🚀 Launching OpenHands GUI server...</ansiblue>")
     )
-    print_formatted_text('')
+    print_formatted_text("")
 
     # Check Docker requirements
     if not check_docker_requirements():
@@ -94,13 +94,13 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
 
     # Get the current version for the Docker image
     version = __version__
-    runtime_image = f'docker.all-hands.dev/all-hands-ai/runtime:{version}-nikolaik'
-    app_image = f'docker.all-hands.dev/all-hands-ai/openhands:{version}'
+    runtime_image = f"docker.all-hands.dev/all-hands-ai/runtime:{version}-nikolaik"
+    app_image = f"docker.all-hands.dev/all-hands-ai/openhands:{version}"
 
-    print_formatted_text(HTML('<grey>Pulling required Docker images...</grey>'))
+    print_formatted_text(HTML("<grey>Pulling required Docker images...</grey>"))
 
     # Pull the runtime image first
-    pull_cmd = ['docker', 'pull', runtime_image]
+    pull_cmd = ["docker", "pull", runtime_image]
     print_formatted_text(HTML(_format_docker_command_for_logging(pull_cmd)))
     try:
         subprocess.run(
@@ -110,55 +110,55 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         )
     except subprocess.CalledProcessError:
         print_formatted_text(
-            HTML('<ansired>❌ Failed to pull runtime image.</ansired>')
+            HTML("<ansired>❌ Failed to pull runtime image.</ansired>")
         )
         sys.exit(1)
     except subprocess.TimeoutExpired:
         print_formatted_text(
-            HTML('<ansired>❌ Timeout while pulling runtime image.</ansired>')
+            HTML("<ansired>❌ Timeout while pulling runtime image.</ansired>")
         )
         sys.exit(1)
 
-    print_formatted_text('')
+    print_formatted_text("")
     print_formatted_text(
-        HTML('<ansigreen>✅ Starting OpenHands GUI server...</ansigreen>')
+        HTML("<ansigreen>✅ Starting OpenHands GUI server...</ansigreen>")
     )
     print_formatted_text(
-        HTML('<grey>The server will be available at: http://localhost:3000</grey>')
+        HTML("<grey>The server will be available at: http://localhost:3000</grey>")
     )
-    print_formatted_text(HTML('<grey>Press Ctrl+C to stop the server.</grey>'))
-    print_formatted_text('')
+    print_formatted_text(HTML("<grey>Press Ctrl+C to stop the server.</grey>"))
+    print_formatted_text("")
 
     # Build the Docker command
     docker_cmd = [
-        'docker',
-        'run',
-        '-it',
-        '--rm',
-        '--pull=always',
-        '-e',
-        f'SANDBOX_RUNTIME_CONTAINER_IMAGE={runtime_image}',
-        '-e',
-        'LOG_ALL_EVENTS=true',
-        '-v',
-        '/var/run/docker.sock:/var/run/docker.sock',
-        '-v',
-        f'{config_dir}:/.openhands',
+        "docker",
+        "run",
+        "-it",
+        "--rm",
+        "--pull=always",
+        "-e",
+        f"SANDBOX_RUNTIME_CONTAINER_IMAGE={runtime_image}",
+        "-e",
+        "LOG_ALL_EVENTS=true",
+        "-v",
+        "/var/run/docker.sock:/var/run/docker.sock",
+        "-v",
+        f"{config_dir}:/.openhands",
     ]
 
     # Add GPU support if requested
     if gpu:
         print_formatted_text(
-            HTML('<ansigreen>🖥️ Enabling GPU support via nvidia-docker...</ansigreen>')
+            HTML("<ansigreen>🖥️ Enabling GPU support via nvidia-docker...</ansigreen>")
         )
         # Add the --gpus all flag to enable all GPUs
-        docker_cmd.insert(2, '--gpus')
-        docker_cmd.insert(3, 'all')
+        docker_cmd.insert(2, "--gpus")
+        docker_cmd.insert(3, "all")
         # Add environment variable to pass GPU support to sandbox containers
         docker_cmd.extend(
             [
-                '-e',
-                'SANDBOX_ENABLE_GPU=true',
+                "-e",
+                "SANDBOX_ENABLE_GPU=true",
             ]
         )
 
@@ -168,34 +168,34 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         # Following the documentation at https://docs.all-hands.dev/usage/runtimes/docker#connecting-to-your-filesystem
         docker_cmd.extend(
             [
-                '-e',
-                f'SANDBOX_VOLUMES={cwd}:/workspace:rw',
+                "-e",
+                f"SANDBOX_VOLUMES={cwd}:/workspace:rw",
             ]
         )
 
         # Set user ID for Unix-like systems only
-        if os.name != 'nt':  # Not Windows
+        if os.name != "nt":  # Not Windows
             try:
-                user_id = subprocess.check_output(['id', '-u'], text=True).strip()
-                docker_cmd.extend(['-e', f'SANDBOX_USER_ID={user_id}'])
+                user_id = subprocess.check_output(["id", "-u"], text=True).strip()
+                docker_cmd.extend(["-e", f"SANDBOX_USER_ID={user_id}"])
             except (subprocess.CalledProcessError, FileNotFoundError):
                 # If 'id' command fails or doesn't exist, skip setting user ID
                 pass
         # Print the folder that will be mounted to inform the user
         print_formatted_text(
             HTML(
-                f'<ansigreen>📂 Mounting current directory:</ansigreen> <ansiyellow>{cwd}</ansiyellow> <ansigreen>to</ansigreen> <ansiyellow>/workspace</ansiyellow>'
+                f"<ansigreen>📂 Mounting current directory:</ansigreen> <ansiyellow>{cwd}</ansiyellow> <ansigreen>to</ansigreen> <ansiyellow>/workspace</ansiyellow>"
             )
         )
 
     docker_cmd.extend(
         [
-            '-p',
-            '3000:3000',
-            '--add-host',
-            'host.docker.internal:host-gateway',
-            '--name',
-            'openhands-app',
+            "-p",
+            "3000:3000",
+            "--add-host",
+            "host.docker.internal:host-gateway",
+            "--name",
+            "openhands-app",
             app_image,
         ]
     )
@@ -205,15 +205,15 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         print_formatted_text(HTML(_format_docker_command_for_logging(docker_cmd)))
         subprocess.run(docker_cmd, check=True)
     except subprocess.CalledProcessError as e:
-        print_formatted_text('')
+        print_formatted_text("")
         print_formatted_text(
-            HTML('<ansired>❌ Failed to start OpenHands GUI server.</ansired>')
+            HTML("<ansired>❌ Failed to start OpenHands GUI server.</ansired>")
         )
-        print_formatted_text(HTML(f'<grey>Error: {e}</grey>'))
+        print_formatted_text(HTML(f"<grey>Error: {e}</grey>"))
         sys.exit(1)
     except KeyboardInterrupt:
-        print_formatted_text('')
+        print_formatted_text("")
         print_formatted_text(
-            HTML('<ansigreen>✓ OpenHands GUI server stopped successfully.</ansigreen>')
+            HTML("<ansigreen>✓ OpenHands GUI server stopped successfully.</ansigreen>")
         )
         sys.exit(0)

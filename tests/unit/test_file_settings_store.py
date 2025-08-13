@@ -21,7 +21,7 @@ def file_settings_store(mock_file_store):
 @pytest.mark.asyncio
 async def test_load_nonexistent_data(file_settings_store):
     with patch(
-        'openhands.storage.data_models.settings.load_openhands_config',
+        "openhands.storage.data_models.settings.load_openhands_config",
         MagicMock(return_value=OpenHandsConfig()),
     ):
         file_settings_store.file_store.read.side_effect = FileNotFoundError()
@@ -32,23 +32,23 @@ async def test_load_nonexistent_data(file_settings_store):
 async def test_store_and_load_data(file_settings_store):
     # Test data
     init_data = Settings(
-        language='python',
-        agent='test-agent',
+        language="python",
+        agent="test-agent",
         max_iterations=100,
-        security_analyzer='default',
+        security_analyzer="default",
         confirmation_mode=True,
-        llm_model='test-model',
-        llm_api_key='test-key',
-        llm_base_url='https://test.com',
+        llm_model="test-model",
+        llm_api_key="test-key",
+        llm_base_url="https://test.com",
     )
 
     # Store data
     await file_settings_store.store(init_data)
 
     # Verify store called with correct JSON
-    expected_json = init_data.model_dump_json(context={'expose_secrets': True})
+    expected_json = init_data.model_dump_json(context={"expose_secrets": True})
     file_settings_store.file_store.write.assert_called_once_with(
-        'settings.json', expected_json
+        "settings.json", expected_json
     )
 
     # Setup mock for load
@@ -74,10 +74,10 @@ async def test_store_and_load_data(file_settings_store):
 
 @pytest.mark.asyncio
 async def test_get_instance():
-    config = OpenHandsConfig(file_store='local', file_store_path='/test/path')
+    config = OpenHandsConfig(file_store="local", file_store_path="/test/path")
 
     with patch(
-        'openhands.storage.settings.file_settings_store.get_file_store'
+        "openhands.storage.settings.file_settings_store.get_file_store"
     ) as mock_get_store:
         mock_store = MagicMock(spec=FileStore)
         mock_get_store.return_value = mock_store
@@ -87,8 +87,8 @@ async def test_get_instance():
         assert isinstance(store, FileSettingsStore)
         assert store.file_store == mock_store
         mock_get_store.assert_called_once_with(
-            file_store_type='local',
-            file_store_path='/test/path',
+            file_store_type="local",
+            file_store_path="/test/path",
             file_store_web_hook_url=None,
             file_store_web_hook_headers=None,
             file_store_web_hook_batch=False,

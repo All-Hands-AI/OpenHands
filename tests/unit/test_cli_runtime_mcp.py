@@ -24,7 +24,7 @@ class TestCLIRuntimeMCP:
         self.config = OpenHandsConfig()
         self.event_stream = MagicMock()
         self.runtime = CLIRuntime(
-            config=self.config, event_stream=self.event_stream, sid='test-session'
+            config=self.config, event_stream=self.event_stream, sid="test-session"
         )
 
     @pytest.mark.asyncio
@@ -33,44 +33,44 @@ class TestCLIRuntimeMCP:
         # Set up empty MCP config
         self.runtime.config.mcp = MCPConfig()
 
-        action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
+        action = MCPAction(name="test_tool", arguments={"arg1": "value1"})
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = await self.runtime.call_tool_mcp(action)
 
         assert isinstance(result, ErrorObservation)
-        assert 'No MCP servers configured' in result.content
+        assert "No MCP servers configured" in result.content
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
+    @patch("openhands.mcp.utils.create_mcp_clients")
     async def test_call_tool_mcp_no_clients_created(self, mock_create_clients):
         """Test MCP call when no clients can be created."""
         # Set up MCP config with servers
         self.runtime.config.mcp = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')]
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")]
         )
 
         # Mock create_mcp_clients to return empty list
         mock_create_clients.return_value = []
 
-        action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
+        action = MCPAction(name="test_tool", arguments={"arg1": "value1"})
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = await self.runtime.call_tool_mcp(action)
 
         assert isinstance(result, ErrorObservation)
-        assert 'No MCP clients could be created' in result.content
+        assert "No MCP clients could be created" in result.content
         mock_create_clients.assert_called_once()
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
-    @patch('openhands.mcp.utils.call_tool_mcp')
+    @patch("openhands.mcp.utils.create_mcp_clients")
+    @patch("openhands.mcp.utils.call_tool_mcp")
     async def test_call_tool_mcp_success(self, mock_call_tool, mock_create_clients):
         """Test successful MCP tool call."""
         # Set up MCP config with servers
         self.runtime.config.mcp = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')],
-            stdio_servers=[MCPStdioServerConfig(name='test-stdio', command='python')],
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")],
+            stdio_servers=[MCPStdioServerConfig(name="test-stdio", command="python")],
         )
 
         # Mock successful client creation
@@ -80,14 +80,14 @@ class TestCLIRuntimeMCP:
         # Mock successful tool call
         expected_observation = MCPObservation(
             content='{"result": "success"}',
-            name='test_tool',
-            arguments={'arg1': 'value1'},
+            name="test_tool",
+            arguments={"arg1": "value1"},
         )
         mock_call_tool.return_value = expected_observation
 
-        action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
+        action = MCPAction(name="test_tool", arguments={"arg1": "value1"})
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = await self.runtime.call_tool_mcp(action)
 
         assert result == expected_observation
@@ -100,36 +100,36 @@ class TestCLIRuntimeMCP:
         mock_call_tool.assert_called_once_with([mock_client], action)
 
     @pytest.mark.asyncio
-    @patch('openhands.mcp.utils.create_mcp_clients')
+    @patch("openhands.mcp.utils.create_mcp_clients")
     async def test_call_tool_mcp_exception_handling(self, mock_create_clients):
         """Test exception handling in MCP tool call."""
         # Set up MCP config with servers
         self.runtime.config.mcp = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')]
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")]
         )
 
         # Mock create_mcp_clients to raise an exception
-        mock_create_clients.side_effect = Exception('Connection error')
+        mock_create_clients.side_effect = Exception("Connection error")
 
-        action = MCPAction(name='test_tool', arguments={'arg1': 'value1'})
+        action = MCPAction(name="test_tool", arguments={"arg1": "value1"})
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = await self.runtime.call_tool_mcp(action)
 
         assert isinstance(result, ErrorObservation)
-        assert 'Error executing MCP tool test_tool' in result.content
-        assert 'Connection error' in result.content
+        assert "Error executing MCP tool test_tool" in result.content
+        assert "Connection error" in result.content
 
     def test_get_mcp_config_basic(self):
         """Test basic MCP config retrieval."""
         # Set up MCP config
         expected_config = MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url='http://test.com')],
-            stdio_servers=[MCPStdioServerConfig(name='test-stdio', command='python')],
+            sse_servers=[MCPSSEServerConfig(url="http://test.com")],
+            stdio_servers=[MCPStdioServerConfig(name="test-stdio", command="python")],
         )
         self.runtime.config.mcp = expected_config
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = self.runtime.get_mcp_config()
 
         assert result == expected_config
@@ -137,16 +137,16 @@ class TestCLIRuntimeMCP:
     def test_get_mcp_config_with_extra_stdio_servers(self):
         """Test MCP config with extra stdio servers."""
         # Set up initial MCP config
-        initial_stdio_server = MCPStdioServerConfig(name='initial', command='python')
+        initial_stdio_server = MCPStdioServerConfig(name="initial", command="python")
         self.runtime.config.mcp = MCPConfig(stdio_servers=[initial_stdio_server])
 
         # Add extra stdio servers
         extra_servers = [
-            MCPStdioServerConfig(name='extra1', command='node'),
-            MCPStdioServerConfig(name='extra2', command='java'),
+            MCPStdioServerConfig(name="extra1", command="node"),
+            MCPStdioServerConfig(name="extra2", command="java"),
         ]
 
-        with patch('sys.platform', 'linux'):
+        with patch("sys.platform", "linux"):
             result = self.runtime.get_mcp_config(extra_stdio_servers=extra_servers)
 
         # Should have all three servers

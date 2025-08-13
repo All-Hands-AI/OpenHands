@@ -9,67 +9,67 @@ from . import exceptions
 from .snippets import findall_regex, split_by_regex
 
 header = namedtuple(
-    'header',
-    'index_path old_path old_version new_path new_version',
+    "header",
+    "index_path old_path old_version new_path new_version",
 )
 
-diffobj = namedtuple('diffobj', 'header changes text')
-Change = namedtuple('Change', 'old new line hunk')
+diffobj = namedtuple("diffobj", "header changes text")
+Change = namedtuple("Change", "old new line hunk")
 
-file_timestamp_str = '(.+?)(?:\t|:|  +)(.*)'
+file_timestamp_str = "(.+?)(?:\t|:|  +)(.*)"
 # .+? was previously [^:\t\n\r\f\v]+
 
 # general diff regex
-diffcmd_header = re.compile('^diff.* (.+) (.+)$')
-unified_header_index = re.compile('^Index: (.+)$')
-unified_header_old_line = re.compile(r'^--- ' + file_timestamp_str + '$')
-unified_header_new_line = re.compile(r'^\+\+\+ ' + file_timestamp_str + '$')
-unified_hunk_start = re.compile(r'^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@(.*)$')
-unified_change = re.compile('^([-+ ])(.*)$', re.MULTILINE)
+diffcmd_header = re.compile("^diff.* (.+) (.+)$")
+unified_header_index = re.compile("^Index: (.+)$")
+unified_header_old_line = re.compile(r"^--- " + file_timestamp_str + "$")
+unified_header_new_line = re.compile(r"^\+\+\+ " + file_timestamp_str + "$")
+unified_hunk_start = re.compile(r"^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@(.*)$")
+unified_change = re.compile("^([-+ ])(.*)$", re.MULTILINE)
 
-context_header_old_line = re.compile(r'^\*\*\* ' + file_timestamp_str + '$')
-context_header_new_line = re.compile('^--- ' + file_timestamp_str + '$')
-context_hunk_start = re.compile(r'^\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*$')
-context_hunk_old = re.compile(r'^\*\*\* (\d+),?(\d*) \*\*\*\*$')
-context_hunk_new = re.compile(r'^--- (\d+),?(\d*) ----$')
-context_change = re.compile('^([-+ !]) (.*)$')
+context_header_old_line = re.compile(r"^\*\*\* " + file_timestamp_str + "$")
+context_header_new_line = re.compile("^--- " + file_timestamp_str + "$")
+context_hunk_start = re.compile(r"^\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*$")
+context_hunk_old = re.compile(r"^\*\*\* (\d+),?(\d*) \*\*\*\*$")
+context_hunk_new = re.compile(r"^--- (\d+),?(\d*) ----$")
+context_change = re.compile("^([-+ !]) (.*)$")
 
-ed_hunk_start = re.compile(r'^(\d+),?(\d*)([acd])$')
-ed_hunk_end = re.compile('^.$')
+ed_hunk_start = re.compile(r"^(\d+),?(\d*)([acd])$")
+ed_hunk_end = re.compile("^.$")
 # much like forward ed, but no 'c' type
-rcs_ed_hunk_start = re.compile(r'^([ad])(\d+) ?(\d*)$')
+rcs_ed_hunk_start = re.compile(r"^([ad])(\d+) ?(\d*)$")
 
-default_hunk_start = re.compile(r'^(\d+),?(\d*)([acd])(\d+),?(\d*)$')
-default_hunk_mid = re.compile('^---$')
-default_change = re.compile('^([><]) (.*)$')
+default_hunk_start = re.compile(r"^(\d+),?(\d*)([acd])(\d+),?(\d*)$")
+default_hunk_mid = re.compile("^---$")
+default_change = re.compile("^([><]) (.*)$")
 
 # Headers
 
 # git has a special index header and no end part
-git_diffcmd_header = re.compile('^diff --git a/(.+) b/(.+)$')
-git_header_index = re.compile(r'^index ([a-f0-9]+)..([a-f0-9]+) ?(\d*)$')
-git_header_old_line = re.compile('^--- (.+)$')
-git_header_new_line = re.compile(r'^\+\+\+ (.+)$')
-git_header_file_mode = re.compile(r'^(new|deleted) file mode \d{6}$')
-git_header_binary_file = re.compile('^Binary files (.+) and (.+) differ')
-git_binary_patch_start = re.compile(r'^GIT binary patch$')
-git_binary_literal_start = re.compile(r'^literal (\d+)$')
-git_binary_delta_start = re.compile(r'^delta (\d+)$')
-base85string = re.compile(r'^[0-9A-Za-z!#$%&()*+;<=>?@^_`{|}~-]+$')
+git_diffcmd_header = re.compile("^diff --git a/(.+) b/(.+)$")
+git_header_index = re.compile(r"^index ([a-f0-9]+)..([a-f0-9]+) ?(\d*)$")
+git_header_old_line = re.compile("^--- (.+)$")
+git_header_new_line = re.compile(r"^\+\+\+ (.+)$")
+git_header_file_mode = re.compile(r"^(new|deleted) file mode \d{6}$")
+git_header_binary_file = re.compile("^Binary files (.+) and (.+) differ")
+git_binary_patch_start = re.compile(r"^GIT binary patch$")
+git_binary_literal_start = re.compile(r"^literal (\d+)$")
+git_binary_delta_start = re.compile(r"^delta (\d+)$")
+base85string = re.compile(r"^[0-9A-Za-z!#$%&()*+;<=>?@^_`{|}~-]+$")
 
-bzr_header_index = re.compile('=== (.+)')
+bzr_header_index = re.compile("=== (.+)")
 bzr_header_old_line = unified_header_old_line
 bzr_header_new_line = unified_header_new_line
 
 svn_header_index = unified_header_index
-svn_header_timestamp_version = re.compile(r'\((?:working copy|revision (\d+))\)')
-svn_header_timestamp = re.compile(r'.*(\(.*\))$')
+svn_header_timestamp_version = re.compile(r"\((?:working copy|revision (\d+))\)")
+svn_header_timestamp = re.compile(r".*(\(.*\))$")
 
 cvs_header_index = unified_header_index
-cvs_header_rcs = re.compile(r'^RCS file: (.+)(?:,\w{1}$|$)')
-cvs_header_timestamp = re.compile(r'(.+)\t([\d.]+)')
-cvs_header_timestamp_colon = re.compile(r':([\d.]+)\t(.+)')
-old_cvs_diffcmd_header = re.compile('^diff.* (.+):(.*) (.+):(.*)$')
+cvs_header_rcs = re.compile(r"^RCS file: (.+)(?:,\w{1}$|$)")
+cvs_header_timestamp = re.compile(r"(.+)\t([\d.]+)")
+cvs_header_timestamp_colon = re.compile(r":([\d.]+)\t(.+)")
+old_cvs_diffcmd_header = re.compile("^diff.* (.+):(.*) (.+):(.*)$")
 
 
 def parse_patch(text: str | list[str]) -> Iterable[diffobj]:
@@ -95,7 +95,7 @@ def parse_patch(text: str | list[str]) -> Iterable[diffobj]:
             break
 
     for diff in diffs:
-        difftext = '\n'.join(diff) + '\n'
+        difftext = "\n".join(diff) + "\n"
         h = parse_header(diff)
         d = parse_diff(diff)
         if h or d:
@@ -128,10 +128,10 @@ def parse_scm_header(text: str | list[str]) -> header | None:
                 if res:
                     old_path = res.old_path
                     new_path = res.new_path
-                    if old_path.startswith('a/'):
+                    if old_path.startswith("a/"):
                         old_path = old_path[2:]
 
-                    if new_path.startswith('b/'):
+                    if new_path.startswith("b/"):
                         new_path = new_path[2:]
 
                     return header(
@@ -229,10 +229,10 @@ def parse_git_header(text: str | list[str]) -> header | None:
             new_path = binary.group(2)
 
         if old_path and new_path:
-            if old_path.startswith('a/'):
+            if old_path.startswith("a/"):
                 old_path = old_path[2:]
 
-            if new_path.startswith('b/'):
+            if new_path.startswith("b/"):
                 new_path = new_path[2:]
             return header(
                 index_path=None,
@@ -245,19 +245,19 @@ def parse_git_header(text: str | list[str]) -> header | None:
     # if we go through all of the text without finding our normal info,
     # use the cmd if available
     if cmd_old_path and cmd_new_path and old_version and new_version:
-        if cmd_old_path.startswith('a/'):
+        if cmd_old_path.startswith("a/"):
             cmd_old_path = cmd_old_path[2:]
 
-        if cmd_new_path.startswith('b/'):
+        if cmd_new_path.startswith("b/"):
             cmd_new_path = cmd_new_path[2:]
 
         return header(
             index_path=None,
             # wow, I kind of hate this:
             # assume /dev/null if the versions are zeroed out
-            old_path='/dev/null' if old_version == '0000000' else cmd_old_path,
+            old_path="/dev/null" if old_version == "0000000" else cmd_old_path,
             old_version=old_version,
-            new_path='/dev/null' if new_version == '0000000' else cmd_new_path,
+            new_path="/dev/null" if new_version == "0000000" else cmd_new_path,
             new_version=new_version,
         )
 
@@ -540,10 +540,10 @@ def parse_default_diff(text: str | list[str]) -> list[Change] | None:
                 kind = c.group(1)
                 line = c.group(2)
 
-                if kind == '<' and (r != old_len or r == 0):
+                if kind == "<" and (r != old_len or r == 0):
                     changes.append(Change(old + r, None, line, hunk_n))
                     r += 1
-                elif kind == '>' and (i != new_len or i == 0):
+                elif kind == ">" and (i != new_len or i == 0):
                     changes.append(Change(None, new + i, line, hunk_n))
                     i += 1
 
@@ -595,20 +595,20 @@ def parse_unified_diff(text: str | list[str]) -> list[Change] | None:
             # Each line in a unified diff starts with a space (context), + (addition), or - (deletion)
             # The first character is the kind, the rest is the line content
             kind = (
-                n[0] if len(n) > 0 else ' '
+                n[0] if len(n) > 0 else " "
             )  # Empty lines in the hunk are treated as context lines
-            line = n[1:] if len(n) > 1 else ''
+            line = n[1:] if len(n) > 1 else ""
 
             # Process the line based on its kind
-            if kind == '-' and (r != old_len or r == 0):
+            if kind == "-" and (r != old_len or r == 0):
                 # Line was removed from the old file
                 changes.append(Change(old + r, None, line, hunk_n))
                 r += 1
-            elif kind == '+' and (i != new_len or i == 0):
+            elif kind == "+" and (i != new_len or i == 0):
                 # Line was added in the new file
                 changes.append(Change(None, new + i, line, hunk_n))
                 i += 1
-            elif kind == ' ':
+            elif kind == " ":
                 # Context line - exists in both old and new file
                 changes.append(Change(old + r, new + i, line, hunk_n))
                 r += 1
@@ -639,7 +639,7 @@ def parse_context_diff(text: str | list[str]) -> list[Change] | None:
         k = 0
         parts = split_by_regex(hunk, context_hunk_new)
         if len(parts) != 2:
-            raise exceptions.ParseException('Context diff invalid', hunk_n)
+            raise exceptions.ParseException("Context diff invalid", hunk_n)
 
         old_hunk = parts[0]
         new_hunk = parts[1]
@@ -667,7 +667,7 @@ def parse_context_diff(text: str | list[str]) -> list[Change] | None:
 
         # now have old and new set, can start processing?
         if len(old_hunk) > 0 and len(new_hunk) == 0:
-            msg = 'Got unexpected change in removal hunk: '
+            msg = "Got unexpected change in removal hunk: "
             # only removes left?
             while len(old_hunk) > 0:
                 c = context_change.match(old_hunk[0])
@@ -679,22 +679,22 @@ def parse_context_diff(text: str | list[str]) -> list[Change] | None:
                 kind = c.group(1)
                 line = c.group(2)
 
-                if kind == '-' and (j != old_len or j == 0):
+                if kind == "-" and (j != old_len or j == 0):
                     changes.append(Change(old + j, None, line, hunk_n))
                     j += 1
-                elif kind == ' ' and (
+                elif kind == " " and (
                     (j != old_len and k != new_len) or (j == 0 or k == 0)
                 ):
                     changes.append(Change(old + j, new + k, line, hunk_n))
                     j += 1
                     k += 1
-                elif kind == '+' or kind == '!':
+                elif kind == "+" or kind == "!":
                     raise exceptions.ParseException(msg + kind, hunk_n)
 
             continue
 
         if len(old_hunk) == 0 and len(new_hunk) > 0:
-            msg = 'Got unexpected change in removal hunk: '
+            msg = "Got unexpected change in removal hunk: "
             # only insertions left?
             while len(new_hunk) > 0:
                 c = context_change.match(new_hunk[0])
@@ -706,16 +706,16 @@ def parse_context_diff(text: str | list[str]) -> list[Change] | None:
                 kind = c.group(1)
                 line = c.group(2)
 
-                if kind == '+' and (k != new_len or k == 0):
+                if kind == "+" and (k != new_len or k == 0):
                     changes.append(Change(None, new + k, line, hunk_n))
                     k += 1
-                elif kind == ' ' and (
+                elif kind == " " and (
                     (j != old_len and k != new_len) or (j == 0 or k == 0)
                 ):
                     changes.append(Change(old + j, new + k, line, hunk_n))
                     j += 1
                     k += 1
-                elif kind == '-' or kind == '!':
+                elif kind == "-" or kind == "!":
                     raise exceptions.ParseException(msg + kind, hunk_n)
             continue
 
@@ -737,17 +737,17 @@ def parse_context_diff(text: str | list[str]) -> list[Change] | None:
             if not (oc or nc):
                 del old_hunk[0]
                 del new_hunk[0]
-            elif okind == ' ' and nkind == ' ' and oline == nline:
+            elif okind == " " and nkind == " " and oline == nline:
                 changes.append(Change(old + j, new + k, oline, hunk_n))
                 j += 1
                 k += 1
                 del old_hunk[0]
                 del new_hunk[0]
-            elif okind == '-' or okind == '!' and (j != old_len or j == 0):
+            elif okind == "-" or okind == "!" and (j != old_len or j == 0):
                 changes.append(Change(old + j, None, oline, hunk_n))
                 j += 1
                 del old_hunk[0]
-            elif nkind == '+' or nkind == '!' and (k != new_len or k == 0):
+            elif nkind == "+" or nkind == "!" and (k != new_len or k == 0):
                 changes.append(Change(None, new + k, nline, hunk_n))
                 k += 1
                 del new_hunk[0]
@@ -790,7 +790,7 @@ def parse_ed_diff(text: str | list[str]) -> list[Change] | None:
             old_end = int(o.group(2)) if len(o.group(2)) else old
 
             hunk_kind = o.group(3)
-            if hunk_kind == 'd':
+            if hunk_kind == "d":
                 k = 0
                 while old_end >= old:
                     changes.append(Change(old + k, None, None, hunk_n))
@@ -801,7 +801,7 @@ def parse_ed_diff(text: str | list[str]) -> list[Change] | None:
 
             while len(hunk) > 0:
                 e = ed_hunk_end.match(hunk[0])
-                if not e and hunk_kind == 'c':
+                if not e and hunk_kind == "c":
                     k = 0
                     while old_end >= old:
                         changes.append(Change(old + k, None, None, hunk_n))
@@ -821,7 +821,7 @@ def parse_ed_diff(text: str | list[str]) -> list[Change] | None:
                     )
                     i += 1
                     j += 1
-                if not e and hunk_kind == 'a':
+                if not e and hunk_kind == "a":
                     changes.append(
                         Change(
                             None,
@@ -866,7 +866,7 @@ def parse_rcs_ed_diff(text: str | list[str]) -> list[Change] | None:
                 old = int(o.group(2))
                 size = int(o.group(3)) if o.group(3) else 0
 
-                if hunk_kind == 'a':
+                if hunk_kind == "a":
                     old += total_change_size + 1
                     total_change_size += size
                     while size > 0 and len(hunk) > 0:
@@ -876,7 +876,7 @@ def parse_rcs_ed_diff(text: str | list[str]) -> list[Change] | None:
 
                         del hunk[0]
 
-                elif hunk_kind == 'd':
+                elif hunk_kind == "d":
                     total_change_size -= size
                     while size > 0:
                         changes.append(Change(old + j, None, None, hunk_n))
@@ -900,8 +900,8 @@ def parse_git_binary_diff(text: str | list[str]) -> list[Change] | None:
     # the sizes are used as latch-up
     new_size = 0
     old_size = 0
-    old_encoded = ''
-    new_encoded = ''
+    old_encoded = ""
+    new_encoded = ""
     for line in lines:
         if cmd_old_path is None and cmd_new_path is None:
             hm = git_diffcmd_header.match(line)
@@ -940,11 +940,11 @@ def parse_git_binary_diff(text: str | list[str]) -> list[Change] | None:
                     change = Change(None, 0, added_data, None)
                     changes.append(change)
                 new_size = 0
-                new_encoded = ''
+                new_encoded = ""
             else:
                 # Invalid line format
                 new_size = 0
-                new_encoded = ''
+                new_encoded = ""
 
         # the second is removed file
         if old_size == 0:
@@ -968,10 +968,10 @@ def parse_git_binary_diff(text: str | list[str]) -> list[Change] | None:
                     change = Change(0, None, None, removed_data)
                     changes.append(change)
                 old_size = 0
-                old_encoded = ''
+                old_encoded = ""
             else:
                 # Invalid line format
                 old_size = 0
-                old_encoded = ''
+                old_encoded = ""
 
     return changes

@@ -9,23 +9,23 @@ _GLOB_DESCRIPTION = """Fast file pattern matching tool.
 """
 
 GlobTool = ChatCompletionToolParam(
-    type='function',
+    type="function",
     function=ChatCompletionToolParamFunctionChunk(
-        name='glob',
+        name="glob",
         description=_GLOB_DESCRIPTION,
         parameters={
-            'type': 'object',
-            'properties': {
-                'pattern': {
-                    'type': 'string',
-                    'description': 'The glob pattern to match files (e.g., "**/*.js", "src/**/*.ts")',
+            "type": "object",
+            "properties": {
+                "pattern": {
+                    "type": "string",
+                    "description": 'The glob pattern to match files (e.g., "**/*.js", "src/**/*.ts")',
                 },
-                'path': {
-                    'type': 'string',
-                    'description': 'The directory (absolute path) to search in. Defaults to the current working directory.',
+                "path": {
+                    "type": "string",
+                    "description": "The directory (absolute path) to search in. Defaults to the current working directory.",
                 },
             },
-            'required': ['pattern'],
+            "required": ["pattern"],
         },
     ),
 )

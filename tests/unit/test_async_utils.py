@@ -38,11 +38,11 @@ async def test_await_all_single_exception():
     async def dummy(value: int):
         await asyncio.sleep(0.1)
         if value == 1:
-            raise ValueError('Invalid value 1')  # Throw an exception on every odd value
+            raise ValueError("Invalid value 1")  # Throw an exception on every odd value
         return value * 2
 
     # expect an exception to be raised.
-    with pytest.raises(ValueError, match='Invalid value 1'):
+    with pytest.raises(ValueError, match="Invalid value 1"):
         await wait_all(dummy(i) for i in range(10))
 
 
@@ -53,7 +53,7 @@ async def test_await_all_multi_exception():
         await asyncio.sleep(0.1)
         if value & 1:
             raise ValueError(
-                f'Invalid value {value}'
+                f"Invalid value {value}"
             )  # Throw an exception on every odd value
         return value * 2
 
@@ -124,21 +124,21 @@ def test_call_async_from_sync_background_tasks():
 
     async def bg_task():
         # This background task should finish after the dummy task
-        events.append('bg_started')
+        events.append("bg_started")
         asyncio.sleep(0.2)
-        events.append('bg_finished')
+        events.append("bg_finished")
 
     async def dummy(value: int):
-        events.append('dummy_started')
+        events.append("dummy_started")
         # This coroutine kicks off a background task
         asyncio.create_task(bg_task())
-        events.append('dummy_started')
+        events.append("dummy_started")
 
     call_async_from_sync(dummy, 0, 3)
 
     # We check that the function did not return until all coroutines completed
     # (Even though some of these were started as background tasks)
-    expected = ['dummy_started', 'dummy_started', 'bg_started', 'bg_finished']
+    expected = ["dummy_started", "dummy_started", "bg_started", "bg_finished"]
     assert expected == events
 
 
@@ -211,12 +211,12 @@ async def test_run_in_loop_with_exception():
 
     async def failing_coro():
         await asyncio.sleep(0.01)
-        raise ValueError('Test exception')
+        raise ValueError("Test exception")
 
     current_loop = asyncio.get_running_loop()
     coro = failing_coro()
 
-    with pytest.raises(ValueError, match='Test exception'):
+    with pytest.raises(ValueError, match="Test exception"):
         await run_in_loop(coro, current_loop)
 
 
@@ -228,7 +228,7 @@ async def test_run_in_loop_with_timeout():
 
     async def slow_coro():
         await asyncio.sleep(1.0)  # Sleep longer than timeout
-        return 'should not reach here'
+        return "should not reach here"
 
     loop_queue = queue.Queue()
 
@@ -272,7 +272,7 @@ async def test_run_in_loop_same_loop_no_timeout():
 
     async def quick_coro():
         await asyncio.sleep(0.01)
-        return 'completed'
+        return "completed"
 
     current_loop = asyncio.get_running_loop()
     coro = quick_coro()
@@ -280,7 +280,7 @@ async def test_run_in_loop_same_loop_no_timeout():
     # Even with a very short timeout, this should work because
     # timeout is only applied when using different loops
     result = await run_in_loop(coro, current_loop, timeout=0.001)
-    assert result == 'completed'
+    assert result == "completed"
 
 
 @pytest.mark.asyncio
@@ -289,7 +289,7 @@ async def test_run_in_loop_return_value():
 
     async def return_dict():
         await asyncio.sleep(0.01)
-        return {'key': 'value', 'number': 42}
+        return {"key": "value", "number": 42}
 
     current_loop = asyncio.get_running_loop()
     coro = return_dict()
@@ -297,8 +297,8 @@ async def test_run_in_loop_return_value():
     result = await run_in_loop(coro, current_loop)
 
     assert isinstance(result, dict)
-    assert result['key'] == 'value'
-    assert result['number'] == 42
+    assert result["key"] == "value"
+    assert result["number"] == 42
 
 
 @pytest.mark.asyncio

@@ -35,19 +35,18 @@ RESUMABLE_STATES = [
 # NOTE: this is deprecated
 class TrafficControlState(str, Enum):
     # default state, no rate limiting
-    NORMAL = 'normal'
+    NORMAL = "normal"
 
     # task paused due to traffic control
-    THROTTLING = 'throttling'
+    THROTTLING = "throttling"
 
     # traffic control is temporarily paused
-    PAUSED = 'paused'
+    PAUSED = "paused"
 
 
 @dataclass
 class State:
-    """
-    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
+    """Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)
@@ -78,7 +77,7 @@ class State:
       - additional task-specific data
     """
 
-    session_id: str = ''
+    session_id: str = ""
     user_id: str | None = None
     iteration_flag: IterationControlFlag = field(
         default_factory=lambda: IterationControlFlag(
@@ -106,7 +105,7 @@ class State:
     # NOTE: this is used by the controller to track parent's metrics snapshot before delegation
     # evaluation tasks to store extra data needed to track the progress/state of the task.
     extra_data: dict[str, Any] = field(default_factory=dict)
-    last_error: str = ''
+    last_error: str = ""
 
     # NOTE: deprecated args, kept here temporarily for backwards compatability
     # Will be remove in 30 days
@@ -121,8 +120,8 @@ class State:
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
         pickled = pickle.dumps(self)
-        logger.debug(f'Saving state to session {sid}:{self.agent_state}')
-        encoded = base64.b64encode(pickled).decode('utf-8')
+        logger.debug(f"Saving state to session {sid}:{self.agent_state}")
+        encoded = base64.b64encode(pickled).decode("utf-8")
         try:
             file_store.write(
                 get_conversation_agent_state_filename(sid, user_id), encoded
@@ -136,17 +135,14 @@ class State:
                 except Exception:
                     pass
         except Exception as e:
-            logger.error(f'Failed to save state to session: {e}')
+            logger.error(f"Failed to save state to session: {e}")
             raise e
 
     @staticmethod
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
-    ) -> 'State':
-        """
-        Restores the state from the previously saved session.
-        """
-
+    ) -> "State":
+        """Restores the state from the previously saved session."""
         state: State
         try:
             encoded = file_store.read(
@@ -164,10 +160,10 @@ class State:
                 state = pickle.loads(pickled)
             else:
                 raise FileNotFoundError(
-                    f'Could not restore state from session file for sid: {sid}'
+                    f"Could not restore state from session file for sid: {sid}"
                 )
         except Exception as e:
-            logger.debug(f'Could not restore state from session: {e}')
+            logger.debug(f"Could not restore state from session: {e}")
             raise e
 
         # update state
@@ -187,35 +183,35 @@ class State:
     def __getstate__(self) -> dict:
         # don't pickle history, it will be restored from the event stream
         state = self.__dict__.copy()
-        state['history'] = []
+        state["history"] = []
 
         # Remove any view caching attributes. They'll be rebuilt frmo the
         # history after that gets reloaded.
-        state.pop('_history_checksum', None)
-        state.pop('_view', None)
+        state.pop("_history_checksum", None)
+        state.pop("_view", None)
 
         # Remove deprecated fields before pickling
-        state.pop('iteration', None)
-        state.pop('local_iteration', None)
-        state.pop('max_iterations', None)
-        state.pop('traffic_control_state', None)
-        state.pop('local_metrics', None)
-        state.pop('delegates', None)
+        state.pop("iteration", None)
+        state.pop("local_iteration", None)
+        state.pop("max_iterations", None)
+        state.pop("traffic_control_state", None)
+        state.pop("local_metrics", None)
+        state.pop("delegates", None)
 
         return state
 
     def __setstate__(self, state: dict) -> None:
         # Check if we're restoring from an older version (before control flags)
-        is_old_version = 'iteration' in state
+        is_old_version = "iteration" in state
 
         # Convert old iteration tracking to new iteration_flag if needed
         if is_old_version:
             # Create iteration_flag from old values
-            max_iterations = state.get('max_iterations', 100)
-            current_iteration = state.get('iteration', 0)
+            max_iterations = state.get("max_iterations", 100)
+            current_iteration = state.get("iteration", 0)
 
             # Add the iteration_flag to the state
-            state['iteration_flag'] = IterationControlFlag(
+            state["iteration_flag"] = IterationControlFlag(
                 limit_increase_amount=max_iterations,
                 current_value=current_iteration,
                 max_value=max_iterations,
@@ -228,16 +224,16 @@ class State:
         # They will be removed by __getstate__ when the state is saved again
 
         # make sure we always have the attribute history
-        if not hasattr(self, 'history'):
+        if not hasattr(self, "history"):
             self.history = []
 
         # Ensure we have default values for new fields if they're missing
-        if not hasattr(self, 'iteration_flag'):
+        if not hasattr(self, "iteration_flag"):
             self.iteration_flag = IterationControlFlag(
                 limit_increase_amount=100, current_value=0, max_value=100
             )
 
-        if not hasattr(self, 'budget_flag'):
+        if not hasattr(self, "budget_flag"):
             self.budget_flag = None
 
     def get_current_user_intent(self) -> tuple[str | None, list[str] | None]:
@@ -245,7 +241,7 @@ class State:
         last_user_message = None
         last_user_message_image_urls: list[str] | None = []
         for event in reversed(self.view):
-            if isinstance(event, MessageAction) and event.source == 'user':
+            if isinstance(event, MessageAction) and event.source == "user":
                 last_user_message = event.content
                 last_user_message_image_urls = event.image_urls
             elif isinstance(event, AgentFinishAction):
@@ -268,14 +264,14 @@ class State:
 
     def to_llm_metadata(self, model_name: str, agent_name: str) -> dict:
         metadata = {
-            'session_id': self.session_id,
-            'trace_version': openhands.__version__,
-            'trace_user_id': self.user_id,
-            'tags': [
-                f'model:{model_name}',
-                f'agent:{agent_name}',
-                f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
-                f'openhands_version:{openhands.__version__}',
+            "session_id": self.session_id,
+            "trace_version": openhands.__version__,
+            "trace_user_id": self.user_id,
+            "tags": [
+                f"model:{model_name}",
+                f"agent:{agent_name}",
+                f"web_host:{os.environ.get('WEB_HOST', 'unspecified')}",
+                f"openhands_version:{openhands.__version__}",
             ],
         }
         return metadata
@@ -296,7 +292,7 @@ class State:
         # Compute a simple checksum from the history to see if we can re-use any
         # cached view.
         history_checksum = len(self.history)
-        old_history_checksum = getattr(self, '_history_checksum', -1)
+        old_history_checksum = getattr(self, "_history_checksum", -1)
 
         # If the history has changed, we need to re-create the view and update
         # the caching.

@@ -36,26 +36,26 @@ from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
-EVALUATION_LLM = 'gpt-4-1106-preview'
+EVALUATION_LLM = "gpt-4-1106-preview"
 
 DATA_FILES = {}
 
 LIBRARIES = [
-    'pandas',
-    'numpy',
-    'scipy',
-    'matplotlib',
-    'seaborn',
-    'scikit-learn',
-    'statsmodels',
+    "pandas",
+    "numpy",
+    "scipy",
+    "matplotlib",
+    "seaborn",
+    "scikit-learn",
+    "statsmodels",
 ]
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    'CodeActAgent': codeact_user_response,
+    "CodeActAgent": codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    'CodeActAgent': 'When you think you have fixed the issue through code changes, please finish the interaction using the "finish" tool.\n'
+    "CodeActAgent": 'When you think you have fixed the issue through code changes, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -63,11 +63,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.12-bookworm'
+    sandbox_config.base_container_image = "python:3.12-bookworm"
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='docker',
+        runtime="docker",
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -89,8 +89,7 @@ def get_config(
 def get_dv_query_for_real(
     datasets, question, domain_knowledge=None, workflow_tags=None
 ):
-    """
-    Prepare a structured query for the agent to execute on the specified datasets.
+    """Prepare a structured query for the agent to execute on the specified datasets.
 
     This function constructs a query by compiling metadata from the provided datasets, along with any relevant domain knowledge and workflow tags.
 
@@ -104,35 +103,34 @@ def get_dv_query_for_real(
         query_to_dv: Query to be run on the dataset
         dataset_meta: Metadata of the dataset
     """
-
-    dataset_meta = ''
+    dataset_meta = ""
     for dataset_metadata in datasets:
-        dataset_meta += 'Dataset name: ' + dataset_metadata['name']
-        dataset_meta += 'Dataset description: ' + dataset_metadata['description']
-        dataset_meta += '\nBrief description of columns: '
-        for col in dataset_metadata['columns']['raw']:
-            dataset_meta += col['name'] + ': ' + col['description'] + ', '
+        dataset_meta += "Dataset name: " + dataset_metadata["name"]
+        dataset_meta += "Dataset description: " + dataset_metadata["description"]
+        dataset_meta += "\nBrief description of columns: "
+        for col in dataset_metadata["columns"]["raw"]:
+            dataset_meta += col["name"] + ": " + col["description"] + ", "
 
     query_to_dv = dataset_meta
 
-    query_to_dv += f'\nQuery: {question}'
+    query_to_dv += f"\nQuery: {question}"
 
     if domain_knowledge:
         query_to_dv += (
-            '\nAdditionally, we provide some hints that might be useful to solve the task. Domain Knowledge: \n'
+            "\nAdditionally, we provide some hints that might be useful to solve the task. Domain Knowledge: \n"
             + domain_knowledge
-            + '.\n'
+            + ".\n"
         )
 
     if workflow_tags:
-        query_to_dv += 'The meta tags are: ' + workflow_tags + '.\n'
+        query_to_dv += "The meta tags are: " + workflow_tags + ".\n"
 
     query_to_dv += (
-        'In the final answer, please write down a scientific hypothesis in '
-        'natural language, derived from the provided dataset, clearly stating the '
-        'context of hypothesis (if any), variables chosen (if any) and '
-        'relationship between those variables (if any) including any statistical significance.'
-        'Also generate a summary of the full workflow starting from data loading that led to the final answer as WORKFLOW SUMMARY:'
+        "In the final answer, please write down a scientific hypothesis in "
+        "natural language, derived from the provided dataset, clearly stating the "
+        "context of hypothesis (if any), variables chosen (if any) and "
+        "relationship between those variables (if any) including any statistical significance."
+        "Also generate a summary of the full workflow starting from data loading that led to the final answer as WORKFLOW SUMMARY:"
     )
 
     # Run the NL query through datavoyager
@@ -140,37 +138,36 @@ def get_dv_query_for_real(
 
 
 def initialize_runtime(runtime: Runtime, data_files: list[str]):
-    """
-    Initialize the runtime for the agent.
+    """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
     obs: CmdOutputObservation
 
-    action = CmdRunAction(command='mkdir -p /workspace')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="mkdir -p /workspace")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command='cd /workspace')
-    logger.info(action, extra={'msg_type': 'ACTION'})
+    action = CmdRunAction(command="cd /workspace")
+    logger.info(action, extra={"msg_type": "ACTION"})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     for file in data_files:
         runtime.copy_to(
             file,
-            '/workspace',
+            "/workspace",
         )
 
     for lib in LIBRARIES:
-        action = CmdRunAction(command=f'pip install {lib}')
-        logger.info(action, extra={'msg_type': 'ACTION'})
+        action = CmdRunAction(command=f"pip install {lib}")
+        logger.info(action, extra={"msg_type": "ACTION"})
         obs = runtime.run_action(action)
         assert obs.exit_code == 0
 
-    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
+    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
 
 
 def get_last_agent_finish_action(state: State) -> AgentFinishAction:
@@ -197,7 +194,7 @@ def complete_runtime(state: State):
             final_message_1
         )
     else:
-        gen_hypo_1, gen_workflow_1, error_1 = '', '', ''
+        gen_hypo_1, gen_workflow_1, error_1 = "", "", ""
 
     if last_agent_message_action is not None:
         final_message_2 = last_agent_message_action.content
@@ -205,22 +202,22 @@ def complete_runtime(state: State):
             final_message_2
         )
     else:
-        gen_hypo_2, gen_workflow_2, error_2 = '', '', ''
+        gen_hypo_2, gen_workflow_2, error_2 = "", "", ""
 
     if gen_hypo_1 and gen_hypo_2:
         test_result = {
-            'gen_hypo': last_agent_finish_action.thought
+            "gen_hypo": last_agent_finish_action.thought
             if last_agent_finish_action
             else last_agent_message_action.content,
-            'gen_workflow': '',
-            'error': '',
+            "gen_workflow": "",
+            "error": "",
         }
         return test_result
 
     test_result = {
-        'gen_hypo': gen_hypo_1 if gen_hypo_1 else gen_hypo_2,
-        'gen_workflow': gen_workflow_1 if gen_workflow_1 else gen_workflow_2,
-        'error': error_1 if error_1 else error_2,
+        "gen_hypo": gen_hypo_1 if gen_hypo_1 else gen_hypo_2,
+        "gen_workflow": gen_workflow_1 if gen_workflow_1 else gen_workflow_2,
+        "error": error_1 if error_1 else error_2,
     }
 
     return test_result
@@ -231,8 +228,7 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    """
-    Process and evaluate a single instance of the dataset.
+    """Process and evaluate a single instance of the dataset.
 
     This function executes the OpenHands agent
     for a specific instance of the dataset. It retrieves
@@ -247,16 +243,15 @@ def process_instance(
     Returns:
         output: EvalOutput object
     """
-
     config = get_config(metadata)
 
     # Setup the logger properly, so you can run
     # multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
+        logger.info(f"Starting evaluation for instance {instance.instance_id}.")
 
     problem_statement, dataset_metadata = get_dv_query_for_real(
         datasets=instance.datasets,
@@ -267,15 +262,15 @@ def process_instance(
 
     # Prepare instruction
     instruction = (
-        f'You are a discovery agent who can execute a python code only once to answer a query based on one or more datasets. The datasets will be present in the current directory.\n\n'
-        'Environment has been set up for you to start working. You may assume all necessary tools and datasets are installed.\n\n'
-        '# Problem Statement\n'
-        f'{problem_statement}\n\n'
+        f"You are a discovery agent who can execute a python code only once to answer a query based on one or more datasets. The datasets will be present in the current directory.\n\n"
+        "Environment has been set up for you to start working. You may assume all necessary tools and datasets are installed.\n\n"
+        "# Problem Statement\n"
+        f"{problem_statement}\n\n"
     )
     instruction += (
-        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
-        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
-        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
+        "IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n"
+        "You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n"
+        "You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n"
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
@@ -297,7 +292,7 @@ def process_instance(
     )
 
     if state is None:
-        raise ValueError('State should not be None.')
+        raise ValueError("State should not be None.")
 
     metrics = state.metrics.get() if state.metrics else None
     test_result = complete_runtime(state)
@@ -311,15 +306,15 @@ def process_instance(
     eval_rec = run_eval_gold_vs_gen_NL_hypo_workflow(
         query=instance.query,
         gold_hypo=instance.gold_hypo,
-        gold_workflow='',
-        gen_hypo=test_result['gen_hypo'],
-        gen_workflow='',
+        gold_workflow="",
+        gen_hypo=test_result["gen_hypo"],
+        gen_workflow="",
         dataset_meta=instance.dataset_metadata,
         llm_used=EVALUATION_LLM,
-        dataset_type='real',
+        dataset_type="real",
     )
 
-    test_result['eval_rec'] = eval_rec
+    test_result["eval_rec"] = eval_rec
 
     output = EvalOutput(
         instance_id=str(instance.instance_id),
@@ -335,12 +330,12 @@ def process_instance(
 
 
 def update_csv_name(name):
-    name = name.replace('-', '_')
+    name = name.replace("-", "_")
 
-    if 'meta_regression' in name:
-        name = name.replace('meta_regression', 'meta-regression')
-    if 'ML_enabled' in name:
-        name = name.replace('ML_enabled', 'ML-enabled')
+    if "meta_regression" in name:
+        name = name.replace("meta_regression", "meta-regression")
+    if "ML_enabled" in name:
+        name = name.replace("ML_enabled", "ML-enabled")
 
     return name
 
@@ -349,15 +344,14 @@ def list_csv_files(list_of_datasets):
     res = []
     for ele in list_of_datasets:
         for key, value in ele.items():
-            if key == 'name':
+            if key == "name":
                 csv_file_name = update_csv_name(value)
                 res.append(DATA_FILES[csv_file_name])
     return res
 
 
-def create_dataset(repo_location: str, split: str = 'test'):
-    """
-    Create a dataset from the discoverybench repository
+def create_dataset(repo_location: str, split: str = "test"):
+    """Create a dataset from the discoverybench repository
     by walking through the repository and extracting metadata
     from the metadata_{}.json files
 
@@ -368,100 +362,99 @@ def create_dataset(repo_location: str, split: str = 'test'):
     Returns:
         df: DataFrame containing the dataset instances
     """
-
     data_dict = {}
 
-    data_location = os.path.join(repo_location, 'discoverybench', 'real', split)
-    answer_key_location = os.path.join(repo_location, 'eval', 'answer_key_real.csv')
+    data_location = os.path.join(repo_location, "discoverybench", "real", split)
+    answer_key_location = os.path.join(repo_location, "eval", "answer_key_real.csv")
 
     idx = 0
 
     for root, dirs, files in os.walk(data_location):
         for file in files:
-            if file.endswith('.json'):
-                if 'metadata' in file:
+            if file.endswith(".json"):
+                if "metadata" in file:
                     metadata = json.load(open(os.path.join(root, file)))
 
-                    dataset = root.split('/')[-1]
-                    metadata_id = file.split('_')[-1].split('.')[0]
-                    domain = metadata.get('domain', '')
-                    domain_knowledge = metadata.get('domain_knowledge', '')
-                    workflow_tags = metadata.get('workflow_tags', '')
-                    datasets = metadata.get('datasets', [])
-                    queries = metadata.get('queries', [])
-                    gold_workflow = metadata.get('workflow')
+                    dataset = root.split("/")[-1]
+                    metadata_id = file.split("_")[-1].split(".")[0]
+                    domain = metadata.get("domain", "")
+                    domain_knowledge = metadata.get("domain_knowledge", "")
+                    workflow_tags = metadata.get("workflow_tags", "")
+                    datasets = metadata.get("datasets", [])
+                    queries = metadata.get("queries", [])
+                    gold_workflow = metadata.get("workflow")
 
                     # loop through queries list to get queries
                     # and each query has qid; add that to dictionary
                     for query in queries[0]:
-                        qid = query.get('qid', '')
+                        qid = query.get("qid", "")
 
                         data = {
-                            'dataset': dataset,
-                            'metadata_id': metadata_id,
-                            'qid': qid,
-                            'domain': domain,
-                            'domain_knowledge': domain_knowledge,
-                            'workflow_tags': workflow_tags,
-                            'datasets': datasets,
-                            'question_type': query['question_type'],
-                            'query': query['question'],
-                            'gold_workflow': gold_workflow,
-                            'dataset_metadata': metadata,
+                            "dataset": dataset,
+                            "metadata_id": metadata_id,
+                            "qid": qid,
+                            "domain": domain,
+                            "domain_knowledge": domain_knowledge,
+                            "workflow_tags": workflow_tags,
+                            "datasets": datasets,
+                            "question_type": query["question_type"],
+                            "query": query["question"],
+                            "gold_workflow": gold_workflow,
+                            "dataset_metadata": metadata,
                         }
 
                         data_dict[idx] = data
                         idx += 1
 
-            if file.endswith('.csv'):
+            if file.endswith(".csv"):
                 DATA_FILES[file] = os.path.join(root, file)
-            if file.endswith('.txt'):
+            if file.endswith(".txt"):
                 DATA_FILES[file] = os.path.join(root, file)
 
-    df = pd.DataFrame.from_dict(data_dict, orient='index')
+    df = pd.DataFrame.from_dict(data_dict, orient="index")
 
-    df['instance_id'] = df.index
+    df["instance_id"] = df.index
 
-    df['data_files'] = df['datasets'].apply(lambda x: list_csv_files(x))
+    df["data_files"] = df["datasets"].apply(lambda x: list_csv_files(x))
 
     answer_key = pd.read_csv(answer_key_location)
 
     answer_key = answer_key.rename(
         columns={
-            'metadataid': 'metadata_id',
-            'query_id': 'qid',
-            'gold_hypothesis': 'gold_hypothesis',
+            "metadataid": "metadata_id",
+            "query_id": "qid",
+            "gold_hypothesis": "gold_hypothesis",
         }
     )
 
-    df['qid'] = df['qid'].astype(int)
-    df['metadata_id'] = df['metadata_id'].astype(int)
+    df["qid"] = df["qid"].astype(int)
+    df["metadata_id"] = df["metadata_id"].astype(int)
 
-    answer_key['qid'] = answer_key['qid'].astype(int)
-    answer_key['metadata_id'] = answer_key['metadata_id'].astype(int)
+    answer_key["qid"] = answer_key["qid"].astype(int)
+    answer_key["metadata_id"] = answer_key["metadata_id"].astype(int)
 
-    df = pd.merge(df, answer_key, on=['dataset', 'metadata_id', 'qid'], how='left')
+    df = pd.merge(df, answer_key, on=["dataset", "metadata_id", "qid"], how="left")
 
     return df
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments()
 
     # clone git repositor for csv files
-    repo_url = 'https://github.com/allenai/discoverybench.git'
-    repo_location = 'git-discoverybench-allenai'
+    repo_url = "https://github.com/allenai/discoverybench.git"
+    repo_location = "git-discoverybench-allenai"
 
     try:
         git.Repo.clone_from(repo_url, repo_location)
     except git.exc.GitCommandError:
-        print('Repository already exists')
+        print("Repository already exists")
 
     dataset = create_dataset(repo_location)
 
     # check if there is any empty csv_file
-    if dataset['data_files'].isnull().any():
-        raise ValueError('Some csv files are missing.')
+    if dataset["data_files"].isnull().any():
+        raise ValueError("Some csv files are missing.")
 
     llm_config = None
     if args.llm_config:
@@ -469,17 +462,17 @@ if __name__ == '__main__':
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
 
     metadata = make_metadata(
         llm_config,
-        'discoverybench-python',
+        "discoverybench-python",
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
+    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
     run_evaluation(
