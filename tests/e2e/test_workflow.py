@@ -98,11 +98,11 @@ def test_readme_line_count():
 def test_simple_browser_navigation(page: Page):
     """Test that we can navigate to a page using Playwright."""
     # Navigate to the GitHub repository
-    page.goto('https://github.com/All-Hands-AI/OpenHands')
+    page.goto('https://github.com/openhands-agent/OpenHands')
 
     # Check that the page title contains "OpenHands"
     expect(page).to_have_title(
-        'GitHub - All-Hands-AI/OpenHands: 🙌 OpenHands: Code Less, Make More'
+        'GitHub - openhands-agent/OpenHands: 🙌 OpenHands: Code Less, Make More'
     )
 
     # Check that the repository name is displayed
@@ -119,7 +119,7 @@ def test_openhands_full_workflow(page, openhands_app):
     1. Start OpenHands (already done by openhands_app fixture)
     2. Use playwright to:
        a. Handle AI Provider Configuration if needed
-       b. Click on the "All-Hands-AI/OpenHands" repo in the "Select a repo" dropdown
+       b. Click on the "openhands-agent/OpenHands" repo in the "Select a repo" dropdown
        c. Click "Launch"
        d. Check that the interface changes to the agent control interface
        e. Check agent states: "Connecting", "Initializing Agent", "Agent is waiting for user input..."
@@ -359,7 +359,7 @@ def test_openhands_full_workflow(page, openhands_app):
         raise Exception('Could not find repository selector')
 
     # Step 2e: Select the OpenHands repository
-    print('Step 2e: Selecting All-Hands-AI/OpenHands repository...')
+    print('Step 2e: Selecting openhands-agent/OpenHands repository...')
 
     # Click on the repository input to open dropdown
     repo_input.click()
@@ -369,14 +369,14 @@ def test_openhands_full_workflow(page, openhands_app):
     # The input field appears after clicking the dropdown
     try:
         # Try to fill first (for regular inputs)
-        repo_input.fill('All-Hands-AI/OpenHands')
+        repo_input.fill('openhands-agent/OpenHands')
         print('Used fill() method for repository input')
     except Exception as e:
         print(f'Fill failed ({e}), trying keyboard input for React Select...')
         # If fill fails, this is likely a React Select component
         # Clear any existing text and type
         page.keyboard.press('Control+a')  # Select all
-        page.keyboard.type('All-Hands-AI/OpenHands')
+        page.keyboard.type('openhands-agent/OpenHands')
         print('Used keyboard.type() for React Select component')
 
     page.wait_for_timeout(2000)  # Wait for search results
@@ -390,10 +390,10 @@ def test_openhands_full_workflow(page, openhands_app):
             selected_value = selected_repo.input_value()
             print(f'Repository dropdown input value: "{selected_value}"')
             if (
-                'All-Hands-AI/OpenHands' in selected_value
+                'openhands-agent/OpenHands' in selected_value
                 or 'OpenHands' in selected_value
             ):
-                print('All-Hands-AI/OpenHands repository is already selected')
+                print('openhands-agent/OpenHands repository is already selected')
             else:
                 print(f'Different repository in input: {selected_value}')
         else:
@@ -416,15 +416,15 @@ def test_openhands_full_workflow(page, openhands_app):
     # React Select creates options with specific structure - target the actual clickable option
     option_selectors = [
         # React Select option selectors (most specific first)
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
         '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
-        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("openhands-agent/OpenHands")',
         '[data-testid="repo-dropdown"] div[id*="option"]:has-text("OpenHands")',
         # Generic option selectors
-        '[role="option"]:has-text("All-Hands-AI/OpenHands")',
+        '[role="option"]:has-text("openhands-agent/OpenHands")',
         '[role="option"]:has-text("OpenHands")',
         # Fallback selectors (but avoid aria-results span)
-        'div:has-text("All-Hands-AI/OpenHands"):not([id="aria-results"])',
+        'div:has-text("openhands-agent/OpenHands"):not([id="aria-results"])',
         'div:has-text("OpenHands"):not([id="aria-results"])',
     ]
 
