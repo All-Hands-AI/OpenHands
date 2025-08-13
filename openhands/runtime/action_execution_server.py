@@ -1,5 +1,4 @@
-"""
-This is the main file for the runtime client.
+"""This is the main file for the runtime client.
 It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
