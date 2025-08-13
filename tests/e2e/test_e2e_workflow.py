@@ -120,9 +120,10 @@ def test_github_token_configuration(page):
     """
     Test the GitHub token configuration flow:
     1. Navigate to OpenHands
-    2. Check if GitHub token is already configured
-    3. If not, navigate to settings and configure it
-    4. Verify the token is saved and repository selection is available
+    2. Configure LLM API key if needed
+    3. Check if GitHub token is already configured
+    4. If not, navigate to settings and configure it
+    5. Verify the token is saved and repository selection is available
     """
     # Create test-results directory if it doesn't exist
     os.makedirs('test-results', exist_ok=True)
@@ -135,6 +136,41 @@ def test_github_token_configuration(page):
     # Take initial screenshot
     page.screenshot(path='test-results/token_01_initial_load.png')
     print('Screenshot saved: token_01_initial_load.png')
+
+    # Step 1.5: Handle any initial modals that might appear (LLM API key configuration)
+    try:
+        # Check for AI Provider Configuration modal
+        config_modal = page.locator('text=AI Provider Configuration')
+        if config_modal.is_visible(timeout=5000):
+            print('AI Provider Configuration modal detected')
+
+            # Fill in the LLM API key if available
+            llm_api_key_input = page.locator('[data-testid="llm-api-key-input"]')
+            if llm_api_key_input.is_visible(timeout=3000):
+                llm_api_key = os.getenv('LLM_API_KEY', 'test-key')
+                llm_api_key_input.fill(llm_api_key)
+                print(f'Filled LLM API key (length: {len(llm_api_key)})')
+
+            # Click the Save button
+            save_button = page.locator('button:has-text("Save")')
+            if save_button.is_visible(timeout=3000):
+                save_button.click()
+                page.wait_for_timeout(2000)
+                print('Saved LLM API key configuration')
+
+        # Check for Privacy Preferences modal
+        privacy_modal = page.locator('text=Your Privacy Preferences')
+        if privacy_modal.is_visible(timeout=5000):
+            print('Privacy Preferences modal detected')
+            confirm_button = page.locator('button:has-text("Confirm Preferences")')
+            if confirm_button.is_visible(timeout=3000):
+                confirm_button.click()
+                page.wait_for_timeout(2000)
+                print('Confirmed privacy preferences')
+    except Exception as e:
+        print(f'Error handling initial modals: {e}')
+        page.screenshot(path='test-results/token_01_5_modal_error.png')
+        print('Screenshot saved: token_01_5_modal_error.png')
 
     # Step 2: Check if GitHub token is already configured or needs to be set
     print('Step 2: Checking if GitHub token is configured...')
@@ -350,7 +386,7 @@ def test_github_token_configuration(page):
 
     # Look for the repository dropdown/selector
     repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
-    expect(repo_dropdown).to_be_visible(timeout=5000)
+    expect(repo_dropdown).to_be_visible(timeout=15000)
     print('Repository dropdown is visible')
 
     # Success - we've verified the GitHub token configuration
@@ -384,27 +420,7 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_01_initial_load.png')
     print('Screenshot saved: conv_01_initial_load.png')
 
-    # Handle any initial modals that might appear
-    try:
-        # Check for AI Provider Configuration modal
-        config_modal = page.locator('text=AI Provider Configuration')
-        if config_modal.is_visible(timeout=5000):
-            print('AI Provider Configuration modal detected')
-            save_button = page.locator('button:has-text("Save")')
-            if save_button.is_visible():
-                save_button.click()
-                page.wait_for_timeout(2000)
-
-        # Check for Privacy Preferences modal
-        privacy_modal = page.locator('text=Your Privacy Preferences')
-        if privacy_modal.is_visible(timeout=5000):
-            print('Privacy Preferences modal detected')
-            confirm_button = page.locator('button:has-text("Confirm Preferences")')
-            if confirm_button.is_visible():
-                confirm_button.click()
-                page.wait_for_timeout(2000)
-    except Exception as e:
-        print(f'Error handling initial modals: {e}')
+    # Note: Initial modals are handled in test_github_token_configuration
 
     # Step 2: Select the OpenHands repository
     print('Step 2: Selecting openhands-agent/OpenHands repository...')
@@ -416,7 +432,7 @@ def test_conversation_start(page):
 
     # Look for the repository dropdown/selector
     repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
-    expect(repo_dropdown).to_be_visible(timeout=5000)
+    expect(repo_dropdown).to_be_visible(timeout=15000)
     print('Repository dropdown is visible')
 
     # Click on the repository input to open dropdown

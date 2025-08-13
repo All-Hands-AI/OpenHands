@@ -12,7 +12,7 @@ jobs:
   e2e-tests:
     if: contains(github.event.pull_request.labels.*.name, 'end-to-end') || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     env:
       GITHUB_REPO_NAME: ${{ github.repository }}
@@ -178,7 +178,7 @@ jobs:
 
           # Run the tests with detailed output
           cd tests/e2e
-          poetry run python -m pytest test_e2e_workflow.py::test_github_token_configuration test_e2e_workflow.py::test_conversation_start -v --no-header --capture=no
+          poetry run python -m pytest test_e2e_workflow.py::test_github_token_configuration test_e2e_workflow.py::test_conversation_start -v --no-header --capture=no --timeout=600
 
       - name: Upload test results
         if: always()

@@ -39,7 +39,7 @@ echo "Running end-to-end tests with visible browser..."
 
 # Run the tests in sequence
 echo "Step 1: Running GitHub token configuration test..."
-poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_github_token_configuration
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_github_token_configuration
 
 # Check if the test passed
 if [ $? -ne 0 ]; then
@@ -52,7 +52,7 @@ echo "GitHub token configuration test passed"
 
 # Step 2: Run the conversation start test
 echo "Step 2: Running conversation start test..."
-poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_conversation_start
 
 # Check if the test passed
 if [ $? -ne 0 ]; then

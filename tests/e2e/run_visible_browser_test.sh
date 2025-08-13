@@ -41,23 +41,23 @@ cd "$(dirname "$0")"
 # Check if the argument is a file or a test name
 if [[ "$1" == *".py" ]]; then
   # It's a file, run the whole file
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 $1"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 "$1"
+  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 $1"
+  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 "$1"
 elif [[ "$1" == "test_github_token_configuration" ]]; then
   # Run the GitHub token configuration test
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_github_token_configuration"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_github_token_configuration
+  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_github_token_configuration"
+  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_github_token_configuration
 elif [[ "$1" == "test_conversation_start" ]]; then
   # Run the conversation start test
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_conversation_start
+  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_conversation_start"
+  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_conversation_start
 
 elif [[ "$1" == "test_simple_browser_navigation" ]]; then
   # Run the simple browser navigation test
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_simple_browser_navigation"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::test_simple_browser_navigation
+  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_simple_browser_navigation"
+  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::test_simple_browser_navigation
 else
   # It's a test name, run it from test_e2e_workflow.py
-  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::$1"
-  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_e2e_workflow.py::$1
+  echo "Running: pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::$1"
+  poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 --timeout=600 test_e2e_workflow.py::$1
 fi
