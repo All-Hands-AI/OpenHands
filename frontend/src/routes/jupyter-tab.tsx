@@ -35,7 +35,7 @@ function Jupyter() {
   const maxWidth = parentWidth > 0 ? parentWidth : 9999;
 
   return (
-    <div ref={parentRef} className="h-full">
+    <div ref={parentRef} className="h-full card-glow-accent p-2">
       <JupyterEditor maxWidth={maxWidth} />
     </div>
   );

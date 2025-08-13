@@ -8,7 +8,7 @@ function TerminalTab() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-grow overflow-auto">
+      <div className="flex-grow overflow-auto card-glow-gold p-2">
         {/* Terminal uses some API that is not compatible in a server-environment. For this reason, we lazy load it to ensure
          * that it loads only in the client-side. */}
         <React.Suspense fallback={<div className="h-full" />}>
