@@ -1,33 +1,16 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   useRouteError,
   isRouteErrorResponse,
   Outlet,
-  useNavigate,
   useLocation,
   useNavigation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import i18n from "#/i18n";
-import { useGitHubAuthUrl } from "#/hooks/use-github-auth-url";
-import { useIsAuthed } from "#/hooks/query/use-is-authed";
-import { useConfig } from "#/hooks/query/use-config";
-import { Sidebar } from "#/components/features/sidebar/sidebar";
-import { AuthModal } from "#/components/features/waitlist/auth-modal";
-import { ReauthModal } from "#/components/features/waitlist/reauth-modal";
-import { AnalyticsConsentFormModal } from "#/components/features/analytics/analytics-consent-form-modal";
 import { useSettings } from "#/hooks/query/use-settings";
-import { useMigrateUserConsent } from "#/hooks/use-migrate-user-consent";
 import { useBalance } from "#/hooks/query/use-balance";
-import { SetupPaymentModal } from "#/components/features/payment/setup-payment-modal";
-import { displaySuccessToast } from "#/utils/custom-toast-handlers";
-import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
-import { useAutoLogin } from "#/hooks/use-auto-login";
-import { useAuthCallback } from "#/hooks/use-auth-callback";
-import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
-import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
-import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { useConfig } from "#/hooks/query/use-config";
 import { LoadingOverlay } from "#/components/shared/loading-overlay";
 
 export function ErrorBoundary() {
@@ -79,6 +62,29 @@ export default function RootLayout() {
       return () => clearTimeout(id);
     }
   }, [navigation.state, location.pathname]);
+
+  // Prefetch heavy route chunks optimistically
+  useEffect(() => {
+    const links = [
+      "/conversations/:id/terminal",
+      "/conversations/:id/jupyter",
+      "/conversations/:id/browser",
+      "/conversations/:id/served",
+      "/chat",
+      "/settings",
+    ];
+    for (const href of links) {
+      const link = document.createElement("link");
+      link.rel = "prefetch";
+      link.as = "script";
+      link.href = href; // react-router build maps chunks to route entries
+      document.head.appendChild(link);
+    }
+    return () => {
+      const toRemove = document.querySelectorAll('link[rel="prefetch"]');
+      toRemove.forEach((el) => el.parentElement?.removeChild(el));
+    };
+  }, []);
 
   const showGlobalLoader = useMemo(() => {
     const isFetchingAuth = false; // plug actual auth query if available
