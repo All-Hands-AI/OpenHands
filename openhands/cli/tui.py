@@ -69,21 +69,11 @@ COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
 COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
 
-# Risk level colors
-COLOR_RISK_LOW = '#00FF00'  # Green
-COLOR_RISK_MEDIUM = '#FFA500'  # Orange
-COLOR_RISK_HIGH = '#FF0000'  # Red
-COLOR_RISK_UNKNOWN = '#808080'  # Grey
-
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
         'grey': COLOR_GREY,
         'prompt': f'{COLOR_GOLD} bold',
-        'risk-low': COLOR_RISK_LOW,
-        'risk-medium': COLOR_RISK_MEDIUM,
-        'risk-high': COLOR_RISK_HIGH,
-        'risk-unknown': COLOR_RISK_UNKNOWN,
     }
 )
 
@@ -101,45 +91,6 @@ COMMANDS = {
 print_lock = threading.Lock()
 
 pause_task: asyncio.Task | None = None  # No more than one pause task
-
-
-def get_risk_color(safety_risk: str | None) -> str:
-    """Get the color for a given safety risk level."""
-    if not safety_risk:
-        return COLOR_RISK_UNKNOWN
-
-    risk_colors = {
-        'LOW': COLOR_RISK_LOW,
-        'MEDIUM': COLOR_RISK_MEDIUM,
-        'HIGH': COLOR_RISK_HIGH,
-    }
-    return risk_colors.get(safety_risk.upper(), COLOR_RISK_UNKNOWN)
-
-
-def get_risk_style_class(safety_risk: str | None) -> str:
-    """Get the style class for a given safety risk level."""
-    if not safety_risk:
-        return 'risk-unknown'
-
-    risk_classes = {
-        'LOW': 'risk-low',
-        'MEDIUM': 'risk-medium',
-        'HIGH': 'risk-high',
-    }
-    return risk_classes.get(safety_risk.upper(), 'risk-unknown')
-
-
-def get_risk_indicator(safety_risk: str | None) -> str:
-    """Get a visual indicator for the risk level."""
-    if not safety_risk:
-        return '❓'
-
-    risk_indicators = {
-        'LOW': '✅',
-        'MEDIUM': '⚠️',
-        'HIGH': '🚨',
-    }
-    return risk_indicators.get(safety_risk.upper(), '❓')
 
 
 class UsageMetrics:
@@ -839,8 +790,7 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
 
         # Create risk-aware question (only for HIGH risk now)
         if safety_risk == 'HIGH':
-            risk_indicator = get_risk_indicator(safety_risk)
-            question = f'{risk_indicator} HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
+            question = '🚨 HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
         else:
             question = 'Choose an option:'
 
@@ -938,15 +888,8 @@ def cli_confirm(
     selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
-        # Use risk-based styling for the question
-        if safety_risk == 'HIGH':
-            question_style = 'class:risk-high'
-        elif safety_risk == 'MEDIUM':
-            question_style = 'class:risk-medium'
-        elif safety_risk == 'LOW':
-            question_style = 'class:risk-low'
-        else:
-            question_style = 'class:question'
+        # Use red styling for HIGH risk questions
+        question_style = 'class:risk-high' if safety_risk == 'HIGH' else 'class:question'
 
         return [
             (question_style, f'{question}\n\n'),
@@ -989,10 +932,7 @@ def cli_confirm(
             'selected': COLOR_GOLD,
             'unselected': '',
             'question': '',
-            'risk-low': COLOR_RISK_LOW,
-            'risk-medium': COLOR_RISK_MEDIUM,
-            'risk-high': COLOR_RISK_HIGH + ' bold',
-            'risk-unknown': COLOR_RISK_UNKNOWN,
+            'risk-high': '#FF0000 bold',  # Red bold for HIGH risk
         }
     )
 
@@ -1003,24 +943,14 @@ def cli_confirm(
         height=Dimension(max=8),  # Limit height to prevent screen takeover
     )
 
-    # Add frame for risk commands - full width
+    # Add frame for HIGH risk commands
     if safety_risk == 'HIGH':
         layout = Layout(
             HSplit([
                 Frame(
                     content_window,
                     title='🚨 HIGH RISK',
-                    style=f'fg:{COLOR_RISK_HIGH} bold',
-                )
-            ])
-        )
-    elif safety_risk == 'MEDIUM':
-        layout = Layout(
-            HSplit([
-                Frame(
-                    content_window,
-                    title='⚠️ MEDIUM RISK',
-                    style=f'fg:{COLOR_RISK_MEDIUM}',
+                    style='fg:#FF0000 bold',  # Red color for HIGH risk
                 )
             ])
         )
