@@ -431,6 +431,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                             "browser_actions": 'goto("http://localhost:3000")',
                             "browsergym_send_msg_to_user": "browsergym",
                             "return_axtree": False,
+                            "confirmation_state": ActionConfirmationStatus.CONFIRMED,
                         },
                     ),
                 ),

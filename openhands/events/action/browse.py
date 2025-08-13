@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionConfirmationStatus, ActionSecurityRisk
 
 
 @dataclass
@@ -35,7 +35,7 @@ class BrowseInteractiveAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     return_axtree: bool = False
-    confirmation_state: str | None = None
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
 
     @property
     def message(self) -> str:

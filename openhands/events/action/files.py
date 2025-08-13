@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionConfirmationStatus, ActionSecurityRisk
 from openhands.events.event import FileEditSource, FileReadSource
 
 
@@ -22,7 +22,7 @@ class FileReadAction(Action):
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
-    confirmation_state: str | None = None
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
 
     @property
     def message(self) -> str:
@@ -114,7 +114,7 @@ class FileEditAction(Action):
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
-    confirmation_state: str | None = None
+    confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
 
     def __repr__(self) -> str:
         ret = "**FileEditAction**\n"
