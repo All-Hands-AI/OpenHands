@@ -67,11 +67,17 @@ export function Container({
 
   const showScrollButtons = containerWidth < 598 && labels && labels.length > 0;
 
+  // Derive optional glow styles if parent passes 'card-glow-*' utilities via className
+  const isGold = (className || "").includes("card-glow-gold");
+  const isAccent = (className || "").includes("card-glow-accent");
+
   return (
     <div
       ref={containerRef}
       className={clsx(
         "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full w-full",
+        isGold && "card-glow-gold",
+        isAccent && "card-glow-accent",
         className,
       )}
     >
