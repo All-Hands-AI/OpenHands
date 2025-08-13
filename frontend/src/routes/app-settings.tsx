@@ -6,6 +6,7 @@ import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { SettingsSwitchWithTooltip } from "#/components/features/settings/settings-switch-with-tooltip";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
@@ -48,6 +49,10 @@ function AppSettingsScreen() {
     React.useState(false);
   const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
     React.useState(false);
+  const [
+    securityAnalyzerSwitchHasChanged,
+    setSecurityAnalyzerSwitchHasChanged,
+  ] = React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -80,6 +85,9 @@ function AppSettingsScreen() {
       formData.get("git-user-email-input")?.toString() ||
       DEFAULT_SETTINGS.GIT_USER_EMAIL;
 
+    const enableSecurityAnalyzer =
+      formData.get("enable-security-analyzer-switch")?.toString() === "on";
+
     saveSettings(
       {
         LANGUAGE: language,
@@ -90,6 +98,7 @@ function AppSettingsScreen() {
         MAX_BUDGET_PER_TASK: maxBudgetPerTask,
         GIT_USER_NAME: gitUserName,
         GIT_USER_EMAIL: gitUserEmail,
+        SECURITY_ANALYZER: enableSecurityAnalyzer ? "llm" : "",
       },
       {
         onSuccess: () => {
@@ -105,9 +114,11 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
+          setSolvabilityAnalysisSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
           setGitUserNameHasChanged(false);
           setGitUserEmailHasChanged(false);
+          setSecurityAnalyzerSwitchHasChanged(false);
         },
       },
     );
@@ -167,6 +178,11 @@ function AppSettingsScreen() {
     setGitUserEmailHasChanged(value !== currentValue);
   };
 
+  const checkIfSecurityAnalyzerSwitchHasChanged = (checked: boolean) => {
+    const currentSecurityAnalyzer = !!settings?.SECURITY_ANALYZER;
+    setSecurityAnalyzerSwitchHasChanged(checked !== currentSecurityAnalyzer);
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
@@ -175,7 +191,8 @@ function AppSettingsScreen() {
     !solvabilityAnalysisSwitchHasChanged &&
     !maxBudgetPerTaskHasChanged &&
     !gitUserNameHasChanged &&
-    !gitUserEmailHasChanged;
+    !gitUserEmailHasChanged &&
+    !securityAnalyzerSwitchHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -211,6 +228,16 @@ function AppSettingsScreen() {
           >
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
+
+          <SettingsSwitchWithTooltip
+            testId="enable-security-analyzer-switch"
+            name="enable-security-analyzer-switch"
+            defaultIsToggled={!!settings.SECURITY_ANALYZER}
+            onToggle={checkIfSecurityAnalyzerSwitchHasChanged}
+            tooltip={t(I18nKey.SETTINGS$SECURITY_ANALYZER_TOOLTIP)}
+          >
+            {t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+          </SettingsSwitchWithTooltip>
 
           {config?.APP_MODE === "saas" && (
             <SettingsSwitch

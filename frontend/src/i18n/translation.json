@@ -6127,6 +6127,22 @@
         "ja": "セキュリティアナライザーを選択…",
         "uk": "Виберіть аналізатор безпеки…"
     },
+    "SETTINGS$SECURITY_ANALYZER_TOOLTIP": {
+        "en": "When enabled, the agent will pause and ask for confirmation when it tries to execute high-risk actions",
+        "de": "Wenn aktiviert, pausiert der Agent und fragt nach Bestätigung, wenn er versucht, risikoreiche Aktionen auszuführen",
+        "zh-CN": "启用后，代理在尝试执行高风险操作时会暂停并要求确认",
+        "zh-TW": "啟用後，代理在嘗試執行高風險操作時會暫停並要求確認",
+        "ko-KR": "활성화되면 에이전트가 고위험 작업을 실행하려고 할 때 일시 중지하고 확인을 요청합니다",
+        "no": "Når aktivert, vil agenten pause og be om bekreftelse når den prøver å utføre høyrisiko-handlinger",
+        "it": "Quando abilitato, l'agente si fermerà e chiederà conferma quando tenta di eseguire azioni ad alto rischio",
+        "pt": "Quando ativado, o agente pausará e pedirá confirmação quando tentar executar ações de alto risco",
+        "es": "Cuando está habilitado, el agente se pausará y pedirá confirmación cuando trate de ejecutar acciones de alto riesgo",
+        "ar": "عند التمكين، سيتوقف الوكيل ويطلب التأكيد عندما يحاول تنفيذ إجراءات عالية المخاطر",
+        "fr": "Lorsqu'il est activé, l'agent se mettra en pause et demandera confirmation lorsqu'il tentera d'exécuter des actions à haut risque",
+        "tr": "Etkinleştirildiğinde, ajan yüksek riskli eylemleri gerçekleştirmeye çalıştığında duraklar ve onay ister",
+        "ja": "有効にすると、エージェントは高リスクなアクションを実行しようとする際に一時停止し、確認を求めます",
+        "uk": "Коли увімкнено, агент зупиниться і попросить підтвердження, коли спробує виконати дії високого ризику"
+    },
     "SETTINGS$DONT_KNOW_API_KEY": {
         "en": "Don't know your API key?",
         "ja": "APIキーがわかりませんか？",
