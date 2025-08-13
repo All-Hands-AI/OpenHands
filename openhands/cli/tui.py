@@ -441,24 +441,10 @@ def display_command(event: CmdRunAction) -> None:
     # Get safety risk information if available
     safety_risk = getattr(event, 'safety_risk', None)
 
-    # Create command text with subtle risk information
-    if safety_risk:
-        # Add a small, subtle risk indicator to the title only
-        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
-        title = f'Command {risk_emoji}'
-        command_text = f'$ {event.command}'
-        
-        # Use subtle border colors - less prominent than before
-        if safety_risk == 'HIGH':
-            border_style = f'fg:{COLOR_RISK_HIGH}'  # Removed bold for subtlety
-        elif safety_risk == 'MEDIUM':
-            border_style = f'fg:{COLOR_RISK_MEDIUM}'
-        else:
-            border_style = f'fg:{COLOR_RISK_LOW}'
-    else:
-        command_text = f'$ {event.command}'
-        title = 'Command'
-        border_style = 'ansiblue'
+    # Keep command frame clean and simple
+    command_text = f'$ {event.command}'
+    title = 'Command'
+    border_style = 'ansiblue'
 
     container = Frame(
         TextArea(
@@ -472,6 +458,20 @@ def display_command(event: CmdRunAction) -> None:
     )
     print_formatted_text('')
     print_container(container)
+    
+    # Display subtle risk indicator below the command frame if present
+    if safety_risk:
+        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
+        risk_color = get_risk_color(safety_risk)
+        
+        # Create a very subtle, small risk indicator
+        risk_text = f'  {risk_emoji} {safety_risk.lower()}'
+        
+        # Use HTML formatting for dimmed colored text
+        from prompt_toolkit.formatted_text import HTML
+        formatted_risk = HTML(f'<style fg="{risk_color}" dim="true">{risk_text}</style>')
+        
+        print_formatted_text(formatted_risk, style=DEFAULT_STYLE)
 
 
 def display_command_output(output: str) -> None:
