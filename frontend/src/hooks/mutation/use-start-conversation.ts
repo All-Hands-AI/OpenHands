@@ -31,7 +31,12 @@ export const useStartConversation = () => {
         );
       }
     },
-    onSettled: () => {
+    onSettled: (_, __, variables) => {
+      // Invalidate the specific conversation query to trigger automatic refetch
+      queryClient.invalidateQueries({
+        queryKey: ["user", "conversation", variables.conversationId],
+      });
+      // Also invalidate the conversations list for consistency
       queryClient.invalidateQueries({ queryKey: ["user", "conversations"] });
     },
   });

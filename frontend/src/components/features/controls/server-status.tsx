@@ -10,7 +10,6 @@ import { ServerStatusContextMenu } from "./server-status-context-menu";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
 import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 
 export interface ServerStatusProps {
@@ -29,7 +28,6 @@ export function ServerStatus({
   const { t } = useTranslation();
 
   const { conversationId } = useConversationId();
-  const { refetch } = useActiveConversation();
 
   // Mutation hooks
   const stopConversationMutation = useStopConversation();
@@ -82,30 +80,16 @@ export function ServerStatus({
 
   const handleStopServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    stopConversationMutation.mutate(
-      { conversationId },
-      {
-        onSuccess: () => {
-          refetch();
-        },
-      },
-    );
+    stopConversationMutation.mutate({ conversationId });
     setShowContextMenu(false);
   };
 
   const handleStartServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
-    startConversationMutation.mutate(
-      {
-        conversationId,
-        providers,
-      },
-      {
-        onSuccess: () => {
-          refetch();
-        },
-      },
-    );
+    startConversationMutation.mutate({
+      conversationId,
+      providers,
+    });
     setShowContextMenu(false);
   };
 
