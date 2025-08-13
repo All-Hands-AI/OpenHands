@@ -6,7 +6,7 @@ from openhands.config import load_openhands_config
 
 config = load_openhands_config()
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     """Main entry point of the script.
 
     This script runs pytest with specific arguments and configuration.
@@ -16,17 +16,17 @@ if __name__ == "__main__":
 
     """
     parser = argparse.ArgumentParser(
-        description="This script runs pytest with specific arguments and configuration."
+        description='This script runs pytest with specific arguments and configuration.'
     )
     parser.add_argument(
-        "--OPENAI_API_KEY", type=str, required=True, help="Your OpenAI API key"
+        '--OPENAI_API_KEY', type=str, required=True, help='Your OpenAI API key'
     )
     parser.add_argument(
-        "--model", type=str, required=True, help="The model name to use"
+        '--model', type=str, required=True, help='The model name to use'
     )
 
     parser_args = parser.parse_args()
-    config.config["OPENAI_API_KEY"] = parser_args.OPENAI_API_KEY
-    args = ["-v", "evaluation/regression/cases", f"-o model={parser_args.model}"]
+    config.config['OPENAI_API_KEY'] = parser_args.OPENAI_API_KEY
+    args = ['-v', 'evaluation/regression/cases', f'-o model={parser_args.model}']
 
     pytest.main(args)

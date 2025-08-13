@@ -62,11 +62,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "python:3.12-bookworm"
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -85,21 +85,21 @@ def gpqa_codeact_user_response(
     try_parse: Callable[[Action], str] | None = None,
 ) -> str:
     msg = (
-        "Please continue working on the task on whatever approach you think is suitable.\n"
-        "Feel free to use all tools for calculations and solving the problem, and web-search for finding relevant facts during the process if needed\n"
+        'Please continue working on the task on whatever approach you think is suitable.\n'
+        'Feel free to use all tools for calculations and solving the problem, and web-search for finding relevant facts during the process if needed\n'
         'If you have finished reporting the answer in the expected format, (and only once that is done), please use the "finish" tool to finish the interaction.\n'
-        "Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.\n"
-        "That is, when you have decided on the answer report in the following format:\n"
-        f"{ACTION_FORMAT}\n"
-        "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n"
+        'Again you are being told a million times to first report the answer in the requested format (see again below for reference) before exiting. DO NOT EXIT WITHOUT REPORTING THE ANSWER FIRST.\n'
+        'That is, when you have decided on the answer report in the following format:\n'
+        f'{ACTION_FORMAT}\n'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP TO SOLVE THIS TASK.\n'
     )
     return msg
 
 
-AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {"CodeActAgent": gpqa_codeact_user_response}
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {'CodeActAgent': gpqa_codeact_user_response}
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    "CodeActAgent": '\n\n SUPER IMPORTANT: When you think you have solved the question, first report it back to the user in the requested format. Only once that is done, in the next turn, please finish the interaction using the "finish" tool.\n'
+    'CodeActAgent': '\n\n SUPER IMPORTANT: When you think you have solved the question, first report it back to the user in the requested format. Only once that is done, in the next turn, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -111,7 +111,7 @@ def parse_final_answer(final_answer: str | None) -> str | None:
     ||FINAL_ANSWER>>
     """
     # to do this first extract the part enclosed in the format <<FINAL_ANSWER|| ... ||FINAL_ANSWER>>
-    pattern = re.compile(r"<<FINAL_ANSWER\|\|(.*?)\|\|FINAL_ANSWER>>", re.DOTALL)
+    pattern = re.compile(r'<<FINAL_ANSWER\|\|(.*?)\|\|FINAL_ANSWER>>', re.DOTALL)
     match = pattern.search(final_answer)
 
     # and then strip it, remove any leading/trailing spaces line breaks etc.
@@ -119,7 +119,7 @@ def parse_final_answer(final_answer: str | None) -> str | None:
     # finally capitalize it
     answer = answer.upper()
     # and then return A, B, C, D depending on whether the answer A, B, C, D is found in the final answer
-    for letter in ["A", "B", "C", "D"]:
+    for letter in ['A', 'B', 'C', 'D']:
         if letter in answer:
             return letter
 
@@ -131,14 +131,14 @@ def compare_answers(model_output: str | None, ground_truth: str):
         predicted_answer = parse_final_answer(model_output)
     except Exception as e:
         # Log the exception
-        logger.error(f"An error occurred: {e}\n defaulting to random guess ...")
+        logger.error(f'An error occurred: {e}\n defaulting to random guess ...')
         # choose a random answer if the model output is not in the correct format
-        predicted_answer = random.choice(["A", "B", "C", "D"])
+        predicted_answer = random.choice(['A', 'B', 'C', 'D'])
 
-    logger.info("#############################################")
-    logger.info(f"Predicted answer: {predicted_answer}")
-    logger.info(f"Ground truth answer: {ground_truth}")
-    logger.info("#############################################")
+    logger.info('#############################################')
+    logger.info(f'Predicted answer: {predicted_answer}')
+    logger.info(f'Ground truth answer: {ground_truth}')
+    logger.info('#############################################')
     return predicted_answer == ground_truth
 
 
@@ -147,25 +147,25 @@ def convert_instance_dict(instance):
     Reads and extracts relevant information from the dataset instance.
     """
     out_instance_dict = {}
-    out_instance_dict["question"] = instance["Question"]
-    correct_answer = instance["Correct Answer"]
-    out_instance_dict["choices"] = [
+    out_instance_dict['question'] = instance['Question']
+    correct_answer = instance['Correct Answer']
+    out_instance_dict['choices'] = [
         correct_answer,
-        instance["Incorrect Answer 1"],
-        instance["Incorrect Answer 2"],
-        instance["Incorrect Answer 3"],
+        instance['Incorrect Answer 1'],
+        instance['Incorrect Answer 2'],
+        instance['Incorrect Answer 3'],
     ]
 
     # Randomize the order of choices
-    random.shuffle(out_instance_dict["choices"])
+    random.shuffle(out_instance_dict['choices'])
 
     # Find the index of the correct answer after shuffling and store it as a letter (A/B/C/D)
-    correct_index = out_instance_dict["choices"].index(correct_answer)
+    correct_index = out_instance_dict['choices'].index(correct_answer)
     correct_letter = chr(
         65 + correct_index
     )  # Convert index (0-3) to corresponding letter (A-D)
 
-    out_instance_dict["correct_solution"] = correct_letter
+    out_instance_dict['correct_solution'] = correct_letter
 
     return out_instance_dict
 
@@ -179,22 +179,22 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
-        reset_logger_for_multiprocessing(logger, instance["instance_id"], log_dir)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance['instance_id']}.")
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
     # ======= Run the agent on the instance =======
     # Prepare instruction for the agent using suggested format in gpqa codebase
     instruction = f"""
 What is the correct answer to this question:\n
-{instance["question"]}\n
+{instance['question']}\n
 
 Choices:\n
-(A) {instance["choices"][0]}\n
-(B) {instance["choices"][1]}\n
-(C) {instance["choices"][2]}\n
-(D) {instance["choices"][3]}\n
+(A) {instance['choices'][0]}\n
+(B) {instance['choices'][1]}\n
+(C) {instance['choices'][2]}\n
+(D) {instance['choices'][3]}\n
 \n\n
 
 MOST IMPORTANT: Format your response as follows:
@@ -226,35 +226,35 @@ Ok now its time to start solving the question. Good luck!
             ),
         )
     )
-    assert state is not None, "State should not be None."
+    assert state is not None, 'State should not be None.'
 
     # ======= Attempt to evaluate the agent's edits =======
 
     question_choices = {
-        "A": instance["choices"][0],
-        "B": instance["choices"][1],
-        "C": instance["choices"][2],
-        "D": instance["choices"][3],
+        'A': instance['choices'][0],
+        'B': instance['choices'][1],
+        'C': instance['choices'][2],
+        'D': instance['choices'][3],
     }
     # get the final message from the state history (default to empty if not found)
     found_answers = {
-        "A": False,
-        "B": False,
-        "C": False,
-        "D": False,
+        'A': False,
+        'B': False,
+        'C': False,
+        'D': False,
     }
     for event in reversed(state.history):
         if (
             isinstance(event, AgentFinishAction)
-            and event.source != "user"
-            and "<<FINAL_ANSWER||" in event.thought
+            and event.source != 'user'
+            and '<<FINAL_ANSWER||' in event.thought
         ):
             final_message = event.thought
             break
         elif (
             isinstance(event, MessageAction)
-            and event.source != "user"
-            and "<<FINAL_ANSWER||" in event.content
+            and event.source != 'user'
+            and '<<FINAL_ANSWER||' in event.content
         ):
             final_message = event.content
             break
@@ -266,9 +266,9 @@ Ok now its time to start solving the question. Good luck!
             final_message = None
 
     found_options = [option for option, found in found_answers.items() if found]
-    logger.info("#############################################")
-    logger.info(f"Final message generated by the agent: {final_message}")
-    logger.info("#############################################")
+    logger.info('#############################################')
+    logger.info(f'Final message generated by the agent: {final_message}')
+    logger.info('#############################################')
 
     # check if the model output matches the ground truth
     test_result = compare_answers(final_message, instance.correct_solution)
@@ -277,20 +277,20 @@ Ok now its time to start solving the question. Good luck!
         # if the final message is None, then the agent did not report the answer in the correct format
         # so we randomly select one of the found options and compare it with the correct solution
         test_result = _selected == instance.correct_solution
-        logger.info("#############################################")
-        logger.info("Agent did not report the answer in the correct format.")
-        logger.info(f"Found options: {found_options}")
-        logger.info(f"Selected option: {_selected}")
-        logger.info("#############################################")
+        logger.info('#############################################')
+        logger.info('Agent did not report the answer in the correct format.')
+        logger.info(f'Found options: {found_options}')
+        logger.info(f'Selected option: {_selected}')
+        logger.info('#############################################')
 
-    logger.info("#############################################")
-    logger.info(f"Test result: {test_result}")
-    logger.info("#############################################")
+    logger.info('#############################################')
+    logger.info(f'Test result: {test_result}')
+    logger.info('#############################################')
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
     metrics = state.metrics.get() if state.metrics else None
 
@@ -303,23 +303,23 @@ Ok now its time to start solving the question. Good luck!
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
-            "result": test_result,
-            "found_answers": found_answers,
-            "last_message": final_message,
+            'result': test_result,
+            'found_answers': found_answers,
+            'last_message': final_message,
         },
     )
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     # data split must be one of 'gpqa_main', 'gqpa_diamond', 'gpqa_experts', 'gpqa_extended'
     parser.add_argument(
-        "--data-split",
+        '--data-split',
         type=str,
-        choices=["gpqa_main", "gpqa_diamond", "gpqa_experts", "gpqa_extended"],
-        default="gpqa_diamond",
-        help="data split to evaluate, eg. gpqa_diamond",
+        choices=['gpqa_main', 'gpqa_diamond', 'gpqa_experts', 'gpqa_extended'],
+        default='gpqa_diamond',
+        help='data split to evaluate, eg. gpqa_diamond',
     )
     args, _ = parser.parse_known_args()
 
@@ -330,21 +330,21 @@ if __name__ == "__main__":
         llm_config.modify_params = False
 
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
-    dataset = load_dataset("Idavidrein/gpqa", args.data_split)
-    gpqa_dataset = dataset["train"]
+    dataset = load_dataset('Idavidrein/gpqa', args.data_split)
+    gpqa_dataset = dataset['train']
     # preprocess the dataset
     gpqa_dataset = gpqa_dataset.map(convert_instance_dict)
     gpqa_dataset = gpqa_dataset.to_pandas()
     # Add a new column 'instance_id' with the index
-    gpqa_dataset["instance_id"] = gpqa_dataset.index
+    gpqa_dataset['instance_id'] = gpqa_dataset.index
 
-    if args.agent_cls != "CodeActAgent":
+    if args.agent_cls != 'CodeActAgent':
         raise ValueError(
-            f"Agent class {args.agent_cls} not supported for GPQA evaluation."
+            f'Agent class {args.agent_cls} not supported for GPQA evaluation.'
         )
 
     metadata = make_metadata(
@@ -357,7 +357,7 @@ if __name__ == "__main__":
         data_split=args.data_split,
     )
 
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     prepared_dataset = prepare_dataset(gpqa_dataset, output_file, args.eval_n_limit)
 
     run_evaluation(

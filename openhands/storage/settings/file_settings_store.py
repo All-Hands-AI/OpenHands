@@ -14,7 +14,7 @@ from openhands.utils.async_utils import call_sync_from_async
 @dataclass
 class FileSettingsStore(SettingsStore):
     file_store: FileStore
-    path: str = "settings.json"
+    path: str = 'settings.json'
 
     async def load(self) -> Settings | None:
         try:
@@ -26,7 +26,7 @@ class FileSettingsStore(SettingsStore):
             return None
 
     async def store(self, settings: Settings) -> None:
-        json_str = settings.model_dump_json(context={"expose_secrets": True})
+        json_str = settings.model_dump_json(context={'expose_secrets': True})
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 
     @classmethod

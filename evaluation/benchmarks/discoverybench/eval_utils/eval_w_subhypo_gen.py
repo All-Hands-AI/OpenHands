@@ -7,61 +7,61 @@ from .lm_utils import run_chatgpt_query_multi_turn
 from .openai_helpers import get_response
 
 logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s -   %(message)s",
-    datefmt="%m/%d/%Y %H:%M:%S",
+    format='%(asctime)s - %(levelname)s - %(name)s -   %(message)s',
+    datefmt='%m/%d/%Y %H:%M:%S',
     level=logging.INFO,
 )
 logger = logging.getLogger(__name__)
 
 
 def get_score_from_answer(type, answer):
-    if type == "context":
-        answer = answer.replace("Answer:", "").strip()
-        if answer.startswith("A)"):
+    if type == 'context':
+        answer = answer.replace('Answer:', '').strip()
+        if answer.startswith('A)'):
             return 1.0
-        elif answer.startswith("B)"):
+        elif answer.startswith('B)'):
             return 0.0
         return -1.0
 
-    elif type == "var":
+    elif type == 'var':
         try:
             var_json = json.loads(answer)
             # print(f"var_json:{var_json}")
             p = 0.0
             r = 0.0
             f1 = 0.0
-            if var_json["sizeB"]:
-                p = var_json["intersection"] / var_json["sizeB"]
-            if var_json["sizeA"]:
-                r = var_json["intersection"] / var_json["sizeA"]
+            if var_json['sizeB']:
+                p = var_json['intersection'] / var_json['sizeB']
+            if var_json['sizeA']:
+                r = var_json['intersection'] / var_json['sizeA']
             if p > 0.0 and r > 0.0:
                 f1 = (2 * p * r) / (p + r)
             else:
                 f1 = 0.0
             eval_rec = {
-                "p": p,
-                "r": r,
-                "f1": f1,
-                "sizeA": var_json["sizeA"],
-                "sizeB": var_json["sizeB"],
-                "intersection": var_json["intersection"],
-                "explanation": var_json["explanation"],
+                'p': p,
+                'r': r,
+                'f1': f1,
+                'sizeA': var_json['sizeA'],
+                'sizeB': var_json['sizeB'],
+                'intersection': var_json['intersection'],
+                'explanation': var_json['explanation'],
             }
-            print(f"var_eval: {eval_rec}")
+            print(f'var_eval: {eval_rec}')
             return eval_rec
         except Exception:  # COMMENT: added Exception
-            return {"p": -1.0, "r": -1.0, "f1": -1.0}
-    elif type == "rel":
+            return {'p': -1.0, 'r': -1.0, 'f1': -1.0}
+    elif type == 'rel':
         print(answer)
         rel_json = json.loads(answer)
-        answer_str = rel_json["answer"].strip()
-        if answer_str.startswith("A") or "very similar" in answer_str:
+        answer_str = rel_json['answer'].strip()
+        if answer_str.startswith('A') or 'very similar' in answer_str:
             return 1.0
         elif (
-            answer_str.startswith("B") or "similar but general than HypoA" in answer_str
+            answer_str.startswith('B') or 'similar but general than HypoA' in answer_str
         ):
             return 0.5
-        elif answer_str.startswith("C") or "different" in answer_str:
+        elif answer_str.startswith('C') or 'different' in answer_str:
             return 0.0
         return -1.0
     return -1.0
@@ -79,28 +79,28 @@ def ask_dimension_question(
     dataset_type,
     use_column_metadata=True,
 ):
-    dimension_question = ""
-    answer = ""
+    dimension_question = ''
+    answer = ''
     score = 0.0
-    if dimension == "var":
-        score = {"p": -1.0, "r": -1.0, "f1": -1.0}
+    if dimension == 'var':
+        score = {'p': -1.0, 'r': -1.0, 'f1': -1.0}
     num_tokens = 256
     num_retries = 1
     json_response = False
 
     messages = [
         {
-            "role": "system",
-            "content": "You are an AI assistant that helps evaluate a data-driven hypothesis. You are a helpful assistant who is not talkative. You only respond with the exact answer to a query without additional conversation.",
+            'role': 'system',
+            'content': 'You are an AI assistant that helps evaluate a data-driven hypothesis. You are a helpful assistant who is not talkative. You only respond with the exact answer to a query without additional conversation.',
         },
     ]
-    if dimension == "context":
+    if dimension == 'context':
         dimension_question = """\
         Question: Is HypoB defined in the same context as HypoA?
         (Context refers to assumptions/stratification under which the hypotheses are defined.)
         Options: A) same   B) different
         What is your answer?"""
-    elif dimension == "var":
+    elif dimension == 'var':
         dimension_question = """\
         Question: For both HypoA and HypoB, what are the different variables found in the hypotheses? \
         Return your answer as a JSON object in the following format:
@@ -115,7 +115,7 @@ def ask_dimension_question(
         num_tokens = 512
         num_retries = 1
         json_response = True
-    elif dimension == "rel":
+    elif dimension == 'rel':
         dimension_question = """\
         Question: Does HypoB exhibit the same relation as HypoA?
         Compare using following example hierarchy of relationships (based on specificity): \
@@ -161,7 +161,7 @@ def ask_dimension_question(
 
         {dimension_question}"""
 
-    messages.append({"role": "user", "content": dimension_question_str})
+    messages.append({'role': 'user', 'content': dimension_question_str})
     for retry in range(num_retries):
         response = run_chatgpt_query_multi_turn(
             messages=messages,
@@ -184,32 +184,32 @@ def prepare_dataset_metadata_json(dataset_meta, dataset_type, use_column_metadat
     if dataset_meta is None:  # COMMENT: changed from == to is None
         return [
             {
-                "dataset_description": "",
-                "columns": [],
+                'dataset_description': '',
+                'columns': [],
             }
         ]
     datasets_json = []
-    if dataset_type == "real":
-        for d in dataset_meta["datasets"]:
+    if dataset_type == 'real':
+        for d in dataset_meta['datasets']:
             datasets_json.append(
                 {
-                    "dataset_description": d["description"],
-                    "columns": [
-                        {"name": col["name"], "description": col["description"]}
-                        for col in d["columns"]["raw"]
+                    'dataset_description': d['description'],
+                    'columns': [
+                        {'name': col['name'], 'description': col['description']}
+                        for col in d['columns']['raw']
                     ]
                     if use_column_metadata
                     else [],
                 }
             )
     else:
-        for d in dataset_meta["datasets"]:
+        for d in dataset_meta['datasets']:
             datasets_json.append(
                 {
-                    "dataset_description": d["description"],
-                    "columns": [
-                        {"name": col["name"], "description": col["description"]}
-                        for col in d["columns"]
+                    'dataset_description': d['description'],
+                    'columns': [
+                        {'name': col['name'], 'description': col['description']}
+                        for col in d['columns']
                     ]
                     if use_column_metadata
                     else [],
@@ -272,19 +272,19 @@ def get_sub_hypotheses(
 
     if sub_hypo_json is not None:  # COMMENT: changed from != to is not
         # print(f"full hypothesis: {hypo}")
-        print(f"sub_hypo_json: {sub_hypo_json}")
+        print(f'sub_hypo_json: {sub_hypo_json}')
     else:
         sub_hypo_json = {
-            "sub_hypo": [],
+            'sub_hypo': [],
         }
 
-    sub_hypo_json["full_hypo"] = hypo
+    sub_hypo_json['full_hypo'] = hypo
 
     return sub_hypo_json
 
 
 def match_context_with_gpt(
-    gold_hyp, gold_context, pred_hyp, pred_context, model="gpt-3.5-turbo"
+    gold_hyp, gold_context, pred_hyp, pred_context, model='gpt-3.5-turbo'
 ):
     prompt = f"""\
         Given a gold hypothesis, a gold context, a predicted hypothesis, and a predicted context, your task is \
@@ -314,13 +314,13 @@ def match_context_with_gpt(
 
     client = OpenAI()
     output = get_response(client, prompt, model=model)
-    return output.get("match", False)
+    return output.get('match', False)
 
 
 def is_matching_context(gold_hyp, gold_context, pred_hyp, pred_context, llm_used):
     if gold_context == pred_context:
         return True
-    if "None" in [gold_context, pred_context]:
+    if 'None' in [gold_context, pred_context]:
         return False
     return match_context_with_gpt(
         gold_hyp, gold_context, pred_hyp, pred_context, model=llm_used
@@ -342,14 +342,14 @@ def run_eval_gold_vs_gen_NL_subhypo(
     # GPT-4 based evaluation to evaluate generated hypothesis in terms of context, variables, relation
 
     eval_rec = {
-        "query": query,
-        "HypoA": gold_hypo,
-        "WorkflowA": gold_workflow,
-        "HypoB": gen_hypo,
-        "WorkflowB": gen_workflow,
+        'query': query,
+        'HypoA': gold_hypo,
+        'WorkflowA': gold_workflow,
+        'HypoB': gen_hypo,
+        'WorkflowB': gen_workflow,
     }
 
-    for dimension in ["var", "rel"]:
+    for dimension in ['var', 'rel']:
         question, answer, score = ask_dimension_question(
             query,
             gold_hypo,
@@ -363,14 +363,14 @@ def run_eval_gold_vs_gen_NL_subhypo(
             use_column_metadata=use_column_metadata,
         )
 
-        eval_rec[dimension] = {"question": question, "answer": answer, "score": score}
+        eval_rec[dimension] = {'question': question, 'answer': answer, 'score': score}
 
-    eval_rec["context"] = context_score
-    eval_rec["accuracy_score"] = (
+    eval_rec['context'] = context_score
+    eval_rec['accuracy_score'] = (
         1.0
-        * eval_rec["context"]["score"]
-        * eval_rec["var"]["score"]["f1"]
-        * eval_rec["rel"]["score"]
+        * eval_rec['context']['score']
+        * eval_rec['var']['score']['f1']
+        * eval_rec['rel']['score']
     )
 
     return eval_rec
@@ -409,11 +409,11 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
 
     # recall_context = 1.0  # COMMENT: never used
     eval_rec = {
-        "query": query,
-        "HypoA": gold_hypo,
-        "WorkflowA": gold_workflow,
-        "HypoB": gen_hypo,
-        "WorkflowB": gen_workflow,
+        'query': query,
+        'HypoA': gold_hypo,
+        'WorkflowA': gold_workflow,
+        'HypoB': gen_hypo,
+        'WorkflowB': gen_workflow,
     }
 
     gold_sub_hypo_json = get_sub_hypotheses(
@@ -425,17 +425,17 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
         dataset_type=dataset_type,
         use_column_metadata=use_column_metadata,
     )
-    if len(gold_sub_hypo_json["sub_hypo"]) == 0:
-        gold_sub_hypo_json["sub_hypo"] = [
+    if len(gold_sub_hypo_json['sub_hypo']) == 0:
+        gold_sub_hypo_json['sub_hypo'] = [
             {
-                "text": gold_hypo,
-                "context": "None",
-                "variables": [],
-                "relations": "",
-                "explanation": "unable to segment",
+                'text': gold_hypo,
+                'context': 'None',
+                'variables': [],
+                'relations': '',
+                'explanation': 'unable to segment',
             }
         ]
-    print(f"gold_sub_hypo_json: {gold_sub_hypo_json}")
+    print(f'gold_sub_hypo_json: {gold_sub_hypo_json}')
 
     gen_sub_hypo_json = get_sub_hypotheses(
         query=query,
@@ -446,38 +446,38 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
         dataset_type=dataset_type,
         use_column_metadata=use_column_metadata,
     )
-    if len(gen_sub_hypo_json["sub_hypo"]) == 0:
-        gen_sub_hypo_json["sub_hypo"] = [
+    if len(gen_sub_hypo_json['sub_hypo']) == 0:
+        gen_sub_hypo_json['sub_hypo'] = [
             {
-                "text": gen_hypo,
-                "context": "None",
-                "variables": [],
-                "relations": "",
-                "explanation": "unable to segment",
+                'text': gen_hypo,
+                'context': 'None',
+                'variables': [],
+                'relations': '',
+                'explanation': 'unable to segment',
             }
         ]
-    print(f"gen_sub_hypo_json: {gen_sub_hypo_json}")
+    print(f'gen_sub_hypo_json: {gen_sub_hypo_json}')
 
-    eval_rec["gold_sub_hypo"] = gold_sub_hypo_json
-    eval_rec["gen_sub_hypo"] = gen_sub_hypo_json
+    eval_rec['gold_sub_hypo'] = gold_sub_hypo_json
+    eval_rec['gen_sub_hypo'] = gen_sub_hypo_json
 
     gold_subh_covered = []
     gen_subh_to_gold_subh = dict()
     gen_gold_subh_to_context = dict()
 
-    for p_id, gen_subh in enumerate(gen_sub_hypo_json["sub_hypo"]):
+    for p_id, gen_subh in enumerate(gen_sub_hypo_json['sub_hypo']):
         gen_subh_to_gold_subh[p_id] = -1
 
-        for g_id, gold_subh in enumerate(gold_sub_hypo_json["sub_hypo"]):
+        for g_id, gold_subh in enumerate(gold_sub_hypo_json['sub_hypo']):
             if g_id in gold_subh_covered:
                 continue
 
             # match context
             context_bool = is_matching_context(
-                gold_subh["text"],
-                gold_subh.get("context", ""),
-                gen_subh["text"],
-                gen_subh.get("context", ""),
+                gold_subh['text'],
+                gold_subh.get('context', ''),
+                gen_subh['text'],
+                gen_subh.get('context', ''),
                 llm_used,
             )
             if context_bool:
@@ -488,21 +488,21 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
             if context_score == 1.0:  # match only when context_score = 1.0
                 gen_subh_to_gold_subh[p_id] = g_id
                 gold_subh_covered.append(g_id)
-                gen_gold_subh_to_context[f"P{p_id}||G{g_id}"] = {
-                    "question": f"""Comapring: GoldH: {gold_subh["text"]}, GoldC: {gold_subh["context"]}\nGenH: {gen_subh["text"]}, GenC: {gen_subh["context"]}""",
-                    "answer": context_bool,
-                    "score": context_score,
+                gen_gold_subh_to_context[f'P{p_id}||G{g_id}'] = {
+                    'question': f"""Comapring: GoldH: {gold_subh['text']}, GoldC: {gold_subh['context']}\nGenH: {gen_subh['text']}, GenC: {gen_subh['context']}""",
+                    'answer': context_bool,
+                    'score': context_score,
                 }
                 break
 
-    print(f"gen_subh_to_gold_subh: {gen_subh_to_gold_subh}")
-    eval_rec["gen_subh_to_gold_subh"] = gen_subh_to_gold_subh
-    eval_rec["gold_subh_covered"] = gold_subh_covered
+    print(f'gen_subh_to_gold_subh: {gen_subh_to_gold_subh}')
+    eval_rec['gen_subh_to_gold_subh'] = gen_subh_to_gold_subh
+    eval_rec['gold_subh_covered'] = gold_subh_covered
     matched_gold_gen_subh_evals = dict()
     sum_accuracy_score = 0.0
     for p_id, g_id in gen_subh_to_gold_subh.items():
         if g_id >= 0:
-            key = f"P{p_id}||G{g_id}"
+            key = f'P{p_id}||G{g_id}'
             context_score = gen_gold_subh_to_context[key]
             subh_eval_rec = run_eval_gold_vs_gen_NL_subhypo(
                 query,
@@ -516,13 +516,13 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
                 dataset_type=dataset_type,
                 use_column_metadata=use_column_metadata,
             )
-            sum_accuracy_score += subh_eval_rec["accuracy_score"]
+            sum_accuracy_score += subh_eval_rec['accuracy_score']
             matched_gold_gen_subh_evals[key] = subh_eval_rec
 
-    eval_rec["matched_gold_gen_subh_evals"] = matched_gold_gen_subh_evals
-    eval_rec["recall_context"] = (
-        len(gold_subh_covered) / len(gold_sub_hypo_json["sub_hypo"])
-        if len(gold_sub_hypo_json["sub_hypo"])
+    eval_rec['matched_gold_gen_subh_evals'] = matched_gold_gen_subh_evals
+    eval_rec['recall_context'] = (
+        len(gold_subh_covered) / len(gold_sub_hypo_json['sub_hypo'])
+        if len(gold_sub_hypo_json['sub_hypo'])
         else 0.0
     )
     mean_accuracy_score = (
@@ -530,9 +530,9 @@ def run_eval_gold_vs_gen_NL_hypo_workflow(
         if len(gen_subh_to_gold_subh)
         else 0.0
     )
-    eval_rec["mean_accuracy_score"] = mean_accuracy_score
-    final_score = eval_rec["recall_context"] * mean_accuracy_score
-    eval_rec["final_score"] = final_score
-    print(f"eval_rec: {json.dumps(eval_rec, indent=2)}")
+    eval_rec['mean_accuracy_score'] = mean_accuracy_score
+    final_score = eval_rec['recall_context'] * mean_accuracy_score
+    eval_rec['final_score'] = final_score
+    print(f'eval_rec: {json.dumps(eval_rec, indent=2)}')
 
     return eval_rec

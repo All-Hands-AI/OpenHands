@@ -28,16 +28,16 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.utils.async_utils import call_sync_from_async
 
 app = APIRouter(
-    prefix="/api/conversations/{conversation_id}", dependencies=get_dependencies()
+    prefix='/api/conversations/{conversation_id}', dependencies=get_dependencies()
 )
 
 
 @app.get(
-    "/list-files",
+    '/list-files',
     response_model=list[str],
     responses={
-        404: {"description": "Runtime not initialized", "model": dict},
-        500: {"description": "Error listing or filtering files", "model": dict},
+        404: {'description': 'Runtime not initialized', 'model': dict},
+        500: {'description': 'Error listing or filtering files', 'model': dict},
     },
 )
 async def list_files(
@@ -67,17 +67,17 @@ async def list_files(
     if not conversation.runtime:
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
-            content={"error": "Runtime not yet initialized"},
+            content={'error': 'Runtime not yet initialized'},
         )
 
     runtime: Runtime = conversation.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
     except AgentRuntimeUnavailableError as e:
-        logger.error(f"Error listing files: {e}")
+        logger.error(f'Error listing files: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": f"Error listing files: {e}"},
+            content={'error': f'Error listing files: {e}'},
         )
     if path:
         file_list = [os.path.join(path, f) for f in file_list]
@@ -85,7 +85,7 @@ async def list_files(
     file_list = [f for f in file_list if f not in FILES_TO_IGNORE]
 
     async def filter_for_gitignore(file_list: list[str], base_path: str) -> list[str]:
-        gitignore_path = os.path.join(base_path, ".gitignore")
+        gitignore_path = os.path.join(base_path, '.gitignore')
         try:
             read_action = FileReadAction(gitignore_path)
             observation = await call_sync_from_async(runtime.run_action, read_action)
@@ -99,12 +99,12 @@ async def list_files(
         return file_list
 
     try:
-        file_list = await filter_for_gitignore(file_list, "")
+        file_list = await filter_for_gitignore(file_list, '')
     except AgentRuntimeUnavailableError as e:
-        logger.error(f"Error filtering files: {e}")
+        logger.error(f'Error filtering files: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": f"Error filtering files: {e}"},
+            content={'error': f'Error filtering files: {e}'},
         )
 
     return file_list
@@ -116,12 +116,12 @@ async def list_files(
 # Instead, we document the possible responses using the 'responses' parameter and maintain
 # proper type annotations for mypy.
 @app.get(
-    "/select-file",
+    '/select-file',
     response_model=None,
     responses={
-        200: {"description": "File content returned as JSON", "model": dict[str, str]},
-        500: {"description": "Error opening file", "model": dict},
-        415: {"description": "Unsupported media type", "model": dict},
+        200: {'description': 'File content returned as JSON', 'model': dict[str, str]},
+        500: {'description': 'Error opening file', 'model': dict},
+        415: {'description': 'Unsupported media type', 'model': dict},
     },
 )
 async def select_file(
@@ -152,79 +152,79 @@ async def select_file(
     try:
         observation = await call_sync_from_async(runtime.run_action, read_action)
     except AgentRuntimeUnavailableError as e:
-        logger.error(f"Error opening file {file}: {e}")
+        logger.error(f'Error opening file {file}: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": f"Error opening file: {e}"},
+            content={'error': f'Error opening file: {e}'},
         )
 
     if isinstance(observation, FileReadObservation):
         content = observation.content
-        return JSONResponse(content={"code": content})
+        return JSONResponse(content={'code': content})
     elif isinstance(observation, ErrorObservation):
-        logger.error(f"Error opening file {file}: {observation}")
+        logger.error(f'Error opening file {file}: {observation}')
 
-        if "ERROR_BINARY_FILE" in observation.message:
+        if 'ERROR_BINARY_FILE' in observation.message:
             return JSONResponse(
                 status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                content={"error": f"Unable to open binary file: {file}"},
+                content={'error': f'Unable to open binary file: {file}'},
             )
 
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": f"Error opening file: {observation}"},
+            content={'error': f'Error opening file: {observation}'},
         )
     else:
         # Handle unexpected observation types
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": f"Unexpected observation type: {type(observation)}"},
+            content={'error': f'Unexpected observation type: {type(observation)}'},
         )
 
 
 @app.get(
-    "/zip-directory",
+    '/zip-directory',
     response_model=None,
     responses={
-        200: {"description": "Zipped workspace returned as FileResponse"},
-        500: {"description": "Error zipping workspace", "model": dict},
+        200: {'description': 'Zipped workspace returned as FileResponse'},
+        500: {'description': 'Error zipping workspace', 'model': dict},
     },
 )
 def zip_current_workspace(
     conversation: ServerConversation = Depends(get_conversation),
 ) -> FileResponse | JSONResponse:
     try:
-        logger.debug("Zipping workspace")
+        logger.debug('Zipping workspace')
         runtime: Runtime = conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
             zip_file_path = runtime.copy_from(path)
         except AgentRuntimeUnavailableError as e:
-            logger.error(f"Error zipping workspace: {e}")
+            logger.error(f'Error zipping workspace: {e}')
             return JSONResponse(
                 status_code=500,
-                content={"error": f"Error zipping workspace: {e}"},
+                content={'error': f'Error zipping workspace: {e}'},
             )
         return FileResponse(
             path=zip_file_path,
-            filename="workspace.zip",
-            media_type="application/zip",
+            filename='workspace.zip',
+            media_type='application/zip',
             background=BackgroundTask(lambda: os.unlink(zip_file_path)),
         )
     except Exception as e:
-        logger.error(f"Error zipping workspace: {e}")
+        logger.error(f'Error zipping workspace: {e}')
         raise HTTPException(
             status_code=500,
-            detail="Failed to zip workspace",
+            detail='Failed to zip workspace',
         )
 
 
 @app.get(
-    "/git/changes",
+    '/git/changes',
     response_model=list[dict[str, str]],
     responses={
-        404: {"description": "Not a git repository", "model": dict},
-        500: {"description": "Error getting changes", "model": dict},
+        404: {'description': 'Not a git repository', 'model': dict},
+        500: {'description': 'Error getting changes', 'model': dict},
     },
 )
 async def git_changes(
@@ -235,34 +235,34 @@ async def git_changes(
     runtime: Runtime = conversation.runtime
 
     cwd = runtime.config.workspace_mount_path_in_sandbox
-    logger.info(f"Getting git changes in {cwd}")
+    logger.info(f'Getting git changes in {cwd}')
 
     try:
         changes = await call_sync_from_async(runtime.get_git_changes, cwd)
         if changes is None:
             return JSONResponse(
                 status_code=404,
-                content={"error": "Not a git repository"},
+                content={'error': 'Not a git repository'},
             )
         return changes
     except AgentRuntimeUnavailableError as e:
-        logger.error(f"Runtime unavailable: {e}")
+        logger.error(f'Runtime unavailable: {e}')
         return JSONResponse(
             status_code=500,
-            content={"error": f"Error getting changes: {e}"},
+            content={'error': f'Error getting changes: {e}'},
         )
     except Exception as e:
-        logger.error(f"Error getting changes: {e}")
+        logger.error(f'Error getting changes: {e}')
         return JSONResponse(
             status_code=500,
-            content={"error": str(e)},
+            content={'error': str(e)},
         )
 
 
 @app.get(
-    "/git/diff",
+    '/git/diff',
     response_model=dict[str, Any],
-    responses={500: {"description": "Error getting diff", "model": dict}},
+    responses={500: {'description': 'Error getting diff', 'model': dict}},
 )
 async def git_diff(
     path: str,
@@ -277,14 +277,14 @@ async def git_diff(
         diff = await call_sync_from_async(runtime.get_git_diff, path, cwd)
         return diff
     except AgentRuntimeUnavailableError as e:
-        logger.error(f"Error getting diff: {e}")
+        logger.error(f'Error getting diff: {e}')
         return JSONResponse(
             status_code=500,
-            content={"error": f"Error getting diff: {e}"},
+            content={'error': f'Error getting diff: {e}'},
         )
 
 
-@app.post("/upload-files", response_model=POSTUploadFilesModel)
+@app.post('/upload-files', response_model=POSTUploadFilesModel)
 async def upload_files(
     files: list[UploadFile],
     conversation: ServerConversation = Depends(get_conversation),
@@ -302,17 +302,17 @@ async def upload_files(
             write_action = FileWriteAction(
                 # TODO: DISCUSS UTF8 encoding here
                 path=file_path,
-                content=file_content.decode("utf-8", errors="replace"),
+                content=file_content.decode('utf-8', errors='replace'),
             )
             # TODO: DISCUSS file name unique issues
             await call_sync_from_async(runtime.run_action, write_action)
             uploaded_files.append(file_path)
         except Exception as e:
-            skipped_files.append({"name": file.filename, "reason": str(e)})
+            skipped_files.append({'name': file.filename, 'reason': str(e)})
     return JSONResponse(
         status_code=status.HTTP_200_OK,
         content={
-            "uploaded_files": uploaded_files,
-            "skipped_files": skipped_files,
+            'uploaded_files': uploaded_files,
+            'skipped_files': skipped_files,
         },
     )

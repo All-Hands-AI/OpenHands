@@ -6,13 +6,13 @@ import warnings
 def normalize_number_str(number_str: str) -> float:
     # we replace these common units and commas to allow
     # conversion to float
-    for char in ["$", "%", ","]:
-        number_str = number_str.replace(char, "")
+    for char in ['$', '%', ',']:
+        number_str = number_str.replace(char, '')
     try:
         return float(number_str)
     except ValueError:
-        print(f"String {number_str} cannot be normalized to number str.")
-        return float("inf")
+        print(f'String {number_str} cannot be normalized to number str.')
+        return float('inf')
 
 
 def split_string(
@@ -20,8 +20,8 @@ def split_string(
     char_list: list[str] = None,
 ) -> list[str]:
     if char_list is None:
-        char_list = [",", ";"]
-    pattern = f"[{''.join(char_list)}]"
+        char_list = [',', ';']
+    pattern = f'[{"".join(char_list)}]'
     return re.split(pattern, s)
 
 
@@ -38,13 +38,13 @@ def question_scorer(
 
     # if gt is a number
     if is_float(ground_truth):
-        print(f"Evaluating {model_answer} as a number.")
+        print(f'Evaluating {model_answer} as a number.')
         normalized_answer = normalize_number_str(model_answer)
         return normalized_answer == float(ground_truth)
 
     # if gt is a list
-    elif any(char in ground_truth for char in [",", ";"]):
-        print(f"Evaluating {model_answer} as a comma separated list.")
+    elif any(char in ground_truth for char in [',', ';']):
+        print(f'Evaluating {model_answer} as a comma separated list.')
         # question with the fish: normalization removes punct
 
         gt_elems = split_string(ground_truth)
@@ -53,7 +53,7 @@ def question_scorer(
         # check length is the same
         if len(gt_elems) != len(ma_elems):
             warnings.warn(
-                "Answer lists have different lengths, returning False.",
+                'Answer lists have different lengths, returning False.',
                 UserWarning,
                 stacklevel=2,
             )
@@ -75,7 +75,7 @@ def question_scorer(
 
     # if gt is a str
     else:
-        print(f"Evaluating {model_answer} as a string.")
+        print(f'Evaluating {model_answer} as a string.')
         return normalize_str(model_answer) == normalize_str(ground_truth)
 
 
@@ -92,11 +92,11 @@ def normalize_str(input_str, remove_punct=True) -> str:
     - str, the normalized string
     """
     # Remove all white spaces. Required e.g for seagull vs. sea gull
-    no_spaces = re.sub(r"\s", "", input_str)
+    no_spaces = re.sub(r'\s', '', input_str)
 
     # Remove punctuation, if specified.
     if remove_punct:
-        translator = str.maketrans("", "", string.punctuation)
+        translator = str.maketrans('', '', string.punctuation)
         return no_spaces.lower().translate(translator)
     else:
         return no_spaces.lower()

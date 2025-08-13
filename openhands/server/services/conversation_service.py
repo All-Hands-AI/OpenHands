@@ -48,17 +48,17 @@ async def create_new_conversation(
     mcp_config: MCPConfig | None = None,
 ) -> AgentLoopInfo:
     logger.info(
-        "Creating conversation",
+        'Creating conversation',
         extra={
-            "signal": "create_conversation",
-            "user_id": user_id,
-            "trigger": conversation_trigger.value,
+            'signal': 'create_conversation',
+            'user_id': user_id,
+            'trigger': conversation_trigger.value,
         },
     )
-    logger.info("Loading settings")
+    logger.info('Loading settings')
     settings_store = await SettingsStoreImpl.get_instance(config, user_id)
     settings = await settings_store.load()
-    logger.info("Settings loaded")
+    logger.info('Settings loaded')
 
     session_init_args: dict[str, Any] = {}
     if settings:
@@ -69,29 +69,29 @@ async def create_new_conversation(
             not settings.llm_api_key
             or settings.llm_api_key.get_secret_value().isspace()
         ):
-            logger.warning(f"Missing api key for model {settings.llm_model}")
+            logger.warning(f'Missing api key for model {settings.llm_model}')
             raise LLMAuthenticationError(
-                "Error authenticating with the LLM provider. Please check your API key"
+                'Error authenticating with the LLM provider. Please check your API key'
             )
 
     else:
-        logger.warning("Settings not present, not starting conversation")
-        raise MissingSettingsError("Settings not found")
+        logger.warning('Settings not present, not starting conversation')
+        raise MissingSettingsError('Settings not found')
 
-    session_init_args["git_provider_tokens"] = git_provider_tokens
-    session_init_args["selected_repository"] = selected_repository
-    session_init_args["custom_secrets"] = custom_secrets
-    session_init_args["selected_branch"] = selected_branch
-    session_init_args["git_provider"] = git_provider
-    session_init_args["conversation_instructions"] = conversation_instructions
+    session_init_args['git_provider_tokens'] = git_provider_tokens
+    session_init_args['selected_repository'] = selected_repository
+    session_init_args['custom_secrets'] = custom_secrets
+    session_init_args['selected_branch'] = selected_branch
+    session_init_args['git_provider'] = git_provider
+    session_init_args['conversation_instructions'] = conversation_instructions
     if mcp_config:
-        session_init_args["mcp_config"] = mcp_config
+        session_init_args['mcp_config'] = mcp_config
 
     conversation_init_data = ConversationInitData(**session_init_args)
 
-    logger.info("Loading conversation store")
+    logger.info('Loading conversation store')
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
-    logger.info("ServerConversation store loaded")
+    logger.info('ServerConversation store loaded')
 
     # For nested runtimes, we allow a single conversation id, passed in on container creation
     if conversation_id is None:
@@ -99,8 +99,8 @@ async def create_new_conversation(
 
     if not await conversation_store.exists(conversation_id):
         logger.info(
-            f"New conversation ID: {conversation_id}",
-            extra={"user_id": user_id, "session_id": conversation_id},
+            f'New conversation ID: {conversation_id}',
+            extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
         conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
@@ -108,7 +108,7 @@ async def create_new_conversation(
         )
         conversation_title = get_default_conversation_title(conversation_id)
 
-        logger.info(f"Saving metadata for conversation {conversation_id}")
+        logger.info(f'Saving metadata for conversation {conversation_id}')
         await conversation_store.save_metadata(
             ConversationMetadata(
                 trigger=conversation_trigger,
@@ -123,18 +123,18 @@ async def create_new_conversation(
         )
 
     logger.info(
-        f"Starting agent loop for conversation {conversation_id}",
-        extra={"user_id": user_id, "session_id": conversation_id},
+        f'Starting agent loop for conversation {conversation_id}',
+        extra={'user_id': user_id, 'session_id': conversation_id},
     )
     initial_message_action = None
     if initial_user_msg or image_urls:
         initial_message_action = MessageAction(
-            content=initial_user_msg or "",
+            content=initial_user_msg or '',
             image_urls=image_urls or [],
         )
 
     if attach_convo_id:
-        logger.warning("Attaching convo ID is deprecated, skipping process")
+        logger.warning('Attaching convo ID is deprecated, skipping process')
 
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
@@ -143,7 +143,7 @@ async def create_new_conversation(
         initial_user_msg=initial_message_action,
         replay_json=replay_json,
     )
-    logger.info(f"Finished initializing conversation {agent_loop_info.conversation_id}")
+    logger.info(f'Finished initializing conversation {agent_loop_info.conversation_id}')
     return agent_loop_info
 
 
@@ -182,21 +182,21 @@ async def setup_init_convo_settings(
         from socketio.exceptions import ConnectionRefusedError
 
         raise ConnectionRefusedError(
-            "Settings not found", {"msg_id": "CONFIGURATION$SETTINGS_NOT_FOUND"}
+            'Settings not found', {'msg_id': 'CONFIGURATION$SETTINGS_NOT_FOUND'}
         )
 
     session_init_args: dict = {}
     session_init_args = {**settings.__dict__, **session_init_args}
 
     git_provider_tokens = create_provider_tokens_object(providers_set)
-    logger.info(f"Git provider scaffold: {git_provider_tokens}")
+    logger.info(f'Git provider scaffold: {git_provider_tokens}')
 
     if server_config.app_mode != AppMode.SAAS and user_secrets:
         git_provider_tokens = user_secrets.provider_tokens
 
-    session_init_args["git_provider_tokens"] = git_provider_tokens
+    session_init_args['git_provider_tokens'] = git_provider_tokens
     if user_secrets:
-        session_init_args["custom_secrets"] = user_secrets.custom_secrets
+        session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
     convo_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation

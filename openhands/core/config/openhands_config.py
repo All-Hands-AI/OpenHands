@@ -67,9 +67,9 @@ class OpenHandsConfig(BaseModel):
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
-    runtime: str = Field(default="docker")
-    file_store: str = Field(default="local")
-    file_store_path: str = Field(default="~/.openhands")
+    runtime: str = Field(default='docker')
+    file_store: str = Field(default='local')
+    file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
     file_store_web_hook_batch: bool = Field(default=False)
@@ -79,7 +79,7 @@ class OpenHandsConfig(BaseModel):
     replay_trajectory_path: str | None = Field(default=None)
     search_api_key: SecretStr | None = Field(
         default=None,
-        description="API key for Tavily search engine (https://tavily.com/). Required for search functionality.",
+        description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
     )
 
     workspace_base: str | None = Field(default=None)
@@ -92,7 +92,7 @@ class OpenHandsConfig(BaseModel):
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     # End of deprecated parameters
 
-    cache_dir: str = Field(default="/tmp/cache")
+    cache_dir: str = Field(default='/tmp/cache')
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
@@ -103,7 +103,7 @@ class OpenHandsConfig(BaseModel):
     debug: bool = Field(default=False)
     file_uploads_max_file_size_mb: int = Field(default=0)
     file_uploads_restrict_file_types: bool = Field(default=False)
-    file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: [".*"])
+    file_uploads_allowed_extensions: list[str] = Field(default_factory=lambda: ['.*'])
 
     cli_multiline_input: bool = Field(default=False)
     conversation_max_age_seconds: int = Field(default=864000)  # 10 days in seconds
@@ -111,56 +111,56 @@ class OpenHandsConfig(BaseModel):
     max_concurrent_conversations: int = Field(
         default=3
     )  # Maximum number of concurrent agent loops allowed per user
-    mcp_host: str = Field(default=f"localhost:{os.getenv('port', 3000)}")
+    mcp_host: str = Field(default=f'localhost:{os.getenv("port", 3000)}')
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
     git_user_name: str = Field(
-        default="openhands", description="Git user name for commits made by the agent"
+        default='openhands', description='Git user name for commits made by the agent'
     )
     git_user_email: str = Field(
-        default="openhands@all-hands.dev",
-        description="Git user email for commits made by the agent",
+        default='openhands@all-hands.dev',
+        description='Git user email for commits made by the agent',
     )
 
     defaults_dict: ClassVar[dict] = {}
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra='forbid')
 
-    def get_llm_config(self, name: str = "llm") -> LLMConfig:
+    def get_llm_config(self, name: str = 'llm') -> LLMConfig:
         """'llm' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.llms:
             return self.llms[name]
-        if name is not None and name != "llm":
+        if name is not None and name != 'llm':
             logger.openhands_logger.warning(
-                f"llm config group {name} not found, using default config"
+                f'llm config group {name} not found, using default config'
             )
-        if "llm" not in self.llms:
-            self.llms["llm"] = LLMConfig()
-        return self.llms["llm"]
+        if 'llm' not in self.llms:
+            self.llms['llm'] = LLMConfig()
+        return self.llms['llm']
 
-    def set_llm_config(self, value: LLMConfig, name: str = "llm") -> None:
+    def set_llm_config(self, value: LLMConfig, name: str = 'llm') -> None:
         self.llms[name] = value
 
-    def get_agent_config(self, name: str = "agent") -> AgentConfig:
+    def get_agent_config(self, name: str = 'agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
             return self.agents[name]
-        if "agent" not in self.agents:
-            self.agents["agent"] = AgentConfig()
-        return self.agents["agent"]
+        if 'agent' not in self.agents:
+            self.agents['agent'] = AgentConfig()
+        return self.agents['agent']
 
-    def set_agent_config(self, value: AgentConfig, name: str = "agent") -> None:
+    def set_agent_config(self, value: AgentConfig, name: str = 'agent') -> None:
         self.agents[name] = value
 
     def get_agent_to_llm_config_map(self) -> dict[str, LLMConfig]:
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name: str = "agent") -> LLMConfig:
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
         agent_config: AgentConfig = self.get_agent_config(name)
         llm_config_name = (
-            agent_config.llm_config if agent_config.llm_config is not None else "llm"
+            agent_config.llm_config if agent_config.llm_config is not None else 'llm'
         )
         return self.get_llm_config(llm_config_name)
 

@@ -10,8 +10,8 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 class TestCLISetupFlow(unittest.TestCase):
     """Test the CLI setup flow."""
 
-    @patch("openhands.cli.settings.modify_llm_settings_basic")
-    @patch("openhands.cli.main.print_formatted_text")
+    @patch('openhands.cli.settings.modify_llm_settings_basic')
+    @patch('openhands.cli.main.print_formatted_text')
     async def test_run_setup_flow(self, mock_print, mock_modify_settings):
         """Test that the setup flow calls the modify_llm_settings_basic function."""
         # Setup
@@ -33,11 +33,11 @@ class TestCLISetupFlow(unittest.TestCase):
         # Verify that the function returns True when settings are found
         self.assertTrue(result)
 
-    @patch("openhands.cli.main.print_formatted_text")
-    @patch("openhands.cli.main.run_setup_flow")
-    @patch("openhands.cli.main.FileSettingsStore.get_instance")
-    @patch("openhands.cli.main.setup_config_from_args")
-    @patch("openhands.cli.main.parse_arguments")
+    @patch('openhands.cli.main.print_formatted_text')
+    @patch('openhands.cli.main.run_setup_flow')
+    @patch('openhands.cli.main.FileSettingsStore.get_instance')
+    @patch('openhands.cli.main.setup_config_from_args')
+    @patch('openhands.cli.main.parse_arguments')
     async def test_main_calls_setup_flow_when_no_settings(
         self,
         mock_parse_args,
@@ -86,5 +86,5 @@ def run_async_test(coro):
         loop.close()
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

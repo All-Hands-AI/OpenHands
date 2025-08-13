@@ -10,7 +10,7 @@ class MCPObservation(Observation):
     """This data class represents the result of a MCP Server operation."""
 
     observation: str = ObservationType.MCP
-    name: str = ""  # The name of the MCP tool that was called
+    name: str = ''  # The name of the MCP tool that was called
     arguments: dict[str, Any] = field(
         default_factory=dict
     )  # The arguments passed to the MCP tool

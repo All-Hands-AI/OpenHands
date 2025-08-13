@@ -24,7 +24,7 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
         workspace_base=None,
         workspace_mount_path=None,
         replay_trajectory_path=str(
-            (Path(__file__).parent / "trajs" / f"{trajectory_name}.json").resolve()
+            (Path(__file__).parent / 'trajs' / f'{trajectory_name}.json').resolve()
         ),
     )
 
@@ -35,7 +35,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = str(
-        (Path(__file__).parent / "trajs" / "basic.json").resolve()
+        (Path(__file__).parent / 'trajs' / 'basic.json').resolve()
     )
     config.security.confirmation_mode = False
 
@@ -64,7 +64,7 @@ def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config("basic_gui_mode")
+    config = _get_config('basic_gui_mode')
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
@@ -92,7 +92,7 @@ def test_replay_wrong_initial_state(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = str(
-        (Path(__file__).parent / "trajs" / "wrong_initial_state.json").resolve()
+        (Path(__file__).parent / 'trajs' / 'wrong_initial_state.json').resolve()
     )
     config.security.confirmation_mode = False
 
@@ -126,7 +126,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
 
-    config = _get_config("basic_interactions")
+    config = _get_config('basic_interactions')
     config.security.confirmation_mode = False
 
     state: State | None = asyncio.run(
@@ -145,7 +145,7 @@ def test_replay_basic_interactions(temp_dir, runtime_cls, run_as_openhands):
     user_messages = [
         "what's 1+1?",
         "No, I mean by Goldbach's conjecture!",
-        "Finish please",
+        'Finish please',
     ]
     i = 0
     for event in state.history:

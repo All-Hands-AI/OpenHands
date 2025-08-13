@@ -9,28 +9,28 @@ from evaluation.benchmarks.testgeneval.log_parsers import (
 
 
 def indent_text(text, indent_level):
-    return "\n".join(
-        " " * indent_level + line if line.strip() else line for line in text.split("\n")
+    return '\n'.join(
+        ' ' * indent_level + line if line.strip() else line for line in text.split('\n')
     )
 
 
 def extract_preamble_classes_and_functions(code):
     class_pattern = re.compile(
-        r"(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)"
-        r"^class\s+([\w]+)(?:\([^)]*\))?:",  # the class line
+        r'(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)'
+        r'^class\s+([\w]+)(?:\([^)]*\))?:',  # the class line
         re.MULTILINE,
     )
     # Capture methods with or without decorators
-    method_pattern = re.compile(r"(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)", re.MULTILINE)
+    method_pattern = re.compile(r'(^(\s*@.*\s*)*^\s*def\s+[\w_]+\(.*\):)', re.MULTILINE)
 
     # Capture functions with or without decorators
     function_pattern = re.compile(
-        r"(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)"
-        r"^def\s+([\w_]+)\(.*\):",  # the function line
+        r'(?P<decorators>(?:^@[^\r\n]*(?:\r?\n(?:[ \t]+[^\r\n]*|^\)[^\r\n]*)*)*\r?\n)*?)'
+        r'^def\s+([\w_]+)\(.*\):',  # the function line
         re.MULTILINE,
     )
 
-    preamble = ""
+    preamble = ''
     classes = []
     test_functions = []
 
@@ -41,10 +41,10 @@ def extract_preamble_classes_and_functions(code):
         Returns the class body and the end index of the class body.
         """
         if not code or start_index < 0 or start_index >= len(code):
-            raise ValueError("Invalid code or start index")
+            raise ValueError('Invalid code or start index')
 
         # Split the code into lines
-        lines = code[start_index:].split("\n")
+        lines = code[start_index:].split('\n')
         class_body_lines = []
 
         # Find the starting indentation level of the class definition
@@ -72,7 +72,7 @@ def extract_preamble_classes_and_functions(code):
             # Add lines that are part of the class body
             class_body_lines.append(line)
             # Update the end index to the current line end
-            end_index = start_index + len("\n".join(lines[: i + 1])) + 1
+            end_index = start_index + len('\n'.join(lines[: i + 1])) + 1
 
         return code[start_index:end_index], end_index
 
@@ -113,7 +113,7 @@ def extract_preamble_classes_and_functions(code):
             start_idx = method_match.start()
 
             # Extract the current function's indentation level
-            lines = code[start_idx:].split("\n")
+            lines = code[start_idx:].split('\n')
             current_indent = len(lines[0]) - len(lines[0].lstrip())
 
             next_function = function_pattern.search(
@@ -124,7 +124,7 @@ def extract_preamble_classes_and_functions(code):
             ):
                 # Calculate the indentation of the next function
                 next_function_start = next_function.start()
-                next_line = code[next_function_start:].split("\n", 1)[0]
+                next_line = code[next_function_start:].split('\n', 1)[0]
                 next_indent = len(next_line) - len(next_line.lstrip())
 
                 # Check if the next function is top-level
@@ -188,7 +188,7 @@ def filter_passing_tests(
             failing_tests.append(test_name)
 
     if not passing_tests:
-        return "", passing_tests, failing_tests
+        return '', passing_tests, failing_tests
 
     # Extract test components
     preamble, classes, functions = extract_preamble_classes_and_functions(test_content)
@@ -200,7 +200,7 @@ def filter_passing_tests(
         for method_name, method_body in methods:
             # Extract the base method name for matching
             method_full_name = (
-                method_name.split(".")[-1].split("(")[0].strip().split(" ")[-1]
+                method_name.split('.')[-1].split('(')[0].strip().split(' ')[-1]
             )
             # Check if the method name is in failing_tests or if any failing_test is in the method name
             if not (
@@ -217,7 +217,7 @@ def filter_passing_tests(
     # Filter standalone functions
     filtered_functions = []
     for func_body, start_idx in functions:
-        func_name = func_body.split("def ")[1].split("(")[0].strip()
+        func_name = func_body.split('def ')[1].split('(')[0].strip()
         if any(func_name in failing_test for failing_test in failing_tests) or any(
             failing_test in func_name for failing_test in failing_tests
         ):
@@ -230,16 +230,16 @@ def filter_passing_tests(
 
     # Add filtered classes
     for class_name, methods, _ in filtered_classes:
-        class_content = class_name + "\n"
+        class_content = class_name + '\n'
         for _, method_body in methods:
-            class_content += method_body + "\n"
+            class_content += method_body + '\n'
         content_parts.append(class_content)
 
     # Add filtered functions
     for func_body, _ in filtered_functions:
         content_parts.append(func_body)
 
-    return "\n\n".join(content_parts), passing_tests, failing_tests
+    return '\n\n'.join(content_parts), passing_tests, failing_tests
 
 
 def filter_tests(
@@ -287,7 +287,7 @@ def filter_tests(
         for node in tree.body:
             # For top-level function definitions, only filter those that look like tests.
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
-                if node.name.startswith("test") and is_failing(node.name):
+                if node.name.startswith('test') and is_failing(node.name):
                     continue
                 new_body.append(node)
             # For classes, filter out failing test methods but preserve other methods (e.g. setup).
@@ -296,7 +296,7 @@ def filter_tests(
                 for subnode in node.body:
                     if isinstance(subnode, (ast.FunctionDef, ast.AsyncFunctionDef)):
                         # Only consider filtering if the method is a test.
-                        qualified_name = f"{node.name}.{subnode.name}"
+                        qualified_name = f'{node.name}.{subnode.name}'
                         if is_failing(subnode.name) or is_failing(qualified_name):
                             continue
                         new_class_body.append(subnode)
@@ -319,6 +319,6 @@ def filter_tests(
         return new_test_content, passing_tests, failing_tests
 
     except Exception:
-        print("AST processing failed; falling back on regex-based filtering.")
+        print('AST processing failed; falling back on regex-based filtering.')
         # If AST processing fails for any reason, fall back on the original regex-based filtering.
         return filter_passing_tests(test_content, test_output, repo)

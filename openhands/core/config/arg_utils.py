@@ -15,52 +15,52 @@ def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
 def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     """Add common arguments shared between CLI and headless modes."""
     parser.add_argument(
-        "--config-file",
+        '--config-file',
         type=str,
-        default="config.toml",
-        help="Path to the config file (default: config.toml in the current directory)",
+        default='config.toml',
+        help='Path to the config file (default: config.toml in the current directory)',
     )
     parser.add_argument(
-        "-t",
-        "--task",
+        '-t',
+        '--task',
         type=str,
-        default="",
-        help="The task for the agent to perform",
+        default='',
+        help='The task for the agent to perform',
     )
     parser.add_argument(
-        "-f",
-        "--file",
+        '-f',
+        '--file',
         type=str,
-        help="Path to a file containing the task. Overrides -t if both are provided.",
+        help='Path to a file containing the task. Overrides -t if both are provided.',
     )
     parser.add_argument(
-        "-n",
-        "--name",
-        help="Session name",
+        '-n',
+        '--name',
+        help='Session name',
         type=str,
-        default="",
+        default='',
     )
     parser.add_argument(
-        "--log-level",
-        help="Set the log level",
+        '--log-level',
+        help='Set the log level',
         type=str,
         default=None,
     )
     parser.add_argument(
-        "-l",
-        "--llm-config",
+        '-l',
+        '--llm-config',
         default=None,
         type=str,
         help='Replace default LLM ([llm] section in config.toml) config with the specified LLM config, e.g. "llama3" for [llm.llama3] section in config.toml',
     )
     parser.add_argument(
-        "--agent-config",
+        '--agent-config',
         default=None,
         type=str,
         help='Replace default Agent ([agent] section in config.toml) config with the specified Agent config, e.g. "CodeAct" for [agent.CodeAct] section in config.toml',
     )
     parser.add_argument(
-        "-v", "--version", action="store_true", help="Show version information"
+        '-v', '--version', action='store_true', help='Show version information'
     )
 
 
@@ -68,75 +68,75 @@ def add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments specific to evaluation mode."""
     # Evaluation-specific arguments
     parser.add_argument(
-        "--eval-output-dir",
-        default="evaluation/evaluation_outputs/outputs",
+        '--eval-output-dir',
+        default='evaluation/evaluation_outputs/outputs',
         type=str,
-        help="The directory to save evaluation output",
+        help='The directory to save evaluation output',
     )
     parser.add_argument(
-        "--eval-n-limit",
+        '--eval-n-limit',
         default=None,
         type=int,
-        help="The number of instances to evaluate",
+        help='The number of instances to evaluate',
     )
     parser.add_argument(
-        "--eval-num-workers",
+        '--eval-num-workers',
         default=4,
         type=int,
-        help="The number of workers to use for evaluation",
+        help='The number of workers to use for evaluation',
     )
     parser.add_argument(
-        "--eval-note",
+        '--eval-note',
         default=None,
         type=str,
-        help="The note to add to the evaluation directory",
+        help='The note to add to the evaluation directory',
     )
     parser.add_argument(
-        "--eval-ids",
+        '--eval-ids',
         default=None,
         type=str,
-        help="The comma-separated list (in quotes) of IDs of the instances to evaluate",
+        help='The comma-separated list (in quotes) of IDs of the instances to evaluate',
     )
 
 
 def add_headless_specific_arguments(parser: argparse.ArgumentParser) -> None:
     """Add arguments specific to headless mode (full evaluation suite)."""
     parser.add_argument(
-        "-d",
-        "--directory",
+        '-d',
+        '--directory',
         type=str,
-        help="The working directory for the agent",
+        help='The working directory for the agent',
     )
     parser.add_argument(
-        "-c",
-        "--agent-cls",
+        '-c',
+        '--agent-cls',
         default=None,
         type=str,
-        help="Name of the default agent to use",
+        help='Name of the default agent to use',
     )
     parser.add_argument(
-        "-i",
-        "--max-iterations",
+        '-i',
+        '--max-iterations',
         default=None,
         type=int,
-        help="The maximum number of iterations to run the agent",
+        help='The maximum number of iterations to run the agent',
     )
     parser.add_argument(
-        "-b",
-        "--max-budget-per-task",
+        '-b',
+        '--max-budget-per-task',
         type=float,
-        help="The maximum budget allowed per task, beyond which the agent will stop.",
+        help='The maximum budget allowed per task, beyond which the agent will stop.',
     )
     # Additional headless-specific arguments
     parser.add_argument(
-        "--no-auto-continue",
-        help="Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)",
-        action="store_true",
+        '--no-auto-continue',
+        help='Disable auto-continue responses in headless mode (i.e. headless will read from stdin instead of auto-continuing)',
+        action='store_true',
         default=False,
     )
     parser.add_argument(
-        "--selected-repo",
-        help="GitHub repository to clone (format: owner/repo)",
+        '--selected-repo',
+        help='GitHub repository to clone (format: owner/repo)',
         type=str,
         default=None,
     )
@@ -146,60 +146,60 @@ def get_cli_parser() -> argparse.ArgumentParser:
     """Create argument parser for CLI mode with simplified argument set."""
     # Create a description with welcome message explaining available commands
     description = (
-        "Welcome to OpenHands: Code Less, Make More\n\n"
-        "OpenHands supports two main commands:\n"
-        "  serve - Launch the OpenHands GUI server (web interface)\n"
-        "  cli   - Run OpenHands in CLI mode (terminal interface)\n\n"
+        'Welcome to OpenHands: Code Less, Make More\n\n'
+        'OpenHands supports two main commands:\n'
+        '  serve - Launch the OpenHands GUI server (web interface)\n'
+        '  cli   - Run OpenHands in CLI mode (terminal interface)\n\n'
         'Running "openhands" without a command is the same as "openhands cli"'
     )
 
     parser = argparse.ArgumentParser(
         description=description,
-        prog="openhands",
+        prog='openhands',
         formatter_class=argparse.RawDescriptionHelpFormatter,  # Preserve formatting in description
-        epilog="For more information about a command, run: openhands COMMAND --help",
+        epilog='For more information about a command, run: openhands COMMAND --help',
     )
 
     # Create subparsers
     subparsers = parser.add_subparsers(
-        dest="command",
-        title="commands",
-        description="OpenHands supports two main commands:",
-        metavar="COMMAND",
+        dest='command',
+        title='commands',
+        description='OpenHands supports two main commands:',
+        metavar='COMMAND',
     )
 
     # Add 'serve' subcommand
     serve_parser = subparsers.add_parser(
-        "serve", help="Launch the OpenHands GUI server using Docker (web interface)"
+        'serve', help='Launch the OpenHands GUI server using Docker (web interface)'
     )
     serve_parser.add_argument(
-        "--mount-cwd",
-        help="Mount the current working directory into the GUI server container",
-        action="store_true",
+        '--mount-cwd',
+        help='Mount the current working directory into the GUI server container',
+        action='store_true',
         default=False,
     )
     serve_parser.add_argument(
-        "--gpu",
-        help="Enable GPU support by mounting all GPUs into the Docker container via nvidia-docker",
-        action="store_true",
+        '--gpu',
+        help='Enable GPU support by mounting all GPUs into the Docker container via nvidia-docker',
+        action='store_true',
         default=False,
     )
 
     # Add 'cli' subcommand - import all the existing CLI arguments
     cli_parser = subparsers.add_parser(
-        "cli", help="Run OpenHands in CLI mode (terminal interface)"
+        'cli', help='Run OpenHands in CLI mode (terminal interface)'
     )
     add_common_arguments(cli_parser)
 
     cli_parser.add_argument(
-        "--override-cli-mode",
-        help="Override the default settings for CLI mode",
+        '--override-cli-mode',
+        help='Override the default settings for CLI mode',
         type=bool,
         default=False,
     )
     parser.add_argument(
-        "--conversation",
-        help="The conversation id to continue",
+        '--conversation',
+        help='The conversation id to continue',
         type=str,
         default=None,
     )
@@ -209,7 +209,7 @@ def get_cli_parser() -> argparse.ArgumentParser:
 
 def get_headless_parser() -> argparse.ArgumentParser:
     """Create argument parser for headless mode with full argument set."""
-    parser = argparse.ArgumentParser(description="Run the agent via CLI")
+    parser = argparse.ArgumentParser(description='Run the agent via CLI')
     add_common_arguments(parser)
     add_headless_specific_arguments(parser)
     return parser
@@ -217,7 +217,7 @@ def get_headless_parser() -> argparse.ArgumentParser:
 
 def get_evaluation_parser() -> argparse.ArgumentParser:
     """Create argument parser for evaluation mode."""
-    parser = argparse.ArgumentParser(description="Run OpenHands in evaluation mode")
+    parser = argparse.ArgumentParser(description='Run OpenHands in evaluation mode')
     add_common_arguments(parser)
     add_headless_specific_arguments(parser)
     add_evaluation_arguments(parser)

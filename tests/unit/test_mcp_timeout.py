@@ -16,17 +16,17 @@ async def test_sse_connection_timeout():
     # Configure the mock to raise a TimeoutError when connect_http is called
     async def mock_connect_http(*args, **kwargs):
         await asyncio.sleep(0.1)  # Simulate some delay
-        raise asyncio.TimeoutError("Connection timed out")
+        raise asyncio.TimeoutError('Connection timed out')
 
     mock_client.connect_http.side_effect = mock_connect_http
     mock_client.disconnect = mock.AsyncMock()
 
     # Mock the MCPClient constructor to return our mock
-    with mock.patch("openhands.mcp.utils.MCPClient", return_value=mock_client):
+    with mock.patch('openhands.mcp.utils.MCPClient', return_value=mock_client):
         # Create a list of server URLs to test
         servers = [
-            MCPSSEServerConfig(url="http://server1:8080"),
-            MCPSSEServerConfig(url="http://server2:8080"),
+            MCPSSEServerConfig(url='http://server1:8080'),
+            MCPSSEServerConfig(url='http://server2:8080'),
         ]
 
         # Call create_mcp_clients with the server URLs
@@ -46,11 +46,11 @@ async def test_fetch_mcp_tools_with_timeout():
     mock_config = mock.MagicMock(spec=MCPConfig)
 
     # Configure the mock config
-    mock_config.sse_servers = ["http://server1:8080"]
+    mock_config.sse_servers = ['http://server1:8080']
     mock_config.shttp_servers = []
 
     # Mock create_mcp_clients to return an empty list (simulating all connections failing)
-    with mock.patch("openhands.mcp.utils.create_mcp_clients", return_value=[]):
+    with mock.patch('openhands.mcp.utils.create_mcp_clients', return_value=[]):
         # Call fetch_mcp_tools_from_config
         tools = await fetch_mcp_tools_from_config(mock_config, None)
 
@@ -65,7 +65,7 @@ async def test_mixed_connection_results():
     mock_config = mock.MagicMock(spec=MCPConfig)
 
     # Configure the mock config
-    mock_config.sse_servers = ["http://server1:8080", "http://server2:8080"]
+    mock_config.sse_servers = ['http://server1:8080', 'http://server2:8080']
     mock_config.shttp_servers = []
 
     # Create a successful client
@@ -73,13 +73,13 @@ async def test_mixed_connection_results():
 
     # Create a mock tool with a to_param method that returns a tool dictionary
     mock_tool = mock.MagicMock()
-    mock_tool.name = "mock_tool"
+    mock_tool.name = 'mock_tool'
     mock_tool.to_param.return_value = {
-        "type": "function",
-        "function": {
-            "name": "mock_tool",
-            "description": "A mock tool for testing",
-            "parameters": {},
+        'type': 'function',
+        'function': {
+            'name': 'mock_tool',
+            'description': 'A mock tool for testing',
+            'parameters': {},
         },
     }
 
@@ -88,11 +88,11 @@ async def test_mixed_connection_results():
 
     # Mock create_mcp_clients to return our successful client
     with mock.patch(
-        "openhands.mcp.utils.create_mcp_clients", return_value=[successful_client]
+        'openhands.mcp.utils.create_mcp_clients', return_value=[successful_client]
     ):
         # Call fetch_mcp_tools_from_config
         tools = await fetch_mcp_tools_from_config(mock_config, None)
 
         # Verify that tools were returned
         assert len(tools) > 0
-        assert tools[0]["function"]["name"] == "mock_tool"
+        assert tools[0]['function']['name'] == 'mock_tool'

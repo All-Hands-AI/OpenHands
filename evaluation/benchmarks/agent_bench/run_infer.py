@@ -41,12 +41,12 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "python:3.12-slim"
+    sandbox_config.base_container_image = 'python:3.12-slim'
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get("RUNTIME", "docker"),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -67,40 +67,40 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command="cd /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     init_cmd = instance.init
     if init_cmd is not None:
-        script_name = f"{instance.instance_id}_init.sh"
+        script_name = f'{instance.instance_id}_init.sh'
 
         with tempfile.TemporaryDirectory() as tmpdir:
             host_script_path = os.path.join(tmpdir, script_name)
             create_sh_file(host_script_path, init_cmd)
             runtime.copy_to(
                 host_script_path,
-                "/workspace",
+                '/workspace',
             )
 
-        logger.info(f"Running init script: {script_name}")
-        action = CmdRunAction(command=f"chmod +x ./{script_name} && ./{script_name}")
-        logger.info(action, extra={"msg_type": "ACTION"})
+        logger.info(f'Running init script: {script_name}')
+        action = CmdRunAction(command=f'chmod +x ./{script_name} && ./{script_name}')
+        logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={"msg_type": "OBSERVATION"})
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -113,29 +113,29 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     agent_answer = None
     get_agent_result_cmd = instance.get_agent_result
     if get_agent_result_cmd is not None:
-        script_name = "get_agent_result.sh"
+        script_name = 'get_agent_result.sh'
 
         with tempfile.TemporaryDirectory() as tmpdir:
             host_script_path = os.path.join(tmpdir, script_name)
             create_sh_file(host_script_path, get_agent_result_cmd)
             runtime.copy_to(
                 host_script_path,
-                "/workspace",
+                '/workspace',
             )
-            logger.info(f"Running get agent result cmd: {script_name}")
+            logger.info(f'Running get agent result cmd: {script_name}')
 
         action = CmdRunAction(
-            command=f"chmod +x ./{script_name} && ./{script_name}",
+            command=f'chmod +x ./{script_name} && ./{script_name}',
         )
-        logger.info(action, extra={"msg_type": "ACTION"})
+        logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={"msg_type": "OBSERVATION"})
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert obs.exit_code == 0
         agent_answer = obs.content
     # IF the agent answer is not found, retrieve it from the history
@@ -147,28 +147,28 @@ def complete_runtime(
     else:
         get_ground_truth_cmd = instance.get_ground_truth
         if get_ground_truth_cmd is not None:
-            script_name = "get_ground_truth.sh"
+            script_name = 'get_ground_truth.sh'
             with tempfile.TemporaryDirectory() as tmpdir:
                 host_script_path = os.path.join(tmpdir, script_name)
                 create_sh_file(host_script_path, get_ground_truth_cmd)
                 runtime.copy_to(
                     host_script_path,
-                    "/workspace",
+                    '/workspace',
                 )
-            logger.info(f"Running get ground truth cmd: {script_name}")
+            logger.info(f'Running get ground truth cmd: {script_name}')
 
             action = CmdRunAction(
-                command=f"chmod +x ./{script_name} && ./{script_name}"
+                command=f'chmod +x ./{script_name} && ./{script_name}'
             )
-            logger.info(action, extra={"msg_type": "ACTION"})
+            logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={"msg_type": "OBSERVATION"})
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
             final_ans = obs.content
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return {
-        "final_ans": final_ans,
-        "agent_answer": agent_answer,
+        'final_ans': final_ans,
+        'agent_answer': agent_answer,
     }
 
 
@@ -181,10 +181,10 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance.instance_id}.")
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     # =============================================
     # build instruction
@@ -192,16 +192,16 @@ def process_instance(
 
     # Prepare instruction
     instruction = (
-        f"Please fix the following issue.\n"
-        "IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n"
-        "Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n"
-        "For example: The answer to the question is <solution> 42 </solution>.\n"
-        "# Problem \n"
-        f"{instance.description}\n\n"
+        f'Please fix the following issue.\n'
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+        'For example: The answer to the question is <solution> 42 </solution>.\n'
+        '# Problem \n'
+        f'{instance.description}\n\n'
     )
     instruction += (
-        "IMPORTANT: You should ONLY interact with the environment provided "
-        "to you AND NEVER ASK FOR HUMAN HELP.\n"
+        'IMPORTANT: You should ONLY interact with the environment provided '
+        'to you AND NEVER ASK FOR HUMAN HELP.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += INST_SUFFIXES[metadata.agent_class]
@@ -225,25 +225,25 @@ def process_instance(
         )
     )
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
     # =============================================
     # result evaluation
     # =============================================
 
     return_val = complete_runtime(runtime, instance)
-    agent_answer = return_val["agent_answer"]
-    final_ans = return_val["final_ans"]
+    agent_answer = return_val['agent_answer']
+    final_ans = return_val['final_ans']
 
     # If the agent answer is not found, retrieve it from the history
     if agent_answer is None:
-        agent_answer = ""
-        logger.info("Retrieving agent answer from history.")
-        raw_ans = ""
+        agent_answer = ''
+        logger.info('Retrieving agent answer from history.')
+        raw_ans = ''
 
         # retrieve the last agent message or thought
         for event in reversed(state.history):
-            if event.source == "agent":
+            if event.source == 'agent':
                 if isinstance(event, AgentFinishAction):
                     raw_ans = event.thought
                     break
@@ -255,16 +255,16 @@ def process_instance(
                     break
 
         # parse the answer for a solution tag
-        agent_answer = re.findall(r"<solution>(.*?)</solution>", raw_ans, re.DOTALL)
+        agent_answer = re.findall(r'<solution>(.*?)</solution>', raw_ans, re.DOTALL)
         if len(agent_answer) == 0:
-            logger.warning(f"Failed to parse model answer: {raw_ans}")
+            logger.warning(f'Failed to parse model answer: {raw_ans}')
             agent_answer = raw_ans
         else:
             agent_answer = agent_answer[0]
 
     comparison_method = instance.comparison_method
     logger.info(
-        f"Final message: {agent_answer} | Ground truth: {final_ans} | Comparison method: {comparison_method}"
+        f'Final message: {agent_answer} | Ground truth: {final_ans} | Comparison method: {comparison_method}'
     )
     test_result = compare_results(comparison_method, agent_answer, final_ans)
 
@@ -285,19 +285,19 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
-            "agent_answer": agent_answer,
-            "final_answer": final_ans,
-            "check_method": comparison_method,
-            "result": test_result,
+            'agent_answer': agent_answer,
+            'final_answer': final_ans,
+            'check_method': comparison_method,
+            'result': test_result,
         },
     )
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_arguments()
-    dataset = load_dataset("iFurySt/AgentBench")
-    agent_bench_tests = dataset["osbench"].to_pandas()
+    dataset = load_dataset('iFurySt/AgentBench')
+    agent_bench_tests = dataset['osbench'].to_pandas()
 
     llm_config = None
     if args.llm_config:
@@ -306,17 +306,17 @@ if __name__ == "__main__":
         llm_config.modify_params = False
 
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        "AgentBench-OS",
+        'AgentBench-OS',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(agent_bench_tests, output_file, args.eval_n_limit)
 
     run_evaluation(

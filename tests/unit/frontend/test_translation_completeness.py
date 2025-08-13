@@ -14,27 +14,27 @@ class TestTranslationCompleteness(unittest.TestCase):
             os.path.dirname(
                 os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
             ),
-            "frontend",
+            'frontend',
         )
         script_path = os.path.join(
-            frontend_dir, "scripts", "check-translation-completeness.cjs"
+            frontend_dir, 'scripts', 'check-translation-completeness.cjs'
         )
 
         # Verify the script exists
         self.assertTrue(
-            os.path.exists(script_path), f"Script not found at {script_path}"
+            os.path.exists(script_path), f'Script not found at {script_path}'
         )
 
         # Verify the script is executable
         self.assertTrue(
             os.access(script_path, os.X_OK),
-            f"Script at {script_path} is not executable",
+            f'Script at {script_path} is not executable',
         )
 
         # Run the script (it may fail due to missing translations, but we just want to verify it runs)
         try:
             subprocess.run(
-                ["node", script_path],
+                ['node', script_path],
                 cwd=frontend_dir,
                 check=False,
                 capture_output=True,
@@ -42,4 +42,4 @@ class TestTranslationCompleteness(unittest.TestCase):
             )
             # We don't assert on the return code because it might fail due to missing translations
         except Exception as e:
-            self.fail(f"Failed to run translation completeness check: {e}")
+            self.fail(f'Failed to run translation completeness check: {e}')

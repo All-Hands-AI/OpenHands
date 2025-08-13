@@ -14,10 +14,10 @@ class MCPClientTool(Tool):
     def to_param(self) -> dict:
         """Convert tool to function call format."""
         return {
-            "type": "function",
-            "function": {
-                "name": self.name,
-                "description": self.description,
-                "parameters": self.inputSchema,
+            'type': 'function',
+            'function': {
+                'name': self.name,
+                'description': self.description,
+                'parameters': self.inputSchema,
             },
         }

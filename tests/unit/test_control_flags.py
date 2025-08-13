@@ -47,7 +47,7 @@ def test_iteration_control_flag_step_behavior():
     assert flag.reached_limit()
 
     # Stepping again should raise error
-    with pytest.raises(RuntimeError, match="Agent reached maximum iteration"):
+    with pytest.raises(RuntimeError, match='Agent reached maximum iteration'):
         flag.step()
 
 
@@ -107,7 +107,7 @@ def test_budget_control_flag_step_raises_on_limit():
     )
 
     # Should raise RuntimeError
-    with pytest.raises(RuntimeError, match="Agent reached maximum budget"):
+    with pytest.raises(RuntimeError, match='Agent reached maximum budget'):
         flag.step()
 
     # After increasing limit, step should not raise

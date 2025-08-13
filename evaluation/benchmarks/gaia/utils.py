@@ -11,16 +11,16 @@ def image_to_png_base64_url(
     """Convert a numpy array to a base64 encoded png image url."""
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
-    if image.mode in ("RGBA", "LA"):
-        image = image.convert("RGB")
+    if image.mode in ('RGBA', 'LA'):
+        image = image.convert('RGB')
     buffered = io.BytesIO()
-    image.save(buffered, format="PNG")
+    image.save(buffered, format='PNG')
 
     image_base64 = base64.b64encode(buffered.getvalue()).decode()
     return (
-        f"data:image/png;base64,{image_base64}"
+        f'data:image/png;base64,{image_base64}'
         if add_data_prefix
-        else f"{image_base64}"
+        else f'{image_base64}'
     )
 
 
@@ -30,14 +30,14 @@ def image_to_jpg_base64_url(
     """Convert a numpy array to a base64 encoded jpeg image url."""
     if isinstance(image, np.ndarray):
         image = Image.fromarray(image)
-    if image.mode in ("RGBA", "LA"):
-        image = image.convert("RGB")
+    if image.mode in ('RGBA', 'LA'):
+        image = image.convert('RGB')
     buffered = io.BytesIO()
-    image.save(buffered, format="JPEG")
+    image.save(buffered, format='JPEG')
 
     image_base64 = base64.b64encode(buffered.getvalue()).decode()
     return (
-        f"data:image/jpeg;base64,{image_base64}"
+        f'data:image/jpeg;base64,{image_base64}'
         if add_data_prefix
-        else f"{image_base64}"
+        else f'{image_base64}'
     )

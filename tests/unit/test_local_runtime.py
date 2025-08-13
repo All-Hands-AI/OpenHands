@@ -14,8 +14,8 @@ from openhands.runtime.impl.local.local_runtime import LocalRuntime
 def config():
     """Create a mock OpenHandsConfig for testing."""
     config = OpenHandsConfig()
-    config.sandbox.local_runtime_url = "http://localhost"
-    config.workspace_mount_path_in_sandbox = "/workspace"
+    config.sandbox.local_runtime_url = 'http://localhost'
+    config.workspace_mount_path_in_sandbox = '/workspace'
     return config
 
 
@@ -38,11 +38,11 @@ def local_runtime(config, event_stream):
 
     # Add required attributes for testing
     runtime._vscode_enabled = True
-    runtime._vscode_token = "test-token"
+    runtime._vscode_token = 'test-token'
 
     # Mock the runtime_url property for testing
     def mock_runtime_url(self):
-        return "http://localhost"
+        return 'http://localhost'
 
     # Create a property mock for runtime_url
     type(runtime).runtime_url = property(mock_runtime_url)
@@ -57,15 +57,15 @@ class TestLocalRuntime:
         """Test runtime_url when RUNTIME_URL environment variable is set."""
         # Create a fresh instance for this test
         config = OpenHandsConfig()
-        config.sandbox.local_runtime_url = "http://localhost"
+        config.sandbox.local_runtime_url = 'http://localhost'
         runtime = LocalRuntime.__new__(LocalRuntime)
         runtime.config = config
 
-        with patch.dict(os.environ, {"RUNTIME_URL": "http://custom-url"}, clear=True):
+        with patch.dict(os.environ, {'RUNTIME_URL': 'http://custom-url'}, clear=True):
             # Call the actual runtime_url property
             original_property = LocalRuntime.runtime_url
             try:
-                assert original_property.__get__(runtime) == "http://custom-url"
+                assert original_property.__get__(runtime) == 'http://custom-url'
             finally:
                 # Restore the original property
                 LocalRuntime.runtime_url = original_property
@@ -74,13 +74,13 @@ class TestLocalRuntime:
         """Test runtime_url when RUNTIME_URL_PATTERN environment variable is set."""
         # Create a fresh instance for this test
         config = OpenHandsConfig()
-        config.sandbox.local_runtime_url = "http://localhost"
+        config.sandbox.local_runtime_url = 'http://localhost'
         runtime = LocalRuntime.__new__(LocalRuntime)
         runtime.config = config
 
         env_vars = {
-            "RUNTIME_URL_PATTERN": "http://runtime-{runtime_id}.example.com",
-            "HOSTNAME": "runtime-abc123-xyz",
+            'RUNTIME_URL_PATTERN': 'http://runtime-{runtime_id}.example.com',
+            'HOSTNAME': 'runtime-abc123-xyz',
         }
         with patch.dict(os.environ, env_vars, clear=True):
             # Call the actual runtime_url property
@@ -88,7 +88,7 @@ class TestLocalRuntime:
             try:
                 assert (
                     original_property.__get__(runtime)
-                    == "http://runtime-abc123.example.com"
+                    == 'http://runtime-abc123.example.com'
                 )
             finally:
                 # Restore the original property
@@ -98,7 +98,7 @@ class TestLocalRuntime:
         """Test runtime_url fallback to local_runtime_url."""
         # Create a fresh instance for this test
         config = OpenHandsConfig()
-        config.sandbox.local_runtime_url = "http://localhost"
+        config.sandbox.local_runtime_url = 'http://localhost'
         runtime = LocalRuntime.__new__(LocalRuntime)
         runtime.config = config
 
@@ -106,7 +106,7 @@ class TestLocalRuntime:
             # Call the actual runtime_url property
             original_property = LocalRuntime.runtime_url
             try:
-                assert original_property.__get__(runtime) == "http://localhost"
+                assert original_property.__get__(runtime) == 'http://localhost'
             finally:
                 # Restore the original property
                 LocalRuntime.runtime_url = original_property
@@ -121,14 +121,14 @@ class TestLocalRuntime:
 
         # Create a mock method for runtime_url that accepts self parameter
         def mock_runtime_url(self):
-            return "http://localhost"
+            return 'http://localhost'
 
         # Temporarily replace the runtime_url property
         original_property = LocalRuntime.runtime_url
         try:
             LocalRuntime.runtime_url = property(mock_runtime_url)
-            url = runtime._create_url("test-prefix", 9000)
-            assert url == "http://localhost:8080"
+            url = runtime._create_url('test-prefix', 9000)
+            assert url == 'http://localhost:8080'
         finally:
             # Restore the original property
             LocalRuntime.runtime_url = original_property
@@ -142,14 +142,14 @@ class TestLocalRuntime:
 
         # Create a mock method for runtime_url that accepts self parameter
         def mock_runtime_url(self):
-            return "https://example.com"
+            return 'https://example.com'
 
         # Temporarily replace the runtime_url property
         original_property = LocalRuntime.runtime_url
         try:
             LocalRuntime.runtime_url = property(mock_runtime_url)
-            url = runtime._create_url("test-prefix", 9000)
-            assert url == "https://test-prefix-example.com"
+            url = runtime._create_url('test-prefix', 9000)
+            assert url == 'https://test-prefix-example.com'
         finally:
             # Restore the original property
             LocalRuntime.runtime_url = original_property
@@ -158,30 +158,30 @@ class TestLocalRuntime:
         """Test vscode_url when token is available."""
         # Create a fresh instance for this test
         config = OpenHandsConfig()
-        config.workspace_mount_path_in_sandbox = "/workspace"
+        config.workspace_mount_path_in_sandbox = '/workspace'
         runtime = LocalRuntime.__new__(LocalRuntime)
         runtime.config = config
 
         # Add required attributes
         runtime._vscode_enabled = True
         runtime._runtime_initialized = True
-        runtime._vscode_token = "test-token"
+        runtime._vscode_token = 'test-token'
 
         # Create a direct implementation of the method to test
         def mock_vscode_url(self):
             # Simplified version of the actual method
-            token = "test-token"  # Mocked token
+            token = 'test-token'  # Mocked token
             if not token:
                 return None
-            vscode_url = "https://vscode-example.com"  # Mocked URL
-            return f"{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}"
+            vscode_url = 'https://vscode-example.com'  # Mocked URL
+            return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
         # Temporarily replace the vscode_url method
         original_method = LocalRuntime.vscode_url
         try:
             LocalRuntime.vscode_url = property(mock_vscode_url)
             url = runtime.vscode_url
-            assert url == "https://vscode-example.com/?tkn=test-token&folder=/workspace"
+            assert url == 'https://vscode-example.com/?tkn=test-token&folder=/workspace'
         finally:
             # Restore the original method
             LocalRuntime.vscode_url = original_method
@@ -217,18 +217,18 @@ class TestLocalRuntime:
 
         # Mock _create_url to return predictable values
         def mock_create_url(prefix, port):
-            return f"https://{prefix}-example.com"
+            return f'https://{prefix}-example.com'
 
-        with patch.object(runtime, "_create_url", side_effect=mock_create_url):
+        with patch.object(runtime, '_create_url', side_effect=mock_create_url):
             # Call the web_hosts property
             hosts = runtime.web_hosts
 
             # Verify the result
             assert len(hosts) == 2
-            assert "https://work-1-example.com" in hosts
-            assert hosts["https://work-1-example.com"] == 12000
-            assert "https://work-2-example.com" in hosts
-            assert hosts["https://work-2-example.com"] == 12001
+            assert 'https://work-1-example.com' in hosts
+            assert hosts['https://work-1-example.com'] == 12000
+            assert 'https://work-2-example.com' in hosts
+            assert hosts['https://work-2-example.com'] == 12001
 
     def test_web_hosts_with_no_ports(self):
         """Test web_hosts with no app ports."""

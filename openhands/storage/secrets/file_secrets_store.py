@@ -14,7 +14,7 @@ from openhands.utils.async_utils import call_sync_from_async
 @dataclass
 class FileSecretsStore(SecretsStore):
     file_store: FileStore
-    path: str = "secrets.json"
+    path: str = 'secrets.json'
 
     async def load(self) -> UserSecrets | None:
         try:
@@ -22,17 +22,17 @@ class FileSecretsStore(SecretsStore):
             kwargs = json.loads(json_str)
             provider_tokens = {
                 k: v
-                for k, v in (kwargs.get("provider_tokens") or {}).items()
-                if v.get("token")
+                for k, v in (kwargs.get('provider_tokens') or {}).items()
+                if v.get('token')
             }
-            kwargs["provider_tokens"] = provider_tokens
+            kwargs['provider_tokens'] = provider_tokens
             secrets = UserSecrets(**kwargs)
             return secrets
         except FileNotFoundError:
             return None
 
     async def store(self, secrets: UserSecrets) -> None:
-        json_str = secrets.model_dump_json(context={"expose_secrets": True})
+        json_str = secrets.model_dump_json(context={'expose_secrets': True})
         await call_sync_from_async(self.file_store.write, self.path, json_str)
 
     @classmethod

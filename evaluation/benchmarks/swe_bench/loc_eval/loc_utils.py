@@ -34,29 +34,29 @@ class LocalizationInfo:
             Dictionary representation of the localization information
         """
         return {
-            "instance_id": self.instance_id,
-            "files": self.files,
-            "file_line_ranges": {
+            'instance_id': self.instance_id,
+            'files': self.files,
+            'file_line_ranges': {
                 file: [[start, end] for start, end in ranges]
                 for file, ranges in self.file_line_ranges.items()
             },
-            "functions": self.functions,
-            "classes": self.classes,
-            "line_to_function": {
+            'functions': self.functions,
+            'classes': self.classes,
+            'line_to_function': {
                 file: {str(line): func for line, func in mapping.items()}
                 for file, mapping in self.line_to_function.items()
             },
-            "line_to_class": {
+            'line_to_class': {
                 file: {str(line): cls for line, cls in mapping.items()}
                 for file, mapping in self.line_to_class.items()
             },
-            "total_lines_changed": self.total_lines_changed,
-            "total_files_changed": self.total_files_changed,
-            "hunks_per_file": self.hunks_per_file,
+            'total_lines_changed': self.total_lines_changed,
+            'total_files_changed': self.total_files_changed,
+            'hunks_per_file': self.hunks_per_file,
         }
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> "LocalizationInfo":
+    def from_dict(cls, data: dict[str, Any]) -> 'LocalizationInfo':
         """Create LocalizationInfo from a dictionary (for loading from JSON).
 
         Args:
@@ -66,25 +66,25 @@ class LocalizationInfo:
             LocalizationInfo object
         """
         return cls(
-            instance_id=data["instance_id"],
-            files=data["files"],
+            instance_id=data['instance_id'],
+            files=data['files'],
             file_line_ranges={
                 file: [(start, end) for start, end in ranges]
-                for file, ranges in data["file_line_ranges"].items()
+                for file, ranges in data['file_line_ranges'].items()
             },
-            functions=data["functions"],
-            classes=data["classes"],
+            functions=data['functions'],
+            classes=data['classes'],
             line_to_function={
                 file: {int(line): func for line, func in mapping.items()}
-                for file, mapping in data["line_to_function"].items()
+                for file, mapping in data['line_to_function'].items()
             },
             line_to_class={
                 file: {int(line): cls for line, cls in mapping.items()}
-                for file, mapping in data["line_to_class"].items()
+                for file, mapping in data['line_to_class'].items()
             },
-            total_lines_changed=data["total_lines_changed"],
-            total_files_changed=data["total_files_changed"],
-            hunks_per_file=data["hunks_per_file"],
+            total_lines_changed=data['total_lines_changed'],
+            total_files_changed=data['total_files_changed'],
+            hunks_per_file=data['hunks_per_file'],
         )
 
 
@@ -98,8 +98,8 @@ class LocMeta:
 
     def __init__(
         self,
-        dataset_name: str = "princeton-nlp/SWE-bench_Verified",
-        split: str = "test",
+        dataset_name: str = 'princeton-nlp/SWE-bench_Verified',
+        split: str = 'test',
     ):
         """Initialize LocMeta with a SWE-Bench dataset.
 
@@ -124,7 +124,7 @@ class LocMeta:
         Converts to pandas DataFrame for easy manipulation.
         """
         try:
-            self.logger.info(f"Loading dataset: {self.dataset_name}")
+            self.logger.info(f'Loading dataset: {self.dataset_name}')
 
             # Load dataset from HuggingFace
             self.dataset = load_dataset(self.dataset_name, split=self.split)
@@ -134,14 +134,14 @@ class LocMeta:
 
             # Create lookup dictionary for fast instance access
             self.instance_lookup = {
-                row["instance_id"]: idx for idx, row in self.df.iterrows()
+                row['instance_id']: idx for idx, row in self.df.iterrows()
             }
 
-            self.logger.info(f"Successfully loaded {len(self.df)} instances")
-            self.logger.info(f"Available columns: {list(self.df.columns)}")
+            self.logger.info(f'Successfully loaded {len(self.df)} instances')
+            self.logger.info(f'Available columns: {list(self.df.columns)}')
 
         except Exception as e:
-            self.logger.error(f"Failed to load dataset {self.dataset_name}: {e}")
+            self.logger.error(f'Failed to load dataset {self.dataset_name}: {e}')
             raise
 
     def get_instance_by_id(self, instance_id: str) -> pd.Series:
@@ -178,15 +178,15 @@ class LocMeta:
             instance = self.get_instance_by_id(actual_instance_id)
         else:
             # instance is a pandas Series
-            actual_instance_id = instance.get("instance_id", "unknown")
+            actual_instance_id = instance.get('instance_id', 'unknown')
 
-        self.logger.info(f"Parsing localization for instance: {actual_instance_id}")
+        self.logger.info(f'Parsing localization for instance: {actual_instance_id}')
 
         # Extract patch content
-        patch_content = instance.get("patch", "")
+        patch_content = instance.get('patch', '')
         if not patch_content:
             self.logger.warning(
-                f"No patch content found for instance {actual_instance_id}"
+                f'No patch content found for instance {actual_instance_id}'
             )
             patch_loc_info = self._empty_localization_info(actual_instance_id)
         else:
@@ -195,10 +195,10 @@ class LocMeta:
             )
 
         # Extract test patch content
-        patch_content = instance.get("test_patch", "")
+        patch_content = instance.get('test_patch', '')
         if not patch_content:
             self.logger.warning(
-                f"No test patch content found for instance {actual_instance_id}"
+                f'No test patch content found for instance {actual_instance_id}'
             )
             test_patch_loc_info = self._empty_localization_info(actual_instance_id)
         else:
@@ -206,7 +206,7 @@ class LocMeta:
                 patch_content, actual_instance_id
             )
 
-        return {"patch": patch_loc_info, "test_patch": test_patch_loc_info}
+        return {'patch': patch_loc_info, 'test_patch': test_patch_loc_info}
 
     def _parse_file_patch_lines(
         self, file_patch: str
@@ -223,12 +223,12 @@ class LocMeta:
         lines_changed = 0
         num_hunks = 0
 
-        lines = file_patch.split("\n")
+        lines = file_patch.split('\n')
 
         for line in lines:
             # Match hunk headers: @@ -start,count +start,count @@
             hunk_match = re.match(
-                r"@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@", line
+                r'@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@', line
             )
             if hunk_match:
                 num_hunks += 1
@@ -258,41 +258,41 @@ class LocMeta:
         classes = set()
 
         # Only attempt Python AST parsing for Python files
-        if not file_path.endswith(".py"):
+        if not file_path.endswith('.py'):
             return list(functions), list(classes)
 
-        lines = file_patch.split("\n")
+        lines = file_patch.split('\n')
 
         for line in lines:
             # Check for function names in hunk headers
             # Format: @@ -start,count +start,count @@ [optional context like "def function_name"]
-            hunk_match = re.match(r"@@.*?@@\s*(.*)", line)
+            hunk_match = re.match(r'@@.*?@@\s*(.*)', line)
             if hunk_match:
                 context = hunk_match.group(1).strip()
                 if context:
                     # Look for function definition in context
-                    func_match = re.search(r"def\s+([a-zA-Z_][a-zA-Z0-9_]*)", context)
+                    func_match = re.search(r'def\s+([a-zA-Z_][a-zA-Z0-9_]*)', context)
                     if func_match:
                         functions.add(func_match.group(1))
 
                     # Look for class definition in context
                     class_match = re.search(
-                        r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)", context
+                        r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)', context
                     )
                     if class_match:
                         classes.add(class_match.group(1))
 
             # Look for function and class definitions in the patch content
-            stripped_line = line.lstrip("+-@ ")
+            stripped_line = line.lstrip('+-@ ')
 
             # Match function definitions
-            func_match = re.match(r"def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", stripped_line)
+            func_match = re.match(r'def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', stripped_line)
             if func_match:
                 functions.add(func_match.group(1))
 
             # Match class definitions
             class_match = re.match(
-                r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]", stripped_line
+                r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]', stripped_line
             )
             if class_match:
                 classes.add(class_match.group(1))
@@ -393,115 +393,115 @@ class LocMeta:
         classes = set()
 
         # Process Python and Cython files
-        if not (file_path.endswith(".py") or file_path.endswith(".pyx")):
+        if not (file_path.endswith('.py') or file_path.endswith('.pyx')):
             return list(functions), list(classes)
 
-        lines = file_patch.split("\n")
+        lines = file_patch.split('\n')
 
         # Debug: Print some patch content for analysis
-        self.logger.info(f"Analyzing patch for {file_path}")
-        self.logger.info(f"Patch has {len(lines)} lines")
+        self.logger.info(f'Analyzing patch for {file_path}')
+        self.logger.info(f'Patch has {len(lines)} lines')
 
         for line in lines:
             # Check for function names in hunk headers with context
             # Format: @@ -start,count +start,count @@ [optional context like "def function_name"]
-            hunk_match = re.match(r"@@.*?@@\s*(.*)", line)
+            hunk_match = re.match(r'@@.*?@@\s*(.*)', line)
             if hunk_match:
                 context = hunk_match.group(1).strip()
                 self.logger.info(f"Found hunk context: '{context}'")
                 if context:
                     # Look for function definition in context
                     func_match = re.search(
-                        r"(?:def|async\s+def|cdef\s+\w*\s+|cpdef\s+\w*\s+)\s*([a-zA-Z_][a-zA-Z0-9_]*)",
+                        r'(?:def|async\s+def|cdef\s+\w*\s+|cpdef\s+\w*\s+)\s*([a-zA-Z_][a-zA-Z0-9_]*)',
                         context,
                     )
                     if func_match:
                         func_name = func_match.group(1)
                         functions.add(func_name)
-                        self.logger.info(f"Found function in hunk context: {func_name}")
+                        self.logger.info(f'Found function in hunk context: {func_name}')
 
                     # Look for class definition in context
                     class_match = re.search(
-                        r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)", context
+                        r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)', context
                     )
                     if class_match:
                         class_name = class_match.group(1)
                         classes.add(class_name)
-                        self.logger.info(f"Found class in hunk context: {class_name}")
+                        self.logger.info(f'Found class in hunk context: {class_name}')
 
             # Look for function and class definitions in the patch content
             # Check both added and removed lines, and context lines
-            if line.startswith(("+", "-", " ")):
+            if line.startswith(('+', '-', ' ')):
                 stripped_line = line[1:].strip()  # Remove +/- prefix and whitespace
 
                 # Match function definitions (including async and cdef for Cython)
                 func_match = re.match(
-                    r"(?:async\s+|cdef\s+)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                    r'(?:async\s+|cdef\s+)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                     stripped_line,
                 )
                 if func_match:
                     func_name = func_match.group(1)
                     functions.add(func_name)
-                    self.logger.info(f"Found function in patch content: {func_name}")
+                    self.logger.info(f'Found function in patch content: {func_name}')
 
                 # Match Cython cdef functions
                 cdef_func_match = re.match(
-                    r"cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", stripped_line
+                    r'cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', stripped_line
                 )
                 if cdef_func_match:
                     func_name = cdef_func_match.group(1)
                     functions.add(func_name)
                     self.logger.info(
-                        f"Found cdef function in patch content: {func_name}"
+                        f'Found cdef function in patch content: {func_name}'
                     )
 
                 # Match class definitions
                 class_match = re.match(
-                    r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]", stripped_line
+                    r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]', stripped_line
                 )
                 if class_match:
                     class_name = class_match.group(1)
                     classes.add(class_name)
-                    self.logger.info(f"Found class in patch content: {class_name}")
+                    self.logger.info(f'Found class in patch content: {class_name}')
 
             # Also check lines without prefixes (context lines in some patch formats)
             elif line.strip() and not line.startswith(
-                ("@@", "diff", "---", "+++", "index")
+                ('@@', 'diff', '---', '+++', 'index')
             ):
                 stripped_line = line.strip()
 
                 # Match function definitions
                 func_match = re.match(
-                    r"(?:async\s+|cdef\s+)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                    r'(?:async\s+|cdef\s+)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                     stripped_line,
                 )
                 if func_match:
                     func_name = func_match.group(1)
                     functions.add(func_name)
-                    self.logger.info(f"Found function in context line: {func_name}")
+                    self.logger.info(f'Found function in context line: {func_name}')
 
                 # Match Cython cdef functions
                 cdef_func_match = re.match(
-                    r"cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", stripped_line
+                    r'cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', stripped_line
                 )
                 if cdef_func_match:
                     func_name = cdef_func_match.group(1)
                     functions.add(func_name)
                     self.logger.info(
-                        f"Found cdef function in context line: {func_name}"
+                        f'Found cdef function in context line: {func_name}'
                     )
 
                 # Match class definitions
                 class_match = re.match(
-                    r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]", stripped_line
+                    r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]', stripped_line
                 )
                 if class_match:
                     class_name = class_match.group(1)
                     classes.add(class_name)
-                    self.logger.info(f"Found class in context line: {class_name}")
+                    self.logger.info(f'Found class in context line: {class_name}')
 
         self.logger.info(
-            f"Final results for {file_path}: functions={list(functions)}, classes={list(classes)}"
+            f'Final results for {file_path}: functions={list(functions)}, classes={list(classes)}'
         )
         return list(functions), list(classes)
 
@@ -549,7 +549,7 @@ class LocMeta:
 
             # Analyze source code using OpenHands runtime for accurate function/class mapping
             if affected_lines and (
-                file_path.endswith(".py") or file_path.endswith(".pyx")
+                file_path.endswith('.py') or file_path.endswith('.pyx')
             ):
                 file_functions, file_classes, line_func_map, line_class_map = (
                     self._analyze_source_code_with_runtime(
@@ -600,17 +600,17 @@ class LocMeta:
             instance = self.get_instance_by_id(actual_instance_id)
         else:
             # instance is a pandas Series
-            actual_instance_id = instance.get("instance_id", "unknown")
+            actual_instance_id = instance.get('instance_id', 'unknown')
 
         self.logger.info(
-            f"Parsing localization with runtime for instance: {actual_instance_id}"
+            f'Parsing localization with runtime for instance: {actual_instance_id}'
         )
 
         # Extract patch content
-        patch_content = instance.get("patch", "")
+        patch_content = instance.get('patch', '')
         if not patch_content:
             self.logger.warning(
-                f"No patch content found for instance {actual_instance_id}"
+                f'No patch content found for instance {actual_instance_id}'
             )
             return self._empty_localization_info(actual_instance_id)
 
@@ -633,8 +633,8 @@ class LocMeta:
         """
         try:
             # Check if file exists and is a Python/Cython file
-            if not (file_path.endswith(".py") or file_path.endswith(".pyx")):
-                self.logger.info(f"Skipping non-Python/Cython file: {file_path}")
+            if not (file_path.endswith('.py') or file_path.endswith('.pyx')):
+                self.logger.info(f'Skipping non-Python/Cython file: {file_path}')
                 return [], [], {}, {}
 
             # Read the file content using runtime
@@ -646,8 +646,8 @@ class LocMeta:
             )
             obs = runtime.run_action(check_action)
 
-            if "NOT_EXISTS" in obs.content:
-                self.logger.warning(f"File not found: {file_path}")
+            if 'NOT_EXISTS' in obs.content:
+                self.logger.warning(f'File not found: {file_path}')
                 return [], [], {}, {}
 
             # Read file content
@@ -655,17 +655,17 @@ class LocMeta:
             obs = runtime.run_action(read_action)
 
             if obs.exit_code != 0:
-                self.logger.warning(f"Failed to read file {file_path}: {obs.content}")
+                self.logger.warning(f'Failed to read file {file_path}: {obs.content}')
                 return [], [], {}, {}
 
             file_content = obs.content
 
             # Parse the content
-            if file_path.endswith(".py"):
+            if file_path.endswith('.py'):
                 return self._parse_python_content_with_line_mapping(
                     file_content, affected_lines
                 )
-            elif file_path.endswith(".pyx"):
+            elif file_path.endswith('.pyx'):
                 return self._parse_cython_content_with_line_mapping(
                     file_content, affected_lines
                 )
@@ -674,7 +674,7 @@ class LocMeta:
 
         except Exception as e:
             self.logger.warning(
-                f"Failed to analyze source code with runtime for {file_path}: {e}"
+                f'Failed to analyze source code with runtime for {file_path}: {e}'
             )
             return [], [], {}, {}
 
@@ -697,7 +697,7 @@ class LocMeta:
             line_to_function = {}
             line_to_class = {}
 
-            lines = content.split("\n")
+            lines = content.split('\n')
             current_function = None
             current_class = None
 
@@ -706,7 +706,7 @@ class LocMeta:
 
                 # Match class definitions
                 class_match = re.match(
-                    r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]", stripped_line
+                    r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]', stripped_line
                 )
                 if class_match:
                     current_class = class_match.group(1)
@@ -715,18 +715,18 @@ class LocMeta:
 
                 # Match function definitions (def, cdef, cpdef)
                 func_match = re.match(
-                    r"(?:async\s+|c?p?def\s+(?:[^(]*\s+)?)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                    r'(?:async\s+|c?p?def\s+(?:[^(]*\s+)?)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                     stripped_line,
                 )
                 if not func_match:
                     # Try matching cdef functions with return types
                     func_match = re.match(
-                        r"cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", stripped_line
+                        r'cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', stripped_line
                     )
                 if not func_match:
                     # Try matching cpdef functions
                     func_match = re.match(
-                        r"cpdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(", stripped_line
+                        r'cpdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(', stripped_line
                     )
 
                 if func_match:
@@ -739,7 +739,7 @@ class LocMeta:
                     current_function
                     and line
                     and not line[0].isspace()
-                    and not line.startswith("#")
+                    and not line.startswith('#')
                 ):
                     # We've left the function
                     current_function = None
@@ -748,17 +748,17 @@ class LocMeta:
                     current_class
                     and line
                     and not line[0].isspace()
-                    and not line.startswith("#")
-                    and not stripped_line.startswith("def ")
-                    and not stripped_line.startswith("cdef ")
-                    and not stripped_line.startswith("cpdef ")
+                    and not line.startswith('#')
+                    and not stripped_line.startswith('def ')
+                    and not stripped_line.startswith('cdef ')
+                    and not stripped_line.startswith('cpdef ')
                 ):
                     # We've left the class
                     current_class = None
 
             # Map affected lines to functions and classes using a simple heuristic
             # This is imperfect but better than nothing for Cython files
-            lines = content.split("\n")
+            lines = content.split('\n')
             for line_num in affected_lines:
                 if line_num <= len(lines):
                     # Find the nearest function/class definition above this line
@@ -771,17 +771,17 @@ class LocMeta:
 
                             # Check for function definition
                             func_match = re.match(
-                                r"(?:async\s+|c?p?def\s+(?:[^(]*\s+)?)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                                r'(?:async\s+|c?p?def\s+(?:[^(]*\s+)?)?def\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                                 line,
                             )
                             if not func_match:
                                 func_match = re.match(
-                                    r"cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                                    r'cdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                                     line,
                                 )
                             if not func_match:
                                 func_match = re.match(
-                                    r"cpdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(",
+                                    r'cpdef\s+[^(]*\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*\(',
                                     line,
                                 )
 
@@ -790,7 +790,7 @@ class LocMeta:
 
                             # Check for class definition
                             class_match = re.match(
-                                r"class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]", line
+                                r'class\s+([a-zA-Z_][a-zA-Z0-9_]*)\s*[\(:]', line
                             )
                             if class_match and not nearest_class:
                                 nearest_class = class_match.group(1)
@@ -807,7 +807,7 @@ class LocMeta:
             return list(functions), list(classes), line_to_function, line_to_class
 
         except Exception as e:
-            self.logger.warning(f"Failed to parse Cython content: {e}")
+            self.logger.warning(f'Failed to parse Cython content: {e}')
             return [], [], {}, {}
 
     def _parse_python_content_with_line_mapping(
@@ -846,13 +846,13 @@ class LocMeta:
 
                     # Mark lines in this class
                     start_line = node.lineno
-                    end_line = getattr(node, "end_lineno", node.lineno)
+                    end_line = getattr(node, 'end_lineno', node.lineno)
                     if end_line is None:
                         # Estimate end line by finding the next class/function or end of file
                         end_line = start_line + 100  # Conservative estimate
 
                     for line_num in range(start_line, end_line + 1):
-                        line_to_node[line_num] = ("class", node.name)
+                        line_to_node[line_num] = ('class', node.name)
 
                     self.generic_visit(node)
                     self.current_class = old_class
@@ -863,13 +863,13 @@ class LocMeta:
 
                     # Mark lines in this function
                     start_line = node.lineno
-                    end_line = getattr(node, "end_lineno", node.lineno)
+                    end_line = getattr(node, 'end_lineno', node.lineno)
                     if end_line is None:
                         # Estimate end line based on the next sibling or parent end
                         end_line = start_line + 50  # Conservative estimate
 
                     for line_num in range(start_line, end_line + 1):
-                        line_to_node[line_num] = ("function", node.name)
+                        line_to_node[line_num] = ('function', node.name)
 
                     self.generic_visit(node)
 
@@ -884,15 +884,15 @@ class LocMeta:
             for line_num in affected_lines:
                 if line_num in line_to_node:
                     node_type, node_name = line_to_node[line_num]
-                    if node_type == "function":
+                    if node_type == 'function':
                         line_to_function[line_num] = node_name
-                    elif node_type == "class":
+                    elif node_type == 'class':
                         line_to_class[line_num] = node_name
 
             return list(functions), list(classes), line_to_function, line_to_class
 
         except Exception as e:
-            self.logger.warning(f"Failed to parse Python content: {e}")
+            self.logger.warning(f'Failed to parse Python content: {e}')
             return [], [], {}, {}
 
     def _parse_python_content(
@@ -928,7 +928,7 @@ class LocMeta:
                     classes.add(node.name)
 
                     # Mark lines in this class
-                    end_line = getattr(node, "end_lineno", node.lineno)
+                    end_line = getattr(node, 'end_lineno', node.lineno)
                     if end_line is None:
                         end_line = node.lineno
 
@@ -945,7 +945,7 @@ class LocMeta:
                     functions.add(node.name)
 
                     # Mark lines in this function
-                    end_line = getattr(node, "end_lineno", node.lineno)
+                    end_line = getattr(node, 'end_lineno', node.lineno)
                     if end_line is None:
                         end_line = node.lineno
 
@@ -968,7 +968,7 @@ class LocMeta:
             return list(functions), list(classes), line_to_function, line_to_class
 
         except Exception as e:
-            self.logger.warning(f"Failed to parse Python content: {e}")
+            self.logger.warning(f'Failed to parse Python content: {e}')
             return [], [], {}, {}
 
     def _split_patch_by_files(self, patch_content: str) -> dict[str, str]:
@@ -984,18 +984,18 @@ class LocMeta:
         current_file = None
         current_patch_lines = []
 
-        lines = patch_content.split("\n")
+        lines = patch_content.split('\n')
 
         for line in lines:
             # Check for file header patterns
-            if line.startswith("diff --git"):
+            if line.startswith('diff --git'):
                 # Save previous file if exists
                 if current_file and current_patch_lines:
-                    file_patches[current_file] = "\n".join(current_patch_lines)
+                    file_patches[current_file] = '\n'.join(current_patch_lines)
 
                 # Extract file path from diff line
                 # Format: diff --git a/path/to/file.py b/path/to/file.py
-                match = re.search(r"diff --git a/(.*?) b/(.*?)(?:\s|$)", line)
+                match = re.search(r'diff --git a/(.*?) b/(.*?)(?:\s|$)', line)
                 if match:
                     current_file = match.group(1)  # Use the 'a/' path
                     current_patch_lines = [line]
@@ -1003,11 +1003,11 @@ class LocMeta:
                     current_file = None
                     current_patch_lines = []
 
-            elif line.startswith("---") or line.startswith("+++"):
+            elif line.startswith('---') or line.startswith('+++'):
                 # Alternative file path extraction
                 if not current_file:
-                    match = re.search(r"[+-]{3}\s+(?:a/|b/)?(.+?)(?:\s|$)", line)
-                    if match and not match.group(1).startswith("/dev/null"):
+                    match = re.search(r'[+-]{3}\s+(?:a/|b/)?(.+?)(?:\s|$)', line)
+                    if match and not match.group(1).startswith('/dev/null'):
                         current_file = match.group(1)
                         if not current_patch_lines:
                             current_patch_lines = [line]
@@ -1024,12 +1024,12 @@ class LocMeta:
 
         # Save the last file
         if current_file and current_patch_lines:
-            file_patches[current_file] = "\n".join(current_patch_lines)
+            file_patches[current_file] = '\n'.join(current_patch_lines)
 
         return file_patches
 
     def _empty_localization_info(
-        self, instance_id: str = "unknown"
+        self, instance_id: str = 'unknown'
     ) -> LocalizationInfo:
         """Return an empty LocalizationInfo object.
 
@@ -1062,14 +1062,14 @@ class LocMeta:
             return {}
 
         stats = {
-            "total_instances": len(self.df),
-            "repositories": self.df["repo"].nunique()
-            if "repo" in self.df.columns
+            'total_instances': len(self.df),
+            'repositories': self.df['repo'].nunique()
+            if 'repo' in self.df.columns
             else 0,
-            "avg_patch_length": self.df["patch"].str.len().mean()
-            if "patch" in self.df.columns
+            'avg_patch_length': self.df['patch'].str.len().mean()
+            if 'patch' in self.df.columns
             else 0,
-            "columns": list(self.df.columns),
+            'columns': list(self.df.columns),
         }
 
         return stats
@@ -1083,7 +1083,7 @@ class LocMeta:
         Returns:
             DataFrame containing instances for the specified repository
         """
-        if "repo" not in self.df.columns:
-            raise ValueError("Repository information not available in dataset")
+        if 'repo' not in self.df.columns:
+            raise ValueError('Repository information not available in dataset')
 
-        return self.df[self.df["repo"] == repo_name].copy()
+        return self.df[self.df['repo'] == repo_name].copy()

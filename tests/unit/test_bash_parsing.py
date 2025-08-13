@@ -5,7 +5,7 @@ from openhands.runtime.utils.bash import escape_bash_special_chars, split_bash_c
 
 def test_split_commands_util():
     cmds = [
-        "ls -l",
+        'ls -l',
         'echo -e "hello\nworld"',
         """
 echo -e "hello it\\'s me"
@@ -54,29 +54,29 @@ for month in {01..04}; do
 done
 """.strip(),
     ]
-    joined_cmds = "\n".join(cmds)
+    joined_cmds = '\n'.join(cmds)
     split_cmds = split_bash_commands(joined_cmds)
     for s in split_cmds:
-        print("\nCMD")
+        print('\nCMD')
         print(s)
     for i in range(len(cmds)):
         assert split_cmds[i].strip() == cmds[i].strip(), (
-            f"At index {i}: {split_cmds[i]} != {cmds[i]}."
+            f'At index {i}: {split_cmds[i]} != {cmds[i]}.'
         )
 
 
 @pytest.mark.parametrize(
-    "input_command, expected_output",
+    'input_command, expected_output',
     [
-        ("ls -l", ["ls -l"]),
+        ('ls -l', ['ls -l']),
         ("echo 'Hello, world!'", ["echo 'Hello, world!'"]),
-        ("cd /tmp && touch test.txt", ["cd /tmp && touch test.txt"]),
+        ('cd /tmp && touch test.txt', ['cd /tmp && touch test.txt']),
         ("echo -e 'line1\\nline2\\nline3'", ["echo -e 'line1\\nline2\\nline3'"]),
         (
             "grep 'pattern' file.txt | sort | uniq",
             ["grep 'pattern' file.txt | sort | uniq"],
         ),
-        ("for i in {1..5}; do echo $i; done", ["for i in {1..5}; do echo $i; done"]),
+        ('for i in {1..5}; do echo $i; done', ['for i in {1..5}; do echo $i; done']),
         (
             "echo 'Single quotes don\\'t escape'",
             ["echo 'Single quotes don\\'t escape'"],
@@ -99,7 +99,7 @@ text
 EOF
 echo "Done"
 """
-    expected_output = ["cat <<EOF\nmultiline\ntext\nEOF", 'echo "Done"']
+    expected_output = ['cat <<EOF\nmultiline\ntext\nEOF', 'echo "Done"']
     assert split_bash_commands(input_commands) == expected_output
 
 
@@ -125,7 +125,7 @@ ls -l
 """
     expected_output = [
         'echo "Hello" # This is a comment\n# This is another comment',
-        "ls -l",
+        'ls -l',
     ]
     assert split_bash_commands(input_commands) == expected_output
 
@@ -148,7 +148,7 @@ def test_invalid_syntax():
     invalid_inputs = [
         'echo "Unclosed quote',
         "echo 'Unclosed quote",
-        "cat <<EOF\nUnclosed heredoc",
+        'cat <<EOF\nUnclosed heredoc',
     ]
     for input_command in invalid_inputs:
         # it will fall back to return the original input
@@ -159,7 +159,7 @@ def test_unclosed_backtick():
     # This test reproduces issue #7391
     # The issue occurs when parsing a command with an unclosed backtick
     # which causes a TypeError: ParsingError.__init__() missing 2 required positional arguments: 's' and 'position'
-    command = "echo `unclosed backtick"
+    command = 'echo `unclosed backtick'
 
     # Should not raise TypeError
     try:
@@ -183,7 +183,7 @@ def test_unclosed_backtick():
 def test_over_escaped_command():
     # This test reproduces issue #8369 Example 1
     # The issue occurs when parsing a command with over-escaped quotes
-    over_escaped_command = r"# 0. Setup directory\\nrm -rf /workspace/repro_sphinx_bug && mkdir -p /workspace/repro_sphinx_bug && cd /workspace/repro_sphinx_bug\\n\\n# 1. Run sphinx-quickstart\\nsphinx-quickstart --no-sep --project myproject --author me -v 0.1.0 --release 0.1.0 --language en . -q\\n\\n# 2. Create index.rst\\necho -e \'Welcome\\\\\\\\n=======\\\\\\\\n\\\\\\\\n.. toctree::\\\\n   :maxdepth: 2\\\\\\\\n\\\\\\\\n   mypackage_file\\\\\\\\n\' > index.rst"
+    over_escaped_command = r'# 0. Setup directory\\nrm -rf /workspace/repro_sphinx_bug && mkdir -p /workspace/repro_sphinx_bug && cd /workspace/repro_sphinx_bug\\n\\n# 1. Run sphinx-quickstart\\nsphinx-quickstart --no-sep --project myproject --author me -v 0.1.0 --release 0.1.0 --language en . -q\\n\\n# 2. Create index.rst\\necho -e \'Welcome\\\\\\\\n=======\\\\\\\\n\\\\\\\\n.. toctree::\\\\n   :maxdepth: 2\\\\\\\\n\\\\\\\\n   mypackage_file\\\\\\\\n\' > index.rst'
 
     # Should not raise any exception
     try:
@@ -192,19 +192,19 @@ def test_over_escaped_command():
         assert result == [over_escaped_command]
     except Exception as e:
         # This is the error we're trying to fix
-        pytest.fail(f"split_bash_commands raised {type(e).__name__} unexpectedly: {e}")
+        pytest.fail(f'split_bash_commands raised {type(e).__name__} unexpectedly: {e}')
 
 
 @pytest.fixture
 def sample_commands():
     return [
-        "ls -l",
+        'ls -l',
         'echo "Hello, world!"',
-        "cd /tmp && touch test.txt",
+        'cd /tmp && touch test.txt',
         'echo -e "line1\\nline2\\nline3"',
         'grep "pattern" file.txt | sort | uniq',
-        "for i in {1..5}; do echo $i; done",
-        "cat <<EOF\nmultiline\ntext\nEOF",
+        'for i in {1..5}; do echo $i; done',
+        'cat <<EOF\nmultiline\ntext\nEOF',
         'echo "Escaped \\"quotes\\""',
         "echo 'Single quotes don\\'t escape'",
         'echo "Command with a trailing backslash \\\n  and continuation"',
@@ -214,7 +214,7 @@ def sample_commands():
 def test_split_single_commands(sample_commands):
     for cmd in sample_commands:
         result = split_bash_commands(cmd)
-        assert len(result) == 1, f"Expected single command, got: {result}"
+        assert len(result) == 1, f'Expected single command, got: {result}'
 
 
 def test_split_commands_with_heredoc():
@@ -225,9 +225,9 @@ text
 EOF
 echo "Done"
 """
-    expected_output = ["cat <<EOF\nmultiline\ntext\nEOF", 'echo "Done"']
+    expected_output = ['cat <<EOF\nmultiline\ntext\nEOF', 'echo "Done"']
     result = split_bash_commands(input_commands)
-    assert result == expected_output, f"Expected {expected_output}, got {result}"
+    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_backslash_continuation():
@@ -242,7 +242,7 @@ echo "Next command"
         'echo "Next command"',
     ]
     result = split_bash_commands(input_commands)
-    assert result == expected_output, f"Expected {expected_output}, got {result}"
+    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_empty_lines():
@@ -253,9 +253,9 @@ echo "Hello"
 
 cd /tmp
 """
-    expected_output = ["ls -l", 'echo "Hello"', "cd /tmp"]
+    expected_output = ['ls -l', 'echo "Hello"', 'cd /tmp']
     result = split_bash_commands(input_commands)
-    assert result == expected_output, f"Expected {expected_output}, got {result}"
+    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_comments():
@@ -266,10 +266,10 @@ ls -l
 """
     expected_output = [
         'echo "Hello" # This is a comment\n# This is another comment',
-        "ls -l",
+        'ls -l',
     ]
     result = split_bash_commands(input_commands)
-    assert result == expected_output, f"Expected {expected_output}, got {result}"
+    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_complex_quoting():
@@ -285,14 +285,14 @@ echo "Mixed 'quotes' in \\"double quotes\\""
     ]
     # "echo 'This is a '\\''single-quoted'\\'' string'",
     result = split_bash_commands(input_commands)
-    assert result == expected_output, f"Expected {expected_output}, got {result}"
+    assert result == expected_output, f'Expected {expected_output}, got {result}'
 
 
 def test_split_commands_with_invalid_input():
     invalid_inputs = [
         'echo "Unclosed quote',
         "echo 'Unclosed quote",
-        "cat <<EOF\nUnclosed heredoc",
+        'cat <<EOF\nUnclosed heredoc',
     ]
     for input_command in invalid_inputs:
         # it will fall back to return the original input
@@ -302,11 +302,11 @@ def test_split_commands_with_invalid_input():
 def test_escape_bash_special_chars():
     test_cases = [
         # Basic cases - use raw strings (r'') to avoid Python escape sequence warnings
-        ("echo test \\; ls", "echo test \\\\; ls"),
-        ("grep pattern \\| sort", "grep pattern \\\\| sort"),
-        ("cmd1 \\&\\& cmd2", "cmd1 \\\\&\\\\& cmd2"),
-        ("cat file \\> output.txt", "cat file \\\\> output.txt"),
-        ("cat \\< input.txt", "cat \\\\< input.txt"),
+        ('echo test \\; ls', 'echo test \\\\; ls'),
+        ('grep pattern \\| sort', 'grep pattern \\\\| sort'),
+        ('cmd1 \\&\\& cmd2', 'cmd1 \\\\&\\\\& cmd2'),
+        ('cat file \\> output.txt', 'cat file \\\\> output.txt'),
+        ('cat \\< input.txt', 'cat \\\\< input.txt'),
         # Quoted strings should remain unchanged
         ('echo "test \\; unchanged"', 'echo "test \\; unchanged"'),
         ("echo 'test \\| unchanged'", "echo 'test \\| unchanged'"),
@@ -316,13 +316,13 @@ def test_escape_bash_special_chars():
             'echo "quoted \\;" \\\\; "more" \\\\| grep',
         ),
         # Multiple escapes in sequence
-        ("cmd1 \\;\\|\\& cmd2", "cmd1 \\\\;\\\\|\\\\& cmd2"),
+        ('cmd1 \\;\\|\\& cmd2', 'cmd1 \\\\;\\\\|\\\\& cmd2'),
         # Commands with other backslashes
-        ("echo test\\ntest", "echo test\\ntest"),
+        ('echo test\\ntest', 'echo test\\ntest'),
         ('echo "test\\ntest"', 'echo "test\\ntest"'),
         # Edge cases
-        ("", ""),  # Empty string
-        ("\\\\", "\\\\"),  # Double backslash
+        ('', ''),  # Empty string
+        ('\\\\', '\\\\'),  # Double backslash
         ('\\"', '\\"'),  # Escaped quote
     ]
 
@@ -337,12 +337,12 @@ def test_escape_bash_special_chars_with_invalid_syntax():
     invalid_inputs = [
         'echo "unclosed quote',
         "echo 'unclosed quote",
-        "cat <<EOF\nunclosed heredoc",
+        'cat <<EOF\nunclosed heredoc',
     ]
     for input_cmd in invalid_inputs:
         # Should return original input when parsing fails
         result = escape_bash_special_chars(input_cmd)
-        assert result == input_cmd, f"Failed to handle invalid input: {input_cmd}"
+        assert result == input_cmd, f'Failed to handle invalid input: {input_cmd}'
 
 
 def test_escape_bash_special_chars_with_heredoc():
@@ -354,25 +354,25 @@ EOF"""
     expected = input_cmd
     result = escape_bash_special_chars(input_cmd)
     assert result == expected, (
-        f"Failed to handle heredoc correctly\nExpected: {expected}\nGot: {result}"
+        f'Failed to handle heredoc correctly\nExpected: {expected}\nGot: {result}'
     )
 
 
 def test_escape_bash_special_chars_with_parameter_expansion():
     test_cases = [
         # Parameter expansion should be preserved
-        ("echo $HOME", "echo $HOME"),
-        ("echo ${HOME}", "echo ${HOME}"),
-        ("echo ${HOME:-default}", "echo ${HOME:-default}"),
+        ('echo $HOME', 'echo $HOME'),
+        ('echo ${HOME}', 'echo ${HOME}'),
+        ('echo ${HOME:-default}', 'echo ${HOME:-default}'),
         # Mixed with special chars
-        ("echo $HOME \\; ls", "echo $HOME \\\\; ls"),
-        ("echo ${PATH} \\| grep bin", "echo ${PATH} \\\\| grep bin"),
+        ('echo $HOME \\; ls', 'echo $HOME \\\\; ls'),
+        ('echo ${PATH} \\| grep bin', 'echo ${PATH} \\\\| grep bin'),
         # Quoted parameter expansion
         ('echo "$HOME"', 'echo "$HOME"'),
         ('echo "${HOME}"', 'echo "${HOME}"'),
         # Complex parameter expansions
-        ("echo ${var:=default} \\; ls", "echo ${var:=default} \\\\; ls"),
-        ("echo ${!prefix*} \\| sort", "echo ${!prefix*} \\\\| sort"),
+        ('echo ${var:=default} \\; ls', 'echo ${var:=default} \\\\; ls'),
+        ('echo ${!prefix*} \\| sort', 'echo ${!prefix*} \\\\| sort'),
     ]
 
     for input_cmd, expected in test_cases:
@@ -385,13 +385,13 @@ def test_escape_bash_special_chars_with_parameter_expansion():
 def test_escape_bash_special_chars_with_command_substitution():
     test_cases = [
         # Basic command substitution
-        ("echo $(pwd)", "echo $(pwd)"),
-        ("echo `pwd`", "echo `pwd`"),
+        ('echo $(pwd)', 'echo $(pwd)'),
+        ('echo `pwd`', 'echo `pwd`'),
         # Mixed with special chars
-        ("echo $(pwd) \\; ls", "echo $(pwd) \\\\; ls"),
-        ("echo `pwd` \\| grep home", "echo `pwd` \\\\| grep home"),
+        ('echo $(pwd) \\; ls', 'echo $(pwd) \\\\; ls'),
+        ('echo `pwd` \\| grep home', 'echo `pwd` \\\\| grep home'),
         # Nested command substitution
-        ("echo $(echo `pwd`)", "echo $(echo `pwd`)"),
+        ('echo $(echo `pwd`)', 'echo $(echo `pwd`)'),
         # Complex command substitution
         ('echo $(find . -name "*.txt" \\; ls)', 'echo $(find . -name "*.txt" \\; ls)'),
         # Mixed with quotes
@@ -409,17 +409,17 @@ def test_escape_bash_special_chars_with_command_substitution():
 def test_escape_bash_special_chars_mixed_nodes():
     test_cases = [
         # Mix of parameter expansion and command substitution
-        ("echo $HOME/$(pwd)", "echo $HOME/$(pwd)"),
+        ('echo $HOME/$(pwd)', 'echo $HOME/$(pwd)'),
         # Mix with special chars
-        ("echo $HOME/$(pwd) \\; ls", "echo $HOME/$(pwd) \\\\; ls"),
+        ('echo $HOME/$(pwd) \\; ls', 'echo $HOME/$(pwd) \\\\; ls'),
         # Complex mixed cases
         (
             'echo "${HOME}/$(basename `pwd`) \\; next"',
             'echo "${HOME}/$(basename `pwd`) \\; next"',
         ),
         (
-            "VAR=${HOME} \\; echo $(pwd)",
-            "VAR=${HOME} \\\\; echo $(pwd)",
+            'VAR=${HOME} \\; echo $(pwd)',
+            'VAR=${HOME} \\\\; echo $(pwd)',
         ),
         # Real-world examples
         (
@@ -442,22 +442,22 @@ def test_escape_bash_special_chars_mixed_nodes():
 def test_escape_bash_special_chars_with_chained_commands():
     test_cases = [
         # Basic chained commands
-        ("ls && pwd", "ls && pwd"),
+        ('ls && pwd', 'ls && pwd'),
         ('echo "hello" && ls', 'echo "hello" && ls'),
         # Chained commands with special chars
-        ("ls \\; pwd && echo test", "ls \\\\; pwd && echo test"),
-        ("echo test && grep pattern \\| sort", "echo test && grep pattern \\\\| sort"),
+        ('ls \\; pwd && echo test', 'ls \\\\; pwd && echo test'),
+        ('echo test && grep pattern \\| sort', 'echo test && grep pattern \\\\| sort'),
         # Complex chained cases
-        ("echo ${HOME} && ls \\; pwd", "echo ${HOME} && ls \\\\; pwd"),
+        ('echo ${HOME} && ls \\; pwd', 'echo ${HOME} && ls \\\\; pwd'),
         (
             'echo "$(pwd)" && cat file \\> out.txt',
             'echo "$(pwd)" && cat file \\\\> out.txt',
         ),
         # Multiple chains
-        ("cmd1 && cmd2 && cmd3", "cmd1 && cmd2 && cmd3"),
+        ('cmd1 && cmd2 && cmd3', 'cmd1 && cmd2 && cmd3'),
         (
-            "cmd1 \\; ls && cmd2 \\| grep && cmd3",
-            "cmd1 \\\\; ls && cmd2 \\\\| grep && cmd3",
+            'cmd1 \\; ls && cmd2 \\| grep && cmd3',
+            'cmd1 \\\\; ls && cmd2 \\\\| grep && cmd3',
         ),
     ]
 

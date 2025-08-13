@@ -55,16 +55,16 @@ class AsyncLLM(LLM):
             # see llm.py for more details
             if len(args) > 1:
                 messages = args[1] if len(args) > 1 else args[0]
-                kwargs["messages"] = messages
+                kwargs['messages'] = messages
 
                 # remove the first args, they're sent in kwargs
                 args = args[2:]
-            elif "messages" in kwargs:
-                messages = kwargs["messages"]
+            elif 'messages' in kwargs:
+                messages = kwargs['messages']
 
             # Set reasoning effort for models that support it
             if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
-                kwargs["reasoning_effort"] = self.config.reasoning_effort
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
@@ -72,7 +72,7 @@ class AsyncLLM(LLM):
             # if we have no messages, something went very wrong
             if not messages:
                 raise ValueError(
-                    "The messages list is empty. At least one message is required."
+                    'The messages list is empty. At least one message is required.'
                 )
 
             self.log_prompt(messages)
@@ -80,7 +80,7 @@ class AsyncLLM(LLM):
             async def check_stopped() -> None:
                 while should_continue():
                     if (
-                        hasattr(self.config, "on_cancel_requested_fn")
+                        hasattr(self.config, 'on_cancel_requested_fn')
                         and self.config.on_cancel_requested_fn is not None
                         and await self.config.on_cancel_requested_fn()
                     ):
@@ -93,7 +93,7 @@ class AsyncLLM(LLM):
                 # Directly call and await litellm_acompletion
                 resp = await async_completion_unwrapped(*args, **kwargs)
 
-                message_back = resp["choices"][0]["message"]["content"]
+                message_back = resp['choices'][0]['message']['content']
                 self.log_response(message_back)
 
                 # log costs and tokens used
@@ -103,10 +103,10 @@ class AsyncLLM(LLM):
                 return resp
 
             except UserCancelledError:
-                logger.debug("LLM request cancelled by user.")
+                logger.debug('LLM request cancelled by user.')
                 raise
             except Exception as e:
-                logger.error(f"Completion Error occurred:\n{e}")
+                logger.error(f'Completion Error occurred:\n{e}')
                 raise
 
             finally:

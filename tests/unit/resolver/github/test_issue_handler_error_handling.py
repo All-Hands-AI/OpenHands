@@ -19,16 +19,16 @@ from openhands.resolver.interfaces.issue_definitions import (
 def mock_logger(monkeypatch):
     # suppress logging of completion data to file
     mock_logger = MagicMock()
-    monkeypatch.setattr("openhands.llm.debug_mixin.llm_prompt_logger", mock_logger)
-    monkeypatch.setattr("openhands.llm.debug_mixin.llm_response_logger", mock_logger)
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_prompt_logger', mock_logger)
+    monkeypatch.setattr('openhands.llm.debug_mixin.llm_response_logger', mock_logger)
     return mock_logger
 
 
 @pytest.fixture
 def default_config():
     return LLMConfig(
-        model="gpt-4o",
-        api_key="test_key",
+        model='gpt-4o',
+        api_key='test_key',
         num_retries=2,
         retry_min_wait=1,
         retry_max_wait=2,
@@ -36,23 +36,23 @@ def default_config():
 
 
 def test_handle_nonexistent_issue_reference():
-    llm_config = LLMConfig(model="test", api_key="test")
+    llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(
-        GithubPRHandler("test-owner", "test-repo", "test-token"), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock the requests.get to simulate a 404 error
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = httpx.HTTPError(
-        "404 Client Error: Not Found"
+        '404 Client Error: Not Found'
     )
 
-    with patch("httpx.get", return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with a non-existent issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
-            issue_body="This references #999999",  # Non-existent issue
+            issue_body='This references #999999',  # Non-existent issue
             review_comments=[],
             review_threads=[],
             thread_comments=None,
@@ -63,23 +63,23 @@ def test_handle_nonexistent_issue_reference():
 
 
 def test_handle_rate_limit_error():
-    llm_config = LLMConfig(model="test", api_key="test")
+    llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(
-        GithubPRHandler("test-owner", "test-repo", "test-token"), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock the requests.get to simulate a rate limit error
     mock_response = MagicMock()
     mock_response.raise_for_status.side_effect = httpx.HTTPError(
-        "403 Client Error: Rate Limit Exceeded"
+        '403 Client Error: Rate Limit Exceeded'
     )
 
-    with patch("httpx.get", return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
-            issue_body="This references #123",
+            issue_body='This references #123',
             review_comments=[],
             review_threads=[],
             thread_comments=None,
@@ -90,18 +90,18 @@ def test_handle_rate_limit_error():
 
 
 def test_handle_network_error():
-    llm_config = LLMConfig(model="test", api_key="test")
+    llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(
-        GithubPRHandler("test-owner", "test-repo", "test-token"), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock the requests.get to simulate a network error
-    with patch("httpx.get", side_effect=httpx.NetworkError("Network Error")):
+    with patch('httpx.get', side_effect=httpx.NetworkError('Network Error')):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
-            issue_body="This references #123",
+            issue_body='This references #123',
             review_comments=[],
             review_threads=[],
             thread_comments=None,
@@ -112,29 +112,29 @@ def test_handle_network_error():
 
 
 def test_successful_issue_reference():
-    llm_config = LLMConfig(model="test", api_key="test")
+    llm_config = LLMConfig(model='test', api_key='test')
     handler = ServiceContextPR(
-        GithubPRHandler("test-owner", "test-repo", "test-token"), llm_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), llm_config
     )
 
     # Mock a successful response
     mock_response = MagicMock()
     mock_response.raise_for_status.return_value = None
-    mock_response.json.return_value = {"body": "This is the referenced issue body"}
+    mock_response.json.return_value = {'body': 'This is the referenced issue body'}
 
-    with patch("httpx.get", return_value=mock_response):
+    with patch('httpx.get', return_value=mock_response):
         # Call the method with an issue reference
         result = handler._strategy.get_context_from_external_issues_references(
             closing_issues=[],
             closing_issue_numbers=[],
-            issue_body="This references #123",
+            issue_body='This references #123',
             review_comments=[],
             review_threads=[],
             thread_comments=None,
         )
 
         # The method should return a list with the referenced issue body
-        assert result == ["This is the referenced issue body"]
+        assert result == ['This is the referenced issue body']
 
 
 class MockLLMResponse:
@@ -185,21 +185,21 @@ class DotDict(dict):
             )
 
 
-@patch("openhands.llm.llm.litellm_completion")
+@patch('openhands.llm.llm.litellm_completion')
 def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_config):
     """Test that the retry mechanism in guess_success respects wait time between retries."""
-    with patch("time.sleep") as mock_sleep:
+    with patch('time.sleep') as mock_sleep:
         # Simulate a rate limit error followed by a successful response
         mock_litellm_completion.side_effect = [
             RateLimitError(
-                "Rate limit exceeded", llm_provider="test_provider", model="test_model"
+                'Rate limit exceeded', llm_provider='test_provider', model='test_model'
             ),
             DotDict(
                 {
-                    "choices": [
+                    'choices': [
                         {
-                            "message": {
-                                "content": "--- success\ntrue\n--- explanation\nRetry successful"
+                            'message': {
+                                'content': '--- success\ntrue\n--- explanation\nRetry successful'
                             }
                         }
                     ]
@@ -209,27 +209,27 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
 
         llm = LLM(config=default_config)
         handler = ServiceContextIssue(
-            GithubIssueHandler("test-owner", "test-repo", "test-token"), default_config
+            GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
         )
         handler.llm = llm
 
         # Mock issue and history
         issue = Issue(
-            owner="test-owner",
-            repo="test-repo",
+            owner='test-owner',
+            repo='test-repo',
             number=1,
-            title="Test Issue",
-            body="This is a test issue.",
-            thread_comments=["Please improve error handling"],
+            title='Test Issue',
+            body='This is a test issue.',
+            thread_comments=['Please improve error handling'],
         )
-        history = [MessageAction(content="Fixed error handling.")]
+        history = [MessageAction(content='Fixed error handling.')]
 
         # Call guess_success
         success, _, explanation = handler.guess_success(issue, history)
 
         # Assertions
         assert success is True
-        assert explanation == "Retry successful"
+        assert explanation == 'Retry successful'
         assert mock_litellm_completion.call_count == 2  # Two attempts made
         mock_sleep.assert_called_once()  # Sleep called once between retries
 
@@ -238,35 +238,35 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
         assert (
             default_config.retry_min_wait <= wait_time <= default_config.retry_max_wait
         ), (
-            f"Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}"
+            f'Expected wait time between {default_config.retry_min_wait} and {default_config.retry_max_wait} seconds, but got {wait_time}'
         )
 
 
-@patch("openhands.llm.llm.litellm_completion")
+@patch('openhands.llm.llm.litellm_completion')
 def test_guess_success_exhausts_retries(mock_completion, default_config):
     """Test the retry mechanism in guess_success exhausts retries and raises an error."""
     # Simulate persistent rate limit errors by always raising RateLimitError
     mock_completion.side_effect = RateLimitError(
-        "Rate limit exceeded", llm_provider="test_provider", model="test_model"
+        'Rate limit exceeded', llm_provider='test_provider', model='test_model'
     )
 
     # Initialize LLM and handler
     llm = LLM(config=default_config)
     handler = ServiceContextPR(
-        GithubPRHandler("test-owner", "test-repo", "test-token"), default_config
+        GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
     )
     handler.llm = llm
 
     # Mock issue and history
     issue = Issue(
-        owner="test-owner",
-        repo="test-repo",
+        owner='test-owner',
+        repo='test-repo',
         number=1,
-        title="Test Issue",
-        body="This is a test issue.",
-        thread_comments=["Please improve error handling"],
+        title='Test Issue',
+        body='This is a test issue.',
+        thread_comments=['Please improve error handling'],
     )
-    history = [MessageAction(content="Fixed error handling.")]
+    history = [MessageAction(content='Fixed error handling.')]
 
     # Call guess_success and expect it to raise an error after retries
     with pytest.raises(RateLimitError):

@@ -43,17 +43,17 @@ class SandboxConfig(BaseModel):
             This is useful when deploying OpenHands in a remote machine where you need to expose a specific port.
     """
 
-    remote_runtime_api_url: str | None = Field(default="http://localhost:8000")
-    local_runtime_url: str = Field(default="http://localhost")
+    remote_runtime_api_url: str | None = Field(default='http://localhost:8000')
+    local_runtime_url: str = Field(default='http://localhost')
     keep_runtime_alive: bool = Field(default=False)
     pause_closed_runtimes: bool = Field(default=True)
     rm_all_containers: bool = Field(default=False)
     api_key: str | None = Field(default=None)
     base_container_image: str | None = Field(
-        default="nikolaik/python-nodejs:python3.12-nodejs22"
+        default='nikolaik/python-nodejs:python3.12-nodejs22'
     )
     runtime_container_image: str | None = Field(default=None)
-    user_id: int = Field(default=os.getuid() if hasattr(os, "getuid") else 1000)
+    user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
     timeout: int = Field(default=120)
     remote_runtime_init_timeout: int = Field(default=180)
     remote_runtime_api_timeout: int = Field(default=10)
@@ -65,7 +65,7 @@ class SandboxConfig(BaseModel):
         default=False
     )  # once enabled, OpenHands would lint files after editing
     use_host_network: bool = Field(default=False)
-    runtime_binding_address: str = Field(default="0.0.0.0")
+    runtime_binding_address: str = Field(default='0.0.0.0')
     runtime_extra_build_args: list[str] | None = Field(default=None)
     initialize_plugins: bool = Field(default=True)
     force_rebuild_runtime: bool = Field(default=False)
@@ -75,7 +75,7 @@ class SandboxConfig(BaseModel):
     platform: str | None = Field(default=None)
     close_delay: int = Field(
         default=3600,
-        description="The delay in seconds before closing the sandbox after the agent is done.",
+        description='The delay in seconds before closing the sandbox after the agent is done.',
     )
     remote_runtime_resource_factor: int = Field(default=1)
     enable_gpu: bool = Field(default=False)
@@ -89,10 +89,10 @@ class SandboxConfig(BaseModel):
     )
 
     cuda_visible_devices: str | None = Field(default=None)
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
-    def from_toml_section(cls, data: dict) -> dict[str, "SandboxConfig"]:
+    def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
         """Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
 
         The configuration is built from all keys in data.
@@ -105,14 +105,14 @@ class SandboxConfig(BaseModel):
 
         # Try to create the configuration instance
         try:
-            sandbox_mapping["sandbox"] = cls.model_validate(data)
+            sandbox_mapping['sandbox'] = cls.model_validate(data)
         except ValidationError as e:
-            raise ValueError(f"Invalid sandbox configuration: {e}")
+            raise ValueError(f'Invalid sandbox configuration: {e}')
 
         return sandbox_mapping
 
-    @model_validator(mode="after")
-    def set_default_base_image(self) -> "SandboxConfig":
+    @model_validator(mode='after')
+    def set_default_base_image(self) -> 'SandboxConfig':
         if self.base_container_image is None:
-            self.base_container_image = "nikolaik/python-nodejs:python3.12-nodejs22"
+            self.base_container_image = 'nikolaik/python-nodejs:python3.12-nodejs22'
         return self

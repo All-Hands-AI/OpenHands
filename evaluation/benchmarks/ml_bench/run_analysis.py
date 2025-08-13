@@ -21,48 +21,48 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
     costs = []
     instance_ids = set()
     instances = []
-    with open(res_file_path, "r") as file:
+    with open(res_file_path, 'r') as file:
         for line in file:
             data = json.loads(line.strip())
-            success = data["metrics"]["success"]
-            if data["instance_id"] in instance_ids:
-                print(f"WARNING: Duplicate instance_id found: {data['instance_id']}")
+            success = data['metrics']['success']
+            if data['instance_id'] in instance_ids:
+                print(f'WARNING: Duplicate instance_id found: {data["instance_id"]}')
                 continue
-            instance_ids.add(data["instance_id"])
+            instance_ids.add(data['instance_id'])
             instances.append(data)
             if success:
                 passed.append(
                     {
-                        "instance_id": data["instance_id"],
-                        "repo": data["repo"],
-                        "instruction": data["instruction"],
-                        "eval_script": data["eval_script"],
-                        "eval_exit_code": data["eval_exit_code"],
-                        "eval_output": data["eval_output"],
-                        "accumulated_cost": data["metrics"]["accumulated_cost"],
+                        'instance_id': data['instance_id'],
+                        'repo': data['repo'],
+                        'instruction': data['instruction'],
+                        'eval_script': data['eval_script'],
+                        'eval_exit_code': data['eval_exit_code'],
+                        'eval_output': data['eval_output'],
+                        'accumulated_cost': data['metrics']['accumulated_cost'],
                     }
                 )
             else:
                 failed.append(
                     {
-                        "instance_id": data["instance_id"],
-                        "repo": data["repo"],
-                        "instruction": data["instruction"],
-                        "metadata": data["metadata"],
-                        "history": data["history"],
-                        "eval_script": data["eval_script"],
-                        "eval_exit_code": data["eval_exit_code"],
-                        "eval_output": data["eval_output"],
-                        "accumulated_cost": data["metrics"]["accumulated_cost"],
+                        'instance_id': data['instance_id'],
+                        'repo': data['repo'],
+                        'instruction': data['instruction'],
+                        'metadata': data['metadata'],
+                        'history': data['history'],
+                        'eval_script': data['eval_script'],
+                        'eval_exit_code': data['eval_exit_code'],
+                        'eval_output': data['eval_output'],
+                        'accumulated_cost': data['metrics']['accumulated_cost'],
                     }
                 )
-            costs.append(data["metrics"]["accumulated_cost"])
+            costs.append(data['metrics']['accumulated_cost'])
 
         # sort by instance_id
-        instances.sort(key=lambda x: x["instance_id"])
-        with open(res_file_path, "w") as file:
+        instances.sort(key=lambda x: x['instance_id'])
+        with open(res_file_path, 'w') as file:
             for instance in instances:
-                file.write(json.dumps(instance) + "\n")
+                file.write(json.dumps(instance) + '\n')
         return passed, failed, costs
 
 
@@ -71,16 +71,16 @@ def classify_error(llm: LLM, failed_case: dict) -> str:
     Please classify the error for the following failed case based on the history and eval_output:
 
     Instruction:
-    {failed_case["instruction"]}
+    {failed_case['instruction']}
 
     Eval Script:
-    {failed_case["eval_script"]}s
+    {failed_case['eval_script']}s
 
     History:
-    {failed_case["history"]}
+    {failed_case['history']}
 
     Eval Output:
-    {failed_case["eval_output"]}
+    {failed_case['eval_output']}
 
     The error categories are:
     E1: Hallucination Errors - The model misinterpreted the user's intention, misplaced Python code and bash script, or generated random or irrelevant code.
@@ -93,34 +93,34 @@ def classify_error(llm: LLM, failed_case: dict) -> str:
     """
 
     try:
-        response = llm.completion(messages=[{"content": prompt, "role": "user"}])
-        error_category = response.choices[0].message["content"]
+        response = llm.completion(messages=[{'content': prompt, 'role': 'user'}])
+        error_category = response.choices[0].message['content']
     except Exception as e:
         logger.error(
-            f"Failed to classify the error for the failed case: {failed_case['instance_id']}"
+            f'Failed to classify the error for the failed case: {failed_case["instance_id"]}'
         )
         logger.error(e)
         error_category = input(
-            failed_case["instruction"]
-            + ": "
-            + failed_case["eval_script"]
-            + " - "
-            + failed_case["eval_output"]
+            failed_case['instruction']
+            + ': '
+            + failed_case['eval_script']
+            + ' - '
+            + failed_case['eval_output']
         )
 
-    if error_category not in ["E1", "E2", "E3", "E4", "E5"]:
-        raise ValueError(f"Invalid error category: {error_category}")
+    if error_category not in ['E1', 'E2', 'E3', 'E4', 'E5']:
+        raise ValueError(f'Invalid error category: {error_category}')
 
     return error_category
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     parser.add_argument(
-        "--json_file_path",
+        '--json_file_path',
         type=str,
         required=True,
-        help="Path to the jsonl file containing the evaluation results",
+        help='Path to the jsonl file containing the evaluation results',
     )
     args, _ = parser.parse_known_args()
 
@@ -133,38 +133,38 @@ if __name__ == "__main__":
 
         if specified_llm_config:
             config.llm = specified_llm_config
-    logger.info(f"Config for evaluation: {config}")
+    logger.info(f'Config for evaluation: {config}')
     llm = LLM(llm_config=specified_llm_config)
 
     passed, new_failed, costs = extract_test_results(args.json_file_path)
 
     failed = []
-    if os.path.exists(args.json_file_path.replace(".jsonl", "_failed.jsonl")):
-        with open(args.json_file_path.replace(".jsonl", "_failed.jsonl"), "r") as file:
+    if os.path.exists(args.json_file_path.replace('.jsonl', '_failed.jsonl')):
+        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'r') as file:
             for line in file:
                 failed.append(json.loads(line.strip()))
         print(
-            f"Loaded {len(failed)} failed cases from {args.json_file_path.replace('.jsonl', '_failed.jsonl')}"
+            f'Loaded {len(failed)} failed cases from {args.json_file_path.replace(".jsonl", "_failed.jsonl")}'
         )
 
     for failed_case in tqdm.tqdm(new_failed):
-        if failed_case["instance_id"] in [case["instance_id"] for case in failed]:
+        if failed_case['instance_id'] in [case['instance_id'] for case in failed]:
             continue
         error_category = classify_error(llm, failed_case)
-        failed_case["error_category"] = error_category
+        failed_case['error_category'] = error_category
         failed.append(failed_case)
-        with open(args.json_file_path.replace(".jsonl", "_failed.jsonl"), "a") as file:
-            file.write(json.dumps(failed_case) + "\n")
+        with open(args.json_file_path.replace('.jsonl', '_failed.jsonl'), 'a') as file:
+            file.write(json.dumps(failed_case) + '\n')
 
     # Print the summary
-    print("Summary:")
-    print(f"Passed: {len(passed)}")
-    print(f"Failed: {len(failed)}")
-    print(f"Costs: {costs}")
-    print("Failed cases:")
+    print('Summary:')
+    print(f'Passed: {len(passed)}')
+    print(f'Failed: {len(failed)}')
+    print(f'Costs: {costs}')
+    print('Failed cases:')
     error_categories = {}
     for case in failed:
-        error_category = case["error_category"]
+        error_category = case['error_category']
         if error_category not in error_categories:
             error_categories[error_category] = 0
         error_categories[error_category] += 1

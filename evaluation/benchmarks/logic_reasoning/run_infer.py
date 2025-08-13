@@ -34,11 +34,11 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    "CodeActAgent": "When you think you have solved the question, please first send your answer to user through message and then exit.\n"
+    'CodeActAgent': 'When you think you have solved the question, please first send your answer to user through message and then exit.\n'
 }
 
 
@@ -46,15 +46,15 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "xingyaoww/od-eval-logic-reasoning:v1.0"
+    sandbox_config.base_container_image = 'xingyaoww/od-eval-logic-reasoning:v1.0'
     sandbox_config.runtime_extra_deps = (
-        "$OH_INTERPRETER_PATH -m pip install scitools-pyke"
+        '$OH_INTERPRETER_PATH -m pip install scitools-pyke'
     )
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -69,37 +69,37 @@ def get_config(
 
 def get_choice(answer_str):
     choices = [
-        "A",
-        "B",
-        "C",
-        "D",
-        "E",
-        "F",
-        "G",
-        "H",
-        "A)",
-        "B)",
-        "C)",
-        "D)",
-        "E)",
-        "F)",
-        "G)",
-        "H)",
-        "A.",
-        "B.",
-        "C.",
-        "D.",
-        "E.",
-        "F.",
-        "G.",
-        "H.",
+        'A',
+        'B',
+        'C',
+        'D',
+        'E',
+        'F',
+        'G',
+        'H',
+        'A)',
+        'B)',
+        'C)',
+        'D)',
+        'E)',
+        'F)',
+        'G)',
+        'H)',
+        'A.',
+        'B.',
+        'C.',
+        'D.',
+        'E.',
+        'F.',
+        'G.',
+        'H.',
     ]
     for c in choices:
         if answer_str.startswith(c):
-            return c.replace(")", "")
+            return c.replace(')', '')
 
-    if answer_str.startswith(":"):
-        return answer_str.replace(":", "").replace(".", "").strip()
+    if answer_str.startswith(':'):
+        return answer_str.replace(':', '').replace('.', '').strip()
     return None
 
 
@@ -107,16 +107,16 @@ def get_test_result(
     model_answer: str,
     ground_truth: str,
 ) -> dict[str, bool]:
-    gold_answer = ground_truth.replace("(", "").replace(")", "").strip()
-    answer_str = model_answer if model_answer is not None else ""
+    gold_answer = ground_truth.replace('(', '').replace(')', '').strip()
+    answer_str = model_answer if model_answer is not None else ''
     prediction = get_choice(answer_str)
 
     indicators = [
-        "the correct option is",
-        "the correct answer is",
-        "The correct answer is",
-        "The correct option is",
-        "the answer is",
+        'the correct option is',
+        'the correct answer is',
+        'The correct answer is',
+        'The correct option is',
+        'the answer is',
     ]
     if prediction is None:
         for indicator in indicators:
@@ -126,7 +126,7 @@ def get_test_result(
                 break
 
     isTrue = prediction == gold_answer
-    test_result = {"result": isTrue}
+    test_result = {'result': isTrue}
     return test_result
 
 
@@ -141,44 +141,44 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command="cd /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     # copy logic_inference.py to /workspace
-    runtime.copy_to(os.path.join(CUR_EVAL_DIR, "logic_inference.py"), "/workspace")
+    runtime.copy_to(os.path.join(CUR_EVAL_DIR, 'logic_inference.py'), '/workspace')
     # check if the file exists
-    obs = runtime.run_action(CmdRunAction(command="ls /workspace"))
+    obs = runtime.run_action(CmdRunAction(command='ls /workspace'))
     assert obs.exit_code == 0
-    assert "logic_inference.py" in obs.content
+    assert 'logic_inference.py' in obs.content
 
-    runtime.add_env_vars({"DATASET_NAME": metadata.dataset})
+    runtime.add_env_vars({'DATASET_NAME': metadata.dataset})
 
-    action = CmdRunAction(command="mkdir -p /workspace/.cache_program")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace/.cache_program')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = IPythonRunCellAction(code="%pip install scitools-pyke")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = IPythonRunCellAction(code='%pip install scitools-pyke')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     ipynb_obs = runtime.run_action(action)
-    logger.info(ipynb_obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(ipynb_obs, extra={'msg_type': 'OBSERVATION'})
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 # Prepare instruction
-with open(os.path.join(CUR_EVAL_DIR, "instruction.txt"), "r") as f:
+with open(os.path.join(CUR_EVAL_DIR, 'instruction.txt'), 'r') as f:
     INSTRUCTION_TEMPLATE = f.read()
 
 
@@ -191,16 +191,16 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
-        reset_logger_for_multiprocessing(logger, instance["instance_id"], log_dir)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance['instance_id']}.")
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
-    instance_logic_programs = instance["raw_logic_programs"][0].strip()
+    instance_logic_programs = instance['raw_logic_programs'][0].strip()
     instruction = (
-        INSTRUCTION_TEMPLATE.replace("[[dataset_name]]", dataset_name)
-        .replace("[[logic_programs]]", instance_logic_programs)
-        .replace("[[logic_inference_path.py]]", "/workspace/logic_inference.py")
+        INSTRUCTION_TEMPLATE.replace('[[dataset_name]]', dataset_name)
+        .replace('[[logic_programs]]', instance_logic_programs)
+        .replace('[[logic_inference_path.py]]', '/workspace/logic_inference.py')
     )
 
     # NOTE: You can actually set slightly different instruction for different agents
@@ -226,9 +226,9 @@ def process_instance(
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
-    final_message = ""
+    final_message = ''
     for event in reversed(state.history):
         if isinstance(event, AgentFinishAction):
             final_message = event.thought
@@ -239,13 +239,13 @@ def process_instance(
 
     final_message = final_message.strip("'")
     logger.info(
-        f"Predicted answer: {final_message}, Ground truth: {instance['answer']}"
+        f'Predicted answer: {final_message}, Ground truth: {instance["answer"]}'
     )
 
     test_result = get_test_result(
-        model_answer=final_message, ground_truth=instance["answer"]
+        model_answer=final_message, ground_truth=instance['answer']
     )
-    test_result["final_message"] = final_message
+    test_result['final_message'] = final_message
 
     metrics = state.metrics.get() if state.metrics else None
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
@@ -255,7 +255,7 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance["instance_id"],
+        instance_id=instance['instance_id'],
         instruction=instruction,
         metadata=metadata,
         history=histories,
@@ -266,27 +266,27 @@ def process_instance(
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     parser.add_argument(
-        "--dataset",
+        '--dataset',
         type=str,
-        help="the logic reasoning dataset to evaluate on {ProntoQA, ProofWriter}",
-        default="ProofWriter",
+        help='the logic reasoning dataset to evaluate on {ProntoQA, ProofWriter}',
+        default='ProofWriter',
     )
     parser.add_argument(
-        "--data-split",
+        '--data-split',
         type=str,
-        help="data split to evaluate on {validation}",  # right now we only support validation split
-        default="validation",
+        help='data split to evaluate on {validation}',  # right now we only support validation split
+        default='validation',
     )
     args, _ = parser.parse_known_args()
 
     dataset_name = args.dataset
     data_split = args.data_split
-    dataset = load_dataset(f"renma/{dataset_name}")
+    dataset = load_dataset(f'renma/{dataset_name}')
     dataset_df = dataset[data_split].to_pandas()
-    dataset_df.rename(columns={"id": "instance_id"}, inplace=True)
+    dataset_df.rename(columns={'id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -294,7 +294,7 @@ if __name__ == "__main__":
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
@@ -304,7 +304,7 @@ if __name__ == "__main__":
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset_df, output_file, args.eval_n_limit)
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance

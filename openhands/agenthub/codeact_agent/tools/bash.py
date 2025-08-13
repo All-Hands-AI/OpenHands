@@ -41,32 +41,32 @@ def create_cmd_run_tool(
         _SHORT_BASH_DESCRIPTION if use_short_description else _DETAILED_BASH_DESCRIPTION
     )
     return ChatCompletionToolParam(
-        type="function",
+        type='function',
         function=ChatCompletionToolParamFunctionChunk(
             name=EXECUTE_BASH_TOOL_NAME,
             description=refine_prompt(description),
             parameters={
-                "type": "object",
-                "properties": {
-                    "command": {
-                        "type": "string",
-                        "description": refine_prompt(
-                            "The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together."
+                'type': 'object',
+                'properties': {
+                    'command': {
+                        'type': 'string',
+                        'description': refine_prompt(
+                            'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.'
                         ),
                     },
-                    "is_input": {
-                        "type": "string",
-                        "description": refine_prompt(
-                            "If True, the command is an input to the running process. If False, the command is a bash command to be executed in the terminal. Default is False."
+                    'is_input': {
+                        'type': 'string',
+                        'description': refine_prompt(
+                            'If True, the command is an input to the running process. If False, the command is a bash command to be executed in the terminal. Default is False.'
                         ),
-                        "enum": ["true", "false"],
+                        'enum': ['true', 'false'],
                     },
-                    "timeout": {
-                        "type": "number",
-                        "description": "Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.",
+                    'timeout': {
+                        'type': 'number',
+                        'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
                     },
                 },
-                "required": ["command"],
+                'required': ['command'],
             },
         ),
     )

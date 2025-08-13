@@ -30,7 +30,7 @@ class SecurityAnalyzer:
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
-        logger.debug(f"SecurityAnalyzer received event: {event}")
+        logger.debug(f'SecurityAnalyzer received event: {event}')
         await self.log_event(event)
         if not isinstance(event, Action):
             return
@@ -40,12 +40,12 @@ class SecurityAnalyzer:
             event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:
-            logger.error(f"Error occurred while analyzing the event: {e}")
+            logger.error(f'Error occurred while analyzing the event: {e}')
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""
         raise NotImplementedError(
-            "Need to implement handle_api_request method in SecurityAnalyzer subclass"
+            'Need to implement handle_api_request method in SecurityAnalyzer subclass'
         )
 
     async def log_event(self, event: Event) -> None:
@@ -59,7 +59,7 @@ class SecurityAnalyzer:
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level."""
         raise NotImplementedError(
-            "Need to implement security_risk method in SecurityAnalyzer subclass"
+            'Need to implement security_risk method in SecurityAnalyzer subclass'
         )
 
     async def close(self) -> None:

@@ -48,29 +48,29 @@ from openhands.utils.async_utils import call_async_from_sync
 config = load_openhands_config()
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    "CodeActAgent": 'When you think you have completed the task, please finish the interaction using the "finish" tool.\n'
+    'CodeActAgent': 'When you think you have completed the task, please finish the interaction using the "finish" tool.\n'
 }
 
 ID2CONDA = {
-    1: "dgl_DS",
-    2: "bert_DS",
-    3: "lavis_DS",
-    4: "if_DS",
-    5: "V2V_DS",
-    6: "esm_DS",
-    7: "OP_DS",
-    8: "TSL_DS",
-    9: "EAP_DS",
-    10: "PG_DS",
-    11: "PIM_DS",
-    12: "AD2_DS",
-    13: "L3_DS",
-    14: "MZ2_DS",
-    15: "GSA2_DS",
+    1: 'dgl_DS',
+    2: 'bert_DS',
+    3: 'lavis_DS',
+    4: 'if_DS',
+    5: 'V2V_DS',
+    6: 'esm_DS',
+    7: 'OP_DS',
+    8: 'TSL_DS',
+    9: 'EAP_DS',
+    10: 'PG_DS',
+    11: 'PIM_DS',
+    12: 'AD2_DS',
+    13: 'L3_DS',
+    14: 'MZ2_DS',
+    15: 'GSA2_DS',
 }
 
 
@@ -78,11 +78,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "public.ecr.aws/i5g0m1f6/ml-bench"
+    sandbox_config.base_container_image = 'public.ecr.aws/i5g0m1f6/ml-bench'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -103,41 +103,41 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     # Set up the task environment
-    action = CmdRunAction(command=f"conda activate {ID2CONDA[instance['github_id']]}")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command=f'conda activate {ID2CONDA[instance["github_id"]]}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    repo_url = instance["github"]
-    repo_name = repo_url.split("/")[-1]
-    action = CmdRunAction(command=f"git clone {repo_url} /workspace/{repo_name}")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    repo_url = instance['github']
+    repo_name = repo_url.split('/')[-1]
+    action = CmdRunAction(command=f'git clone {repo_url} /workspace/{repo_name}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command=f"chmod -R 777 /workspace/{repo_name}")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command=f'chmod -R 777 /workspace/{repo_name}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     # Navigate to the task's code path
-    task_path = os.path.join("/workspace", repo_name, instance["path"][2:])
-    action = CmdRunAction(command=f"cd {task_path}")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
+    action = CmdRunAction(command=f'cd {task_path}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -150,56 +150,56 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
-    repo_url = instance["github"]
-    repo_name = repo_url.split("/")[-1]
-    task_path = os.path.join("/workspace", repo_name, instance["path"][2:])
+    repo_url = instance['github']
+    repo_name = repo_url.split('/')[-1]
+    task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
 
     # Evaluate the agent's script
-    eval_script = os.path.join(task_path, "run.sh")
-    logger.info(f"Running evaluation script: {eval_script}")
+    eval_script = os.path.join(task_path, 'run.sh')
+    logger.info(f'Running evaluation script: {eval_script}')
 
-    action = CmdRunAction(command=f"cat {eval_script}")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command=f'cat {eval_script}')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:
         eval_script_content = obs.content
     else:
-        logger.error(f"Error reading evaluation script: {obs.content}")
-        eval_script_content = ""
+        logger.error(f'Error reading evaluation script: {obs.content}')
+        eval_script_content = ''
 
     action = CmdRunAction(
-        command=f"timeout 120s conda run -n {ID2CONDA[instance['github_id']]} bash {eval_script}",
+        command=f'timeout 120s conda run -n {ID2CONDA[instance["github_id"]]} bash {eval_script}',
         timeout=600,
     )
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     if obs.exit_code == 0:
         eval_output = obs.content
     else:
-        logger.error(f"Error running evaluation script: {obs.content}")
-        eval_output = ""
+        logger.error(f'Error running evaluation script: {obs.content}')
+        eval_output = ''
 
     outputs = {
-        "eval_script_content": eval_script_content,
-        "eval_output": eval_output,
+        'eval_script_content': eval_script_content,
+        'eval_output': eval_output,
     }
     if obs.exit_code != 0 and obs.exit_code != 124:
-        logger.warning(f"Evaluation script failed with exit code {obs.exit_code}")
-        logger.warning(f"Output: {eval_output}")
-        outputs["success"] = int(
-            "KeyboardInterrupt" in eval_output
+        logger.warning(f'Evaluation script failed with exit code {obs.exit_code}')
+        logger.warning(f'Output: {eval_output}')
+        outputs['success'] = int(
+            'KeyboardInterrupt' in eval_output
         )  # super-dainiu: assume ``KeyboardInterrupt`` is a success as is done in ML-Bench
 
     else:
-        logger.info(f"Evaluation script succeeded with exit code {obs.exit_code}")
-        logger.info(f"Output: {eval_output}")
-        outputs["success"] = 1
-    outputs["eval_exit_code"] = obs.exit_code
+        logger.info(f'Evaluation script succeeded with exit code {obs.exit_code}')
+        logger.info(f'Output: {eval_output}')
+        outputs['success'] = 1
+    outputs['eval_exit_code'] = obs.exit_code
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return outputs
 
 
@@ -208,29 +208,29 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
-        reset_logger_for_multiprocessing(logger, instance["instance_id"], log_dir)
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
+        reset_logger_for_multiprocessing(logger, instance['instance_id'], log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance['instance_id']}.")
+        logger.info(f'Starting evaluation for instance {instance["instance_id"]}.')
 
-    repo_url = instance["github"]
-    repo_name = repo_url.split("/")[-1]
-    task_path = os.path.join("/workspace", repo_name, instance["path"][2:])
+    repo_url = instance['github']
+    repo_name = repo_url.split('/')[-1]
+    task_path = os.path.join('/workspace', repo_name, instance['path'][2:])
     # Prepare the task instruction
     instruction = (
-        f"Please complete the Machine Learning task in the following repository: {repo_name}\n\n"
-        f"{instance['instruction']}\n\n"
-        "You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n"
-        f"You can find the task repo at: {task_path}\n\n"
+        f'Please complete the Machine Learning task in the following repository: {repo_name}\n\n'
+        f'{instance["instruction"]}\n\n'
+        'You should create a script named `run.sh` under the specified path in the repo to run the task.\n\n'
+        f'You can find the task repo at: {task_path}\n\n'
         + (
-            "Here is the prefix code for the task:\n"
-            "```bash\n"
-            f"{instance['prefix_code']}\n"
-            "```\n\n"
-            if instance["prefix_code"]
-            else ""
+            'Here is the prefix code for the task:\n'
+            '```bash\n'
+            f'{instance["prefix_code"]}\n'
+            '```\n\n'
+            if instance['prefix_code']
+            else ''
         )
-        + "You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait())."
+        + 'You should terminate the subprocess after running the task (e.g., call subprocess.Popen(args).wait()).'
     )
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
 
@@ -261,7 +261,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
     # Save the output
     output = EvalOutput(
-        instance_id=instance["instance_id"],
+        instance_id=instance['instance_id'],
         instance=instance.to_dict(),
         instruction=instruction,
         metadata=metadata,
@@ -272,22 +272,22 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     parser.add_argument(
-        "-s",
-        "--eval-split",
+        '-s',
+        '--eval-split',
         type=str,
-        default="quarter",
-        choices=["full", "quarter"],
-        help="data split to evaluate on, either full or quarter",
+        default='quarter',
+        choices=['full', 'quarter'],
+        help='data split to evaluate on, either full or quarter',
     )
     args, _ = parser.parse_known_args()
 
     data_split = args.eval_split
 
-    ml_bench = load_dataset("super-dainiu/ml-bench", split=data_split).to_pandas()
-    ml_bench.rename(columns={"id": "instance_id"}, inplace=True)
+    ml_bench = load_dataset('super-dainiu/ml-bench', split=data_split).to_pandas()
+    ml_bench.rename(columns={'id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -295,17 +295,17 @@ if __name__ == "__main__":
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        f"ml-bench-{data_split}",
+        f'ml-bench-{data_split}',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(ml_bench, output_file, args.eval_n_limit)
 
     run_evaluation(

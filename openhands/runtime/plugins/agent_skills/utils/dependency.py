@@ -8,4 +8,4 @@ def import_functions(
         if hasattr(module, name):
             target_globals[name] = getattr(module, name)
         else:
-            raise ValueError(f"Function {name} not found in {module.__name__}")
+            raise ValueError(f'Function {name} not found in {module.__name__}')

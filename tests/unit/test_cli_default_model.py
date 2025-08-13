@@ -7,11 +7,11 @@ from openhands.cli.utils import VERIFIED_ANTHROPIC_MODELS
 
 
 @pytest.mark.asyncio
-@patch("openhands.cli.settings.get_supported_llm_models")
-@patch("openhands.cli.settings.organize_models_and_providers")
-@patch("openhands.cli.settings.PromptSession")
-@patch("openhands.cli.settings.cli_confirm")
-@patch("openhands.cli.settings.print_formatted_text")
+@patch('openhands.cli.settings.get_supported_llm_models')
+@patch('openhands.cli.settings.organize_models_and_providers')
+@patch('openhands.cli.settings.PromptSession')
+@patch('openhands.cli.settings.cli_confirm')
+@patch('openhands.cli.settings.print_formatted_text')
 async def test_anthropic_default_model_is_best_verified(
     mock_print,
     mock_confirm,
@@ -22,13 +22,13 @@ async def test_anthropic_default_model_is_best_verified(
     """Test that the default model for anthropic is the best verified model."""
     # Setup mocks
     mock_get_models.return_value = [
-        "anthropic/claude-sonnet-4-20250514",
-        "anthropic/claude-2",
+        'anthropic/claude-sonnet-4-20250514',
+        'anthropic/claude-2',
     ]
     mock_organize.return_value = {
-        "anthropic": {
-            "models": ["claude-sonnet-4-20250514", "claude-2"],
-            "separator": "/",
+        'anthropic': {
+            'models': ['claude-sonnet-4-20250514', 'claude-2'],
+            'separator': '/',
         },
     }
 
@@ -67,13 +67,13 @@ async def test_anthropic_default_model_is_best_verified(
         args, _ = call
         if (
             args
-            and hasattr(args[0], "value")
-            and f"Default model: </grey><green>{best_verified_model}</green>"
+            and hasattr(args[0], 'value')
+            and f'Default model: </grey><green>{best_verified_model}</green>'
             in args[0].value
         ):
             default_model_displayed = True
             break
 
     assert default_model_displayed, (
-        f"Default model displayed was not {best_verified_model}"
+        f'Default model displayed was not {best_verified_model}'
     )

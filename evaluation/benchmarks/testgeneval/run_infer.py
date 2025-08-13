@@ -48,10 +48,10 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
-RUN_WITH_BROWSING = os.environ.get("RUN_WITH_BROWSING", "false").lower() == "true"
+RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 
@@ -63,16 +63,16 @@ def _preprocess_instance(d):
 
 
 def _get_swebench_workspace_dir_name(instance: pd.Series) -> str:
-    return f"{instance.repo}__{instance.version}".replace("/", "__")
+    return f'{instance.repo}__{instance.version}'.replace('/', '__')
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     # workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     # Prepare instruction
-    coverage_command = " ".join(
+    coverage_command = ' '.join(
         [
-            MAP_REPO_VERSION_TO_SPECS[instance["repo"]][instance["version"]][
-                "test_cmd"
+            MAP_REPO_VERSION_TO_SPECS[instance['repo']][instance['version']][
+                'test_cmd'
             ],
             *get_test_directives(instance),
         ]
@@ -81,37 +81,37 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata):
     # Testing general agents
     prompt_to_use = (
         CODEACT_TESTGEN_PROMPT_ITERATE
-        if instance["full_pred"] is not None
+        if instance['full_pred'] is not None
         else CODEACT_TESTGEN_PROMPT
     )
     instruction = prompt_to_use.format(
-        code_file=os.path.join("/testbed", instance.code_file),
-        test_file=os.path.join("/testbed", instance.test_file),
+        code_file=os.path.join('/testbed', instance.code_file),
+        test_file=os.path.join('/testbed', instance.test_file),
         coverage_command=coverage_command,
-        code_src=instance["code_src"],
-        imports="\n".join(instance.local_imports),
+        code_src=instance['code_src'],
+        imports='\n'.join(instance.local_imports),
         workspace_dir_name=_get_swebench_workspace_dir_name(instance),
     )
 
     if RUN_WITH_BROWSING:
         instruction += (
-            "<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n"
+            '<IMPORTANT!>\nYou SHOULD NEVER attempt to browse the web. </IMPORTANT!>\n'
         )
 
     return instruction
 
 
 # TODO: migrate all swe-bench docker to ghcr.io/openhands
-DOCKER_IMAGE_PREFIX = os.environ.get("EVAL_DOCKER_IMAGE_PREFIX", "docker.io/kdjain/")
-logger.info(f"Using docker image prefix: {DOCKER_IMAGE_PREFIX}")
+DOCKER_IMAGE_PREFIX = os.environ.get('EVAL_DOCKER_IMAGE_PREFIX', 'docker.io/kdjain/')
+logger.info(f'Using docker image prefix: {DOCKER_IMAGE_PREFIX}')
 
 
 def get_instance_docker_image(instance_id: str) -> str:
-    image_name = "sweb.eval.x86_64." + instance_id
+    image_name = 'sweb.eval.x86_64.' + instance_id
     image_name = image_name.replace(
-        "__", "_s_"
+        '__', '_s_'
     )  # to comply with docker image naming convention
-    return DOCKER_IMAGE_PREFIX.rstrip("/") + "/" + image_name
+    return DOCKER_IMAGE_PREFIX.rstrip('/') + '/' + image_name
 
 
 def get_config(
@@ -119,18 +119,18 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     # We use a different instance image for the each instance of TestGenEval
-    base_container_image = get_instance_docker_image(instance["instance_id_swebench"])
+    base_container_image = get_instance_docker_image(instance['instance_id_swebench'])
     logger.info(
-        f"Using instance container image: {base_container_image}. "
-        f"Please make sure this image exists. "
-        f"Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues."
+        f'Using instance container image: {base_container_image}. '
+        f'Please make sure this image exists. '
+        f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
 
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
-        runtime=os.environ.get("RUNTIME", "eventstream"),
+        runtime=os.environ.get('RUNTIME', 'eventstream'),
         sandbox=SandboxConfig(
             base_container_image=base_container_image,
             enable_auto_lint=True,
@@ -138,10 +138,10 @@ def get_config(
             # large enough timeout, since some testcases take very long to run
             timeout=300,
             # Add platform to the sandbox config to solve issue 4401
-            platform="linux/amd64",
-            api_key=os.environ.get("ALLHANDS_API_KEY", None),
+            platform='linux/amd64',
+            api_key=os.environ.get('ALLHANDS_API_KEY', None),
             remote_runtime_api_url=os.environ.get(
-                "SANDBOX_REMOTE_RUNTIME_API_URL", "http://localhost:8000"
+                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
             ),
             keep_runtime_alive=False,
             remote_runtime_init_timeout=3600,
@@ -152,7 +152,7 @@ def get_config(
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
-            metadata.llm_config, metadata.eval_output_dir, instance["id"]
+            metadata.llm_config, metadata.eval_output_dir, instance['id']
         )
     )
     agent_config = AgentConfig(
@@ -174,54 +174,54 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info("-" * 30)
-    logger.info("BEGIN Runtime Initialization Fn")
-    logger.info("-" * 30)
+    logger.info('-' * 30)
+    logger.info('BEGIN Runtime Initialization Fn')
+    logger.info('-' * 30)
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     obs: CmdOutputObservation
 
-    instance["instance_id"] = instance["instance_id_swebench"]
+    instance['instance_id'] = instance['instance_id_swebench']
 
     # Set instance id
     action = CmdRunAction(
-        command=f"""echo 'export SWE_INSTANCE_ID={instance["instance_id_swebench"]}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
+        command=f"""echo 'export SWE_INSTANCE_ID={instance['instance_id_swebench']}' >> ~/.bashrc && echo 'export PIP_CACHE_DIR=~/.cache/pip' >> ~/.bashrc && echo "alias git='git --no-pager'" >> ~/.bashrc"""
     )
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
-        obs.exit_code == 0, f"Failed to export SWE_INSTANCE_ID: {str(obs)}"
+        obs.exit_code == 0, f'Failed to export SWE_INSTANCE_ID: {str(obs)}'
     )
 
     action = CmdRunAction(command="""export USER=$(whoami); echo USER=${USER} """)
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
-    assert_and_raise(obs.exit_code == 0, f"Failed to export USER: {str(obs)}")
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to export USER: {str(obs)}')
 
     # inject the init script
     script_dir = os.path.dirname(__file__)
 
     # inject the instance info
-    action = CmdRunAction(command="mkdir -p /swe_util/eval_data/instances")
+    action = CmdRunAction(command='mkdir -p /swe_util/eval_data/instances')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f"Failed to create /swe_util/eval_data/instances: {str(obs)}",
+        f'Failed to create /swe_util/eval_data/instances: {str(obs)}',
     )
 
-    swe_instance_json_name = "swe-bench-instance.json"
-    swe_prediction = "test_suite.py"
+    swe_instance_json_name = 'swe-bench-instance.json'
+    swe_prediction = 'test_suite.py'
     with tempfile.TemporaryDirectory() as temp_dir:
         # Construct the full path for the desired file name within the temporary directory
         temp_file_path = os.path.join(temp_dir, swe_instance_json_name)
         # Write to the file with the desired name within the temporary directory
-        with open(temp_file_path, "w") as f:
+        with open(temp_file_path, 'w') as f:
             if not isinstance(instance, dict):
                 preprocessed_instance = _preprocess_instance(instance.to_dict())
                 json.dump([preprocessed_instance], f)
@@ -230,96 +230,96 @@ def initialize_runtime(
                 json.dump([preprocessed_instance], f)
 
         # Copy the file to the desired location
-        runtime.copy_to(temp_file_path, "/swe_util/eval_data/instances/")
+        runtime.copy_to(temp_file_path, '/swe_util/eval_data/instances/')
 
-        if instance["full_pred"] is not None:
+        if instance['full_pred'] is not None:
             temp_file_path_pred = os.path.join(temp_dir, swe_prediction)
-            with open(temp_file_path_pred, "w") as f:
-                f.write(instance["full_pred"])
+            with open(temp_file_path_pred, 'w') as f:
+                f.write(instance['full_pred'])
 
-            runtime.copy_to(temp_file_path_pred, "/tmp")
+            runtime.copy_to(temp_file_path_pred, '/tmp')
 
             # Copy the file to the desired location
             action = CmdRunAction(
-                command=f"cp /tmp/test_suite.py /testbed/{instance['test_file']}"
+                command=f'cp /tmp/test_suite.py /testbed/{instance["test_file"]}'
             )
             action.set_hard_timeout(600)
-            logger.info(action, extra={"msg_type": "ACTION"})
+            logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={"msg_type": "OBSERVATION"})
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
             assert_and_raise(
-                obs.exit_code == 0, f"Failed to copy test file: {str(obs)}"
+                obs.exit_code == 0, f'Failed to copy test file: {str(obs)}'
             )
 
             action = CmdRunAction(
                 command='git -C /testbed add . && git -C /testbed commit -m "Add test file"'
             )
             action.set_hard_timeout(600)
-            logger.info(action, extra={"msg_type": "ACTION"})
+            logger.info(action, extra={'msg_type': 'ACTION'})
             obs = runtime.run_action(action)
-            logger.info(obs, extra={"msg_type": "OBSERVATION"})
-            assert_and_raise(obs.exit_code == 0, f"Failed to cat ~/.bashrc: {str(obs)}")
+            logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+            assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
     # inject the instance swe entry
     runtime.copy_to(
-        str(os.path.join(script_dir, "scripts/setup/instance_swe_entry.sh")),
-        "/swe_util/",
+        str(os.path.join(script_dir, 'scripts/setup/instance_swe_entry.sh')),
+        '/swe_util/',
     )
-    action = CmdRunAction(command="cat ~/.bashrc")
+    action = CmdRunAction(command='cat ~/.bashrc')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
-    assert_and_raise(obs.exit_code == 0, f"Failed to cat ~/.bashrc: {str(obs)}")
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to cat ~/.bashrc: {str(obs)}')
 
-    action = CmdRunAction(command="source ~/.bashrc")
+    action = CmdRunAction(command='source ~/.bashrc')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     if isinstance(obs, ErrorObservation):
-        logger.error(f"Failed to source ~/.bashrc: {str(obs)}")
-    assert_and_raise(obs.exit_code == 0, f"Failed to source ~/.bashrc: {str(obs)}")
+        logger.error(f'Failed to source ~/.bashrc: {str(obs)}')
+    assert_and_raise(obs.exit_code == 0, f'Failed to source ~/.bashrc: {str(obs)}')
 
-    action = CmdRunAction(command="source /swe_util/instance_swe_entry.sh")
+    action = CmdRunAction(command='source /swe_util/instance_swe_entry.sh')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f"Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}",
+        f'Failed to source /swe_util/instance_swe_entry.sh: {str(obs)}',
     )
 
-    action = CmdRunAction(command=f"cd /workspace/{workspace_dir_name}")
+    action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     assert_and_raise(
         obs.exit_code == 0,
-        f"Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}",
+        f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
-    action = CmdRunAction(command="git reset --hard")
+    action = CmdRunAction(command='git reset --hard')
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
-    assert_and_raise(obs.exit_code == 0, f"Failed to git reset --hard: {str(obs)}")
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to git reset --hard: {str(obs)}')
 
     action = CmdRunAction(
         command='for remote_name in $(git remote); do git remote remove "${remote_name}"; done'
     )
     action.set_hard_timeout(600)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
-    assert_and_raise(obs.exit_code == 0, f"Failed to remove git remotes: {str(obs)}")
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(obs.exit_code == 0, f'Failed to remove git remotes: {str(obs)}')
 
-    logger.info("-" * 30)
-    logger.info("END Runtime Initialization Fn")
-    logger.info("-" * 30)
+    logger.info('-' * 30)
+    logger.info('END Runtime Initialization Fn')
+    logger.info('-' * 30)
 
 
 def complete_runtime(
@@ -333,38 +333,38 @@ def complete_runtime(
     the agent has run, modify this function.
     """
     try:
-        logger.info("-" * 30)
-        logger.info("BEGIN Runtime Completion Fn")
-        logger.info("-" * 30)
+        logger.info('-' * 30)
+        logger.info('BEGIN Runtime Completion Fn')
+        logger.info('-' * 30)
         obs: CmdOutputObservation
         workspace_dir_name = _get_swebench_workspace_dir_name(instance)
 
-        action = CmdRunAction(command=f"cd /workspace/{workspace_dir_name}")
+        action = CmdRunAction(command=f'cd /workspace/{workspace_dir_name}')
         action.set_hard_timeout(600)
-        logger.info(action, extra={"msg_type": "ACTION"})
+        logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={"msg_type": "OBSERVATION"})
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert_and_raise(
             obs.exit_code == 0,
-            f"Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}",
+            f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
         )
 
-        action = CmdRunAction(command=f"cat {instance.test_file}")
+        action = CmdRunAction(command=f'cat {instance.test_file}')
         action.set_hard_timeout(600)
-        logger.info(action, extra={"msg_type": "ACTION"})
+        logger.info(action, extra={'msg_type': 'ACTION'})
         obs = runtime.run_action(action)
-        logger.info(obs, extra={"msg_type": "OBSERVATION"})
+        logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert_and_raise(
             obs.exit_code == 0,
-            f"Failed to find file: {instance.test_file} in /workspace/{workspace_dir_name}",
+            f'Failed to find file: {instance.test_file} in /workspace/{workspace_dir_name}',
         )
 
         test_suite = obs.content.strip()
     except Exception:
         # Print stack trace
-        print("Skipping, exception in complete_runtime")
+        print('Skipping, exception in complete_runtime')
         print(traceback.format_exc())
-        test_suite = instance["full_pred"] if instance["full_pred"] is not None else ""
+        test_suite = instance['full_pred'] if instance['full_pred'] is not None else ''
 
     # action = CmdRunAction(command='git add -A')
     # action.set_hard_timeout(600)
@@ -373,11 +373,11 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     # assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
 
-    logger.info("-" * 30)
-    logger.info("END Runtime Completion Fn")
-    logger.info("-" * 30)
+    logger.info('-' * 30)
+    logger.info('END Runtime Completion Fn')
+    logger.info('-' * 30)
     return {
-        "test_suite": test_suite,
+        'test_suite': test_suite,
     }
 
 
@@ -391,10 +391,10 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, instance.id, log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance.id}.")
+        logger.info(f'Starting evaluation for instance {instance.id}.')
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
@@ -418,13 +418,13 @@ def process_instance(
 
         # if fatal error, throw EvalError to trigger re-run
         if is_fatal_evaluation_error(state.last_error):
-            raise EvalException("Fatal error detected: " + state.last_error)
+            raise EvalException('Fatal error detected: ' + state.last_error)
 
         # ======= THIS IS SWE-Bench specific =======
         return_val = complete_runtime(runtime, instance)
-        test_suite = return_val["test_suite"]
+        test_suite = return_val['test_suite']
         logger.info(
-            f"Got test suite for instance {instance.instance_id}:\n--------\n{test_suite}\n--------"
+            f'Got test suite for instance {instance.instance_id}:\n--------\n{test_suite}\n--------'
         )
     finally:
         runtime.close()
@@ -432,7 +432,7 @@ def process_instance(
     end_time = time.time()
     elapsed_time = end_time - start_time
     logger.info(
-        f"Evaluation for instance {instance.instance_id} took {elapsed_time:.2f} seconds."
+        f'Evaluation for instance {instance.instance_id} took {elapsed_time:.2f} seconds.'
     )
 
     # ==========================================
@@ -441,14 +441,14 @@ def process_instance(
     # we use eval_infer.sh to evaluate the agent's edits, not here
     # because the agent may alter the environment / testcases
     test_result = {
-        "test_suite": test_suite,
-        "elapsed_time": elapsed_time,
+        'test_suite': test_suite,
+        'elapsed_time': elapsed_time,
     }
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
     histories = [event_to_dict(event) for event in state.history]
     metrics = get_metrics(state)
@@ -469,71 +469,71 @@ def process_instance(
 
 
 def prepare_dataset_pre(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
-    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.toml")
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
     if os.path.exists(file_path):
-        with open(file_path, "r") as file:
+        with open(file_path, 'r') as file:
             data = toml.load(file)
-            if "selected_ids" in data:
-                selected_ids = data["selected_ids"]
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
                 logger.info(
                     f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
                 )
                 subset = dataset[dataset[filter_column].isin(selected_ids)]
-                logger.info(f"Retained {subset.shape[0]} tasks after filtering")
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
 
-                subset["instance_id_swebench"] = subset["instance_id"]
-                subset["instance_id"] = subset["id"]
+                subset['instance_id_swebench'] = subset['instance_id']
+                subset['instance_id'] = subset['id']
                 return subset
 
-    dataset["instance_id_swebench"] = dataset["instance_id"]
-    dataset["instance_id"] = dataset["id"]
+    dataset['instance_id_swebench'] = dataset['instance_id']
+    dataset['instance_id'] = dataset['id']
     return dataset
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     parser.add_argument(
-        "--dataset",
+        '--dataset',
         type=str,
-        default="kjain/testgenevallite",
-        help="data set to evaluate on, either full-test or lite-test",
+        default='kjain/testgenevallite',
+        help='data set to evaluate on, either full-test or lite-test',
     )
     parser.add_argument(
-        "--split",
+        '--split',
         type=str,
-        default="test",
-        help="split to evaluate on",
+        default='test',
+        help='split to evaluate on',
     )
     parser.add_argument(
-        "--testfile_start",
-        action="store_true",
-        help="Whether to start from the 0 shot test file",
+        '--testfile_start',
+        action='store_true',
+        help='Whether to start from the 0 shot test file',
     )
 
     parser.add_argument(
-        "--zero_shot_path",
+        '--zero_shot_path',
         type=str,
-        help="Path to the zero shot test file predictions",
+        help='Path to the zero shot test file predictions',
     )
     args, _ = parser.parse_known_args()
 
     if args.testfile_start and not args.zero_shot_path:
         raise ValueError(
-            "If you want to start from the 0 shot test file, you must provide the path to the zero shot test file predictions"
+            'If you want to start from the 0 shot test file, you must provide the path to the zero shot test file predictions'
         )
 
     preds_map = {}
     if args.testfile_start:
-        with open(args.zero_shot_path, "r") as f:
+        with open(args.zero_shot_path, 'r') as f:
             for line in f:
                 pred = json.loads(line)
-                preds_map[pred["id"]] = pred["preds"]["full"][0]
+                preds_map[pred['id']] = pred['preds']['full'][0]
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(args.dataset, split=args.split)
-    logger.info(f"Loaded dataset {args.dataset} with split {args.split}")
-    testgeneval_filepairs = prepare_dataset_pre(dataset.to_pandas(), "id")
+    logger.info(f'Loaded dataset {args.dataset} with split {args.split}')
+    testgeneval_filepairs = prepare_dataset_pre(dataset.to_pandas(), 'id')
 
     llm_config = None
     if args.llm_config:
@@ -543,13 +543,13 @@ if __name__ == "__main__":
         llm_config.modify_params = False
 
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     details = {}
     _agent_cls = openhands.agenthub.Agent.get_cls(args.agent_cls)
 
     dataset_descrption = (
-        args.dataset.replace("/", "__") + "-" + args.split.replace("/", "__")
+        args.dataset.replace('/', '__') + '-' + args.split.replace('/', '__')
     )
     metadata = make_metadata(
         llm_config,
@@ -561,12 +561,12 @@ if __name__ == "__main__":
         details=details,
     )
 
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(testgeneval_filepairs, output_file, args.eval_n_limit)
 
     if not instances.empty:
-        instances["full_pred"] = (
-            instances["instance_id"]
+        instances['full_pred'] = (
+            instances['instance_id']
             .map(preds_map)
             .apply(lambda x: x if pd.notna(x) else None)
         )

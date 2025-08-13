@@ -89,7 +89,7 @@ class BatchedWebHookFileStore(FileStore):
             contents: The contents to write
         """
         self.file_store.write(path, contents)
-        self._queue_update(path, "write", contents)
+        self._queue_update(path, 'write', contents)
 
     def read(self, path: str) -> str:
         """Read contents from a file.
@@ -120,7 +120,7 @@ class BatchedWebHookFileStore(FileStore):
             path: The path to delete
         """
         self.file_store.delete(path)
-        self._queue_update(path, "delete", None)
+        self._queue_update(path, 'delete', None)
 
     def _queue_update(
         self, path: str, operation: str, contents: Optional[Union[str, bytes]]
@@ -137,7 +137,7 @@ class BatchedWebHookFileStore(FileStore):
             content_size = 0
             if contents is not None:
                 if isinstance(contents, str):
-                    content_size = len(contents.encode("utf-8"))
+                    content_size = len(contents.encode('utf-8'))
                 else:
                     content_size = len(contents)
 
@@ -147,7 +147,7 @@ class BatchedWebHookFileStore(FileStore):
                 prev_op, prev_contents = self._batch[path]
                 if prev_contents is not None:
                     if isinstance(prev_contents, str):
-                        self._batch_size -= len(prev_contents.encode("utf-8"))
+                        self._batch_size -= len(prev_contents.encode('utf-8'))
                     else:
                         self._batch_size -= len(prev_contents)
 
@@ -207,7 +207,7 @@ class BatchedWebHookFileStore(FileStore):
                 self._send_batch_request(batch_to_send)
             except Exception as e:
                 # Log the error
-                print(f"Error sending webhook batch: {e}")
+                print(f'Error sending webhook batch: {e}')
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(1),
@@ -231,24 +231,24 @@ class BatchedWebHookFileStore(FileStore):
 
         for path, (operation, contents) in batch.items():
             item = {
-                "method": "POST" if operation == "write" else "DELETE",
-                "path": path,
+                'method': 'POST' if operation == 'write' else 'DELETE',
+                'path': path,
             }
 
-            if operation == "write" and contents is not None:
+            if operation == 'write' and contents is not None:
                 # Convert bytes to string if needed
                 if isinstance(contents, bytes):
                     try:
                         # Try to decode as UTF-8
-                        item["content"] = contents.decode("utf-8")
+                        item['content'] = contents.decode('utf-8')
                     except UnicodeDecodeError:
                         # If not UTF-8, use base64 encoding
                         import base64
 
-                        item["content"] = base64.b64encode(contents).decode("ascii")
-                        item["encoding"] = "base64"
+                        item['content'] = base64.b64encode(contents).decode('ascii')
+                        item['encoding'] = 'base64'
                 else:
-                    item["content"] = contents
+                    item['content'] = contents
 
             batch_payload.append(item)
 

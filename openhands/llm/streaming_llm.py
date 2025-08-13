@@ -48,12 +48,12 @@ class StreamingLLM(AsyncLLM):
             # see llm.py for more details
             if len(args) > 1:
                 messages = args[1] if len(args) > 1 else args[0]
-                kwargs["messages"] = messages
+                kwargs['messages'] = messages
 
                 # remove the first args, they're sent in kwargs
                 args = args[2:]
-            elif "messages" in kwargs:
-                messages = kwargs["messages"]
+            elif 'messages' in kwargs:
+                messages = kwargs['messages']
 
             # ensure we work with a list of messages
             messages = messages if isinstance(messages, list) else [messages]
@@ -61,12 +61,12 @@ class StreamingLLM(AsyncLLM):
             # if we have no messages, something went very wrong
             if not messages:
                 raise ValueError(
-                    "The messages list is empty. At least one message is required."
+                    'The messages list is empty. At least one message is required.'
                 )
 
             # Set reasoning effort for models that support it
             if self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS:
-                kwargs["reasoning_effort"] = self.config.reasoning_effort
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             self.log_prompt(messages)
 
@@ -78,15 +78,15 @@ class StreamingLLM(AsyncLLM):
                 async for chunk in resp:
                     # Check for cancellation before yielding the chunk
                     if (
-                        hasattr(self.config, "on_cancel_requested_fn")
+                        hasattr(self.config, 'on_cancel_requested_fn')
                         and self.config.on_cancel_requested_fn is not None
                         and await self.config.on_cancel_requested_fn()
                     ):
                         raise UserCancelledError(
-                            "LLM request cancelled due to CANCELLED state"
+                            'LLM request cancelled due to CANCELLED state'
                         )
                     # with streaming, it is "delta", not "message"!
-                    message_back = chunk["choices"][0]["delta"].get("content", "")
+                    message_back = chunk['choices'][0]['delta'].get('content', '')
                     if message_back:
                         self.log_response(message_back)
                     self._post_completion(chunk)
@@ -94,15 +94,15 @@ class StreamingLLM(AsyncLLM):
                     yield chunk
 
             except UserCancelledError:
-                logger.debug("LLM request cancelled by user.")
+                logger.debug('LLM request cancelled by user.')
                 raise
             except Exception as e:
-                logger.error(f"Completion Error occurred:\n{e}")
+                logger.error(f'Completion Error occurred:\n{e}')
                 raise
 
             finally:
                 # sleep for 0.1 seconds to allow the stream to be flushed
-                if kwargs.get("stream", False):
+                if kwargs.get('stream', False):
                     await asyncio.sleep(0.1)
 
         self._async_streaming_completion = async_streaming_completion_wrapper

@@ -39,9 +39,9 @@ from openhands.runtime.browser.browser_env import (
 )
 from openhands.utils.async_utils import call_async_from_sync
 
-SUPPORTED_AGENT_CLS = {"VisualBrowsingAgent"}
+SUPPORTED_AGENT_CLS = {'VisualBrowsingAgent'}
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "VisualBrowsingAgent": "Continue the task. IMPORTANT: do not talk to the user until you have finished the task",
+    'VisualBrowsingAgent': 'Continue the task. IMPORTANT: do not talk to the user until you have finished the task',
 }
 
 
@@ -49,33 +49,33 @@ def get_config(
     metadata: EvalMetadata,
     env_id: str,
 ) -> OpenHandsConfig:
-    base_url = os.environ.get("VISUALWEBARENA_BASE_URL", None)
-    openai_api_key = os.environ.get("OPENAI_API_KEY", None)
-    openai_base_url = os.environ.get("OPENAI_BASE_URL", None)
-    assert base_url is not None, "VISUALWEBARENA_BASE_URL must be set"
-    assert openai_api_key is not None, "OPENAI_API_KEY must be set"
-    assert openai_base_url is not None, "OPENAI_BASE_URL must be set"
+    base_url = os.environ.get('VISUALWEBARENA_BASE_URL', None)
+    openai_api_key = os.environ.get('OPENAI_API_KEY', None)
+    openai_base_url = os.environ.get('OPENAI_BASE_URL', None)
+    assert base_url is not None, 'VISUALWEBARENA_BASE_URL must be set'
+    assert openai_api_key is not None, 'OPENAI_API_KEY must be set'
+    assert openai_base_url is not None, 'OPENAI_BASE_URL must be set'
 
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "python:3.12-bookworm"
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.browsergym_eval_env = env_id
     sandbox_config.runtime_startup_env_vars = {
-        "BASE_URL": base_url,
-        "OPENAI_API_KEY": openai_api_key,
-        "OPENAI_BASE_URL": openai_base_url,
-        "VWA_CLASSIFIEDS": f"{base_url}:9980",
-        "VWA_CLASSIFIEDS_RESET_TOKEN": "4b61655535e7ed388f0d40a93600254c",
-        "VWA_SHOPPING": f"{base_url}:7770",
-        "VWA_SHOPPING_ADMIN": f"{base_url}:7780/admin",
-        "VWA_REDDIT": f"{base_url}:9999",
-        "VWA_GITLAB": f"{base_url}:8023",
-        "VWA_WIKIPEDIA": f"{base_url}:8888",
-        "VWA_HOMEPAGE": f"{base_url}:4399",
+        'BASE_URL': base_url,
+        'OPENAI_API_KEY': openai_api_key,
+        'OPENAI_BASE_URL': openai_base_url,
+        'VWA_CLASSIFIEDS': f'{base_url}:9980',
+        'VWA_CLASSIFIEDS_RESET_TOKEN': '4b61655535e7ed388f0d40a93600254c',
+        'VWA_SHOPPING': f'{base_url}:7770',
+        'VWA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
+        'VWA_REDDIT': f'{base_url}:9999',
+        'VWA_GITLAB': f'{base_url}:8023',
+        'VWA_WIKIPEDIA': f'{base_url}:8888',
+        'VWA_HOMEPAGE': f'{base_url}:4399',
     }
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -100,23 +100,23 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     goal = obs.content
     goal_image_urls = []
-    if hasattr(obs, "goal_image_urls"):
+    if hasattr(obs, 'goal_image_urls'):
         goal_image_urls = obs.goal_image_urls
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
     return goal, goal_image_urls
 
 
@@ -129,17 +129,17 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
-    logger.info(action, extra={"msg_type": "ACTION"})
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
-    logger.info(obs, extra={"msg_type": "OBSERVATION"})
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return {
-        "rewards": json.loads(obs.content),
+        'rewards': json.loads(obs.content),
     }
 
 
@@ -154,10 +154,10 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, env_id, log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {env_id}.")
+        logger.info(f'Starting evaluation for instance {env_id}.')
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
@@ -177,12 +177,12 @@ def process_instance(
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
     metrics = state.metrics.get() if state.metrics else None
 
     # Instruction obtained from the first message from the USER
-    instruction = ""
+    instruction = ''
     for event in state.history:
         if isinstance(event, MessageAction):
             instruction = event.content
@@ -190,8 +190,8 @@ def process_instance(
 
     try:
         return_val = complete_runtime(runtime)
-        logger.info(f"Return value from complete_runtime: {return_val}")
-        reward = max(return_val["rewards"])
+        logger.info(f'Return value from complete_runtime: {return_val}')
+        reward = max(return_val['rewards'])
     except Exception:
         reward = -1.0  # kept -1 to identify instances for which evaluation failed.
 
@@ -209,22 +209,22 @@ def process_instance(
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
-            "reward": reward,
+            'reward': reward,
         },
     )
     runtime.close()
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_arguments()
 
     dataset = pd.DataFrame(
         {
-            "instance_id": [
+            'instance_id': [
                 id
                 for id in gym.envs.registry.keys()
-                if id.startswith("browsergym/visualwebarena")
+                if id.startswith('browsergym/visualwebarena')
             ]
         }
     )
@@ -232,16 +232,16 @@ if __name__ == "__main__":
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
     metadata = make_metadata(
         llm_config,
-        "visualwebarena",
+        'visualwebarena',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(dataset, output_file, args.eval_n_limit)
 
     run_evaluation(

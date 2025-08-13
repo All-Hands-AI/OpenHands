@@ -2,56 +2,56 @@ from enum import Enum
 
 
 class ObservationType(str, Enum):
-    READ = "read"
+    READ = 'read'
     """The content of a file
     """
 
-    WRITE = "write"
+    WRITE = 'write'
 
-    EDIT = "edit"
+    EDIT = 'edit'
 
-    BROWSE = "browse"
+    BROWSE = 'browse'
     """The HTML content of a URL
     """
 
-    RUN = "run"
+    RUN = 'run'
     """The output of a command
     """
 
-    RUN_IPYTHON = "run_ipython"
+    RUN_IPYTHON = 'run_ipython'
     """Runs a IPython cell.
     """
 
-    CHAT = "chat"
+    CHAT = 'chat'
     """A message from the user
     """
 
-    DELEGATE = "delegate"
+    DELEGATE = 'delegate'
     """The result of a task delegated to another agent
     """
 
-    MESSAGE = "message"
+    MESSAGE = 'message'
 
-    ERROR = "error"
+    ERROR = 'error'
 
-    SUCCESS = "success"
+    SUCCESS = 'success'
 
-    NULL = "null"
+    NULL = 'null'
 
-    THINK = "think"
+    THINK = 'think'
 
-    AGENT_STATE_CHANGED = "agent_state_changed"
+    AGENT_STATE_CHANGED = 'agent_state_changed'
 
-    USER_REJECTED = "user_rejected"
+    USER_REJECTED = 'user_rejected'
 
-    CONDENSE = "condense"
+    CONDENSE = 'condense'
     """Result of a condensation operation."""
 
-    RECALL = "recall"
+    RECALL = 'recall'
     """Result of a recall operation. This can be the workspace context, a microagent, or other types of information."""
 
-    MCP = "mcp"
+    MCP = 'mcp'
     """Result of a MCP Server operation"""
 
-    DOWNLOAD = "download"
+    DOWNLOAD = 'download'
     """Result of downloading/opening a file via the browser"""

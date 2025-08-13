@@ -26,12 +26,12 @@ async def test_auto_generate_title_with_llm():
     file_store = InMemoryFileStore()
 
     # Create test conversation with a user message
-    conversation_id = "test-conversation"
-    user_id = "test-user"
+    conversation_id = 'test-conversation'
+    user_id = 'test-user'
 
     # Create a mock event
     user_message = MessageAction(
-        content="Help me write a Python script to analyze data"
+        content='Help me write a Python script to analyze data'
     )
     user_message._source = EventSource.USER
     user_message._id = 1
@@ -39,7 +39,7 @@ async def test_auto_generate_title_with_llm():
 
     # Mock the EventStore class
     with patch(
-        "openhands.utils.conversation_summary.EventStore"
+        'openhands.utils.conversation_summary.EventStore'
     ) as mock_event_store_cls:
         # Configure the mock event stream to return our test message
         mock_event_store = MagicMock(spec=EventStore)
@@ -47,18 +47,18 @@ async def test_auto_generate_title_with_llm():
         mock_event_store_cls.return_value = mock_event_store
 
         # Mock the LLM response
-        with patch("openhands.utils.conversation_summary.LLM") as mock_llm_cls:
+        with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
             mock_llm = mock_llm_cls.return_value
             mock_response = MagicMock()
             mock_response.choices = [MagicMock()]
-            mock_response.choices[0].message.content = "Python Data Analysis Script"
+            mock_response.choices[0].message.content = 'Python Data Analysis Script'
             mock_llm.completion.return_value = mock_response
 
             # Create test settings with LLM config
             settings = Settings(
-                llm_model="test-model",
-                llm_api_key="test-key",
-                llm_base_url="test-url",
+                llm_model='test-model',
+                llm_api_key='test-key',
+                llm_base_url='test-url',
             )
 
             # Call the auto_generate_title function directly
@@ -67,7 +67,7 @@ async def test_auto_generate_title_with_llm():
             )
 
             # Verify the result
-            assert title == "Python Data Analysis Script"
+            assert title == 'Python Data Analysis Script'
 
             # Verify EventStore was created with the correct parameters
             mock_event_store_cls.assert_called_once_with(
@@ -77,9 +77,9 @@ async def test_auto_generate_title_with_llm():
             # Verify LLM was called with appropriate parameters
             mock_llm_cls.assert_called_once_with(
                 LLMConfig(
-                    model="test-model",
-                    api_key="test-key",
-                    base_url="test-url",
+                    model='test-model',
+                    api_key='test-key',
+                    base_url='test-url',
                 )
             )
             mock_llm.completion.assert_called_once()
@@ -92,11 +92,11 @@ async def test_auto_generate_title_fallback():
     file_store = InMemoryFileStore()
 
     # Create test conversation with a user message
-    conversation_id = "test-conversation"
-    user_id = "test-user"
+    conversation_id = 'test-conversation'
+    user_id = 'test-user'
 
     # Create a mock event with a long message
-    long_message = "This is a very long message that should be truncated when used as a title because it exceeds the maximum length allowed for titles"
+    long_message = 'This is a very long message that should be truncated when used as a title because it exceeds the maximum length allowed for titles'
     user_message = MessageAction(content=long_message)
     user_message._source = EventSource.USER
     user_message._id = 1
@@ -104,7 +104,7 @@ async def test_auto_generate_title_fallback():
 
     # Mock the EventStore class
     with patch(
-        "openhands.utils.conversation_summary.EventStore"
+        'openhands.utils.conversation_summary.EventStore'
     ) as mock_event_store_cls:
         # Configure the mock event stream to return our test message
         mock_event_store = MagicMock(spec=EventStore)
@@ -112,15 +112,15 @@ async def test_auto_generate_title_fallback():
         mock_event_store_cls.return_value = mock_event_store
 
         # Mock the LLM to raise an exception
-        with patch("openhands.utils.conversation_summary.LLM") as mock_llm_cls:
+        with patch('openhands.utils.conversation_summary.LLM') as mock_llm_cls:
             mock_llm = mock_llm_cls.return_value
-            mock_llm.completion.side_effect = Exception("Test error")
+            mock_llm.completion.side_effect = Exception('Test error')
 
             # Create test settings with LLM config
             settings = Settings(
-                llm_model="test-model",
-                llm_api_key="test-key",
-                llm_base_url="test-url",
+                llm_model='test-model',
+                llm_api_key='test-key',
+                llm_base_url='test-url',
             )
 
             # Call the auto_generate_title function directly
@@ -129,7 +129,7 @@ async def test_auto_generate_title_fallback():
             )
 
             # Verify the result is a truncated version of the message
-            assert title == "This is a very long message th..."
+            assert title == 'This is a very long message th...'
             assert len(title) <= 35
 
             # Verify EventStore was created with the correct parameters
@@ -145,12 +145,12 @@ async def test_auto_generate_title_no_messages():
     file_store = InMemoryFileStore()
 
     # Create test conversation with no messages
-    conversation_id = "test-conversation"
-    user_id = "test-user"
+    conversation_id = 'test-conversation'
+    user_id = 'test-user'
 
     # Mock the EventStore class
     with patch(
-        "openhands.utils.conversation_summary.EventStore"
+        'openhands.utils.conversation_summary.EventStore'
     ) as mock_event_store_cls:
         # Configure the mock event store to return no events
         mock_event_store = MagicMock(spec=EventStore)
@@ -159,9 +159,9 @@ async def test_auto_generate_title_no_messages():
 
         # Create test settings
         settings = Settings(
-            llm_model="test-model",
-            llm_api_key="test-key",
-            llm_base_url="test-url",
+            llm_model='test-model',
+            llm_api_key='test-key',
+            llm_base_url='test-url',
         )
 
         # Call the auto_generate_title function directly
@@ -170,7 +170,7 @@ async def test_auto_generate_title_no_messages():
         )
 
         # Verify the result is empty
-        assert title == ""
+        assert title == ''
 
         # Verify EventStore was created with the correct parameters
         mock_event_store_cls.assert_called_once_with(
@@ -188,20 +188,20 @@ async def test_update_conversation_with_title():
     server_config = MagicMock()
 
     # Create test conversation
-    conversation_id = "test-conversation"
-    user_id = "test-user"
+    conversation_id = 'test-conversation'
+    user_id = 'test-user'
 
     # Create test settings
     settings = Settings(
-        llm_model="test-model",
-        llm_api_key="test-key",
-        llm_base_url="test-url",
+        llm_model='test-model',
+        llm_api_key='test-key',
+        llm_base_url='test-url',
     )
 
     # Mock the conversation store and metadata
     mock_conversation_store = AsyncMock()
     mock_metadata = MagicMock()
-    mock_metadata.title = f"Conversation {conversation_id[:5]}"  # Default title
+    mock_metadata.title = f'Conversation {conversation_id[:5]}'  # Default title
     mock_conversation_store.get_metadata.return_value = mock_metadata
 
     # Create the conversation manager
@@ -218,20 +218,20 @@ async def test_update_conversation_with_title():
 
     # Mock the auto_generate_title function
     with patch(
-        "openhands.server.conversation_manager.standalone_conversation_manager.auto_generate_title",
-        AsyncMock(return_value="Generated Title"),
+        'openhands.server.conversation_manager.standalone_conversation_manager.auto_generate_title',
+        AsyncMock(return_value='Generated Title'),
     ):
         # Call the method
         await manager._update_conversation_for_event(user_id, conversation_id, settings)
 
         # Verify the title was updated
-        assert mock_metadata.title == "Generated Title"
+        assert mock_metadata.title == 'Generated Title'
 
         # Verify the socket.io emit was called with the correct parameters
         sio.emit.assert_called_once()
         call_args = sio.emit.call_args[0]
-        assert call_args[0] == "oh_event"
-        assert call_args[1]["status_update"] is True
-        assert call_args[1]["type"] == "info"
-        assert call_args[1]["message"] == conversation_id
-        assert call_args[1]["conversation_title"] == "Generated Title"
+        assert call_args[0] == 'oh_event'
+        assert call_args[1]['status_update'] is True
+        assert call_args[1]['type'] == 'info'
+        assert call_args[1]['message'] == conversation_id
+        assert call_args[1]['conversation_title'] == 'Generated Title'

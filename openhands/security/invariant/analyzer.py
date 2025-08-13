@@ -33,9 +33,9 @@ class InvariantAnalyzer(SecurityAnalyzer):
 
     trace: list[TraceElement]
     input: list[dict[str, Any]]
-    container_name: str = "openhands-invariant-server"
-    image_name: str = "ghcr.io/invariantlabs-ai/server:openhands"
-    api_host: str = "http://localhost"
+    container_name: str = 'openhands-invariant-server'
+    image_name: str = 'ghcr.io/invariantlabs-ai/server:openhands'
+    api_host: str = 'http://localhost'
     timeout: int = 180
     settings: dict[str, Any] = {}
 
@@ -60,16 +60,16 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.docker_client = docker.from_env()
         except Exception as ex:
             logger.exception(
-                "Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.",
+                'Error creating Invariant Security Analyzer container. Please check that Docker is running or disable the Security Analyzer in settings.',
                 exc_info=False,
             )
             raise ex
         running_containers = self.docker_client.containers.list(
-            filters={"name": self.container_name}
+            filters={'name': self.container_name}
         )
         if not running_containers:
             all_containers = self.docker_client.containers.list(
-                all=True, filters={"name": self.container_name}
+                all=True, filters={'name': self.container_name}
             )
             if all_containers:
                 self.container = all_containers[0]
@@ -79,33 +79,33 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 self.container = self.docker_client.containers.run(
                     self.image_name,
                     name=self.container_name,
-                    platform="linux/amd64",
-                    ports={"8000/tcp": self.api_port},
+                    platform='linux/amd64',
+                    ports={'8000/tcp': self.api_port},
                     detach=True,
                 )
         else:
             self.container = running_containers[0]
 
         elapsed = 0
-        while self.container.status != "running":
+        while self.container.status != 'running':
             self.container = self.docker_client.containers.get(self.container_name)
             elapsed += 1
             logger.debug(
-                f"waiting for container to start: {elapsed}, container status: {self.container.status}"
+                f'waiting for container to start: {elapsed}, container status: {self.container.status}'
             )
             if elapsed > self.timeout:
                 break
 
         self.api_port = int(
-            self.container.attrs["NetworkSettings"]["Ports"]["8000/tcp"][0]["HostPort"]
+            self.container.attrs['NetworkSettings']['Ports']['8000/tcp'][0]['HostPort']
         )
 
-        self.api_server = f"{self.api_host}:{self.api_port}"
+        self.api_server = f'{self.api_host}:{self.api_port}'
         self.client = InvariantClient(self.api_server, self.sid)
         if policy is None:
             policy, _ = self.client.Policy.get_template()
             if policy is None:
-                policy = ""
+                policy = ''
         self.monitor = self.client.Monitor.from_string(policy)
 
     async def close(self) -> None:
@@ -117,15 +117,15 @@ class InvariantAnalyzer(SecurityAnalyzer):
             self.trace.extend(element)
             self.input.extend([e.model_dump(exclude_none=True) for e in element])
         else:
-            logger.debug("Invariant skipping element: event")
+            logger.debug('Invariant skipping element: event')
 
     def get_risk(self, results: list[str]) -> ActionSecurityRisk:
         mapping = {
-            "high": ActionSecurityRisk.HIGH,
-            "medium": ActionSecurityRisk.MEDIUM,
-            "low": ActionSecurityRisk.LOW,
+            'high': ActionSecurityRisk.HIGH,
+            'medium': ActionSecurityRisk.MEDIUM,
+            'low': ActionSecurityRisk.LOW,
         }
-        regex = r"(?<=risk=)\w+"
+        regex = r'(?<=risk=)\w+'
         risks: list[ActionSecurityRisk] = []
         for result in results:
             m = re.search(regex, result)
@@ -155,41 +155,41 @@ class InvariantAnalyzer(SecurityAnalyzer):
         """
         recent_trace_element = self.trace[-1]
         responses = []
-        if getattr(recent_trace_element, "role", None) == "user":
+        if getattr(recent_trace_element, 'role', None) == 'user':
             messages = []
             messages.append(
                 Message(
-                    role="system",
-                    content=[TextContent(text="You are a helpful assistant")],
+                    role='system',
+                    content=[TextContent(text='You are a helpful assistant')],
                 )
             )
             messages.append(
                 Message(
-                    role="user",
+                    role='user',
                     content=[
                         TextContent(
-                            text="A browsing agent is an AI agent that helps the user to browse the web and automate benign tasks. We need to stop only very harmful and unethical requests. Answer Yes or No. Is it appropriate for an AI browsing agent to help with the following task?: "
-                            + repr(getattr(recent_trace_element, "content", ""))
+                            text='A browsing agent is an AI agent that helps the user to browse the web and automate benign tasks. We need to stop only very harmful and unethical requests. Answer Yes or No. Is it appropriate for an AI browsing agent to help with the following task?: '
+                            + repr(getattr(recent_trace_element, 'content', ''))
                         )
                     ],
                 )
             )
             assert self.guardrail_llm is not None, (
-                "InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask"
+                'InvariantAnalyzer.guardrail_llm should be initialized before calling check_usertask'
             )
             response = self.guardrail_llm.completion(
                 messages=self.guardrail_llm.format_messages_for_llm(messages),
-                stop=["."],
+                stop=['.'],
             )
             responses.append(response)
         for response in responses:
-            if "No" in response["choices"][0]["message"]["content"]:
+            if 'No' in response['choices'][0]['message']['content']:
                 new_event = action_from_dict(
                     {
-                        "action": "change_agent_state",
-                        "args": {
-                            "agent_state": AgentState.ERROR,
-                            "thought": "It is inappropriate for a browsing agent to comply with this request",
+                        'action': 'change_agent_state',
+                        'args': {
+                            'agent_state': AgentState.ERROR,
+                            'thought': 'It is inappropriate for a browsing agent to comply with this request',
                         },
                     }
                 )
@@ -201,8 +201,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
     def parse_browser_action(
         self, browser_action: str
     ) -> list[tuple[str | None, list[str]]]:
-        assert browser_action[-1] == ")"
-        tree = ast.parse(browser_action, mode="exec")
+        assert browser_action[-1] == ')'
+        tree = ast.parse(browser_action, mode='exec')
         function_calls: list[tuple[str | None, list[str]]] = []
 
         for node in tree.body:
@@ -214,14 +214,14 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     func_name = call_node.func.id
                 elif isinstance(call_node.func, ast.Attribute):
                     func_name = (
-                        f"{ast.unparse(call_node.func.value)}.{call_node.func.attr}"
+                        f'{ast.unparse(call_node.func.value)}.{call_node.func.attr}'
                     )
 
                 # Extract positional arguments
                 args = [ast.unparse(arg) for arg in call_node.args]
                 function_calls.append((func_name, args))
             else:
-                raise ValueError("The code does not represent a function call.")
+                raise ValueError('The code does not represent a function call.')
         return function_calls
 
     async def check_fillaction(self) -> None:
@@ -232,52 +232,52 @@ class InvariantAnalyzer(SecurityAnalyzer):
         recent_trace_element = self.trace[-1]
         responses = []
         if (
-            getattr(recent_trace_element, "type", None) == "function"
-            and hasattr(recent_trace_element, "function")
-            and hasattr(recent_trace_element.function, "name")
-            and recent_trace_element.function.name == "browse_interactive"
+            getattr(recent_trace_element, 'type', None) == 'function'
+            and hasattr(recent_trace_element, 'function')
+            and hasattr(recent_trace_element.function, 'name')
+            and recent_trace_element.function.name == 'browse_interactive'
         ):
             function_calls = self.parse_browser_action(
-                recent_trace_element.function.arguments["browser_actions"]
+                recent_trace_element.function.arguments['browser_actions']
             )
             for function_call in function_calls:
                 action_name, action_args = function_call
-                if action_name == "fill":
+                if action_name == 'fill':
                     messages = []
                     messages.append(
                         Message(
-                            role="system",
-                            content=[TextContent(text="You are a helpful assistant")],
+                            role='system',
+                            content=[TextContent(text='You are a helpful assistant')],
                         )
                     )
                     messages.append(
                         Message(
-                            role="user",
+                            role='user',
                             content=[
                                 TextContent(
-                                    text="Answer Yes or No. Is this harmful content: "
+                                    text='Answer Yes or No. Is this harmful content: '
                                     + repr(action_args[1])
                                 )
                             ],
                         )
                     )
                     assert self.guardrail_llm is not None, (
-                        "InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction"
+                        'InvariantAnalyzer.guardrail_llm should be initialized before calling check_fillaction'
                     )
                     response = self.guardrail_llm.completion(
                         messages=self.guardrail_llm.format_messages_for_llm(messages),
-                        stop=["."],
+                        stop=['.'],
                     )
                     responses.append(response)
 
             for response in responses:
-                if "Yes" in response["choices"][0]["message"]["content"]:
+                if 'Yes' in response['choices'][0]['message']['content']:
                     new_event = action_from_dict(
                         {
-                            "action": "change_agent_state",
-                            "args": {
-                                "agent_state": AgentState.ERROR,
-                                "thought": "It is inappropriate for a browsing agent to fill in harmful content",
+                            'action': 'change_agent_state',
+                            'args': {
+                                'agent_state': AgentState.ERROR,
+                                'thought': 'It is inappropriate for a browsing agent to fill in harmful content',
                             },
                         }
                     )
@@ -288,25 +288,25 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     break
 
     async def should_confirm(self, event: Event) -> bool:
-        risk = event.security_risk if hasattr(event, "security_risk") else None  # type: ignore [attr-defined]
+        risk = event.security_risk if hasattr(event, 'security_risk') else None  # type: ignore [attr-defined]
         return (
             risk is not None
-            and risk < self.settings.get("RISK_SEVERITY", ActionSecurityRisk.MEDIUM)
-            and hasattr(event, "confirmation_state")
+            and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
+            and hasattr(event, 'confirmation_state')
             and event.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         )
 
     async def confirm(self, event: Event) -> None:
         new_event = action_from_dict(
-            {"action": "change_agent_state", "args": {"agent_state": "user_confirmed"}}
+            {'action': 'change_agent_state', 'args': {'agent_state': 'user_confirmed'}}
         )
         # we should confirm only on agent actions
         event_source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(new_event, event_source)
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
-        logger.debug("Calling security_risk on InvariantAnalyzer")
+        logger.debug('Calling security_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input_data = [e.model_dump(exclude_none=True) for e in new_elements]
         self.trace.extend(new_elements)
@@ -317,42 +317,42 @@ class InvariantAnalyzer(SecurityAnalyzer):
         # Process check_result
         result, err = check_result
         if err:
-            logger.warning(f"Error checking policy: {err}")
+            logger.warning(f'Error checking policy: {err}')
             return risk
 
         return self.get_risk(result)
 
     ### Handle API requests
     async def handle_api_request(self, request: Request) -> Any:
-        path_parts = request.url.path.strip("/").split("/")
+        path_parts = request.url.path.strip('/').split('/')
         endpoint = path_parts[-1]  # Get the last part of the path
 
-        if request.method == "GET":
-            if endpoint == "export-trace":
+        if request.method == 'GET':
+            if endpoint == 'export-trace':
                 return await self.export_trace(request)
-            elif endpoint == "policy":
+            elif endpoint == 'policy':
                 return await self.get_policy(request)
-            elif endpoint == "settings":
+            elif endpoint == 'settings':
                 return await self.get_settings(request)
-        elif request.method == "POST":
-            if endpoint == "policy":
+        elif request.method == 'POST':
+            if endpoint == 'policy':
                 return await self.update_policy(request)
-            elif endpoint == "settings":
+            elif endpoint == 'settings':
                 return await self.update_settings(request)
-        raise HTTPException(status_code=405, detail="Method Not Allowed")
+        raise HTTPException(status_code=405, detail='Method Not Allowed')
 
     async def export_trace(self, request: Request) -> JSONResponse:
         return JSONResponse(content=self.input)
 
     async def get_policy(self, request: Request) -> JSONResponse:
-        return JSONResponse(content={"policy": self.monitor.policy})
+        return JSONResponse(content={'policy': self.monitor.policy})
 
     async def update_policy(self, request: Request) -> JSONResponse:
         data = await request.json()
-        policy = data.get("policy")
+        policy = data.get('policy')
         new_monitor = self.client.Monitor.from_string(policy)
         self.monitor = new_monitor
-        return JSONResponse(content={"policy": policy})
+        return JSONResponse(content={'policy': policy})
 
     async def get_settings(self, request: Request) -> JSONResponse:
         return JSONResponse(content=self.settings)

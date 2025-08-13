@@ -35,7 +35,7 @@ class EventStoreABC:
             Events from the stream that match the criteria.
         """
 
-    @deprecated("Use search_events instead")
+    @deprecated('Use search_events instead')
     def get_events(
         self,
         start_id: int = 0,
@@ -63,11 +63,11 @@ class EventStoreABC:
     def get_latest_event_id(self) -> int:
         """Get the id of the latest event from the event stream"""
 
-    @deprecated("use search_events instead")
+    @deprecated('use search_events instead')
     def filtered_events_by_source(self, source: EventSource) -> Iterable[Event]:
         yield from self.search_events(filter=EventFilter(source=source))
 
-    @deprecated("use search_events instead")
+    @deprecated('use search_events instead')
     def get_matching_events(
         self,
         query: str | None = None,
@@ -95,7 +95,7 @@ class EventStoreABC:
             list: List of matching events (as dicts)
         """
         if limit < 1 or limit > 100:
-            raise ValueError("Limit must be between 1 and 100")
+            raise ValueError('Limit must be between 1 and 100')
 
         events = self.search_events(
             start_id=start_id,

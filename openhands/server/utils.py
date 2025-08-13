@@ -15,7 +15,7 @@ from openhands.storage.data_models.conversation_metadata import ConversationMeta
 
 async def get_conversation_store(request: Request) -> ConversationStore | None:
     conversation_store: ConversationStore | None = getattr(
-        request.state, "conversation_store", None
+        request.state, 'conversation_store', None
     )
     if conversation_store:
         return conversation_store
@@ -45,7 +45,7 @@ async def get_conversation_metadata(
     except FileNotFoundError:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conversation {conversation_id} not found",
+            detail=f'Conversation {conversation_id} not found',
         )
 
 
@@ -58,12 +58,12 @@ async def get_conversation(
     )
     if not conversation:
         logger.warning(
-            f"get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None",
-            extra={"session_id": conversation_id, "user_id": user_id},
+            f'get_conversation: conversation {conversation_id} not found, attach_to_conversation returned None',
+            extra={'session_id': conversation_id, 'user_id': user_id},
         )
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Conversation {conversation_id} not found",
+            detail=f'Conversation {conversation_id} not found',
         )
     try:
         yield conversation

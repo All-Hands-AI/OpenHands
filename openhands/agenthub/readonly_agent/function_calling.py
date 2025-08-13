@@ -59,24 +59,24 @@ def grep_to_cmdrun(
     """
     # Use shlex.quote to properly escape all shell special characters
     quoted_pattern = shlex.quote(pattern)
-    path_arg = shlex.quote(path) if path else "."
+    path_arg = shlex.quote(path) if path else '.'
 
     # Build ripgrep command
-    rg_cmd = f"rg -li {quoted_pattern} --sortr=modified"
+    rg_cmd = f'rg -li {quoted_pattern} --sortr=modified'
 
     if include:
         quoted_include = shlex.quote(include)
-        rg_cmd += f" --glob {quoted_include}"
+        rg_cmd += f' --glob {quoted_include}'
 
     # Build the complete command
-    complete_cmd = f"{rg_cmd} {path_arg} | head -n 100"
+    complete_cmd = f'{rg_cmd} {path_arg} | head -n 100'
 
     # Add a header to the output
     echo_cmd = f'echo "Below are the execution results of the search command: {complete_cmd}\n"; '
     return echo_cmd + complete_cmd
 
 
-def glob_to_cmdrun(pattern: str, path: str = ".") -> str:
+def glob_to_cmdrun(pattern: str, path: str = '.') -> str:
     # NOTE: This function currently relies on `rg` (ripgrep).
     # `rg` may not be installed when using CLIRuntime or LocalRuntime
     # TODO: Implement a fallback to `find` if `rg` is not available.
@@ -95,12 +95,12 @@ def glob_to_cmdrun(pattern: str, path: str = ".") -> str:
 
     # Use ripgrep in a glob-only mode with -g flag and --files to list files
     # This most closely matches the behavior of the NodeJS glob implementation
-    rg_cmd = f"rg --files {quoted_path} -g {quoted_pattern} --sortr=modified"
+    rg_cmd = f'rg --files {quoted_path} -g {quoted_pattern} --sortr=modified'
 
     # Sort results and limit to 100 entries (matching the Node.js implementation)
-    sort_and_limit_cmd = " | head -n 100"
+    sort_and_limit_cmd = ' | head -n 100'
 
-    complete_cmd = f"{rg_cmd}{sort_and_limit_cmd}"
+    complete_cmd = f'{rg_cmd}{sort_and_limit_cmd}'
 
     # Add a header to the output
     echo_cmd = f'echo "Below are the execution results of the glob command: {complete_cmd}\n"; '
@@ -111,70 +111,70 @@ def response_to_actions(
     response: ModelResponse, mcp_tool_names: list[str] | None = None
 ) -> list[Action]:
     actions: list[Action] = []
-    assert len(response.choices) == 1, "Only one choice is supported for now"
+    assert len(response.choices) == 1, 'Only one choice is supported for now'
     choice = response.choices[0]
     assistant_msg = choice.message
-    if hasattr(assistant_msg, "tool_calls") and assistant_msg.tool_calls:
+    if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
-        thought = ""
+        thought = ''
         if isinstance(assistant_msg.content, str):
             thought = assistant_msg.content
         elif isinstance(assistant_msg.content, list):
             for msg in assistant_msg.content:
-                if msg["type"] == "text":
-                    thought += msg["text"]
+                if msg['type'] == 'text':
+                    thought += msg['text']
 
         # Process each tool call to OpenHands action
         for i, tool_call in enumerate(assistant_msg.tool_calls):
             action: Action
-            logger.debug(f"Tool call in function_calling.py: {tool_call}")
+            logger.debug(f'Tool call in function_calling.py: {tool_call}')
             try:
                 arguments = json.loads(tool_call.function.arguments)
             except json.decoder.JSONDecodeError as e:
                 raise FunctionCallValidationError(
-                    f"Failed to parse tool call arguments: {tool_call.function.arguments}"
+                    f'Failed to parse tool call arguments: {tool_call.function.arguments}'
                 ) from e
 
             # ================================================
             # AgentFinishAction
             # ================================================
-            if tool_call.function.name == FinishTool["function"]["name"]:
+            if tool_call.function.name == FinishTool['function']['name']:
                 action = AgentFinishAction(
-                    final_thought=arguments.get("message", ""),
+                    final_thought=arguments.get('message', ''),
                 )
 
             # ================================================
             # ViewTool (ACI-based file viewer, READ-ONLY)
             # ================================================
-            elif tool_call.function.name == ViewTool["function"]["name"]:
-                if "path" not in arguments:
+            elif tool_call.function.name == ViewTool['function']['name']:
+                if 'path' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "path" in tool call {tool_call.function.name}'
                     )
                 action = FileReadAction(
-                    path=arguments["path"],
+                    path=arguments['path'],
                     impl_source=FileReadSource.OH_ACI,
-                    view_range=arguments.get("view_range", None),
+                    view_range=arguments.get('view_range', None),
                 )
 
             # ================================================
             # AgentThinkAction
             # ================================================
-            elif tool_call.function.name == ThinkTool["function"]["name"]:
-                action = AgentThinkAction(thought=arguments.get("thought", ""))
+            elif tool_call.function.name == ThinkTool['function']['name']:
+                action = AgentThinkAction(thought=arguments.get('thought', ''))
 
             # ================================================
             # GrepTool (file content search)
             # ================================================
-            elif tool_call.function.name == GrepTool["function"]["name"]:
-                if "pattern" not in arguments:
+            elif tool_call.function.name == GrepTool['function']['name']:
+                if 'pattern' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "pattern" in tool call {tool_call.function.name}'
                     )
 
-                pattern = arguments["pattern"]
-                path = arguments.get("path")
-                include = arguments.get("include")
+                pattern = arguments['pattern']
+                path = arguments.get('path')
+                include = arguments.get('include')
 
                 grep_cmd = grep_to_cmdrun(pattern, path, include)
                 action = CmdRunAction(command=grep_cmd, is_input=False)
@@ -182,14 +182,14 @@ def response_to_actions(
             # ================================================
             # GlobTool (file pattern matching)
             # ================================================
-            elif tool_call.function.name == GlobTool["function"]["name"]:
-                if "pattern" not in arguments:
+            elif tool_call.function.name == GlobTool['function']['name']:
+                if 'pattern' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "pattern" in tool call {tool_call.function.name}'
                     )
 
-                pattern = arguments["pattern"]
-                path = arguments.get("path", ".")
+                pattern = arguments['pattern']
+                path = arguments.get('path', '.')
 
                 glob_cmd = glob_to_cmdrun(pattern, path)
                 action = CmdRunAction(command=glob_cmd, is_input=False)
@@ -205,7 +205,7 @@ def response_to_actions(
 
             else:
                 raise FunctionCallNotExistsError(
-                    f"Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool."
+                    f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
                 )
 
             # We only add thought to the first action
@@ -222,7 +222,7 @@ def response_to_actions(
     else:
         actions.append(
             MessageAction(
-                content=str(assistant_msg.content) if assistant_msg.content else "",
+                content=str(assistant_msg.content) if assistant_msg.content else '',
                 wait_for_response=True,
             )
         )

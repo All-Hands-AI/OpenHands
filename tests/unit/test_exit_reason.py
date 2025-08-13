@@ -9,25 +9,25 @@ from openhands.core.schema.exit_reason import ExitReason
 
 
 def test_exit_reason_enum_values():
-    assert ExitReason.INTENTIONAL.value == "intentional"
-    assert ExitReason.INTERRUPTED.value == "interrupted"
-    assert ExitReason.ERROR.value == "error"
+    assert ExitReason.INTENTIONAL.value == 'intentional'
+    assert ExitReason.INTERRUPTED.value == 'interrupted'
+    assert ExitReason.ERROR.value == 'error'
 
 
 def test_exit_reason_enum_names():
-    assert ExitReason["INTENTIONAL"] == ExitReason.INTENTIONAL
-    assert ExitReason["INTERRUPTED"] == ExitReason.INTERRUPTED
-    assert ExitReason["ERROR"] == ExitReason.ERROR
+    assert ExitReason['INTENTIONAL'] == ExitReason.INTENTIONAL
+    assert ExitReason['INTERRUPTED'] == ExitReason.INTERRUPTED
+    assert ExitReason['ERROR'] == ExitReason.ERROR
 
 
 def test_exit_reason_str_representation():
-    assert str(ExitReason.INTENTIONAL) == "ExitReason.INTENTIONAL"
+    assert str(ExitReason.INTENTIONAL) == 'ExitReason.INTENTIONAL'
     assert repr(ExitReason.ERROR) == "<ExitReason.ERROR: 'error'>"
 
 
 @pytest.mark.asyncio
 async def test_handle_exit_command_returns_intentional(monkeypatch):
-    monkeypatch.setattr("openhands.cli.commands.cli_confirm", lambda *a, **k: 0)
+    monkeypatch.setattr('openhands.cli.commands.cli_confirm', lambda *a, **k: 0)
 
     mock_usage_metrics = MagicMock()
     mock_usage_metrics.session_init_time = time.time() - 3600
@@ -45,12 +45,12 @@ async def test_handle_exit_command_returns_intentional(monkeypatch):
         new_session_requested,
         exit_reason,
     ) = await handle_commands(
-        "/exit",
+        '/exit',
         MagicMock(),
         mock_usage_metrics,
-        "test-session",
+        'test-session',
         MagicMock(),
-        "/tmp/test",
+        '/tmp/test',
         MagicMock(),
         AgentState.RUNNING,
     )
