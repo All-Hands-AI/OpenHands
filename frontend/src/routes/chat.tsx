@@ -63,10 +63,10 @@ export default function ChatRoute() {
       )}
 
       <section className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        <div className="col-span-2 border border-tertiary rounded-lg p-4 h-[60vh] flex flex-col">
+        <div className="col-span-2 card-glow-accent p-4 h-[60vh] flex flex-col">
           <div className="flex-1 overflow-auto flex flex-col gap-3 pr-1">
             {messages.map((m, idx) => (
-              <div key={idx} className={m.role === "user" ? "text-white" : "text-[#7de69b]"}>
+              <div key={idx} className={m.role === "user" ? "text-white" : "text-glow"}>
                 <span className="text-xs opacity-70 mr-2">{m.role}</span>
                 {m.content}
               </div>
@@ -80,14 +80,20 @@ export default function ChatRoute() {
               placeholder={"Ask anything..."}
               className="flex-1 bg-tertiary border border-[#717888] rounded-sm p-2 text-white"
             />
-            <BrandButton variant="primary" onClick={sendMessage} isDisabled={isSending || !prompt.trim()}>
+            <BrandButton
+              variant="primary"
+              type="button"
+              onClick={sendMessage}
+              isDisabled={isSending || !prompt.trim()}
+              className="btn-3d"
+            >
               {isSending ? t("SENDING") : t("SEND")}
             </BrandButton>
           </div>
         </div>
 
         <div className="col-span-1 flex flex-col gap-4">
-          <div className="border border-tertiary rounded-lg p-4">
+          <div className="card-glow-gold p-4">
             <h2 className="text-white font-medium mb-2">Generate Image</h2>
             <input
               value={imagePrompt}
@@ -95,12 +101,18 @@ export default function ChatRoute() {
               placeholder={"Describe your image..."}
               className="w-full bg-tertiary border border-[#717888] rounded-sm p-2 text-white mb-2"
             />
-            <BrandButton variant="primary" onClick={generateImage} isDisabled={!imagePrompt.trim()}>
+            <BrandButton
+              variant="glow"
+              type="button"
+              onClick={generateImage}
+              isDisabled={!imagePrompt.trim()}
+              className="btn-3d"
+            >
               {t("GENERATE_IMAGE")}
             </BrandButton>
           </div>
 
-          <div className="border border-tertiary rounded-lg p-4">
+          <div className="card-glow-gold p-4">
             <h2 className="text-white font-medium mb-2">Generate Video</h2>
             <input
               value={videoPrompt}
@@ -108,7 +120,13 @@ export default function ChatRoute() {
               placeholder={"Describe your video..."}
               className="w-full bg-tertiary border border-[#717888] rounded-sm p-2 text-white mb-2"
             />
-            <BrandButton variant="primary" onClick={generateVideo} isDisabled={!videoPrompt.trim()}>
+            <BrandButton
+              variant="glow"
+              type="button"
+              onClick={generateVideo}
+              isDisabled={!videoPrompt.trim()}
+              className="btn-3d"
+            >
               {t("GENERATE_VIDEO")}
             </BrandButton>
           </div>
