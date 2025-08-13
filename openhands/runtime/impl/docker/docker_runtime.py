@@ -258,7 +258,18 @@ class DockerRuntime(ActionExecutionClient):
             for mount in mounts:
                 parts = mount.split(':')
                 if len(parts) >= 2:
-                    host_path = os.path.abspath(parts[0])
+                    # Support both bind mounts (absolute paths) and Docker named volumes.
+                    # Named volume syntax:
+                    #   volume:<name>   (explicit)
+                    #   <name>          (implicit when not starting with '/')
+                    raw_host_part = parts[0]
+
+                    if raw_host_part.startswith('volume:'):
+                        host_path = raw_host_part.split('volume:', 1)[1]
+                    elif not os.path.isabs(raw_host_part):
+                        host_path = raw_host_part  # treat as named volume
+                    else:
+                        host_path = os.path.abspath(raw_host_part)
                     container_path = parts[1]
                     # Default mode is 'rw' if not specified
                     mount_mode = parts[2] if len(parts) > 2 else 'rw'
@@ -324,7 +335,8 @@ class DockerRuntime(ActionExecutionClient):
             container_path = parts[1]
             mount_mode = parts[2] if len(parts) > 2 else 'rw'
 
-            if 'overlay' not in mount_mode:
+            # Only consider overlay mounts for host-bind paths (absolute)
+            if (not os.path.isabs(parts[0])) or ('overlay' not in mount_mode):
                 continue
 
             # Prepare upper and work directories unique to this container and mount
