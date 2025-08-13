@@ -57,7 +57,6 @@ def get_action_execution_server_startup_command(
         username,
         '--user-id',
         str(user_id),
-
         *browsergym_args,
     ]
 

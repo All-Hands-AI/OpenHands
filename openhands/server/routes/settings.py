@@ -11,7 +11,7 @@ from openhands.server.routes.secrets import invalidate_legacy_secrets_store
 from openhands.server.settings import (
     GETSettingsModel,
 )
-from openhands.server.shared import config, conversation_manager
+from openhands.server.shared import config
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -176,7 +176,9 @@ async def store_settings(
         # Note: Git configuration will be applied when new sessions are initialized
         # Existing sessions will continue with their current git configuration
         if git_config_updated:
-            logger.info(f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}')
+            logger.info(
+                f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}'
+            )
 
         settings = convert_to_settings(settings)
         await settings_store.store(settings)
