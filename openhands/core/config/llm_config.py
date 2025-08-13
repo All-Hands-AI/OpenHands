@@ -80,7 +80,7 @@ class LLMConfig(BaseModel):
     # Note: this setting is actually global, unlike drop_params
     modify_params: bool = Field(default=True)
     disable_vision: bool | None = Field(default=None)
-    disable_stop_word: bool | None = Field(default=None)
+    disable_stop_word: bool | None = Field(default=False)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
