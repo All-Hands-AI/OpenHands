@@ -447,6 +447,16 @@ def display_command(event: CmdRunAction) -> None:
     
     # Get safety risk information if available
     safety_risk = getattr(event, 'safety_risk', None)
+    
+    # Temporary: Add risk detection for testing purposes
+    if safety_risk is None:
+        command = event.command.lower()
+        if any(dangerous in command for dangerous in ['rm -rf', 'sudo', 'chmod 777', 'dd if=', 'mkfs', 'format']):
+            safety_risk = 'HIGH'
+        elif any(risky in command for risky in ['rm ', 'mv ', 'cp ', 'wget', 'curl', 'pip install', 'npm install']):
+            safety_risk = 'MEDIUM'
+        elif any(safe in command for safe in ['ls', 'cat', 'echo', 'pwd', 'whoami', 'date']):
+            safety_risk = 'LOW'
 
     # Create a unique identifier for this command to prevent duplicates
     command_id = f"{event.command}_{getattr(event, 'id', '')}"
