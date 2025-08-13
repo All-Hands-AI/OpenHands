@@ -14,6 +14,7 @@ interface MCPJsonEditorProps {
 const MCP_DEFAULT_CONFIG: MCPConfig = {
   sse_servers: [],
   stdio_servers: [],
+  shttp_servers: [],
 };
 
 export function MCPJsonEditor({
@@ -131,7 +132,7 @@ export function MCPJsonEditor({
           {t(I18nKey.BUTTON$CANCEL)}
         </BrandButton>
         <BrandButton type="button" variant="primary" onClick={handleSave}>
-          {t(I18nKey.SETTINGS$MCP_PREVIEW_CHANGES)}
+          {t(I18nKey.SETTINGS$MCP_CONFIRM_CHANGES)}
         </BrandButton>
       </div>
     </div>
