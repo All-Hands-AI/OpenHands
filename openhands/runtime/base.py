@@ -931,37 +931,11 @@ fi
             logger.debug('Skipping git configuration for CLI runtime - using user\'s local git config')
             return
             
-        import sys
-        
-        is_windows = sys.platform == 'win32'
-        
-        commands = []
-        
-        # Check if this is a local runtime (not CLI, not remote/container)
-        # Local runtime uses file-based config, others use global config
-        is_local_runtime = self.__class__.__name__ == 'LocalRuntime'
-        
-        if is_local_runtime:
-            if is_windows:
-                # Windows, local - use file-based config
-                commands.extend([
-                    f'git config --file ./.git_config user.name "{git_user_name}"',
-                    f'git config --file ./.git_config user.email "{git_user_email}"',
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                ])
-            else:
-                # Unix, local - use file-based config
-                commands.extend([
-                    f'git config --file ./.git_config user.name "{git_user_name}"',
-                    f'git config --file ./.git_config user.email "{git_user_email}"',
-                    'export GIT_CONFIG=$(pwd)/.git_config'
-                ])
-        else:
-            # Remote/container runtime - use global config
-            commands.extend([
-                f'git config --global user.name "{git_user_name}"',
-                f'git config --global user.email "{git_user_email}"'
-            ])
+        # All runtimes (except CLI) use global git config
+        commands = [
+            f'git config --global user.name "{git_user_name}"',
+            f'git config --global user.email "{git_user_email}"'
+        ]
         
         # Execute git configuration commands
         for cmd in commands:
