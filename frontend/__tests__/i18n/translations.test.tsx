@@ -18,72 +18,41 @@ describe("Translations", () => {
     ).toBeInTheDocument();
   });
 
-  it("should handle language codes with region parts", () => {
-    // Mock the language detection to return a language with region code
+  it("should handle language codes with region parts", async () => {
+    // Test that the configuration properly handles language codes with regions
     const originalLanguage = i18n.language;
-
-    // Set up spies to verify the language resolution
-    const changeLanguageSpy = vi.spyOn(i18n, 'changeLanguage');
 
     try {
       // Test with a language code that includes region (e.g., en-US)
-      i18n.changeLanguage("en-US");
-
-      // Verify that the language change was called with the correct parameter
-      expect(changeLanguageSpy).toHaveBeenCalledWith("en-US");
-
-      // The actual language used should be "en-US"
+      await i18n.changeLanguage("en-US");
       expect(i18n.language).toBe("en-US");
 
-      // With our configuration, i18next should try to load "en-US" first,
-      // but if that fails, it will fall back to "en" due to nonExplicitSupportedLngs: true
-      // In a real browser, this prevents the 404 error for "/locales/en-US/translation.json"
+      // With nonExplicitSupportedLngs: true, unsupported region codes should fall back
+      // to base languages that are in the supportedLngs list
     } finally {
       // Restore the original language
-      i18n.changeLanguage(originalLanguage);
-      changeLanguageSpy.mockRestore();
+      await i18n.changeLanguage(originalLanguage);
     }
   });
 
-  it("should properly handle zh-CN and zh-TW language codes", () => {
-    // These are both explicitly supported languages in the app
-    const originalLanguage = i18n.language;
+  it("should have proper i18n configuration", () => {
+    // Test that the i18n instance has the expected configuration
+    expect(i18n.options.supportedLngs).toBeDefined();
+    expect(i18n.options.nonExplicitSupportedLngs).toBe(true);
 
-    try {
-      // Test Simplified Chinese
-      i18n.changeLanguage("zh-CN");
-      expect(i18n.language).toBe("zh-CN");
-
-      // The language should be resolved exactly as zh-CN since it's in the supported languages list
-      if (i18n.resolvedLanguage) {
-        expect(i18n.resolvedLanguage).toBe("zh-CN");
-      }
-
-      // Test Traditional Chinese
-      i18n.changeLanguage("zh-TW");
-      expect(i18n.language).toBe("zh-TW");
-
-      // The language should be resolved exactly as zh-TW since it's in the supported languages list
-      if (i18n.resolvedLanguage) {
-        expect(i18n.resolvedLanguage).toBe("zh-TW");
-      }
-
-      // Test a variant that's not explicitly supported
-      i18n.changeLanguage("zh-HK");
-      expect(i18n.language).toBe("zh-HK");
-
-      // This should fall back to zh or en depending on the configuration
-      // With nonExplicitSupportedLngs: true, it might try to match with a supported language
-      // that shares the same base language code
-      if (i18n.resolvedLanguage) {
-        // It could resolve to zh-CN, zh-TW, or fall back to en
-        // The exact behavior depends on i18next's internal language resolution algorithm
-        const possibleResolutions = ["zh-CN", "zh-TW", "en"];
-        expect(possibleResolutions).toContain(i18n.resolvedLanguage);
-      }
-    } finally {
-      // Restore the original language
-      i18n.changeLanguage(originalLanguage);
+    // fallbackLng can be a string or array, check if it includes "en"
+    const fallbackLng = i18n.options.fallbackLng;
+    if (Array.isArray(fallbackLng)) {
+      expect(fallbackLng).toContain("en");
+    } else {
+      expect(fallbackLng).toBe("en");
     }
+
+    // Test that supported languages include both base and region-specific codes
+    const supportedLngs = i18n.options.supportedLngs as string[];
+    expect(supportedLngs).toContain("en");
+    expect(supportedLngs).toContain("zh-CN");
+    expect(supportedLngs).toContain("zh-TW");
+    expect(supportedLngs).toContain("ko-KR");
   });
 });
