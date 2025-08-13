@@ -15,15 +15,23 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import OpenHands from "#/api/open-hands";
 import TerminalIcon from "#/icons/terminal.svg?react";
+import { ConversationLoading } from "./conversation-loading";
 
 export function ConversationTabs() {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
+  const { shouldShownAgentLoading } = useSelector(
+    (state: RootState) => state.conversation,
+  );
 
   const { conversationId } = useConversationId();
 
   const { t } = useTranslation();
 
   const basePath = `/conversations/${conversationId}`;
+
+  if (shouldShownAgentLoading) {
+    return <ConversationLoading />;
+  }
 
   return (
     <Container
