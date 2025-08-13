@@ -880,7 +880,7 @@ def test_git_operation(temp_dir, runtime_cls):
     is_windows(), reason='Test uses Linux-specific git hooks and file operations'
 )
 def test_git_co_authorship_runtime_setup(temp_dir, runtime_cls):
-    """Test that the runtime properly sets up git co-authorship functionality."""
+    """Test that all runtimes have git co-authorship enabled via Dockerfile.j2 hooks."""
     runtime, config = _load_runtime(
         temp_dir=temp_dir,
         use_workspace=False,
@@ -917,14 +917,9 @@ def test_git_co_authorship_runtime_setup(temp_dir, runtime_cls):
         obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
         assert obs.exit_code == 0
 
-        # For CLI runtime, co-authorship should be automatically added
-        # For other runtimes, this test verifies their co-authorship mechanism
-        if runtime_cls.__name__ == 'CLIRuntime':
-            assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
-        else:
-            # Other runtimes may have different co-authorship mechanisms
-            # This test ensures they don't break basic git functionality
-            assert obs.exit_code == 0
+        # All runtimes should have git co-authorship enabled via hooks in Dockerfile.j2
+        # CLI runtime uses additional PATH-based wrapper, but hooks work for all
+        assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
 
     finally:
         _close_test_runtime(runtime)
