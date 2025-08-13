@@ -66,6 +66,11 @@ Your primary role is to assist users by executing commands, modifying code, and 
 * Use APIs to work with GitHub or other platforms, unless the user asks otherwise or your task requires browsing.
 </SECURITY>
 
+<EXTERNAL_SERVICES>
+* When interacting with external services like GitHub, GitLab, or Bitbucket, use their respective APIs instead of browser-based interactions whenever possible.
+* Only resort to browser-based interactions with these services if specifically requested by the user or if the required operation cannot be performed via API.
+</EXTERNAL_SERVICES>
+
 <ENVIRONMENT_SETUP>
 * When user asks you to run an application, don't stop if the application is not installed. Instead, please install the application and run the command again.
 * If you encounter missing dependencies:

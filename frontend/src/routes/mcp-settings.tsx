@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "#/hooks/query/use-settings";
 import { useDeleteMcpServer } from "#/hooks/mutation/use-delete-mcp-server";
@@ -32,12 +32,12 @@ function MCPSettingsScreen() {
   const { mutate: addMcpServer } = useAddMcpServer();
   const { mutate: updateMcpServer } = useUpdateMcpServer();
 
-  const [view, setView] = React.useState<"list" | "add" | "edit">("list");
+  const [view, setView] = useState<"list" | "add" | "edit">("list");
   const [editingServer, setEditingServer] =
-    React.useState<MCPServerConfig | null>(null);
+    useState<MCPServerConfig | null>(null);
   const [confirmationModalIsVisible, setConfirmationModalIsVisible] =
-    React.useState(false);
-  const [serverToDelete, setServerToDelete] = React.useState<string | null>(
+    useState(false);
+  const [serverToDelete, setServerToDelete] = useState<string | null>(
     null,
   );
 

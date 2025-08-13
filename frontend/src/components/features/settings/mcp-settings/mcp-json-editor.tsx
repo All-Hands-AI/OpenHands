@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { MCPConfig } from "#/types/settings";
 import { I18nKey } from "#/i18n/declaration";
@@ -11,6 +11,11 @@ interface MCPJsonEditorProps {
   onCancel: () => void;
 }
 
+const MCP_DEFAULT_CONFIG: MCPConfig = {
+  sse_servers: [],
+  stdio_servers: [],
+};
+
 export function MCPJsonEditor({
   mcpConfig,
   onChange,
@@ -20,9 +25,16 @@ export function MCPJsonEditor({
   const [configText, setConfigText] = useState(() =>
     mcpConfig
       ? JSON.stringify(mcpConfig, null, 2)
-      : t(I18nKey.SETTINGS$MCP_DEFAULT_CONFIG),
+      : JSON.stringify(MCP_DEFAULT_CONFIG, null, 2),
   );
+
   const [error, setError] = useState<string | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setConfigText(e.target.value);
@@ -89,6 +101,7 @@ export function MCPJsonEditor({
         />
       </p>
       <textarea
+        ref={textareaRef}
         className={cn(
           "w-full h-64 resize-y p-2 rounded-sm text-sm font-mono",
           "bg-tertiary border border-[#717888]",
@@ -118,7 +131,7 @@ export function MCPJsonEditor({
           {t(I18nKey.BUTTON$CANCEL)}
         </BrandButton>
         <BrandButton type="button" variant="primary" onClick={handleSave}>
-          {t(I18nKey.SETTINGS$MCP_CONFIRM_CHANGES)}
+          {t(I18nKey.SETTINGS$MCP_PREVIEW_CHANGES)}
         </BrandButton>
       </div>
     </div>
