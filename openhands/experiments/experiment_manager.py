@@ -20,8 +20,10 @@ def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
         file_path = get_experiment_config_filename(conversation_id)
         exp_config = file_store.read(file_path)
         return ExperimentConfig.model_validate_json(exp_config)
-    except Exception:
-        return None
+    except Exception as e:
+        logger.warning(f'Failed to load experiment config: {e}')
+
+    return None
 
 
 class ExperimentManager:
@@ -36,6 +38,7 @@ class ExperimentManager:
         user_id: str, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         exp_config = load_experiment_config(conversation_id)
+        logger.info(f'Got experiment config: {exp_config}')
         if exp_config:
             agent_cfg = config.get_agent_config(config.default_agent)
             try:
@@ -45,6 +48,8 @@ class ExperimentManager:
             except json.JSONDecodeError:
                 logger.warning('Invalid JSON in EXPERIMENT_MANAGER_DEFAULT_CONFIG')
 
+            except Exception as e:
+                logger.warning(f'Error processing exp config: {e}')
         return config
 
 
