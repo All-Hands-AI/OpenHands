@@ -64,10 +64,6 @@ streaming_output_text_area: TextArea | None = None
 recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
 
-# Track displayed commands to prevent duplication
-displayed_commands: set[str] = set()
-MAX_DISPLAYED_COMMANDS = 10
-
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -443,26 +439,7 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
-    global displayed_commands
-    
-    # Create a unique identifier for this command to prevent duplicates
-    command_id = f"{event.command}_{getattr(event, 'id', '')}"
-    
-    # Check if this command has already been displayed
-    if command_id in displayed_commands:
-        return  # Skip duplicate display
-    
-    # Add to displayed commands set
-    displayed_commands.add(command_id)
-    
-    # Keep the set size manageable
-    if len(displayed_commands) > MAX_DISPLAYED_COMMANDS:
-        # Remove oldest entries (convert to list, remove first few, convert back)
-        displayed_commands_list = list(displayed_commands)
-        displayed_commands.clear()
-        displayed_commands.update(displayed_commands_list[-MAX_DISPLAYED_COMMANDS:])
-
-    # Create simple command frame without risk information
+    # Create simple command frame
     command_text = f'$ {event.command}'
     
     container = Frame(
