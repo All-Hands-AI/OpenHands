@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { useSettings } from "#/hooks/query/use-settings";
+import { streamChat, startImageJob, startVideoJob, getJob } from "#/api/chat";
 
 export default function ChatRoute() {
   const { t } = useTranslation();
@@ -15,17 +16,26 @@ export default function ChatRoute() {
   const sendMessage = async () => {
     if (!prompt.trim()) return;
     const userMsg = { role: "user" as const, content: prompt };
-    setMessages((m) => [...m, userMsg]);
+    setMessages((m) => [...m, userMsg, { role: "assistant", content: "" }]);
     setPrompt("");
     setIsSending(true);
     try {
-      // TODO: integrate with backend streaming endpoint /api/chat
-      // For now, mock assistant reply
-      setTimeout(() => {
-        setMessages((m) => [...m, { role: "assistant", content: "(demo) Received: " + userMsg.content }]);
-        setIsSending(false);
-      }, 600);
-    } catch {
+      await streamChat(
+        [{ role: "user", content: userMsg.content }],
+        settings?.llm_model,
+        (token) => {
+          setMessages((prev) => {
+            const copy = [...prev];
+            // append to last assistant message
+            const lastIdx = copy.length - 1;
+            if (lastIdx >= 0 && copy[lastIdx].role === "assistant") {
+              copy[lastIdx] = { ...copy[lastIdx], content: copy[lastIdx].content + token };
+            }
+            return copy;
+          });
+        },
+      );
+    } finally {
       setIsSending(false);
     }
   };
@@ -33,19 +43,44 @@ export default function ChatRoute() {
   const [imagePrompt, setImagePrompt] = React.useState("");
   const [videoPrompt, setVideoPrompt] = React.useState("");
   const [jobStatus, setJobStatus] = React.useState<string | null>(null);
+  const [imageUrl, setImageUrl] = React.useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = React.useState<string | null>(null);
+
+  const pollJob = async (jobId: string) => {
+    while (true) {
+      const j = await getJob(jobId);
+      if (j.status === "COMPLETED") return j.result;
+      if (j.status === "FAILED") throw new Error(j.error || "Job failed");
+      await new Promise((r) => setTimeout(r, 800));
+    }
+  };
 
   const generateImage = async () => {
     if (!imagePrompt.trim()) return;
     setJobStatus("Creating image...");
-    // TODO: call POST /api/generate-image, then poll /api/jobs/{id}
-    setTimeout(() => setJobStatus("(demo) Image ready"), 1200);
+    setImageUrl(null);
+    try {
+      const jobId = await startImageJob(imagePrompt);
+      const result = await pollJob(jobId);
+      setImageUrl(result?.path || null);
+      setJobStatus("Image ready");
+    } catch (e) {
+      setJobStatus("Image generation failed");
+    }
   };
 
   const generateVideo = async () => {
     if (!videoPrompt.trim()) return;
     setJobStatus("Creating video...");
-    // TODO: call POST /api/generate-video, then poll /api/jobs/{id}
-    setTimeout(() => setJobStatus("(demo) Video ready"), 2500);
+    setVideoUrl(null);
+    try {
+      const jobId = await startVideoJob(videoPrompt);
+      const result = await pollJob(jobId);
+      setVideoUrl(result?.path || null);
+      setJobStatus("Video ready");
+    } catch (e) {
+      setJobStatus("Video generation failed");
+    }
   };
 
   return (
@@ -110,6 +145,11 @@ export default function ChatRoute() {
             >
               {t("GENERATE_IMAGE")}
             </BrandButton>
+            {imageUrl && (
+              <div className="mt-3">
+                <img src={imageUrl} alt="generated" className="max-w-full rounded-sm border border-[#717888]" />
+              </div>
+            )}
           </div>
 
           <div className="card-glow-gold p-4">
@@ -129,6 +169,13 @@ export default function ChatRoute() {
             >
               {t("GENERATE_VIDEO")}
             </BrandButton>
+            {videoUrl && (
+              <div className="mt-3 text-[#9099AC] text-sm break-all">
+                <a href={videoUrl} target="_blank" rel="noreferrer" className="text-accent underline">
+                  Download Video
+                </a>
+              </div>
+            )}
           </div>
 
           {jobStatus && (
