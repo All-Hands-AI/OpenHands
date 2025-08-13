@@ -18,30 +18,35 @@ describe("Translations", () => {
     ).toBeInTheDocument();
   });
 
-  it("should fallback from unsupported region codes to base languages", async () => {
-    // Test that the configuration properly handles language codes with regions
+  it("should not attempt to load unsupported language codes", async () => {
+    // Test that the configuration prevents 404 errors by not attempting to load
+    // unsupported language codes like 'en-US@posix'
     const originalLanguage = i18n.language;
 
     try {
+      // With nonExplicitSupportedLngs: false, i18next will not attempt to load
+      // unsupported language codes, preventing 404 errors
+
       // Test with a language code that includes region but is not in supportedLngs
       await i18n.changeLanguage("en-US@posix");
 
-      // Should resolve to "en" (base language) since "en-US@posix" is not supported
+      // Since "en-US@posix" is not in supportedLngs and nonExplicitSupportedLngs is false,
+      // i18next should fall back to the fallbackLng ("en")
       expect(i18n.language).toBe("en");
 
       // Test another unsupported region code
       await i18n.changeLanguage("ja-JP");
 
-      // Should resolve to "ja" since "ja-JP" is not in supportedLngs
+      // With nonExplicitSupportedLngs: false, i18next will still try to find
+      // the base language if it exists in supportedLngs
       expect(i18n.language).toBe("ja");
 
-      // Test Chinese fallback - should map to zh-CN
-      await i18n.changeLanguage("zh");
-      expect(i18n.language).toBe("zh-CN");
+      // Test that supported languages still work
+      await i18n.changeLanguage("ja");
+      expect(i18n.language).toBe("ja");
 
-      // Test Korean fallback - should map to ko-KR
-      await i18n.changeLanguage("ko");
-      expect(i18n.language).toBe("ko-KR");
+      await i18n.changeLanguage("zh-CN");
+      expect(i18n.language).toBe("zh-CN");
 
     } finally {
       // Restore the original language
@@ -52,7 +57,9 @@ describe("Translations", () => {
   it("should have proper i18n configuration", () => {
     // Test that the i18n instance has the expected configuration
     expect(i18n.options.supportedLngs).toBeDefined();
-    expect(i18n.options.nonExplicitSupportedLngs).toBe(true);
+
+    // nonExplicitSupportedLngs should be false to prevent 404 errors
+    expect(i18n.options.nonExplicitSupportedLngs).toBe(false);
 
     // fallbackLng can be a string or array, check if it includes "en"
     const fallbackLng = i18n.options.fallbackLng;
