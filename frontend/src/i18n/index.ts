@@ -29,7 +29,7 @@ i18n
     debug: import.meta.env.NODE_ENV === "development",
 
     // Define supported languages explicitly
-    supportedLngs: AvailableLanguages.map(lang => lang.value),
+    supportedLngs: AvailableLanguages.map((lang) => lang.value),
 
     // This ensures that if a specific language+region isn't found (e.g., en-US),
     // it will try the base language (e.g., en) before falling back to the fallbackLng
