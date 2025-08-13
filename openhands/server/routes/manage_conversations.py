@@ -626,7 +626,6 @@ async def update_conversation(
     Raises:
         HTTPException: If conversation is not found or user lacks permission
     """
-
     logger.info(
         f'Updating conversation {conversation_id} with title: {data.title}',
         extra={'session_id': conversation_id, 'user_id': user_id},

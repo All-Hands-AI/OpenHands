@@ -445,8 +445,7 @@ def test_completion_keyboard_interrupt_handler(mock_litellm_completion, default_
 def test_completion_retry_with_llm_no_response_error_zero_temp(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator properly handles LLMNoResponseError by:
+    """Test that the retry decorator properly handles LLMNoResponseError by:
     1. First call to llm_completion uses temperature=0 and throws LLMNoResponseError
     2. Second call should have temperature=0.2 and return a successful response
     """
@@ -498,8 +497,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 def test_completion_retry_with_llm_no_response_error_nonzero_temp(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
+    """Test that the retry decorator works for LLMNoResponseError when initial temperature is non-zero,
     and keeps the original temperature on retry.
 
     This test verifies that when LLMNoResponseError is raised with a non-zero temperature:
@@ -530,8 +528,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp(
 @patch('openhands.llm.llm.litellm.get_model_info')
 @patch('openhands.llm.llm.httpx.get')
 def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
-    """
-    Test that Gemini 2.5 Pro models have function calling enabled by default.
+    """Test that Gemini 2.5 Pro models have function calling enabled by default.
     This includes testing various model name formats with different prefixes.
     """
     # Mock the model info response
@@ -589,8 +586,7 @@ def test_gemini_25_pro_function_calling(mock_httpx_get, mock_get_model_info):
 def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_retry(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError with non-zero temperature
+    """Test that the retry decorator works for LLMNoResponseError with non-zero temperature
     and successfully retries while preserving the original temperature.
 
     This test verifies that:
@@ -650,8 +646,7 @@ def test_completion_retry_with_llm_no_response_error_nonzero_temp_successful_ret
 def test_completion_retry_with_llm_no_response_error_successful_retry(
     mock_litellm_completion, default_config
 ):
-    """
-    Test that the retry decorator works for LLMNoResponseError with zero temperature
+    """Test that the retry decorator works for LLMNoResponseError with zero temperature
     and successfully retries with temperature=0.2.
 
     This test verifies that:
@@ -734,8 +729,7 @@ def test_completion_with_litellm_mock(mock_litellm_completion, default_config):
 
 @patch('openhands.llm.llm.litellm_completion')
 def test_llm_gemini_thinking_parameter(mock_litellm_completion, default_config):
-    """
-    Test that the 'thinking' parameter is correctly passed to litellm_completion
+    """Test that the 'thinking' parameter is correctly passed to litellm_completion
     when a Gemini model is used with 'low' reasoning_effort.
     """
     # Configure for Gemini model with low reasoning effort

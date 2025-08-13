@@ -58,8 +58,7 @@ POD_LABEL = 'openhands-runtime'
 
 
 class KubernetesRuntime(ActionExecutionClient):
-    """
-    A Kubernetes runtime for OpenHands that works with Kind.
+    """A Kubernetes runtime for OpenHands that works with Kind.
 
     This runtime creates pods in a Kubernetes cluster to run the agent code.
     It uses the Kubernetes Python client to create and manage the pods.
@@ -411,7 +410,6 @@ class KubernetesRuntime(ActionExecutionClient):
 
     def _get_vscode_service_manifest(self):
         """Create a service manifest for the VSCode server."""
-
         vscode_service_spec = V1ServiceSpec(
             selector={'app': POD_LABEL, 'session': self.sid},
             type='ClusterIP',
@@ -567,7 +565,6 @@ class KubernetesRuntime(ActionExecutionClient):
 
     def _get_vscode_ingress_manifest(self):
         """Create an ingress manifest for the VSCode server."""
-
         tls = []
         if self._k8s_config.ingress_tls_secret:
             runtime_tls = V1IngressTLS(
