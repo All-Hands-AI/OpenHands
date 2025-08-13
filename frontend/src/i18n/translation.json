@@ -2351,6 +2351,22 @@
         "tr": "Git Ayarları",
         "uk": "Git налаштування"
     },
+    "SETTINGS$GIT_SETTINGS_DESCRIPTION": {
+        "en": "Configure the username and email that OpenHands uses to commit changes.",
+        "ja": "OpenHandsがコミットに使用するユーザー名とメールを設定します。",
+        "zh-CN": "配置OpenHands用于提交更改的用户名和电子邮件。",
+        "zh-TW": "配置OpenHands用於提交更改的用戶名和電子郵件。",
+        "ko-KR": "OpenHands가 변경 사항을 커밋할 때 사용하는 사용자 이름과 이메일을 구성합니다.",
+        "de": "Konfigurieren Sie den Benutzernamen und die E-Mail, die OpenHands zum Committen von Änderungen verwendet.",
+        "no": "Konfigurer brukernavnet og e-posten som OpenHands bruker for å committe endringer.",
+        "it": "Configura il nome utente e l'email che OpenHands utilizza per committare le modifiche.",
+        "pt": "Configure o nome de usuário e o email que o OpenHands usa para fazer commits de alterações.",
+        "es": "Configure el nombre de usuario y el correo electrónico que OpenHands utiliza para confirmar cambios.",
+        "ar": "قم بتكوين اسم المستخدم والبريد الإلكتروني الذي يستخدمه OpenHands لارتكاب التغييرات.",
+        "fr": "Configurez le nom d'utilisateur et l'email qu'OpenHands utilise pour valider les modifications.",
+        "tr": "OpenHands'ın değişiklikleri commit etmek için kullandığı kullanıcı adını ve e-postayı yapılandırın.",
+        "uk": "Налаштуйте ім'я користувача та електронну пошту, які OpenHands використовує для фіксації змін."
+    },
     "SETTINGS$SOUND_NOTIFICATIONS": {
         "en": "Sound Notifications",
         "ja": "サウンド通知",
@@ -2414,6 +2430,22 @@
         "fr": "Suggérer des tâches sur GitHub",
         "tr": "GitHub'da Görevler Öner",
         "uk": "Запропонувати завдання на GitHub"
+    },
+    "SETTINGS$SOLVABILITY_ANALYSIS": {
+        "en": "Enable Solvability Analysis",
+        "ja": "解決可能性分析を有効にする",
+        "zh-CN": "启用可解决性分析",
+        "zh-TW": "啟用可解決性分析",
+        "ko-KR": "해결 가능성 분석 활성화",
+        "de": "Lösbarkeitsanalyse aktivieren",
+        "no": "Aktiver løsningsanalyse",
+        "it": "Abilita analisi di risolvibilità",
+        "pt": "Ativar análise de solucionabilidade",
+        "es": "Habilitar análisis de solvencia",
+        "ar": "تمكين تحليل القابلية للحل",
+        "fr": "Activer l'analyse de solvabilité",
+        "tr": "Çözünürlük Analizini Etkinleştir",
+        "uk": "Увімкнути аналіз розв'язності"
     },
     "SETTINGS$SEARCH_API_KEY": {
         "en": "Search API Key (Tavily)",
