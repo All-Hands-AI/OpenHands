@@ -14,5 +14,3 @@ export function ConversationLoading() {
     </div>
   );
 }
-
-export default ConversationLoading;

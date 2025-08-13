@@ -131,8 +131,35 @@
 
 /* Drag and drop styles */
 .drag-over {
-  background-color: rgba(208, 217, 250, 0.25) !important;
-  border: 2px dashed #d0d9fa !important;
+  backdrop-filter: blur(2px);
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 15px;
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+  z-index: 100;
+}
+
+.drag-over-content-wrapper {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  justify-content: center;
+  left: 0;
+  position: absolute;
+  width: 100%;
+  z-index: 100;
+  transform: translateY(16%);
+}
+
+.drag-over-ui-content {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 20px;
+  color: #fff;
 }
 
 /* File preview styles */
