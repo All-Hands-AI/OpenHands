@@ -21,7 +21,8 @@ from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.layout.containers import HSplit, Window
+from prompt_toolkit.layout.containers import HSplit, VSplit, Window
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.controls import FormattedTextControl
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.lexers import Lexer
@@ -62,6 +63,10 @@ streaming_output_text_area: TextArea | None = None
 # Track recent thoughts to prevent duplicate display
 recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
+
+# Track displayed commands to prevent duplication
+displayed_commands: set[str] = set()
+MAX_DISPLAYED_COMMANDS = 10
 
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
@@ -438,13 +443,40 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
+    global displayed_commands
+    
     # Get safety risk information if available
     safety_risk = getattr(event, 'safety_risk', None)
 
-    # Keep command frame clean and simple
+    # Create a unique identifier for this command to prevent duplicates
+    command_id = f"{event.command}_{getattr(event, 'id', '')}"
+    
+    # Check if this command has already been displayed
+    if command_id in displayed_commands:
+        return  # Skip duplicate display
+    
+    # Add to displayed commands set
+    displayed_commands.add(command_id)
+    
+    # Keep the set size manageable
+    if len(displayed_commands) > MAX_DISPLAYED_COMMANDS:
+        # Remove oldest entries (convert to list, remove first few, convert back)
+        displayed_commands_list = list(displayed_commands)
+        displayed_commands.clear()
+        displayed_commands.update(displayed_commands_list[-MAX_DISPLAYED_COMMANDS:])
+
+    # Create command frame with risk info in header
     command_text = f'$ {event.command}'
-    title = 'Command'
-    border_style = 'ansiblue'
+    
+    # Add risk information to the title
+    if safety_risk:
+        title = f'Command [Action Risk: {safety_risk.title()}]'
+        # Use risk-appropriate border color
+        risk_color = get_risk_color(safety_risk)
+        border_style = f'fg:{risk_color}'
+    else:
+        title = 'Command'
+        border_style = 'ansiblue'
 
     container = Frame(
         TextArea(
@@ -458,20 +490,6 @@ def display_command(event: CmdRunAction) -> None:
     )
     print_formatted_text('')
     print_container(container)
-    
-    # Display subtle risk indicator below the command frame if present
-    if safety_risk:
-        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
-        risk_color = get_risk_color(safety_risk)
-        
-        # Create a very subtle, small risk indicator
-        risk_text = f'  {risk_emoji} {safety_risk.lower()}'
-        
-        # Use HTML formatting for dimmed colored text
-        from prompt_toolkit.formatted_text import HTML
-        formatted_risk = HTML(f'<style fg="{risk_color}" dim="true">{risk_text}</style>')
-        
-        print_formatted_text(formatted_risk, style=DEFAULT_STYLE)
 
 
 def display_command_output(output: str) -> None:
@@ -858,7 +876,7 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
         # Create risk-aware question (only for HIGH risk now)
         if safety_risk == 'HIGH':
             risk_indicator = get_risk_indicator(safety_risk)
-            question = f'{risk_indicator} WARNING: This command has been identified as HIGH RISK.\nPlease review carefully before proceeding.\n\nChoose an option:'
+            question = f'{risk_indicator} HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
         else:
             question = 'Choose an option:'
 
@@ -1014,39 +1032,62 @@ def cli_confirm(
         }
     )
 
-    # Create layout with risk-based styling
+    # Create compact layout with risk-based styling
     content_window = Window(
         FormattedTextControl(get_choice_text),
         always_hide_cursor=True,
+        height=Dimension(max=10),  # Limit height to prevent screen takeover
+        width=Dimension(max=80),   # Limit width for compactness
     )
 
-    # Add a frame for high-risk commands
+    # Add a compact frame for high-risk commands
     if safety_risk == 'HIGH':
+        framed_content = Frame(
+            content_window,
+            title='🚨 HIGH RISK',
+            style=f'fg:{COLOR_RISK_HIGH} bold',
+        )
+        # Center the dialog and make it compact
         layout = Layout(
-            HSplit(
-                [
-                    Frame(
-                        content_window,
-                        title='⚠️  HIGH RISK COMMAND - PROCEED WITH CAUTION  ⚠️',
-                        style=f'fg:{COLOR_RISK_HIGH} bold',
-                    )
-                ]
-            )
+            HSplit([
+                Window(height=1),  # Small top padding
+                VSplit([
+                    Window(width=Dimension(weight=1)),  # Left padding
+                    framed_content,
+                    Window(width=Dimension(weight=1)),  # Right padding
+                ]),
+                Window(height=Dimension(weight=1)),  # Bottom padding
+            ])
         )
     elif safety_risk == 'MEDIUM':
+        framed_content = Frame(
+            content_window,
+            title='⚠️ MEDIUM RISK',
+            style=f'fg:{COLOR_RISK_MEDIUM}',
+        )
         layout = Layout(
-            HSplit(
-                [
-                    Frame(
-                        content_window,
-                        title='⚠️  MEDIUM RISK COMMAND',
-                        style=f'fg:{COLOR_RISK_MEDIUM}',
-                    )
-                ]
-            )
+            HSplit([
+                Window(height=1),
+                VSplit([
+                    Window(width=Dimension(weight=1)),
+                    framed_content,
+                    Window(width=Dimension(weight=1)),
+                ]),
+                Window(height=Dimension(weight=1)),
+            ])
         )
     else:
-        layout = Layout(HSplit([content_window]))
+        layout = Layout(
+            HSplit([
+                Window(height=1),
+                VSplit([
+                    Window(width=Dimension(weight=1)),
+                    content_window,
+                    Window(width=Dimension(weight=1)),
+                ]),
+                Window(height=Dimension(weight=1)),
+            ])
+        )
 
     app = Application(
         layout=layout,
