@@ -68,6 +68,9 @@ MAX_RECENT_THOUGHTS = 5
 displayed_commands: set[str] = set()
 MAX_DISPLAYED_COMMANDS = 10
 
+# Global variable to store current action risk for display synchronization
+current_action_risk: str | None = None
+
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
@@ -443,12 +446,16 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
-    global displayed_commands
+    global displayed_commands, current_action_risk
     
     # Get safety risk information if available
     safety_risk = getattr(event, 'safety_risk', None)
     
-    # Temporary: Add risk detection for testing purposes
+    # If no risk info on event, use the global current action risk
+    if safety_risk is None:
+        safety_risk = current_action_risk
+    
+    # If still no risk info, use fallback detection for testing
     if safety_risk is None:
         command = event.command.lower()
         if any(dangerous in command for dangerous in ['rm -rf', 'sudo', 'chmod 777', 'dd if=', 'mkfs', 'format']):
@@ -886,11 +893,15 @@ async def read_prompt_input(
 
 
 async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) -> str:
+    global current_action_risk
     try:
         # Get risk information from the pending action
         safety_risk = None
         if pending_action and hasattr(pending_action, 'safety_risk'):
             safety_risk = getattr(pending_action, 'safety_risk')
+        
+        # Store the risk globally for display synchronization
+        current_action_risk = safety_risk
 
         # Only show confirmation dialog for HIGH risk commands
         # For MEDIUM and LOW risk, auto-proceed (risk will be shown in action frame)
