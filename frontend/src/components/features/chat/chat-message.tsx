@@ -53,7 +53,7 @@ export function ChatMessage({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       className={cn(
-        "rounded-xl relative w-fit",
+        "rounded-xl relative w-fit max-w-[100%]",
         "flex flex-col gap-2",
         type === "user" && " p-4 bg-tertiary self-end",
         type === "agent" && "mt-6 max-w-full bg-transparent",
