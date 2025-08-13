@@ -95,6 +95,21 @@ export default function ConnectGitHubScreen() {
     navigate("/workspace", { replace: false });
   }, [navigate]);
 
+  const startGithubOAuth = async () => {
+    try {
+      const res = await fetch("/api/auth/github/start");
+      if (!res.ok) throw new Error("Failed to start GitHub OAuth");
+      const data = await res.json();
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        displayErrorToast("OAuth URL not received");
+      }
+    } catch (e) {
+      displayErrorToast("Failed to start GitHub OAuth");
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 p-8">
       <h1 className="text-2xl font-semibold text-white">Connect GitHub</h1>
@@ -111,7 +126,15 @@ export default function ConnectGitHubScreen() {
           githubHostSet={existingGithubHost}
         />
 
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-between">
+          <BrandButton
+            variant="secondary"
+            type="button"
+            onClick={startGithubOAuth}
+          >
+            Connect with GitHub (OAuth)
+          </BrandButton>
+
           <BrandButton
             testId="connect-github-save"
             type="submit"
