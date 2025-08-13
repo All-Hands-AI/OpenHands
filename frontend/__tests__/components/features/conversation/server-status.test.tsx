@@ -55,12 +55,6 @@ vi.mock("#/hooks/use-conversation-id", () => ({
   }),
 }));
 
-vi.mock("#/hooks/query/use-active-conversation", () => ({
-  useActiveConversation: () => ({
-    refetch: vi.fn(),
-  }),
-}));
-
 vi.mock("#/hooks/use-user-providers", () => ({
   useUserProviders: () => ({
     providers: [],
@@ -177,10 +171,9 @@ describe("ServerStatus", () => {
     const stopButton = screen.getByTestId("stop-server-button");
     await user.click(stopButton);
 
-    expect(mockStopConversationMutate).toHaveBeenCalledWith(
-      { conversationId: "test-conversation-id" },
-      expect.any(Object),
-    );
+    expect(mockStopConversationMutate).toHaveBeenCalledWith({
+      conversationId: "test-conversation-id",
+    });
   });
 
   it("should call start conversation mutation when start server is clicked", async () => {
@@ -197,13 +190,10 @@ describe("ServerStatus", () => {
     const startButton = screen.getByTestId("start-server-button");
     await user.click(startButton);
 
-    expect(mockStartConversationMutate).toHaveBeenCalledWith(
-      {
-        conversationId: "test-conversation-id",
-        providers: [],
-      },
-      expect.any(Object),
-    );
+    expect(mockStartConversationMutate).toHaveBeenCalledWith({
+      conversationId: "test-conversation-id",
+      providers: [],
+    });
   });
 
   it("should close context menu after stop server action", async () => {
