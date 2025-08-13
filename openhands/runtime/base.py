@@ -194,6 +194,9 @@ class Runtime(FileEditRuntimeMixin):
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
+        
+        # Configure git settings
+        self._setup_git_config()
 
     def close(self) -> None:
         """
@@ -907,44 +910,35 @@ fi
     async def connect(self) -> None:
         pass
 
-    def setup_git_config(
-        self,
-        git_user_name: str = 'openhands',
-        git_user_email: str = 'openhands@all-hands.dev',
-        is_cli_runtime: bool = False,
-    ) -> None:
-        """Configure git user settings after runtime connection.
+    def _setup_git_config(self) -> None:
+        """Configure git user settings during initial environment setup.
         
-        This method should be called after the runtime is connected to ensure
-        git configuration is applied to the active runtime environment.
-        
-        Note: CLI runtime skips git configuration as it runs on the user's
-        local machine where they likely have their own git settings.
-        
-        Args:
-            git_user_name: Git user name for commits
-            git_user_email: Git user email for commits
-            is_cli_runtime: Whether this is a CLI runtime (skips git config if True)
+        This method is called automatically during setup_initial_env() to ensure
+        git configuration is applied to the runtime environment.
         """
-        # Skip git configuration for CLI runtime - user's local git config should be used
+        # Get git configuration from config
+        git_user_name = getattr(self.config, 'git_user_name', 'openhands')
+        git_user_email = getattr(self.config, 'git_user_email', 'openhands@all-hands.dev')
+        
+        # Skip git configuration for CLI runtime to preserve user's local git settings
+        is_cli_runtime = getattr(self.config, 'is_cli_runtime', False)
         if is_cli_runtime:
             logger.debug('Skipping git configuration for CLI runtime - using user\'s local git config')
             return
             
         # All runtimes (except CLI) use global git config
-        commands = [
-            f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
-        ]
+        cmd = f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
         
-        # Execute git configuration commands
-        for cmd in commands:
-            try:
-                action = CmdRunAction(command=cmd)
-                obs = self.run(action)
-                if obs.exit_code != 0:
-                    logger.warning(f'Git config command failed: {cmd}, error: {obs.content}')
-            except Exception as e:
-                logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
+        # Execute git configuration command
+        try:
+            action = CmdRunAction(command=cmd)
+            obs = self.run(action)
+            if obs.exit_code != 0:
+                logger.warning(f'Git config command failed: {cmd}, error: {obs.content}')
+            else:
+                logger.debug(f'Successfully configured git: name={git_user_name}, email={git_user_email}')
+        except Exception as e:
+            logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
 
     @abstractmethod
     def get_mcp_config(

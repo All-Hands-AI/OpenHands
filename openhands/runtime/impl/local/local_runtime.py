@@ -368,12 +368,6 @@ class LocalRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
-        
-        # Configure git settings after runtime connection
-        self.setup_git_config(
-            git_user_name=self.config.git_user_name,
-            git_user_email=self.config.git_user_email,
-        )
 
         # Check if we need to create more warm servers after connecting
         if (

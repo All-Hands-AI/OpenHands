@@ -209,12 +209,6 @@ class DockerRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
-        
-        # Configure git settings after runtime connection
-        self.setup_git_config(
-            git_user_name=self.config.git_user_name,
-            git_user_email=self.config.git_user_email,
-        )
 
     def maybe_build_runtime_container_image(self):
         if self.runtime_container_image is None:

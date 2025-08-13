@@ -130,6 +130,9 @@ class CLIRuntime(Runtime):
             user_id,
             git_provider_tokens,
         )
+        
+        # Mark this as a CLI runtime to skip git configuration
+        self.config.is_cli_runtime = True
 
         # Set up workspace
         if self.config.workspace_base is not None:
@@ -189,13 +192,6 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
-        
-        # Configure git settings after runtime connection (skipped for CLI)
-        self.setup_git_config(
-            git_user_name=self.config.git_user_name,
-            git_user_email=self.config.git_user_email,
-            is_cli_runtime=True,
-        )
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:
         """
