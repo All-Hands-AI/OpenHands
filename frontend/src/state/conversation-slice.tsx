@@ -7,6 +7,7 @@ interface ConversationState {
   loadingFiles: string[]; // File names currently being processed
   loadingImages: string[]; // Image names currently being processed
   messageToSend: string | null;
+  shouldShownAgentLoading: boolean;
 }
 
 export const conversationSlice = createSlice({
@@ -20,10 +21,14 @@ export const conversationSlice = createSlice({
     loadingFiles: [],
     loadingImages: [],
     messageToSend: null,
+    shouldShownAgentLoading: false,
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
       state.isRightPanelShown = action.payload;
+    },
+    setShouldShownAgentLoading: (state, action) => {
+      state.shouldShownAgentLoading = action.payload;
     },
     addImages: (state, action) => {
       state.images = [...state.images, ...action.payload];
@@ -82,6 +87,7 @@ export const conversationSlice = createSlice({
 
 export const {
   setIsRightPanelShown,
+  setShouldShownAgentLoading,
   addImages,
   addFiles,
   removeImage,

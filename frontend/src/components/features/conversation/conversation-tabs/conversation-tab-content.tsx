@@ -1,7 +1,11 @@
 import { lazy, Suspense } from "react";
+import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
 import { useConversationTabs } from "./use-conversation-tabs";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { RootState } from "#/store";
+import { ConversationLoading } from "../conversation-loading";
+
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
 const BrowserTab = lazy(() => import("#/routes/browser-tab"));
@@ -12,12 +16,20 @@ const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 export function ConversationTabContent() {
   const [{ selectedTab }] = useConversationTabs();
 
+  const { shouldShownAgentLoading } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
   // Determine which tab is active based on the current path
   const isEditorActive = selectedTab === "editor";
   const isBrowserActive = selectedTab === "browser";
   const isJupyterActive = selectedTab === "jupyter";
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
+
+  if (shouldShownAgentLoading) {
+    return <ConversationLoading />;
+  }
 
   return (
     <div
