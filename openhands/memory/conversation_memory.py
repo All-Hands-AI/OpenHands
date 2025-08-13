@@ -1,3 +1,4 @@
+import re
 from typing import Generator
 
 from litellm import ModelResponse
@@ -427,7 +428,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
             content = []
-            if obs.content.strip().startswith('data:image/png;'):
+            if re.match(r'^data:image/[^;]+;base64,', obs.content.strip()):
                 content.append(ImageContent(image_urls=[obs.content.strip()]))
             else:
                 content.append(TextContent(text=obs.content))
