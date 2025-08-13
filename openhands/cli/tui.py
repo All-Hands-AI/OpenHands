@@ -854,7 +854,12 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
         # Create risk-aware question
         if safety_risk:
             risk_indicator = get_risk_indicator(safety_risk)
-            question = f'{risk_indicator} This command is for testing purposes only and should NOT be executed in a production environment.\nIt is intentionally set to HIGH risk to test the safety analysis functionality.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
+            if safety_risk == 'HIGH':
+                question = f'{risk_indicator} WARNING: This command has been identified as HIGH RISK.\nPlease review carefully before proceeding.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
+            elif safety_risk == 'MEDIUM':
+                question = f'{risk_indicator} CAUTION: This command has been identified as MEDIUM RISK.\nPlease review before proceeding.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
+            else:
+                question = f'{risk_indicator} Risk Level: {safety_risk}\n\nChoose an option:'
         else:
             question = 'Choose an option:'
 
