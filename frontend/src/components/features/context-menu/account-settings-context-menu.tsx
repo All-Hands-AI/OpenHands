@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
@@ -87,15 +87,14 @@ export function AccountSettingsContextMenu({
 }: AccountSettingsContextMenuProps) {
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
-  const handleNavigation = (path: string) => {
-    navigate(path);
+  const handleNavigationClick = () => {
     onClose();
+    // The Link component will handle the actual navigation
   };
 
   return (
@@ -105,14 +104,15 @@ export function AccountSettingsContextMenu({
       className="absolute right-0 md:right-full md:left-full mt-2 md:mt-0 md:bottom-0 ml-2 z-10 w-fit bg-tertiary rounded-[6px] p-[6px]"
     >
       {navItems.map(({ to, text, icon }) => (
-        <ContextMenuListItem
-          key={to}
-          onClick={() => handleNavigation(to)}
-          className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded"
-        >
-          {icon}
-          <span className="text-white text-sm">{t(text)}</span>
-        </ContextMenuListItem>
+        <Link key={to} to={to} className="text-decoration-none">
+          <ContextMenuListItem
+            onClick={() => handleNavigationClick()}
+            className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded"
+          >
+            {icon}
+            <span className="text-white text-sm">{t(text)}</span>
+          </ContextMenuListItem>
+        </Link>
       ))}
 
       <ContextMenuSeparator className="bg-[#959CB2] my-[6px]" />
