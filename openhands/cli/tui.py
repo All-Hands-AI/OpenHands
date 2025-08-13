@@ -67,11 +67,22 @@ MAX_RECENT_THOUGHTS = 5
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
 COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
+
+# Risk level colors
+COLOR_RISK_LOW = '#00FF00'  # Green
+COLOR_RISK_MEDIUM = '#FFA500'  # Orange
+COLOR_RISK_HIGH = '#FF0000'  # Red
+COLOR_RISK_UNKNOWN = '#808080'  # Grey
+
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
         'grey': COLOR_GREY,
         'prompt': f'{COLOR_GOLD} bold',
+        'risk-low': COLOR_RISK_LOW,
+        'risk-medium': COLOR_RISK_MEDIUM,
+        'risk-high': COLOR_RISK_HIGH,
+        'risk-unknown': COLOR_RISK_UNKNOWN,
     }
 )
 
@@ -89,6 +100,45 @@ COMMANDS = {
 print_lock = threading.Lock()
 
 pause_task: asyncio.Task | None = None  # No more than one pause task
+
+
+def get_risk_color(safety_risk: str | None) -> str:
+    """Get the color for a given safety risk level."""
+    if not safety_risk:
+        return COLOR_RISK_UNKNOWN
+
+    risk_colors = {
+        'LOW': COLOR_RISK_LOW,
+        'MEDIUM': COLOR_RISK_MEDIUM,
+        'HIGH': COLOR_RISK_HIGH,
+    }
+    return risk_colors.get(safety_risk.upper(), COLOR_RISK_UNKNOWN)
+
+
+def get_risk_style_class(safety_risk: str | None) -> str:
+    """Get the style class for a given safety risk level."""
+    if not safety_risk:
+        return 'risk-unknown'
+
+    risk_classes = {
+        'LOW': 'risk-low',
+        'MEDIUM': 'risk-medium',
+        'HIGH': 'risk-high',
+    }
+    return risk_classes.get(safety_risk.upper(), 'risk-unknown')
+
+
+def get_risk_indicator(safety_risk: str | None) -> str:
+    """Get a visual indicator for the risk level."""
+    if not safety_risk:
+        return '❓'
+
+    risk_indicators = {
+        'LOW': '✅',
+        'MEDIUM': '⚠️',
+        'HIGH': '🚨',
+    }
+    return risk_indicators.get(safety_risk.upper(), '❓')
 
 
 class UsageMetrics:
@@ -388,15 +438,38 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
+    # Get safety risk information if available
+    safety_risk = getattr(event, 'safety_risk', None)
+    risk_indicator = get_risk_indicator(safety_risk)
+    get_risk_color(safety_risk)
+
+    # Create command text with risk information
+    if safety_risk:
+        command_text = (
+            f'$ {event.command}\n\n{risk_indicator} Risk Level: {safety_risk}'
+        )
+        title = f'Command ({safety_risk} Risk)'
+        # Use risk-appropriate border color
+        if safety_risk == 'HIGH':
+            border_style = f'fg:{COLOR_RISK_HIGH} bold'
+        elif safety_risk == 'MEDIUM':
+            border_style = f'fg:{COLOR_RISK_MEDIUM}'
+        else:
+            border_style = f'fg:{COLOR_RISK_LOW}'
+    else:
+        command_text = f'$ {event.command}'
+        title = 'Command'
+        border_style = 'ansiblue'
+
     container = Frame(
         TextArea(
-            text=f'$ {event.command}',
+            text=command_text,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
         ),
-        title='Command',
-        style='ansiblue',
+        title=title,
+        style=border_style,
     )
     print_formatted_text('')
     print_container(container)
@@ -771,18 +844,53 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) -> str:
     try:
-        choices = [
-            'Yes, proceed',
-            'No (and allow to enter instructions)',
-            'Always proceed unless predicted HIGH risk',
-            "Always proceed (don't ask again)",
-        ]
+        # Get risk information from the pending action
+        safety_risk = None
+        if pending_action and hasattr(pending_action, 'safety_risk'):
+            safety_risk = getattr(pending_action, 'safety_risk')
+
+        # Create risk-aware question
+        if safety_risk:
+            risk_indicator = get_risk_indicator(safety_risk)
+            question = f'{risk_indicator} This command is for testing purposes only and should NOT be executed in a production environment.\nIt is intentionally set to HIGH risk to test the safety analysis functionality.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
+        else:
+            question = 'Choose an option:'
+
+        # Create risk-aware menu choices
+        if safety_risk == 'HIGH':
+            choices = [
+                '⚠️  Yes, proceed (HIGH RISK - Use with caution)',
+                '🛑 No (and allow to enter instructions)',
+                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
+                "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
+            ]
+        elif safety_risk == 'MEDIUM':
+            choices = [
+                '✅ Yes, proceed (MEDIUM risk)',
+                '🛑 No (and allow to enter instructions)',
+                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
+                "🚀 Always proceed (don't ask again)",
+            ]
+        elif safety_risk == 'LOW':
+            choices = [
+                '✅ Yes, proceed (LOW risk)',
+                '🛑 No (and allow to enter instructions)',
+                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
+                "🚀 Always proceed (don't ask again)",
+            ]
+        else:
+            choices = [
+                'Yes, proceed',
+                'No (and allow to enter instructions)',
+                'Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
+                "Always proceed (don't ask again)",
+            ]
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(
-            cli_confirm, config, 'Choose an option:', choices
+            cli_confirm, config, question, choices, safety_risk
         )
 
         return {0: 'yes', 1: 'no', 2: 'smart', 3: 'always'}.get(index, 'no')
@@ -843,6 +951,7 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    safety_risk: str | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -853,8 +962,18 @@ def cli_confirm(
     selected = [0]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
+        # Use risk-based styling for the question
+        if safety_risk == 'HIGH':
+            question_style = 'class:risk-high'
+        elif safety_risk == 'MEDIUM':
+            question_style = 'class:risk-medium'
+        elif safety_risk == 'LOW':
+            question_style = 'class:risk-low'
+        else:
+            question_style = 'class:question'
+
         return [
-            ('class:question', f'{question}\n\n'),
+            (question_style, f'{question}\n\n'),
         ] + [
             (
                 'class:selected' if i == selected[0] else 'class:unselected',
@@ -889,18 +1008,51 @@ def cli_confirm(
     def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
-    style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
-
-    layout = Layout(
-        HSplit(
-            [
-                Window(
-                    FormattedTextControl(get_choice_text),
-                    always_hide_cursor=True,
-                )
-            ]
-        )
+    style = Style.from_dict(
+        {
+            'selected': COLOR_GOLD,
+            'unselected': '',
+            'question': '',
+            'risk-low': COLOR_RISK_LOW,
+            'risk-medium': COLOR_RISK_MEDIUM,
+            'risk-high': COLOR_RISK_HIGH + ' bold',
+            'risk-unknown': COLOR_RISK_UNKNOWN,
+        }
     )
+
+    # Create layout with risk-based styling
+    content_window = Window(
+        FormattedTextControl(get_choice_text),
+        always_hide_cursor=True,
+    )
+
+    # Add a frame for high-risk commands
+    if safety_risk == 'HIGH':
+        layout = Layout(
+            HSplit(
+                [
+                    Frame(
+                        content_window,
+                        title='⚠️  HIGH RISK COMMAND - PROCEED WITH CAUTION  ⚠️',
+                        style=f'fg:{COLOR_RISK_HIGH} bold',
+                    )
+                ]
+            )
+        )
+    elif safety_risk == 'MEDIUM':
+        layout = Layout(
+            HSplit(
+                [
+                    Frame(
+                        content_window,
+                        title='⚠️  MEDIUM RISK COMMAND',
+                        style=f'fg:{COLOR_RISK_MEDIUM}',
+                    )
+                ]
+            )
+        )
+    else:
+        layout = Layout(HSplit([content_window]))
 
     app = Application(
         layout=layout,

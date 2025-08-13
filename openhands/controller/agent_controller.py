@@ -888,7 +888,7 @@ class AgentController:
                 # If safety_risk is MEDIUM or LOW, follow the confirmation_mode setting
                 # If safety_risk is not set, follow the confirmation_mode setting
                 if safety_risk == 'HIGH' or self.state.confirmation_mode:
-                    action.confirmation_state = (
+                    action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )
             self._pending_action = action

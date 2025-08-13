@@ -252,7 +252,11 @@ async def run_session(
                             )
                             return
 
-                confirmation_status = await read_confirmation_input(config)
+                # Get the pending action to show risk information
+                pending_action = controller._pending_action
+                confirmation_status = await read_confirmation_input(
+                    config, pending_action
+                )
                 if confirmation_status in ('yes', 'always', 'smart'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
