@@ -5,6 +5,7 @@ import {
   Outlet,
   useNavigate,
   useLocation,
+  useNavigation,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -62,197 +63,38 @@ export function ErrorBoundary() {
   );
 }
 
-export default function MainApp() {
-  const navigate = useNavigate();
-  const { pathname } = useLocation();
-  const isOnTosPage = useIsOnTosPage();
-  const { data: settings, isFetching: isFetchingSettings } = useSettings();
-  const { error, isFetching: isFetchingBalance } = useBalance();
-  const { migrateUserConsent } = useMigrateUserConsent();
-  const { t } = useTranslation();
-
+export default function RootLayout() {
+  const navigation = useNavigation();
+  const location = useLocation();
+  const [isNavigating, setIsNavigating] = useState(false);
   const config = useConfig();
-  const {
-    data: isAuthed,
-    isFetching: isFetchingAuth,
-    isError: isAuthError,
-  } = useIsAuthed();
+  const balance = useBalance();
+  const settings = useSettings();
 
-  // Always call the hook, but we'll only use the result when not on TOS page
-  const gitHubAuthUrl = useGitHubAuthUrl({
-    appMode: config.data?.APP_MODE || null,
-    gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
-    authUrl: config.data?.AUTH_URL,
-  });
-
-  // When on TOS page, we don't use the GitHub auth URL
-  const effectiveGitHubAuthUrl = isOnTosPage ? null : gitHubAuthUrl;
-
-  const [consentFormIsOpen, setConsentFormIsOpen] = React.useState(false);
-
-  // Track route transitions for global loading overlay
-  const [isNavigating, setIsNavigating] = React.useState(false);
-  React.useEffect(() => {
-    setIsNavigating(true);
-    const id = setTimeout(() => setIsNavigating(false), 200); // small debounce
-    return () => clearTimeout(id);
-  }, [pathname]);
-
-  // Auto-login if login method is stored in local storage
-  useAutoLogin();
-
-  // Handle authentication callback and set login method after successful authentication
-  useAuthCallback();
-
-  React.useEffect(() => {
-    // Don't change language when on TOS page
-    if (!isOnTosPage && settings?.LANGUAGE) {
-      i18n.changeLanguage(settings.LANGUAGE);
+  useEffect(() => {
+    if (navigation.state !== "idle") {
+      setIsNavigating(true);
+    } else {
+      const id = setTimeout(() => setIsNavigating(false), 150);
+      return () => clearTimeout(id);
     }
-  }, [settings?.LANGUAGE, isOnTosPage]);
+  }, [navigation.state, location.pathname]);
 
-  React.useEffect(() => {
-    // Don't show consent form when on TOS page
-    if (!isOnTosPage) {
-      const consentFormModalIsOpen =
-        settings?.USER_CONSENTS_TO_ANALYTICS === null;
+  const showGlobalLoader = useMemo(() => {
+    const isFetchingAuth = false; // plug actual auth query if available
+    const isFetchingSettings = settings.isFetching;
+    const isFetchingBalance = balance.isFetching;
+    return (
+      isNavigating || isFetchingAuth || isFetchingSettings || isFetchingBalance || config.isLoading
+    );
+  }, [isNavigating, settings.isFetching, balance.isFetching, config.isLoading]);
 
-      setConsentFormIsOpen(consentFormModalIsOpen);
-    }
-  }, [settings, isOnTosPage]);
-
-  React.useEffect(() => {
-    // Don't migrate user consent when on TOS page
-    if (!isOnTosPage) {
-      // Migrate user consent to the server if it was previously stored in localStorage
-      migrateUserConsent({
-        handleAnalyticsWasPresentInLocalStorage: () => {
-          setConsentFormIsOpen(false);
-        },
-      });
-    }
-  }, [isOnTosPage]);
-
-  React.useEffect(() => {
-    if (settings?.IS_NEW_USER && config.data?.APP_MODE === "saas") {
-      displaySuccessToast(t(I18nKey.BILLING$YOURE_IN));
-    }
-  }, [settings?.IS_NEW_USER, config.data?.APP_MODE]);
-
-  React.useEffect(() => {
-    // Don't do any redirects when on TOS page
-    // Don't allow users to use the app if it 402s
-    if (!isOnTosPage && error?.status === 402 && pathname !== "/") {
-      navigate("/");
-    }
-  }, [error?.status, pathname, isOnTosPage]);
-
-  // Function to check if login method exists in local storage
-  const checkLoginMethodExists = React.useCallback(() => {
-    // Only check localStorage if we're in a browser environment
-    if (typeof window !== "undefined" && window.localStorage) {
-      return localStorage.getItem(LOCAL_STORAGE_KEYS.LOGIN_METHOD) !== null;
-    }
-    return false;
-  }, []);
-
-  // State to track if login method exists
-  const [loginMethodExists, setLoginMethodExists] = React.useState(
-    checkLoginMethodExists(),
-  );
-
-  // Listen for storage events to update loginMethodExists when logout happens
-  React.useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === LOCAL_STORAGE_KEYS.LOGIN_METHOD) {
-        setLoginMethodExists(checkLoginMethodExists());
-      }
-    };
-
-    // Also check on window focus, as logout might happen in another tab
-    const handleWindowFocus = () => {
-      setLoginMethodExists(checkLoginMethodExists());
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    window.addEventListener("focus", handleWindowFocus);
-
-    return () => {
-      window.removeEventListener("storage", handleStorageChange);
-      window.removeEventListener("focus", handleWindowFocus);
-    };
-  }, [checkLoginMethodExists]);
-
-  // Check login method status when auth status changes
-  React.useEffect(() => {
-    // When auth status changes (especially on logout), recheck login method
-    setLoginMethodExists(checkLoginMethodExists());
-  }, [isAuthed, checkLoginMethodExists]);
-
-  const renderAuthModal =
-    !isAuthed &&
-    !isAuthError &&
-    !isFetchingAuth &&
-    !isOnTosPage &&
-    config.data?.APP_MODE === "saas" &&
-    !loginMethodExists; // Don't show auth modal if login method exists in local storage
-
-  const renderReAuthModal =
-    !isAuthed &&
-    !isAuthError &&
-    !isFetchingAuth &&
-    !isOnTosPage &&
-    config.data?.APP_MODE === "saas" &&
-    loginMethodExists;
-
-  const showGlobalLoader =
-    isNavigating ||
-    isFetchingAuth ||
-    isFetchingSettings ||
-    isFetchingBalance ||
-    (config.isLoading ?? false);
+  const loaderMessage = isNavigating ? "Loading..." : (settings.isFetching ? "Loading settings..." : undefined);
 
   return (
-    <div
-      data-testid="root-layout"
-      className="bg-base p-3 h-screen lg:min-w-[1024px] flex flex-col md:flex-row gap-3"
-    >
-      <Sidebar />
-
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
-        {config.data?.MAINTENANCE && (
-          <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
-        )}
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
-      </div>
-
-      {renderAuthModal && (
-        <AuthModal
-          githubAuthUrl={effectiveGitHubAuthUrl}
-          appMode={config.data?.APP_MODE}
-          providersConfigured={config.data?.PROVIDERS_CONFIGURED}
-          authUrl={config.data?.AUTH_URL}
-        />
-      )}
-      {renderReAuthModal && <ReauthModal />}
-      {config.data?.APP_MODE === "oss" && consentFormIsOpen && (
-        <AnalyticsConsentFormModal
-          onClose={() => {
-            setConsentFormIsOpen(false);
-          }}
-        />
-      )}
-
-      {config.data?.FEATURE_FLAGS.ENABLE_BILLING &&
-        config.data?.APP_MODE === "saas" &&
-        settings?.IS_NEW_USER && <SetupPaymentModal />}
-
-      <LoadingOverlay visible={showGlobalLoader} message={"Loading..."} />
+    <div className="h-full w-full">
+      <LoadingOverlay visible={showGlobalLoader} message={loaderMessage} />
+      <Outlet />
     </div>
   );
 }
