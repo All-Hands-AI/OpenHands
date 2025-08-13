@@ -890,7 +890,7 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(
-            cli_confirm, config, question, choices, safety_risk
+            cli_confirm, config, question, choices, 0, safety_risk
         )
 
         return {0: 'yes', 1: 'no', 2: 'smart', 3: 'always'}.get(index, 'no')
@@ -951,6 +951,7 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    initial_selection: int = 0,
     safety_risk: str | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
@@ -959,7 +960,7 @@ def cli_confirm(
     """
     if choices is None:
         choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
+    selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
         # Use risk-based styling for the question
