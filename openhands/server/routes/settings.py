@@ -173,26 +173,10 @@ async def store_settings(
             config.git_user_email = settings.git_user_email
             git_config_updated = True
 
-        # Apply git configuration to all active runtimes if git settings were updated
+        # Note: Git configuration will be applied when new sessions are initialized
+        # Existing sessions will continue with their current git configuration
         if git_config_updated:
-            try:
-                # Get all active sessions and update their git configuration
-                if hasattr(conversation_manager, '_local_agent_loops_by_sid'):
-                    for session in conversation_manager._local_agent_loops_by_sid.values():
-                        if (session.agent_session.runtime 
-                            and session.agent_session.runtime.runtime_initialized):
-                            # Update the session's config as well
-                            session.config.git_user_name = config.git_user_name
-                            session.config.git_user_email = config.git_user_email
-                            # Apply git configuration to the runtime
-                            session.agent_session.runtime.setup_git_config(
-                                git_user_name=config.git_user_name,
-                                git_user_email=config.git_user_email,
-                            )
-                            logger.info(f'Updated git configuration for session {session.sid}: '
-                                      f'name={config.git_user_name}, email={config.git_user_email}')
-            except Exception as e:
-                logger.warning(f'Failed to update git configuration in runtime: {e}')
+            logger.info(f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}')
 
         settings = convert_to_settings(settings)
         await settings_store.store(settings)

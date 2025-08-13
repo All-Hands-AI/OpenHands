@@ -933,8 +933,7 @@ fi
             
         # All runtimes (except CLI) use global git config
         commands = [
-            f'git config --global user.name "{git_user_name}"',
-            f'git config --global user.email "{git_user_email}"'
+            f'git config --global user.name "{git_user_name}" && git config --global user.email "{git_user_email}"'
         ]
         
         # Execute git configuration commands
