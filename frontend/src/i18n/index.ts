@@ -20,6 +20,36 @@ export const AvailableLanguages = [
   { label: "Українська", value: "uk" },
 ];
 
+// Function to normalize language codes to supported ones
+function normalizeLanguageCode(langCode: string): string {
+  const supportedLanguages = AvailableLanguages.map((lang) => lang.value);
+
+  // If the exact language is supported, use it
+  if (supportedLanguages.includes(langCode)) {
+    return langCode;
+  }
+
+  // Try to find a base language match (e.g., 'en' for 'en-US@posix')
+  const baseLang = langCode.split('-')[0];
+  if (supportedLanguages.includes(baseLang)) {
+    return baseLang;
+  }
+
+  // For Chinese, try to map variants
+  if (baseLang === 'zh') {
+    // Default to Simplified Chinese for generic 'zh'
+    return 'zh-CN';
+  }
+
+  // For Korean, try to map variants
+  if (baseLang === 'ko') {
+    return 'ko-KR';
+  }
+
+  // Fall back to English
+  return 'en';
+}
+
 i18n
   .use(Backend)
   .use(LanguageDetector)
@@ -35,5 +65,15 @@ i18n
     // it will try the base language (e.g., en) before falling back to the fallbackLng
     nonExplicitSupportedLngs: true,
   });
+
+// Override the changeLanguage method to normalize language codes
+const originalChangeLanguage = i18n.changeLanguage.bind(i18n);
+i18n.changeLanguage = (lng?: string, callback?: any) => {
+  if (lng) {
+    const normalizedLng = normalizeLanguageCode(lng);
+    return originalChangeLanguage(normalizedLng, callback);
+  }
+  return originalChangeLanguage(lng, callback);
+};
 
 export default i18n;

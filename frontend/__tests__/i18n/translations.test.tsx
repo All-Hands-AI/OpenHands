@@ -18,17 +18,31 @@ describe("Translations", () => {
     ).toBeInTheDocument();
   });
 
-  it("should handle language codes with region parts", async () => {
+  it("should fallback from unsupported region codes to base languages", async () => {
     // Test that the configuration properly handles language codes with regions
     const originalLanguage = i18n.language;
 
     try {
-      // Test with a language code that includes region (e.g., en-US)
-      await i18n.changeLanguage("en-US");
-      expect(i18n.language).toBe("en-US");
+      // Test with a language code that includes region but is not in supportedLngs
+      await i18n.changeLanguage("en-US@posix");
 
-      // With nonExplicitSupportedLngs: true, unsupported region codes should fall back
-      // to base languages that are in the supportedLngs list
+      // Should resolve to "en" (base language) since "en-US@posix" is not supported
+      expect(i18n.language).toBe("en");
+
+      // Test another unsupported region code
+      await i18n.changeLanguage("ja-JP");
+
+      // Should resolve to "ja" since "ja-JP" is not in supportedLngs
+      expect(i18n.language).toBe("ja");
+
+      // Test Chinese fallback - should map to zh-CN
+      await i18n.changeLanguage("zh");
+      expect(i18n.language).toBe("zh-CN");
+
+      // Test Korean fallback - should map to ko-KR
+      await i18n.changeLanguage("ko");
+      expect(i18n.language).toBe("ko-KR");
+
     } finally {
       // Restore the original language
       await i18n.changeLanguage(originalLanguage);
