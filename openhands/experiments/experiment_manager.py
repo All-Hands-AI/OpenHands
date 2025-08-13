@@ -1,4 +1,3 @@
-import json
 import os
 
 from pydantic import BaseModel
@@ -20,6 +19,9 @@ def load_experiment_config(conversation_id: str) -> ExperimentConfig | None:
         file_path = get_experiment_config_filename(conversation_id)
         exp_config = file_store.read(file_path)
         return ExperimentConfig.model_validate_json(exp_config)
+
+    except FileNotFoundError:
+        pass
     except Exception as e:
         logger.warning(f'Failed to load experiment config: {e}')
 
@@ -38,20 +40,18 @@ class ExperimentManager:
         user_id: str, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         exp_config = load_experiment_config(conversation_id)
-        logger.info(f'Got experiment config: {exp_config}')
         if exp_config and exp_config.config:
             agent_cfg = config.get_agent_config(config.default_agent)
             try:
                 for attr, value in exp_config.config.items():
-                    logger.info(f'checking attrib: {attr}')
                     if hasattr(agent_cfg, attr):
-                        logger.info(f'setting attrib: {attr}')
+                        logger.info(
+                            f'Set attrib {attr} to {value} for {conversation_id}'
+                        )
                         setattr(agent_cfg, attr, value)
-            except json.JSONDecodeError:
-                logger.warning('Invalid JSON in EXPERIMENT_MANAGER_DEFAULT_CONFIG')
-
             except Exception as e:
                 logger.warning(f'Error processing exp config: {e}')
+
         return config
 
 
