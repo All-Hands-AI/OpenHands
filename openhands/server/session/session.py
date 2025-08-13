@@ -79,6 +79,10 @@ class Session:
         self.config = ExperimentManagerImpl.run_config_variant_test(
             user_id, sid, self.config
         )
+        print(
+            'config selected',
+            self.config.get_agent_config(config.default_agent).system_prompt_filename,
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 

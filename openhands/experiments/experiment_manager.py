@@ -43,7 +43,9 @@ class ExperimentManager:
             agent_cfg = config.get_agent_config(config.default_agent)
             try:
                 for attr, value in exp_config.model_dump(exclude_unset=True).items():
+                    logger.info(f'checking attrib: {attr}')
                     if hasattr(agent_cfg, attr):
+                        logger.info(f'setting attrib: {attr}')
                         setattr(agent_cfg, attr, value)
             except json.JSONDecodeError:
                 logger.warning('Invalid JSON in EXPERIMENT_MANAGER_DEFAULT_CONFIG')
