@@ -29,7 +29,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
-from openhands.runtime.impl.docker.docker_runtime import (
+from openhands.runtime.impl.constants import (
     APP_PORT_RANGE_1,
     APP_PORT_RANGE_2,
     EXECUTION_SERVER_PORT_RANGE,

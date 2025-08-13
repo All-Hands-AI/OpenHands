@@ -1,15 +1,20 @@
-from browsergym.core.action.highlevel import HighLevelActionSet
+try:
+    from browsergym.core.action.highlevel import HighLevelActionSet
+
+    BROWSERGYM_AVAILABLE = True
+    # from browsergym/core/action/highlevel.py
+    _browser_action_space = HighLevelActionSet(
+        subsets=['bid', 'nav'],
+        strict=False,  # less strict on the parsing of the actions
+        multiaction=True,  # enable to agent to take multiple actions at once
+    )
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    _browser_action_space = None
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
-
-# from browsergym/core/action/highlevel.py
-_browser_action_space = HighLevelActionSet(
-    subsets=['bid', 'nav'],
-    strict=False,  # less strict on the parsing of the actions
-    multiaction=True,  # enable to agent to take multiple actions at once
-)
-
 
 _BROWSER_DESCRIPTION = """Interact with the browser using Python code. Use it ONLY when you need to interact with a webpage.
 
@@ -132,13 +137,14 @@ upload_file(bid: str, file: str | list[str])
 """
 
 
-for _, action in _browser_action_space.action_set.items():
-    assert action.signature in _BROWSER_TOOL_DESCRIPTION, (
-        f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
-    )
-    assert action.description in _BROWSER_TOOL_DESCRIPTION, (
-        f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
-    )
+if BROWSERGYM_AVAILABLE:
+    for _, action in _browser_action_space.action_set.items():
+        assert action.signature in _BROWSER_TOOL_DESCRIPTION, (
+            f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.signature}'
+        )
+        assert action.description in _BROWSER_TOOL_DESCRIPTION, (
+            f'Browser description mismatch. Please double check if the BrowserGym updated their action space.\n\nAction: {action.description}'
+        )
 
 BrowserTool = ChatCompletionToolParam(
     type='function',

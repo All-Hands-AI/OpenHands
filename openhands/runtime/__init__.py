@@ -2,23 +2,54 @@ import importlib
 
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.docker.docker_runtime import (
-    DockerRuntime,
-)
-from openhands.runtime.impl.kubernetes.kubernetes_runtime import KubernetesRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
+
+try:
+    from openhands.runtime.impl.kubernetes.kubernetes_runtime import KubernetesRuntime
+
+    KUBERNETES_RUNTIME_AVAILABLE = True
+except ImportError:
+    KUBERNETES_RUNTIME_AVAILABLE = False
+
+    # Create a stub class that raises an error when instantiated
+    class KubernetesRuntime:  # type: ignore
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                'Kubernetes runtime is not available. Install kubernetes to enable Kubernetes runtime.'
+            )
+
+
+try:
+    from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+
+    DOCKER_RUNTIME_AVAILABLE = True
+except ImportError:
+    DOCKER_RUNTIME_AVAILABLE = False
+
+    # Create a stub class that raises an error when instantiated
+    class DockerRuntime:  # type: ignore
+        def __init__(self, *args, **kwargs):
+            raise ImportError(
+                'Docker runtime is not available. Install docker to enable Docker runtime.'
+            )
+
+
 from openhands.utils.import_utils import get_impl
 
 # mypy: disable-error-code="type-abstract"
 _DEFAULT_RUNTIME_CLASSES: dict[str, type[Runtime]] = {
-    'eventstream': DockerRuntime,
-    'docker': DockerRuntime,
     'remote': RemoteRuntime,
     'local': LocalRuntime,
-    'kubernetes': KubernetesRuntime,
     'cli': CLIRuntime,
 }
+
+if DOCKER_RUNTIME_AVAILABLE:
+    _DEFAULT_RUNTIME_CLASSES['eventstream'] = DockerRuntime
+    _DEFAULT_RUNTIME_CLASSES['docker'] = DockerRuntime
+
+if KUBERNETES_RUNTIME_AVAILABLE:
+    _DEFAULT_RUNTIME_CLASSES['kubernetes'] = KubernetesRuntime
 
 # Try to import third-party runtimes if available
 _THIRD_PARTY_RUNTIME_CLASSES: dict[str, type[Runtime]] = {}
@@ -107,12 +138,16 @@ def get_runtime_cls(name: str) -> type[Runtime]:
 __all__ = [
     'Runtime',
     'RemoteRuntime',
-    'DockerRuntime',
-    'KubernetesRuntime',
     'CLIRuntime',
     'LocalRuntime',
     'get_runtime_cls',
 ]
+
+if DOCKER_RUNTIME_AVAILABLE:
+    __all__.append('DockerRuntime')
+
+if KUBERNETES_RUNTIME_AVAILABLE:
+    __all__.append('KubernetesRuntime')
 
 # Add third-party runtimes to __all__ if they're available
 for runtime_name, runtime_class in _THIRD_PARTY_RUNTIME_CLASSES.items():

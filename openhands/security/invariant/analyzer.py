@@ -3,9 +3,33 @@ import re
 import uuid
 from typing import Any
 
-import docker
-from fastapi import HTTPException, Request
-from fastapi.responses import JSONResponse
+try:
+    import docker
+
+    DOCKER_AVAILABLE = True
+except ImportError:
+    DOCKER_AVAILABLE = False
+
+    # Create a mock docker module
+    class MockDocker:
+        @staticmethod
+        def from_env():
+            raise ImportError(
+                'Docker is not available. Install docker to enable Docker functionality.'
+            )
+
+    docker = MockDocker()  # type: ignore
+
+try:
+    from fastapi import HTTPException, Request
+    from fastapi.responses import JSONResponse
+
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    HTTPException = None
+    Request = None
+    JSONResponse = None
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
@@ -55,6 +79,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
         self.settings = {}
         if sid is None:
             self.sid = str(uuid.uuid4())
+
+        if not DOCKER_AVAILABLE:
+            logger.error('Docker is not available. Install with: pip install docker')
+            raise ImportError('Docker is required for InvariantAnalyzer')
 
         try:
             self.docker_client = docker.from_env()
@@ -323,7 +351,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         return self.get_risk(result)
 
     ### Handle API requests
-    async def handle_api_request(self, request: Request) -> Any:
+    async def handle_api_request(self, request: Any) -> Any:
         path_parts = request.url.path.strip('/').split('/')
         endpoint = path_parts[-1]  # Get the last part of the path
 
@@ -339,25 +367,37 @@ class InvariantAnalyzer(SecurityAnalyzer):
                 return await self.update_policy(request)
             elif endpoint == 'settings':
                 return await self.update_settings(request)
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         raise HTTPException(status_code=405, detail='Method Not Allowed')
 
-    async def export_trace(self, request: Request) -> JSONResponse:
+    async def export_trace(self, request: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         return JSONResponse(content=self.input)
 
-    async def get_policy(self, request: Request) -> JSONResponse:
+    async def get_policy(self, request: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         return JSONResponse(content={'policy': self.monitor.policy})
 
-    async def update_policy(self, request: Request) -> JSONResponse:
+    async def update_policy(self, request: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         data = await request.json()
         policy = data.get('policy')
         new_monitor = self.client.Monitor.from_string(policy)
         self.monitor = new_monitor
         return JSONResponse(content={'policy': policy})
 
-    async def get_settings(self, request: Request) -> JSONResponse:
+    async def get_settings(self, request: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         return JSONResponse(content=self.settings)
 
-    async def update_settings(self, request: Request) -> JSONResponse:
+    async def update_settings(self, request: Any) -> Any:
+        if not FASTAPI_AVAILABLE:
+            raise ImportError('FastAPI is required for API requests')
         settings = await request.json()
         self.settings = settings
         return JSONResponse(content=self.settings)

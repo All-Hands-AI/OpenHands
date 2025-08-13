@@ -11,7 +11,14 @@ if TYPE_CHECKING:
 
 import openhands.agenthub.codeact_agent.function_calling as codeact_function_calling
 from openhands.agenthub.codeact_agent.tools.bash import create_cmd_run_tool
-from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+
+try:
+    from openhands.agenthub.codeact_agent.tools.browser import BrowserTool
+
+    BROWSER_TOOL_AVAILABLE = True
+except ImportError:
+    BROWSER_TOOL_AVAILABLE = False
+    BrowserTool = None
 from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
@@ -132,6 +139,10 @@ class CodeActAgent(Agent):
         if self.config.enable_browsing:
             if sys.platform == 'win32':
                 logger.warning('Windows runtime does not support browsing yet')
+            elif not BROWSER_TOOL_AVAILABLE:
+                logger.warning(
+                    'BrowserGym is not available. Install with: pip install browsergym-core'
+                )
             else:
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:

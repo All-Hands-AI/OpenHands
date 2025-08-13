@@ -78,10 +78,10 @@ docker = { version = "*", optional = true }
 kubernetes = { version = "^33.1.0", optional = true }
 browsergym-core = { version = "0.13.3", optional = true }
 html2text = { version = "*", optional = true }
-PyPDF2 = { version = "*", optional = true }
-python-pptx = { version = "*", optional = true }
-pylatexenc = { version = "*", optional = true }
-python-docx = { version = "*", optional = true }
+PyPDF2 = "*"
+python-pptx = "*"
+pylatexenc = "*"
+python-docx = "*"
 ipywidgets = { version = "^8.1.5", optional = true }
 qtconsole = { version = "^5.6.1", optional = true }
 jupyter_kernel_gateway = { version = "*", optional = true }
@@ -90,17 +90,15 @@ google-api-python-client = { version = "^2.164.0", optional = true }
 google-auth-httplib2 = { version = "*", optional = true }
 google-auth-oauthlib = { version = "*", optional = true }
 redis = { version = ">=5.2,<7.0", optional = true }
-minio = { version = "^7.2.8", optional = true }
-stripe = { version = ">=11.5,<13.0", optional = true }
 google-cloud-aiplatform = { version = "*", optional = true }
 anthropic = { version = "*", extras = [ "vertex" ], optional = true }
 boto3 = { version = "*", optional = true }
 pygithub = { version = "^2.5.0", optional = true }
-openhands-aci = { version = "0.3.1", optional = true }
+openhands-aci = "0.3.1"
 pythonnet = { version = "*", optional = true }
 memory-profiler = { version = "^0.61.0", optional = true }
 numpy = { version = "*", optional = true }
-json-repair = { version = "*", optional = true }
+json-repair = "*"
 joblib = { version = "*", optional = true }
 
 # Third-party runtime dependencies (optional)

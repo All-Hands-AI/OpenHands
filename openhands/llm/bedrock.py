@@ -1,4 +1,10 @@
-import boto3
+try:
+    import boto3
+
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    boto3 = None
 
 from openhands.core.logger import openhands_logger as logger
 
@@ -6,6 +12,10 @@ from openhands.core.logger import openhands_logger as logger
 def list_foundation_models(
     aws_region_name: str, aws_access_key_id: str, aws_secret_access_key: str
 ) -> list[str]:
+    if not BOTO3_AVAILABLE:
+        logger.warning('boto3 is not available. Install with: pip install boto3')
+        return []
+
     try:
         # The AWS bedrock model id is not queried, if no AWS parameters are configured.
         client = boto3.client(
