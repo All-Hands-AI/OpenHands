@@ -9,6 +9,10 @@ export function ChatActions() {
     (state: RootState) => state.conversation.isRightPanelShown,
   );
 
+  const { shouldShownAgentLoading } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
   const dispatch = useDispatch();
 
   return (
@@ -18,8 +22,12 @@ export function ChatActions() {
         className={cn(
           "flex items-center justify-center w-[26px] h-[26px] rounded-lg cursor-pointer",
           isRightPanelShown && "bg-[#25272D] hover:bg-tertiary",
+          shouldShownAgentLoading && "cursor-not-allowed",
         )}
         onClick={() => {
+          if (shouldShownAgentLoading) {
+            return;
+          }
           dispatch(setIsRightPanelShown(!isRightPanelShown));
         }}
       >
