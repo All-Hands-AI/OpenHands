@@ -867,9 +867,10 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
             choices = [
                 '⚠️  Yes, proceed (HIGH RISK - Use with caution)',
                 '🛑 No (and allow to enter instructions)',
-                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
                 "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
             ]
+            # For HIGH risk, map indices differently since we removed smart mode
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
         else:
             choices = [
                 'Yes, proceed',
@@ -877,13 +878,15 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
                 'Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
                 "Always proceed (don't ask again)",
             ]
+            # For non-HIGH risk, keep original mapping
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'smart', 3: 'always'}
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(
             cli_confirm, config, question, choices, 0, safety_risk
         )
 
-        return {0: 'yes', 1: 'no', 2: 'smart', 3: 'always'}.get(index, 'no')
+        return choice_mapping.get(index, 'no')
 
     except (KeyboardInterrupt, EOFError):
         return 'no'
