@@ -526,12 +526,16 @@ class ConversationMemory:
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                         working_dir=obs.working_dir,
+                        git_user_name=obs.git_user_name,
+                        git_user_email=obs.git_user_email,
                     )
                 else:
                     runtime_info = RuntimeInfo(
                         date=date,
                         custom_secrets_descriptions=obs.custom_secrets_descriptions,
                         working_dir=obs.working_dir,
+                        git_user_name=obs.git_user_name,
+                        git_user_email=obs.git_user_email,
                     )
 
                 conversation_instructions = None

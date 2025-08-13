@@ -169,6 +169,8 @@ def create_memory(
     status_callback: Callable | None = None,
     conversation_instructions: str | None = None,
     working_dir: str = DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
+    git_user_name: str = '',
+    git_user_email: str = '',
 ) -> Memory:
     """Create a memory for the agent to use.
 
@@ -191,7 +193,7 @@ def create_memory(
 
     if runtime:
         # sets available hosts
-        memory.set_runtime_info(runtime, {}, working_dir)
+        memory.set_runtime_info(runtime, {}, working_dir, git_user_name, git_user_email)
 
         # loads microagents from repo/.openhands/microagents
         microagents: list[BaseMicroagent] = runtime.get_microagents_from_selected_repo(

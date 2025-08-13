@@ -291,6 +291,8 @@ async def run_session(
         repo_directory=repo_directory,
         conversation_instructions=conversation_instructions,
         working_dir=os.getcwd(),
+        git_user_name=config.git_user_name,
+        git_user_email=config.git_user_email,
     )
 
     # Add MCP tools to the agent

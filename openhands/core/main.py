@@ -136,6 +136,8 @@ async def run_controller(
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
             working_dir=config.workspace_mount_path_in_sandbox,
+            git_user_name=config.git_user_name,
+            git_user_email=config.git_user_email,
         )
 
     # Add MCP tools to the agent

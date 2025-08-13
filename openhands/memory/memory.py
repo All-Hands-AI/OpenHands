@@ -202,6 +202,12 @@ class Memory:
                 if self.conversation_instructions is not None
                 else '',
                 working_dir=self.runtime_info.working_dir if self.runtime_info else '',
+                git_user_name=self.runtime_info.git_user_name
+                if self.runtime_info
+                else '',
+                git_user_email=self.runtime_info.git_user_email
+                if self.runtime_info
+                else '',
             )
             return obs
         return None
@@ -341,25 +347,31 @@ class Memory:
         runtime: Runtime,
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
+        git_user_name: str = '',
+        git_user_email: str = '',
     ) -> None:
         """Store runtime info (web hosts, ports, etc.)."""
         # e.g. { '127.0.0.1': 8080 }
         utc_now = datetime.now(timezone.utc)
         date = str(utc_now.date())
 
-        if runtime.web_hosts or runtime.additional_agent_instructions:
+        if runtime and (runtime.web_hosts or runtime.additional_agent_instructions):
             self.runtime_info = RuntimeInfo(
                 available_hosts=runtime.web_hosts,
                 additional_agent_instructions=runtime.additional_agent_instructions,
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
                 working_dir=working_dir,
+                git_user_name=git_user_name,
+                git_user_email=git_user_email,
             )
         else:
             self.runtime_info = RuntimeInfo(
                 date=date,
                 custom_secrets_descriptions=custom_secrets_descriptions,
                 working_dir=working_dir,
+                git_user_name=git_user_name,
+                git_user_email=git_user_email,
             )
 
     def set_conversation_instructions(

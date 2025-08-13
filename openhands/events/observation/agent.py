@@ -78,6 +78,8 @@ class RecallObservation(Observation):
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
     conversation_instructions: str = ''
     working_dir: str = ''
+    git_user_name: str = ''
+    git_user_email: str = ''
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)
