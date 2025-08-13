@@ -69,7 +69,7 @@ function SettingsScreen() {
   return (
     <main
       data-testid="settings-screen"
-      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col"
+      className="bg-base-secondary border border-tertiary h-full rounded-xl flex flex-col shadow-inner-soft"
     >
       <header className="px-3 py-1.5 border-b border-b-tertiary flex items-center gap-2">
         <SettingsIcon width={16} height={16} />
@@ -88,7 +88,7 @@ function SettingsScreen() {
             className={({ isActive }) =>
               cn(
                 "border-b-2 border-transparent py-2.5 px-4 min-w-[40px] flex items-center justify-center",
-                isActive && "border-primary",
+                isActive && "border-primary drop-shadow-gold",
               )
             }
           >
@@ -97,8 +97,10 @@ function SettingsScreen() {
         ))}
       </nav>
 
-      <div className="flex flex-col grow overflow-auto">
-        <Outlet />
+      <div className="flex flex-col grow overflow-auto p-4">
+        <div className="card-glow-accent p-4 h-full">
+          <Outlet />
+        </div>
       </div>
     </main>
   );
