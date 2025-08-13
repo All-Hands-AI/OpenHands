@@ -206,7 +206,7 @@ def make_metadata(
         condenser_config=condenser_config
         if condenser_config
         else NoOpCondenserConfig(),
-        instruction_template_name=os.environ.get('INSTRUCTION_TEMPLATE_NAME')
+        instruction_template_name=os.environ.get('INSTRUCTION_TEMPLATE_NAME'),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
