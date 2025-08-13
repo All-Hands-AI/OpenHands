@@ -195,7 +195,7 @@ def load_bird():
         return prompt
 
     def _create_prompt(e, database_path):
-        """Create a prompt for the given example"""
+        """Create a prompt for the given example."""
         db_id = e['db_id']
         db_path = pathlib.Path(database_path) / db_id / f'{db_id}.sqlite'
 

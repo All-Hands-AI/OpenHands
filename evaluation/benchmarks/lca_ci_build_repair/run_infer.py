@@ -1,4 +1,4 @@
-"""Implements inference on JetBrains CI builds repair baselines
+"""Implements inference on JetBrains CI builds repair baselines.
 
 Please see https://github.com/JetBrains-Research/lca-baselines/tree/main/ci-builds-repair
 and https://huggingface.co/datasets/JetBrains-Research/lca-ci-builds-repair

@@ -86,7 +86,7 @@ def normalize_str(input_str, remove_punct=True) -> str:
     - Converting to lowercase
     Parameters:
     - input_str: str, the string to normalize
-    - remove_punct: bool, whether to remove punctuation (default: True)
+    - remove_punct: bool, whether to remove punctuation (default: True).
 
     Returns:
     - str, the normalized string

@@ -10,7 +10,7 @@ EXECUTOR = ThreadPoolExecutor()
 async def call_sync_from_async(fn: Callable, *args, **kwargs):
     """Shorthand for running a function in the default background thread pool executor
     and awaiting the result. The nature of synchronous code is that the future
-    returned by this function is not cancellable
+    returned by this function is not cancellable.
     """
     loop = asyncio.get_event_loop()
     coro = loop.run_in_executor(None, lambda: fn(*args, **kwargs))
@@ -22,7 +22,7 @@ def call_async_from_sync(
     corofn: Callable, timeout: float = GENERAL_TIMEOUT, *args, **kwargs
 ):
     """Shorthand for running a coroutine in the default background thread pool executor
-    and awaiting the result
+    and awaiting the result.
     """
     if corofn is None:
         raise ValueError('corofn is None')

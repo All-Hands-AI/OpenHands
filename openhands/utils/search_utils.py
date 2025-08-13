@@ -17,7 +17,7 @@ def page_id_to_offset(page_id: str | None) -> int:
 
 
 async def iterate(fn: Callable, **kwargs) -> AsyncIterator:
-    """Iterate over paged result sets. Assumes that the results sets contain an array of result objects, and a next_page_id"""
+    """Iterate over paged result sets. Assumes that the results sets contain an array of result objects, and a next_page_id."""
     kwargs = {**kwargs}
     kwargs['page_id'] = None
     while True:

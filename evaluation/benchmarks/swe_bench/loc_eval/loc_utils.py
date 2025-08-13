@@ -12,7 +12,7 @@ from openhands.runtime.base import Runtime
 
 @dataclass
 class LocalizationInfo:
-    """Container for ground-truth localization information"""
+    """Container for ground-truth localization information."""
 
     instance_id: str  # SWE-Bench instance identifier
     files: list[str]  # List of modified files

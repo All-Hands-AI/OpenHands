@@ -1276,7 +1276,7 @@ class TestFilterUnmatchedToolCalls:
         assert result == expected_after_filter
 
     def test_partial_matched_tool_calls_retains_matched(self):
-        """When there are both matched and unmatched tools calls in a message, retain the message and only matched calls"""
+        """When there are both matched and unmatched tools calls in a message, retain the message and only matched calls."""
         messages = [
             Message(role='user', content=[TextContent(text='Get data')]),
             Message(

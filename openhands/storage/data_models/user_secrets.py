@@ -94,7 +94,7 @@ class UserSecrets(BaseModel):
     def convert_dict_to_mappingproxy(
         cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
     ) -> dict[str, MappingProxyType | None]:
-        """Custom deserializer to convert dictionary into MappingProxyType"""
+        """Custom deserializer to convert dictionary into MappingProxyType."""
         if not isinstance(data, dict):
             raise ValueError('UserSecrets must be initialized with a dictionary')
 
@@ -142,7 +142,7 @@ class UserSecrets(BaseModel):
     def set_event_stream_secrets(self, event_stream: EventStream) -> None:
         """This ensures that provider tokens and custom secrets masked from the event stream
         Args:
-            event_stream: Agent session's event stream
+            event_stream: Agent session's event stream.
         """
         secrets = self.get_env_vars()
         event_stream.set_secrets(secrets)

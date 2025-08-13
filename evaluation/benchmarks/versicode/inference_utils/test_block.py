@@ -1,4 +1,4 @@
-"""block completion"""
+"""block completion."""
 
 import copy
 import gc

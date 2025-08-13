@@ -9,7 +9,7 @@ from openhands.events.event_filter import EventFilter
 
 
 class EventStoreABC:
-    """A stored list of events backing a conversation"""
+    """A stored list of events backing a conversation."""
 
     sid: str
     user_id: str | None
@@ -23,7 +23,7 @@ class EventStoreABC:
         filter: EventFilter | None = None,
         limit: int | None = None,
     ) -> Iterable[Event]:
-        """Retrieve events from the event stream, optionally excluding events using a filter
+        """Retrieve events from the event stream, optionally excluding events using a filter.
 
         Args:
             start_id: The ID of the first event to retrieve. Defaults to 0.
@@ -53,15 +53,15 @@ class EventStoreABC:
 
     @abstractmethod
     def get_event(self, id: int) -> Event:
-        """Retrieve a single event from the event stream. Raise a FileNotFoundError if there was no such event"""
+        """Retrieve a single event from the event stream. Raise a FileNotFoundError if there was no such event."""
 
     @abstractmethod
     def get_latest_event(self) -> Event:
-        """Get the latest event from the event stream"""
+        """Get the latest event from the event stream."""
 
     @abstractmethod
     def get_latest_event_id(self) -> int:
-        """Get the id of the latest event from the event stream"""
+        """Get the id of the latest event from the event stream."""
 
     @deprecated('use search_events instead')
     def filtered_events_by_source(self, source: EventSource) -> Iterable[Event]:

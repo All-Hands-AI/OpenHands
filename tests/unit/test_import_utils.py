@@ -7,7 +7,7 @@ from openhands.utils.import_utils import get_impl
 class Shape:
     @abstractmethod
     def get_area(self):
-        """Get the area of this shape"""
+        """Get the area of this shape."""
 
 
 @dataclass

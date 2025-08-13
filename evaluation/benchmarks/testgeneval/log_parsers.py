@@ -4,7 +4,7 @@ from evaluation.benchmarks.testgeneval.constants import TestStatus
 
 
 def parse_log_pytest(log: str) -> dict[str, str]:
-    """Parser for test logs generated with PyTest framework
+    """Parser for test logs generated with PyTest framework.
 
     Args:
         log (str): log content
@@ -25,7 +25,7 @@ def parse_log_pytest(log: str) -> dict[str, str]:
 
 
 def parse_log_pytest_options(log: str) -> dict[str, str]:
-    """Parser for test logs generated with PyTest framework with options
+    """Parser for test logs generated with PyTest framework with options.
 
     Args:
         log (str): log content
@@ -59,7 +59,7 @@ def parse_log_pytest_options(log: str) -> dict[str, str]:
 
 
 def parse_log_django(log: str) -> dict[str, str]:
-    """Parser for test logs generated with Django tester framework
+    """Parser for test logs generated with Django tester framework.
 
     Args:
         log (str): log content
@@ -138,7 +138,7 @@ def parse_log_django(log: str) -> dict[str, str]:
 
 
 def parse_log_pytest_v2(log: str) -> dict[str, str]:
-    """Parser for test logs generated with PyTest framework (Later Version)
+    """Parser for test logs generated with PyTest framework (Later Version).
 
     Args:
         log (str): log content
@@ -166,7 +166,7 @@ def parse_log_pytest_v2(log: str) -> dict[str, str]:
 
 
 def parse_log_seaborn(log: str) -> dict[str, str]:
-    """Parser for test logs generated with seaborn testing framework
+    """Parser for test logs generated with seaborn testing framework.
 
     Args:
         log (str): log content
@@ -191,7 +191,7 @@ def parse_log_seaborn(log: str) -> dict[str, str]:
 
 
 def parse_log_sympy(log: str) -> dict[str, str]:
-    """Parser for test logs generated with Sympy framework
+    """Parser for test logs generated with Sympy framework.
 
     Args:
         log (str): log content
@@ -223,7 +223,7 @@ def parse_log_sympy(log: str) -> dict[str, str]:
 
 
 def parse_log_matplotlib(log: str) -> dict[str, str]:
-    """Parser for test logs generated with PyTest framework
+    """Parser for test logs generated with PyTest framework.
 
     Args:
         log (str): log content

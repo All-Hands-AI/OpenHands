@@ -29,7 +29,7 @@ class RepositoryInfo:
 
 @dataclass
 class ConversationInstructions:
-    """Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+    """Optional instructions the agent must follow throughout the conversation while addressing the user's initial task.
 
     Examples include
 

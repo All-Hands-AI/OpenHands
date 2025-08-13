@@ -14,7 +14,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 def test_provider_token_immutability():
-    """Test that ProviderToken is immutable"""
+    """Test that ProviderToken is immutable."""
     token = ProviderToken(token=SecretStr('test'), user_id='user1')
 
     # Test direct attribute modification
@@ -34,7 +34,7 @@ def test_provider_token_immutability():
 
 
 def test_secret_store_immutability():
-    """Test that UserSecrets is immutable"""
+    """Test that UserSecrets is immutable."""
     store = UserSecrets(
         provider_tokens={ProviderType.GITHUB: ProviderToken(token=SecretStr('test'))}
     )
@@ -67,7 +67,7 @@ def test_secret_store_immutability():
 
 
 def test_settings_immutability():
-    """Test that Settings secrets_store is immutable"""
+    """Test that Settings secrets_store is immutable."""
     settings = Settings(
         secrets_store=UserSecrets(
             provider_tokens={
@@ -115,7 +115,7 @@ def test_settings_immutability():
 
 
 def test_provider_handler_immutability():
-    """Test that ProviderHandler maintains token immutability"""
+    """Test that ProviderHandler maintains token immutability."""
     # Create initial tokens
     tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr('test'))}
@@ -140,7 +140,7 @@ def test_provider_handler_immutability():
 
 
 def test_token_conversion():
-    """Test token conversion in UserSecrets.create"""
+    """Test token conversion in UserSecrets.create."""
     # Test with string token
     store1 = Settings(
         secrets_store=UserSecrets(
@@ -204,7 +204,7 @@ def test_provider_handler_type_enforcement():
 
 
 def test_expose_env_vars():
-    """Test that expose_env_vars correctly exposes secrets as strings"""
+    """Test that expose_env_vars correctly exposes secrets as strings."""
     tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
@@ -226,7 +226,7 @@ def test_expose_env_vars():
 
 @pytest.mark.asyncio
 async def test_get_env_vars():
-    """Test get_env_vars with different configurations"""
+    """Test get_env_vars with different configurations."""
     tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
@@ -264,7 +264,7 @@ async def test_get_env_vars():
 
 @pytest.fixture
 def event_stream():
-    """Fixture for event stream testing"""
+    """Fixture for event stream testing."""
 
     class TestEventStream:
         def __init__(self):
@@ -278,7 +278,7 @@ def event_stream():
 
 @pytest.mark.asyncio
 async def test_set_event_stream_secrets(event_stream):
-    """Test setting secrets in event stream"""
+    """Test setting secrets in event stream."""
     tokens = MappingProxyType(
         {
             ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token')),
@@ -307,7 +307,7 @@ async def test_set_event_stream_secrets(event_stream):
 
 
 def test_check_cmd_action_for_provider_token_ref():
-    """Test detection of provider tokens in command actions"""
+    """Test detection of provider tokens in command actions."""
     # Test command with GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
@@ -335,6 +335,6 @@ def test_check_cmd_action_for_provider_token_ref():
 
 
 def test_get_provider_env_key():
-    """Test provider environment key generation"""
+    """Test provider environment key generation."""
     assert ProviderHandler.get_provider_env_key(ProviderType.GITHUB) == 'github_token'
     assert ProviderHandler.get_provider_env_key(ProviderType.GITLAB) == 'gitlab_token'

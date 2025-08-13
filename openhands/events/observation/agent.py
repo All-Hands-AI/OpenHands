@@ -7,7 +7,7 @@ from openhands.events.observation.observation import Observation
 
 @dataclass
 class AgentStateChangedObservation(Observation):
-    """This data class represents the result from delegating to another agent"""
+    """This data class represents the result from delegating to another agent."""
 
     agent_state: str
     reason: str = ''

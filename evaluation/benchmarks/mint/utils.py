@@ -143,7 +143,7 @@ class TimeoutException(Exception):
 
 
 class WriteOnlyStringIO(io.StringIO):
-    """StringIO that throws an exception when it's read from"""
+    """StringIO that throws an exception when it's read from."""
 
     def read(self, *args, **kwargs):
         raise IOError
@@ -181,7 +181,7 @@ def chdir(root):
 def reliability_guard(maximum_memory_bytes: int | None = None):
     """This disables various destructive functions and prevents the generated code
     from interfering with the test (e.g. fork bomb, killing other processes,
-    removing filesystem files, etc.)
+    removing filesystem files, etc.).
 
     Warning:
     This function is NOT a security sandbox. Untrusted code, including, model-

@@ -195,7 +195,7 @@ def grade_test_output(
     """Two-pass test grading with short-circuiting:
     1. Run all tests to identify passing/failing tests
     2. If no failing tests, evaluate coverage immediately
-    3. Otherwise, run only passing tests for coverage analysis
+    3. Otherwise, run only passing tests for coverage analysis.
     """
     unit_test_output, coverage_output = '', ''
     if TESTS_SUFFIX in test_output:

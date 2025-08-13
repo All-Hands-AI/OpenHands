@@ -108,7 +108,7 @@ def parse_final_answer(final_answer: str | None) -> str | None:
     to extract the final answer. The final answer is usually enclosed in the format:
     <<FINAL_ANSWER||
     <insert correct answer here>
-    ||FINAL_ANSWER>>
+    ||FINAL_ANSWER>>.
     """
     # to do this first extract the part enclosed in the format <<FINAL_ANSWER|| ... ||FINAL_ANSWER>>
     pattern = re.compile(r'<<FINAL_ANSWER\|\|(.*?)\|\|FINAL_ANSWER>>', re.DOTALL)
@@ -125,7 +125,7 @@ def parse_final_answer(final_answer: str | None) -> str | None:
 
 
 def compare_answers(model_output: str | None, ground_truth: str):
-    """Compare the predicted answer with the ground truth answer"""
+    """Compare the predicted answer with the ground truth answer."""
     try:
         # parse the final answer from model output
         predicted_answer = parse_final_answer(model_output)

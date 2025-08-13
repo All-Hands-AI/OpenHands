@@ -1,4 +1,4 @@
-"""Calculate the cdc score for line and block"""
+"""Calculate the cdc score for line and block."""
 
 import json
 import math

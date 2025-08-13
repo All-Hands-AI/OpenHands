@@ -353,7 +353,7 @@ def list_csv_files(list_of_datasets):
 def create_dataset(repo_location: str, split: str = 'test'):
     """Create a dataset from the discoverybench repository
     by walking through the repository and extracting metadata
-    from the metadata_{}.json files
+    from the metadata_{}.json files.
 
     Args:
         repo_location: Location of the repository

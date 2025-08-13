@@ -504,7 +504,7 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     """Test that when a user continues after hitting the budget limit:
     1. Error is thrown when budget cap is exceeded
     2. LLM budget does not reset when user continues
-    3. Budget is extended by adding the initial budget cap to the current accumulated cost
+    3. Budget is extended by adding the initial budget cap to the current accumulated cost.
     """
     # Create a real Metrics instance shared between controller state and llm
     metrics = Metrics()

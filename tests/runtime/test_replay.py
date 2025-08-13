@@ -1,4 +1,4 @@
-"""Replay tests"""
+"""Replay tests."""
 
 import asyncio
 from pathlib import Path
@@ -31,7 +31,7 @@ def _get_config(trajectory_name: str, agent: str = OH_DEFAULT_AGENT):
 
 def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
     """A simple replay test that involves simple terminal operations and edits
-    (creating a simple 2048 game), using the default agent
+    (creating a simple 2048 game), using the default agent.
     """
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     config.replay_trajectory_path = str(
@@ -54,7 +54,7 @@ def test_simple_replay(temp_dir, runtime_cls, run_as_openhands):
 
 def test_simple_gui_replay(temp_dir, runtime_cls, run_as_openhands):
     """A simple replay test that involves simple terminal operations and edits
-    (writing a Vue.js App), using the default agent
+    (writing a Vue.js App), using the default agent.
 
     Note:
     1. This trajectory is exported from GUI mode, meaning it has extra

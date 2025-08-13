@@ -436,12 +436,12 @@ class BaseGitService(ABC):
 
 class InstallationsService(Protocol):
     async def get_installations(self) -> list[str]:
-        """Get installations for the service; repos live underneath these installations"""
+        """Get installations for the service; repos live underneath these installations."""
         ...
 
 
 class GitService(Protocol):
-    """Protocol defining the interface for Git service providers"""
+    """Protocol defining the interface for Git service providers."""
 
     def __init__(
         self,
@@ -452,27 +452,27 @@ class GitService(Protocol):
         external_token_manager: bool = False,
         base_domain: str | None = None,
     ) -> None:
-        """Initialize the service with authentication details"""
+        """Initialize the service with authentication details."""
         ...
 
     async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the user"""
+        """Get latest working token of the user."""
         ...
 
     async def get_user(self) -> User:
-        """Get the authenticated user's information"""
+        """Get the authenticated user's information."""
         ...
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
-        """Search for public repositories"""
+        """Search for public repositories."""
         ...
 
     async def get_all_repositories(
         self, sort: str, app_mode: AppMode
     ) -> list[Repository]:
-        """Get repositories for the authenticated user"""
+        """Get repositories for the authenticated user."""
         ...
 
     async def get_paginated_repos(
@@ -483,29 +483,29 @@ class GitService(Protocol):
         installation_id: str | None,
         query: str | None = None,
     ) -> list[Repository]:
-        """Get a page of repositories for the authenticated user"""
+        """Get a page of repositories for the authenticated user."""
         ...
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
-        """Get suggested tasks for the authenticated user across all repositories"""
+        """Get suggested tasks for the authenticated user across all repositories."""
         ...
 
     async def get_repository_details_from_repo_name(
         self, repository: str
     ) -> Repository:
-        """Gets all repository details from repository name"""
+        """Gets all repository details from repository name."""
 
     async def get_branches(self, repository: str) -> list[Branch]:
-        """Get branches for a repository"""
+        """Get branches for a repository."""
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
-        """Get microagents from a repository"""
+        """Get microagents from a repository."""
         ...
 
     async def get_microagent_content(
         self, repository: str, file_path: str
     ) -> MicroagentContentResponse:
-        """Get content of a specific microagent file
+        """Get content of a specific microagent file.
 
         Returns:
             MicroagentContentResponse with parsed content and triggers

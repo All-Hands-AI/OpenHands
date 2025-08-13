@@ -13,20 +13,20 @@ from openhands.storage.data_models.settings import Settings
 
 
 class POSTProviderModel(BaseModel):
-    """Settings for POST requests"""
+    """Settings for POST requests."""
 
     mcp_config: MCPConfig | None = None
     provider_tokens: dict[ProviderType, ProviderToken] = {}
 
 
 class POSTCustomSecrets(BaseModel):
-    """Adding new custom secret"""
+    """Adding new custom secret."""
 
     custom_secrets: dict[str, CustomSecret] = {}
 
 
 class GETSettingsModel(Settings):
-    """Settings with additional token data for the frontend"""
+    """Settings with additional token data for the frontend."""
 
     provider_tokens_set: dict[ProviderType, str | None] | None = (
         None  # provider + base_domain key-value pair
@@ -38,19 +38,19 @@ class GETSettingsModel(Settings):
 
 
 class CustomSecretWithoutValueModel(BaseModel):
-    """Custom secret model without value"""
+    """Custom secret model without value."""
 
     name: str
     description: str | None = None
 
 
 class CustomSecretModel(CustomSecretWithoutValueModel):
-    """Custom secret model with value"""
+    """Custom secret model with value."""
 
     value: SecretStr
 
 
 class GETCustomSecrets(BaseModel):
-    """Custom secrets names"""
+    """Custom secrets names."""
 
     custom_secrets: list[CustomSecretWithoutValueModel] | None = None

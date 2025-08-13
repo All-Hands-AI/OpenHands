@@ -14,7 +14,7 @@ from openhands.storage.settings.settings_store import SettingsStore
 
 @dataclass
 class DefaultUserAuth(UserAuth):
-    """Default user authentication mechanism"""
+    """Default user authentication mechanism."""
 
     _settings: Settings | None = None
     _settings_store: SettingsStore | None = None
@@ -22,15 +22,15 @@ class DefaultUserAuth(UserAuth):
     _user_secrets: UserSecrets | None = None
 
     async def get_user_id(self) -> str | None:
-        """The default implementation does not support multi tenancy, so user_id is always None"""
+        """The default implementation does not support multi tenancy, so user_id is always None."""
         return None
 
     async def get_user_email(self) -> str | None:
-        """The default implementation does not support multi tenancy, so email is always None"""
+        """The default implementation does not support multi tenancy, so email is always None."""
         return None
 
     async def get_access_token(self) -> SecretStr | None:
-        """The default implementation does not support multi tenancy, so access_token is always None"""
+        """The default implementation does not support multi tenancy, so access_token is always None."""
         return None
 
     async def get_user_settings_store(self) -> SettingsStore:

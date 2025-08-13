@@ -42,7 +42,7 @@ _DUMMY_PAGE = _CachePage(None, 1, -1)
 
 @dataclass
 class EventStore(EventStoreABC):
-    """A stored list of events backing a conversation"""
+    """A stored list of events backing a conversation."""
 
     sid: str
     file_store: FileStore

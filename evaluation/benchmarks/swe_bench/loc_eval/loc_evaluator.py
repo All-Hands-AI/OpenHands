@@ -94,14 +94,14 @@ class LocEvaluator:
             return False
 
     def _check_if_to_eval_success(self):
-        """Check if post-evaluation outputs exist"""
+        """Check if post-evaluation outputs exist."""
         if not os.path.isdir(self.eval_dir):
             return False
         else:
             return True
 
     def _compute_avg_over_all(self):
-        """Compute average loc evaluations over all instances"""
+        """Compute average loc evaluations over all instances."""
         macro_la_file, micro_la_file = 0, 0
         macro_la_func, micro_la_func = 0, 0
         resolve_rate = 0
@@ -276,7 +276,7 @@ class LocEvaluator:
             return {}
 
     def _parse_agent_turn_num(self):
-        """Get the max agent turn for current instance"""
+        """Get the max agent turn for current instance."""
         history_idx = 1
         self.agent_turn_num = 0
         while history_idx < len(self.trajectory) - 1:
@@ -446,7 +446,7 @@ class LocEvaluator:
             return []
 
     def _parse_loc_from_history(self, action_history: dict) -> list:
-        """Parse function name and file path"""
+        """Parse function name and file path."""
         if not action_history:
             logger.error('No action history provided.')
             raise
@@ -507,7 +507,7 @@ class LocEvaluator:
         return curr_turn_agent_loc
 
     def _add_task_success_metric(self) -> bool:
-        """Task success evaluation result"""
+        """Task success evaluation result."""
         self.task_resolved = False
         report_pth = os.path.join(
             self.eval_dir, self.instance.instance_id, 'report.json'
@@ -534,7 +534,7 @@ class LocEvaluator:
             }
 
     def eval_agent_trajectory(self):
-        """Evaluate agent's localization at current state"""
+        """Evaluate agent's localization at current state."""
         if not self.trajectory:
             logger.warning(
                 f'Inference trajectory for current instance (instance ID: {self.instance.instance_id}) is None, skipping localization evaluation for current instance...'
@@ -701,7 +701,7 @@ class LocEvaluator:
         self._save_to_eval_dicts(agent_trajectory)
 
     def _get_instance_gt_loc(self):
-        """Get ground-truth localization for current instance"""
+        """Get ground-truth localization for current instance."""
         gt_localization = self.localizer.parse_instance_loc(self.instance)
 
         # Convert to dict

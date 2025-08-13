@@ -60,7 +60,7 @@ class MCPClient(BaseModel):
         conversation_id: str | None = None,
         timeout: float = 30.0,
     ):
-        """Connect to MCP server using SHTTP or SSE transport"""
+        """Connect to MCP server using SHTTP or SSE transport."""
         server_url = server.url
         api_key = server.api_key
 
@@ -123,7 +123,7 @@ class MCPClient(BaseModel):
             raise
 
     async def connect_stdio(self, server: MCPStdioServerConfig, timeout: float = 30.0):
-        """Connect to MCP server using stdio transport"""
+        """Connect to MCP server using stdio transport."""
         try:
             transport = StdioTransport(
                 command=server.command, args=server.args or [], env=server.env

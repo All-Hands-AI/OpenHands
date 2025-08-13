@@ -7,7 +7,7 @@ from openhands.io.json import dumps
 
 
 def get_memory_usage():
-    """Get current memory usage of the process"""
+    """Get current memory usage of the process."""
     process = psutil.Process()
     return process.memory_info().rss
 

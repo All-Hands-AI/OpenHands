@@ -1,4 +1,4 @@
-"""GPT performs line level generation prediction and truncates overly long tokens"""
+"""GPT performs line level generation prediction and truncates overly long tokens."""
 
 import json
 import os

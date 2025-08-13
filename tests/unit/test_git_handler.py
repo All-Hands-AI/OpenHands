@@ -160,7 +160,7 @@ class TestGitHandler(unittest.TestCase):
         self.write_file(nested_2, 'unstaged_add.txt')
 
     def test_get_git_changes(self):
-        """Test with unpushed commits, staged commits, and unstaged commits"""
+        """Test with unpushed commits, staged commits, and unstaged commits."""
         changes = self.git_handler.get_git_changes()
 
         expected_changes = [
@@ -178,7 +178,7 @@ class TestGitHandler(unittest.TestCase):
         assert changes == expected_changes
 
     def test_get_git_changes_after_push(self):
-        """Test with staged commits, and unstaged commits"""
+        """Test with staged commits, and unstaged commits."""
         self.run_command('git push -u origin feature-branch', self.local_dir)
         changes = self.git_handler.get_git_changes()
 
@@ -194,7 +194,7 @@ class TestGitHandler(unittest.TestCase):
         assert changes == expected_changes
 
     def test_get_git_changes_nested_repos(self):
-        """Test with staged commits, and unstaged commits"""
+        """Test with staged commits, and unstaged commits."""
         self.setup_nested()
 
         changes = self.git_handler.get_git_changes()
@@ -218,7 +218,7 @@ class TestGitHandler(unittest.TestCase):
         assert changes == expected_changes
 
     def test_get_git_diff_staged_modified(self):
-        """Test on a staged modified"""
+        """Test on a staged modified."""
         diff = self.git_handler.get_git_diff('staged_modified.txt')
         expected_diff = {
             'original': 'staged_modified.txt\nLine 1\nLine 2\nLine 3',

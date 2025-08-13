@@ -12,7 +12,7 @@ from openhands.llm.metrics import Metrics
 
 
 class OpenHandsJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder that handles datetime and event objects"""
+    """Custom JSON encoder that handles datetime and event objects."""
 
     def default(self, obj):
         if isinstance(obj, datetime):
@@ -33,7 +33,7 @@ _json_encoder = OpenHandsJSONEncoder()
 
 
 def dumps(obj, **kwargs):
-    """Serialize an object to str format"""
+    """Serialize an object to str format."""
     if not kwargs:
         return _json_encoder.encode(obj)
 
@@ -48,7 +48,7 @@ def dumps(obj, **kwargs):
 
 
 def loads(json_str, **kwargs):
-    """Create a JSON object from str"""
+    """Create a JSON object from str."""
     try:
         return json.loads(json_str, **kwargs)
     except json.JSONDecodeError:

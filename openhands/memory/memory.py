@@ -268,7 +268,7 @@ class Memory:
                 self.repo_microagents[user_microagent.name] = user_microagent
 
     def _load_global_microagents(self) -> None:
-        """Loads microagents from the global microagents_dir"""
+        """Loads microagents from the global microagents_dir."""
         repo_agents, knowledge_agents = load_microagents_from_dir(
             GLOBAL_MICROAGENTS_DIR
         )
@@ -300,7 +300,7 @@ class Memory:
             )
 
     def get_microagent_mcp_tools(self) -> list[MCPConfig]:
-        """Get MCP tools from all repo microagents (always active)
+        """Get MCP tools from all repo microagents (always active).
 
         Returns:
             A list of MCP tools configurations from microagents
@@ -358,7 +358,7 @@ class Memory:
         self, conversation_instructions: str | None
     ) -> None:
         """Set contextual information for conversation
-        This is information the agent may require
+        This is information the agent may require.
         """
         self.conversation_instructions = ConversationInstructions(
             content=conversation_instructions or ''

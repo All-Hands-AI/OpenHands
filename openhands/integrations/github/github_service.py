@@ -493,7 +493,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
-        """Get branches for a repository"""
+        """Get branches for a repository."""
         url = f'{self.BASE_URL}/repos/{repository}/branches'
 
         # Set maximum branches to fetch (10 pages with 100 per page)
@@ -548,7 +548,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         draft: bool = True,
         labels: list[str] | None = None,
     ) -> str:
-        """Creates a PR using user credentials
+        """Creates a PR using user credentials.
 
         Args:
             repo_name: The full name of the repository (owner/repo)

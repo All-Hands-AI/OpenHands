@@ -78,7 +78,7 @@ class RunloopRuntime(ActionExecutionClient):
         wait=tenacity.wait_fixed(1),
     )
     def _wait_for_devbox(self, devbox: DevboxView) -> DevboxView:
-        """Pull devbox status until it is running"""
+        """Pull devbox status until it is running."""
         if devbox == "running":
             return devbox
 

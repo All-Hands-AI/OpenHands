@@ -622,7 +622,7 @@ def test_send_pull_request_target_branch_with_additional_message(
 def test_send_pull_request_invalid_target_branch(
     mock_get, mock_issue, mock_output_dir, mock_llm_config
 ):
-    """Test that an error is raised when specifying a non-existent target branch"""
+    """Test that an error is raised when specifying a non-existent target branch."""
     repo_path = os.path.join(mock_output_dir, 'repo')
 
     # Mock API response for non-existent branch

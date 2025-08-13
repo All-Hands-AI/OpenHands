@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def remove_setup_files(model_patch: str, instance: dict, delete_setup_changes: bool):
-    """Discard all changes that a patch applies to files changes by the pre_install script and that are reproduction scripts (top-level script)"""
+    """Discard all changes that a patch applies to files changes by the pre_install script and that are reproduction scripts (top-level script)."""
     setup_files = ['setup.py', 'tox.ini', 'pyproject.toml']
     pre_install = (
         MAP_VERSION_TO_INSTALL.get(instance['repo'], {})

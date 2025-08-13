@@ -1,4 +1,4 @@
-"""Implements evaluation on JetBrains CI builds repair baselines
+"""Implements evaluation on JetBrains CI builds repair baselines.
 
 Please see https://github.com/JetBrains-Research/lca-baselines/tree/main/ci-builds-repair
 and https://huggingface.co/datasets/JetBrains-Research/lca-ci-builds-repair
@@ -72,7 +72,7 @@ bench_config = load_bench_config()
 def run_eval(
     runtime: Runtime,
 ):
-    """Run the evaluation and create report"""
+    """Run the evaluation and create report."""
     logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 

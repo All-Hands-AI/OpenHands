@@ -1,4 +1,4 @@
-"""Calculate the cdc score for migration"""
+"""Calculate the cdc score for migration."""
 
 import json
 import math
@@ -100,7 +100,7 @@ def compute_block_score_k(
     core_line_in_core_block,
     core_line_in_output_clear,
 ):
-    """cdc需要满足五个条件，em只需要满足第一个条件"""
+    """cdc需要满足五个条件，em只需要满足第一个条件."""
     c = 0
     n = len(model_output)
     for index, code in enumerate(model_output):

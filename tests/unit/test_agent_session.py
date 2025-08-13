@@ -23,7 +23,7 @@ from openhands.storage.memory import InMemoryFileStore
 
 @pytest.fixture
 def mock_agent():
-    """Create a properly configured mock agent with all required nested attributes"""
+    """Create a properly configured mock agent with all required nested attributes."""
     # Create the base mocks
     agent = MagicMock(spec=Agent)
     llm = MagicMock(spec=LLM)
@@ -54,7 +54,7 @@ def mock_agent():
 
 @pytest.mark.asyncio
 async def test_agent_session_start_with_no_state(mock_agent):
-    """Test that AgentSession.start() works correctly when there's no state to restore"""
+    """Test that AgentSession.start() works correctly when there's no state to restore."""
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -141,7 +141,7 @@ async def test_agent_session_start_with_no_state(mock_agent):
 
 @pytest.mark.asyncio
 async def test_agent_session_start_with_restored_state(mock_agent):
-    """Test that AgentSession.start() works correctly when there's a state to restore"""
+    """Test that AgentSession.start() works correctly when there's a state to restore."""
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(

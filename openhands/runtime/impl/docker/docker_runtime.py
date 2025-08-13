@@ -571,7 +571,7 @@ class DockerRuntime(ActionExecutionClient):
         self.check_if_alive()
 
     def close(self, rm_all_containers: bool | None = None) -> None:
-        """Closes the DockerRuntime and associated objects
+        """Closes the DockerRuntime and associated objects.
 
         Parameters:
         - rm_all_containers (bool): Whether to remove all containers with the 'openhands-sandbox-' prefix

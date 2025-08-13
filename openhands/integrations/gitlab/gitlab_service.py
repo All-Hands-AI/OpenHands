@@ -71,7 +71,7 @@ class GitLabService(BaseGitService, GitService):
         return ProviderType.GITLAB.value
 
     async def _get_gitlab_headers(self) -> dict[str, Any]:
-        """Retrieve the GitLab Token to construct the headers"""
+        """Retrieve the GitLab Token to construct the headers."""
         if not self.token:
             latest_token = await self.get_latest_token()
             if latest_token:
@@ -171,7 +171,7 @@ class GitLabService(BaseGitService, GitService):
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any] | None = None
     ) -> Any:
-        """Execute a GraphQL query against the GitLab GraphQL API
+        """Execute a GraphQL query against the GitLab GraphQL API.
 
         Args:
             query: The GraphQL query string
@@ -537,7 +537,7 @@ class GitLabService(BaseGitService, GitService):
         return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
-        """Get branches for a repository"""
+        """Get branches for a repository."""
         encoded_name = repository.replace('/', '%2F')
         url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
 
@@ -583,7 +583,7 @@ class GitLabService(BaseGitService, GitService):
         description: str | None = None,
         labels: list[str] | None = None,
     ) -> str:
-        """Creates a merge request in GitLab
+        """Creates a merge request in GitLab.
 
         Args:
             id: The ID or URL-encoded path of the project

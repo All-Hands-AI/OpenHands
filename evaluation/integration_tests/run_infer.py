@@ -154,7 +154,7 @@ def process_instance(
 
 
 def load_integration_tests() -> pd.DataFrame:
-    """Load tests from python files under ./tests"""
+    """Load tests from python files under ./tests."""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
     test_dir = os.path.join(cur_dir, 'tests')
     test_files = [

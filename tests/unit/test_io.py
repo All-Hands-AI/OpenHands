@@ -5,7 +5,7 @@ from openhands.io import read_input
 
 
 def test_single_line_input():
-    """Test that single line input works when cli_multiline_input is False"""
+    """Test that single line input works when cli_multiline_input is False."""
     config = OpenHandsConfig()
     config.cli_multiline_input = False
 
@@ -15,7 +15,7 @@ def test_single_line_input():
 
 
 def test_multiline_input():
-    """Test that multiline input works when cli_multiline_input is True"""
+    """Test that multiline input works when cli_multiline_input is True."""
     config = OpenHandsConfig()
     config.cli_multiline_input = True
 

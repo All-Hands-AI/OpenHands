@@ -96,7 +96,7 @@ def test_restore_older_state_version():
 
 
 def test_save_without_deprecated_fields():
-    """Test that we can save state without deprecated fields"""
+    """Test that we can save state without deprecated fields."""
     # Create a dictionary that mimics the old state format (before control flags)
     state = State(
         session_id='test_old_session',

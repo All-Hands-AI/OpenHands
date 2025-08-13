@@ -24,7 +24,7 @@ MAX_CMD_OUTPUT_SIZE: int = 30000
 
 
 class CmdOutputMetadata(BaseModel):
-    """Additional metadata captured from PS1"""
+    """Additional metadata captured from PS1."""
 
     exit_code: int = -1
     pid: int = -1

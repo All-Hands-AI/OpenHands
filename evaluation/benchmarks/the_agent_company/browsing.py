@@ -24,7 +24,7 @@ class ActionType(Enum):
 
 @dataclass
 class Selector:
-    """Represents either a direct anchor ID or a descriptive selector"""
+    """Represents either a direct anchor ID or a descriptive selector."""
 
     value: str
     is_anchor: bool = False
@@ -35,12 +35,12 @@ class Selector:
 
 @dataclass
 class BrowserAction:
-    """Base class for all browser actions"""
+    """Base class for all browser actions."""
 
     action_type: ActionType
 
     def to_instruction(self) -> str:
-        """Convert the action to a browser instruction string"""
+        """Convert the action to a browser instruction string."""
         raise NotImplementedError
 
 
@@ -99,7 +99,7 @@ class ClickAction(BrowserAction):
 
 
 def parse_content_to_elements(content: str) -> dict[str, str]:
-    """Parse the observation content into a dictionary mapping anchors to their descriptions"""
+    """Parse the observation content into a dictionary mapping anchors to their descriptions."""
     elements = {}
     current_anchor = None
     description_lines = []
@@ -132,7 +132,7 @@ def parse_content_to_elements(content: str) -> dict[str, str]:
 
 
 def find_matching_anchor(content: str, selector: str) -> str | None:
-    """Find the anchor ID that matches the given selector description"""
+    """Find the anchor ID that matches the given selector description."""
     elements = parse_content_to_elements(content)
 
     # Clean up selector and create a pattern

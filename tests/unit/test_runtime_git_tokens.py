@@ -17,7 +17,7 @@ from openhands.storage import get_file_store
 
 
 class TestRuntime(Runtime):
-    """A concrete implementation of Runtime for testing"""
+    """A concrete implementation of Runtime for testing."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,7 +82,7 @@ def temp_dir(tmp_path_factory: pytest.TempPathFactory) -> str:
 
 @pytest.fixture
 def runtime(temp_dir):
-    """Fixture for runtime testing"""
+    """Fixture for runtime testing."""
     config = OpenHandsConfig()
     git_provider_tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr('test_token'))}
@@ -115,7 +115,7 @@ def mock_repo_and_patch(monkeypatch, provider=ProviderType.GITHUB, is_public=Tru
 
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
-    """Test that no token export happens when user_id is not set"""
+    """Test that no token export happens when user_id is not set."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -133,7 +133,7 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
 
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
-    """Test that no token export happens when command doesn't reference tokens"""
+    """Test that no token export happens when command doesn't reference tokens."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -153,7 +153,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
 
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_success(runtime):
-    """Test successful token export when command references tokens"""
+    """Test successful token export when command references tokens."""
     # Create a command that references the GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
 
@@ -166,7 +166,7 @@ async def test_export_latest_git_provider_tokens_success(runtime):
 
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
-    """Test token export with multiple token references"""
+    """Test token export with multiple token references."""
     config = OpenHandsConfig()
     # Initialize with both GitHub and GitLab tokens
     git_provider_tokens = MappingProxyType(
@@ -200,7 +200,7 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
 
 @pytest.mark.asyncio
 async def test_export_latest_git_provider_tokens_token_update(runtime):
-    """Test that token updates are handled correctly"""
+    """Test that token updates are handled correctly."""
     # First export with initial token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
     await runtime._export_latest_git_provider_tokens(cmd)
@@ -220,7 +220,7 @@ async def test_export_latest_git_provider_tokens_token_update(runtime):
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_no_repo_init_git_in_empty_workspace(temp_dir):
-    """Test that git init is run when no repository is selected and init_git_in_empty_workspace"""
+    """Test that git init is run when no repository is selected and init_git_in_empty_workspace."""
     config = OpenHandsConfig()
     config.init_git_in_empty_workspace = True
     file_store = get_file_store('local', temp_dir)
@@ -244,7 +244,7 @@ async def test_clone_or_init_repo_no_repo_init_git_in_empty_workspace(temp_dir):
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_dir):
-    """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
+    """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set."""
     config = OpenHandsConfig()
     config.workspace_base = '/some/path'  # Set workspace_base
     file_store = get_file_store('local', temp_dir)
@@ -263,7 +263,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_di
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_auth_error(temp_dir):
-    """Test that RuntimeError is raised when authentication fails"""
+    """Test that RuntimeError is raised when authentication fails."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -331,7 +331,7 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
-    """Test cloning a GitHub repository without a token"""
+    """Test cloning a GitHub repository without a token."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
@@ -405,7 +405,7 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
-    """Test cloning a repository with a specified branch"""
+    """Test cloning a repository with a specified branch."""
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)

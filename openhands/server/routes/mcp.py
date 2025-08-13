@@ -32,7 +32,7 @@ CONVO_URL = HOST + '/conversations/{}'
 
 
 async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
-    """Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR"""
+    """Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR."""
     if server_config.app_mode != AppMode.SAAS:
         return body
 
@@ -90,7 +90,7 @@ async def create_pr(
         list[str] | None, Field(description='Labels to apply to the PR')
     ] = None,
 ) -> str:
-    """Open a PR in GitHub"""
+    """Open a PR in GitHub."""
     logger.info('Calling OpenHands MCP create_pr')
 
     request = get_http_request()
@@ -160,7 +160,7 @@ async def create_mr(
         list[str] | None, Field(description='Labels to apply to the MR')
     ] = None,
 ) -> str:
-    """Open a MR in GitLab"""
+    """Open a MR in GitLab."""
     logger.info('Calling OpenHands MCP create_mr')
 
     request = get_http_request()
@@ -227,7 +227,7 @@ async def create_bitbucket_pr(
     ],
     description: Annotated[str | None, Field(description='PR description')],
 ) -> str:
-    """Open a PR in Bitbucket"""
+    """Open a PR in Bitbucket."""
     logger.info('Calling OpenHands MCP create_bitbucket_pr')
 
     request = get_http_request()

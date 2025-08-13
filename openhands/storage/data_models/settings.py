@@ -18,7 +18,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):
-    """Persisted settings for OpenHands sessions"""
+    """Persisted settings for OpenHands sessions."""
 
     language: str | None = None
     agent: str | None = None

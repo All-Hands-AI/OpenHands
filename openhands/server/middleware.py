@@ -49,7 +49,7 @@ class LocalhostCORSMiddleware(CORSMiddleware):
 
 
 class CacheControlMiddleware(BaseHTTPMiddleware):
-    """Middleware to disable caching for all routes by adding appropriate headers"""
+    """Middleware to disable caching for all routes by adding appropriate headers."""
 
     async def dispatch(
         self, request: Request, call_next: RequestResponseEndpoint

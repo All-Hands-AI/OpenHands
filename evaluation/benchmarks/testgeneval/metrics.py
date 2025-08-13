@@ -228,7 +228,7 @@ def pass_at_k(n: int, c: int, k: int) -> float:
     """Sample pass@k metric according to the Codex paper, but in the scale of 0~100.
     :param n: total number of samples
     :param c: number of correct samples
-    :param k: k in pass@$k$
+    :param k: k in pass@$k$.
     """
     if n < k or (n - c) < k:
         # fallback to the (1 - (1-p)^k) formula
@@ -240,7 +240,7 @@ def pass_at_k(n: int, c: int, k: int) -> float:
 def self_bleu(samples: list[list[str]]) -> float:
     """Calculate self-BLEU among the samples.
     :param samples: the chosen m samples
-    :return: self-BLEU
+    :return: self-BLEU.
     """
     if len(samples) == 0:
         return 100.0
@@ -263,7 +263,7 @@ def self_edit_distance(samples: list[Union[str, list[str]]], sep=' ') -> float:
     """Calculate self-edit-distance among the samples.
     :param samples: the chosen m samples
     :param sep: the separator between tokens
-    :return: self-edit-distance
+    :return: self-edit-distance.
     """
     if len(samples) == 0:
         return 0.0

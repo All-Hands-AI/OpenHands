@@ -36,15 +36,15 @@ class UserAuth(ABC):
 
     @abstractmethod
     async def get_user_id(self) -> str | None:
-        """Get the unique identifier for the current user"""
+        """Get the unique identifier for the current user."""
 
     @abstractmethod
     async def get_user_email(self) -> str | None:
-        """Get the email for the current user"""
+        """Get the email for the current user."""
 
     @abstractmethod
     async def get_access_token(self) -> SecretStr | None:
-        """Get the access token for the current user"""
+        """Get the access token for the current user."""
 
     @abstractmethod
     async def get_provider_tokens(self) -> PROVIDER_TOKEN_TYPE | None:
@@ -55,7 +55,7 @@ class UserAuth(ABC):
         """Get the settings store for the current user."""
 
     async def get_user_settings(self) -> Settings | None:
-        """Get the user settings for the current user"""
+        """Get the user settings for the current user."""
         settings = self._settings
         if settings:
             return settings
@@ -66,11 +66,11 @@ class UserAuth(ABC):
 
     @abstractmethod
     async def get_secrets_store(self) -> SecretsStore:
-        """Get secrets store"""
+        """Get secrets store."""
 
     @abstractmethod
     async def get_user_secrets(self) -> UserSecrets | None:
-        """Get the user's secrets"""
+        """Get the user's secrets."""
 
     def get_auth_type(self) -> AuthType | None:
         return None
@@ -78,7 +78,7 @@ class UserAuth(ABC):
     @classmethod
     @abstractmethod
     async def get_instance(cls, request: Request) -> UserAuth:
-        """Get an instance of UserAuth from the request given"""
+        """Get an instance of UserAuth from the request given."""
 
 
 async def get_user_auth(request: Request) -> UserAuth:

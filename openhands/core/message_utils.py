@@ -5,7 +5,7 @@ from openhands.llm.metrics import Metrics, TokenUsage
 def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | None:
     """Returns at most one token usage record for either:
       - `tool_call_metadata.model_response.id`, if possible
-      - otherwise event.response_id, if set
+      - otherwise event.response_id, if set.
 
     If neither exist or none matches in metrics.token_usages, returns None.
     """

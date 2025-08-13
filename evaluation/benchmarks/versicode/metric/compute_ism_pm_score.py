@@ -1,7 +1,7 @@
 """评测block的预测能力
 1、判断是否包含正确的函数名
 2、判断是否合法
-3、计算ISM，和PM
+3、计算ISM，和PM.
 """
 
 import io
@@ -93,7 +93,7 @@ def get_token(ans_code: str, output_code: str):
 def get_token_per_line(code: str):
     """对每一行代码进行词法分析，记录每一行的标识符
     :param code: 代码字符串
-    :return: 每一行的标识符列表组成的列表
+    :return: 每一行的标识符列表组成的列表.
     """
     lines = code.split('\n')  # 将代码按行分割成列表
     identifiers_per_line = []  # 用于存储每一行的标识符列表的列表
@@ -187,7 +187,7 @@ def longest_common_prefix_with_lengths(list1, list2):
     """计算两个二维列表中每个子列表的最长前缀匹配长度，并记录拥有最长前缀匹配长度的两个子列表的长度
     :param list1: 第一个二维列表
     :param list2: 第二个二维列表
-    :return: 最长前缀匹配长度以及拥有最长前缀匹配长度的两个子列表的长度
+    :return: 最长前缀匹配长度以及拥有最长前缀匹配长度的两个子列表的长度.
     """
     max_length = 0
     len_list1 = 0

@@ -260,7 +260,7 @@ def load_replay_log(trajectory_path: str) -> tuple[list[Event] | None, Action]:
     """Load trajectory from given path, serialize it to a list of events, and return
     two things:
     1) A list of events except the first action
-    2) First action (user message, a.k.a. initial task)
+    2) First action (user message, a.k.a. initial task).
     """
     try:
         path = Path(trajectory_path).resolve()

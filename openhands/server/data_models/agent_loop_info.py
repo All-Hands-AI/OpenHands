@@ -7,7 +7,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 
 @dataclass
 class AgentLoopInfo:
-    """Information about an agent loop - the URL on which to locate it and the event store"""
+    """Information about an agent loop - the URL on which to locate it and the event store."""
 
     conversation_id: str
     url: str | None

@@ -447,7 +447,7 @@ def test_completion_retry_with_llm_no_response_error_zero_temp(
 ):
     """Test that the retry decorator properly handles LLMNoResponseError by:
     1. First call to llm_completion uses temperature=0 and throws LLMNoResponseError
-    2. Second call should have temperature=0.2 and return a successful response
+    2. Second call should have temperature=0.2 and return a successful response.
     """
 
     # Define a side effect function that checks the temperature parameter

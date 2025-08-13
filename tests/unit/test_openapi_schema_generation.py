@@ -17,7 +17,7 @@ from openhands.storage.settings.settings_store import SettingsStore
 
 
 class MockUserAuth(UserAuth):
-    """Mock implementation of UserAuth for testing"""
+    """Mock implementation of UserAuth for testing."""
 
     def __init__(self):
         self._settings = None

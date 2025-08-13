@@ -28,7 +28,7 @@ class ServerConfigInterface(ABC):
 
     @abstractmethod
     def get_config(self) -> dict[str, Any]:
-        """Configure attributes for frontend"""
+        """Configure attributes for frontend."""
         raise NotImplementedError
 
 

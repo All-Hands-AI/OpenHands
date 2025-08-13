@@ -125,7 +125,7 @@ def parse_html_tags(
     optional_keys: list[str] | None = None,
     merge_multiple: bool = False,
 ) -> tuple[dict[str, str], bool, str]:
-    """Satisfy the parse api, extracts 1 match per key and validates that all keys are present
+    """Satisfy the parse api, extracts 1 match per key and validates that all keys are present.
 
     Parameters
     ----------

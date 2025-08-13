@@ -16,7 +16,7 @@ FILES_TO_IGNORE = [
 
 
 def sanitize_filename(filename: str) -> str:
-    """Sanitize the filename to prevent directory traversal"""
+    """Sanitize the filename to prevent directory traversal."""
     # Remove any directory components
     filename = os.path.basename(filename)
     # Remove any non-alphanumeric characters except for .-_

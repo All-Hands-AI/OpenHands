@@ -282,7 +282,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         return repositories
 
     async def _get_user_workspaces(self) -> list[dict[str, Any]]:
-        """Get all workspaces the user has access to"""
+        """Get all workspaces the user has access to."""
         url = f'{self.BASE_URL}/workspaces'
         data, _ = await self._make_request(url)
         return data.get('values', [])

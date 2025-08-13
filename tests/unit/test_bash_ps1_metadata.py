@@ -10,7 +10,7 @@ from openhands.events.observation.commands import (
 
 
 def test_ps1_metadata_format():
-    """Test that PS1 prompt has correct format markers"""
+    """Test that PS1 prompt has correct format markers."""
     prompt = CmdOutputMetadata.to_ps1_prompt()
     print(prompt)
     assert prompt.startswith('\n###PS1JSON###\n')
@@ -19,7 +19,7 @@ def test_ps1_metadata_format():
 
 
 def test_ps1_metadata_json_structure():
-    """Test that PS1 prompt contains valid JSON with expected fields"""
+    """Test that PS1 prompt contains valid JSON with expected fields."""
     prompt = CmdOutputMetadata.to_ps1_prompt()
     # Extract JSON content between markers
     json_str = prompt.replace('###PS1JSON###\n', '').replace('\n###PS1END###\n', '')
@@ -42,7 +42,7 @@ def test_ps1_metadata_json_structure():
 
 
 def test_ps1_metadata_parsing():
-    """Test parsing PS1 output into CmdOutputMetadata"""
+    """Test parsing PS1 output into CmdOutputMetadata."""
     test_data = {
         'exit_code': 0,
         'username': 'testuser',
@@ -66,7 +66,7 @@ def test_ps1_metadata_parsing():
 
 
 def test_ps1_metadata_parsing_string():
-    """Test parsing PS1 output into CmdOutputMetadata"""
+    """Test parsing PS1 output into CmdOutputMetadata."""
     ps1_str = r"""###PS1JSON###
 {
   "exit_code": "0",
@@ -88,7 +88,7 @@ def test_ps1_metadata_parsing_string():
 
 
 def test_ps1_metadata_parsing_string_real_example():
-    """Test parsing PS1 output into CmdOutputMetadata"""
+    """Test parsing PS1 output into CmdOutputMetadata."""
     ps1_str = r"""
 ###PS1JSON###
 {
@@ -115,7 +115,7 @@ def test_ps1_metadata_parsing_string_real_example():
 
 
 def test_ps1_metadata_parsing_additional_prefix():
-    """Test parsing PS1 output into CmdOutputMetadata"""
+    """Test parsing PS1 output into CmdOutputMetadata."""
     test_data = {
         'exit_code': 0,
         'username': 'testuser',
@@ -143,7 +143,7 @@ This is something that not part of the PS1 prompt
 
 
 def test_ps1_metadata_parsing_invalid():
-    """Test parsing invalid PS1 output returns default metadata"""
+    """Test parsing invalid PS1 output returns default metadata."""
     # Test with invalid JSON
     invalid_json = """###PS1JSON###
     {invalid json}
@@ -187,7 +187,7 @@ def test_ps1_metadata_parsing_invalid():
 
 
 def test_ps1_metadata_missing_fields():
-    """Test handling of missing fields in PS1 metadata"""
+    """Test handling of missing fields in PS1 metadata."""
     # Test with only required fields
     minimal_data = {'exit_code': 0, 'pid': 123}
     ps1_str = f"""###PS1JSON###
@@ -219,7 +219,7 @@ def test_ps1_metadata_missing_fields():
 
 
 def test_ps1_metadata_multiple_blocks():
-    """Test handling multiple PS1 metadata blocks"""
+    """Test handling multiple PS1 metadata blocks."""
     test_data = {
         'exit_code': 0,
         'username': 'testuser',
@@ -246,7 +246,7 @@ Some other content
 
 
 def test_ps1_metadata_regex_pattern():
-    """Test the regex pattern used to extract PS1 metadata"""
+    """Test the regex pattern used to extract PS1 metadata."""
     # Test basic pattern matching
     test_str = f'{CMD_OUTPUT_PS1_BEGIN}test\n{CMD_OUTPUT_PS1_END}'
     matches = CMD_OUTPUT_METADATA_PS1_REGEX.finditer(test_str)
@@ -267,7 +267,7 @@ def test_ps1_metadata_regex_pattern():
 
 
 def test_cmd_output_observation_properties():
-    """Test CmdOutputObservation class properties"""
+    """Test CmdOutputObservation class properties."""
     # Test with successful command
     metadata = CmdOutputMetadata(exit_code=0, pid=123)
     obs = CmdOutputObservation(command='ls', content='file1\nfile2', metadata=metadata)
@@ -292,7 +292,7 @@ def test_cmd_output_observation_properties():
 
 
 def test_ps1_metadata_empty_fields():
-    """Test handling of empty fields in PS1 metadata"""
+    """Test handling of empty fields in PS1 metadata."""
     # Test with empty strings
     empty_data = {
         'exit_code': 0,
