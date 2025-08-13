@@ -490,6 +490,20 @@ def display_command(event: CmdRunAction) -> None:
     )
     print_formatted_text('')
     print_container(container)
+    
+    # Display subtle risk indicator below the command frame if present
+    if safety_risk:
+        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
+        risk_color = get_risk_color(safety_risk)
+        
+        # Create a very subtle, small risk indicator
+        risk_text = f'  {risk_emoji} {safety_risk.lower()}'
+        
+        # Use HTML formatting for dimmed colored text
+        from prompt_toolkit.formatted_text import HTML
+        formatted_risk = HTML(f'<style fg="{risk_color}" dim="true">{risk_text}</style>')
+        
+        print_formatted_text(formatted_risk, style=DEFAULT_STYLE)
 
 
 def display_command_output(output: str) -> None:
@@ -1032,62 +1046,36 @@ def cli_confirm(
         }
     )
 
-    # Create compact layout with risk-based styling
+    # Create layout with risk-based styling - full width but limited height
     content_window = Window(
         FormattedTextControl(get_choice_text),
         always_hide_cursor=True,
-        height=Dimension(max=10),  # Limit height to prevent screen takeover
-        width=Dimension(max=80),   # Limit width for compactness
+        height=Dimension(max=8),  # Limit height to prevent screen takeover
     )
 
-    # Add a compact frame for high-risk commands
+    # Add frame for risk commands - full width
     if safety_risk == 'HIGH':
-        framed_content = Frame(
-            content_window,
-            title='🚨 HIGH RISK',
-            style=f'fg:{COLOR_RISK_HIGH} bold',
-        )
-        # Center the dialog and make it compact
         layout = Layout(
             HSplit([
-                Window(height=1),  # Small top padding
-                VSplit([
-                    Window(width=Dimension(weight=1)),  # Left padding
-                    framed_content,
-                    Window(width=Dimension(weight=1)),  # Right padding
-                ]),
-                Window(height=Dimension(weight=1)),  # Bottom padding
+                Frame(
+                    content_window,
+                    title='🚨 HIGH RISK',
+                    style=f'fg:{COLOR_RISK_HIGH} bold',
+                )
             ])
         )
     elif safety_risk == 'MEDIUM':
-        framed_content = Frame(
-            content_window,
-            title='⚠️ MEDIUM RISK',
-            style=f'fg:{COLOR_RISK_MEDIUM}',
-        )
         layout = Layout(
             HSplit([
-                Window(height=1),
-                VSplit([
-                    Window(width=Dimension(weight=1)),
-                    framed_content,
-                    Window(width=Dimension(weight=1)),
-                ]),
-                Window(height=Dimension(weight=1)),
+                Frame(
+                    content_window,
+                    title='⚠️ MEDIUM RISK',
+                    style=f'fg:{COLOR_RISK_MEDIUM}',
+                )
             ])
         )
     else:
-        layout = Layout(
-            HSplit([
-                Window(height=1),
-                VSplit([
-                    Window(width=Dimension(weight=1)),
-                    content_window,
-                    Window(width=Dimension(weight=1)),
-                ]),
-                Window(height=Dimension(weight=1)),
-            ])
-        )
+        layout = Layout(HSplit([content_window]))
 
     app = Application(
         layout=layout,
