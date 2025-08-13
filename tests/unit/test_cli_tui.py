@@ -394,14 +394,14 @@ class TestReadConfirmationInput:
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.cli_confirm')
-    async def test_read_confirmation_input_always(self, mock_confirm):
+    async def test_read_confirmation_input_smart(self, mock_confirm):
         mock_confirm.return_value = 2  # user picked third menu item
 
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
         result = await read_confirmation_input(config=cfg)
-        assert result == 'always'
+        assert result == 'smart'
 
 
 """Tests for CLI TUI MCP functionality."""
