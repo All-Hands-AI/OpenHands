@@ -115,9 +115,11 @@ class CmdOutputObservation(Observation):
         **kwargs: Any,
     ) -> None:
         # Truncate content before passing it to parent
-        truncated_content = self._maybe_truncate(content)
+        truncate = not kwargs.get('is_static')
+        if truncate:
+            content = self._maybe_truncate(content)
 
-        super().__init__(truncated_content)
+        super().__init__(content)
 
         self.command = command
         self.observation = observation
