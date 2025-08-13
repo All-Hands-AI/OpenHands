@@ -186,8 +186,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
-        """
-        Fetch repositories with pagination support.
+        """Fetch repositories with pagination support.
 
         Args:
             url: The API endpoint URL
@@ -228,8 +227,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        """
-        Parse a GitHub API repository response into a Repository object.
+        """Parse a GitHub API repository response into a Repository object.
 
         Args:
             repo: Repository data from GitHub API
@@ -550,8 +548,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         draft: bool = True,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a PR using user credentials
+        """Creates a PR using user credentials
 
         Args:
             repo_name: The full name of the repository (owner/repo)
@@ -566,7 +563,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             - PR URL when successful
             - Error message when unsuccessful
         """
-
         url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
         # Set default body if none provided

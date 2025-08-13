@@ -80,6 +80,7 @@ class LLMConfig(BaseModel):
     # Note: this setting is actually global, unlike drop_params
     modify_params: bool = Field(default=True)
     disable_vision: bool | None = Field(default=None)
+    disable_stop_word: bool | None = Field(default=False)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
@@ -96,8 +97,7 @@ class LLMConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
-        """
-        Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
+        """Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
 
         The default configuration is built from all non-dict keys in data.
         Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration,
@@ -116,7 +116,6 @@ class LLMConfig(BaseModel):
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-
         # Initialize the result mapping
         llm_mapping: dict[str, LLMConfig] = {}
 

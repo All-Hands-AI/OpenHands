@@ -6,7 +6,7 @@
 - `prompt_toolkit` - Interactive command-line interfaces
 - Core: `jinja2`, `toml`, `pydantic`, `httpx`, standard library
 
-### Server Component  
+### Server Component
 - `fastapi` - Web framework
 - `uvicorn` - ASGI server
 - `python-multipart` - File upload support

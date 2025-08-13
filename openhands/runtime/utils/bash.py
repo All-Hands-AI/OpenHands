@@ -79,8 +79,7 @@ def split_bash_commands(commands: str) -> list[str]:
 
 
 def escape_bash_special_chars(command: str) -> str:
-    r"""
-    Escapes characters that have different interpretations in bash vs python.
+    r"""Escapes characters that have different interpretations in bash vs python.
     Specifically handles escape sequences like \;, \|, \&, etc.
     """
     if command.strip() == '':
@@ -446,6 +445,7 @@ class BashSession:
             ps1_matches: List of regex matches for PS1 prompts
             get_content_before_last_match: when there's only one PS1 match, whether to get
                 the content before the last PS1 prompt (True) or after the last PS1 prompt (False)
+
         Returns:
             Combined string of all outputs between matches
         """

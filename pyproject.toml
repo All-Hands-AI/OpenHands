@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.51.1"
+version = "0.52.1"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -36,10 +36,10 @@ termcolor = "*"
 toml = "*"
 types-toml = "*"
 python-dotenv = "*"
+markdown = "*"                                     # For markdown to HTML conversion
 tenacity = ">=8.5,<10.0"
 pydantic = "*"
 python-json-logger = "^3.2.1"
-jinja2 = "^3.1.3"
 pathspec = "^0.12.1"
 pyjwt = "^2.9.0"
 python-frontmatter = "^1.1.0"
@@ -60,6 +60,7 @@ deprecated = "*"
 httpx-aiohttp = "^0.1.8"
 pexpect = "*"                                      # Needed for core runtime functionality
 fastmcp = "^2.5.2"                                 # Needed for core MCP functionality
+jinja2 = "^3.1.3"
 
 # CLI-specific dependencies (optional)
 prompt-toolkit = { version = "^3.0.50", optional = true }
@@ -127,6 +128,7 @@ pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
 pytest = "^8.4.0"
+types-markdown = "^3.8.0.20250809"
 
 [tool.poetry.group.test]
 optional = true
