@@ -20,52 +20,52 @@ class KubernetesConfig(BaseModel):
     """
 
     namespace: str = Field(
-        default="default",
-        description="The Kubernetes namespace to use for OpenHands resources",
+        default='default',
+        description='The Kubernetes namespace to use for OpenHands resources',
     )
     ingress_domain: str = Field(
-        default="localhost", description="Domain for ingress resources"
+        default='localhost', description='Domain for ingress resources'
     )
     pvc_storage_size: str = Field(
-        default="2Gi", description="Size of the persistent volume claim"
+        default='2Gi', description='Size of the persistent volume claim'
     )
     pvc_storage_class: str | None = Field(
-        default=None, description="Storage class for persistent volume claims"
+        default=None, description='Storage class for persistent volume claims'
     )
     resource_cpu_request: str = Field(
-        default="1", description="CPU request for runtime pods"
+        default='1', description='CPU request for runtime pods'
     )
     resource_memory_request: str = Field(
-        default="1Gi", description="Memory request for runtime pods"
+        default='1Gi', description='Memory request for runtime pods'
     )
     resource_memory_limit: str = Field(
-        default="2Gi", description="Memory limit for runtime pods"
+        default='2Gi', description='Memory limit for runtime pods'
     )
     image_pull_secret: str | None = Field(
         default=None,
-        description="Optional name of image pull secret for private registries",
+        description='Optional name of image pull secret for private registries',
     )
     ingress_tls_secret: str | None = Field(
-        default=None, description="Optional name of TLS secret for ingress"
+        default=None, description='Optional name of TLS secret for ingress'
     )
     node_selector_key: str | None = Field(
-        default=None, description="Optional node selector key for pod scheduling"
+        default=None, description='Optional node selector key for pod scheduling'
     )
     node_selector_val: str | None = Field(
-        default=None, description="Optional node selector value for pod scheduling"
+        default=None, description='Optional node selector value for pod scheduling'
     )
     tolerations_yaml: str | None = Field(
-        default=None, description="Optional YAML string defining pod tolerations"
+        default=None, description='Optional YAML string defining pod tolerations'
     )
     privileged: bool = Field(
         default=False,
-        description="Run the runtime sandbox container in privileged mode for use with docker-in-docker",
+        description='Run the runtime sandbox container in privileged mode for use with docker-in-docker',
     )
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
-    def from_toml_section(cls, data: dict) -> dict[str, "KubernetesConfig"]:
+    def from_toml_section(cls, data: dict) -> dict[str, 'KubernetesConfig']:
         """Create a mapping of KubernetesConfig instances from a toml dictionary representing the [kubernetes] section.
 
         The configuration is built from all keys in data.
@@ -78,8 +78,8 @@ class KubernetesConfig(BaseModel):
 
         # Try to create the configuration instance
         try:
-            kubernetes_mapping["kubernetes"] = cls.model_validate(data)
+            kubernetes_mapping['kubernetes'] = cls.model_validate(data)
         except ValidationError as e:
-            raise ValueError(f"Invalid kubernetes configuration: {e}")
+            raise ValueError(f'Invalid kubernetes configuration: {e}')
 
         return kubernetes_mapping

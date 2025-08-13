@@ -6,24 +6,24 @@ _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
 """
 
 IPythonTool = ChatCompletionToolParam(
-    type="function",
+    type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name="execute_ipython_cell",
+        name='execute_ipython_cell',
         description=_IPYTHON_DESCRIPTION,
         parameters={
-            "type": "object",
-            "properties": {
-                "code": {
-                    "type": "string",
-                    "description": "The Python code to execute. Supports magic commands like %pip.",
+            'type': 'object',
+            'properties': {
+                'code': {
+                    'type': 'string',
+                    'description': 'The Python code to execute. Supports magic commands like %pip.',
                 },
-                "safety_risk": {
-                    "type": "string",
-                    "description": "The LLM's assessment of the safety risk of this Python code. This helps the security analyzer determine whether user confirmation is needed.",
-                    "enum": ["LOW", "MEDIUM", "HIGH"],
+                'safety_risk': {
+                    'type': 'string',
+                    'description': "The LLM's assessment of the safety risk of this Python code. This helps the security analyzer determine whether user confirmation is needed.",
+                    'enum': ['LOW', 'MEDIUM', 'HIGH'],
                 },
             },
-            "required": ["code"],
+            'required': ['code'],
         },
     ),
 )

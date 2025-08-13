@@ -18,13 +18,13 @@ class ExperimentManager:
         user_id: str, conversation_id: str, config: OpenHandsConfig
     ) -> OpenHandsConfig:
         logger.debug(
-            f"Running agent config variant test for user_id={user_id}, conversation_id={conversation_id}"
+            f'Running agent config variant test for user_id={user_id}, conversation_id={conversation_id}'
         )
         return config
 
 
 experiment_manager_cls = os.environ.get(
-    "OPENHANDS_EXPERIMENT_MANAGER_CLS",
-    "openhands.experiments.experiment_manager.ExperimentManager",
+    'OPENHANDS_EXPERIMENT_MANAGER_CLS',
+    'openhands.experiments.experiment_manager.ExperimentManager',
 )
 ExperimentManagerImpl = get_impl(ExperimentManager, experiment_manager_cls)

@@ -6,7 +6,7 @@ from typing import Callable
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils import git_changes, git_diff
 
-GIT_CHANGES_CMD = "python3 /openhands/code/openhands/runtime/utils/git_changes.py"
+GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.py'
 GIT_DIFF_CMD = (
     'python3 /openhands/code/openhands/runtime/utils/git_diff.py "{file_path}"'
 )
@@ -48,9 +48,9 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
-        result = self.execute("mktemp -d", self.cwd)
+        result = self.execute('mktemp -d', self.cwd)
         script_file = Path(result.content.strip(), Path(file).name)
-        with open(file, "r") as f:
+        with open(file, 'r') as f:
             self.create_file_fn(str(script_file), f.read())
             result = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
@@ -75,8 +75,8 @@ class GitHandler:
                 return changes
             except Exception:
                 logger.exception(
-                    "GitHandler:get_git_changes:error",
-                    extra={"content": result.content},
+                    'GitHandler:get_git_changes:error',
+                    extra={'content': result.content},
                 )
                 return None
 
@@ -86,10 +86,10 @@ class GitHandler:
 
         # We try to add a script for getting git changes to the runtime - legacy runtimes may be missing the script
         logger.info(
-            "GitHandler:get_git_changes: adding git_changes script to runtime..."
+            'GitHandler:get_git_changes: adding git_changes script to runtime...'
         )
         script_file = self._create_python_script_file(git_changes.__file__)
-        self.git_changes_cmd = f"python3 {script_file}"
+        self.git_changes_cmd = f'python3 {script_file}'
 
         # Try again with the new changes cmd
         return self.get_git_changes()
@@ -105,7 +105,7 @@ class GitHandler:
         """
         # If cwd is not set, return None
         if not self.cwd:
-            raise ValueError("no_dir_in_git_diff")
+            raise ValueError('no_dir_in_git_diff')
 
         result = self.execute(self.git_diff_cmd.format(file_path=file_path), self.cwd)
         if result.exit_code == 0:
@@ -114,10 +114,10 @@ class GitHandler:
 
         if self.git_diff_cmd != GIT_DIFF_CMD:
             # We have already tried to add a script to the workspace - it did not work
-            raise ValueError("error_in_git_diff")
+            raise ValueError('error_in_git_diff')
 
         # We try to add a script for getting git changes to the runtime - legacy runtimes may be missing the script
-        logger.info("GitHandler:get_git_diff: adding git_diff script to runtime...")
+        logger.info('GitHandler:get_git_diff: adding git_diff script to runtime...')
         script_file = self._create_python_script_file(git_diff.__file__)
         self.git_diff_cmd = f'python3 {script_file} "{{file_path}}"'
 

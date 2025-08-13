@@ -16,17 +16,17 @@ The message should include:
 """
 
 FinishTool = ChatCompletionToolParam(
-    type="function",
+    type='function',
     function=ChatCompletionToolParamFunctionChunk(
         name=FINISH_TOOL_NAME,
         description=_FINISH_DESCRIPTION,
         parameters={
-            "type": "object",
-            "required": ["message"],
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "description": "Final message to send to the user",
+            'type': 'object',
+            'required': ['message'],
+            'properties': {
+                'message': {
+                    'type': 'string',
+                    'description': 'Final message to send to the user',
                 },
             },
         },

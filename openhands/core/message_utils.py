@@ -11,7 +11,7 @@ def get_token_usage_for_event(event: Event, metrics: Metrics) -> TokenUsage | No
     """
     # 1) Use the tool_call_metadata's response.id if present
     if event.tool_call_metadata and event.tool_call_metadata.model_response:
-        tool_response_id = event.tool_call_metadata.model_response.get("id")
+        tool_response_id = event.tool_call_metadata.model_response.get('id')
         if tool_response_id:
             usage_rec = next(
                 (u for u in metrics.token_usages if u.response_id == tool_response_id),

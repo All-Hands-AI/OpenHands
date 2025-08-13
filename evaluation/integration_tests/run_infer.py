@@ -33,8 +33,8 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 FAKE_RESPONSES = {
-    "CodeActAgent": fake_user_response,
-    "VisualBrowsingAgent": fake_user_response,
+    'CodeActAgent': fake_user_response,
+    'VisualBrowsingAgent': fake_user_response,
 }
 
 
@@ -43,11 +43,11 @@ def get_config(
     instance_id: str,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.platform = "linux/amd64"
+    sandbox_config.platform = 'linux/amd64'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime=os.environ.get("RUNTIME", "docker"),
+        runtime=os.environ.get('RUNTIME', 'docker'),
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -79,11 +79,11 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, str(instance.instance_id), log_dir)
     else:
         logger.info(
-            f"\nStarting evaluation for instance {str(instance.instance_id)}.\n"
+            f'\nStarting evaluation for instance {str(instance.instance_id)}.\n'
         )
 
     # =============================================
@@ -93,13 +93,13 @@ def process_instance(
     spec = importlib.util.spec_from_file_location(instance_id, instance.file_path)
     test_module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(test_module)
-    assert hasattr(test_module, "Test"), (
-        f"Test module {instance_id} does not have a Test class"
+    assert hasattr(test_module, 'Test'), (
+        f'Test module {instance_id} does not have a Test class'
     )
 
     test_class: type[BaseIntegrationTest] = test_module.Test
     assert issubclass(test_class, BaseIntegrationTest), (
-        f"Test class {instance_id} does not inherit from BaseIntegrationTest"
+        f'Test class {instance_id} does not inherit from BaseIntegrationTest'
     )
 
     instruction = test_class.INSTRUCTION
@@ -122,7 +122,7 @@ def process_instance(
             )
         )
         if state is None:
-            raise ValueError("State should not be None.")
+            raise ValueError('State should not be None.')
 
         # # =============================================
         # # result evaluation
@@ -131,8 +131,8 @@ def process_instance(
         histories = state.history
 
         # some basic check
-        logger.info(f"Total events in history: {len(histories)}")
-        assert len(histories) > 0, "History should not be empty"
+        logger.info(f'Total events in history: {len(histories)}')
+        assert len(histories) > 0, 'History should not be empty'
 
         test_result: TestResult = test_class.verify_result(runtime, histories)
         metrics = state.metrics.get() if state.metrics else None
@@ -156,20 +156,20 @@ def process_instance(
 def load_integration_tests() -> pd.DataFrame:
     """Load tests from python files under ./tests"""
     cur_dir = os.path.dirname(os.path.abspath(__file__))
-    test_dir = os.path.join(cur_dir, "tests")
+    test_dir = os.path.join(cur_dir, 'tests')
     test_files = [
         os.path.join(test_dir, f)
         for f in os.listdir(test_dir)
-        if f.startswith("t") and f.endswith(".py")
+        if f.startswith('t') and f.endswith('.py')
     ]
-    df = pd.DataFrame(test_files, columns=["file_path"])
-    df["instance_id"] = df["file_path"].apply(
-        lambda x: os.path.basename(x).rstrip(".py")
+    df = pd.DataFrame(test_files, columns=['file_path'])
+    df['instance_id'] = df['file_path'].apply(
+        lambda x: os.path.basename(x).rstrip('.py')
     )
     return df
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_arguments()
     integration_tests = load_integration_tests()
 
@@ -178,23 +178,23 @@ if __name__ == "__main__":
         llm_config = get_llm_config_arg(args.llm_config)
 
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        "integration_tests",
+        'integration_tests',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
 
     # Parse dataset IDs if provided
     eval_ids = None
     if args.eval_ids:
-        eval_ids = str(args.eval_ids).split(",")
-        logger.info(f"\nUsing specific dataset IDs: {eval_ids}\n")
+        eval_ids = str(args.eval_ids).split(',')
+        logger.info(f'\nUsing specific dataset IDs: {eval_ids}\n')
 
     instances = prepare_dataset(
         integration_tests,
@@ -211,44 +211,44 @@ if __name__ == "__main__":
         process_instance,
     )
 
-    df = pd.read_json(output_file, lines=True, orient="records")
+    df = pd.read_json(output_file, lines=True, orient='records')
 
     # record success and reason
-    df["success"] = df["test_result"].apply(lambda x: x["success"])
-    df["reason"] = df["test_result"].apply(lambda x: x["reason"])
-    logger.info("-" * 100)
+    df['success'] = df['test_result'].apply(lambda x: x['success'])
+    df['reason'] = df['test_result'].apply(lambda x: x['reason'])
+    logger.info('-' * 100)
     logger.info(
-        f"Success rate: {df['success'].mean():.2%} ({df['success'].sum()}/{len(df)})"
+        f'Success rate: {df["success"].mean():.2%} ({df["success"].sum()}/{len(df)})'
     )
     logger.info(
-        "\nEvaluation Results:"
-        + "\n"
-        + df[["instance_id", "success", "reason"]].to_string(index=False)
+        '\nEvaluation Results:'
+        + '\n'
+        + df[['instance_id', 'success', 'reason']].to_string(index=False)
     )
-    logger.info("-" * 100)
+    logger.info('-' * 100)
 
     # record cost for each instance, with 3 decimal places
     # we sum up all the "costs" from the metrics array
-    df["cost"] = df["metrics"].apply(
-        lambda m: round(sum(c["cost"] for c in m["costs"]), 3)
-        if m and "costs" in m
+    df['cost'] = df['metrics'].apply(
+        lambda m: round(sum(c['cost'] for c in m['costs']), 3)
+        if m and 'costs' in m
         else 0.0
     )
 
     # capture the top-level error if present, per instance
-    df["error_message"] = df.get("error", None)
+    df['error_message'] = df.get('error', None)
 
-    logger.info(f"Total cost: USD {df['cost'].sum():.2f}")
+    logger.info(f'Total cost: USD {df["cost"].sum():.2f}')
 
-    report_file = os.path.join(metadata.eval_output_dir, "report.md")
-    with open(report_file, "w") as f:
+    report_file = os.path.join(metadata.eval_output_dir, 'report.md')
+    with open(report_file, 'w') as f:
         f.write(
-            f"Success rate: {df['success'].mean():.2%}"
-            f" ({df['success'].sum()}/{len(df)})\n"
+            f'Success rate: {df["success"].mean():.2%}'
+            f' ({df["success"].sum()}/{len(df)})\n'
         )
-        f.write(f"\nTotal cost: USD {df['cost'].sum():.2f}\n")
+        f.write(f'\nTotal cost: USD {df["cost"].sum():.2f}\n')
         f.write(
             df[
-                ["instance_id", "success", "reason", "cost", "error_message"]
+                ['instance_id', 'success', 'reason', 'cost', 'error_message']
             ].to_markdown(index=False)
         )

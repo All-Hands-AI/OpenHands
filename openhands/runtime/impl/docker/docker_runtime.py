@@ -39,14 +39,14 @@ from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
-CONTAINER_NAME_PREFIX = "openhands-runtime-"
+CONTAINER_NAME_PREFIX = 'openhands-runtime-'
 
 EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
 
-if os.name == "nt" or platform.release().endswith("microsoft-standard-WSL2"):
+if os.name == 'nt' or platform.release().endswith('microsoft-standard-WSL2'):
     EXECUTION_SERVER_PORT_RANGE = (30000, 34999)
     VSCODE_PORT_RANGE = (35000, 39999)
     APP_PORT_RANGE_1 = (40000, 44999)
@@ -90,7 +90,7 @@ class DockerRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
-        sid: str = "default",
+        sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable | None = None,
@@ -118,16 +118,16 @@ class DockerRuntime(ActionExecutionClient):
         self._vscode_port_lock: PortLock | None = None
         self._app_port_locks: list[PortLock] = []
 
-        if os.environ.get("DOCKER_HOST_ADDR"):
+        if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
-                f"Using DOCKER_HOST_IP: {os.environ['DOCKER_HOST_ADDR']} for local_runtime_url"
+                f'Using DOCKER_HOST_IP: {os.environ["DOCKER_HOST_ADDR"]} for local_runtime_url'
             )
             self.config.sandbox.local_runtime_url = (
-                f"http://{os.environ['DOCKER_HOST_ADDR']}"
+                f'http://{os.environ["DOCKER_HOST_ADDR"]}'
             )
 
         self.docker_client: docker.DockerClient = self._init_docker_client()
-        self.api_url = f"{self.config.sandbox.local_runtime_url}:{self._container_port}"
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         self.base_container_image = self.config.sandbox.base_container_image
         self.runtime_container_image = self.config.sandbox.runtime_container_image
@@ -156,8 +156,8 @@ class DockerRuntime(ActionExecutionClient):
         # Log runtime_extra_deps after base class initialization so self.sid is available
         if self.config.sandbox.runtime_extra_deps:
             self.log(
-                "debug",
-                f"Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}",
+                'debug',
+                f'Installing extra user-provided dependencies in the runtime image: {self.config.sandbox.runtime_extra_deps}',
             )
 
     @property
@@ -171,18 +171,18 @@ class DockerRuntime(ActionExecutionClient):
         except docker.errors.NotFound as e:
             if self.attach_to_existing:
                 self.log(
-                    "warning",
-                    f"Container {self.container_name} not found.",
+                    'warning',
+                    f'Container {self.container_name} not found.',
                 )
                 raise AgentRuntimeDisconnectedError from e
             self.maybe_build_runtime_container_image()
             self.log(
-                "info", f"Starting runtime with image: {self.runtime_container_image}"
+                'info', f'Starting runtime with image: {self.runtime_container_image}'
             )
             await call_sync_from_async(self.init_container)
             self.log(
-                "info",
-                f"Container started: {self.container_name}. VSCode URL: {self.vscode_url}",
+                'info',
+                f'Container started: {self.container_name}. VSCode URL: {self.vscode_url}',
             )
 
         if DEBUG_RUNTIME and self.container:
@@ -191,20 +191,20 @@ class DockerRuntime(ActionExecutionClient):
             self.log_streamer = None
 
         if not self.attach_to_existing:
-            self.log("info", f"Waiting for client to become ready at {self.api_url}...")
+            self.log('info', f'Waiting for client to become ready at {self.api_url}...')
             self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
 
         if not self.attach_to_existing:
-            self.log("info", "Runtime is ready.")
+            self.log('info', 'Runtime is ready.')
 
         if not self.attach_to_existing:
             await call_sync_from_async(self.setup_initial_env)
 
         self.log(
-            "debug",
-            f"Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}",
+            'debug',
+            f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         if not self.attach_to_existing:
             self.set_runtime_status(RuntimeStatus.READY)
@@ -214,7 +214,7 @@ class DockerRuntime(ActionExecutionClient):
         if self.runtime_container_image is None:
             if self.base_container_image is None:
                 raise ValueError(
-                    "Neither runtime container image nor base container image is set"
+                    'Neither runtime container image nor base container image is set'
                 )
             self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.runtime_container_image = build_runtime_image(
@@ -234,7 +234,7 @@ class DockerRuntime(ActionExecutionClient):
             return docker.from_env()
         except Exception as ex:
             logger.error(
-                "Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.",
+                'Launch docker client failed. Please make sure you have installed docker and started docker desktop/daemon.',
             )
             raise ex
 
@@ -250,10 +250,10 @@ class DockerRuntime(ActionExecutionClient):
         # Process volumes (comma-delimited)
         if self.config.sandbox.volumes is not None:
             # Handle multiple mounts with comma delimiter
-            mounts = self.config.sandbox.volumes.split(",")
+            mounts = self.config.sandbox.volumes.split(',')
 
             for mount in mounts:
-                parts = mount.split(":")
+                parts = mount.split(':')
                 if len(parts) >= 2:
                     # Support both bind mounts (absolute paths) and Docker named volumes.
                     # Named volume syntax:
@@ -261,25 +261,25 @@ class DockerRuntime(ActionExecutionClient):
                     #   <name>          (implicit when not starting with '/')
                     raw_host_part = parts[0]
 
-                    if raw_host_part.startswith("volume:"):
-                        host_path = raw_host_part.split("volume:", 1)[1]
+                    if raw_host_part.startswith('volume:'):
+                        host_path = raw_host_part.split('volume:', 1)[1]
                     elif not os.path.isabs(raw_host_part):
                         host_path = raw_host_part  # treat as named volume
                     else:
                         host_path = os.path.abspath(raw_host_part)
                     container_path = parts[1]
                     # Default mode is 'rw' if not specified
-                    mount_mode = parts[2] if len(parts) > 2 else "rw"
+                    mount_mode = parts[2] if len(parts) > 2 else 'rw'
                     # Skip overlay mounts here; they will be handled separately via Mount objects
-                    if "overlay" in mount_mode:
+                    if 'overlay' in mount_mode:
                         continue
 
                     volumes[host_path] = {
-                        "bind": container_path,
-                        "mode": mount_mode,
+                        'bind': container_path,
+                        'mode': mount_mode,
                     }
                     logger.debug(
-                        f"Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}"
+                        f'Mount dir (sandbox.volumes): {host_path} to {container_path} with mode: {mount_mode}'
                     )
 
         # Legacy mounting with workspace_* parameters
@@ -287,16 +287,16 @@ class DockerRuntime(ActionExecutionClient):
             self.config.workspace_mount_path is not None
             and self.config.workspace_mount_path_in_sandbox is not None
         ):
-            mount_mode = "rw"  # Default mode
+            mount_mode = 'rw'  # Default mode
 
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
             # Add os.path.abspath() here so that relative paths can be used when workspace_mount_path is configured in config.toml
             volumes[os.path.abspath(self.config.workspace_mount_path)] = {
-                "bind": self.config.workspace_mount_path_in_sandbox,
-                "mode": mount_mode,
+                'bind': self.config.workspace_mount_path_in_sandbox,
+                'mode': mount_mode,
             }
             logger.debug(
-                f"Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}"
+                f'Mount dir (legacy): {self.config.workspace_mount_path} with mode: {mount_mode}'
             )
 
         return volumes
@@ -315,51 +315,51 @@ class DockerRuntime(ActionExecutionClient):
             return overlay_mounts
 
         # Base directory for overlay upper/work layers from env var
-        overlay_base = os.environ.get("SANDBOX_VOLUME_OVERLAYS")
+        overlay_base = os.environ.get('SANDBOX_VOLUME_OVERLAYS')
         if not overlay_base:
             # If no base path provided, skip overlay processing
             return overlay_mounts
 
         os.makedirs(overlay_base, exist_ok=True)
 
-        mount_specs = self.config.sandbox.volumes.split(",")
+        mount_specs = self.config.sandbox.volumes.split(',')
 
         for idx, mount_spec in enumerate(mount_specs):
-            parts = mount_spec.split(":")
+            parts = mount_spec.split(':')
             if len(parts) < 2:
                 continue
             host_path = os.path.abspath(parts[0])
             container_path = parts[1]
-            mount_mode = parts[2] if len(parts) > 2 else "rw"
+            mount_mode = parts[2] if len(parts) > 2 else 'rw'
 
             # Only consider overlay mounts for host-bind paths (absolute)
-            if (not os.path.isabs(parts[0])) or ("overlay" not in mount_mode):
+            if (not os.path.isabs(parts[0])) or ('overlay' not in mount_mode):
                 continue
 
             # Prepare upper and work directories unique to this container and mount
-            overlay_dir = os.path.join(overlay_base, self.container_name, f"{idx}")
-            upper_dir = os.path.join(overlay_dir, "upper")
-            work_dir = os.path.join(overlay_dir, "work")
+            overlay_dir = os.path.join(overlay_base, self.container_name, f'{idx}')
+            upper_dir = os.path.join(overlay_dir, 'upper')
+            work_dir = os.path.join(overlay_dir, 'work')
             os.makedirs(upper_dir, exist_ok=True)
             os.makedirs(work_dir, exist_ok=True)
 
             driver_cfg = DriverConfig(
-                name="local",
+                name='local',
                 options={
-                    "type": "overlay",
-                    "device": "overlay",
-                    "o": f"lowerdir={host_path},upperdir={upper_dir},workdir={work_dir}",
+                    'type': 'overlay',
+                    'device': 'overlay',
+                    'o': f'lowerdir={host_path},upperdir={upper_dir},workdir={work_dir}',
                 },
             )
 
             mount = Mount(
                 target=container_path,
-                source="",  # Anonymous volume
-                type="volume",
+                source='',  # Anonymous volume
+                type='volume',
                 labels={
-                    "app": "openhands",
-                    "role": "worker",
-                    "container": self.container_name,
+                    'app': 'openhands',
+                    'role': 'worker',
+                    'container': self.container_name,
                 },
                 driver_config=driver_cfg,
             )
@@ -369,7 +369,7 @@ class DockerRuntime(ActionExecutionClient):
         return overlay_mounts
 
     def init_container(self) -> None:
-        self.log("debug", "Preparing to start container...")
+        self.log('debug', 'Preparing to start container...')
         self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         # Allocate host port with locking to prevent race conditions
@@ -396,65 +396,65 @@ class DockerRuntime(ActionExecutionClient):
             lock for lock in [app_lock_1, app_lock_2] if lock is not None
         ]
 
-        self.api_url = f"{self.config.sandbox.local_runtime_url}:{self._container_port}"
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal["host"] | None = (
-            "host" if use_host_network else None
+        network_mode: typing.Literal['host'] | None = (
+            'host' if use_host_network else None
         )
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
         if not use_host_network:
             port_mapping = {
-                f"{self._container_port}/tcp": [
+                f'{self._container_port}/tcp': [
                     {
-                        "HostPort": str(self._host_port),
-                        "HostIp": self.config.sandbox.runtime_binding_address,
+                        'HostPort': str(self._host_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
                     }
                 ],
             }
 
             if self.vscode_enabled:
-                port_mapping[f"{self._vscode_port}/tcp"] = [
+                port_mapping[f'{self._vscode_port}/tcp'] = [
                     {
-                        "HostPort": str(self._vscode_port),
-                        "HostIp": self.config.sandbox.runtime_binding_address,
+                        'HostPort': str(self._vscode_port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
                     }
                 ]
 
             for port in self._app_ports:
-                port_mapping[f"{port}/tcp"] = [
+                port_mapping[f'{port}/tcp'] = [
                     {
-                        "HostPort": str(port),
-                        "HostIp": self.config.sandbox.runtime_binding_address,
+                        'HostPort': str(port),
+                        'HostIp': self.config.sandbox.runtime_binding_address,
                     }
                 ]
         else:
             self.log(
-                "warn",
-                "Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop",
+                'warn',
+                'Using host network mode. If you are using MacOS, please make sure you have the latest version of Docker Desktop and enabled host network feature: https://docs.docker.com/network/drivers/host/#docker-desktop',
             )
 
         # Combine environment variables
         environment = dict(**self.initial_env_vars)
         environment.update(
             {
-                "port": str(self._container_port),
-                "PYTHONUNBUFFERED": "1",
+                'port': str(self._container_port),
+                'PYTHONUNBUFFERED': '1',
                 # Passing in the ports means nested runtimes do not come up with their own ports!
-                "VSCODE_PORT": str(self._vscode_port),
-                "APP_PORT_1": str(self._app_ports[0]),
-                "APP_PORT_2": str(self._app_ports[1]),
-                "PIP_BREAK_SYSTEM_PACKAGES": "1",
+                'VSCODE_PORT': str(self._vscode_port),
+                'APP_PORT_1': str(self._app_ports[0]),
+                'APP_PORT_2': str(self._app_ports[1]),
+                'PIP_BREAK_SYSTEM_PACKAGES': '1',
             }
         )
         if self.config.debug or DEBUG:
-            environment["DEBUG"] = "true"
+            environment['DEBUG'] = 'true'
         # also update with runtime_startup_env_vars
         environment.update(self.config.sandbox.runtime_startup_env_vars)
 
-        self.log("debug", f"Workspace Base: {self.config.workspace_base}")
+        self.log('debug', f'Workspace Base: {self.config.workspace_base}')
 
         # Process volumes for mounting
         volumes = self._process_volumes()
@@ -462,35 +462,35 @@ class DockerRuntime(ActionExecutionClient):
         # If no volumes were configured, set to None
         if not volumes:
             logger.debug(
-                "Mount dir is not set, will not mount the workspace directory to the container"
+                'Mount dir is not set, will not mount the workspace directory to the container'
             )
             volumes = {}  # Empty dict instead of None to satisfy mypy
         self.log(
-            "debug",
-            f"Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}",
+            'debug',
+            f'Sandbox workspace: {self.config.workspace_mount_path_in_sandbox}',
         )
 
         command = self.get_action_execution_server_startup_command()
-        self.log("info", f"Starting server with command: {command}")
+        self.log('info', f'Starting server with command: {command}')
 
         if self.config.sandbox.enable_gpu:
             gpu_ids = self.config.sandbox.cuda_visible_devices
             if gpu_ids is None:
                 device_requests = [
-                    docker.types.DeviceRequest(capabilities=[["gpu"]], count=-1)
+                    docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)
                 ]
             else:
                 device_requests = [
                     docker.types.DeviceRequest(
-                        capabilities=[["gpu"]],
-                        device_ids=[str(i) for i in gpu_ids.split(",")],
+                        capabilities=[['gpu']],
+                        device_ids=[str(i) for i in gpu_ids.split(',')],
                     )
                 ]
         else:
             device_requests = None
         try:
             if self.runtime_container_image is None:
-                raise ValueError("Runtime container image is not set")
+                raise ValueError('Runtime container image is not set')
             # Process overlay mounts (read-only lower with per-container COW)
             overlay_mounts = self._process_overlay_mounts()
 
@@ -501,7 +501,7 @@ class DockerRuntime(ActionExecutionClient):
                 entrypoint=[],
                 network_mode=network_mode,
                 ports=port_mapping,
-                working_dir="/openhands/code/",  # do not change this!
+                working_dir='/openhands/code/',  # do not change this!
                 name=self.container_name,
                 detach=True,
                 environment=environment,
@@ -510,44 +510,44 @@ class DockerRuntime(ActionExecutionClient):
                 device_requests=device_requests,
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
-            self.log("debug", f"Container started. Server url: {self.api_url}")
+            self.log('debug', f'Container started. Server url: {self.api_url}')
             self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:
             self.log(
-                "error",
-                f"Error: Instance {self.container_name} FAILED to start container!\n",
+                'error',
+                f'Error: Instance {self.container_name} FAILED to start container!\n',
             )
             self.close()
             raise e
 
     def _attach_to_container(self) -> None:
         self.container = self.docker_client.containers.get(self.container_name)
-        if self.container.status == "exited":
+        if self.container.status == 'exited':
             self.container.start()
 
-        config = self.container.attrs["Config"]
-        for env_var in config["Env"]:
-            if env_var.startswith("port="):
-                self._host_port = int(env_var.split("port=")[1])
+        config = self.container.attrs['Config']
+        for env_var in config['Env']:
+            if env_var.startswith('port='):
+                self._host_port = int(env_var.split('port=')[1])
                 self._container_port = self._host_port
-            elif env_var.startswith("VSCODE_PORT="):
-                self._vscode_port = int(env_var.split("VSCODE_PORT=")[1])
+            elif env_var.startswith('VSCODE_PORT='):
+                self._vscode_port = int(env_var.split('VSCODE_PORT=')[1])
 
         self._app_ports = []
-        exposed_ports = config.get("ExposedPorts")
+        exposed_ports = config.get('ExposedPorts')
         if exposed_ports:
             for exposed_port in exposed_ports.keys():
-                exposed_port = int(exposed_port.split("/tcp")[0])
+                exposed_port = int(exposed_port.split('/tcp')[0])
                 if (
                     exposed_port != self._host_port
                     and exposed_port != self._vscode_port
                 ):
                     self._app_ports.append(exposed_port)
 
-        self.api_url = f"{self.config.sandbox.local_runtime_url}:{self._container_port}"
+        self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
         self.log(
-            "debug",
-            f"attached to container: {self.container_name} {self._container_port} {self.api_url}",
+            'debug',
+            f'attached to container: {self.container_name} {self._container_port} {self.api_url}',
         )
 
     @tenacity.retry(
@@ -559,13 +559,13 @@ class DockerRuntime(ActionExecutionClient):
     def wait_until_alive(self) -> None:
         try:
             container = self.docker_client.containers.get(self.container_name)
-            if container.status == "exited":
+            if container.status == 'exited':
                 raise AgentRuntimeDisconnectedError(
-                    f"Container {self.container_name} has exited."
+                    f'Container {self.container_name} has exited.'
                 )
         except docker.errors.NotFound:
             raise AgentRuntimeNotFoundError(
-                f"Container {self.container_name} not found."
+                f'Container {self.container_name} not found.'
             )
 
         self.check_if_alive()
@@ -596,18 +596,18 @@ class DockerRuntime(ActionExecutionClient):
         if self._host_port_lock:
             self._host_port_lock.release()
             self._host_port_lock = None
-            logger.debug(f"Released host port lock for port {self._host_port}")
+            logger.debug(f'Released host port lock for port {self._host_port}')
 
         if self._vscode_port_lock:
             self._vscode_port_lock.release()
             self._vscode_port_lock = None
-            logger.debug(f"Released VSCode port lock for port {self._vscode_port}")
+            logger.debug(f'Released VSCode port lock for port {self._vscode_port}')
 
         for i, lock in enumerate(self._app_port_locks):
             if lock:
                 lock.release()
                 logger.debug(
-                    f"Released app port lock for port {self._app_ports[i] if i < len(self._app_ports) else 'unknown'}"
+                    f'Released app port lock for port {self._app_ports[i] if i < len(self._app_ports) else "unknown"}'
                 )
 
         self._app_port_locks.clear()
@@ -640,14 +640,14 @@ class DockerRuntime(ActionExecutionClient):
             min_port=port_range[0],
             max_port=port_range[1],
             max_attempts=max_attempts,
-            bind_address="0.0.0.0",
+            bind_address='0.0.0.0',
             lock_timeout=1.0,
         )
 
         if result is None:
             # Fallback to original method if port locking fails
             logger.warning(
-                f"Port locking failed for range {port_range}, falling back to original method"
+                f'Port locking failed for range {port_range}, falling back to original method'
             )
             port = port_range[1]
             for _ in range(max_attempts):
@@ -662,7 +662,7 @@ class DockerRuntime(ActionExecutionClient):
         if self._is_port_in_use_docker(port):
             port_lock.release()
             # Try again with a different port
-            logger.debug(f"Port {port} is in use by Docker, trying again")
+            logger.debug(f'Port {port} is in use by Docker, trying again')
             return self._find_available_port_with_lock(port_range, max_attempts - 1)
 
         return port, port_lock
@@ -680,16 +680,16 @@ class DockerRuntime(ActionExecutionClient):
         if not token:
             return None
 
-        vscode_url = f"http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}"
+        vscode_url = f'http://localhost:{self._vscode_port}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         return vscode_url
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
 
-        host_addr = os.environ.get("DOCKER_HOST_ADDR", "localhost")
+        host_addr = os.environ.get('DOCKER_HOST_ADDR', 'localhost')
         for port in self._app_ports:
-            hosts[f"http://{host_addr}:{port}"] = port
+            hosts[f'http://{host_addr}:{port}'] = port
 
         return hosts
 
@@ -698,25 +698,25 @@ class DockerRuntime(ActionExecutionClient):
         This is different from container.stop() as it ensures environment variables are properly preserved.
         """
         if not self.container:
-            raise RuntimeError("Container not initialized")
+            raise RuntimeError('Container not initialized')
 
         # First, ensure all environment variables are properly persisted in .bashrc
         # This is already handled by add_env_vars in base.py
 
         # Stop the container
         self.container.stop()
-        self.log("debug", f"Container {self.container_name} paused")
+        self.log('debug', f'Container {self.container_name} paused')
 
     def resume(self) -> None:
         """Resume the runtime by starting the container.
         This is different from container.start() as it ensures environment variables are properly restored.
         """
         if not self.container:
-            raise RuntimeError("Container not initialized")
+            raise RuntimeError('Container not initialized')
 
         # Start the container
         self.container.start()
-        self.log("debug", f"Container {self.container_name} resumed")
+        self.log('debug', f'Container {self.container_name} resumed')
 
         # Wait for the container to be ready
         self.wait_until_alive()

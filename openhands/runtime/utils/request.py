@@ -18,7 +18,7 @@ class RequestHTTPError(httpx.HTTPStatusError):
     def __str__(self) -> str:
         s = super().__str__()
         if self.detail is not None:
-            s += f"\nDetails: {self.detail}"
+            s += f'\nDetails: {self.detail}'
         return str(s)
 
 
@@ -55,6 +55,6 @@ def send_request(
             e,
             request=e.request,
             response=e.response,
-            detail=_json.get("detail") if _json is not None else None,
+            detail=_json.get('detail') if _json is not None else None,
         ) from e
     return response

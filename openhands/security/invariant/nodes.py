@@ -12,7 +12,7 @@ class LLM:
 
 class Event(BaseModel):
     metadata: dict[str, Any] | None = Field(
-        default_factory=lambda: dict(), description="Metadata associated with the event"
+        default_factory=lambda: dict(), description='Metadata associated with the event'
     )
 
 
@@ -36,9 +36,9 @@ class Message(Event):
         self,
     ) -> Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]:
         # Print on separate line
-        yield "role", self.role
-        yield "content", self.content
-        yield "tool_calls", self.tool_calls
+        yield 'role', self.role
+        yield 'content', self.content
+        yield 'tool_calls', self.tool_calls
 
 
 class ToolOutput(Event):

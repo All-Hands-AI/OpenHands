@@ -55,7 +55,7 @@ async def validate_provider_token(
         bitbucket_error = e
 
     logger.debug(
-        f"Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}"
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
     )
 
     return None

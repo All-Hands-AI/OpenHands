@@ -42,40 +42,40 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 IMPORT_HELPER = {
-    "python": [
-        "import math",
-        "import re",
-        "import sys",
-        "import copy",
-        "import datetime",
-        "import itertools",
-        "import collections",
-        "import heapq",
-        "import statistics",
-        "import functools",
-        "import hashlib",
-        "import numpy",
-        "import numpy as np",
-        "import string",
-        "from typing import *",
-        "from collections import *",
+    'python': [
+        'import math',
+        'import re',
+        'import sys',
+        'import copy',
+        'import datetime',
+        'import itertools',
+        'import collections',
+        'import heapq',
+        'import statistics',
+        'import functools',
+        'import hashlib',
+        'import numpy',
+        'import numpy as np',
+        'import string',
+        'from typing import *',
+        'from collections import *',
     ],
 }
 
 LANGUAGE_TO_TIMEOUT = {
-    "python": 10,
+    'python': 10,
 }
 
 LANGUAGE_TO_NUM_WORKERS = {
-    "python": 4,
+    'python': 4,
 }
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    "CodeActAgent": 'When you think you have fixed the issue through code changes, please finish the interaction using the "finish" tool.\n'
+    'CodeActAgent': 'When you think you have fixed the issue through code changes, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -83,11 +83,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "python:3.12-bookworm"
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -101,7 +101,7 @@ def get_config(
 
 
 def _get_instance_id(instance: pd.Series) -> str:
-    return instance.instance_id.replace("/", "__")
+    return instance.instance_id.replace('/', '__')
 
 
 def initialize_runtime(
@@ -112,38 +112,38 @@ def initialize_runtime(
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command="cd /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
     problem_statement = (
-        instance.declaration + instance.buggy_solution + "\n" + instance.test
+        instance.declaration + instance.buggy_solution + '\n' + instance.test
     )
-    filename = f"{_get_instance_id(instance)}.py"
+    filename = f'{_get_instance_id(instance)}.py'
     with tempfile.TemporaryDirectory() as tmpdir:
         host_script_path = os.path.join(tmpdir, filename)
-        with open(host_script_path, "w") as f:
+        with open(host_script_path, 'w') as f:
             f.write(problem_statement)
         runtime.copy_to(
             host_script_path,
-            "/workspace",
+            '/workspace',
         )
 
     # check file exists
-    action = CmdRunAction(command=f"ls /workspace/{_get_instance_id(instance)}.py")
+    action = CmdRunAction(command=f'ls /workspace/{_get_instance_id(instance)}.py')
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def complete_runtime(
@@ -156,26 +156,26 @@ def complete_runtime(
     If you need to do something in the sandbox to get the correctness metric after
     the agent has run, modify this function.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # default value
-    language = "python"
+    language = 'python'
     timeout = 10
 
-    test_result = {"result": {}, "metadata": {}}
-    code_metric = load("Muennighoff/code_eval_octopack")
+    test_result = {'result': {}, 'metadata': {}}
+    code_metric = load('Muennighoff/code_eval_octopack')
     timeout = LANGUAGE_TO_TIMEOUT[language]
     num_workers = LANGUAGE_TO_NUM_WORKERS[language]
-    python_imports = "\n".join(IMPORT_HELPER[language])
+    python_imports = '\n'.join(IMPORT_HELPER[language])
 
-    action = CmdRunAction(command=f"cat /workspace/{_get_instance_id(instance)}.py")
+    action = CmdRunAction(command=f'cat /workspace/{_get_instance_id(instance)}.py')
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    function = obs.content.replace("\r\n", "\n")
-    logger.info(f"Function: {function}")
-    function = [[python_imports + "\n" + function]]
+    function = obs.content.replace('\r\n', '\n')
+    logger.info(f'Function: {function}')
+    function = [[python_imports + '\n' + function]]
 
     results, logs = code_metric.compute(
         references=[instance.test],
@@ -184,13 +184,13 @@ def complete_runtime(
         timeout=timeout,
         num_workers=num_workers,
     )
-    test_result["result"] = results
-    test_result["metadata"] = {
-        "logs": logs,
-        "timeout": timeout,
-        "num_workers": num_workers,
+    test_result['result'] = results
+    test_result['metadata'] = {
+        'logs': logs,
+        'timeout': timeout,
+        'num_workers': num_workers,
     }
-    logger.info(f"{'-' * 50} END Runtime Completion Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
     return test_result
 
 
@@ -205,28 +205,28 @@ def process_instance(
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, instance.instance_id, log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {instance.instance_id}.")
+        logger.info(f'Starting evaluation for instance {instance.instance_id}.')
 
     # Create file with HumanEvalFix problem
     # Prompt reference: https://github.com/bigcode-project/bigcode-evaluation-harness/blob/84b96da31b7f840b55c5733325346176140cdb6b/bigcode_eval/tasks/humanevalpack.py#L509
     problem_statement = (
-        instance.declaration + instance.buggy_solution + "\n" + instance.test
+        instance.declaration + instance.buggy_solution + '\n' + instance.test
     )
 
     # Prepare instruction
     instruction = (
-        f"Please fix the function in {sid}.py such that all test cases pass.\n"
-        "Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n"
-        "# Problem Statement\n"
-        f"{problem_statement}\n\n"
+        f'Please fix the function in {sid}.py such that all test cases pass.\n'
+        'Environment has been set up for you to start working. You may assume all necessary tools are installed.\n\n'
+        '# Problem Statement\n'
+        f'{problem_statement}\n\n'
     )
     instruction += (
-        "IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n"
-        "You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n"
-        "You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n"
+        'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
+        'You should NOT modify any existing test case files. If needed, you can add new test cases in a NEW file to reproduce the issue.\n'
+        'You SHOULD INCLUDE PROPER INDENTATION in your edit commands.\n'
     )
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
@@ -247,7 +247,7 @@ def process_instance(
     )
 
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
     metrics = state.metrics.get() if state.metrics else None
     test_result = complete_runtime(runtime, instance)
 
@@ -269,16 +269,16 @@ def process_instance(
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     args = parse_arguments()
 
     # NOTE: It is preferable to load datasets from huggingface datasets and perform post-processing
     # so we don't need to manage file uploading to OpenHands's repo
     dataset = load_dataset(
-        "bigcode/humanevalpack", "python"
+        'bigcode/humanevalpack', 'python'
     )  # TODO: Support other languages
-    hefix_tests = dataset["test"].to_pandas()
-    hefix_tests.rename(columns={"task_id": "instance_id"}, inplace=True)
+    hefix_tests = dataset['test'].to_pandas()
+    hefix_tests.rename(columns={'task_id': 'instance_id'}, inplace=True)
 
     llm_config = None
     if args.llm_config:
@@ -286,17 +286,17 @@ if __name__ == "__main__":
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        "humanevalfix-python",
+        'humanevalfix-python',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(hefix_tests, output_file, args.eval_n_limit)
 
     run_evaluation(

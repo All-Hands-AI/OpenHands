@@ -25,12 +25,12 @@ class RetryMixin:
         Returns:
             A retry decorator with the parameters customizable in configuration.
         """
-        num_retries = kwargs.get("num_retries")
-        retry_exceptions: tuple = kwargs.get("retry_exceptions", ())
-        retry_min_wait = kwargs.get("retry_min_wait")
-        retry_max_wait = kwargs.get("retry_max_wait")
-        retry_multiplier = kwargs.get("retry_multiplier")
-        retry_listener = kwargs.get("retry_listener")
+        num_retries = kwargs.get('num_retries')
+        retry_exceptions: tuple = kwargs.get('retry_exceptions', ())
+        retry_min_wait = kwargs.get('retry_min_wait')
+        retry_max_wait = kwargs.get('retry_max_wait')
+        retry_multiplier = kwargs.get('retry_multiplier')
+        retry_listener = kwargs.get('retry_listener')
 
         def before_sleep(retry_state: Any) -> None:
             self.log_retry_attempt(retry_state)
@@ -40,17 +40,17 @@ class RetryMixin:
             # Check if the exception is LLMNoResponseError
             exception = retry_state.outcome.exception()
             if isinstance(exception, LLMNoResponseError):
-                if hasattr(retry_state, "kwargs"):
+                if hasattr(retry_state, 'kwargs'):
                     # Only change temperature if it's zero or not set
-                    current_temp = retry_state.kwargs.get("temperature", 0)
+                    current_temp = retry_state.kwargs.get('temperature', 0)
                     if current_temp == 0:
-                        retry_state.kwargs["temperature"] = 1.0
+                        retry_state.kwargs['temperature'] = 1.0
                         logger.warning(
-                            "LLMNoResponseError detected with temperature=0, setting temperature to 1.0 for next attempt."
+                            'LLMNoResponseError detected with temperature=0, setting temperature to 1.0 for next attempt.'
                         )
                     else:
                         logger.warning(
-                            f"LLMNoResponseError detected with temperature={current_temp}, keeping original temperature"
+                            f'LLMNoResponseError detected with temperature={current_temp}, keeping original temperature'
                         )
 
         retry_decorator: Callable = retry(
@@ -73,15 +73,15 @@ class RetryMixin:
         exception = retry_state.outcome.exception()
 
         # Add retry attempt and max retries to the exception for later use
-        if hasattr(retry_state, "retry_object") and hasattr(
-            retry_state.retry_object, "stop"
+        if hasattr(retry_state, 'retry_object') and hasattr(
+            retry_state.retry_object, 'stop'
         ):
             # Get the max retries from the stop_after_attempt
             stop_condition = retry_state.retry_object.stop
 
             # Handle both single stop conditions and stop_any (combined conditions)
             stop_funcs = []
-            if hasattr(stop_condition, "stops"):
+            if hasattr(stop_condition, 'stops'):
                 # This is a stop_any object with multiple stop conditions
                 stop_funcs = stop_condition.stops
             else:
@@ -89,12 +89,12 @@ class RetryMixin:
                 stop_funcs = [stop_condition]
 
             for stop_func in stop_funcs:
-                if hasattr(stop_func, "max_attempts"):
+                if hasattr(stop_func, 'max_attempts'):
                     # Add retry information to the exception
                     exception.retry_attempt = retry_state.attempt_number
                     exception.max_retries = stop_func.max_attempts
                     break
 
         logger.error(
-            f"{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.",
+            f'{exception}. Attempt #{retry_state.attempt_number} | You can customize retry values in the configuration.',
         )

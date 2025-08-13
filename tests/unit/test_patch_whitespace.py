@@ -30,14 +30,14 @@ index 1234567..89abcdef 100644
     # The patch should still work because we normalize whitespace
     new_content = apply_diff(patch, original_content)
     assert new_content == [
-        "class Example:",
-        "    def method(self):",
-        "        pass",
-        "",
+        'class Example:',
+        '    def method(self):',
+        '        pass',
+        '',
         '    new_field: str = "value"',
-        "",
-        "    def another(self):",
-        "        pass",
+        '',
+        '    def another(self):',
+        '        pass',
     ]
 
 
@@ -68,12 +68,12 @@ index 1234567..89abcdef 100644
     patch = next(parse_patch(patch_text))
     new_content = apply_diff(patch, original_content)
     assert new_content == [
-        "class Example:",
-        "    def method(self):",
-        "        pass",
-        "",
+        'class Example:',
+        '    def method(self):',
+        '        pass',
+        '',
         '    new_field: str = "value"',
-        "",
-        "    def another(self):",
-        "        pass",
+        '',
+        '    def another(self):',
+        '        pass',
     ]

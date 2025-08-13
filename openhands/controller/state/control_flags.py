@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 T = TypeVar(
-    "T", int, float
+    'T', int, float
 )  # Type for the value (int for iterations, float for budget)
 
 
@@ -57,8 +57,8 @@ class IterationControlFlag(ControlFlag[int]):
     def step(self):
         if self.reached_limit():
             raise RuntimeError(
-                f"Agent reached maximum iteration. "
-                f"Current iteration: {self.current_value}, max iteration: {self.max_value}"
+                f'Agent reached maximum iteration. '
+                f'Current iteration: {self.current_value}, max iteration: {self.max_value}'
             )
 
         # Increment the current value
@@ -87,9 +87,9 @@ class BudgetControlFlag(ControlFlag[float]):
         as the budget is updated externally.
         """
         if self.reached_limit():
-            current_str = f"{self.current_value:.2f}"
-            max_str = f"{self.max_value:.2f}"
+            current_str = f'{self.current_value:.2f}'
+            max_str = f'{self.max_value:.2f}'
             raise RuntimeError(
-                f"Agent reached maximum budget for conversation."
-                f"Current budget: {current_str}, max budget: {max_str}"
+                f'Agent reached maximum budget for conversation.'
+                f'Current budget: {current_str}, max budget: {max_str}'
             )

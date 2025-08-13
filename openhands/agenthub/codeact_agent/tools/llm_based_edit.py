@@ -115,31 +115,31 @@ print(MyClass().y)
 """
 
 LLMBasedFileEditTool = ChatCompletionToolParam(
-    type="function",
+    type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name="edit_file",
+        name='edit_file',
         description=_FILE_EDIT_DESCRIPTION,
         parameters={
-            "type": "object",
-            "properties": {
-                "path": {
-                    "type": "string",
-                    "description": "The absolute path to the file to be edited.",
+            'type': 'object',
+            'properties': {
+                'path': {
+                    'type': 'string',
+                    'description': 'The absolute path to the file to be edited.',
                 },
-                "content": {
-                    "type": "string",
-                    "description": "A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.",
+                'content': {
+                    'type': 'string',
+                    'description': 'A draft of the new content for the file being edited. Note that the assistant may skip unchanged lines.',
                 },
-                "start": {
-                    "type": "integer",
-                    "description": "The starting line number for the edit (1-indexed, inclusive). Default is 1.",
+                'start': {
+                    'type': 'integer',
+                    'description': 'The starting line number for the edit (1-indexed, inclusive). Default is 1.',
                 },
-                "end": {
-                    "type": "integer",
-                    "description": "The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).",
+                'end': {
+                    'type': 'integer',
+                    'description': 'The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).',
                 },
             },
-            "required": ["path", "content"],
+            'required': ['path', 'content'],
         },
     ),
 )

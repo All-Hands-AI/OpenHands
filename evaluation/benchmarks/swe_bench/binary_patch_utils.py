@@ -16,12 +16,12 @@ def remove_binary_diffs(patch_text):
     is_binary_block = False
 
     for line in lines:
-        if line.startswith("diff --git "):
+        if line.startswith('diff --git '):
             if block and not is_binary_block:
                 cleaned_lines.extend(block)
             block = [line]
             is_binary_block = False
-        elif "Binary files" in line:
+        elif 'Binary files' in line:
             is_binary_block = True
             block.append(line)
         else:
@@ -29,7 +29,7 @@ def remove_binary_diffs(patch_text):
 
     if block and not is_binary_block:
         cleaned_lines.extend(block)
-    return "\n".join(cleaned_lines)
+    return '\n'.join(cleaned_lines)
 
 
 def remove_binary_files_from_git():

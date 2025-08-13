@@ -15,7 +15,7 @@ from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
 from openhands.core.config.mcp_config import MCPStdioServerConfig
 
 logger = logging.getLogger(__name__)
-fastmcp_logger = fastmcp_get_logger("fastmcp")
+fastmcp_logger = fastmcp_get_logger('fastmcp')
 
 
 class MCPProxyManager:
@@ -44,7 +44,7 @@ class MCPProxyManager:
         self.proxy: Optional[FastMCP] = None
         # Initialize with a valid configuration format for FastMCP
         self.config: dict[str, Any] = {
-            "mcpServers": {},
+            'mcpServers': {},
         }
 
         # Configure FastMCP logger
@@ -53,9 +53,9 @@ class MCPProxyManager:
 
     def initialize(self) -> None:
         """Initialize the FastMCP proxy with the current configuration."""
-        if len(self.config["mcpServers"]) == 0:
+        if len(self.config['mcpServers']) == 0:
             logger.info(
-                "No MCP servers configured for FastMCP Proxy, skipping initialization."
+                'No MCP servers configured for FastMCP Proxy, skipping initialization.'
             )
             return None
 
@@ -66,7 +66,7 @@ class MCPProxyManager:
             api_key=self.api_key,
         )
 
-        logger.info("FastMCP Proxy initialized successfully")
+        logger.info('FastMCP Proxy initialized successfully')
 
     async def mount_to_app(
         self, app: FastAPI, allow_origins: Optional[list[str]] = None
@@ -77,12 +77,12 @@ class MCPProxyManager:
             app: FastAPI application to mount to
             allow_origins: List of allowed origins for CORS
         """
-        if len(self.config["mcpServers"]) == 0:
-            logger.info("No MCP servers configured for FastMCP Proxy, skipping mount.")
+        if len(self.config['mcpServers']) == 0:
+            logger.info('No MCP servers configured for FastMCP Proxy, skipping mount.')
             return
 
         if not self.proxy:
-            raise ValueError("FastMCP Proxy is not initialized")
+            raise ValueError('FastMCP Proxy is not initialized')
 
         def close_on_double_start(app):
             async def wrapped(scope, receive, send):
@@ -90,10 +90,10 @@ class MCPProxyManager:
 
                 async def check_send(message):
                     nonlocal start_sent
-                    if message["type"] == "http.response.start":
+                    if message['type'] == 'http.response.start':
                         if start_sent:
                             raise get_cancelled_exc_class()(
-                                "closed because of double http.response.start (mcp issue https://github.com/modelcontextprotocol/python-sdk/issues/883)"
+                                'closed because of double http.response.start (mcp issue https://github.com/modelcontextprotocol/python-sdk/issues/883)'
                             )
                         start_sent = True
                     await send(message)
@@ -105,16 +105,16 @@ class MCPProxyManager:
         # Get the SSE app
         # mcp_app = self.proxy.http_app(path='/shttp')
         mcp_app = close_on_double_start(
-            self.proxy.http_app(path="/sse", transport="sse")
+            self.proxy.http_app(path='/sse', transport='sse')
         )
-        app.mount("/mcp", mcp_app)
+        app.mount('/mcp', mcp_app)
 
         # Remove any existing mounts at root path
-        if "/mcp" in app.routes:
-            app.routes.remove("/mcp")
+        if '/mcp' in app.routes:
+            app.routes.remove('/mcp')
 
-        app.mount("/", mcp_app)
-        logger.info("Mounted FastMCP Proxy app at /mcp")
+        app.mount('/', mcp_app)
+        logger.info('Mounted FastMCP Proxy app at /mcp')
 
     async def update_and_remount(
         self,
@@ -134,7 +134,7 @@ class MCPProxyManager:
             allow_origins: List of allowed origins for CORS
         """
         tools = {t.name: t.model_dump() for t in stdio_servers}
-        self.config["mcpServers"] = tools
+        self.config['mcpServers'] = tools
 
         del self.proxy
         self.proxy = None

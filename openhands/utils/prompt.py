@@ -13,9 +13,9 @@ from openhands.events.observation.agent import MicroagentKnowledge
 class RuntimeInfo:
     date: str
     available_hosts: dict[str, int] = field(default_factory=dict)
-    additional_agent_instructions: str = ""
+    additional_agent_instructions: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
-    working_dir: str = ""
+    working_dir: str = ''
 
 
 @dataclass
@@ -37,7 +37,7 @@ class ConversationInstructions:
         2. Slack instructions: make sure to check whether any of the context attached is relevant to the task <context_messages>
     """
 
-    content: str = ""
+    content: str = ''
 
 
 class PromptManager:
@@ -52,20 +52,20 @@ class PromptManager:
     def __init__(
         self,
         prompt_dir: str,
-        system_prompt_filename: str = "system_prompt.j2",
+        system_prompt_filename: str = 'system_prompt.j2',
     ):
         if prompt_dir is None:
-            raise ValueError("Prompt directory is not set")
+            raise ValueError('Prompt directory is not set')
 
         self.prompt_dir: str = prompt_dir
         self.env = Environment(loader=FileSystemLoader(prompt_dir))
         self.system_template: Template = self._load_template(system_prompt_filename)
-        self.user_template: Template = self._load_template("user_prompt.j2")
+        self.user_template: Template = self._load_template('user_prompt.j2')
         self.additional_info_template: Template = self._load_template(
-            "additional_info.j2"
+            'additional_info.j2'
         )
         self.microagent_info_template: Template = self._load_template(
-            "microagent_info.j2"
+            'microagent_info.j2'
         )
 
     def _load_template(self, template_name: str) -> Template:
@@ -84,7 +84,7 @@ class PromptManager:
             return self.env.get_template(template_name)
         except Exception:
             template_path = os.path.join(self.prompt_dir, template_name)
-            raise FileNotFoundError(f"Prompt file {template_path} not found")
+            raise FileNotFoundError(f'Prompt file {template_path} not found')
 
     def get_system_message(self) -> str:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
@@ -109,7 +109,7 @@ class PromptManager:
         repository_info: RepositoryInfo | None,
         runtime_info: RuntimeInfo | None,
         conversation_instructions: ConversationInstructions | None,
-        repo_instructions: str = "",
+        repo_instructions: str = '',
     ) -> str:
         """Renders the additional info template with the stored repository/runtime info."""
         return self.additional_info_template.render(
@@ -139,7 +139,7 @@ class PromptManager:
                 (
                     m
                     for m in reversed(messages)
-                    if m.role == "user"
+                    if m.role == 'user'
                     and any(isinstance(c, TextContent) for c in m.content)
                 ),
                 1,
@@ -147,5 +147,5 @@ class PromptManager:
             None,
         )
         if latest_user_message:
-            reminder_text = f"\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>."
+            reminder_text = f'\n\nENVIRONMENT REMINDER: You have {state.iteration_flag.max_value - state.iteration_flag.current_value} turns left to complete the task. When finished reply with <finish></finish>.'
             latest_user_message.content.append(TextContent(text=reminder_text))

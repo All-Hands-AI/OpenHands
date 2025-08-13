@@ -19,13 +19,13 @@ def get_file_store(
     file_store_web_hook_batch: bool = False,
 ) -> FileStore:
     store: FileStore
-    if file_store_type == "local":
+    if file_store_type == 'local':
         if file_store_path is None:
-            raise ValueError("file_store_path is required for local file store")
+            raise ValueError('file_store_path is required for local file store')
         store = LocalFileStore(file_store_path)
-    elif file_store_type == "s3":
+    elif file_store_type == 's3':
         store = S3FileStore(file_store_path)
-    elif file_store_type == "google_cloud":
+    elif file_store_type == 'google_cloud':
         store = GoogleCloudFileStore(file_store_path)
     else:
         store = InMemoryFileStore()
@@ -33,9 +33,9 @@ def get_file_store(
         if file_store_web_hook_headers is None:
             # Fallback to default headers. Use the session api key if it is defined in the env.
             file_store_web_hook_headers = {}
-            if os.getenv("SESSION_API_KEY"):
-                file_store_web_hook_headers["X-Session-API-Key"] = os.getenv(
-                    "SESSION_API_KEY"
+            if os.getenv('SESSION_API_KEY'):
+                file_store_web_hook_headers['X-Session-API-Key'] = os.getenv(
+                    'SESSION_API_KEY'
                 )
 
         client = httpx.Client(headers=file_store_web_hook_headers or {})

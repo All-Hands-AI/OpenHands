@@ -4,9 +4,9 @@ from typing import Any, get_args, get_origin
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
-OH_DEFAULT_AGENT = "CodeActAgent"
+OH_DEFAULT_AGENT = 'CodeActAgent'
 OH_MAX_ITERATIONS = 500
-DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX = "/workspace"
+DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX = '/workspace'
 
 
 def get_field_info(field: FieldInfo) -> dict[str, Any]:
@@ -38,7 +38,7 @@ def get_field_info(field: FieldInfo) -> dict[str, Any]:
         str(field_type)
         if field_type is None
         else (
-            field_type.__name__ if hasattr(field_type, "__name__") else str(field_type)
+            field_type.__name__ if hasattr(field_type, '__name__') else str(field_type)
         )
     )
 
@@ -46,7 +46,7 @@ def get_field_info(field: FieldInfo) -> dict[str, Any]:
     default = field.default
 
     # return a schema with the useful info for frontend
-    return {"type": type_name.lower(), "optional": optional, "default": default}
+    return {'type': type_name.lower(), 'optional': optional, 'default': default}
 
 
 def model_defaults_to_dict(model: BaseModel) -> dict[str, Any]:

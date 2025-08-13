@@ -31,10 +31,10 @@ from openhands.server.user_auth import (
     get_user_id,
 )
 
-app = APIRouter(prefix="/api/user", dependencies=get_dependencies())
+app = APIRouter(prefix='/api/user', dependencies=get_dependencies())
 
 
-@app.get("/installations", response_model=list[str])
+@app.get('/installations', response_model=list[str])
 async def get_user_installations(
     provider: ProviderType,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
@@ -59,14 +59,14 @@ async def get_user_installations(
             )
 
     return JSONResponse(
-        content="Git provider token required. (such as GitHub).",
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get("/repositories", response_model=list[Repository])
+@app.get('/repositories', response_model=list[Repository])
 async def get_user_repositories(
-    sort: str = "pushed",
+    sort: str = 'pushed',
     selected_provider: ProviderType | None = None,
     page: int | None = None,
     per_page: int | None = None,
@@ -94,7 +94,7 @@ async def get_user_repositories(
 
         except AuthenticationError as e:
             logger.info(
-                f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}"
+                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
             )
             return JSONResponse(
                 content=str(e),
@@ -108,15 +108,15 @@ async def get_user_repositories(
             )
 
     logger.info(
-        f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}"
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
     return JSONResponse(
-        content="Git provider token required. (such as GitHub).",
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get("/info", response_model=User)
+@app.get('/info', response_model=User)
 async def get_user(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -133,7 +133,7 @@ async def get_user(
 
         except AuthenticationError as e:
             logger.info(
-                f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}"
+                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
             )
             return JSONResponse(
                 content=str(e),
@@ -147,20 +147,20 @@ async def get_user(
             )
 
     logger.info(
-        f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}"
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
     return JSONResponse(
-        content="Git provider token required. (such as GitHub).",
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get("/search/repositories", response_model=list[Repository])
+@app.get('/search/repositories', response_model=list[Repository])
 async def search_repositories(
     query: str,
     per_page: int = 5,
-    sort: str = "stars",
-    order: str = "desc",
+    sort: str = 'stars',
+    order: str = 'desc',
     selected_provider: ProviderType | None = None,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -191,15 +191,15 @@ async def search_repositories(
             )
 
     logger.info(
-        f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}"
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
     return JSONResponse(
-        content="Git provider token required.",
+        content='Git provider token required.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get("/suggested-tasks", response_model=list[SuggestedTask])
+@app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -230,15 +230,15 @@ async def get_suggested_tasks(
                 content=str(e),
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-    logger.info(f"Returning 401 Unauthorized - No providers set for user_id: {user_id}")
+    logger.info(f'Returning 401 Unauthorized - No providers set for user_id: {user_id}')
 
     return JSONResponse(
-        content="No providers set.",
+        content='No providers set.',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
 
-@app.get("/repository/branches", response_model=list[Branch])
+@app.get('/repository/branches', response_model=list[Branch])
 async def get_repository_branches(
     repository: str,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
@@ -274,11 +274,11 @@ async def get_repository_branches(
             )
 
     logger.info(
-        f"Returning 401 Unauthorized - Git provider token required for user_id: {user_id}"
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
 
     return JSONResponse(
-        content="Git provider token required. (such as GitHub).",
+        content='Git provider token required. (such as GitHub).',
         status_code=status.HTTP_401_UNAUTHORIZED,
     )
 
@@ -292,11 +292,11 @@ def _extract_repo_name(repository_name: str) -> str:
     Returns:
         The actual repository name (last part after the last '/')
     """
-    return repository_name.split("/")[-1]
+    return repository_name.split('/')[-1]
 
 
 @app.get(
-    "/repository/{repository_name:path}/microagents",
+    '/repository/{repository_name:path}/microagents',
     response_model=list[MicroagentResponse],
 )
 async def get_repository_microagents(
@@ -336,12 +336,12 @@ async def get_repository_microagents(
         # Fetch microagents using the provider handler
         microagents = await provider_handler.get_microagents(repository_name)
 
-        logger.info(f"Found {len(microagents)} microagents in {repository_name}")
+        logger.info(f'Found {len(microagents)} microagents in {repository_name}')
         return microagents
 
     except AuthenticationError as e:
         logger.info(
-            f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}"
+            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
         )
         return JSONResponse(
             content=str(e),
@@ -356,22 +356,22 @@ async def get_repository_microagents(
 
     except Exception as e:
         logger.error(
-            f"Error scanning repository {repository_name}: {str(e)}", exc_info=True
+            f'Error scanning repository {repository_name}: {str(e)}', exc_info=True
         )
         return JSONResponse(
-            content=f"Error scanning repository: {str(e)}",
+            content=f'Error scanning repository: {str(e)}',
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
 
 @app.get(
-    "/repository/{repository_name:path}/microagents/content",
+    '/repository/{repository_name:path}/microagents/content',
     response_model=MicroagentContentResponse,
 )
 async def get_repository_microagent_content(
     repository_name: str,
     file_path: str = Query(
-        ..., description="Path to the microagent file within the repository"
+        ..., description='Path to the microagent file within the repository'
     ),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
@@ -407,14 +407,14 @@ async def get_repository_microagent_content(
         )
 
         logger.info(
-            f"Retrieved content for microagent {file_path} from {repository_name}"
+            f'Retrieved content for microagent {file_path} from {repository_name}'
         )
 
         return response
 
     except AuthenticationError as e:
         logger.info(
-            f"Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}"
+            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
         )
         return JSONResponse(
             content=str(e),
@@ -429,10 +429,10 @@ async def get_repository_microagent_content(
 
     except Exception as e:
         logger.error(
-            f"Error fetching microagent content from {repository_name}/{file_path}: {str(e)}",
+            f'Error fetching microagent content from {repository_name}/{file_path}: {str(e)}',
             exc_info=True,
         )
         return JSONResponse(
-            content=f"Error fetching microagent content: {str(e)}",
+            content=f'Error fetching microagent content: {str(e)}',
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )

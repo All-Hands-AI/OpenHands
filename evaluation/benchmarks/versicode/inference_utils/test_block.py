@@ -15,7 +15,7 @@ from vllm import LLM, SamplingParams
 
 
 def truncate_text(text, max_tokens):
-    encoding = tiktoken.get_encoding("cl100k_base")
+    encoding = tiktoken.get_encoding('cl100k_base')
     disallowed_special = ()
 
     tokens = encoding.encode(text, disallowed_special=disallowed_special)
@@ -29,15 +29,15 @@ def truncate_text(text, max_tokens):
     return truncated_text
 
 
-model_list = ["/data2/base models/starcoder2-15b", "/data2/base models/CodeGemma-7B"]
+model_list = ['/data2/base models/starcoder2-15b', '/data2/base models/CodeGemma-7B']
 
 
 def run_inference(model_name, origin_data_list):
     temp_data_list = copy.deepcopy(origin_data_list)
     test_list = []
     for data in temp_data_list:
-        version = data["dependency"] + data["version"]  # package == x.x.x
-        description = data["description"]  # func description
+        version = data['dependency'] + data['version']  # package == x.x.x
+        description = data['description']  # func description
 
         instruction = bulid_prompt(version, description)
         test_list.append(instruction)
@@ -59,17 +59,17 @@ def run_inference(model_name, origin_data_list):
             text = o.text
             temp_ans_list.append(text)
 
-        temp_data_list[requests_id]["model_output"] = str(temp_ans_list)
+        temp_data_list[requests_id]['model_output'] = str(temp_ans_list)
 
     save_folder_path = os.path.join(
-        "../data/result_data/block_completion", model_name.split("/")[-1]
+        '../data/result_data/block_completion', model_name.split('/')[-1]
     )
     if not os.path.exists(save_folder_path):
         os.makedirs(save_folder_path)
 
-    save_json_path = os.path.join(save_folder_path, json_path.split("/")[-1])
+    save_json_path = os.path.join(save_folder_path, json_path.split('/')[-1])
 
-    with open(save_json_path, "w", encoding="utf-8") as fw:
+    with open(save_json_path, 'w', encoding='utf-8') as fw:
         json.dump(temp_data_list, fw, indent=4, ensure_ascii=False)
 
     gc.collect()
@@ -112,9 +112,9 @@ def bulid_prompt(version, description) -> str:
     return prompt
 
 
-json_path = "../data/test_data/VersiCode_block_completion.json"
+json_path = '../data/test_data/VersiCode_block_completion.json'
 
-with open(json_path, "r", encoding="utf-8") as fr:
+with open(json_path, 'r', encoding='utf-8') as fr:
     lodict = json.load(fr)
 
 origin_data_list = lodict

@@ -16,15 +16,15 @@ async def test_user_auth_mcp_merging_integration():
     # Mock config.toml settings
     config_settings = Settings(
         mcp_config=MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url="http://config-server.com")]
+            sse_servers=[MCPSSEServerConfig(url='http://config-server.com')]
         )
     )
 
     # Mock stored frontend settings
     stored_settings = Settings(
-        llm_model="gpt-4",
+        llm_model='gpt-4',
         mcp_config=MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url="http://frontend-server.com")]
+            sse_servers=[MCPSSEServerConfig(url='http://frontend-server.com')]
         ),
     )
 
@@ -36,21 +36,21 @@ async def test_user_auth_mcp_merging_integration():
     mock_settings_store.load.return_value = stored_settings
 
     with patch.object(
-        user_auth, "get_user_settings_store", return_value=mock_settings_store
+        user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
-        with patch.object(Settings, "from_config", return_value=config_settings):
+        with patch.object(Settings, 'from_config', return_value=config_settings):
             # Get user settings - this should trigger the merging
             merged_settings = await user_auth.get_user_settings()
 
     # Verify merging worked correctly
     assert merged_settings is not None
-    assert merged_settings.llm_model == "gpt-4"
+    assert merged_settings.llm_model == 'gpt-4'
     assert merged_settings.mcp_config is not None
     assert len(merged_settings.mcp_config.sse_servers) == 2
 
     # Config.toml server should come first (priority)
-    assert merged_settings.mcp_config.sse_servers[0].url == "http://config-server.com"
-    assert merged_settings.mcp_config.sse_servers[1].url == "http://frontend-server.com"
+    assert merged_settings.mcp_config.sse_servers[0].url == 'http://config-server.com'
+    assert merged_settings.mcp_config.sse_servers[1].url == 'http://frontend-server.com'
 
 
 @pytest.mark.asyncio
@@ -58,14 +58,14 @@ async def test_user_auth_caching_behavior():
     """Test that user auth caches the merged settings correctly."""
     config_settings = Settings(
         mcp_config=MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url="http://config-server.com")]
+            sse_servers=[MCPSSEServerConfig(url='http://config-server.com')]
         )
     )
 
     stored_settings = Settings(
-        llm_model="gpt-4",
+        llm_model='gpt-4',
         mcp_config=MCPConfig(
-            sse_servers=[MCPSSEServerConfig(url="http://frontend-server.com")]
+            sse_servers=[MCPSSEServerConfig(url='http://frontend-server.com')]
         ),
     )
 
@@ -75,10 +75,10 @@ async def test_user_auth_caching_behavior():
     mock_settings_store.load.return_value = stored_settings
 
     with patch.object(
-        user_auth, "get_user_settings_store", return_value=mock_settings_store
+        user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
         with patch.object(
-            Settings, "from_config", return_value=config_settings
+            Settings, 'from_config', return_value=config_settings
         ) as mock_from_config:
             # First call should load and merge
             settings1 = await user_auth.get_user_settings()
@@ -107,7 +107,7 @@ async def test_user_auth_no_stored_settings():
     mock_settings_store.load.return_value = None
 
     with patch.object(
-        user_auth, "get_user_settings_store", return_value=mock_settings_store
+        user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
         settings = await user_auth.get_user_settings()
 

@@ -48,15 +48,15 @@ class LLMConfig(BaseModel):
         safety_settings: Safety settings for models that support them (like Mistral AI and Gemini).
     """
 
-    model: str = Field(default="claude-sonnet-4-20250514")
+    model: str = Field(default='claude-sonnet-4-20250514')
     api_key: SecretStr | None = Field(default=None)
     base_url: str | None = Field(default=None)
     api_version: str | None = Field(default=None)
     aws_access_key_id: SecretStr | None = Field(default=None)
     aws_secret_access_key: SecretStr | None = Field(default=None)
     aws_region_name: str | None = Field(default=None)
-    openrouter_site_url: str = Field(default="https://docs.all-hands.dev/")
-    openrouter_app_name: str = Field(default="OpenHands")
+    openrouter_site_url: str = Field(default='https://docs.all-hands.dev/')
+    openrouter_app_name: str = Field(default='OpenHands')
     # total wait time: 8 + 16 + 32 + 64 = 120 seconds
     num_retries: int = Field(default=5)
     retry_multiplier: float = Field(default=8)
@@ -83,17 +83,17 @@ class LLMConfig(BaseModel):
     disable_stop_word: bool | None = Field(default=False)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
-    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, "completions"))
+    log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
     custom_tokenizer: str | None = Field(default=None)
     native_tool_calling: bool | None = Field(default=None)
     reasoning_effort: str | None = Field(default=None)
     seed: int | None = Field(default=None)
     safety_settings: list[dict[str, str]] | None = Field(
         default=None,
-        description="Safety settings for models that support them (like Mistral AI and Gemini)",
+        description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
@@ -131,15 +131,15 @@ class LLMConfig(BaseModel):
         # Try to create the base config
         try:
             base_config = cls.model_validate(base_data)
-            llm_mapping["llm"] = base_config
+            llm_mapping['llm'] = base_config
         except ValidationError:
             logger.warning(
-                "Cannot parse [llm] config from toml. Continuing with defaults."
+                'Cannot parse [llm] config from toml. Continuing with defaults.'
             )
             # If base config fails, create a default one
             base_config = cls()
             # Still add it to the mapping
-            llm_mapping["llm"] = base_config
+            llm_mapping['llm'] = base_config
 
         # Process each custom section independently
         for name, overrides in custom_sections.items():
@@ -150,7 +150,7 @@ class LLMConfig(BaseModel):
                 llm_mapping[name] = custom_config
             except ValidationError:
                 logger.warning(
-                    f"Cannot parse [{name}] config from toml. This section will be skipped."
+                    f'Cannot parse [{name}] config from toml. This section will be skipped.'
                 )
                 # Skip this custom section but continue with others
                 continue
@@ -166,20 +166,20 @@ class LLMConfig(BaseModel):
 
         # Assign OpenRouter-specific variables to environment variables
         if self.openrouter_site_url:
-            os.environ["OR_SITE_URL"] = self.openrouter_site_url
+            os.environ['OR_SITE_URL'] = self.openrouter_site_url
         if self.openrouter_app_name:
-            os.environ["OR_APP_NAME"] = self.openrouter_app_name
+            os.environ['OR_APP_NAME'] = self.openrouter_app_name
 
         # Set reasoning_effort to 'high' by default for non-Gemini models
         # Gemini models use optimized thinking budget when reasoning_effort is None
         logger.debug(
-            f"Setting reasoning_effort for model {self.model} with reasoning_effort {self.reasoning_effort}"
+            f'Setting reasoning_effort for model {self.model} with reasoning_effort {self.reasoning_effort}'
         )
-        if self.reasoning_effort is None and "gemini-2.5-pro" not in self.model:
-            self.reasoning_effort = "high"
+        if self.reasoning_effort is None and 'gemini-2.5-pro' not in self.model:
+            self.reasoning_effort = 'high'
 
         # Set an API version by default for Azure models
         # Required for newer models.
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
-        if self.model.startswith("azure") and self.api_version is None:
-            self.api_version = "2024-12-01-preview"
+        if self.model.startswith('azure') and self.api_version is None:
+            self.api_version = '2024-12-01-preview'

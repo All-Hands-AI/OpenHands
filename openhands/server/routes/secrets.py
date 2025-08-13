@@ -22,7 +22,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.secrets.secrets_store import SecretsStore
 from openhands.storage.settings.settings_store import SettingsStore
 
-app = APIRouter(prefix="/api", dependencies=get_dependencies())
+app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
 # =================================================
@@ -45,7 +45,7 @@ async def invalidate_legacy_secrets_store(
 
         # Invalidate old tokens via settings store serializer
         invalidated_secrets_settings = settings.model_copy(
-            update={"secrets_store": UserSecrets()}
+            update={'secrets_store': UserSecrets()}
         )
         await settings_store.store(invalidated_secrets_settings)
 
@@ -59,17 +59,17 @@ def process_token_validation_result(
 ) -> str:
     if not confirmed_token_type or confirmed_token_type != token_type:
         return (
-            f"Invalid token. Please make sure it is a valid {token_type.value} token."
+            f'Invalid token. Please make sure it is a valid {token_type.value} token.'
         )
 
-    return ""
+    return ''
 
 
 async def check_provider_tokens(
     incoming_provider_tokens: POSTProviderModel,
     existing_provider_tokens: PROVIDER_TOKEN_TYPE | None,
 ) -> str:
-    msg = ""
+    msg = ''
     if incoming_provider_tokens.provider_tokens:
         # Determine whether tokens are valid
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
@@ -100,7 +100,7 @@ async def check_provider_tokens(
     return msg
 
 
-@app.post("/add-git-providers")
+@app.post('/add-git-providers')
 async def store_provider_tokens(
     provider_info: POSTProviderModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
@@ -110,11 +110,11 @@ async def store_provider_tokens(
     if provider_err_msg:
         # We don't have direct access to user_id here, but we can log the provider info
         logger.info(
-            f"Returning 401 Unauthorized - Provider token error: {provider_err_msg}"
+            f'Returning 401 Unauthorized - Provider token error: {provider_err_msg}'
         )
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"error": provider_err_msg},
+            content={'error': provider_err_msg},
         )
 
     try:
@@ -134,45 +134,45 @@ async def store_provider_tokens(
 
                 provider_info.provider_tokens[provider] = provider_info.provider_tokens[
                     provider
-                ].model_copy(update={"host": token_value.host})
+                ].model_copy(update={'host': token_value.host})
 
         updated_secrets = user_secrets.model_copy(
-            update={"provider_tokens": provider_info.provider_tokens}
+            update={'provider_tokens': provider_info.provider_tokens}
         )
         await secrets_store.store(updated_secrets)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "Git providers stored"},
+            content={'message': 'Git providers stored'},
         )
     except Exception as e:
-        logger.warning(f"Something went wrong storing git providers: {e}")
+        logger.warning(f'Something went wrong storing git providers: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Something went wrong storing git providers"},
+            content={'error': 'Something went wrong storing git providers'},
         )
 
 
-@app.post("/unset-provider-tokens", response_model=dict[str, str])
+@app.post('/unset-provider-tokens', response_model=dict[str, str])
 async def unset_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
 ) -> JSONResponse:
     try:
         user_secrets = await secrets_store.load()
         if user_secrets:
-            updated_secrets = user_secrets.model_copy(update={"provider_tokens": {}})
+            updated_secrets = user_secrets.model_copy(update={'provider_tokens': {}})
             await secrets_store.store(updated_secrets)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "Unset Git provider tokens"},
+            content={'message': 'Unset Git provider tokens'},
         )
 
     except Exception as e:
-        logger.warning(f"Something went wrong unsetting tokens: {e}")
+        logger.warning(f'Something went wrong unsetting tokens: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Something went wrong unsetting tokens"},
+            content={'error': 'Something went wrong unsetting tokens'},
         )
 
 
@@ -181,7 +181,7 @@ async def unset_provider_tokens(
 # =================================================
 
 
-@app.get("/secrets", response_model=GETCustomSecrets)
+@app.get('/secrets', response_model=GETCustomSecrets)
 async def load_custom_secrets_names(
     user_secrets: UserSecrets | None = Depends(get_user_secrets),
 ) -> GETCustomSecrets | JSONResponse:
@@ -201,15 +201,15 @@ async def load_custom_secrets_names(
         return GETCustomSecrets(custom_secrets=custom_secrets)
 
     except Exception as e:
-        logger.warning(f"Failed to load secret names: {e}")
-        logger.info("Returning 401 Unauthorized - Failed to get secret names")
+        logger.warning(f'Failed to load secret names: {e}')
+        logger.info('Returning 401 Unauthorized - Failed to get secret names')
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            content={"error": "Failed to get secret names"},
+            content={'error': 'Failed to get secret names'},
         )
 
 
-@app.post("/secrets", response_model=dict[str, str])
+@app.post('/secrets', response_model=dict[str, str])
 async def create_custom_secret(
     incoming_secret: CustomSecretModel,
     secrets_store: SecretsStore = Depends(get_secrets_store),
@@ -227,12 +227,12 @@ async def create_custom_secret(
         if secret_name in custom_secrets:
             return JSONResponse(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                content={"message": f"Secret {secret_name} already exists"},
+                content={'message': f'Secret {secret_name} already exists'},
             )
 
         custom_secrets[secret_name] = CustomSecret(
             secret=secret_value,
-            description=secret_description or "",
+            description=secret_description or '',
         )
 
         # Create a new UserSecrets that preserves provider tokens
@@ -247,17 +247,17 @@ async def create_custom_secret(
 
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
-            content={"message": "Secret created successfully"},
+            content={'message': 'Secret created successfully'},
         )
     except Exception as e:
-        logger.warning(f"Something went wrong creating secret: {e}")
+        logger.warning(f'Something went wrong creating secret: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Something went wrong creating secret"},
+            content={'error': 'Something went wrong creating secret'},
         )
 
 
-@app.put("/secrets/{secret_id}", response_model=dict[str, str])
+@app.put('/secrets/{secret_id}', response_model=dict[str, str])
 async def update_custom_secret(
     secret_id: str,
     incoming_secret: CustomSecretWithoutValueModel,
@@ -270,7 +270,7 @@ async def update_custom_secret(
             if secret_id not in existing_secrets.custom_secrets:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    content={"error": f"Secret with ID {secret_id} not found"},
+                    content={'error': f'Secret with ID {secret_id} not found'},
                 )
 
             secret_name = incoming_secret.name
@@ -282,12 +282,12 @@ async def update_custom_secret(
             if secret_name != secret_id and secret_name in custom_secrets:
                 return JSONResponse(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    content={"message": f"Secret {secret_name} already exists"},
+                    content={'message': f'Secret {secret_name} already exists'},
                 )
 
             custom_secrets[secret_name] = CustomSecret(
                 secret=existing_secret.secret,
-                description=secret_description or "",
+                description=secret_description or '',
             )
 
             updated_secrets = UserSecrets(
@@ -299,17 +299,17 @@ async def update_custom_secret(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "Secret updated successfully"},
+            content={'message': 'Secret updated successfully'},
         )
     except Exception as e:
-        logger.warning(f"Something went wrong updating secret: {e}")
+        logger.warning(f'Something went wrong updating secret: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Something went wrong updating secret"},
+            content={'error': 'Something went wrong updating secret'},
         )
 
 
-@app.delete("/secrets/{secret_id}")
+@app.delete('/secrets/{secret_id}')
 async def delete_custom_secret(
     secret_id: str,
     secrets_store: SecretsStore = Depends(get_secrets_store),
@@ -324,7 +324,7 @@ async def delete_custom_secret(
             if secret_id not in custom_secrets:
                 return JSONResponse(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    content={"error": f"Secret with ID {secret_id} not found"},
+                    content={'error': f'Secret with ID {secret_id} not found'},
                 )
 
             # Remove the secret
@@ -340,11 +340,11 @@ async def delete_custom_secret(
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "Secret deleted successfully"},
+            content={'message': 'Secret deleted successfully'},
         )
     except Exception as e:
-        logger.warning(f"Something went wrong deleting secret: {e}")
+        logger.warning(f'Something went wrong deleting secret: {e}')
         return JSONResponse(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            content={"error": "Something went wrong deleting secret"},
+            content={'error': 'Something went wrong deleting secret'},
         )

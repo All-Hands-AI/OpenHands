@@ -11,7 +11,7 @@ def process_line_mask(code_snippet, core_token):
         return None, None
 
     replaced_lines = {}
-    lines = code_snippet.split("\n")
+    lines = code_snippet.split('\n')
 
     in_multi_line_comment = False
 
@@ -22,7 +22,7 @@ def process_line_mask(code_snippet, core_token):
             ):
                 in_multi_line_comment = False
             continue
-        elif line.strip().startswith("#"):
+        elif line.strip().startswith('#'):
             continue
         elif re.findall(r"'''(.*?)'''|\"\"\"(.*?)\"\"\"", line):
             continue
@@ -32,21 +32,21 @@ def process_line_mask(code_snippet, core_token):
             in_multi_line_comment = True
             continue
         else:
-            if re.search(r"\bdef\s+task_function\b", line):
+            if re.search(r'\bdef\s+task_function\b', line):
                 continue
 
-            if re.search(r"\b{}\b(?!\s*=)".format(re.escape(core_token)), line):
+            if re.search(r'\b{}\b(?!\s*=)'.format(re.escape(core_token)), line):
                 replaced_lines.update({i: line})
 
     if replaced_lines:
         random_line_location = random.choice(list(replaced_lines.keys()))
 
         masked_line = lines[random_line_location]
-        leading_spaces = re.match(r"^\s*", masked_line).group(0)
+        leading_spaces = re.match(r'^\s*', masked_line).group(0)
         masked_line = masked_line.strip()
-        lines[random_line_location] = leading_spaces + "<line_mask>"
+        lines[random_line_location] = leading_spaces + '<line_mask>'
 
-        masked_code = "\n".join(lines)
+        masked_code = '\n'.join(lines)
 
         return masked_code, masked_line
 
@@ -54,47 +54,47 @@ def process_line_mask(code_snippet, core_token):
 
 
 def load_json(file_path):
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data
 
 
 def save_json(file_path, data):
-    with open(file_path, "w", encoding="utf-8") as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=4)
 
 
-if __name__ == "__main__":
-    model_list = os.listdir("../data/result_data/code_migration")
+if __name__ == '__main__':
+    model_list = os.listdir('../data/result_data/code_migration')
     for model in model_list:
         input_json_file = (
-            f"../data/result_data/code_migration/{model}/VersiCode_migration.json"
+            f'../data/result_data/code_migration/{model}/VersiCode_migration.json'
         )
         output_json_file = input_json_file
         data = load_json(input_json_file)
 
         for item in data:
-            core_token = item["old_name"]
-            code = item["old_code"]
+            core_token = item['old_name']
+            code = item['old_code']
 
             _, core_line_in_code = process_line_mask(code, core_token)
             if core_line_in_code:
-                item["core_line_in_code"] = core_line_in_code
+                item['core_line_in_code'] = core_line_in_code
             else:
-                item["core_line_in_code"] = "N/A"
+                item['core_line_in_code'] = 'N/A'
 
-            model_output_clear = item["model_output_clear"]
+            model_output_clear = item['model_output_clear']
             core_line_in_output_list = []
 
-            core_token = item["new_name"]
+            core_token = item['new_name']
             for entry in eval(model_output_clear):
                 _, core_line_in_output = process_line_mask(entry, core_token)
                 if core_line_in_output:
                     core_line_in_output_list.append(core_line_in_output)
                 else:
-                    core_line_in_output_list.append("N/A")
+                    core_line_in_output_list.append('N/A')
 
-            item["core_line_in_output_clear"] = core_line_in_output_list
+            item['core_line_in_output_clear'] = core_line_in_output_list
 
         save_json(output_json_file, data)
-        print("Done!")
+        print('Done!')

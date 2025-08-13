@@ -6,11 +6,11 @@ from termcolor import colored
 class TermColor(Enum):
     """Terminal color codes."""
 
-    WARNING = "yellow"
-    SUCCESS = "green"
-    ERROR = "red"
-    INFO = "blue"
-    GREY = "dark_grey"
+    WARNING = 'yellow'
+    SUCCESS = 'green'
+    ERROR = 'red'
+    INFO = 'blue'
+    GREY = 'dark_grey'
 
 
 def colorize(text: str, color: TermColor = TermColor.WARNING) -> str:

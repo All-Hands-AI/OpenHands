@@ -38,12 +38,12 @@ class UserSecrets(BaseModel):
         arbitrary_types_allowed=True,
     )
 
-    @field_serializer("provider_tokens")
+    @field_serializer('provider_tokens')
     def provider_tokens_serializer(
         self, provider_tokens: PROVIDER_TOKEN_TYPE, info: SerializationInfo
     ) -> dict[str, dict[str, str | Any]]:
         tokens = {}
-        expose_secrets = info.context and info.context.get("expose_secrets", False)
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
 
         for token_type, provider_token in provider_tokens.items():
             if not provider_token or not provider_token.token:
@@ -64,44 +64,44 @@ class UserSecrets(BaseModel):
                 )
 
             tokens[token_type_str] = {
-                "token": token,
-                "host": provider_token.host,
-                "user_id": provider_token.user_id,
+                'token': token,
+                'host': provider_token.host,
+                'user_id': provider_token.user_id,
             }
 
         return tokens
 
-    @field_serializer("custom_secrets")
+    @field_serializer('custom_secrets')
     def custom_secrets_serializer(
         self, custom_secrets: CUSTOM_SECRETS_TYPE, info: SerializationInfo
     ):
         secrets = {}
-        expose_secrets = info.context and info.context.get("expose_secrets", False)
+        expose_secrets = info.context and info.context.get('expose_secrets', False)
 
         if custom_secrets:
             for secret_name, secret_value in custom_secrets.items():
                 secrets[secret_name] = {
-                    "secret": secret_value.secret.get_secret_value()
+                    'secret': secret_value.secret.get_secret_value()
                     if expose_secrets
                     else pydantic_encoder(secret_value.secret),
-                    "description": secret_value.description,
+                    'description': secret_value.description,
                 }
 
         return secrets
 
-    @model_validator(mode="before")
+    @model_validator(mode='before')
     @classmethod
     def convert_dict_to_mappingproxy(
         cls, data: dict[str, dict[str, Any] | MappingProxyType] | PROVIDER_TOKEN_TYPE
     ) -> dict[str, MappingProxyType | None]:
         """Custom deserializer to convert dictionary into MappingProxyType"""
         if not isinstance(data, dict):
-            raise ValueError("UserSecrets must be initialized with a dictionary")
+            raise ValueError('UserSecrets must be initialized with a dictionary')
 
         new_data: dict[str, MappingProxyType | None] = {}
 
-        if "provider_tokens" in data:
-            tokens = data["provider_tokens"]
+        if 'provider_tokens' in data:
+            tokens = data['provider_tokens']
             if isinstance(
                 tokens, dict
             ):  # Ensure conversion happens only for dict inputs
@@ -119,12 +119,12 @@ class UserSecrets(BaseModel):
                         continue
 
                 # Convert to MappingProxyType
-                new_data["provider_tokens"] = MappingProxyType(converted_tokens)
+                new_data['provider_tokens'] = MappingProxyType(converted_tokens)
             elif isinstance(tokens, MappingProxyType):
-                new_data["provider_tokens"] = tokens
+                new_data['provider_tokens'] = tokens
 
-        if "custom_secrets" in data:
-            secrets = data["custom_secrets"]
+        if 'custom_secrets' in data:
+            secrets = data['custom_secrets']
             if isinstance(secrets, dict):
                 converted_secrets = {}
                 for key, value in secrets.items():
@@ -133,9 +133,9 @@ class UserSecrets(BaseModel):
                     except ValueError:
                         continue
 
-                new_data["custom_secrets"] = MappingProxyType(converted_secrets)
+                new_data['custom_secrets'] = MappingProxyType(converted_secrets)
             elif isinstance(secrets, MappingProxyType):
-                new_data["custom_secrets"] = secrets
+                new_data['custom_secrets'] = secrets
 
         return new_data
 
@@ -148,11 +148,11 @@ class UserSecrets(BaseModel):
         event_stream.set_secrets(secrets)
 
     def get_env_vars(self) -> dict[str, str]:
-        secret_store = self.model_dump(context={"expose_secrets": True})
-        custom_secrets = secret_store.get("custom_secrets", {})
+        secret_store = self.model_dump(context={'expose_secrets': True})
+        custom_secrets = secret_store.get('custom_secrets', {})
         secrets = {}
         for secret_name, value in custom_secrets.items():
-            secrets[secret_name] = value["secret"]
+            secrets[secret_name] = value['secret']
 
         return secrets
 

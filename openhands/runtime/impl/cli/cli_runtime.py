@@ -54,7 +54,7 @@ if TYPE_CHECKING:
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 # Import Windows PowerShell support if on Windows
-if sys.platform == "win32":
+if sys.platform == 'win32':
     try:
         from openhands.runtime.utils.windows_bash import WindowsPowershellSession
         from openhands.runtime.utils.windows_exceptions import DotNetMissingError
@@ -73,14 +73,14 @@ After installing .NET SDK, restart your terminal and try again.
 """
         print(friendly_message, file=sys.stderr)
         logger.error(
-            f"Windows runtime initialization failed: {type(err).__name__}: {str(err)}"
+            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
         )
         if (
             isinstance(err, DotNetMissingError)
-            and hasattr(err, "details")
+            and hasattr(err, 'details')
             and err.details
         ):
-            logger.debug(f"Details: {err.details}")
+            logger.debug(f'Details: {err.details}')
 
         # Exit the program with an error code
         sys.exit(1)
@@ -107,7 +107,7 @@ class CLIRuntime(Runtime):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
-        sid: str = "default",
+        sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
@@ -132,17 +132,17 @@ class CLIRuntime(Runtime):
         # Set up workspace
         if self.config.workspace_base is not None:
             logger.warning(
-                f"Workspace base path is set to {self.config.workspace_base}. "
-                "It will be used as the path for the agent to run in. "
-                "Be careful, the agent can EDIT files in this directory!"
+                f'Workspace base path is set to {self.config.workspace_base}. '
+                'It will be used as the path for the agent to run in. '
+                'Be careful, the agent can EDIT files in this directory!'
             )
             self._workspace_path = self.config.workspace_base
         else:
             # Create a temporary directory for the workspace
             self._workspace_path = tempfile.mkdtemp(
-                prefix=f"openhands_workspace_{sid}_"
+                prefix=f'openhands_workspace_{sid}_'
             )
-            logger.info(f"Created temporary workspace at {self._workspace_path}")
+            logger.info(f'Created temporary workspace at {self._workspace_path}')
 
         # Runtime tests rely on this being set correctly.
         self.config.workspace_mount_path_in_sandbox = self._workspace_path
@@ -153,13 +153,13 @@ class CLIRuntime(Runtime):
         self._shell_stream_callback: Callable[[str], None] | None = None
 
         # Initialize PowerShell session on Windows
-        self._is_windows = sys.platform == "win32"
+        self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
 
         logger.warning(
-            "Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. "
-            "This runtime executes commands directly on the local system. "
-            "Use with caution in untrusted environments."
+            'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
+            'This runtime executes commands directly on the local system. '
+            'Use with caution in untrusted environments.'
         )
 
     async def connect(self) -> None:
@@ -186,7 +186,7 @@ class CLIRuntime(Runtime):
 
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
-        logger.info(f"CLIRuntime initialized with workspace at {self._workspace_path}")
+        logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:
         """Adds environment variables to the current runtime environment.
@@ -200,7 +200,7 @@ class CLIRuntime(Runtime):
 
         # We log only keys to avoid leaking sensitive values like tokens into logs.
         logger.info(
-            f"[CLIRuntime] Setting environment variables for this session: {list(env_vars.keys())}"
+            f'[CLIRuntime] Setting environment variables for this session: {list(env_vars.keys())}'
         )
 
         for key, value in env_vars.items():
@@ -221,35 +221,35 @@ class CLIRuntime(Runtime):
             process_obj: the subprocess.Popen object started with start_new_session=True
             signal_to_send: the signal to send to the process group or process.
         """
-        pid = getattr(process_obj, "pid", None)
+        pid = getattr(process_obj, 'pid', None)
         if pid is None:
             return
 
         group_desc = (
-            "kill process group"
+            'kill process group'
             if signal_to_send == signal.SIGKILL
-            else "terminate process group"
+            else 'terminate process group'
         )
         process_desc = (
-            "kill process" if signal_to_send == signal.SIGKILL else "terminate process"
+            'kill process' if signal_to_send == signal.SIGKILL else 'terminate process'
         )
 
         try:
             # Try to terminate/kill the entire process group
-            logger.debug(f"[_safe_terminate_process] Original PID to act on: {pid}")
+            logger.debug(f'[_safe_terminate_process] Original PID to act on: {pid}')
             pgid_to_kill = os.getpgid(
                 pid
             )  # This might raise ProcessLookupError if pid is already gone
             logger.debug(
-                f"[_safe_terminate_process] Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}."
+                f'[_safe_terminate_process] Attempting to {group_desc} for PID {pid} (PGID: {pgid_to_kill}) with {signal_to_send}.'
             )
             os.killpg(pgid_to_kill, signal_to_send)
             logger.debug(
-                f"[_safe_terminate_process] Successfully sent signal {signal_to_send} to PGID {pgid_to_kill} (original PID: {pid})."
+                f'[_safe_terminate_process] Successfully sent signal {signal_to_send} to PGID {pgid_to_kill} (original PID: {pid}).'
             )
         except ProcessLookupError as e_pgid:
             logger.warning(
-                f"[_safe_terminate_process] ProcessLookupError getting PGID for PID {pid} (it might have already exited): {e_pgid}. Falling back to direct kill/terminate."
+                f'[_safe_terminate_process] ProcessLookupError getting PGID for PID {pid} (it might have already exited): {e_pgid}. Falling back to direct kill/terminate.'
             )
             try:
                 if signal_to_send == signal.SIGKILL:
@@ -257,15 +257,15 @@ class CLIRuntime(Runtime):
                 else:
                     process_obj.terminate()
                 logger.debug(
-                    f"[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid})."
+                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
                 )
             except Exception as e_fallback:
                 logger.error(
-                    f"[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}"
+                    f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
                 )
         except (AttributeError, OSError) as e_os:
             logger.error(
-                f"[_safe_terminate_process] OSError/AttributeError during {group_desc} for PID {pid}: {e_os}. Falling back."
+                f'[_safe_terminate_process] OSError/AttributeError during {group_desc} for PID {pid}: {e_os}. Falling back.'
             )
             # Fallback: try to terminate/kill the main process directly.
             try:
@@ -274,16 +274,16 @@ class CLIRuntime(Runtime):
                 else:
                     process_obj.terminate()
                 logger.debug(
-                    f"[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid})."
+                    f'[_safe_terminate_process] Fallback: Terminated {process_desc} (PID: {pid}).'
                 )
             except Exception as e_fallback:
                 logger.error(
-                    f"[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}"
+                    f'[_safe_terminate_process] Fallback: Error during {process_desc} (PID: {pid}): {e_fallback}'
                 )
         except (KeyboardInterrupt, SystemExit):
             raise
         except Exception as e:
-            logger.error(f"Error: {e}")
+            logger.error(f'Error: {e}')
 
     def _execute_powershell_command(
         self, command: str, timeout: float
@@ -298,8 +298,8 @@ class CLIRuntime(Runtime):
         """
         if self._powershell_session is None:
             return ErrorObservation(
-                content="PowerShell session is not available.",
-                error_id="POWERSHELL_SESSION_ERROR",
+                content='PowerShell session is not available.',
+                error_id='POWERSHELL_SESSION_ERROR',
             )
 
         try:
@@ -316,7 +316,7 @@ class CLIRuntime(Runtime):
             logger.error(f'Error executing PowerShell command "{command}": {e}')
             return ErrorObservation(
                 content=f'Error executing PowerShell command "{command}": {str(e)}',
-                error_id="POWERSHELL_EXECUTION_ERROR",
+                error_id='POWERSHELL_EXECUTION_ERROR',
             )
 
     def _execute_shell_command(
@@ -336,7 +336,7 @@ class CLIRuntime(Runtime):
 
         # Use shell=True to run complex bash commands
         process = subprocess.Popen(
-            ["bash", "-c", command],
+            ['bash', '-c', command],
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
@@ -404,18 +404,18 @@ class CLIRuntime(Runtime):
                 self._safe_terminate_process(process, signal_to_send=signal.SIGKILL)
             return CmdOutputObservation(
                 command=command,
-                content="".join(output_lines) + f"\nError during execution: {e}",
+                content=''.join(output_lines) + f'\nError during execution: {e}',
                 exit_code=-1,
             )
 
-        complete_output = "".join(output_lines)
+        complete_output = ''.join(output_lines)
         logger.debug(
             f'[_execute_shell_command] Complete output for "{command}" (len: {len(complete_output)}): {complete_output!r}'
         )
-        obs_metadata = {"working_dir": self._workspace_path}
+        obs_metadata = {'working_dir': self._workspace_path}
         if timed_out:
-            obs_metadata["suffix"] = (
-                f"[The command timed out after {timeout:.1f} seconds.]"
+            obs_metadata['suffix'] = (
+                f'[The command timed out after {timeout:.1f} seconds.]'
             )
             # exit_code = -1 # This is already set if timed_out is True
 
@@ -430,18 +430,18 @@ class CLIRuntime(Runtime):
         """Run a command using subprocess."""
         if not self._runtime_initialized:
             return ErrorObservation(
-                f"Runtime not initialized for command: {action.command}"
+                f'Runtime not initialized for command: {action.command}'
             )
 
         if action.is_input:
             logger.warning(
                 f"CLIRuntime received an action with `is_input=True` (command: '{action.command}'). "
-                "CLIRuntime currently does not support sending input or signals to active processes. "
-                "This action will be ignored and an error observation will be returned."
+                'CLIRuntime currently does not support sending input or signals to active processes. '
+                'This action will be ignored and an error observation will be returned.'
             )
             return ErrorObservation(
                 content=f"CLIRuntime does not support interactive input from the agent (e.g., 'C-c'). The command '{action.command}' was not sent to any process.",
-                error_id="AGENT_ERROR$BAD_ACTION",
+                error_id='AGENT_ERROR$BAD_ACTION',
             )
 
         try:
@@ -483,30 +483,30 @@ class CLIRuntime(Runtime):
         # attempting to use this disabled feature.
         logger.warning(
             "run_ipython is called on CLIRuntime, but it's not implemented. "
-            "Please disable the Jupyter plugin in AgentConfig."
+            'Please disable the Jupyter plugin in AgentConfig.'
         )
         return ErrorObservation(
-            "Executing IPython cells is not implemented in CLIRuntime. "
+            'Executing IPython cells is not implemented in CLIRuntime. '
         )
 
     def _sanitize_filename(self, filename: str) -> str:
         # if path is absolute, ensure it starts with _workspace_path
-        if filename == "/workspace":
+        if filename == '/workspace':
             actual_filename = self._workspace_path
-        elif filename.startswith("/workspace/"):
+        elif filename.startswith('/workspace/'):
             # Map /workspace/ to the actual workspace path
             # Note: /workspace is widely used, so we map it to allow using it with CLIRuntime
             actual_filename = os.path.join(
-                self._workspace_path, filename[len("/workspace/") :]
+                self._workspace_path, filename[len('/workspace/') :]
             )
-        elif filename.startswith("/"):
+        elif filename.startswith('/'):
             if not filename.startswith(self._workspace_path):
                 raise PermissionError(
-                    f"Invalid path: {filename}. You can only work with files in {self._workspace_path}."
+                    f'Invalid path: {filename}. You can only work with files in {self._workspace_path}.'
                 )
             actual_filename = filename
         else:
-            actual_filename = os.path.join(self._workspace_path, filename.lstrip("/"))
+            actual_filename = os.path.join(self._workspace_path, filename.lstrip('/'))
 
         # Resolve the path to handle any '..' or '.' components
         resolved_path = os.path.realpath(actual_filename)
@@ -514,7 +514,7 @@ class CLIRuntime(Runtime):
         # Check if the resolved path is still within the workspace
         if not resolved_path.startswith(self._workspace_path):
             raise PermissionError(
-                f"Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}"
+                f'Invalid path traversal: {filename}. Path resolves outside the workspace. Resolved: {resolved_path}, Workspace: {self._workspace_path}'
             )
 
         return resolved_path
@@ -522,14 +522,14 @@ class CLIRuntime(Runtime):
     def read(self, action: FileReadAction) -> Observation:
         """Read a file using Python's standard library or OHEditor."""
         if not self._runtime_initialized:
-            return ErrorObservation("Runtime not initialized")
+            return ErrorObservation('Runtime not initialized')
 
         file_path = self._sanitize_filename(action.path)
 
         # Use OHEditor for OH_ACI implementation source
         if action.impl_source == FileReadSource.OH_ACI:
             result_str, _ = self._execute_file_editor(
-                command="view",
+                command='view',
                 path=file_path,
                 view_range=action.view_range,
             )
@@ -543,29 +543,29 @@ class CLIRuntime(Runtime):
         try:
             # Check if the file exists
             if not os.path.exists(file_path):
-                return ErrorObservation(f"File not found: {action.path}")
+                return ErrorObservation(f'File not found: {action.path}')
 
             # Check if it's a directory
             if os.path.isdir(file_path):
-                return ErrorObservation(f"Cannot read directory: {action.path}")
+                return ErrorObservation(f'Cannot read directory: {action.path}')
 
             # Cannot read binary files
             if is_binary(file_path):
-                return ErrorObservation("ERROR_BINARY_FILE")
+                return ErrorObservation('ERROR_BINARY_FILE')
 
             # Read the file
-            with open(file_path, "r", encoding="utf-8", errors="replace") as f:
+            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                 content = f.read()
 
             return FileReadObservation(content=content, path=action.path)
         except Exception as e:
-            logger.error(f"Error reading file: {str(e)}")
-            return ErrorObservation(f"Error reading file {action.path}: {str(e)}")
+            logger.error(f'Error reading file: {str(e)}')
+            return ErrorObservation(f'Error reading file {action.path}: {str(e)}')
 
     def write(self, action: FileWriteAction) -> Observation:
         """Write to a file using Python's standard library."""
         if not self._runtime_initialized:
-            return ErrorObservation("Runtime not initialized")
+            return ErrorObservation('Runtime not initialized')
 
         file_path = self._sanitize_filename(action.path)
 
@@ -574,24 +574,24 @@ class CLIRuntime(Runtime):
             os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
             # Write to the file
-            with open(file_path, "w", encoding="utf-8") as f:
+            with open(file_path, 'w', encoding='utf-8') as f:
                 f.write(action.content)
 
-            return FileWriteObservation(content="", path=action.path)
+            return FileWriteObservation(content='', path=action.path)
         except Exception as e:
-            logger.error(f"Error writing to file: {str(e)}")
-            return ErrorObservation(f"Error writing to file {action.path}: {str(e)}")
+            logger.error(f'Error writing to file: {str(e)}')
+            return ErrorObservation(f'Error writing to file {action.path}: {str(e)}')
 
     def browse(self, action: BrowseURLAction) -> Observation:
         """Not implemented for CLI runtime."""
         return ErrorObservation(
-            "Browser functionality is not implemented in CLIRuntime"
+            'Browser functionality is not implemented in CLIRuntime'
         )
 
     def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         """Not implemented for CLI runtime."""
         return ErrorObservation(
-            "Browser functionality is not implemented in CLIRuntime"
+            'Browser functionality is not implemented in CLIRuntime'
         )
 
     def _execute_file_editor(
@@ -636,25 +636,25 @@ class CLIRuntime(Runtime):
             result = ToolResult(error=e.message)
 
         if result.error:
-            return f"ERROR:\n{result.error}", (None, None)
+            return f'ERROR:\n{result.error}', (None, None)
 
         if not result.output:
-            logger.warning(f"No output from file_editor for {path}")
-            return "", (None, None)
+            logger.warning(f'No output from file_editor for {path}')
+            return '', (None, None)
 
         return result.output, (result.old_content, result.new_content)
 
     def edit(self, action: FileEditAction) -> Observation:
         """Edit a file using the OHEditor."""
         if not self._runtime_initialized:
-            return ErrorObservation("Runtime not initialized")
+            return ErrorObservation('Runtime not initialized')
 
         # Ensure the path is within the workspace
         file_path = self._sanitize_filename(action.path)
 
         # Check if it's a binary file
         if os.path.exists(file_path) and is_binary(file_path):
-            return ErrorObservation("ERROR_BINARY_FILE")
+            return ErrorObservation('ERROR_BINARY_FILE')
 
         assert action.impl_source == FileEditSource.OH_ACI
 
@@ -675,8 +675,8 @@ class CLIRuntime(Runtime):
             new_content=action.new_str,
             impl_source=FileEditSource.OH_ACI,
             diff=get_diff(
-                old_contents=old_content or "",
-                new_contents=new_content or "",
+                old_contents=old_content or '',
+                new_contents=new_content or '',
                 filepath=action.path,
             ),
         )
@@ -691,9 +691,9 @@ class CLIRuntime(Runtime):
             Observation: The result of the MCP tool execution
         """
         # Check if we're on Windows - MCP is disabled on Windows
-        if sys.platform == "win32":
-            self.log("info", "MCP functionality is disabled on Windows")
-            return ErrorObservation("MCP functionality is not available on Windows")
+        if sys.platform == 'win32':
+            self.log('info', 'MCP functionality is disabled on Windows')
+            return ErrorObservation('MCP functionality is not available on Windows')
 
         # Import here to avoid circular imports
         from openhands.mcp.utils import call_tool_mcp as call_tool_mcp_handler
@@ -708,14 +708,14 @@ class CLIRuntime(Runtime):
                 and not mcp_config.shttp_servers
                 and not mcp_config.stdio_servers
             ):
-                self.log("warning", "No MCP servers configured")
-                return ErrorObservation("No MCP servers configured")
+                self.log('warning', 'No MCP servers configured')
+                return ErrorObservation('No MCP servers configured')
 
             self.log(
-                "debug",
-                f"Creating MCP clients for action {action.name} with servers: "
-                f"SSE={len(mcp_config.sse_servers)}, SHTTP={len(mcp_config.shttp_servers)}, "
-                f"stdio={len(mcp_config.stdio_servers)}",
+                'debug',
+                f'Creating MCP clients for action {action.name} with servers: '
+                f'SSE={len(mcp_config.sse_servers)}, SHTTP={len(mcp_config.shttp_servers)}, '
+                f'stdio={len(mcp_config.stdio_servers)}',
             )
 
             # Create clients for this specific operation
@@ -727,23 +727,23 @@ class CLIRuntime(Runtime):
             )
 
             if not mcp_clients:
-                self.log("warning", "No MCP clients could be created")
+                self.log('warning', 'No MCP clients could be created')
                 return ErrorObservation(
-                    "No MCP clients could be created - check server configurations"
+                    'No MCP clients could be created - check server configurations'
                 )
 
             # Call the tool and return the result
             self.log(
-                "debug",
-                f"Executing MCP tool: {action.name} with arguments: {action.arguments}",
+                'debug',
+                f'Executing MCP tool: {action.name} with arguments: {action.arguments}',
             )
             result = await call_tool_mcp_handler(mcp_clients, action)
-            self.log("debug", f"MCP tool {action.name} executed successfully")
+            self.log('debug', f'MCP tool {action.name} executed successfully')
             return result
 
         except Exception as e:
-            error_msg = f"Error executing MCP tool {action.name}: {str(e)}"
-            self.log("error", error_msg)
+            error_msg = f'Error executing MCP tool {action.name}: {str(e)}'
+            self.log('error', error_msg)
             return ErrorObservation(error_msg)
 
     @property
@@ -754,7 +754,7 @@ class CLIRuntime(Runtime):
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
         """Copy a file or directory from the host to the sandbox."""
         if not self._runtime_initialized:
-            raise RuntimeError("Runtime not initialized")
+            raise RuntimeError('Runtime not initialized')
         if not os.path.exists(host_src):  # Source must exist on host
             raise FileNotFoundError(f"Source path '{host_src}' does not exist.")
 
@@ -769,7 +769,7 @@ class CLIRuntime(Runtime):
                 # If source and final target are the same, skip.
                 if os.path.realpath(host_src) == os.path.realpath(final_target_dir):
                     logger.debug(
-                        "Skipping recursive copy: source and target are identical."
+                        'Skipping recursive copy: source and target are identical.'
                     )
                     pass
                 else:
@@ -782,7 +782,7 @@ class CLIRuntime(Runtime):
             elif os.path.isfile(host_src):
                 final_target_file_path: str
                 # Scenario A: sandbox_dest is clearly a directory.
-                if os.path.isdir(dest) or (sandbox_dest.endswith(("/", os.sep))):
+                if os.path.isdir(dest) or (sandbox_dest.endswith(('/', os.sep))):
                     target_dir = dest
                     os.makedirs(target_dir, exist_ok=True)
                     final_target_file_path = os.path.join(
@@ -791,7 +791,7 @@ class CLIRuntime(Runtime):
                     # Why: Copies file into specified directory.
 
                 # Scenario B: sandbox_dest is likely a new directory (e.g., 'new_dir').
-                elif not os.path.exists(dest) and "." not in os.path.basename(dest):
+                elif not os.path.exists(dest) and '.' not in os.path.basename(dest):
                     target_dir = dest
                     os.makedirs(target_dir, exist_ok=True)
                     final_target_file_path = os.path.join(
@@ -813,22 +813,22 @@ class CLIRuntime(Runtime):
                 )
 
         except FileNotFoundError as e:
-            logger.error(f"File not found during copy: {str(e)}")
+            logger.error(f'File not found during copy: {str(e)}')
             raise
         except shutil.SameFileError as e:
             # We can be lenient here, just ignore this error.
             logger.debug(
-                f"Skipping copy as source and destination are the same: {str(e)}"
+                f'Skipping copy as source and destination are the same: {str(e)}'
             )
             pass
         except Exception as e:
-            logger.error(f"Unexpected error copying file: {str(e)}")
-            raise RuntimeError(f"Unexpected error copying file: {str(e)}")
+            logger.error(f'Unexpected error copying file: {str(e)}')
+            raise RuntimeError(f'Unexpected error copying file: {str(e)}')
 
     def list_files(self, path: str | None = None) -> list[str]:
         """List files in the sandbox."""
         if not self._runtime_initialized:
-            raise RuntimeError("Runtime not initialized")
+            raise RuntimeError('Runtime not initialized')
 
         if path is None:
             dir_path = self._workspace_path
@@ -845,25 +845,25 @@ class CLIRuntime(Runtime):
             # List files in the directory
             return [os.path.join(dir_path, f) for f in os.listdir(dir_path)]
         except Exception as e:
-            logger.error(f"Error listing files: {str(e)}")
+            logger.error(f'Error listing files: {str(e)}')
             return []
 
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return a path in the local filesystem."""
         if not self._runtime_initialized:
-            raise RuntimeError("Runtime not initialized")
+            raise RuntimeError('Runtime not initialized')
 
         source_path = self._sanitize_filename(path)
 
         if not os.path.exists(source_path):
-            raise FileNotFoundError(f"Path not found: {path}")
+            raise FileNotFoundError(f'Path not found: {path}')
 
         # Create a temporary zip file
-        temp_zip = tempfile.NamedTemporaryFile(suffix=".zip", delete=False)
+        temp_zip = tempfile.NamedTemporaryFile(suffix='.zip', delete=False)
         temp_zip.close()
 
         try:
-            with zipfile.ZipFile(temp_zip.name, "w", zipfile.ZIP_DEFLATED) as zipf:
+            with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 if os.path.isdir(source_path):
                     # Add all files in the directory
                     for root, _, files in os.walk(source_path):
@@ -877,17 +877,17 @@ class CLIRuntime(Runtime):
 
             return Path(temp_zip.name)
         except Exception as e:
-            logger.error(f"Error creating zip file: {str(e)}")
-            raise RuntimeError(f"Error creating zip file: {str(e)}")
+            logger.error(f'Error creating zip file: {str(e)}')
+            raise RuntimeError(f'Error creating zip file: {str(e)}')
 
     def close(self) -> None:
         # Clean up PowerShell session if it exists
         if self._powershell_session is not None:
             try:
                 self._powershell_session.close()
-                logger.debug("PowerShell session closed successfully.")
+                logger.debug('PowerShell session closed successfully.')
             except Exception as e:
-                logger.warning(f"Error closing PowerShell session: {e}")
+                logger.warning(f'Error closing PowerShell session: {e}')
             finally:
                 self._powershell_session = None
 
@@ -899,7 +899,7 @@ class CLIRuntime(Runtime):
         """Delete any resources associated with a conversation."""
         # Look for temporary directories that might be associated with this conversation
         temp_dir = tempfile.gettempdir()
-        prefix = f"openhands_workspace_{conversation_id}_"
+        prefix = f'openhands_workspace_{conversation_id}_'
 
         for item in os.listdir(temp_dir):
             if item.startswith(prefix):
@@ -907,15 +907,15 @@ class CLIRuntime(Runtime):
                     path = os.path.join(temp_dir, item)
                     if os.path.isdir(path):
                         shutil.rmtree(path)
-                        logger.info(f"Deleted workspace directory: {path}")
+                        logger.info(f'Deleted workspace directory: {path}')
                 except Exception as e:
-                    logger.error(f"Error deleting workspace directory: {str(e)}")
+                    logger.error(f'Error deleting workspace directory: {str(e)}')
 
     @property
     def additional_agent_instructions(self) -> str:
-        return "\n\n".join(
+        return '\n\n'.join(
             [
-                f"Your working directory is {self._workspace_path}. You can only read and write files in this directory.",
+                f'Your working directory is {self._workspace_path}. You can only read and write files in this directory.',
                 "You are working directly on the user's machine. In most cases, the working environment is already set up.",
             ]
         )
@@ -932,8 +932,8 @@ class CLIRuntime(Runtime):
             MCPConfig: The MCP configuration with stdio servers and any configured SSE/SHTTP servers
         """
         # Check if we're on Windows - MCP is disabled on Windows
-        if sys.platform == "win32":
-            self.log("debug", "MCP is disabled on Windows, returning empty config")
+        if sys.platform == 'win32':
+            self.log('debug', 'MCP is disabled on Windows, returning empty config')
             return MCPConfig(sse_servers=[], stdio_servers=[], shttp_servers=[])
 
         # Note: we update the self.config.mcp directly for CLI runtime, which is different from other runtimes.
@@ -946,14 +946,14 @@ class CLIRuntime(Runtime):
                 # Check if this stdio server is already in the config
                 if extra_server not in current_stdio_servers:
                     current_stdio_servers.append(extra_server)
-                    self.log("info", f"Added extra stdio server: {extra_server.name}")
+                    self.log('info', f'Added extra stdio server: {extra_server.name}')
             mcp_config.stdio_servers = current_stdio_servers
 
         self.log(
-            "debug",
-            f"CLI MCP config: {len(mcp_config.sse_servers)} SSE servers, "
-            f"{len(mcp_config.stdio_servers)} stdio servers, "
-            f"{len(mcp_config.shttp_servers)} SHTTP servers",
+            'debug',
+            f'CLI MCP config: {len(mcp_config.sse_servers)} SSE servers, '
+            f'{len(mcp_config.stdio_servers)} stdio servers, '
+            f'{len(mcp_config.shttp_servers)} SHTTP servers',
         )
 
         return mcp_config

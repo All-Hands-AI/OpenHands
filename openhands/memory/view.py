@@ -42,7 +42,7 @@ class View(BaseModel):
         elif isinstance(key, int):
             return self.events[key]
         else:
-            raise ValueError(f"Invalid key type: {type(key)}")
+            raise ValueError(f'Invalid key type: {type(key)}')
 
     @staticmethod
     def from_events(events: list[Event]) -> View:
@@ -71,7 +71,7 @@ class View(BaseModel):
                     break
 
         if summary is not None and summary_offset is not None:
-            logger.info(f"Inserting summary at offset {summary_offset}")
+            logger.info(f'Inserting summary at offset {summary_offset}')
 
             kept_events.insert(
                 summary_offset, AgentCondensationObservation(content=summary)

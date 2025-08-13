@@ -24,7 +24,7 @@ def get_next_id(trace: list[TraceElement]) -> str:
     for i in range(1, len(used_ids) + 2):
         if str(i) not in used_ids:
             return str(i)
-    return "1"
+    return '1'
 
 
 def get_last_id(
@@ -41,22 +41,22 @@ def parse_action(trace: list[TraceElement], action: Action) -> list[TraceElement
     inv_trace: list[TraceElement] = []
     if isinstance(action, MessageAction):
         if action.source == EventSource.USER:
-            inv_trace.append(Message(role="user", content=action.content))
+            inv_trace.append(Message(role='user', content=action.content))
         else:
-            inv_trace.append(Message(role="assistant", content=action.content))
+            inv_trace.append(Message(role='assistant', content=action.content))
     elif isinstance(action, (NullAction, ChangeAgentStateAction)):
         pass
-    elif hasattr(action, "action") and action.action is not None:
+    elif hasattr(action, 'action') and action.action is not None:
         event_dict = event_to_dict(action)
-        args = event_dict.get("args", {})
-        thought = args.pop("thought", None)
+        args = event_dict.get('args', {})
+        thought = args.pop('thought', None)
 
         function = Function(name=action.action, arguments=args)
         if thought is not None:
-            inv_trace.append(Message(role="assistant", content=thought))
-        inv_trace.append(ToolCall(id=next_id, type="function", function=function))
+            inv_trace.append(Message(role='assistant', content=thought))
+        inv_trace.append(ToolCall(id=next_id, type='function', function=function))
     else:
-        logger.error(f"Unknown action type: {type(action)}")
+        logger.error(f'Unknown action type: {type(action)}')
     return inv_trace
 
 
@@ -66,10 +66,10 @@ def parse_observation(
     last_id = get_last_id(trace)
     if isinstance(obs, (NullObservation, AgentStateChangedObservation)):
         return []
-    elif hasattr(obs, "content") and obs.content is not None:
-        return [ToolOutput(role="tool", content=obs.content, tool_call_id=last_id)]
+    elif hasattr(obs, 'content') and obs.content is not None:
+        return [ToolOutput(role='tool', content=obs.content, tool_call_id=last_id)]
     else:
-        logger.error(f"Unknown observation type: {type(obs)}")
+        logger.error(f'Unknown observation type: {type(obs)}')
     return []
 
 
@@ -98,5 +98,5 @@ class InvariantState(BaseModel):
     def add_observation(self, obs: Observation) -> None:
         self.trace.extend(parse_observation(self.trace, obs))
 
-    def concatenate(self, other: "InvariantState") -> None:
+    def concatenate(self, other: 'InvariantState') -> None:
         self.trace.extend(other.trace)

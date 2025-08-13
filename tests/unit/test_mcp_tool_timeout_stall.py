@@ -49,7 +49,7 @@ class MockAgent(Agent):
 
     def get_system_message(self):
         """Mock get_system_message method."""
-        return SystemMessageAction(content="System message")
+        return SystemMessageAction(content='System message')
 
 
 @pytest.mark.asyncio
@@ -64,35 +64,35 @@ async def test_mcp_tool_timeout_error_handling():
         await asyncio.sleep(0.1)
         # Create a mock error object with the message attribute
         error = mock.MagicMock()
-        error.message = "Timed out while waiting for response to ClientRequest. Waited 30.0 seconds."
+        error.message = 'Timed out while waiting for response to ClientRequest. Waited 30.0 seconds.'
         raise McpError(error)
 
     mock_client.call_tool.side_effect = mock_call_tool
 
     # Create a mock tool
     mock_tool = MCPClientTool(
-        name="test_tool",
-        description="Test tool",
-        inputSchema={"type": "object", "properties": {}},
+        name='test_tool',
+        description='Test tool',
+        inputSchema={'type': 'object', 'properties': {}},
         session=None,
     )
     mock_client.tools = [mock_tool]
-    mock_client.tool_map = {"test_tool": mock_tool}
+    mock_client.tool_map = {'test_tool': mock_tool}
 
     # Create a mock file store
     mock_file_store = mock.MagicMock()
 
     # Create a mock event stream
-    event_stream = EventStream(sid="test-session", file_store=mock_file_store)
+    event_stream = EventStream(sid='test-session', file_store=mock_file_store)
 
     # Create a mock agent
     agent = MockAgent()
 
     # Create a mock agent controller
     controller = AgentController(
-        sid="test-session",
+        sid='test-session',
         file_store=mock_file_store,
-        user_id="test-user",
+        user_id='test-user',
         agent=agent,
         event_stream=event_stream,
         iteration_delta=10,
@@ -104,9 +104,9 @@ async def test_mcp_tool_timeout_error_handling():
 
     # Create an MCP action
     mcp_action = MCPAction(
-        name="test_tool",
-        arguments={"param": "value"},
-        thought="Testing MCP timeout handling",
+        name='test_tool',
+        arguments={'param': 'value'},
+        thought='Testing MCP timeout handling',
     )
 
     # Add the action to the event stream
@@ -122,8 +122,8 @@ async def test_mcp_tool_timeout_error_handling():
     # Verify that the function returns an error observation
     assert isinstance(result, MCPObservation)
     content = json.loads(result.content)
-    assert content["isError"] is True
-    assert "timed out" in content["error"].lower()
+    assert content['isError'] is True
+    assert 'timed out' in content['error'].lower()
 
     # The agent controller would now be able to continue processing
     # because it received an error observation instead of an exception
@@ -133,9 +133,9 @@ async def test_mcp_tool_timeout_error_handling():
 
     # Verify that the agent can continue processing
     agent.next_action = MCPAction(
-        name="another_tool",
-        arguments={"param": "value"},
-        thought="Another action after timeout",
+        name='another_tool',
+        arguments={'param': 'value'},
+        thought='Another action after timeout',
     )
 
     # The agent controller would be able to step because it received an observation
@@ -154,35 +154,35 @@ async def test_mcp_tool_timeout_agent_continuation():
         await asyncio.sleep(0.1)
         # Create a mock error object with the message attribute
         error = mock.MagicMock()
-        error.message = "Timed out while waiting for response to ClientRequest. Waited 30.0 seconds."
+        error.message = 'Timed out while waiting for response to ClientRequest. Waited 30.0 seconds.'
         raise McpError(error)
 
     mock_client.call_tool.side_effect = mock_call_tool
 
     # Create a mock tool
     mock_tool = MCPClientTool(
-        name="test_tool",
-        description="Test tool",
-        inputSchema={"type": "object", "properties": {}},
+        name='test_tool',
+        description='Test tool',
+        inputSchema={'type': 'object', 'properties': {}},
         session=None,
     )
     mock_client.tools = [mock_tool]
-    mock_client.tool_map = {"test_tool": mock_tool}
+    mock_client.tool_map = {'test_tool': mock_tool}
 
     # Create a mock file store
     mock_file_store = mock.MagicMock()
 
     # Create a mock event stream
-    event_stream = EventStream(sid="test-session", file_store=mock_file_store)
+    event_stream = EventStream(sid='test-session', file_store=mock_file_store)
 
     # Create a mock agent
     agent = MockAgent()
 
     # Create a mock agent controller
     controller = AgentController(
-        sid="test-session",
+        sid='test-session',
         file_store=mock_file_store,
-        user_id="test-user",
+        user_id='test-user',
         agent=agent,
         event_stream=event_stream,
         iteration_delta=10,
@@ -194,9 +194,9 @@ async def test_mcp_tool_timeout_agent_continuation():
 
     # Create an MCP action
     mcp_action = MCPAction(
-        name="test_tool",
-        arguments={"param": "value"},
-        thought="Testing MCP timeout handling",
+        name='test_tool',
+        arguments={'param': 'value'},
+        thought='Testing MCP timeout handling',
     )
 
     # Add the action to the event stream
@@ -213,7 +213,7 @@ async def test_mcp_tool_timeout_agent_continuation():
         except McpError as e:
             # Create an error observation
             error_content = json.dumps(
-                {"isError": True, "error": str(e), "content": []}
+                {'isError': True, 'error': str(e), 'content': []}
             )
             observation = MCPObservation(
                 content=error_content,
@@ -221,12 +221,12 @@ async def test_mcp_tool_timeout_agent_continuation():
                 arguments=action.arguments,
             )
             # Set the cause
-            setattr(observation, "_cause", action.id)
+            setattr(observation, '_cause', action.id)
             return observation
 
     # Use our fixed function
     with mock.patch(
-        "openhands.mcp.utils.call_tool_mcp", side_effect=fixed_call_tool_mcp
+        'openhands.mcp.utils.call_tool_mcp', side_effect=fixed_call_tool_mcp
     ):
         # Call the function that would normally be called by the agent controller
         result = await call_tool_mcp([mock_client], mcp_action)
@@ -234,8 +234,8 @@ async def test_mcp_tool_timeout_agent_continuation():
         # Verify that the function returns an error observation
         assert isinstance(result, MCPObservation)
         content = json.loads(result.content)
-        assert content["isError"] is True
-        assert "timed out" in content["error"].lower()
+        assert content['isError'] is True
+        assert 'timed out' in content['error'].lower()
 
         # Now simulate the agent controller's handling of the observation
         event_stream.add_event(result, EventSource.ENVIRONMENT)
@@ -248,9 +248,9 @@ async def test_mcp_tool_timeout_agent_continuation():
 
         # Verify that the agent can continue processing
         agent.next_action = MCPAction(
-            name="another_tool",
-            arguments={"param": "value"},
-            thought="Another action after timeout",
+            name='another_tool',
+            arguments={'param': 'value'},
+            thought='Another action after timeout',
         )
 
         # Simulate a step

@@ -6,9 +6,9 @@ from openhands.events.event import Event
 
 
 class ActionConfirmationStatus(str, Enum):
-    CONFIRMED = "confirmed"
-    REJECTED = "rejected"
-    AWAITING_CONFIRMATION = "awaiting_confirmation"
+    CONFIRMED = 'confirmed'
+    REJECTED = 'rejected'
+    AWAITING_CONFIRMATION = 'awaiting_confirmation'
 
 
 class ActionSecurityRisk(int, Enum):

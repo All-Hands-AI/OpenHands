@@ -30,11 +30,11 @@ from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
-    "CodeActAgent": codeact_user_response,
+    'CodeActAgent': codeact_user_response,
 }
 
 AGENT_CLS_TO_INST_SUFFIX = {
-    "CodeActAgent": 'When you think you have completed the request, please finish the interaction using the "finish" tool.\n'
+    'CodeActAgent': 'When you think you have completed the request, please finish the interaction using the "finish" tool.\n'
 }
 
 
@@ -42,11 +42,11 @@ def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = "python:3.12-bookworm"
+    sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime="docker",
+        runtime='docker',
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
@@ -64,23 +64,23 @@ def initialize_runtime(runtime: Runtime):
 
     This function is called before the runtime is used to run the agent.
     """
-    logger.info(f"{'-' * 50} BEGIN Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} BEGIN Runtime Initialization Fn {"-" * 50}')
     obs: CmdOutputObservation
 
     # Set instance id
-    action = CmdRunAction(command="mkdir -p /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='mkdir -p /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = CmdRunAction(command="cd /workspace")
-    logger.info(action, extra={"msg_type": "ACTION"})
+    action = CmdRunAction(command='cd /workspace')
+    logger.info(action, extra={'msg_type': 'ACTION'})
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    runtime.add_env_vars({"WOLFRAM_ALPHA_APPID": args.wolfram_alpha_appid})
+    runtime.add_env_vars({'WOLFRAM_ALPHA_APPID': args.wolfram_alpha_appid})
 
-    logger.info(f"{'-' * 50} END Runtime Initialization Fn {'-' * 50}")
+    logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
 
 
 def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool = True):
@@ -92,17 +92,17 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
-        log_dir = os.path.join(metadata.eval_output_dir, "infer_logs")
+        log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
         reset_logger_for_multiprocessing(logger, qid, log_dir)
     else:
-        logger.info(f"Starting evaluation for instance {qid}.")
+        logger.info(f'Starting evaluation for instance {qid}.')
 
     # Prepare instruction
     instruction = encode_question(question)
-    instruction += "IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n"
+    instruction += 'IMPORTANT: You should ONLY interact with the environment provided to you AND NEVER ASK FOR HUMAN HELP.\n'
     # NOTE: You can actually set slightly different instruction for different agents
     instruction += AGENT_CLS_TO_INST_SUFFIX[metadata.agent_class]
-    logger.info(f"Instruction:\n{instruction}", extra={"msg_type": "OBSERVATION"})
+    logger.info(f'Instruction:\n{instruction}', extra={'msg_type': 'OBSERVATION'})
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
@@ -124,15 +124,15 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
-        raise ValueError("State should not be None.")
+        raise ValueError('State should not be None.')
 
     # retrieve the last message from the agent
     last_agent_message = state.get_last_agent_message()
-    model_answer_raw = last_agent_message.content if last_agent_message else ""
+    model_answer_raw = last_agent_message.content if last_agent_message else ''
 
     # attempt to parse model_answer
     correct = eval_answer(str(model_answer_raw), str(answer))
-    logger.info(f"Final message: {model_answer_raw} | Correctness: {correct}")
+    logger.info(f'Final message: {model_answer_raw} | Correctness: {correct}')
 
     metrics = state.metrics.get() if state.metrics else None
 
@@ -145,8 +145,8 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     output = EvalOutput(
         instance_id=qid,
         test_result={
-            "model_answer_raw": model_answer_raw,
-            "correct": correct,
+            'model_answer_raw': model_answer_raw,
+            'correct': correct,
         },
         metadata=metadata,
         history=histories,
@@ -156,25 +156,25 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     return output
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     parser = get_evaluation_parser()
     parser.add_argument(
-        "--dataset",
+        '--dataset',
         type=str,
-        help="Which dataset to evaluate from ToolQA. ToolQA contains 8 datasets, namely agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp. For example, the default is --dataset flight.",
-        default="flight",
+        help='Which dataset to evaluate from ToolQA. ToolQA contains 8 datasets, namely agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp. For example, the default is --dataset flight.',
+        default='flight',
     )
     parser.add_argument(
-        "--hardness",
+        '--hardness',
         type=str,
-        help="Which level of difficulty to evaluate from ToolQA. ToolQA contains 2 levels of hardness, namely easy and hard. For example, the default is --hardness easy.",
-        default="easy",
+        help='Which level of difficulty to evaluate from ToolQA. ToolQA contains 2 levels of hardness, namely easy and hard. For example, the default is --hardness easy.',
+        default='easy',
     )
     parser.add_argument(
-        "--wolfram-alpha-appid",
+        '--wolfram-alpha-appid',
         type=str,
-        help="wolfram alpha appid to use for wolfram alpha related tests",
-        default="YOUR_WOLFRAMALPHA_APPID",
+        help='wolfram alpha appid to use for wolfram alpha related tests',
+        default='YOUR_WOLFRAMALPHA_APPID',
     )
     args, _ = parser.parse_known_args()
 
@@ -185,39 +185,39 @@ if __name__ == "__main__":
         llm_config.modify_params = False
 
     if llm_config is None:
-        raise ValueError(f"Could not find LLM config: --llm_config {args.llm_config}")
+        raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    dataset = ""
-    hardness = ""
+    dataset = ''
+    hardness = ''
     dataset_choices = [
-        "agenda",
-        "airbnb",
-        "coffee",
-        "dblp",
-        "flight",
-        "gsm8k",
-        "scirex",
-        "yelp",
-        "genda",
+        'agenda',
+        'airbnb',
+        'coffee',
+        'dblp',
+        'flight',
+        'gsm8k',
+        'scirex',
+        'yelp',
+        'genda',
     ]
     if args.dataset not in dataset_choices:
         raise ValueError(
-            "Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset."
+            'Please choose from agenda, airbnb, coffee, dblp, flight, gsm8k, scirex, yelp for dataset.'
         )
-    if args.hardness not in ["easy", "hard"]:
-        raise ValueError("Please choose from easy and hard for hardness.")
+    if args.hardness not in ['easy', 'hard']:
+        raise ValueError('Please choose from easy and hard for hardness.')
 
     toolqa_test = pd.DataFrame(get_data(dataset, hardness))
-    toolqa_test.rename(columns={"qid": "instance_id"}, inplace=True)
+    toolqa_test.rename(columns={'qid': 'instance_id'}, inplace=True)
 
     metadata = make_metadata(
         llm_config,
-        f"toolqa-{args.dataset}-{args.hardness}",
+        f'toolqa-{args.dataset}-{args.hardness}',
         args.agent_cls,
         args.eval_note,
         args.eval_output_dir,
     )
-    output_file = os.path.join(metadata.eval_output_dir, "output.jsonl")
+    output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
     instances = prepare_dataset(toolqa_test, output_file, args.eval_n_limit)
     run_evaluation(
         instances, metadata, output_file, args.eval_num_workers, process_instance

@@ -74,11 +74,11 @@ from openhands.utils.async_utils import (
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
     ret = {}
     for key in os.environ:
-        if key.startswith("SANDBOX_ENV_"):
-            sandbox_key = key.removeprefix("SANDBOX_ENV_")
+        if key.startswith('SANDBOX_ENV_'):
+            sandbox_key = key.removeprefix('SANDBOX_ENV_')
             ret[sandbox_key] = os.environ[key]
     if sandbox_config.enable_auto_lint:
-        ret["ENABLE_AUTO_LINT"] = "true"
+        ret['ENABLE_AUTO_LINT'] = 'true'
     return ret
 
 
@@ -123,7 +123,7 @@ class Runtime(FileEditRuntimeMixin):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
-        sid: str = "default",
+        sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
         status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
@@ -190,7 +190,7 @@ class Runtime(FileEditRuntimeMixin):
     def setup_initial_env(self) -> None:
         if self.attach_to_existing:
             return
-        logger.debug(f"Adding env vars: {self.initial_env_vars.keys()}")
+        logger.debug(f'Adding env vars: {self.initial_env_vars.keys()}')
         self.add_env_vars(self.initial_env_vars)
         if self.config.sandbox.runtime_startup_env_vars:
             self.add_env_vars(self.config.sandbox.runtime_startup_env_vars)
@@ -206,11 +206,11 @@ class Runtime(FileEditRuntimeMixin):
         pass
 
     def log(self, level: str, message: str) -> None:
-        message = f"[runtime {self.sid}] {message}"
+        message = f'[runtime {self.sid}] {message}'
         getattr(logger, level)(message, stacklevel=2)
 
     def set_runtime_status(
-        self, runtime_status: RuntimeStatus, msg: str = "", level: str = "info"
+        self, runtime_status: RuntimeStatus, msg: str = '', level: str = 'info'
     ):
         """Sends a status message if the callback function was provided."""
         self.runtime_status = runtime_status
@@ -224,52 +224,52 @@ class Runtime(FileEditRuntimeMixin):
 
         # Add env vars to the IPython shell (if Jupyter is used)
         if any(isinstance(plugin, JupyterRequirement) for plugin in self.plugins):
-            code = "import os\n"
+            code = 'import os\n'
             for key, value in env_vars.items():
                 # Note: json.dumps gives us nice escaping for free
                 code += f'os.environ["{key}"] = {json.dumps(value)}\n'
-            code += "\n"
+            code += '\n'
             self.run_ipython(IPythonRunCellAction(code))
             # Note: we don't log the vars values, they're leaking info
-            logger.debug("Added env vars to IPython")
+            logger.debug('Added env vars to IPython')
 
         # Check if we're on Windows
         import os
         import sys
 
-        is_windows = os.name == "nt" or sys.platform == "win32"
+        is_windows = os.name == 'nt' or sys.platform == 'win32'
 
         if is_windows:
             # Add env vars using PowerShell commands for Windows
-            cmd = ""
+            cmd = ''
             for key, value in env_vars.items():
                 # Use PowerShell's $env: syntax for environment variables
                 # Note: json.dumps gives us nice escaping for free
-                cmd += f"$env:{key} = {json.dumps(value)}; "
+                cmd += f'$env:{key} = {json.dumps(value)}; '
 
             if not cmd:
                 return
 
             cmd = cmd.strip()
-            logger.debug("Adding env vars to PowerShell")  # don't log the values
+            logger.debug('Adding env vars to PowerShell')  # don't log the values
 
             obs = self.run(CmdRunAction(cmd))
             if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
                 raise RuntimeError(
-                    f"Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}"
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
                 )
 
             # We don't add to profile persistence on Windows as it's more complex
             # and varies between PowerShell versions
-            logger.debug(f"Added env vars to PowerShell session: {env_vars.keys()}")
+            logger.debug(f'Added env vars to PowerShell session: {env_vars.keys()}')
 
         else:
             # Original bash implementation for Unix systems
-            cmd = ""
-            bashrc_cmd = ""
+            cmd = ''
+            bashrc_cmd = ''
             for key, value in env_vars.items():
                 # Note: json.dumps gives us nice escaping for free
-                cmd += f"export {key}={json.dumps(value)}; "
+                cmd += f'export {key}={json.dumps(value)}; '
                 # Add to .bashrc if not already present
                 bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
 
@@ -277,21 +277,21 @@ class Runtime(FileEditRuntimeMixin):
                 return
 
             cmd = cmd.strip()
-            logger.debug("Adding env vars to bash")  # don't log the values
+            logger.debug('Adding env vars to bash')  # don't log the values
 
             obs = self.run(CmdRunAction(cmd))
             if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
                 raise RuntimeError(
-                    f"Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}"
+                    f'Failed to add env vars [{env_vars.keys()}] to environment: {obs.content}'
                 )
 
             # Add to .bashrc for persistence
             bashrc_cmd = bashrc_cmd.strip()
-            logger.debug(f"Adding env var to .bashrc: {env_vars.keys()}")
+            logger.debug(f'Adding env var to .bashrc: {env_vars.keys()}')
             obs = self.run(CmdRunAction(bashrc_cmd))
             if not isinstance(obs, CmdOutputObservation) or obs.exit_code != 0:
                 raise RuntimeError(
-                    f"Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}"
+                    f'Failed to add env vars [{env_vars.keys()}] to .bashrc: {obs.content}'
                 )
 
     def on_event(self, event: Event) -> None:
@@ -310,7 +310,7 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
-        logger.info(f"Fetching latest provider tokens for runtime: {self.sid}")
+        logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
         env_vars = await self.provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
@@ -326,7 +326,7 @@ class Runtime(FileEditRuntimeMixin):
             self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
-                f"Failed export latest github token to runtime: {self.sid}, {e}"
+                f'Failed export latest github token to runtime: {self.sid}, {e}'
             )
 
     async def _handle_action(self, event: Action) -> None:
@@ -346,17 +346,17 @@ class Runtime(FileEditRuntimeMixin):
             observation = ErrorObservation(content=str(e))
         except (httpx.NetworkError, AgentRuntimeDisconnectedError) as e:
             runtime_status = RuntimeStatus.ERROR_RUNTIME_DISCONNECTED
-            error_message = f"{type(e).__name__}: {str(e)}"
-            self.log("error", f"Unexpected error while running action: {error_message}")
-            self.log("error", f"Problematic action: {str(event)}")
-            self.set_runtime_status(runtime_status, error_message, level="error")
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message, level='error')
             return
         except Exception as e:
             runtime_status = RuntimeStatus.ERROR
-            error_message = f"{type(e).__name__}: {str(e)}"
-            self.log("error", f"Unexpected error while running action: {error_message}")
-            self.log("error", f"Problematic action: {str(event)}")
-            self.set_runtime_status(runtime_status, error_message, level="error")
+            error_message = f'{type(e).__name__}: {str(e)}'
+            self.log('error', f'Unexpected error while running action: {error_message}')
+            self.log('error', f'Problematic action: {str(event)}')
+            self.set_runtime_status(runtime_status, error_message, level='error')
             return
 
         observation._cause = event.id  # type: ignore[attr-defined]
@@ -378,74 +378,74 @@ class Runtime(FileEditRuntimeMixin):
         if not selected_repository:
             if self.config.init_git_in_empty_workspace:
                 logger.debug(
-                    "No repository selected. Initializing a new git repository in the workspace."
+                    'No repository selected. Initializing a new git repository in the workspace.'
                 )
                 action = CmdRunAction(
-                    command=f"git init && git config --global --add safe.directory {self.workspace_root}"
+                    command=f'git init && git config --global --add safe.directory {self.workspace_root}'
                 )
                 await call_sync_from_async(self.run_action, action)
             else:
                 logger.info(
-                    "In workspace mount mode, not initializing a new git repository."
+                    'In workspace mount mode, not initializing a new git repository.'
                 )
-            return ""
+            return ''
 
         remote_repo_url = await self.provider_handler.get_authenticated_git_url(
             selected_repository
         )
 
         if not remote_repo_url:
-            raise ValueError("Missing either Git token or valid repository")
+            raise ValueError('Missing either Git token or valid repository')
 
         if self.status_callback:
             self.status_callback(
-                "info", RuntimeStatus.SETTING_UP_WORKSPACE, "Setting up workspace..."
+                'info', RuntimeStatus.SETTING_UP_WORKSPACE, 'Setting up workspace...'
             )
 
-        dir_name = selected_repository.split("/")[-1]
+        dir_name = selected_repository.split('/')[-1]
 
         # Generate a random branch name to avoid conflicts
-        random_str = "".join(
+        random_str = ''.join(
             random.choices(string.ascii_lowercase + string.digits, k=8)
         )
-        openhands_workspace_branch = f"openhands-workspace-{random_str}"
+        openhands_workspace_branch = f'openhands-workspace-{random_str}'
 
         # Clone repository command
-        clone_command = f"git clone {remote_repo_url} {dir_name}"
+        clone_command = f'git clone {remote_repo_url} {dir_name}'
 
         # Checkout to appropriate branch
         checkout_command = (
-            f"git checkout {selected_branch}"
+            f'git checkout {selected_branch}'
             if selected_branch
-            else f"git checkout -b {openhands_workspace_branch}"
+            else f'git checkout -b {openhands_workspace_branch}'
         )
 
         clone_action = CmdRunAction(command=clone_command)
         await call_sync_from_async(self.run_action, clone_action)
 
         cd_checkout_action = CmdRunAction(
-            command=f"cd {dir_name} && {checkout_command}"
+            command=f'cd {dir_name} && {checkout_command}'
         )
         action = cd_checkout_action
-        self.log("info", f"Cloning repo: {selected_repository}")
+        self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
         return dir_name
 
     def maybe_run_setup_script(self):
         """Run .openhands/setup.sh if it exists in the workspace or repository."""
-        setup_script = ".openhands/setup.sh"
+        setup_script = '.openhands/setup.sh'
         read_obs = self.read(FileReadAction(path=setup_script))
         if isinstance(read_obs, ErrorObservation):
             return
 
         if self.status_callback:
             self.status_callback(
-                "info", RuntimeStatus.SETTING_UP_WORKSPACE, "Setting up workspace..."
+                'info', RuntimeStatus.SETTING_UP_WORKSPACE, 'Setting up workspace...'
             )
 
         # setup scripts time out after 10 minutes
         action = CmdRunAction(
-            f"chmod +x {setup_script} && source {setup_script}",
+            f'chmod +x {setup_script} && source {setup_script}',
             blocking=True,
             hidden=True,
         )
@@ -465,59 +465,59 @@ class Runtime(FileEditRuntimeMixin):
 
     def maybe_setup_git_hooks(self):
         """Set up git hooks if .openhands/pre-commit.sh exists in the workspace or repository."""
-        pre_commit_script = ".openhands/pre-commit.sh"
+        pre_commit_script = '.openhands/pre-commit.sh'
         read_obs = self.read(FileReadAction(path=pre_commit_script))
         if isinstance(read_obs, ErrorObservation):
             return
 
         if self.status_callback:
             self.status_callback(
-                "info", RuntimeStatus.SETTING_UP_GIT_HOOKS, "Setting up git hooks..."
+                'info', RuntimeStatus.SETTING_UP_GIT_HOOKS, 'Setting up git hooks...'
             )
 
         # Ensure the git hooks directory exists
-        action = CmdRunAction("mkdir -p .git/hooks")
+        action = CmdRunAction('mkdir -p .git/hooks')
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
-            self.log("error", f"Failed to create git hooks directory: {obs.content}")
+            self.log('error', f'Failed to create git hooks directory: {obs.content}')
             return
 
         # Make the pre-commit script executable
-        action = CmdRunAction(f"chmod +x {pre_commit_script}")
+        action = CmdRunAction(f'chmod +x {pre_commit_script}')
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log(
-                "error", f"Failed to make pre-commit script executable: {obs.content}"
+                'error', f'Failed to make pre-commit script executable: {obs.content}'
             )
             return
 
         # Check if there's an existing pre-commit hook
-        pre_commit_hook = ".git/hooks/pre-commit"
-        pre_commit_local = ".git/hooks/pre-commit.local"
+        pre_commit_hook = '.git/hooks/pre-commit'
+        pre_commit_local = '.git/hooks/pre-commit.local'
 
         # Read the existing pre-commit hook if it exists
         read_obs = self.read(FileReadAction(path=pre_commit_hook))
         if not isinstance(read_obs, ErrorObservation):
             # If the existing hook wasn't created by OpenHands, preserve it
-            if "This hook was installed by OpenHands" not in read_obs.content:
-                self.log("info", "Preserving existing pre-commit hook")
+            if 'This hook was installed by OpenHands' not in read_obs.content:
+                self.log('info', 'Preserving existing pre-commit hook')
                 # Move the existing hook to pre-commit.local
-                action = CmdRunAction(f"mv {pre_commit_hook} {pre_commit_local}")
+                action = CmdRunAction(f'mv {pre_commit_hook} {pre_commit_local}')
                 obs = self.run_action(action)
                 if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
                     self.log(
-                        "error",
-                        f"Failed to preserve existing pre-commit hook: {obs.content}",
+                        'error',
+                        f'Failed to preserve existing pre-commit hook: {obs.content}',
                     )
                     return
 
                 # Make it executable
-                action = CmdRunAction(f"chmod +x {pre_commit_local}")
+                action = CmdRunAction(f'chmod +x {pre_commit_local}')
                 obs = self.run_action(action)
                 if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
                     self.log(
-                        "error",
-                        f"Failed to make preserved hook executable: {obs.content}",
+                        'error',
+                        f'Failed to make preserved hook executable: {obs.content}',
                     )
                     return
 
@@ -540,19 +540,19 @@ fi
             FileWriteAction(path=pre_commit_hook, content=pre_commit_hook_content)
         )
         if isinstance(write_obs, ErrorObservation):
-            self.log("error", f"Failed to write pre-commit hook: {write_obs.content}")
+            self.log('error', f'Failed to write pre-commit hook: {write_obs.content}')
             return
 
         # Make the pre-commit hook executable
-        action = CmdRunAction(f"chmod +x {pre_commit_hook}")
+        action = CmdRunAction(f'chmod +x {pre_commit_hook}')
         obs = self.run_action(action)
         if isinstance(obs, CmdOutputObservation) and obs.exit_code != 0:
             self.log(
-                "error", f"Failed to make pre-commit hook executable: {obs.content}"
+                'error', f'Failed to make pre-commit hook executable: {obs.content}'
             )
             return
 
-        self.log("info", "Git pre-commit hook installed successfully")
+        self.log('info', 'Git pre-commit hook installed successfully')
 
     def _load_microagents_from_directory(
         self, microagents_dir: Path, source_description: str
@@ -569,42 +569,42 @@ fi
         loaded_microagents: list[BaseMicroagent] = []
 
         self.log(
-            "info",
-            f"Attempting to list files in {source_description} microagents directory: {microagents_dir}",
+            'info',
+            f'Attempting to list files in {source_description} microagents directory: {microagents_dir}',
         )
 
         files = self.list_files(str(microagents_dir))
 
         if not files:
             self.log(
-                "debug",
-                f"No files found in {source_description} microagents directory: {microagents_dir}",
+                'debug',
+                f'No files found in {source_description} microagents directory: {microagents_dir}',
             )
             return loaded_microagents
 
         self.log(
-            "info",
-            f"Found {len(files)} files in {source_description} microagents directory",
+            'info',
+            f'Found {len(files)} files in {source_description} microagents directory',
         )
         zip_path = self.copy_from(str(microagents_dir))
         microagent_folder = tempfile.mkdtemp()
 
         try:
-            with ZipFile(zip_path, "r") as zip_file:
+            with ZipFile(zip_path, 'r') as zip_file:
                 zip_file.extractall(microagent_folder)
 
             zip_path.unlink()
             repo_agents, knowledge_agents = load_microagents_from_dir(microagent_folder)
 
             self.log(
-                "info",
-                f"Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}",
+                'info',
+                f'Loaded {len(repo_agents)} repo agents and {len(knowledge_agents)} knowledge agents from {source_description}',
             )
 
             loaded_microagents.extend(repo_agents.values())
             loaded_microagents.extend(knowledge_agents.values())
         except Exception as e:
-            self.log("error", f"Failed to load agents from {source_description}: {e}")
+            self.log('error', f'Failed to load agents from {source_description}: {e}')
         finally:
             shutil.rmtree(microagent_folder)
 
@@ -656,52 +656,52 @@ fi
         loaded_microagents: list[BaseMicroagent] = []
 
         self.log(
-            "debug",
-            f"Starting org-level microagent loading for repository: {selected_repository}",
+            'debug',
+            f'Starting org-level microagent loading for repository: {selected_repository}',
         )
 
-        repo_parts = selected_repository.split("/")
+        repo_parts = selected_repository.split('/')
 
         if len(repo_parts) < 2:
             self.log(
-                "warning",
-                f"Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents",
+                'warning',
+                f'Repository path has insufficient parts ({len(repo_parts)} < 2), skipping org-level microagents',
             )
             return loaded_microagents
 
         # Extract the domain and org/user name
         org_name = repo_parts[-2]
         self.log(
-            "info",
-            f"Extracted org/user name: {org_name}",
+            'info',
+            f'Extracted org/user name: {org_name}',
         )
 
         # Determine if this is a GitLab repository
         is_gitlab = self._is_gitlab_repository(selected_repository)
         self.log(
-            "debug",
-            f"Repository type detection - is_gitlab: {is_gitlab}",
+            'debug',
+            f'Repository type detection - is_gitlab: {is_gitlab}',
         )
 
         # For GitLab, use openhands-config (since .openhands is not a valid repo name)
         # For other providers, use .openhands
         if is_gitlab:
-            org_openhands_repo = f"{org_name}/openhands-config"
+            org_openhands_repo = f'{org_name}/openhands-config'
         else:
-            org_openhands_repo = f"{org_name}/.openhands"
+            org_openhands_repo = f'{org_name}/.openhands'
 
         self.log(
-            "info",
-            f"Checking for org-level microagents at {org_openhands_repo}",
+            'info',
+            f'Checking for org-level microagents at {org_openhands_repo}',
         )
 
         # Try to clone the org-level repo
         try:
             # Create a temporary directory for the org-level repo
-            org_repo_dir = self.workspace_root / f"org_openhands_{org_name}"
+            org_repo_dir = self.workspace_root / f'org_openhands_{org_name}'
             self.log(
-                "debug",
-                f"Creating temporary directory for org repo: {org_repo_dir}",
+                'debug',
+                f'Creating temporary directory for org repo: {org_repo_dir}',
             )
 
             # Get authenticated URL and do a shallow clone (--depth 1) for efficiency
@@ -713,23 +713,23 @@ fi
                 )
             except AuthenticationError as e:
                 self.log(
-                    "debug",
-                    f"org-level microagent directory {org_openhands_repo} not found: {str(e)}",
+                    'debug',
+                    f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
                 )
                 raise
             except Exception as e:
                 self.log(
-                    "debug",
-                    f"Failed to get authenticated URL for {org_openhands_repo}: {str(e)}",
+                    'debug',
+                    f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
                 raise
 
             clone_cmd = (
-                f"GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}"
+                f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
             )
             self.log(
-                "info",
-                "Executing clone command for org-level repo",
+                'info',
+                'Executing clone command for org-level repo',
             )
 
             action = CmdRunAction(command=clone_cmd)
@@ -737,56 +737,56 @@ fi
 
             if isinstance(obs, CmdOutputObservation) and obs.exit_code == 0:
                 self.log(
-                    "info",
-                    f"Successfully cloned org-level microagents from {org_openhands_repo}",
+                    'info',
+                    f'Successfully cloned org-level microagents from {org_openhands_repo}',
                 )
 
                 # Load microagents from the org-level repo
-                org_microagents_dir = org_repo_dir / "microagents"
+                org_microagents_dir = org_repo_dir / 'microagents'
                 self.log(
-                    "info",
-                    f"Looking for microagents in directory: {org_microagents_dir}",
+                    'info',
+                    f'Looking for microagents in directory: {org_microagents_dir}',
                 )
 
                 loaded_microagents = self._load_microagents_from_directory(
-                    org_microagents_dir, "org-level"
+                    org_microagents_dir, 'org-level'
                 )
 
                 self.log(
-                    "info",
-                    f"Loaded {len(loaded_microagents)} microagents from org-level repository {org_openhands_repo}",
+                    'info',
+                    f'Loaded {len(loaded_microagents)} microagents from org-level repository {org_openhands_repo}',
                 )
 
                 # Clean up the org repo directory
-                action = CmdRunAction(f"rm -rf {org_repo_dir}")
+                action = CmdRunAction(f'rm -rf {org_repo_dir}')
                 self.run_action(action)
             else:
                 clone_error_msg = (
                     obs.content
                     if isinstance(obs, CmdOutputObservation)
-                    else "Unknown error"
+                    else 'Unknown error'
                 )
                 exit_code = (
-                    obs.exit_code if isinstance(obs, CmdOutputObservation) else "N/A"
+                    obs.exit_code if isinstance(obs, CmdOutputObservation) else 'N/A'
                 )
                 self.log(
-                    "info",
-                    f"No org-level microagents found at {org_openhands_repo} (exit_code: {exit_code})",
+                    'info',
+                    f'No org-level microagents found at {org_openhands_repo} (exit_code: {exit_code})',
                 )
                 self.log(
-                    "debug",
-                    f"Clone command output: {clone_error_msg}",
+                    'debug',
+                    f'Clone command output: {clone_error_msg}',
                 )
 
         except AuthenticationError as e:
             self.log(
-                "debug",
-                f"org-level microagent directory {org_openhands_repo} not found: {str(e)}",
+                'debug',
+                f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
             )
         except Exception as e:
             self.log(
-                "debug",
-                f"Error loading org-level microagents from {org_openhands_repo}: {str(e)}",
+                'debug',
+                f'Error loading org-level microagents from {org_openhands_repo}: {str(e)}',
             )
 
         return loaded_microagents
@@ -807,7 +807,7 @@ fi
         characters.
         """
         loaded_microagents: list[BaseMicroagent] = []
-        microagents_dir = self.workspace_root / ".openhands" / "microagents"
+        microagents_dir = self.workspace_root / '.openhands' / 'microagents'
         repo_root = None
 
         # Check for user/org level microagents if a repository is selected
@@ -817,34 +817,34 @@ fi
             loaded_microagents.extend(org_microagents)
 
             # Continue with repository-specific microagents
-            repo_root = self.workspace_root / selected_repository.split("/")[-1]
-            microagents_dir = repo_root / ".openhands" / "microagents"
+            repo_root = self.workspace_root / selected_repository.split('/')[-1]
+            microagents_dir = repo_root / '.openhands' / 'microagents'
 
         self.log(
-            "info",
-            f"Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)",
+            'info',
+            f'Selected repo: {selected_repository}, loading microagents from {microagents_dir} (inside runtime)',
         )
 
         # Legacy Repo Instructions
         # Check for legacy .openhands_instructions file
         obs = self.read(
-            FileReadAction(path=str(self.workspace_root / ".openhands_instructions"))
+            FileReadAction(path=str(self.workspace_root / '.openhands_instructions'))
         )
         if isinstance(obs, ErrorObservation) and repo_root is not None:
             # If the instructions file is not found in the workspace root, try to load it from the repo root
             self.log(
-                "debug",
-                f".openhands_instructions not present, trying to load from repository {microagents_dir=}",
+                'debug',
+                f'.openhands_instructions not present, trying to load from repository {microagents_dir=}',
             )
             obs = self.read(
-                FileReadAction(path=str(repo_root / ".openhands_instructions"))
+                FileReadAction(path=str(repo_root / '.openhands_instructions'))
             )
 
         if isinstance(obs, FileReadObservation):
-            self.log("info", "openhands_instructions microagent loaded.")
+            self.log('info', 'openhands_instructions microagent loaded.')
             loaded_microagents.append(
                 BaseMicroagent.load(
-                    path=".openhands_instructions",
+                    path='.openhands_instructions',
                     microagent_dir=None,
                     file_content=obs.content,
                 )
@@ -852,7 +852,7 @@ fi
 
         # Load microagents from directory
         repo_microagents = self._load_microagents_from_directory(
-            microagents_dir, "repository"
+            microagents_dir, 'repository'
         )
         loaded_microagents.extend(repo_microagents)
 
@@ -865,27 +865,27 @@ fi
         """
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
-                return AgentThinkObservation("Your thought has been logged.")
-            return NullObservation("")
+                return AgentThinkObservation('Your thought has been logged.')
+            return NullObservation('')
         if (
-            hasattr(action, "confirmation_state")
+            hasattr(action, 'confirmation_state')
             and action.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
-            return NullObservation("")
+            return NullObservation('')
         action_type = action.action  # type: ignore[attr-defined]
         if action_type not in ACTION_TYPE_TO_CLASS:
-            return ErrorObservation(f"Action {action_type} does not exist.")
+            return ErrorObservation(f'Action {action_type} does not exist.')
         if not hasattr(self, action_type):
             return ErrorObservation(
-                f"Action {action_type} is not supported in the current runtime."
+                f'Action {action_type} is not supported in the current runtime.'
             )
         if (
-            getattr(action, "confirmation_state", None)
+            getattr(action, 'confirmation_state', None)
             == ActionConfirmationStatus.REJECTED
         ):
             return UserRejectObservation(
-                "Action has been rejected by the user! Waiting for further user input."
+                'Action has been rejected by the user! Waiting for further user input.'
             )
         observation = getattr(self, action_type)(action)
         return observation
@@ -894,7 +894,7 @@ fi
     # Context manager
     # ====================================================================
 
-    def __enter__(self) -> "Runtime":
+    def __enter__(self) -> 'Runtime':
         return self
 
     def __exit__(self, exc_type, exc_value, traceback) -> None:
@@ -952,7 +952,7 @@ fi
 
     @abstractmethod
     def copy_to(self, host_src: str, sandbox_dest: str, recursive: bool = False):
-        raise NotImplementedError("This method is not implemented in the base class.")
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
     def list_files(self, path: str | None = None) -> list[str]:
@@ -960,12 +960,12 @@ fi
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-        raise NotImplementedError("This method is not implemented in the base class.")
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     @abstractmethod
     def copy_from(self, path: str) -> Path:
         """Zip all files in the sandbox and return a path in the local filesystem."""
-        raise NotImplementedError("This method is not implemented in the base class.")
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     # ====================================================================
     # Authentication
@@ -985,7 +985,7 @@ fi
 
     @property
     def vscode_url(self) -> str | None:
-        raise NotImplementedError("This method is not implemented in the base class.")
+        raise NotImplementedError('This method is not implemented in the base class.')
 
     @property
     def web_hosts(self) -> dict[str, int]:
@@ -1001,14 +1001,14 @@ fi
         """This function is used by the GitHandler to execute shell commands."""
         obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
         exit_code = 0
-        content = ""
+        content = ''
 
         if isinstance(obs, ErrorObservation):
             exit_code = -1
 
-        if hasattr(obs, "exit_code"):
+        if hasattr(obs, 'exit_code'):
             exit_code = obs.exit_code
-        if hasattr(obs, "content"):
+        if hasattr(obs, 'content'):
             content = obs.content
 
         return CommandResult(content=content, exit_code=exit_code)
@@ -1031,7 +1031,7 @@ fi
 
     @property
     def additional_agent_instructions(self) -> str:
-        return ""
+        return ''
 
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None

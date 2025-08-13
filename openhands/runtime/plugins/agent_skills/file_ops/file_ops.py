@@ -26,15 +26,15 @@ CURRENT_LINE = 1
 WINDOW = 100
 
 # This is also used in unit tests!
-MSG_FILE_UPDATED = "[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]"
-LINTER_ERROR_MSG = "[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n"
+MSG_FILE_UPDATED = '[File updated (edited at line {line_number}). Please review the changes and make sure they are correct (correct indentation, no duplicate lines, etc). Edit the file again if necessary.]'
+LINTER_ERROR_MSG = '[Your proposed edit has introduced new syntax error(s). Please understand the errors and retry your edit command.]\n'
 
 
 # ==================================================================================================
 
 
 def _output_error(error_msg: str) -> bool:
-    print(f"ERROR: {error_msg}")
+    print(f'ERROR: {error_msg}')
     return False
 
 
@@ -42,10 +42,10 @@ def _is_valid_filename(file_name: str) -> bool:
     if not file_name or not isinstance(file_name, str) or not file_name.strip():
         return False
     invalid_chars = '<>:"/\\|?*'
-    if os.name == "nt":  # Windows
+    if os.name == 'nt':  # Windows
         invalid_chars = '<>:"/\\|?*'
-    elif os.name == "posix":  # Unix-like systems
-        invalid_chars = "\0"
+    elif os.name == 'posix':  # Unix-like systems
+        invalid_chars = '\0'
 
     for char in invalid_chars:
         if char in file_name:
@@ -77,7 +77,7 @@ def _check_current_file(file_path: str | None = None) -> bool:
     if not file_path:
         file_path = CURRENT_FILE
     if not file_path or not os.path.isfile(file_path):
-        return _output_error("No file open. Use the open_file function first.")
+        return _output_error('No file open. Use the open_file function first.')
     return True
 
 
@@ -105,8 +105,8 @@ def _lint_file(file_path: str) -> tuple[str | None, int | None]:
         # Linting successful. No issues found.
         return None, None
     first_error_line = lint_error[0].line if len(lint_error) > 0 else None
-    error_text = "ERRORS:\n" + "\n".join(
-        [f"{file_path}:{err.line}:{err.column}: {err.message}" for err in lint_error]
+    error_text = 'ERRORS:\n' + '\n'.join(
+        [f'{file_path}:{err.line}:{err.column}: {err.message}' for err in lint_error]
     )
     return error_text, first_error_line
 
@@ -120,13 +120,13 @@ def _print_window(
 ) -> str:
     global CURRENT_LINE
     if not _check_current_file(file_path) or file_path is None:
-        return ""
+        return ''
     with open(file_path) as file:
         content = file.read()
 
         # Ensure the content ends with a newline character
-        if not content.endswith("\n"):
-            content += "\n"
+        if not content.endswith('\n'):
+            content += '\n'
 
         lines = content.splitlines(True)  # Keep all line ending characters
         total_lines = len(lines)
@@ -149,35 +149,35 @@ def _print_window(
         if end == total_lines:
             start = max(1, end - window + 1)
 
-        output = ""
+        output = ''
 
         # only display this when there's at least one line above
         if start > 1:
-            output += f"({start - 1} more lines above)\n"
+            output += f'({start - 1} more lines above)\n'
         else:
-            output += "(this is the beginning of the file)\n"
+            output += '(this is the beginning of the file)\n'
         for i in range(start, end + 1):
-            _new_line = f"{i}|{lines[i - 1]}"
-            if not _new_line.endswith("\n"):
-                _new_line += "\n"
+            _new_line = f'{i}|{lines[i - 1]}'
+            if not _new_line.endswith('\n'):
+                _new_line += '\n'
             output += _new_line
         if end < total_lines:
-            output += f"({total_lines - end} more lines below)\n"
+            output += f'({total_lines - end} more lines below)\n'
         else:
-            output += "(this is the end of the file)\n"
+            output += '(this is the end of the file)\n'
         output = output.rstrip()
 
         if return_str:
             return output
         else:
             print(output)
-            return ""
+            return ''
 
 
 def _cur_file_header(current_file: str | None, total_lines: int) -> str:
     if not current_file:
-        return ""
-    return f"[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n"
+        return ''
+    return f'[File: {os.path.abspath(current_file)} ({total_lines} lines total)]\n'
 
 
 def open_file(
@@ -199,7 +199,7 @@ def open_file(
     global CURRENT_FILE, CURRENT_LINE, WINDOW
 
     if not os.path.isfile(path):
-        _output_error(f"File {path} not found.")
+        _output_error(f'File {path} not found.')
         return
 
     CURRENT_FILE = os.path.abspath(path)
@@ -207,7 +207,7 @@ def open_file(
         total_lines = max(1, sum(1 for _ in file))
 
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        _output_error(f"Line number must be between 1 and {total_lines}")
+        _output_error(f'Line number must be between 1 and {total_lines}')
         return
     CURRENT_LINE = line_number
 
@@ -223,8 +223,8 @@ def open_file(
         return_str=True,
         ignore_window=False,
     )
-    if output.strip().endswith("more lines below)"):
-        output += "\n[Use `scroll_down` to view the next 100 lines of the file!]"
+    if output.strip().endswith('more lines below)'):
+        output += '\n[Use `scroll_down` to view the next 100 lines of the file!]'
     print(output)
 
 
@@ -241,7 +241,7 @@ def goto_line(line_number: int) -> None:
     with open(str(CURRENT_FILE)) as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
-        _output_error(f"Line number must be between 1 and {total_lines}.")
+        _output_error(f'Line number must be between 1 and {total_lines}.')
         return
 
     CURRENT_LINE = _clamp(line_number, 1, total_lines)
@@ -294,7 +294,7 @@ class LineNumberError(Exception):
     pass
 
 
-def search_dir(search_term: str, dir_path: str = "./") -> None:
+def search_dir(search_term: str, dir_path: str = './') -> None:
     """Searches for search_term in all files in dir. If dir is not provided, searches in the current directory.
 
     Args:
@@ -302,15 +302,15 @@ def search_dir(search_term: str, dir_path: str = "./") -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        _output_error(f"Directory {dir_path} not found")
+        _output_error(f'Directory {dir_path} not found')
         return
     matches = []
     for root, _, files in os.walk(dir_path):
         for file in files:
-            if file.startswith("."):
+            if file.startswith('.'):
                 continue
             file_path = os.path.join(root, file)
-            with open(file_path, "r", errors="ignore") as f:
+            with open(file_path, 'r', errors='ignore') as f:
                 for line_num, line in enumerate(f, 1):
                     if search_term in line:
                         matches.append((file_path, line_num, line.strip()))
@@ -330,7 +330,7 @@ def search_dir(search_term: str, dir_path: str = "./") -> None:
 
     print(f'[Found {num_matches} matches for "{search_term}" in {dir_path}]')
     for file_path, line_num, line in matches:
-        print(f"{file_path} (Line {line_num}): {line}")
+        print(f'{file_path} (Line {line_num}): {line}')
     print(f'[End of matches for "{search_term}" in {dir_path}]')
 
 
@@ -345,10 +345,10 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     if file_path is None:
         file_path = CURRENT_FILE
     if file_path is None:
-        _output_error("No file specified or open. Use the open_file function first.")
+        _output_error('No file specified or open. Use the open_file function first.')
         return
     if not os.path.isfile(file_path):
-        _output_error(f"File {file_path} not found.")
+        _output_error(f'File {file_path} not found.')
         return
 
     matches = []
@@ -360,13 +360,13 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
     if matches:
         print(f'[Found {len(matches)} matches for "{search_term}" in {file_path}]')
         for match in matches:
-            print(f"Line {match[0]}: {match[1]}")
+            print(f'Line {match[0]}: {match[1]}')
         print(f'[End of matches for "{search_term}" in {file_path}]')
     else:
         print(f'[No matches found for "{search_term}" in {file_path}]')
 
 
-def find_file(file_name: str, dir_path: str = "./") -> None:
+def find_file(file_name: str, dir_path: str = './') -> None:
     """Finds all files with the given name in the specified directory.
 
     Args:
@@ -374,7 +374,7 @@ def find_file(file_name: str, dir_path: str = "./") -> None:
         dir_path: str: The path to the directory to search.
     """
     if not os.path.isdir(dir_path):
-        _output_error(f"Directory {dir_path} not found")
+        _output_error(f'Directory {dir_path} not found')
         return
 
     matches = []
@@ -386,18 +386,18 @@ def find_file(file_name: str, dir_path: str = "./") -> None:
     if matches:
         print(f'[Found {len(matches)} matches for "{file_name}" in {dir_path}]')
         for match in matches:
-            print(f"{match}")
+            print(f'{match}')
         print(f'[End of matches for "{file_name}" in {dir_path}]')
     else:
         print(f'[No matches found for "{file_name}" in {dir_path}]')
 
 
 __all__ = [
-    "open_file",
-    "goto_line",
-    "scroll_down",
-    "scroll_up",
-    "search_dir",
-    "search_file",
-    "find_file",
+    'open_file',
+    'goto_line',
+    'scroll_down',
+    'scroll_up',
+    'search_dir',
+    'search_file',
+    'find_file',
 ]

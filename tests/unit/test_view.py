@@ -7,7 +7,7 @@ from openhands.memory.view import View
 
 def test_view_preserves_uncondensed_lists() -> None:
     """Tests that the view preserves event lists that don't contain condensation actions."""
-    events: list[Event] = [MessageAction(content=f"Event {i}") for i in range(5)]
+    events: list[Event] = [MessageAction(content=f'Event {i}') for i in range(5)]
     set_ids(events)
     view = View.from_events(events)
     assert len(view) == 5
@@ -17,7 +17,7 @@ def test_view_preserves_uncondensed_lists() -> None:
 def test_view_forgets_events() -> None:
     """Tests that views drop forgotten events and the condensation actions."""
     events: list[Event] = [
-        *[MessageAction(content=f"Event {i}") for i in range(5)],
+        *[MessageAction(content=f'Event {i}') for i in range(5)],
         CondensationAction(forgotten_event_ids=[0, 1, 2, 3, 4]),
     ]
     set_ids(events)
@@ -30,7 +30,7 @@ def test_view_keeps_non_forgotten_events() -> None:
     """Tests that views keep non-forgotten events."""
     for forgotten_event_id in range(5):
         events: list[Event] = [
-            *[MessageAction(content=f"Event {i}") for i in range(5)],
+            *[MessageAction(content=f'Event {i}') for i in range(5)],
             # Instead of forgetting all events like in
             # `test_view_forgets_events`, in this test we only want to forget
             # one of the events. That way we can check that the rest of the
@@ -50,9 +50,9 @@ def test_view_inserts_summary() -> None:
     """Tests that views insert a summary observation at the specified offset."""
     for offset in range(5):
         events: list[Event] = [
-            *[MessageAction(content=f"Event {i}") for i in range(5)],
+            *[MessageAction(content=f'Event {i}') for i in range(5)],
             CondensationAction(
-                forgotten_event_ids=[], summary="My Summary", summary_offset=offset
+                forgotten_event_ids=[], summary='My Summary', summary_offset=offset
             ),
         ]
         set_ids(events)
@@ -63,29 +63,29 @@ def test_view_inserts_summary() -> None:
             print(index, event.content)
             if index == offset:
                 assert isinstance(event, AgentCondensationObservation)
-                assert event.content == "My Summary"
+                assert event.content == 'My Summary'
 
             # Events before where the summary is inserted will have content
             # matching their index.
             elif index < offset:
                 assert isinstance(event, MessageAction)
-                assert event.content == f"Event {index}"
+                assert event.content == f'Event {index}'
 
             # Events after where the summary is inserted will be offset by one
             # from the original list.
             else:
                 assert isinstance(event, MessageAction)
-                assert event.content == f"Event {index - 1}"
+                assert event.content == f'Event {index - 1}'
 
 
 def test_no_condensation_action_in_view() -> None:
     """Ensure that CondensationAction events are never present in the resulting view."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 0'),
+        MessageAction(content='Event 1'),
         CondensationAction(forgotten_event_ids=[0]),
-        MessageAction(content="Event 2"),
-        MessageAction(content="Event 3"),
+        MessageAction(content='Event 2'),
+        MessageAction(content='Event 3'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -101,10 +101,10 @@ def test_no_condensation_action_in_view() -> None:
 def test_unhandled_condensation_request_with_no_condensation() -> None:
     """Test that unhandled_condensation_request is True when there's a CondensationRequestAction but no CondensationAction."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 0'),
+        MessageAction(content='Event 1'),
         CondensationRequestAction(),
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -121,12 +121,12 @@ def test_unhandled_condensation_request_with_no_condensation() -> None:
 def test_handled_condensation_request_with_condensation_action() -> None:
     """Test that unhandled_condensation_request is False when CondensationAction comes after CondensationRequestAction."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 0'),
+        MessageAction(content='Event 1'),
         CondensationRequestAction(),
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
         CondensationAction(forgotten_event_ids=[0, 1]),  # Handles the request
-        MessageAction(content="Event 3"),
+        MessageAction(content='Event 3'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -144,13 +144,13 @@ def test_handled_condensation_request_with_condensation_action() -> None:
 def test_multiple_condensation_requests_pattern() -> None:
     """Test the pattern with multiple condensation requests and actions."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
+        MessageAction(content='Event 0'),
         CondensationRequestAction(),  # First request
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 1'),
         CondensationAction(forgotten_event_ids=[0]),  # Handles first request
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
         CondensationRequestAction(),  # Second request - should be unhandled
-        MessageAction(content="Event 3"),
+        MessageAction(content='Event 3'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -168,13 +168,13 @@ def test_multiple_condensation_requests_pattern() -> None:
 def test_condensation_action_before_request() -> None:
     """Test that CondensationAction before CondensationRequestAction doesn't affect the unhandled status."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
+        MessageAction(content='Event 0'),
         CondensationAction(
             forgotten_event_ids=[]
         ),  # This doesn't handle the later request
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 1'),
         CondensationRequestAction(),  # This should be unhandled
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -192,9 +192,9 @@ def test_condensation_action_before_request() -> None:
 def test_no_condensation_events() -> None:
     """Test that unhandled_condensation_request is False when there are no condensation events."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
-        MessageAction(content="Event 1"),
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 0'),
+        MessageAction(content='Event 1'),
+        MessageAction(content='Event 2'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -210,10 +210,10 @@ def test_no_condensation_events() -> None:
 def test_only_condensation_action() -> None:
     """Test behavior when there's only a CondensationAction (no request)."""
     events: list[Event] = [
-        MessageAction(content="Event 0"),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 0'),
+        MessageAction(content='Event 1'),
         CondensationAction(forgotten_event_ids=[0]),
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
     ]
     set_ids(events)
     view = View.from_events(events)
@@ -231,9 +231,9 @@ def test_condensation_request_always_removed_from_view() -> None:
     """Test that CondensationRequestAction is always removed from the view regardless of unhandled status."""
     # Test case 1: Unhandled request
     events_unhandled: list[Event] = [
-        MessageAction(content="Event 0"),
+        MessageAction(content='Event 0'),
         CondensationRequestAction(),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 1'),
     ]
     set_ids(events_unhandled)
     view_unhandled = View.from_events(events_unhandled)
@@ -245,11 +245,11 @@ def test_condensation_request_always_removed_from_view() -> None:
 
     # Test case 2: Handled request
     events_handled: list[Event] = [
-        MessageAction(content="Event 0"),
+        MessageAction(content='Event 0'),
         CondensationRequestAction(),
-        MessageAction(content="Event 1"),
+        MessageAction(content='Event 1'),
         CondensationAction(forgotten_event_ids=[]),
-        MessageAction(content="Event 2"),
+        MessageAction(content='Event 2'),
     ]
     set_ids(events_handled)
     view_handled = View.from_events(events_handled)

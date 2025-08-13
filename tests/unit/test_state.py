@@ -9,7 +9,7 @@ from openhands.storage.memory import InMemoryFileStore
 
 def example_event(index: int) -> Event:
     event = Event()
-    event._message = f"Test message {index}"
+    event._message = f'Test message {index}'
     event._id = index
     return event
 
@@ -47,8 +47,8 @@ def test_state_view_cache_not_serialized():
 
     # Serialize the state.
     store = InMemoryFileStore()
-    state.save_to_session("test_sid", store, None)
-    restored_state = State.restore_from_session("test_sid", store, None)
+    state.save_to_session('test_sid', store, None)
+    restored_state = State.restore_from_session('test_sid', store, None)
 
     # The state usually has the history rebuilt from the event stream -- we'll
     # simulate this by manually setting the state history to the same events.
@@ -66,7 +66,7 @@ def test_restore_older_state_version():
     """Test that we can restore from an older state version (before control flags)."""
     # Create a dictionary that mimics the old state format (before control flags)
     state = State(
-        session_id="test_old_session",
+        session_id='test_old_session',
         iteration=42,
         local_iteration=42,
         max_iterations=100,
@@ -81,14 +81,14 @@ def test_restore_older_state_version():
 
     store = InMemoryFileStore()
 
-    with patch.object(State, "__getstate__", no_op_getstate):
-        state.save_to_session("test_old_session", store, None)
+    with patch.object(State, '__getstate__', no_op_getstate):
+        state.save_to_session('test_old_session', store, None)
 
     # Now restore it
-    restored_state = State.restore_from_session("test_old_session", store, None)
+    restored_state = State.restore_from_session('test_old_session', store, None)
 
     # Verify that when we store the active fields are populated with the values from the deprecated fields
-    assert restored_state.session_id == "test_old_session"
+    assert restored_state.session_id == 'test_old_session'
     assert restored_state.agent_state == AgentState.LOADING
     assert restored_state.resume_state == AgentState.RUNNING
     assert restored_state.iteration_flag.current_value == 42
@@ -99,7 +99,7 @@ def test_save_without_deprecated_fields():
     """Test that we can save state without deprecated fields"""
     # Create a dictionary that mimics the old state format (before control flags)
     state = State(
-        session_id="test_old_session",
+        session_id='test_old_session',
         iteration=42,
         local_iteration=42,
         max_iterations=100,
@@ -111,12 +111,12 @@ def test_save_without_deprecated_fields():
 
     store = InMemoryFileStore()
 
-    state.save_to_session("test_state", store, None)
-    restored_state = State.restore_from_session("test_state", store, None)
+    state.save_to_session('test_state', store, None)
+    restored_state = State.restore_from_session('test_state', store, None)
 
     # Verify that when we save and restore, the deprecated fields are removed
     # but the new fields maintain the correct values
-    assert restored_state.session_id == "test_old_session"
+    assert restored_state.session_id == 'test_old_session'
     assert restored_state.agent_state == AgentState.LOADING
     assert restored_state.resume_state == AgentState.RUNNING
     assert (

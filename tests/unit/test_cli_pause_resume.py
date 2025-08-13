@@ -14,8 +14,8 @@ from openhands.events.observation import AgentStateChangedObservation
 
 class TestProcessAgentPause:
     @pytest.mark.asyncio
-    @patch("openhands.cli.tui.create_input")
-    @patch("openhands.cli.tui.print_formatted_text")
+    @patch('openhands.cli.tui.create_input')
+    @patch('openhands.cli.tui.print_formatted_text')
     async def test_process_agent_pause_ctrl_p(self, mock_print, mock_create_input):
         """Test that process_agent_pause sets the done event when Ctrl+P is pressed."""
         # Create the done event
@@ -68,12 +68,12 @@ class TestProcessAgentPause:
 
         # Verify print was called with the pause message
         assert mock_print.call_count == 2
-        assert mock_print.call_args_list[0] == call("")
+        assert mock_print.call_args_list[0] == call('')
 
         # Check that the second call contains the pause message HTML
         second_call = mock_print.call_args_list[1][0][0]
         assert isinstance(second_call, HTML)
-        assert "Pausing the agent" in str(second_call)
+        assert 'Pausing the agent' in str(second_call)
 
         # Cancel the task
         task.cancel()
@@ -98,8 +98,8 @@ class TestCliPauseResumeInRunSession:
 
         # Patch the display_event function
         with (
-            patch("openhands.cli.main.display_event") as mock_display_event,
-            patch("openhands.cli.main.update_usage_metrics") as mock_update_metrics,
+            patch('openhands.cli.main.display_event') as mock_display_event,
+            patch('openhands.cli.main.update_usage_metrics') as mock_update_metrics,
         ):
             # Create a closure to capture the current context
             async def test_func():
@@ -146,7 +146,7 @@ class TestCliPauseResumeInRunSession:
         # Create a mock event with AgentStateChangedObservation
         event = MagicMock()
         event.observation = AgentStateChangedObservation(
-            agent_state=AgentState.AWAITING_USER_INPUT, content="Agent awaiting input"
+            agent_state=AgentState.AWAITING_USER_INPUT, content='Agent awaiting input'
         )
 
         # Create mock dependencies
@@ -193,7 +193,7 @@ class TestCliPauseResumeInRunSession:
         event = MagicMock()
         event.observation = AgentStateChangedObservation(
             agent_state=AgentState.AWAITING_USER_CONFIRMATION,
-            content="Agent awaiting confirmation",
+            content='Agent awaiting confirmation',
         )
 
         # Create mock dependencies
@@ -234,19 +234,19 @@ class TestCliPauseResumeInRunSession:
 
 class TestCliCommandsPauseResume:
     @pytest.mark.asyncio
-    @patch("openhands.cli.commands.handle_resume_command")
+    @patch('openhands.cli.commands.handle_resume_command')
     async def test_handle_commands_resume(self, mock_handle_resume):
         """Test that the handle_commands function properly calls handle_resume_command."""
         # Import here to avoid circular imports in test
         from openhands.cli.commands import handle_commands
 
         # Create mocks
-        message = "/resume"
+        message = '/resume'
         event_stream = MagicMock()
         usage_metrics = MagicMock()
-        sid = "test-session-id"
+        sid = 'test-session-id'
         config = MagicMock()
-        current_dir = "/test/dir"
+        current_dir = '/test/dir'
         settings_store = MagicMock()
         agent_state = AgentState.PAUSED
 
@@ -281,8 +281,8 @@ class TestCliCommandsPauseResume:
 
 class TestAgentStatePauseResume:
     @pytest.mark.asyncio
-    @patch("openhands.cli.main.display_agent_running_message")
-    @patch("openhands.cli.tui.process_agent_pause")
+    @patch('openhands.cli.main.display_agent_running_message')
+    @patch('openhands.cli.tui.process_agent_pause')
     async def test_agent_running_enables_pause(
         self, mock_process_agent_pause, mock_display_message
     ):
@@ -290,7 +290,7 @@ class TestAgentStatePauseResume:
         # Create a mock event and event stream
         event = MagicMock()
         event.observation = AgentStateChangedObservation(
-            agent_state=AgentState.RUNNING, content="Agent is running"
+            agent_state=AgentState.RUNNING, content='Agent is running'
         )
         event_stream = MagicMock()
 
@@ -325,8 +325,8 @@ class TestAgentStatePauseResume:
         await test_func()
 
     @pytest.mark.asyncio
-    @patch("openhands.cli.main.display_event")
-    @patch("openhands.cli.main.update_usage_metrics")
+    @patch('openhands.cli.main.display_event')
+    @patch('openhands.cli.main.update_usage_metrics')
     async def test_pause_event_changes_agent_state(
         self, mock_update_metrics, mock_display_event
     ):
@@ -382,7 +382,7 @@ class TestAgentStatePauseResume:
         event = MagicMock()
         # AgentStateChangedObservation requires a content parameter
         event.observation = AgentStateChangedObservation(
-            agent_state=AgentState.PAUSED, content="Agent state changed to PAUSED"
+            agent_state=AgentState.PAUSED, content='Agent state changed to PAUSED'
         )
         is_paused = asyncio.Event()
 

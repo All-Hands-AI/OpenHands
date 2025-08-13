@@ -29,14 +29,14 @@ class MessageAction(Action):
         self.image_urls = value
 
     def __str__(self) -> str:
-        ret = f"**MessageAction** (source={self.source})\n"
-        ret += f"CONTENT: {self.content}"
+        ret = f'**MessageAction** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
         if self.image_urls:
             for url in self.image_urls:
-                ret += f"\nIMAGE_URL: {url}"
+                ret += f'\nIMAGE_URL: {url}'
         if self.file_urls:
             for url in self.file_urls:
-                ret += f"\nFILE_URL: {url}"
+                ret += f'\nFILE_URL: {url}'
         return ret
 
 
@@ -57,10 +57,10 @@ class SystemMessageAction(Action):
         return self.content
 
     def __str__(self) -> str:
-        ret = f"**SystemMessageAction** (source={self.source})\n"
-        ret += f"CONTENT: {self.content}"
+        ret = f'**SystemMessageAction** (source={self.source})\n'
+        ret += f'CONTENT: {self.content}'
         if self.tools:
-            ret += f"\nTOOLS: {len(self.tools)} tools available"
+            ret += f'\nTOOLS: {len(self.tools)} tools available'
         if self.agent_class:
-            ret += f"\nAGENT_CLASS: {self.agent_class}"
+            ret += f'\nAGENT_CLASS: {self.agent_class}'
         return ret

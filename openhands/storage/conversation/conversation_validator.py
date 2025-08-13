@@ -54,8 +54,8 @@ class ConversationValidator:
             metadata = await conversation_store.get_metadata(conversation_id)
         except FileNotFoundError:
             logger.info(
-                f"Creating new conversation metadata for {conversation_id}",
-                extra={"session_id": conversation_id},
+                f'Creating new conversation metadata for {conversation_id}',
+                extra={'session_id': conversation_id},
             )
             await conversation_store.save_metadata(
                 ConversationMetadata(
@@ -72,8 +72,8 @@ class ConversationValidator:
 
 def create_conversation_validator() -> ConversationValidator:
     conversation_validator_cls = os.environ.get(
-        "OPENHANDS_CONVERSATION_VALIDATOR_CLS",
-        "openhands.storage.conversation.conversation_validator.ConversationValidator",
+        'OPENHANDS_CONVERSATION_VALIDATOR_CLS',
+        'openhands.storage.conversation.conversation_validator.ConversationValidator',
     )
     ConversationValidatorImpl = get_impl(
         ConversationValidator, conversation_validator_cls

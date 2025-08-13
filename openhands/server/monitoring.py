@@ -37,5 +37,5 @@ class MonitoringListener:
     def get_instance(
         cls,
         config: OpenHandsConfig,
-    ) -> "MonitoringListener":
+    ) -> 'MonitoringListener':
         return cls()

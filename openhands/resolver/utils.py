@@ -23,7 +23,7 @@ async def identify_token(token: str, base_domain: str | None) -> ProviderType:
     """
     provider = await validate_provider_token(SecretStr(token), base_domain)
     if not provider:
-        raise ValueError("Token is invalid.")
+        raise ValueError('Token is invalid.')
 
     return provider
 
@@ -35,17 +35,17 @@ def codeact_user_response(
 ) -> str:
     encaps_str = (
         (
-            "Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n"
-            "For example: The answer to the question is <solution> 42 </solution>.\n"
+            'Please encapsulate your final answer (answer ONLY) within <solution> and </solution>.\n'
+            'For example: The answer to the question is <solution> 42 </solution>.\n'
         )
         if encapsulate_solution
-        else ""
+        else ''
     )
     msg = (
-        "Please continue working on the task on whatever approach you think is suitable.\n"
-        "If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n"
-        f"{encaps_str}"
-        "IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n"
+        'Please continue working on the task on whatever approach you think is suitable.\n'
+        'If you think you have solved the task, please first send your answer to user through message and then finish the interaction.\n'
+        f'{encaps_str}'
+        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
     )
 
     if state.history:
@@ -61,27 +61,27 @@ def codeact_user_response(
             )
             ans = try_parse(last_action)
             if ans is not None:
-                return "/exit"
+                return '/exit'
 
         # check if the agent has tried to talk to the user 3 times, if so, let the agent know it can give up
         user_msgs = [
             event
             for event in state.history
-            if isinstance(event, MessageAction) and event.source == "user"
+            if isinstance(event, MessageAction) and event.source == 'user'
         ]
         if len(user_msgs) >= 2:
             # let the agent know that it can give up when it has tried 3 times
             return (
                 msg
-                + "If you want to give up, run: <execute_bash> exit </execute_bash>.\n"
+                + 'If you want to give up, run: <execute_bash> exit </execute_bash>.\n'
             )
     return msg
 
 
 def cleanup() -> None:
-    logger.info("Cleaning up child processes...")
+    logger.info('Cleaning up child processes...')
     for process in mp.active_children():
-        logger.info(f"Terminating child process: {process.name}")
+        logger.info(f'Terminating child process: {process.name}')
         process.terminate()
         process.join()
 
@@ -97,7 +97,7 @@ def reset_logger_for_multiprocessing(
     # Set up logger
     log_file = os.path.join(
         log_dir,
-        f"instance_{instance_id}.log",
+        f'instance_{instance_id}.log',
     )
     # Remove all existing handlers from logger
     for handler in logger.handlers[:]:
@@ -105,7 +105,7 @@ def reset_logger_for_multiprocessing(
     # add back the console handler to print ONE line
     logger.addHandler(get_console_handler())
     logger.info(
-        f"Starting resolver for instance {instance_id}.\n"
+        f'Starting resolver for instance {instance_id}.\n'
         f'Hint: run "tail -f {log_file}" to see live logs in a separate shell'
     )
     # Remove all existing handlers from logger
@@ -114,41 +114,41 @@ def reset_logger_for_multiprocessing(
     os.makedirs(os.path.dirname(log_file), exist_ok=True)
     file_handler = logging.FileHandler(log_file)
     file_handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+        logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
     )
     logger.addHandler(file_handler)
 
 
 def extract_image_urls(issue_body: str) -> list[str]:
     # Regular expression to match Markdown image syntax ![alt text](image_url)
-    image_pattern = r"!\[.*?\]\((https?://[^\s)]+)\)"
+    image_pattern = r'!\[.*?\]\((https?://[^\s)]+)\)'
     return re.findall(image_pattern, issue_body)
 
 
 def extract_issue_references(body: str) -> list[int]:
     # First, remove code blocks as they may contain false positives
-    body = re.sub(r"```.*?```", "", body, flags=re.DOTALL)
+    body = re.sub(r'```.*?```', '', body, flags=re.DOTALL)
 
     # Remove inline code
-    body = re.sub(r"`[^`]*`", "", body)
+    body = re.sub(r'`[^`]*`', '', body)
 
     # Remove URLs that contain hash symbols
-    body = re.sub(r"https?://[^\s)]*#\d+[^\s)]*", "", body)
+    body = re.sub(r'https?://[^\s)]*#\d+[^\s)]*', '', body)
 
     # Now extract issue numbers, making sure they're not part of other text
     # The pattern matches #number that:
     # 1. Is at the start of text or after whitespace/punctuation
     # 2. Is followed by whitespace, punctuation, or end of text
     # 3. Is not part of a URL
-    pattern = r"(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)"
+    pattern = r'(?:^|[\s\[({]|[^\w#])#(\d+)(?=[\s,.\])}]|$)'
     return [int(match) for match in re.findall(pattern, body)]
 
 
 def get_unique_uid(start_uid: int = 1000) -> int:
     existing_uids = set()
-    with open("/etc/passwd", "r") as passwd_file:
+    with open('/etc/passwd', 'r') as passwd_file:
         for line in passwd_file:
-            parts = line.split(":")
+            parts = line.split(':')
             if len(parts) > 2:
                 try:
                     existing_uids.add(int(parts[2]))

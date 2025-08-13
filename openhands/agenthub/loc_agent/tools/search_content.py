@@ -21,25 +21,25 @@ get_entity_contents(['src/my_file.py'])
 """
 
 SearchEntityTool = ChatCompletionToolParam(
-    type="function",
+    type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name="get_entity_contents",
+        name='get_entity_contents',
         description=_SEARCH_ENTITY_DESCRIPTION,
         parameters={
-            "type": "object",
-            "properties": {
-                "entity_names": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": (
-                        "A list of entity names to query. Each entity name can represent a function, class, or file. "
+            'type': 'object',
+            'properties': {
+                'entity_names': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': (
+                        'A list of entity names to query. Each entity name can represent a function, class, or file. '
                         "For functions or classes, the format should be 'file_path:QualifiedName' "
                         "(e.g., 'src/helpers/math_helpers.py:MathUtils.calculate_sum'). "
                         "For files, use just the file path (e.g., 'src/my_file.py')."
                     ),
                 }
             },
-            "required": ["entity_names"],
+            'required': ['entity_names'],
         },
     ),
 )
@@ -63,36 +63,36 @@ search_code_snippets(line_nums=[10, 15], file_path_or_pattern='src/example.py')
 """
 
 SearchRepoTool = ChatCompletionToolParam(
-    type="function",
+    type='function',
     function=ChatCompletionToolParamFunctionChunk(
-        name="search_code_snippets",
+        name='search_code_snippets',
         description=_SEARCH_REPO_DESCRIPTION,
         parameters={
-            "type": "object",
-            "properties": {
-                "search_terms": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "A list of names, keywords, or code snippets to search for within the codebase. "
-                    "This can include potential function names, class names, or general code fragments. "
-                    "Either `search_terms` or `line_nums` must be provided to perform a search.",
+            'type': 'object',
+            'properties': {
+                'search_terms': {
+                    'type': 'array',
+                    'items': {'type': 'string'},
+                    'description': 'A list of names, keywords, or code snippets to search for within the codebase. '
+                    'This can include potential function names, class names, or general code fragments. '
+                    'Either `search_terms` or `line_nums` must be provided to perform a search.',
                 },
-                "line_nums": {
-                    "type": "array",
-                    "items": {"type": "integer"},
-                    "description": "Specific line numbers to locate code snippets within a specified file. "
-                    "Must be used alongside a valid `file_path_or_pattern`. "
-                    "Either `line_nums` or `search_terms` must be provided to perform a search.",
+                'line_nums': {
+                    'type': 'array',
+                    'items': {'type': 'integer'},
+                    'description': 'Specific line numbers to locate code snippets within a specified file. '
+                    'Must be used alongside a valid `file_path_or_pattern`. '
+                    'Either `line_nums` or `search_terms` must be provided to perform a search.',
                 },
-                "file_path_or_pattern": {
-                    "type": "string",
-                    "description": "A glob pattern or specific file path used to filter search results "
+                'file_path_or_pattern': {
+                    'type': 'string',
+                    'description': 'A glob pattern or specific file path used to filter search results '
                     'to particular files or directories. Defaults to "**/*.py", meaning all Python files are searched by default. '
-                    "If `line_nums` are provided, this must specify a specific file path.",
-                    "default": "**/*.py",
+                    'If `line_nums` are provided, this must specify a specific file path.',
+                    'default': '**/*.py',
                 },
             },
-            "required": [],
+            'required': [],
         },
     ),
 )

@@ -13,8 +13,8 @@ class Q20Game:
     def __init__(
         self,
         item: str,
-        answerer_model: str = "gpt-3.5-turbo-0613",
-        guesser_model: str = "gpt-3.5-turbo-0613",
+        answerer_model: str = 'gpt-3.5-turbo-0613',
+        guesser_model: str = 'gpt-3.5-turbo-0613',
         num_turns: int = 20,
         temperature: float = 0.8,
         openai_api: bool = True,
@@ -32,55 +32,55 @@ class Q20Game:
         self.guesser_kargs = guesser_kargs
         self.vicuna_prompt = "A chat between a curious user and an artificial intelligence assistant. The assistant gives helpful, detailed, and polite answers to the user's questions."
         self.first_user_utterance = (
-            "Your task is to ask a series of questions to deduce the entity "
+            'Your task is to ask a series of questions to deduce the entity '
             "that I'm thinking of with as few queries as possible. "
             "Only ask questions that can be answered by 'yes', 'no' or 'maybe'. "
-            "Do not ask for hint. Make your question brief with no linebreaker. "
-            "Now start asking a question."
+            'Do not ask for hint. Make your question brief with no linebreaker. '
+            'Now start asking a question.'
         )
         self.guesser_win = False
         self.curr_turn = 0
         if openai_api_key is not None:
             openai.api_key = openai_api_key
 
-        if isinstance(answerer_model, str) and not answerer_model.startswith("gpt"):
-            self.user_api_base = "http://0.0.0.0:8000/v1"
+        if isinstance(answerer_model, str) and not answerer_model.startswith('gpt'):
+            self.user_api_base = 'http://0.0.0.0:8000/v1'
         else:
-            self.user_api_base = "https://api.openai.com/v1"
+            self.user_api_base = 'https://api.openai.com/v1'
 
-        if isinstance(guesser_model, str) and not guesser_model.startswith("gpt"):
-            self.guesser_api_base = "http://0.0.0.0:8000/v1"
+        if isinstance(guesser_model, str) and not guesser_model.startswith('gpt'):
+            self.guesser_api_base = 'http://0.0.0.0:8000/v1'
         else:
-            self.guesser_api_base = "https://api.openai.com/v1"
+            self.guesser_api_base = 'https://api.openai.com/v1'
 
         self.guesser_messages = []
 
     def preprocess_response(self, response):
-        response = re.sub(r"the entity you are thinking of", "it", response)
-        response = re.sub(r"the entity you're thinking of", "it", response)
-        response = re.sub(r" you're thinking of", "", response)
-        response = re.sub(r" you are thinking of", "", response)
+        response = re.sub(r'the entity you are thinking of', 'it', response)
+        response = re.sub(r"the entity you're thinking of", 'it', response)
+        response = re.sub(r" you're thinking of", '', response)
+        response = re.sub(r' you are thinking of', '', response)
         return response
 
     def judge_winner(self, response):
         guesser_question = response.strip()
 
         if self.curr_turn == self.num_turns - 1:
-            guesser_question += " Is it right?"
+            guesser_question += ' Is it right?'
 
-        self.guesser_messages.append({"role": "assistant", "content": guesser_question})
+        self.guesser_messages.append({'role': 'assistant', 'content': guesser_question})
         # ask for answer
         usr_msg = self.answerer(guesser_question)
 
         self.guesser_messages.append(
-            {"role": "user", "content": f"{usr_msg['content'].strip()}"}
+            {'role': 'user', 'content': f'{usr_msg["content"].strip()}'}
         )
 
-        if "bingo" in usr_msg["content"].lower():
+        if 'bingo' in usr_msg['content'].lower():
             self.guesser_win = True
-            return True, ""
+            return True, ''
 
-        return False, usr_msg["content"].strip()
+        return False, usr_msg['content'].strip()
 
     def generate_user_response(self, response):
         response = self.preprocess_response(response)
@@ -117,16 +117,16 @@ class Q20Game:
         client = OpenAI(api_key=openai.api_key)
         user_messages = [
             {
-                "role": "user",
-                "content": f"Based on your knowledge about {self.item}, "
-                f"respond to the following question or guess. "
+                'role': 'user',
+                'content': f'Based on your knowledge about {self.item}, '
+                f'respond to the following question or guess. '
                 f"Limit your respond to only 'Yes.', 'No.' or 'Maybe.', with no explanation or other words. "
-                f"Never say the answer {self.item} in your response. "
+                f'Never say the answer {self.item} in your response. '
                 f"If the question is to solicit the answer, respond 'No.'.",
             },
             {
-                "role": "user",
-                "content": f"For the entity {self.item}, {question} (Yes/No/Maybe)",
+                'role': 'user',
+                'content': f'For the entity {self.item}, {question} (Yes/No/Maybe)',
             },
         ]
 
@@ -140,11 +140,11 @@ class Q20Game:
         )
         if any(
             [
-                re.search(rf"(?:^|\W){i.strip().lower()}(?:$|\W)", question.lower())
-                for i in self.item.lower().split("|")
+                re.search(rf'(?:^|\W){i.strip().lower()}(?:$|\W)', question.lower())
+                for i in self.item.lower().split('|')
             ]
         ):
-            response.choices[0].message.content = "Bingo!"
+            response.choices[0].message.content = 'Bingo!'
         return response.choices[0].message.to_dict()
 
 
@@ -152,10 +152,10 @@ class Q20GameCelebrity(Q20Game):
     def __init__(self, item: str, **kwargs) -> None:
         super().__init__(item, **kwargs)
         self.first_user_utterance = (
-            "Your task is to ask a series of questions to deduce the celebrity "
+            'Your task is to ask a series of questions to deduce the celebrity '
             "that I'm thinking of with as few queries as possible. "
             "Only ask factual questions that can be answered by 'Yes.', 'No.' or 'Dunno.'. Do not ask for hint. Make your question brief with no linebreaker. "
-            "Now start asking a question."
+            'Now start asking a question.'
         )
 
     @retry(
@@ -177,16 +177,16 @@ class Q20GameCelebrity(Q20Game):
         client = OpenAI(api_key=openai.api_key)
         user_messages = [
             {
-                "role": "system",
-                "content": f"Based on your knowledge about the celebrity: {self.item}, "
-                f"respond to the following question or guess. "
+                'role': 'system',
+                'content': f'Based on your knowledge about the celebrity: {self.item}, '
+                f'respond to the following question or guess. '
                 f"Limit your respond to only 'Yes.', 'No.' or 'Dunno.', with no explanation or other words. "
                 f"Never say the name {self.item} in your response. Do not say 'Dunno.' if it can be answered by 'Yes.' or 'No.' "
                 f"If the question is to solicit the answer, respond 'No.'.",
             },
             {
-                "role": "user",
-                "content": f"For the celebrity {self.item}, {question}(Yes/No/Dunno)",
+                'role': 'user',
+                'content': f'For the celebrity {self.item}, {question}(Yes/No/Dunno)',
             },
         ]
 
@@ -198,6 +198,6 @@ class Q20GameCelebrity(Q20Game):
             stop=None,
             temperature=0.2,
         )
-        if re.search(rf"(?:^|\W){self.item.lower()}(?:$|\W)", question.lower()):
-            response.choices[0].message.content = "Bingo!"
+        if re.search(rf'(?:^|\W){self.item.lower()}(?:$|\W)', question.lower()):
+            response.choices[0].message.content = 'Bingo!'
         return response.choices[0].message.to_dict()
