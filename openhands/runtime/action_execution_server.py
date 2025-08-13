@@ -186,6 +186,13 @@ class ActionExecutor:
         self.user_id = user_id
         self.git_user_name = git_user_name
         self.git_user_email = git_user_email
+
+        # Set git environment variables as fallback
+        os.environ['GIT_AUTHOR_NAME'] = self.git_user_name
+        os.environ['GIT_AUTHOR_EMAIL'] = self.git_user_email
+        os.environ['GIT_COMMITTER_NAME'] = self.git_user_name
+        os.environ['GIT_COMMITTER_EMAIL'] = self.git_user_email
+
         _updated_user_id = init_user_and_working_directory(
             username=username, user_id=self.user_id, initial_cwd=work_dir
         )
@@ -371,13 +378,21 @@ class ActionExecutor:
                 )
                 INIT_COMMANDS.append('export GIT_CONFIG=$(pwd)/.git_config')
         else:
-            # Non-local (implies Linux/macOS)
+            # Non-local (cloud/container) - try global first, fallback to local config
             INIT_COMMANDS.append(
-                f'git config --global user.name "{self.git_user_name}"'
+                f'git config --global user.name "{self.git_user_name}" 2>/dev/null || '
+                f'git config --file ./.git_config user.name "{self.git_user_name}"'
             )
             INIT_COMMANDS.append(
-                f'git config --global user.email "{self.git_user_email}"'
+                f'git config --global user.email "{self.git_user_email}" 2>/dev/null || '
+                f'git config --file ./.git_config user.email "{self.git_user_email}"'
             )
+            # Set GIT_CONFIG as fallback in case global config failed
+            INIT_COMMANDS.append('export GIT_CONFIG=$(pwd)/.git_config')
+
+        # Add verification commands to ensure git config was applied
+        INIT_COMMANDS.append('git config user.name || echo "Git user.name not set"')
+        INIT_COMMANDS.append('git config user.email || echo "Git user.email not set"')
 
         # Determine no-pager command
         if is_windows:
@@ -394,9 +409,28 @@ class ActionExecutor:
             logger.debug(f'Executing init command: {command}')
             obs = await self.run(action)
             assert isinstance(obs, CmdOutputObservation)
-            logger.debug(
-                f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
-            )
+
+            # Enhanced logging for git config commands
+            if 'git config' in command:
+                if obs.exit_code == 0:
+                    logger.info(f'Git config command succeeded: {command}')
+                    if obs.content.strip():
+                        logger.info(f'Git config output: {obs.content.strip()}')
+                else:
+                    logger.error(f'Git config command failed: {command}')
+                    logger.error(f'Git config error output: {obs.content}')
+            else:
+                logger.debug(
+                    f'Init command outputs (exit code: {obs.exit_code}): {obs.content}'
+                )
+
+            # Don't fail initialization if git config verification commands fail
+            if 'git config user.' in command and '||' in command:
+                # This is a verification command, log but don't fail
+                if obs.exit_code != 0:
+                    logger.warning(f'Git config verification failed: {command}')
+                continue
+
             assert obs.exit_code == 0
         logger.debug('Bash init commands completed')
 
@@ -1011,6 +1045,57 @@ if __name__ == '__main__':
         if client is None or not client.initialized:
             return {'status': 'not initialized'}
         return {'status': 'ok'}
+
+    @app.get('/debug/git-config')
+    async def debug_git_config():
+        """Debug endpoint to check current git configuration"""
+        assert client is not None
+        try:
+            # Check current git configuration
+            name_action = CmdRunAction(command='git config user.name')
+            email_action = CmdRunAction(command='git config user.email')
+
+            name_obs = await client.run(name_action)
+            email_obs = await client.run(email_action)
+
+            # Check environment variables
+            env_author_name = os.environ.get('GIT_AUTHOR_NAME', 'NOT SET')
+            env_author_email = os.environ.get('GIT_AUTHOR_EMAIL', 'NOT SET')
+            env_committer_name = os.environ.get('GIT_COMMITTER_NAME', 'NOT SET')
+            env_committer_email = os.environ.get('GIT_COMMITTER_EMAIL', 'NOT SET')
+
+            # Check if GIT_CONFIG is set
+            git_config_env = os.environ.get('GIT_CONFIG', 'NOT SET')
+
+            # Handle both CmdOutputObservation and ErrorObservation
+            name_exit_code = getattr(name_obs, 'exit_code', 1)
+            email_exit_code = getattr(email_obs, 'exit_code', 1)
+            name_content = getattr(name_obs, 'content', 'ERROR')
+            email_content = getattr(email_obs, 'content', 'ERROR')
+
+            return {
+                'current_git_user_name': name_content.strip()
+                if name_exit_code == 0
+                else 'NOT SET',
+                'current_git_user_email': email_content.strip()
+                if email_exit_code == 0
+                else 'NOT SET',
+                'configured_git_user_name': client.git_user_name,
+                'configured_git_user_email': client.git_user_email,
+                'environment_variables': {
+                    'GIT_AUTHOR_NAME': env_author_name,
+                    'GIT_AUTHOR_EMAIL': env_author_email,
+                    'GIT_COMMITTER_NAME': env_committer_name,
+                    'GIT_COMMITTER_EMAIL': env_committer_email,
+                    'GIT_CONFIG': git_config_env,
+                },
+                'git_config_check_exit_codes': {
+                    'name_check': name_exit_code,
+                    'email_check': email_exit_code,
+                },
+            }
+        except Exception as e:
+            return {'error': str(e)}
 
     # ================================
     # VSCode-specific operations

@@ -74,3 +74,23 @@ class TestGitConfig:
             # Empty values should fall back to defaults
             assert config.git_user_name == 'openhands'
             assert config.git_user_email == 'openhands@all-hands.dev'
+
+    def test_git_config_fallback_commands(self):
+        """Test that git config commands include fallback logic for cloud environments."""
+        config = OpenHandsConfig()
+        config.git_user_name = 'Test User'
+        config.git_user_email = 'test@example.com'
+
+        cmd = get_action_execution_server_startup_command(
+            server_port=8000,
+            plugins=[],
+            app_config=config,
+            python_prefix=['python'],
+            python_executable='python',
+        )
+
+        # Check that git config arguments are in the command
+        assert '--git-user-name' in cmd
+        assert 'Test User' in cmd
+        assert '--git-user-email' in cmd
+        assert 'test@example.com' in cmd
