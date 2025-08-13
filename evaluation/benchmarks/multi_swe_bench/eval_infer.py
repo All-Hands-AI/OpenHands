@@ -105,8 +105,7 @@ def process_instance(
     log_dir: str | None = None,
     runtime_failure_count: int = 0,
 ) -> EvalOutput:
-    """
-    Evaluate agent performance on a SWE-bench problem instance.
+    """Evaluate agent performance on a SWE-bench problem instance.
 
     Note that this signature differs from the expected input to `run_evaluation`. Use
     `functools.partial` to provide optional arguments before passing to the evaluation harness.

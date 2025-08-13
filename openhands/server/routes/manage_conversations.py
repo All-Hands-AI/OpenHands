@@ -22,6 +22,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
 )
+from openhands.experiments.experiment_manager import ExperimentConfig
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -71,6 +72,7 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
@@ -624,7 +626,6 @@ async def update_conversation(
     Raises:
         HTTPException: If conversation is not found or user lacks permission
     """
-
     logger.info(
         f'Updating conversation {conversation_id} with title: {data.title}',
         extra={'session_id': conversation_id, 'user_id': user_id},
@@ -707,3 +708,28 @@ async def update_conversation(
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.post('/conversations/{conversation_id}/exp-config')
+def add_experiment_config_for_conversation(
+    conversation_id: str, exp_config: ExperimentConfig
+) -> bool:
+    exp_config_filepath = get_experiment_config_filename(conversation_id)
+    exists = False
+    try:
+        file_store.read(exp_config_filepath)
+        exists = True
+    except FileNotFoundError:
+        pass
+
+    # Don't modify again if it already exists
+    if exists:
+        return False
+
+    try:
+        file_store.write(exp_config_filepath, exp_config.model_dump_json())
+    except Exception as e:
+        logger.info(f'Failed to write experiment config for {conversation_id}: {e}')
+        return True
+
+    return False

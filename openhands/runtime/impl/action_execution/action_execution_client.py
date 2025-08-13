@@ -138,7 +138,6 @@ class ActionExecutionClient(Runtime):
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-
         try:
             data = {}
             if path is not None:

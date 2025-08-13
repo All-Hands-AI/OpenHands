@@ -142,7 +142,6 @@ class AgentController:
             status_callback: Optional callback function to handle status updates.
             replay_events: A list of logs to replay.
         """
-
         self.id = sid or event_stream.sid
         self.user_id = user_id
         self.file_store = file_store
