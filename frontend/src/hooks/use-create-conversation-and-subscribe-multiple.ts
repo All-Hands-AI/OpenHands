@@ -80,7 +80,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         // Conversation is ready - subscribe to WebSocket
         subscribeToConversation({
           conversationId,
-          sessionApiKey: sessionApiKey,
+          sessionApiKey,
           providersSet: providers,
           baseUrl,
           onEvent: conversationData.onEventCallback,
