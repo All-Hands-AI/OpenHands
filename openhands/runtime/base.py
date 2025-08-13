@@ -907,6 +907,59 @@ fi
     async def connect(self) -> None:
         pass
 
+    def setup_git_config(
+        self,
+        git_user_name: str = 'openhands',
+        git_user_email: str = 'openhands@all-hands.dev',
+    ) -> None:
+        """Configure git user settings after runtime connection.
+        
+        This method should be called after the runtime is connected to ensure
+        git configuration is applied to the active runtime environment.
+        
+        Args:
+            git_user_name: Git user name for commits
+            git_user_email: Git user email for commits
+        """
+        import sys
+        
+        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
+        is_windows = sys.platform == 'win32'
+        
+        commands = []
+        
+        if is_local_runtime:
+            if is_windows:
+                # Windows, local - use file-based config
+                commands.extend([
+                    f'git config --file ./.git_config user.name "{git_user_name}"',
+                    f'git config --file ./.git_config user.email "{git_user_email}"',
+                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
+                ])
+            else:
+                # Unix, local - use file-based config
+                commands.extend([
+                    f'git config --file ./.git_config user.name "{git_user_name}"',
+                    f'git config --file ./.git_config user.email "{git_user_email}"',
+                    'export GIT_CONFIG=$(pwd)/.git_config'
+                ])
+        else:
+            # Non-local (remote/container) - use global config
+            commands.extend([
+                f'git config --global user.name "{git_user_name}"',
+                f'git config --global user.email "{git_user_email}"'
+            ])
+        
+        # Execute git configuration commands
+        for cmd in commands:
+            try:
+                action = CmdRunAction(command=cmd)
+                obs = self.run(action)
+                if obs.exit_code != 0:
+                    logger.warning(f'Git config command failed: {cmd}, error: {obs.content}')
+            except Exception as e:
+                logger.warning(f'Failed to execute git config command: {cmd}, error: {e}')
+
     @abstractmethod
     def get_mcp_config(
         self, extra_stdio_servers: list[MCPStdioServerConfig] | None = None

@@ -189,6 +189,12 @@ class CLIRuntime(Runtime):
         self._runtime_initialized = True
         self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
+        
+        # Configure git settings after runtime connection
+        self.setup_git_config(
+            git_user_name=self.config.git_user_name,
+            git_user_email=self.config.git_user_email,
+        )
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:
         """

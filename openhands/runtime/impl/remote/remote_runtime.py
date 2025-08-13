@@ -127,6 +127,12 @@ class RemoteRuntime(ActionExecutionClient):
             raise
         await call_sync_from_async(self.setup_initial_env)
         self._runtime_initialized = True
+        
+        # Configure git settings after runtime connection
+        self.setup_git_config(
+            git_user_name=self.config.git_user_name,
+            git_user_email=self.config.git_user_email,
+        )
 
     def _start_or_attach_to_runtime(self) -> None:
         self.log('info', 'Starting or attaching to runtime')
