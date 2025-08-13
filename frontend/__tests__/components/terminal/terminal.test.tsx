@@ -4,9 +4,8 @@ import { vi, describe, afterEach, it, expect } from "vitest";
 import { Command, appendInput, appendOutput } from "#/state/command-slice";
 import Terminal from "#/components/features/terminal/terminal";
 
-const onClose = vi.fn();
 const renderTerminal = (commands: Command[] = []) =>
-  renderWithProviders(<Terminal onClose={onClose} />, {
+  renderWithProviders(<Terminal />, {
     preloadedState: {
       cmd: {
         commands,
@@ -122,7 +121,7 @@ describe.skip("Terminal", () => {
 
   // This test fails because it expects `disposeMock` to have been called before the component is unmounted.
   it.skip("should dispose the terminal on unmount", () => {
-    const { unmount } = renderWithProviders(<Terminal onClose={onClose} />);
+    const { unmount } = renderWithProviders(<Terminal />);
 
     expect(mockTerminal.dispose).not.toHaveBeenCalled();
 
