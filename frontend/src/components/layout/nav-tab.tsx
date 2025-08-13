@@ -10,6 +10,8 @@ interface NavTabProps {
   isBeta?: boolean;
   isLoading?: boolean;
   rightContent?: React.ReactNode;
+  onClick?(): void;
+  isActive?: boolean;
 }
 
 export function NavTab({
@@ -19,12 +21,21 @@ export function NavTab({
   isBeta,
   isLoading,
   rightContent,
+  isActive: isTabActive,
+  onClick,
 }: NavTabProps) {
   return (
     <NavLink
       end
       key={to}
       to={to}
+      onClick={(e) => {
+        if (onClick) {
+          e.preventDefault();
+
+          onClick();
+        }
+      }}
       className={cn(
         "px-2 border-b border-r border-neutral-600 bg-base-secondary flex-1",
         "first-of-type:rounded-tl-xl last-of-type:rounded-tr-xl last-of-type:border-r-0",
@@ -34,7 +45,9 @@ export function NavTab({
       {({ isActive }) => (
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-1 min-w-0">
-            <div className={cn(isActive && "text-logo")}>{icon}</div>
+            <div className={cn((isActive || isTabActive) && "text-logo")}>
+              {icon}
+            </div>
             <span className="truncate">{label}</span>
             {isBeta && <BetaBadge />}
           </div>

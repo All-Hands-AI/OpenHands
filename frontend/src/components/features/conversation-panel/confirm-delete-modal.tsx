@@ -39,7 +39,7 @@ export function ConfirmDeleteModal({
             className="w-full"
             data-testid="confirm-button"
           >
-            {t(I18nKey.ACTION$CONFIRM)}
+            {t(I18nKey.ACTION$CONFIRM_DELETE)}
           </BrandButton>
           <BrandButton
             type="button"

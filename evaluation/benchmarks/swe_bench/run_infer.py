@@ -43,8 +43,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.config.condenser_config import NoOpCondenserConfig
 from openhands.core.config.utils import get_condenser_config_arg
@@ -109,9 +109,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     if mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
-        if 'claude' in llm_model:
-            template_name = 'swe_default.j2'
-        elif 'gpt-4.1' in llm_model:
+        if 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
             template_name = (
@@ -732,7 +730,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,

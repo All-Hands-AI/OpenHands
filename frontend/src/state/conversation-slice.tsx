@@ -5,6 +5,7 @@ export const conversationSlice = createSlice({
   initialState: {
     isRightPanelShown: true as boolean,
     shouldShownAgentLoading: false as boolean,
+    messageToSend: null as string | null,
   },
   reducers: {
     setIsRightPanelShown: (state, action) => {
@@ -13,10 +14,16 @@ export const conversationSlice = createSlice({
     setShouldShownAgentLoading: (state, action) => {
       state.shouldShownAgentLoading = action.payload;
     },
+    setMessageToSend: (state, action) => {
+      state.messageToSend = action.payload;
+    },
   },
 });
 
-export const { setIsRightPanelShown, setShouldShownAgentLoading } =
-  conversationSlice.actions;
+export const {
+  setIsRightPanelShown,
+  setShouldShownAgentLoading,
+  setMessageToSend,
+} = conversationSlice.actions;
 
 export default conversationSlice.reducer;

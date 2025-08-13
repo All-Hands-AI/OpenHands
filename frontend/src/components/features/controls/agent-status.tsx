@@ -12,6 +12,7 @@ import { ChatResumeAgentButton } from "../chat/chat-play-button";
 import { cn } from "#/utils/utils";
 import { AgentLoading } from "./agent-loading";
 import { setShouldShownAgentLoading } from "#/state/conversation-slice";
+import CircleErrorIcon from "#/icons/circle-error.svg?react";
 
 export interface AgentStatusProps {
   className?: string;
@@ -44,6 +45,10 @@ export function AgentStatus({
     curAgentState === AgentState.LOADING ||
     webSocketStatus === "CONNECTING";
 
+  const shouldShownAgentError =
+    curAgentState === AgentState.ERROR ||
+    curAgentState === AgentState.RATE_LIMITED;
+
   const shouldShownAgentStop = curAgentState === AgentState.RUNNING;
 
   const shouldShownAgentResume = curAgentState === AgentState.STOPPED;
@@ -70,9 +75,11 @@ export function AgentStatus({
         {shouldShownAgentResume && (
           <ChatResumeAgentButton onAgentResumed={handleResumeAgent} />
         )}
+        {shouldShownAgentError && <CircleErrorIcon className="w-4 h-4" />}
         {!shouldShownAgentLoading &&
           !shouldShownAgentStop &&
-          !shouldShownAgentResume && <ClockIcon className="w-4 h-4" />}
+          !shouldShownAgentResume &&
+          !shouldShownAgentError && <ClockIcon className="w-4 h-4" />}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from openhands.cli.commands import handle_commands
+from openhands.core.schema import AgentState
 from openhands.core.schema.exit_reason import ExitReason
 
 
@@ -51,6 +52,7 @@ async def test_handle_exit_command_returns_intentional(monkeypatch):
         MagicMock(),
         '/tmp/test',
         MagicMock(),
+        AgentState.RUNNING,
     )
 
     assert exit_reason == ExitReason.INTENTIONAL
