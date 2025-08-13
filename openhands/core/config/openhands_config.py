@@ -73,6 +73,7 @@ class OpenHandsConfig(BaseModel):
     file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
+    file_store_web_hook_batch: bool = Field(default=False)
     enable_browser: bool = Field(default=True)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)

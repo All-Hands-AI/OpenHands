@@ -1,4 +1,5 @@
 import asyncio
+import copy
 import functools
 import os
 import re
@@ -94,6 +95,9 @@ def get_config(
         agent_config.enable_prompt_extensions = False
         agent_config.model_routing = model_routing_config
 
+    config_copy = copy.deepcopy(config)
+    load_from_toml(config_copy)
+    config.search_api_key = config_copy.search_api_key
     return config
 
 
