@@ -156,9 +156,6 @@ class CLIRuntime(Runtime):
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
 
-        # Initialize git wrapper path
-        self._git_wrapper_path: str | None = None
-
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
