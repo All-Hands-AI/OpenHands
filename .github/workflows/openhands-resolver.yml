@@ -24,7 +24,7 @@ on:
       LLM_MODEL:
         required: false
         type: string
-        default: "litellm_proxy/neulab/claude-sonnet-4-20250514"
+        default: "anthropic/claude-sonnet-4-20250514"
       LLM_API_VERSION:
         required: false
         type: string
@@ -102,7 +102,7 @@ jobs:
           OPENHANDS_VERSION=$(head -n 1 openhands_versions.txt | awk '{print $2}' | tr -d '()')
 
           # Create a new requirements.txt locally within the workflow, ensuring no reference to the repo's file
-          echo "git+https://github.com/JiseungHong/OpenHands.git@refactor/abstract-sending-pr" > /tmp/requirements.txt
+          echo "openhands-ai==${OPENHANDS_VERSION}" > /tmp/requirements.txt
           cat /tmp/requirements.txt
 
       - name: Cache pip dependencies
@@ -233,7 +233,7 @@ jobs:
             if (isExperimentalLabel || isIssueCommentExperimental || isReviewCommentExperimental) {
               console.log("Installing experimental OpenHands...");
 
-              await exec.exec("pip install git+https://github.com/JiseungHong/OpenHands.git@refactor/abstract-sending-pr");
+              await exec.exec("pip install git+https://github.com/all-hands-ai/openhands.git");
             } else {
               console.log("Installing from requirements.txt...");
 
