@@ -186,6 +186,50 @@ def save_settings_confirmation(config: OpenHandsConfig) -> bool:
     )
 
 
+def _get_current_values_for_modification_basic(
+    config: OpenHandsConfig,
+) -> tuple[str, str, str]:
+    llm_config = config.get_llm_config()
+    current_provider = ''
+    current_model = ''
+    current_api_key = (
+        llm_config.api_key.get_secret_value() if llm_config.api_key else ''
+    )
+    if llm_config.model:
+        model_info = extract_model_and_provider(llm_config.model)
+        current_provider = model_info.provider or ''
+        current_model = model_info.model or ''
+    return current_provider, current_model, current_api_key
+
+
+def _get_default_provider(provider_list: list[str]) -> str:
+    if 'anthropic' in provider_list:
+        return 'anthropic'
+    else:
+        return provider_list[0] if provider_list else ''
+
+
+def _get_initial_provider_index(
+    verified_providers: list[str],
+    current_provider: str,
+    default_provider: str,
+    provider_choices: list[str],
+) -> int:
+    if (current_provider or default_provider) in verified_providers:
+        return verified_providers.index(current_provider or default_provider)
+    elif current_provider or default_provider:
+        return len(provider_choices) - 1
+    return 0
+
+
+def _get_initial_model_index(
+    verified_models: list[str], current_model: str, default_model: str
+) -> int:
+    if (current_model or default_model) in verified_models:
+        return verified_models.index(current_model or default_model)
+    return 0
+
+
 async def modify_llm_settings_basic(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
@@ -200,25 +244,11 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Get current configuration
-    llm_config = config.get_llm_config()
-    current_provider = ''
-    current_model = ''
-    current_api_key = (
-        llm_config.api_key.get_secret_value() if llm_config.api_key else ''
+    current_provider, current_model, current_api_key = (
+        _get_current_values_for_modification_basic(config)
     )
 
-    # Parse provider from current model
-    if llm_config.model:
-        model_info = extract_model_and_provider(llm_config.model)
-        current_provider = model_info.provider or ''
-        current_model = model_info.model or ''
-
-    default_provider = ''
-    if 'anthropic' in provider_list:
-        default_provider = 'anthropic'
-    else:
-        default_provider = provider_list[0] if provider_list else ''
+    default_provider = _get_default_provider(provider_list)
 
     provider = None
     model = None
@@ -233,20 +263,13 @@ async def modify_llm_settings_basic(
         # Show verified providers plus "Select another provider" option
         provider_choices = verified_providers + ['Select another provider']
 
-        # Find current provider position in choices
-        initial_provider_index = 0
-        if (current_provider or default_provider) in verified_providers:
-            initial_provider_index = verified_providers.index(
-                current_provider or default_provider
-            )
-        elif current_provider or default_provider:
-            initial_provider_index = len(provider_choices) - 1
-
         provider_choice = cli_confirm(
             config,
             '(Step 1/3) Select LLM Provider:',
             provider_choices,
-            initial_selection=initial_provider_index,
+            initial_selection=_get_initial_provider_index(
+                verified_providers, current_provider, default_provider, provider_choices
+            ),
         )
 
         # Ensure provider_choice is an integer (for test compatibility)
@@ -336,13 +359,6 @@ async def modify_llm_settings_basic(
             # Create a list of models for the cli_confirm function
             model_choices = VERIFIED_OPENHANDS_MODELS
 
-            # Find current model position in choices
-            initial_model_index = 0
-            if (current_model or default_model) in VERIFIED_OPENHANDS_MODELS:
-                initial_model_index = VERIFIED_OPENHANDS_MODELS.index(
-                    current_model or default_model
-                )
-
             model_choice = cli_confirm(
                 config,
                 (
@@ -350,7 +366,9 @@ async def modify_llm_settings_basic(
                     + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
                 ),
                 model_choices,
-                initial_selection=initial_model_index,
+                initial_selection=_get_initial_model_index(
+                    VERIFIED_OPENHANDS_MODELS, current_model, default_model
+                ),
             )
 
             # Get the selected model from the list
