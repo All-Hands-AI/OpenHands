@@ -253,8 +253,8 @@ class CLIRuntime(Runtime):
                 logger.warning('[CLIRuntime] Could not find git executable')
                 return
 
-            # Create a bin directory in the workspace for our git wrapper
-            bin_dir = os.path.join(self._workspace_path, '.openhands_bin')
+            # Create a bin directory in user's home for our git wrapper
+            bin_dir = os.path.expanduser('~/.openhands/bin')
             os.makedirs(bin_dir, exist_ok=True)
 
             # Create a modified wrapper that calls the real git with full path
@@ -279,7 +279,7 @@ class CLIRuntime(Runtime):
             os.environ['PATH'] = new_path
 
             logger.info(
-                '[CLIRuntime] Set up OpenHands git wrapper in PATH for co-authorship'
+                f'[CLIRuntime] Set up OpenHands git wrapper at {git_wrapper_dest} for co-authorship'
             )
 
         except Exception as e:

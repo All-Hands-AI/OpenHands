@@ -954,9 +954,9 @@ def test_git_co_authorship_wrapper_always_enabled(temp_dir, runtime_cls):
         assert obs.exit_code == 0
 
         # The git wrapper should have been set up during runtime initialization
-        # Check if the wrapper exists in the bin directory
+        # Check if the wrapper exists in the user's bin directory
         obs = _run_cmd_action(
-            runtime, 'test -x .openhands_bin/git && echo "wrapper exists"'
+            runtime, 'test -x ~/.openhands/bin/git && echo "wrapper exists"'
         )
         assert obs.exit_code == 0
         assert 'wrapper exists' in obs.content
