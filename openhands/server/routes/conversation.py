@@ -114,7 +114,6 @@ async def search_events(
     user_id: str | None = Depends(get_user_id),
 ):
     """Search through the event stream with filtering and pagination.
-
     Args:
         conversation_id: The conversation ID
         start_id: Starting ID in the event stream. Defaults to 0
@@ -124,7 +123,6 @@ async def search_events(
         limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20
         metadata: Conversation metadata (injected by dependency)
         user_id: User ID (injected by dependency)
-
     Returns:
         dict: Dictionary containing:
             - events: List of matching events

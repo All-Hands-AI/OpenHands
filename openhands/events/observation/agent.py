@@ -46,7 +46,8 @@ class AgentThinkObservation(Observation):
 
 @dataclass
 class MicroagentKnowledge:
-    """Represents knowledge from a triggered microagent.
+    """
+    Represents knowledge from a triggered microagent.
 
     Attributes:
         name: The name of the microagent that was triggered

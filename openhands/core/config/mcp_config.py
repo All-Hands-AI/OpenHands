@@ -345,6 +345,7 @@ class OpenHandsMCPConfig:
         Returns:
             tuple[MCPSHTTPServerConfig | None, list[MCPStdioServerConfig]]: A tuple containing the default SHTTP server configuration (or None) and a list of MCP stdio server configurations
         """
+
         stdio_servers = []
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:

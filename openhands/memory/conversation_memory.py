@@ -87,6 +87,7 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
+
         events = condensed_history
 
         # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')

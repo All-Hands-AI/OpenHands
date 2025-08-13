@@ -9,7 +9,9 @@ from openhands.events.event_filter import EventFilter
 
 
 class EventStoreABC:
-    """A stored list of events backing a conversation"""
+    """
+    A stored list of events backing a conversation
+    """
 
     sid: str
     user_id: str | None
@@ -23,7 +25,8 @@ class EventStoreABC:
         filter: EventFilter | None = None,
         limit: int | None = None,
     ) -> Iterable[Event]:
-        """Retrieve events from the event stream, optionally excluding events using a filter
+        """
+        Retrieve events from the event stream, optionally excluding events using a filter
 
         Args:
             start_id: The ID of the first event to retrieve. Defaults to 0.

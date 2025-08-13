@@ -13,7 +13,9 @@ from openhands.events.serialization.event import event_from_dict
 
 @dataclass
 class NestedEventStore(EventStoreABC):
-    """A stored list of events backing a conversation"""
+    """
+    A stored list of events backing a conversation
+    """
 
     base_url: str
     sid: str

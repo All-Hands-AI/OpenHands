@@ -181,7 +181,9 @@ def distinct_methods_stats(tree, num_lines):
 
 
 def loops_stats(tree, num_lines):
-    """Calculate the average number of loops."""
+    """
+    Calculate the average number of loops.
+    """
     total_loops = 0
 
     def traverse(node):
@@ -197,7 +199,9 @@ def loops_stats(tree, num_lines):
 
 
 def branches_stats(tree, num_lines):
-    """Calculate the average number of branches (conditional statements)."""
+    """
+    Calculate the average number of branches (conditional statements).
+    """
     total_branches = 0
 
     def traverse(node):

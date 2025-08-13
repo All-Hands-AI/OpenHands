@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Get git changes in the current working directory relative to the remote origin if possible.
+"""
+Get git changes in the current working directory relative to the remote origin if possible.
 NOTE: Since this is run as a script, there should be no imports from project files!
 """
 

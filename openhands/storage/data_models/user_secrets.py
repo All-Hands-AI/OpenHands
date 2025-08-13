@@ -140,10 +140,12 @@ class UserSecrets(BaseModel):
         return new_data
 
     def set_event_stream_secrets(self, event_stream: EventStream) -> None:
-        """This ensures that provider tokens and custom secrets masked from the event stream
+        """
+        This ensures that provider tokens and custom secrets masked from the event stream
         Args:
             event_stream: Agent session's event stream
         """
+
         secrets = self.get_env_vars()
         event_stream.set_secrets(secrets)
 

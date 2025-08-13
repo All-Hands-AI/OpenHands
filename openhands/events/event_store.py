@@ -42,7 +42,9 @@ _DUMMY_PAGE = _CachePage(None, 1, -1)
 
 @dataclass
 class EventStore(EventStoreABC):
-    """A stored list of events backing a conversation"""
+    """
+    A stored list of events backing a conversation
+    """
 
     sid: str
     file_store: FileStore
@@ -90,7 +92,8 @@ class EventStore(EventStoreABC):
         filter: EventFilter | None = None,
         limit: int | None = None,
     ) -> Iterable[Event]:
-        """Retrieve events from the event stream, optionally filtering out events of a given type
+        """
+        Retrieve events from the event stream, optionally filtering out events of a given type
         and events marked as hidden.
 
         Args:
@@ -102,6 +105,7 @@ class EventStore(EventStoreABC):
         Yields:
             Events from the stream that match the criteria.
         """
+
         if end_id is None:
             end_id = self.cur_id
         else:

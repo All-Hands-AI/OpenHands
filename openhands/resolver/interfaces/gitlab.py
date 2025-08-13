@@ -86,6 +86,7 @@ class GitlabIssueHandler(IssueHandlerInterface):
         Returns:
             List of Gitlab issues.
         """
+
         if not issue_numbers:
             raise ValueError('Unspecified issue number')
 

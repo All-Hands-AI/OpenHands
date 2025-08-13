@@ -1,4 +1,6 @@
-"""CLI Runtime implementation for OpenHands."""
+"""
+CLI Runtime implementation for OpenHands.
+"""
 
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 

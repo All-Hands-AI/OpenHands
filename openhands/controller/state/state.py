@@ -46,7 +46,8 @@ class TrafficControlState(str, Enum):
 
 @dataclass
 class State:
-    """Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
+    """
+    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)
@@ -142,7 +143,10 @@ class State:
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
     ) -> 'State':
-        """Restores the state from the previously saved session."""
+        """
+        Restores the state from the previously saved session.
+        """
+
         state: State
         try:
             encoded = file_store.read(

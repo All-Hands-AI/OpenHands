@@ -10,7 +10,8 @@ from openhands.integrations.provider import ProviderType
 async def validate_provider_token(
     token: SecretStr, base_domain: str | None = None
 ) -> ProviderType | None:
-    """Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
+    """
+    Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
     from the services.
 
     Args:

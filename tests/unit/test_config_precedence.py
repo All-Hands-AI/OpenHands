@@ -314,6 +314,7 @@ def test_cli_settings_json_not_override_config_toml(
 
 def test_default_values_applied_when_none():
     """Test that default values are applied when config values are None."""
+
     # Create mock args with None values for agent_cls and max_iterations
     mock_args = MagicMock()
     mock_args.config_file = None
@@ -335,6 +336,7 @@ def test_default_values_applied_when_none():
 
 def test_cli_args_override_defaults():
     """Test that CLI arguments override default values."""
+
     # Create mock args with custom values
     mock_args = MagicMock()
     mock_args.config_file = None
@@ -356,6 +358,7 @@ def test_cli_args_override_defaults():
 
 def test_cli_args_none_uses_config_toml_values():
     """Test that when CLI args agent_cls and max_iterations are None, config.toml values are used."""
+
     # Create mock args with None values for agent_cls and max_iterations
     mock_args = MagicMock()
     mock_args.config_file = None

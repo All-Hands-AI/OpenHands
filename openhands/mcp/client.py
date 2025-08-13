@@ -21,7 +21,9 @@ from openhands.mcp.tool import MCPClientTool
 
 
 class MCPClient(BaseModel):
-    """A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol."""
+    """
+    A collection of tools that connects to an MCP server and manages available tools through the Model Context Protocol.
+    """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 

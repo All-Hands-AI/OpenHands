@@ -73,6 +73,7 @@ def test_client():
 @pytest.mark.asyncio
 async def test_settings_api_endpoints(test_client):
     """Test that the settings API endpoints work with the new auth system"""
+
     # Test data with remote_runtime_resource_factor
     settings_data = {
         'language': 'en',

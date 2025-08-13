@@ -9,6 +9,7 @@ from openhands.utils.prompt import PromptManager
 
 def test_empty_image_url_handling():
     """Test that empty image URLs are properly filtered out and notification text is added."""
+
     # Create a browser observation with empty screenshot and set_of_marks
     browser_obs = BrowserOutputObservation(
         url='https://example.com',
@@ -69,6 +70,7 @@ def test_empty_image_url_handling():
 
 def test_valid_image_url_handling():
     """Test that valid image URLs are properly handled."""
+
     # Create a browser observation with valid base64 image data
     valid_base64_image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 
@@ -117,6 +119,7 @@ def test_valid_image_url_handling():
 
 def test_mixed_image_url_handling():
     """Test handling of mixed valid and invalid image URLs."""
+
     # Create a browser observation with one empty and one valid image
     valid_base64_image = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
 

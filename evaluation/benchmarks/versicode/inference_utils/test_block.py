@@ -1,4 +1,6 @@
-"""block completion"""
+"""
+block completion
+"""
 
 import copy
 import gc
@@ -77,7 +79,8 @@ def run_inference(model_name, origin_data_list):
 
 
 def bulid_prompt(version, description) -> str:
-    """Build prompt
+    """
+    build prompt
     :param version:
     :param description:
     :param masked_code:

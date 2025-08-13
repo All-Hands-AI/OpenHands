@@ -238,6 +238,7 @@ async def test_store_provider_tokens_new_tokens(test_client, file_secrets_store)
 @pytest.mark.asyncio
 async def test_store_provider_tokens_update_existing(test_client, file_secrets_store):
     """Test store_provider_tokens updates existing tokens."""
+
     # Create existing settings with a GitHub token
     github_token = ProviderToken(token=SecretStr('old-token'))
     provider_tokens = {ProviderType.GITHUB: github_token}
@@ -265,6 +266,7 @@ async def test_store_provider_tokens_update_existing(test_client, file_secrets_s
 @pytest.mark.asyncio
 async def test_store_provider_tokens_keep_existing(test_client, file_secrets_store):
     """Test store_provider_tokens keeps existing tokens when empty string provided."""
+
     # Create existing secrets with a GitHub token
     github_token = ProviderToken(token=SecretStr('existing-token'))
     provider_tokens = {ProviderType.GITHUB: github_token}

@@ -5,6 +5,7 @@ import warnings
 
 def suppress_cli_warnings():
     """Suppress common warnings that appear during CLI usage."""
+
     # Suppress pydub warning about ffmpeg/avconv
     warnings.filterwarnings(
         'ignore',

@@ -1,4 +1,6 @@
-"""code migration"""
+"""
+code migration
+"""
 
 import copy
 import gc
@@ -79,7 +81,8 @@ def run_inference(model_name, origin_data_list):
 
 
 def bulid_prompt(description, old_version, old_code, new_version) -> str:
-    """Build prompt
+    """
+    build prompt
     :param version:
     :param description:
     :param masked_code:

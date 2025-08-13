@@ -146,6 +146,7 @@ class CmdOutputObservation(Observation):
         Returns:
             Original content if not too large, or truncated content otherwise
         """
+
         if len(content) <= max_size:
             return content
 

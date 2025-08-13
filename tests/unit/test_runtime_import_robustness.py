@@ -1,4 +1,5 @@
-"""Test that the runtime import system is robust against broken third-party dependencies.
+"""
+Test that the runtime import system is robust against broken third-party dependencies.
 
 This test specifically addresses the issue where broken third-party runtime dependencies
 (like runloop-api-client with incompatible httpx_aiohttp versions) would break the entire
@@ -13,6 +14,7 @@ import pytest
 
 def test_cli_import_with_broken_third_party_runtime():
     """Test that CLI can be imported even with broken third-party runtime dependencies."""
+
     # Clear any cached modules to ensure fresh import
     modules_to_clear = [
         k for k in sys.modules.keys() if 'openhands' in k or 'third_party' in k
@@ -31,6 +33,7 @@ def test_cli_import_with_broken_third_party_runtime():
 
 def test_runtime_import_robustness():
     """Test that runtime import system is robust against broken dependencies."""
+
     # Clear any cached runtime modules
     modules_to_clear = [k for k in sys.modules.keys() if 'openhands.runtime' in k]
     for module in modules_to_clear:
@@ -47,6 +50,7 @@ def test_runtime_import_robustness():
 
 def test_get_runtime_cls_works():
     """Test that get_runtime_cls works even when third-party runtimes are broken."""
+
     # Import the runtime module
     import openhands.runtime
 
@@ -64,6 +68,7 @@ def test_get_runtime_cls_works():
 
 def test_runtime_exception_handling():
     """Test that the runtime discovery code properly handles exceptions."""
+
     # This test verifies that the fix in openhands/runtime/__init__.py
     # properly catches all exceptions (not just ImportError) during
     # third-party runtime discovery
@@ -79,6 +84,7 @@ def test_runtime_exception_handling():
 
 def test_runtime_import_exception_handling_behavior():
     """Test that runtime import handles ImportError silently but logs other exceptions."""
+
     # Test the exception handling logic by simulating the exact code from runtime init
     from io import StringIO
 
@@ -133,6 +139,7 @@ def test_runtime_import_exception_handling_behavior():
 
 def test_import_error_handled_silently(caplog):
     """Test that ImportError is handled silently (no logging) as it means library is not installed."""
+
     # Simulate the exact code path for ImportError
     logging.getLogger('openhands.runtime')
 

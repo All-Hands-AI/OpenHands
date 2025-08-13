@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Get git diff in a single git file for the closest git repo in the file system
+"""
+Get git diff in a single git file for the closest git repo in the file system
 NOTE: Since this is run as a script, there should be no imports from project files!
 """
 
