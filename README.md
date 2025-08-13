@@ -57,13 +57,8 @@ which comes with $20 in free credits for new users.
 The easiest way to run OpenHands locally is using the CLI launcher with [uv](https://docs.astral.sh/uv/). This provides better isolation from your current project's virtual environment and is required for OpenHands' default MCP servers.
 
 **Install uv** (if you haven't already):
-```bash
-# On macOS and Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# On Windows
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
+See the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for the latest installation instructions for your platform.
 
 **Launch OpenHands**:
 ```bash
@@ -77,6 +72,9 @@ uvx --python 3.12 --from openhands-ai openhands
 You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) (for GUI mode)!
 
 ### Option 2: Docker
+
+<details>
+<summary>Click to expand Docker command</summary>
 
 You can also run OpenHands directly with Docker:
 
@@ -93,6 +91,8 @@ docker run -it --rm --pull=always \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.52
 ```
+
+</details>
 
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 

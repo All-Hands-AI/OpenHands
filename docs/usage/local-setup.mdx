@@ -71,16 +71,8 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
 We recommend using [uv](https://docs.astral.sh/uv/) for the best OpenHands experience. uv provides better isolation from your current project's virtual environment and is required for OpenHands' default MCP servers (like the [fetch MCP server](https://github.com/modelcontextprotocol/servers/tree/main/src/fetch)).
 
 **Install uv** (if you haven't already):
-```bash
-# On macOS and Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# On Windows
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Or with pip
-pip install uv
-```
+See the [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for the latest installation instructions for your platform.
 
 **Launch OpenHands**:
 ```bash
@@ -112,6 +104,8 @@ Note that you'll still need `uv` installed for the default MCP servers to work p
 
 #### Option 2: Using Docker Directly
 
+<Accordion title="Docker Command (Click to expand)">
+
 ```bash
 docker pull docker.all-hands.dev/all-hands-ai/runtime:0.52-nikolaik
 
@@ -125,6 +119,8 @@ docker run -it --rm --pull=always \
     --name openhands-app \
     docker.all-hands.dev/all-hands-ai/openhands:0.52
 ```
+
+</Accordion>
 
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
