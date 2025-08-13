@@ -16,6 +16,7 @@ from openhands.events.action.action import Action
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
+from openhands.integrations.gitea.gitea_service import GiteaServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
@@ -104,6 +105,7 @@ class ProviderHandler:
         ProviderType.GITHUB: 'github.com',
         ProviderType.GITLAB: 'gitlab.com',
         ProviderType.BITBUCKET: 'bitbucket.org',
+        ProviderType.GITEA: 'gitea.com',
     }
 
     def __init__(
@@ -122,6 +124,7 @@ class ProviderHandler:
             ProviderType.GITHUB: GithubServiceImpl,
             ProviderType.GITLAB: GitLabServiceImpl,
             ProviderType.BITBUCKET: BitBucketServiceImpl,
+            ProviderType.GITEA: GiteaServiceImpl,
         }
 
         self.external_auth_id = external_auth_id
@@ -631,8 +634,11 @@ class ProviderHandler:
                     else:
                         # Access token format: use x-token-auth
                         remote_url = f'https://x-token-auth:{token_value}@{domain}/{repo_name}.git'
+                elif provider == ProviderType.GITEA:
+                    # Gitea uses token authentication similar to GitHub
+                    remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
                 else:
-                    # GitHub
+                    # GitHub and others
                     remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
             else:
                 remote_url = f'https://{domain}/{repo_name}.git'

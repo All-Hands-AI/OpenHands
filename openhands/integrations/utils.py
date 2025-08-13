@@ -2,6 +2,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketService
+from openhands.integrations.gitea.gitea_service import GiteaService
 from openhands.integrations.github.github_service import GitHubService
 from openhands.integrations.gitlab.gitlab_service import GitLabService
 from openhands.integrations.provider import ProviderType
@@ -11,7 +12,7 @@ async def validate_provider_token(
     token: SecretStr, base_domain: str | None = None
 ) -> ProviderType | None:
     """
-    Determine whether a token is for GitHub, GitLab, or Bitbucket by attempting to get user info
+    Determine whether a token is for GitHub, GitLab, Bitbucket, or Gitea by attempting to get user info
     from the services.
 
     Args:
@@ -22,6 +23,7 @@ async def validate_provider_token(
         'github' if it's a GitHub token
         'gitlab' if it's a GitLab token
         'bitbucket' if it's a Bitbucket token
+        'gitea' if it's a Gitea token
         None if the token is invalid for all services
     """
     # Skip validation for empty tokens
@@ -46,7 +48,7 @@ async def validate_provider_token(
     except Exception as e:
         gitlab_error = e
 
-    # Try Bitbucket last
+    # Try Bitbucket next
     bitbucket_error = None
     try:
         bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
@@ -55,8 +57,17 @@ async def validate_provider_token(
     except Exception as e:
         bitbucket_error = e
 
+    # Try Gitea last
+    gitea_error = None
+    try:
+        gitea_service = GiteaService(token=token, base_domain=base_domain)
+        await gitea_service.get_user()
+        return ProviderType.GITEA
+    except Exception as e:
+        gitea_error = e
+
     logger.debug(
-        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error}'
+        f'Failed to validate token: {github_error} \n {gitlab_error} \n {bitbucket_error} \n {gitea_error}'
     )
 
     return None
