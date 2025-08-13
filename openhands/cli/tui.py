@@ -440,18 +440,17 @@ def display_error(error: str) -> None:
 def display_command(event: CmdRunAction) -> None:
     # Get safety risk information if available
     safety_risk = getattr(event, 'safety_risk', None)
-    risk_indicator = get_risk_indicator(safety_risk)
-    get_risk_color(safety_risk)
 
-    # Create command text with risk information
+    # Create command text with subtle risk information
     if safety_risk:
-        command_text = (
-            f'$ {event.command}\n\n{risk_indicator} Risk Level: {safety_risk}'
-        )
-        title = f'Command ({safety_risk} Risk)'
-        # Use risk-appropriate border color
+        # Add a small, subtle risk indicator to the title only
+        risk_emoji = {'HIGH': '🚨', 'MEDIUM': '⚠️', 'LOW': '✅'}.get(safety_risk, '')
+        title = f'Command {risk_emoji}'
+        command_text = f'$ {event.command}'
+        
+        # Use subtle border colors - less prominent than before
         if safety_risk == 'HIGH':
-            border_style = f'fg:{COLOR_RISK_HIGH} bold'
+            border_style = f'fg:{COLOR_RISK_HIGH}'  # Removed bold for subtlety
         elif safety_risk == 'MEDIUM':
             border_style = f'fg:{COLOR_RISK_MEDIUM}'
         else:
@@ -851,15 +850,15 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
         if pending_action and hasattr(pending_action, 'safety_risk'):
             safety_risk = getattr(pending_action, 'safety_risk')
 
-        # Create risk-aware question
-        if safety_risk:
+        # Only show confirmation dialog for HIGH risk commands
+        # For MEDIUM and LOW risk, auto-proceed (risk will be shown in action frame)
+        if safety_risk and safety_risk != 'HIGH':
+            return 'yes'  # Auto-proceed for non-HIGH risk commands
+
+        # Create risk-aware question (only for HIGH risk now)
+        if safety_risk == 'HIGH':
             risk_indicator = get_risk_indicator(safety_risk)
-            if safety_risk == 'HIGH':
-                question = f'{risk_indicator} WARNING: This command has been identified as HIGH RISK.\nPlease review carefully before proceeding.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
-            elif safety_risk == 'MEDIUM':
-                question = f'{risk_indicator} CAUTION: This command has been identified as MEDIUM RISK.\nPlease review before proceeding.\n\nRisk Level: {safety_risk}\n\nChoose an option:'
-            else:
-                question = f'{risk_indicator} Risk Level: {safety_risk}\n\nChoose an option:'
+            question = f'{risk_indicator} WARNING: This command has been identified as HIGH RISK.\nPlease review carefully before proceeding.\n\nChoose an option:'
         else:
             question = 'Choose an option:'
 
@@ -870,20 +869,6 @@ async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) 
                 '🛑 No (and allow to enter instructions)',
                 '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
                 "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
-            ]
-        elif safety_risk == 'MEDIUM':
-            choices = [
-                '✅ Yes, proceed (MEDIUM risk)',
-                '🛑 No (and allow to enter instructions)',
-                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
-                "🚀 Always proceed (don't ask again)",
-            ]
-        elif safety_risk == 'LOW':
-            choices = [
-                '✅ Yes, proceed (LOW risk)',
-                '🛑 No (and allow to enter instructions)',
-                '🔍 Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
-                "🚀 Always proceed (don't ask again)",
             ]
         else:
             choices = [
