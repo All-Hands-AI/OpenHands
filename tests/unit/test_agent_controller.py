@@ -64,38 +64,53 @@ def event_loop():
 
 
 @pytest.fixture
-def make_mock_agent():
-    def _make_mock_agent(llm_registry):
-        agent = MagicMock(spec=Agent)
-        agent_config = MagicMock(spec=AgentConfig)
-        llm_config = LLMConfig(
-            model='gpt-4o',
-            api_key='test_key',
-            num_retries=2,
-            retry_min_wait=1,
-            retry_max_wait=2,
-        )
-        agent_config.disabled_microagents = []
-        agent_config.enable_mcp = True
-        llm_registry.service_to_llm.clear()
-        mock_llm = llm_registry.get_llm('agent_llm', llm_config)
-        agent.llm = mock_llm
-        agent.name = 'test-agent'
-        agent.sandbox_plugins = []
-        agent.config = agent_config
-        agent.prompt_manager = MagicMock()
+def mock_agent_with_stats():
+    """Create a mock agent with properly connected LLM registry and conversation stats."""
+    import uuid
 
-        # Add a proper system message mock
-        system_message = SystemMessageAction(
-            content='Test system message', tools=['test_tool']
-        )
-        system_message._source = EventSource.AGENT
-        system_message._id = -1  # Set invalid ID to avoid the ID check
-        agent.get_system_message.return_value = system_message
+    # Create LLM registry
+    config = OpenHandsConfig()
+    llm_registry = LLMRegistry(config=config)
 
-        return agent
+    # Create conversation stats
+    file_store = InMemoryFileStore({})
+    conversation_id = f'test-conversation-{uuid.uuid4()}'
+    conversation_stats = ConversationStats(
+        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
+    )
 
-    return _make_mock_agent
+    # Connect registry to stats (this is the key requirement)
+    llm_registry.subscribe(conversation_stats.register_llm)
+
+    # Create mock agent
+    agent = MagicMock(spec=Agent)
+    agent_config = MagicMock(spec=AgentConfig)
+    llm_config = LLMConfig(
+        model='gpt-4o',
+        api_key='test_key',
+        num_retries=2,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
+    agent_config.disabled_microagents = []
+    agent_config.enable_mcp = True
+    llm_registry.service_to_llm.clear()
+    mock_llm = llm_registry.get_llm('agent_llm', llm_config)
+    agent.llm = mock_llm
+    agent.name = 'test-agent'
+    agent.sandbox_plugins = []
+    agent.config = agent_config
+    agent.prompt_manager = MagicMock()
+
+    # Add a proper system message mock
+    system_message = SystemMessageAction(
+        content='Test system message', tools=['test_tool']
+    )
+    system_message._source = EventSource.AGENT
+    system_message._id = -1  # Set invalid ID to avoid the ID check
+    agent.get_system_message.return_value = system_message
+
+    return agent, conversation_stats, llm_registry
 
 
 @pytest.fixture
@@ -143,32 +158,6 @@ def mock_status_callback():
     return AsyncMock()
 
 
-@pytest.fixture
-def llm_registry():
-    config = OpenHandsConfig()
-    return LLMRegistry(config=config)
-
-
-@pytest.fixture
-def conversation_stats():
-    import uuid
-
-    file_store = InMemoryFileStore({})
-    # Use a unique conversation ID for each test to avoid conflicts
-    conversation_id = f'test-conversation-{uuid.uuid4()}'
-    return ConversationStats(
-        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
-    )
-
-
-@pytest.fixture
-def connected_registry_and_stats(llm_registry, conversation_stats):
-    """Connect the LLMRegistry and ConversationStats properly"""
-    # Subscribe to LLM registry events to track metrics
-    llm_registry.subscribe(conversation_stats.register_llm)
-    return llm_registry, conversation_stats
-
-
 async def send_event_to_controller(controller, event):
     await controller._on_event(event)
     await asyncio.sleep(0.1)
@@ -176,11 +165,8 @@ async def send_event_to_controller(controller, event):
 
 
 @pytest.mark.asyncio
-async def test_set_agent_state(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+async def test_set_agent_state(mock_agent_with_stats, mock_event_stream):
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -200,11 +186,8 @@ async def test_set_agent_state(
 
 
 @pytest.mark.asyncio
-async def test_on_event_message_action(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+async def test_on_event_message_action(mock_agent_with_stats, mock_event_stream):
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -224,10 +207,9 @@ async def test_on_event_message_action(
 
 @pytest.mark.asyncio
 async def test_on_event_change_agent_state_action(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
+    mock_agent_with_stats, mock_event_stream
 ):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -247,14 +229,11 @@ async def test_on_event_change_agent_state_action(
 
 @pytest.mark.asyncio
 async def test_react_to_exception(
-    make_mock_agent,
+    mock_agent_with_stats,
     mock_event_stream,
     mock_status_callback,
-    connected_registry_and_stats,
 ):
-    # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -274,15 +253,12 @@ async def test_react_to_exception(
 
 @pytest.mark.asyncio
 async def test_react_to_content_policy_violation(
-    make_mock_agent,
+    mock_agent_with_stats,
     mock_event_stream,
     mock_status_callback,
-    connected_registry_and_stats,
 ):
     """Test that the controller properly handles content policy violations from the LLM."""
-    # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -324,11 +300,10 @@ async def test_react_to_content_policy_violation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_fatal_error(
-    test_event_stream, mock_memory, make_mock_agent, connected_registry_and_stats
+    test_event_stream, mock_memory, mock_agent_with_stats
 ):
     config = OpenHandsConfig()
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -391,11 +366,10 @@ async def test_run_controller_with_fatal_error(
 
 @pytest.mark.asyncio
 async def test_run_controller_stop_with_stuck(
-    test_event_stream, mock_memory, make_mock_agent, connected_registry_and_stats
+    test_event_stream, mock_memory, mock_agent_with_stats
 ):
     config = OpenHandsConfig()
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     def agent_step_fn(state):
         print(f'agent_step_fn received state: {state}')
@@ -471,12 +445,9 @@ async def test_run_controller_stop_with_stuck(
 
 
 @pytest.mark.asyncio
-async def test_max_iterations_extension(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
+async def test_max_iterations_extension(mock_agent_with_stats, mock_event_stream):
     # Test with headless_mode=False - should extend max_iterations
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -537,11 +508,8 @@ async def test_max_iterations_extension(
 
 
 @pytest.mark.asyncio
-async def test_step_max_budget(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+async def test_step_max_budget(mock_agent_with_stats, mock_event_stream):
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Metrics are always synced with budget flag before
     metrics = Metrics()
@@ -571,11 +539,8 @@ async def test_step_max_budget(
 
 
 @pytest.mark.asyncio
-async def test_step_max_budget_headless(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+async def test_step_max_budget_headless(mock_agent_with_stats, mock_event_stream):
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Metrics are always synced with budget flag before
     metrics = Metrics()
@@ -605,16 +570,13 @@ async def test_step_max_budget_headless(
 
 
 @pytest.mark.asyncio
-async def test_budget_reset_on_continue(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
+async def test_budget_reset_on_continue(mock_agent_with_stats, mock_event_stream):
     """Test that when a user continues after hitting the budget limit:
     1. Error is thrown when budget cap is exceeded
     2. LLM budget does not reset when user continues
     3. Budget is extended by adding the initial budget cap to the current accumulated cost
     """
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Create a real Metrics instance shared between controller state and llm
     metrics = Metrics()
@@ -685,12 +647,11 @@ async def test_budget_reset_on_continue(
 
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_no_observation(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
+    mock_agent_with_stats, mock_event_stream
 ):
     """Test reset() when there's a pending action with tool call metadata but no observation."""
     # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -739,12 +700,11 @@ async def test_reset_with_pending_action_no_observation(
 
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_stopped_state(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
+    mock_agent_with_stats, mock_event_stream
 ):
     """Test reset() when there's a pending action and agent state is STOPPED."""
     # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -793,12 +753,11 @@ async def test_reset_with_pending_action_stopped_state(
 
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_existing_observation(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
+    mock_agent_with_stats, mock_event_stream
 ):
     """Test reset() when there's a pending action with tool call metadata and an existing observation."""
     # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -841,13 +800,10 @@ async def test_reset_with_pending_action_existing_observation(
 
 
 @pytest.mark.asyncio
-async def test_reset_without_pending_action(
-    make_mock_agent, mock_event_stream, connected_registry_and_stats
-):
+async def test_reset_without_pending_action(mock_agent_with_stats, mock_event_stream):
     """Test reset() when there's no pending action."""
     # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -878,12 +834,10 @@ async def test_reset_without_pending_action(
 
 @pytest.mark.asyncio
 async def test_reset_with_pending_action_no_metadata(
-    make_mock_agent, mock_event_stream, monkeypatch, connected_registry_and_stats
+    mock_agent_with_stats, mock_event_stream, monkeypatch
 ):
     """Test reset() when there's a pending action without tool call metadata."""
-    # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -927,14 +881,13 @@ async def test_reset_with_pending_action_no_metadata(
 
 @pytest.mark.asyncio
 async def test_run_controller_max_iterations_has_metrics(
-    test_event_stream, mock_memory, make_mock_agent, connected_registry_and_stats
+    test_event_stream, mock_memory, mock_agent_with_stats
 ):
     config = OpenHandsConfig(
         max_iterations=3,
     )
     event_stream = test_event_stream
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     step_count = 0
 
@@ -1013,14 +966,11 @@ async def test_run_controller_max_iterations_has_metrics(
 
 @pytest.mark.asyncio
 async def test_notify_on_llm_retry(
-    make_mock_agent,
+    mock_agent_with_stats,
     mock_event_stream,
     mock_status_callback,
-    connected_registry_and_stats,
 ):
-    # Connect LLM registry to conversation stats
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -1064,15 +1014,13 @@ async def test_notify_on_llm_retry(
 )
 async def test_context_window_exceeded_error_handling(
     context_window_error,
-    make_mock_agent,
-    connected_registry_and_stats,
+    mock_agent_with_stats,
     mock_runtime,
     test_event_stream,
     mock_memory,
 ):
     """Test that context window exceeded errors are handled correctly by the controller, providing a smaller view but keeping the history intact."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     max_iterations = 5
     error_after = 2
@@ -1237,15 +1185,13 @@ async def test_context_window_exceeded_error_handling(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_with_truncation(
-    make_mock_agent,
-    connected_registry_and_stats,
+    mock_agent_with_stats,
     mock_runtime,
     mock_memory,
     test_event_stream,
 ):
     """Tests that the controller can make progress after handling context window exceeded errors, as long as enable_history_truncation is ON."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     class StepState:
         def __init__(self):
@@ -1329,15 +1275,13 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_context_window_exceeded_without_truncation(
-    make_mock_agent,
-    connected_registry_and_stats,
+    mock_agent_with_stats,
     mock_runtime,
     mock_memory,
     test_event_stream,
 ):
     """Tests that the controller would quit upon context window exceeded errors without enable_history_truncation ON."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     class StepState:
         def __init__(self):
@@ -1426,10 +1370,9 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
 
 @pytest.mark.asyncio
 async def test_run_controller_with_memory_error(
-    test_event_stream, make_mock_agent, connected_registry_and_stats
+    test_event_stream, mock_agent_with_stats
 ):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     config = OpenHandsConfig()
     event_stream = test_event_stream
@@ -1477,9 +1420,8 @@ async def test_run_controller_with_memory_error(
 
 
 @pytest.mark.asyncio
-async def test_action_metrics_copy(make_mock_agent, connected_registry_and_stats):
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+async def test_action_metrics_copy(mock_agent_with_stats):
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Setup
     file_store = InMemoryFileStore({})
@@ -1607,12 +1549,9 @@ async def test_action_metrics_copy(make_mock_agent, connected_registry_and_stats
 
 
 @pytest.mark.asyncio
-async def test_condenser_metrics_included(
-    make_mock_agent, test_event_stream, connected_registry_and_stats
-):
+async def test_condenser_metrics_included(mock_agent_with_stats, test_event_stream):
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Set up agent metrics in place
     mock_agent.llm.metrics.accumulated_cost = 0.05
@@ -1711,7 +1650,7 @@ async def test_condenser_metrics_included(
 
 @pytest.mark.asyncio
 async def test_first_user_message_with_identical_content(
-    test_event_stream, make_mock_agent, connected_registry_and_stats
+    test_event_stream, mock_agent_with_stats
 ):
     """Test that _first_user_message correctly identifies the first user message.
 
@@ -1721,8 +1660,7 @@ async def test_first_user_message_with_identical_content(
     The issue we're checking is that the comparison (action == self._first_user_message())
     should correctly differentiate between messages with the same content but different IDs.
     """
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     controller = AgentController(
         agent=mock_agent,
@@ -1776,27 +1714,20 @@ async def test_first_user_message_with_identical_content(
 
 @pytest.mark.asyncio
 async def test_agent_controller_processes_null_observation_with_cause(
-    conversation_stats,
+    mock_agent_with_stats,
 ):
     """Test that AgentController processes NullObservation events with a cause value.
 
     And that the agent's step method is called as a result.
     """
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
+
     # Create an in-memory file store and real event stream
     file_store = InMemoryFileStore()
     event_stream = EventStream(sid='test-session', file_store=file_store)
 
     # Create a Memory instance - not used directly in this test but needed for setup
     Memory(event_stream=event_stream, sid='test-session')
-
-    # Create a mock agent with necessary attributes
-    mock_agent = MagicMock(spec=Agent)
-    mock_agent.get_system_message = MagicMock(
-        return_value=None,
-    )
-    mock_agent.llm = MagicMock(spec=LLM)
-    mock_agent.llm.metrics = Metrics()
-    mock_agent.llm.config = OpenHandsConfig().get_llm_config()
 
     # Create a controller with the mock agent
     controller = AgentController(
@@ -1865,11 +1796,10 @@ async def test_agent_controller_processes_null_observation_with_cause(
 
 
 def test_agent_controller_should_step_with_null_observation_cause_zero(
-    make_mock_agent, conversation_stats, connected_registry_and_stats
+    mock_agent_with_stats,
 ):
     """Test that AgentController's should_step method returns False for NullObservation with cause = 0."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     # Create a mock event stream
     file_store = InMemoryFileStore()
@@ -1898,12 +1828,9 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(
     )
 
 
-def test_system_message_in_event_stream(
-    make_mock_agent, test_event_stream, connected_registry_and_stats
-):
+def test_system_message_in_event_stream(mock_agent_with_stats, test_event_stream):
     """Test that SystemMessageAction is added to event stream in AgentController."""
-    llm_registry, conversation_stats = connected_registry_and_stats
-    mock_agent = make_mock_agent(llm_registry)
+    mock_agent, conversation_stats, llm_registry = mock_agent_with_stats
 
     _ = AgentController(
         agent=mock_agent,
