@@ -434,7 +434,7 @@ async def modify_llm_settings_basic(
 
         prompt_text = '(Step 3/3) Enter API Key (CTRL-c to cancel): '
         if current_api_key:
-            prompt_text = '(Step 3/3) Enter API Key [***] (CTRL-c to cancel, ENTER to keep current, type new to change): '
+            prompt_text = f'(Step 3/3) Enter API Key [{current_api_key[:4]}***{current_api_key[-4:]}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
         api_key = await get_validated_input(
             session,
             prompt_text,
@@ -518,7 +518,7 @@ async def modify_llm_settings_advanced(
             llm_config.api_key.get_secret_value() if llm_config.api_key else ''
         )
         if current_api_key:
-            prompt_text = '(Step 3/6) API Key [***] (CTRL-c to cancel, ENTER to keep current, type new to change): '
+            prompt_text = f'(Step 3/6) API Key [{current_api_key[:4]}***{current_api_key[-4:]}] (CTRL-c to cancel, ENTER to keep current, type new to change): '
         api_key = await get_validated_input(
             session,
             prompt_text,

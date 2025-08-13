@@ -534,7 +534,7 @@ class TestModifyLLMSettingsBasic:
         # Verify API key prompt shows existing key indicator
         api_key_prompt_call = session_instance.prompt_async.call_args_list[0]
         prompt_text = api_key_prompt_call[0][0]
-        assert '[***]' in prompt_text
+        assert 'exis***-key' in prompt_text
         assert 'ENTER to keep current' in prompt_text
 
         # Verify settings were saved with existing values (no changes)
@@ -677,7 +677,7 @@ class TestModifyLLMSettingsBasic:
         # Verify API key prompt does NOT show existing key indicator after provider change
         api_key_prompt_call = session_instance.prompt_async.call_args_list[0]
         prompt_text = api_key_prompt_call[0][0]
-        assert '[***]' not in prompt_text
+        assert '***' not in prompt_text
         assert 'ENTER to keep current' not in prompt_text
 
         # Verify settings were saved with new provider/model and new API key
@@ -788,7 +788,7 @@ class TestModifyLLMSettingsBasic:
         # Verify API key prompt does NOT show existing key indicator
         api_key_prompt_call = session_instance.prompt_async.call_args_list[0]
         prompt_text = api_key_prompt_call[0][0]
-        assert '[***]' not in prompt_text
+        assert '***' not in prompt_text
         assert 'ENTER to keep current' not in prompt_text
 
         # Verify settings were saved with new values
@@ -1098,7 +1098,7 @@ class TestModifyLLMSettingsAdvanced:
 
         # Check API key prompt (should not prefill but show indicator)
         api_key_prompt = prompt_calls[2][0][0]
-        assert '[***]' in api_key_prompt
+        assert 'exis***-key' in api_key_prompt
         assert 'ENTER to keep current' in api_key_prompt
         assert prompt_calls[2][1]['default'] == ''  # Not prefilled for security
 
@@ -1252,7 +1252,7 @@ class TestModifyLLMSettingsAdvanced:
 
         # Check API key prompt - should not show existing key indicator
         api_key_prompt = prompt_calls[2][0][0]
-        assert '[***]' not in api_key_prompt
+        assert '***' not in api_key_prompt
         assert 'ENTER to keep current' not in api_key_prompt
         assert prompt_calls[2][1]['default'] == ''  # Not prefilled
 
