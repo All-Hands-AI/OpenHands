@@ -408,12 +408,6 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
     for llm in cfg.llms.values():
         llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
 
-    if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
-        logger.openhands_logger.warning(
-            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
-            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
-        )
-
     # make sure cache dir exists
     if cfg.cache_dir:
         pathlib.Path(cfg.cache_dir).mkdir(parents=True, exist_ok=True)
