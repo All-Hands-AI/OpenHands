@@ -17,6 +17,7 @@ from openhands.core.config.condenser_config import (
     StructuredSummaryCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.message import Message, TextContent
 from openhands.core.schema.action import ActionType
 from openhands.events.event import Event, EventSource
@@ -58,12 +59,15 @@ def create_test_event(
 @pytest.fixture
 def mock_llm() -> LLM:
     """Mocks an LLM object with a utility function for setting and resetting response contents in unit tests."""
+    # Create a real LLMConfig instead of a mock to properly handle SecretStr api_key
+    real_config = LLMConfig(
+        model='gpt-4o', api_key='test_key', custom_llm_provider=None
+    )
+
     # Create a MagicMock for the LLM object
     mock_llm = MagicMock(
         spec=LLM,
-        config=MagicMock(
-            spec=LLMConfig, model='gpt-4o', api_key='test_key', custom_llm_provider=None
-        ),
+        config=real_config,
         metrics=MagicMock(),
     )
     _mock_content = None
@@ -106,12 +110,12 @@ def mock_conversation_stats() -> ConversationStats:
 
 @pytest.fixture
 def mock_llm_registry(mock_llm, mock_conversation_stats) -> LLMRegistry:
-    """Creates a mock LLMRegistry that returns the mock_llm for any registration."""
-    mock_registry = MagicMock(spec=LLMRegistry)
-    mock_registry.get_llm.return_value = mock_llm
-    # Set up the subscribe method to work with ConversationStats
-    mock_registry.subscribe.return_value = None
-    return mock_registry
+    """Creates an actual LLMRegistry that returns real LLMs."""
+    # Create an actual LLMRegistry with a basic OpenHandsConfig
+    config = OpenHandsConfig()
+    registry = LLMRegistry(config=config, agent_cls=None, retry_listener=None)
+
+    return registry
 
 
 class RollingCondenserTestHarness:
@@ -364,7 +368,7 @@ def test_llm_summarizing_condenser_from_config(mock_llm_registry):
 
     assert isinstance(condenser, LLMSummarizingCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key == 'test_key'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
@@ -677,7 +681,7 @@ def test_structured_summary_condenser_from_config(mock_llm_registry):
 
     assert isinstance(condenser, StructuredSummaryCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key == 'test_key'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
