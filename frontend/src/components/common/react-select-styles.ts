@@ -5,6 +5,8 @@ export interface SelectOptionBase {
   label: string;
 }
 
+export type SelectOption = SelectOptionBase;
+
 export const getCustomStyles = <T extends SelectOptionBase>(): StylesConfig<
   T,
   false
@@ -90,3 +92,167 @@ export const getCustomStyles = <T extends SelectOptionBase>(): StylesConfig<
     color: "#B7BDC2", // tertiary-light
   }),
 });
+
+// Custom styles for the repo-selection-form dropdowns.
+export const providerDropdownStyles: StylesConfig<SelectOption, false> = {
+  control: (provided) => ({
+    ...provided,
+    maxWidth: "124px",
+    height: "1.5rem",
+    minHeight: "1.5rem",
+    maxHeight: "1.5rem",
+    padding: "0",
+    border: "1px solid #727987",
+    backgroundColor: "#454545",
+    borderRadius: "0.25rem",
+    boxShadow: "none",
+    paddingLeft: "0.375rem",
+    "> div:first-child": {
+      transform: "translateY(-1px)",
+    },
+    "&:hover": {
+      borderColor: "#727987",
+    },
+    "& .provider-dropdown__single-value": {
+      color: "#fff",
+      fontSize: "0.75rem",
+      fontWeight: "400",
+      lineHeight: "1.25rem",
+    },
+    "& .provider-dropdown__value-container": {
+      height: "1.5rem",
+      padding: "0 0.5rem",
+      transform: "translateY(-1px)",
+      paddingLeft: "0.125rem",
+    },
+    "& .provider-dropdown__indicators-container": {
+      height: "1.5rem",
+      padding: "0 0.5rem",
+      "& > div": {
+        padding: "0",
+      },
+    },
+    "& .provider-dropdown__indicators": {
+      transform: "translateY(-1px)",
+      height: "1.5rem",
+      padding: "0 0.5rem",
+      "& > div": {
+        padding: "0",
+      },
+    },
+    "& .provider-dropdown__dropdown-indicator": {
+      color: "#fff",
+      "&:hover": {
+        color: "#fff",
+      },
+    },
+  }),
+  menu: (provided) => ({
+    ...provided,
+    borderRadius: "0.4375rem",
+    boxShadow: "none",
+    border: "1px solid #727987",
+    marginTop: "0.25rem",
+    "& .provider-dropdown__menu-list": {
+      background: "#454545",
+      borderRadius: "0.375rem",
+      padding: "0.25rem",
+    },
+    "& .provider-dropdown__option": {
+      color: "#fff",
+      fontSize: "0.75rem",
+      fontWeight: "400",
+      background: "transparent",
+      borderRadius: "0.375rem",
+      padding: "0 0.5rem",
+      height: "1.5rem",
+      display: "flex",
+      alignItems: "center",
+      "&:hover": {
+        cursor: "pointer",
+        backgroundColor: "#5C5D62",
+      },
+    },
+  }),
+};
+
+export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
+  control: (provided) => ({
+    ...provided,
+    maxWidth: "auto",
+    height: "auto",
+    minHeight: "auto",
+    maxHeight: "auto",
+    padding: "0",
+    border: "1px solid #727987",
+    backgroundColor: "#454545",
+    borderRadius: "0.25rem",
+    boxShadow: "none",
+    paddingLeft: "0.375rem",
+    "> div:first-child": {
+      transform: "translateY(-1px)",
+    },
+    "&:hover": {
+      borderColor: "#727987",
+    },
+    "& .repo-branch-dropdown__single-value": {
+      color: "#fff",
+      fontSize: "0.875rem",
+      fontWeight: "400",
+      lineHeight: "1.25rem",
+    },
+    "& .repo-branch-dropdown__value-container": {
+      height: "auto",
+      padding: "0 0.5rem",
+      transform: "translateY(-1px)",
+      paddingLeft: "0.125rem",
+    },
+    "& .repo-branch-dropdown__indicators-container": {
+      height: "auto",
+      padding: "0 0.5rem",
+      "& > div": {
+        padding: "0",
+      },
+    },
+    "& .repo-branch-dropdown__indicators": {
+      transform: "translateY(-1px)",
+      height: "auto",
+      padding: "0 0.5rem",
+      "& > div": {
+        padding: "0",
+      },
+    },
+    "& .repo-branch-dropdown__dropdown-indicator": {
+      color: "#fff",
+      "&:hover": {
+        color: "#fff",
+      },
+    },
+  }),
+  menu: (provided) => ({
+    ...provided,
+    borderRadius: "0.4375rem",
+    boxShadow: "none",
+    border: "1px solid #727987",
+    marginTop: "0.25rem",
+    "& .repo-branch-dropdown__menu-list": {
+      background: "#454545",
+      borderRadius: "0.375rem",
+      padding: "0.375rem 0.25rem",
+    },
+    "& .repo-branch-dropdown__option": {
+      color: "#fff",
+      fontSize: "0.875rem",
+      fontWeight: "400",
+      background: "transparent",
+      borderRadius: "0.375rem",
+      padding: "0.5rem",
+      display: "flex",
+      alignItems: "center",
+      "&:hover": {
+        cursor: "pointer",
+        backgroundColor: "#5C5D62",
+      },
+    },
+  }),
+};

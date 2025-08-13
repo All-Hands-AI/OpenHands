@@ -1,6 +1,10 @@
+import { StylesConfig } from "react-select";
 import { useMemo } from "react";
 import { useRepositoryBranches } from "../../hooks/query/use-repository-branches";
-import { ReactSelectDropdown, SelectOption } from "./react-select-dropdown";
+import { ReactSelectDropdown } from "./react-select-dropdown";
+import BranchIcon from "#/icons/u-code-branch.svg?react";
+import { SelectOption } from "./react-select-styles";
+import { ReactSelectCustomControl } from "./react-select-custom-control";
 
 export interface GitBranchDropdownProps {
   repositoryName?: string | null;
@@ -11,8 +15,12 @@ export interface GitBranchDropdownProps {
   disabled?: boolean;
   testId?: string;
   onChange?: (branchName: string | null) => void;
+  styles?: StylesConfig<SelectOption, false>;
+  classNamePrefix?: string;
 }
 
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/jsx-props-no-spreading */
 export function GitBranchDropdown({
   repositoryName,
   value,
@@ -22,6 +30,8 @@ export function GitBranchDropdown({
   disabled = false,
   testId,
   onChange,
+  styles,
+  classNamePrefix,
 }: GitBranchDropdownProps) {
   const { data: branches, isLoading } = useRepositoryBranches(
     repositoryName || null,
@@ -67,6 +77,17 @@ export function GitBranchDropdown({
       isSearchable
       isLoading={isLoading}
       onChange={handleChange}
+      components={{
+        IndicatorSeparator: () => null,
+        Control: (props) => (
+          <ReactSelectCustomControl
+            {...props}
+            startIcon={<BranchIcon width={16} height={16} />}
+          />
+        ),
+      }}
+      styles={styles}
+      classNamePrefix={classNamePrefix}
     />
   );
 }

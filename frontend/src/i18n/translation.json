@@ -12927,6 +12927,22 @@
         "tr": "Durdurmayı Onayla",
         "uk": "Підтвердити зупинку"
     },
+    "HOME$SELECT_OR_INSERT_URL": {
+        "en": "Select or insert a URL",
+        "ja": "URLを選択または挿入",
+        "zh-CN": "选择或插入一个URL",
+        "zh-TW": "選擇或插入一個URL",
+        "ko-KR": "URL 선택 또는 입력",
+        "fr": "Sélectionner ou saisir une URL",
+        "es": "Selecciona o introduce una URL",
+        "de": "URL auswählen oder eingeben",
+        "it": "Seleziona o inserisci un URL",
+        "pt": "Selecione ou insira uma URL",
+        "ar": "اختر أو أدخل عنوان URL",
+        "no": "Velg eller sett inn en URL",
+        "tr": "Bir URL seçin veya girin",
+        "uk": "Виберіть або вставте URL"
+    },
     "AGENT_STATUS$INITIALIZING": {
         "en": "Initializing agent...",
         "ja": "エージェントを初期化中。",
