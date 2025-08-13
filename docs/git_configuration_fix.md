@@ -30,7 +30,8 @@ The fix moves git configuration from the action execution server to the runtime 
    - Method supports different platforms (Windows/Unix) and runtime modes (local/remote)
 
 3. **Updated all runtime implementations**:
-   - Local, Remote, Kubernetes, CLI, and Docker runtimes now call `setup_git_config()` after connection
+   - Local, Remote, Kubernetes, and Docker runtimes now call `setup_git_config()` after connection
+   - CLI runtime calls `setup_git_config()` but skips configuration to use user's local git settings
 
 ## Technical Implementation
 
@@ -49,11 +50,12 @@ def setup_git_config(
 
 ### Platform-Specific Logic
 
+- **CLI Runtime**: Skips git configuration entirely (uses user's existing local git config)
 - **Local Runtime (Windows)**: Uses file-based git config with PowerShell environment variable
 - **Local Runtime (Unix)**: Uses file-based git config with bash environment variable  
 - **Remote/Container Runtime**: Uses global git config
 
-The runtime type is determined by the `is_local_runtime` parameter passed to `setup_git_config()`, eliminating the need to rely on environment variables.
+The runtime type is determined automatically by checking the runtime class name, with CLI runtime explicitly identified via the `is_cli_runtime` parameter.
 
 ### Runtime Integration
 
@@ -64,7 +66,7 @@ Each runtime implementation calls `setup_git_config()` after successful connecti
 self.setup_git_config(
     git_user_name=self.config.git_user_name,
     git_user_email=self.config.git_user_email,
-    is_local_runtime=True,  # For local/CLI runtimes
+    is_cli_runtime=True,  # Only for CLI runtime - skips git config
 )
 ```
 
@@ -92,7 +94,8 @@ self.setup_git_config(
 1. **Fixes warm runtime bug**: Git configuration is now applied consistently for both fresh and warm runtimes
 2. **Cleaner separation of concerns**: Git configuration is handled by the runtime client, not the action execution server
 3. **Platform compatibility maintained**: All existing platform-specific logic is preserved
-4. **Backward compatibility**: No changes to external APIs or user-facing behavior
+4. **Respects user environment**: CLI runtime preserves user's existing git configuration
+5. **Backward compatibility**: No changes to external APIs or user-facing behavior
 
 ## Files Modified
 

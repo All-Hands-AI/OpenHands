@@ -373,7 +373,6 @@ class LocalRuntime(ActionExecutionClient):
         self.setup_git_config(
             git_user_name=self.config.git_user_name,
             git_user_email=self.config.git_user_email,
-            is_local_runtime=True,
         )
 
         # Check if we need to create more warm servers after connecting

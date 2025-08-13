@@ -911,23 +911,35 @@ fi
         self,
         git_user_name: str = 'openhands',
         git_user_email: str = 'openhands@all-hands.dev',
-        is_local_runtime: bool = False,
+        is_cli_runtime: bool = False,
     ) -> None:
         """Configure git user settings after runtime connection.
         
         This method should be called after the runtime is connected to ensure
         git configuration is applied to the active runtime environment.
         
+        Note: CLI runtime skips git configuration as it runs on the user's
+        local machine where they likely have their own git settings.
+        
         Args:
             git_user_name: Git user name for commits
             git_user_email: Git user email for commits
-            is_local_runtime: Whether this is a local runtime (affects config strategy)
+            is_cli_runtime: Whether this is a CLI runtime (skips git config if True)
         """
+        # Skip git configuration for CLI runtime - user's local git config should be used
+        if is_cli_runtime:
+            logger.debug('Skipping git configuration for CLI runtime - using user\'s local git config')
+            return
+            
         import sys
         
         is_windows = sys.platform == 'win32'
         
         commands = []
+        
+        # Check if this is a local runtime (not CLI, not remote/container)
+        # Local runtime uses file-based config, others use global config
+        is_local_runtime = self.__class__.__name__ == 'LocalRuntime'
         
         if is_local_runtime:
             if is_windows:
@@ -945,7 +957,7 @@ fi
                     'export GIT_CONFIG=$(pwd)/.git_config'
                 ])
         else:
-            # Non-local (remote/container) - use global config
+            # Remote/container runtime - use global config
             commands.extend([
                 f'git config --global user.name "{git_user_name}"',
                 f'git config --global user.email "{git_user_email}"'
