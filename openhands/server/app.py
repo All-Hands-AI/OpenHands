@@ -33,6 +33,7 @@ from openhands.server.routes.chat import app as chat_router
 from openhands.server.routes.media import app as media_router
 from openhands.server.routes.oauth_github import app as oauth_github_router
 from openhands.server.routes.vision import app as vision_router
+from openhands.server.routes.runtime import app as runtime_router
 from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
 
@@ -79,6 +80,7 @@ app.include_router(chat_router)
 app.include_router(media_router)
 app.include_router(oauth_github_router)
 app.include_router(vision_router)
+app.include_router(runtime_router)
 if server_config.app_mode == AppMode.OSS:
     app.include_router(git_api_router)
 app.include_router(trajectory_router)
