@@ -4,7 +4,6 @@ import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
-import { Controls } from "#/components/features/controls/controls";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
@@ -25,6 +24,10 @@ import { ConversationSubscriptionsProvider } from "#/context/conversation-subscr
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
+import { ConversationName } from "#/components/features/conversation/conversation-name";
+import { Controls } from "#/components/features/controls/controls";
+import { ConversationTabProvider } from "#/components/features/conversation/conversation-tabs/use-conversation-tabs";
+import { ConversationTabs2 } from "#/components/features/conversation/conversation-tabs/conversation-tabs2";
 
 function AppContent() {
   useConversationConfig();
@@ -74,31 +77,38 @@ function AppContent() {
   } = useDisclosure();
 
   return (
-    <WsClientProvider conversationId={conversationId}>
-      <ConversationSubscriptionsProvider>
-        <EventHandler>
-          <div data-testid="app-route" className="flex flex-col h-full gap-3">
-            <ChatActions />
+    <ConversationTabProvider>
+      <WsClientProvider conversationId={conversationId}>
+        <ConversationSubscriptionsProvider>
+          <EventHandler>
+            <div data-testid="app-route" className="flex flex-col h-full gap-3">
+              <div className="flex items-center justify-between gap-4.5">
+                <ConversationName />
+                <ConversationTabs2 />
+                <div className="h-full w-0.25 bg-[#525252]" />
+                <ChatActions />
+              </div>
 
-            <div className="flex h-full overflow-auto">
-              <ConversationMain />
-            </div>
+              <div className="flex h-full overflow-auto">
+                <ConversationMain />
+              </div>
 
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings?.SECURITY_ANALYZER}
-            />
-            {settings && (
-              <Security
-                isOpen={securityModalIsOpen}
-                onOpenChange={onSecurityModalOpenChange}
-                securityAnalyzer={settings.SECURITY_ANALYZER}
+              <Controls
+                setSecurityOpen={onSecurityModalOpen}
+                showSecurityLock={!!settings?.SECURITY_ANALYZER}
               />
-            )}
-          </div>
-        </EventHandler>
-      </ConversationSubscriptionsProvider>
-    </WsClientProvider>
+              {settings && (
+                <Security
+                  isOpen={securityModalIsOpen}
+                  onOpenChange={onSecurityModalOpenChange}
+                  securityAnalyzer={settings.SECURITY_ANALYZER}
+                />
+              )}
+            </div>
+          </EventHandler>
+        </ConversationSubscriptionsProvider>
+      </WsClientProvider>
+    </ConversationTabProvider>
   );
 }
 

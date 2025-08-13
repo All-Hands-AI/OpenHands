@@ -1,30 +1,38 @@
+import { useSelector } from "react-redux";
 import React from "react";
-import { ChatInput } from "./chat-input";
-import { cn } from "#/utils/utils";
-import { ImageCarousel } from "../images/image-carousel";
-import { UploadImageInput } from "../images/upload-image-input";
-import { FileList } from "../files/file-list";
 import { isFileImage } from "#/utils/is-file-image";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
 import { validateFiles } from "#/utils/file-validation";
+import { CustomChatInput } from "./custom-chat-input";
+import { RootState } from "#/store";
+import { AgentState } from "#/types/agent-state";
+import { ImageCarousel } from "../images/image-carousel";
+import { FileList } from "../files/file-list";
+import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import { GitControlBar } from "./git-control-bar";
 
 interface InteractiveChatBoxProps {
-  isDisabled?: boolean;
-  mode?: "stop" | "submit";
   onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
   value?: string;
-  onChange?: (message: string) => void;
+  isWaitingForUserInput: boolean;
+  hasSubstantiveAgentActions: boolean;
+  optimisticUserMessage: boolean;
 }
 
 export function InteractiveChatBox({
-  isDisabled,
-  mode = "submit",
   onSubmit,
   onStop,
   value,
-  onChange,
+  isWaitingForUserInput,
+  hasSubstantiveAgentActions,
+  optimisticUserMessage,
 }: InteractiveChatBoxProps) {
+  const curAgentState = useSelector(
+    (state: RootState) => state.agent.curAgentState,
+  );
+  const { data: conversation } = useActiveConversation();
+
   const [images, setImages] = React.useState<File[]>([]);
   const [files, setFiles] = React.useState<File[]>([]);
 
@@ -62,16 +70,18 @@ export function InteractiveChatBox({
     onSubmit(message, images, files);
     setFiles([]);
     setImages([]);
-    if (message) {
-      onChange?.("");
-    }
   };
 
+  const handleSuggestionsClick = (suggestion: string) => {
+    handleSubmit(suggestion);
+  };
+
+  const isDisabled =
+    curAgentState === AgentState.LOADING ||
+    curAgentState === AgentState.AWAITING_USER_CONFIRMATION;
+
   return (
-    <div
-      data-testid="interactive-chat-box"
-      className="flex flex-col gap-[10px]"
-    >
+    <div data-testid="interactive-chat-box">
       {images.length > 0 && (
         <ImageCarousel
           size="small"
@@ -85,26 +95,20 @@ export function InteractiveChatBox({
           onRemove={handleRemoveFile}
         />
       )}
-
-      <div
-        className={cn(
-          "flex items-end gap-1",
-          "bg-tertiary border border-neutral-600 rounded-lg px-2",
-          "transition-colors duration-200",
-          "hover:border-neutral-500 focus-within:border-neutral-500",
-        )}
-      >
-        <UploadImageInput onUpload={handleUpload} />
-        <ChatInput
-          disabled={isDisabled}
-          button={mode}
-          onChange={onChange}
-          onSubmit={handleSubmit}
-          onStop={onStop}
-          value={value}
-          onFilesPaste={handleUpload}
-          className="py-[10px]"
-          buttonClassName="py-[10px]"
+      <CustomChatInput
+        disabled={isDisabled}
+        onSubmit={handleSubmit}
+        onStop={onStop}
+        onFilesPaste={handleUpload}
+        value={value}
+        conversationStatus={conversation?.status || null}
+      />
+      <div className="mt-4">
+        <GitControlBar
+          onSuggestionsClick={handleSuggestionsClick}
+          isWaitingForUserInput={isWaitingForUserInput}
+          hasSubstantiveAgentActions={hasSubstantiveAgentActions}
+          optimisticUserMessage={optimisticUserMessage}
         />
       </div>
     </div>

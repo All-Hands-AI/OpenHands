@@ -104,6 +104,24 @@ export const formatTimestamp = (timestamp: string) =>
     second: "2-digit",
   });
 
+export const shouldUseInstallationRepos = (
+  provider: Provider,
+  app_mode: "saas" | "oss" | undefined,
+) => {
+  if (!provider) return false;
+
+  switch (provider) {
+    case "bitbucket":
+      return true;
+    case "gitlab":
+      return false;
+    case "github":
+      return app_mode === "saas";
+    default:
+      return false;
+  }
+};
+
 export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
   switch (gitProvider) {
     case "github":
@@ -226,3 +244,105 @@ export const extractRepositoryInfo = (
 
   return { owner, repo, filePath };
 };
+
+/**
+ * Construct the repository URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @returns The repository URL
+ *
+ * @example
+ * constructRepositoryUrl("github", "owner/repo") // "https://github.com/owner/repo"
+ * constructRepositoryUrl("gitlab", "owner/repo") // "https://gitlab.com/owner/repo"
+ * constructRepositoryUrl("bitbucket", "owner/repo") // "https://bitbucket.org/owner/repo"
+ */
+export const constructRepositoryUrl = (
+  provider: Provider,
+  repositoryName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+  return `${baseUrl}/${repositoryName}`;
+};
+
+/**
+ * Construct the branch URL for different providers
+ * @param provider The git provider
+ * @param repositoryName The repository name in format "owner/repo"
+ * @param branchName The branch name
+ * @returns The branch URL
+ *
+ * @example
+ * constructBranchUrl("github", "owner/repo", "main") // "https://github.com/owner/repo/tree/main"
+ * constructBranchUrl("gitlab", "owner/repo", "develop") // "https://gitlab.com/owner/repo/-/tree/develop"
+ * constructBranchUrl("bitbucket", "owner/repo", "feature") // "https://bitbucket.org/owner/repo/src/feature"
+ */
+export const constructBranchUrl = (
+  provider: Provider,
+  repositoryName: string,
+  branchName: string,
+): string => {
+  const baseUrl = getGitProviderBaseUrl(provider);
+
+  switch (provider) {
+    case "github":
+      return `${baseUrl}/${repositoryName}/tree/${branchName}`;
+    case "gitlab":
+      return `${baseUrl}/${repositoryName}/-/tree/${branchName}`;
+    case "bitbucket":
+      return `${baseUrl}/${repositoryName}/src/${branchName}`;
+    default:
+      return "";
+  }
+};
+
+// Git Action Prompts
+
+/**
+ * Generate a git pull prompt
+ * @returns The git pull prompt
+ */
+export const getGitPullPrompt = (): string =>
+  "Please pull the latest code from the repository.";
+
+/**
+ * Generate a git push prompt
+ * @param gitProvider The git provider
+ * @returns The git push prompt
+ */
+export const getGitPushPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the changes to a remote branch on ${providerName}, but do NOT create a ${pr}. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`;
+};
+
+/**
+ * Generate a create pull request prompt
+ * @param gitProvider The git provider
+ * @returns The create PR prompt
+ */
+export const getCreatePRPrompt = (gitProvider: Provider): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+  const prShort = getPRShort(gitProvider === "gitlab");
+
+  return `Please push the changes to ${providerName} and open a ${pr}. If you're on a default branch (e.g., main, master, deploy), create a new branch with a descriptive name otherwise use the current branch. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
+
+/**
+ * Generate a push to existing PR prompt
+ * @param gitProvider The git provider
+ * @returns The push to PR prompt
+ */
+export const getPushToPRPrompt = (gitProvider: Provider): string => {
+  const pr = getPR(gitProvider === "gitlab");
+
+  return `Please push the latest changes to the existing ${pr}.`;
+};
+
+/**
+ * Generate a create new branch prompt
+ * @returns The create new branch prompt
+ */
+export const getCreateNewBranchPrompt = (): string =>
+  "Please create a new branch with a descriptive name related to the work you plan to do.";

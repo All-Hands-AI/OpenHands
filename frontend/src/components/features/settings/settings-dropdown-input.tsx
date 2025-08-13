@@ -1,5 +1,5 @@
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
-import { ReactNode } from "react";
+import React, { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { OptionalTag } from "./optional-tag";
 import { cn } from "#/utils/utils";
@@ -22,6 +22,9 @@ interface SettingsDropdownInputProps {
   onSelectionChange?: (key: React.Key | null) => void;
   onInputChange?: (value: string) => void;
   defaultFilter?: (textValue: string, inputValue: string) => boolean;
+  startContent?: ReactNode;
+  inputWrapperClassName?: string;
+  inputClassName?: string;
 }
 
 export function SettingsDropdownInput({
@@ -42,8 +45,12 @@ export function SettingsDropdownInput({
   onSelectionChange,
   onInputChange,
   defaultFilter,
+  startContent,
+  inputWrapperClassName,
+  inputClassName,
 }: SettingsDropdownInputProps) {
   const { t } = useTranslation();
+
   return (
     <label className={cn("flex flex-col gap-2.5", wrapperClassName)}>
       {label && (
@@ -73,11 +80,15 @@ export function SettingsDropdownInput({
         }}
         inputProps={{
           classNames: {
-            inputWrapper:
+            inputWrapper: cn(
               "bg-tertiary border border-[#717888] h-10 w-full rounded-sm p-2 placeholder:italic",
+              inputWrapperClassName,
+            ),
+            input: inputClassName,
           },
         }}
         defaultFilter={defaultFilter}
+        startContent={startContent || null}
       >
         {(item) => (
           <AutocompleteItem key={item.key}>{item.label}</AutocompleteItem>
