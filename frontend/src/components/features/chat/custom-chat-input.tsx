@@ -7,6 +7,7 @@ import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
+import { Tools } from "../controls/tools";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -59,7 +60,7 @@ export function CustomChatInput({
   // Use the auto-resize hook
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
-    maxHeight: 80,
+    maxHeight: 450,
     value,
   });
 
@@ -307,7 +308,7 @@ export function CustomChatInput({
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[80px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
                     disabled && "cursor-not-allowed",
                   )}
                   contentEditable={!disabled}
@@ -334,7 +335,8 @@ export function CustomChatInput({
         </div>
 
         <div className="w-full flex items-center justify-between">
-          <div className="translate-x-[-6.5px]">
+          <div className="flex items-center gap-1">
+            <Tools />
             <ServerStatus conversationStatus={conversationStatus} />
           </div>
           <AgentStatus

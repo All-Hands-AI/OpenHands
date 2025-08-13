@@ -15,8 +15,17 @@ import GlobeIcon from "#/icons/globe.svg?react";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import OpenHands from "#/api/open-hands";
 import TerminalIcon from "#/icons/terminal.svg?react";
+import { cn } from "#/utils/utils";
 
-export function ConversationTabs() {
+type ConversationTabsProps = {
+  setOpenTerminal(value: boolean): void;
+  openTerminal: boolean;
+};
+
+export function ConversationTabs({
+  setOpenTerminal,
+  openTerminal,
+}: ConversationTabsProps) {
   const { curAgentState } = useSelector((state: RootState) => state.agent);
 
   const { conversationId } = useConversationId();
@@ -27,7 +36,7 @@ export function ConversationTabs() {
 
   return (
     <Container
-      className="h-full w-full"
+      className={cn("h-full w-full")}
       labels={[
         {
           label: "Changes",
@@ -69,8 +78,10 @@ export function ConversationTabs() {
         },
         {
           label: t(I18nKey.WORKSPACE$TERMINAL_TAB_LABEL),
-          to: "terminal",
+          onClick: () => setOpenTerminal(true),
           icon: <TerminalIcon />,
+          isActive: openTerminal,
+          to: "terminal",
         },
         { label: "Jupyter", to: "jupyter", icon: <JupyterIcon /> },
         {

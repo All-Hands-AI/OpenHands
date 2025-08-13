@@ -96,10 +96,6 @@ function SecretsSettingsScreen() {
         </Link>
       )}
 
-      {secrets?.length === 0 && view === "list" && (
-        <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
-      )}
-
       {!shouldRenderConnectToGitButton && view === "list" && (
         <BrandButton
           testId="add-secret-button"
