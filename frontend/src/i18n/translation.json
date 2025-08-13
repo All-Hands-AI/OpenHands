@@ -12286,5 +12286,37 @@
         "tr": "Mikro ajan içeriği yüklenirken hata oluştu.",
         "de": "Fehler beim Laden des Microagent-Inhalts.",
         "uk": "Помилка під час завантаження вмісту мікроагента."
+    },
+    "MICROAGENT$UNKNOWN_ERROR": {
+        "en": "Unknown error, please try again",
+        "ja": "不明なエラーです。もう一度お試しください",
+        "zh-CN": "未知错误，请重试",
+        "zh-TW": "未知錯誤，請重試",
+        "ko-KR": "알 수 없는 오류입니다. 다시 시도해 주세요",
+        "no": "Ukjent feil, vennligst prøv igjen",
+        "it": "Errore sconosciuto, riprova",
+        "pt": "Erro desconhecido, tente novamente",
+        "es": "Error desconocido, inténtalo de nuevo",
+        "ar": "خطأ غير معروف، يرجى المحاولة مرة أخرى",
+        "fr": "Erreur inconnue, veuillez réessayer",
+        "tr": "Bilinmeyen hata, lütfen tekrar deneyin",
+        "de": "Unbekannter Fehler, bitte versuchen Sie es erneut",
+        "uk": "Невідома помилка, спробуйте ще раз"
+    },
+    "MICROAGENT$CONVERSATION_STARTING": {
+        "en": "Starting conversation...",
+        "ja": "会話を開始しています...",
+        "zh-CN": "正在开始对话...",
+        "zh-TW": "正在開始對話...",
+        "ko-KR": "대화를 시작하는 중...",
+        "no": "Starter samtale...",
+        "it": "Avvio conversazione...",
+        "pt": "Iniciando conversa...",
+        "es": "Iniciando conversación...",
+        "ar": "بدء المحادثة...",
+        "fr": "Démarrage de la conversation...",
+        "tr": "Konuşma başlatılıyor...",
+        "de": "Gespräch wird gestartet...",
+        "uk": "Розпочинається розмова..."
     }
 }

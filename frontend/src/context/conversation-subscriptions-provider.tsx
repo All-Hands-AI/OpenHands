@@ -172,9 +172,7 @@ export function ConversationSubscriptionsProvider({
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
             conversationId,
-            isErrorEvent(event)
-              ? event.message
-              : "Unknown error, please try again",
+            isErrorEvent(event) ? event.message : "MICROAGENT$UNKNOWN_ERROR",
           );
         } else if (isStatusUpdate(event)) {
           if (event.type === "info" && event.id === "STATUS$STARTING_RUNTIME") {

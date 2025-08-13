@@ -1,8 +1,6 @@
 import React from "react";
 import { useQueries, type Query } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Spinner } from "@heroui/react";
-import { useTranslation } from "react-i18next";
 import { AxiosError } from "axios";
 import { useCreateConversation } from "./mutation/use-create-conversation";
 import { useUserProviders } from "./use-user-providers";
@@ -10,8 +8,7 @@ import { useConversationSubscriptions } from "#/context/conversation-subscriptio
 import { Provider } from "#/types/settings";
 import { CreateMicroagent, Conversation } from "#/api/open-hands.types";
 import OpenHands from "#/api/open-hands";
-import { TOAST_OPTIONS } from "#/utils/custom-toast-handlers";
-import CloseIcon from "#/icons/close.svg?react";
+import { renderConversationStartingToast } from "#/components/features/chat/microagent/microagent-status-toast";
 
 interface ConversationData {
   conversationId: string;
@@ -19,53 +16,6 @@ interface ConversationData {
   baseUrl: string;
   onEventCallback?: (event: unknown, conversationId: string) => void;
 }
-
-interface ConversationStartingToastProps {
-  conversationId: string;
-  onClose: () => void;
-}
-
-function ConversationStartingToast({
-  conversationId,
-  onClose,
-}: ConversationStartingToastProps) {
-  const { t } = useTranslation();
-  return (
-    <div className="flex items-start gap-2">
-      <Spinner size="sm" />
-      <div>
-        {t("MICROAGENT$CONVERSATION_STARTING")}
-        <br />
-        <a
-          href={`/conversations/${conversationId}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="underline"
-        >
-          {t("MICROAGENT$VIEW_CONVERSATION")}
-        </a>
-      </div>
-      <button type="button" onClick={onClose}>
-        <CloseIcon />
-      </button>
-    </div>
-  );
-}
-
-const renderConversationStartingToast = (conversationId: string) =>
-  toast(
-    (toastInstance) => (
-      <ConversationStartingToast
-        conversationId={conversationId}
-        onClose={() => toast.dismiss(toastInstance.id)}
-      />
-    ),
-    {
-      ...TOAST_OPTIONS,
-      id: `starting-${conversationId}`,
-      duration: 10000, // Show for 10 seconds or until dismissed
-    },
-  );
 
 /**
  * Custom hook to create a conversation and subscribe to it, supporting multiple subscriptions.
@@ -119,7 +69,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
 
       if (!query.data || !conversationData) return;
 
-      const { status, url, session_api_key } = query.data;
+      const { status, url, session_api_key: sessionApiKey } = query.data;
 
       let { baseUrl } = conversationData;
       if (url && !url.startsWith("/")) {
@@ -129,8 +79,8 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       if (status === "RUNNING") {
         // Conversation is ready - subscribe to WebSocket
         subscribeToConversation({
-          conversationId: conversationId,
-          sessionApiKey: session_api_key,
+          conversationId,
+          sessionApiKey: sessionApiKey,
           providersSet: providers,
           baseUrl,
           onEvent: conversationData.onEventCallback,
