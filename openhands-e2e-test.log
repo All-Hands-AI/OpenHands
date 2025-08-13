@@ -29,7 +29,7 @@ Error: No route matches URL "/locales/en-US@posix/translation.json"
     at processTicksAndRejections (node:internal/process/task_queues:105:5)
     at nodeHandler (/home/runner/work/OpenHands/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3396:30)
     at /home/runner/work/OpenHands/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3402:17
-No routes matched location "/locales/en-US@posix/translation.json" 
+No routes matched location "/locales/en-US@posix/translation.json"
 ErrorResponseImpl {
   status: 404,
   statusText: 'Not Found',
