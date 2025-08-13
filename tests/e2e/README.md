@@ -29,12 +29,12 @@ To run the full end-to-end test suite locally, you can use the provided script:
 
 ```bash
 cd tests/e2e
-./run_e2e_tests.sh
+./run_e2e_tests_new.sh
 ```
 
-This script runs the tests in sequence:
-1. First, it runs the GitHub token configuration test
-2. Then, it runs the conversation start test
+This script runs the full workflow test which includes:
+1. GitHub token configuration
+2. Conversation start
 
 ### Running Individual Tests
 
@@ -43,10 +43,13 @@ You can run individual tests directly:
 ```bash
 cd tests/e2e
 # Run the GitHub token configuration test
-poetry run pytest test_github_token_config.py -v
+poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v
 
 # Run the conversation start test
-poetry run pytest test_conversation_start.py -v
+poetry run pytest test_e2e_workflow.py::test_conversation_start -v
+
+# Run the full workflow test
+poetry run pytest test_e2e_workflow.py::test_full_workflow -v
 ```
 
 ### Running with Visible Browser
@@ -55,23 +58,24 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 
 ```bash
 cd tests/e2e
-./run_visible_browser_test.sh test_github_token_config
-./run_visible_browser_test.sh test_conversation_start
+./run_visible_browser_test_new.sh test_github_token_configuration
+./run_visible_browser_test_new.sh test_conversation_start
+./run_visible_browser_test_new.sh test_full_workflow
 ```
 
 You can also run a simple navigation test to verify your setup:
 
 ```bash
 cd tests/e2e
-./run_visible_browser_test.sh test_simple_browser_navigation
+./run_visible_browser_test_new.sh test_simple_browser_navigation
 ```
 
 Or run the tests directly with pytest:
 
 ```bash
 cd tests/e2e
-poetry run pytest test_github_token_config.py -v --no-headless --slow-mo=50
-poetry run pytest test_conversation_start.py -v --no-headless --slow-mo=50
+poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v --no-headless --slow-mo=50
+poetry run pytest test_e2e_workflow.py::test_conversation_start -v --no-headless --slow-mo=50
 ```
 
 ### GitHub Workflow
@@ -85,7 +89,7 @@ The tests can also be run as part of a GitHub workflow. The workflow is triggere
 
 ### GitHub Token Configuration Test
 
-The GitHub token configuration test (`test_github_token_config.py`) performs the following steps:
+The GitHub token configuration test (`test_github_token_configuration`) performs the following steps:
 
 1. Navigates to the OpenHands application
 2. Checks if the GitHub token is already configured:
@@ -95,7 +99,7 @@ The GitHub token configuration test (`test_github_token_config.py`) performs the
 
 ### Conversation Start Test
 
-The conversation start test (`test_conversation_start.py`) performs the following steps:
+The conversation start test (`test_conversation_start`) performs the following steps:
 
 1. Navigates to the OpenHands application (assumes GitHub token is already configured)
 2. Selects the "openhands-agent/OpenHands" repository
@@ -105,9 +109,17 @@ The conversation start test (`test_conversation_start.py`) performs the followin
 6. Asks "How many lines are there in the main README.md file?"
 7. Waits for and verifies the agent's response
 
+### Full Workflow Test
+
+The full workflow test (`test_full_workflow`) combines the GitHub token configuration and conversation start tests into a single test that runs them in sequence.
+
 ### Simple Browser Navigation Test
 
-A simple test (`test_simple_browser_navigation` in `test_workflow.py`) that just navigates to the OpenHands GitHub repository to verify the browser setup works correctly.
+A simple test (`test_simple_browser_navigation`) that just navigates to the OpenHands GitHub repository to verify the browser setup works correctly.
+
+### Local Runtime Test
+
+A separate test (`test_headless_mode_with_dummy_agent_no_browser` in `test_local_runtime.py`) that tests the local runtime with a dummy agent in headless mode.
 
 ## Troubleshooting
 
