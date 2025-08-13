@@ -12799,6 +12799,22 @@
         "de": "Modellkontextprotokoll (MCP)",
         "uk": "Протокол контексту моделі (MCP)"
     },
+    "COMMON$DROP_YOUR_FILES_HERE": {
+        "en": "Drop your files here",
+        "ja": "ここにファイルをドロップしてください",
+        "zh-CN": "将文件拖到此处",
+        "zh-TW": "將檔案拖到這裡",
+        "ko-KR": "여기에 파일을 놓으세요",
+        "no": "Slipp filene dine her",
+        "it": "Trascina i tuoi file qui",
+        "pt": "Solte seus arquivos aqui",
+        "es": "Suelta tus archivos aquí",
+        "ar": "أسقط ملفاتك هنا",
+        "fr": "Déposez vos fichiers ici",
+        "tr": "Dosyalarınızı buraya bırakın",
+        "de": "Legen Sie Ihre Dateien hier ab",
+        "uk": "Перетягніть ваші файли сюди"
+    },
     "COMMON$GIT_TOOLS": {
         "en": "Git Tools",
         "ja": "Gitツール",
@@ -12974,6 +12990,22 @@
         "no": "Bekreft stopp",
         "tr": "Durdurmayı Onayla",
         "uk": "Підтвердити зупинку"
+    },
+    "HOME$SELECT_OR_INSERT_URL": {
+        "en": "Select or insert a URL",
+        "ja": "URLを選択または挿入",
+        "zh-CN": "选择或插入一个URL",
+        "zh-TW": "選擇或插入一個URL",
+        "ko-KR": "URL 선택 또는 입력",
+        "fr": "Sélectionner ou saisir une URL",
+        "es": "Selecciona o introduce una URL",
+        "de": "URL auswählen oder eingeben",
+        "it": "Seleziona o inserisci un URL",
+        "pt": "Selecione ou insira uma URL",
+        "ar": "اختر أو أدخل عنوان URL",
+        "no": "Velg eller sett inn en URL",
+        "tr": "Bir URL seçin veya girin",
+        "uk": "Виберіть або вставте URL"
     },
     "AGENT_STATUS$INITIALIZING": {
         "en": "Initializing agent...",

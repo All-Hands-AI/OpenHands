@@ -1,6 +1,10 @@
+import { StylesConfig } from "react-select";
 import { useMemo } from "react";
 import { Provider } from "../../types/settings";
-import { ReactSelectDropdown, SelectOption } from "./react-select-dropdown";
+import { ReactSelectDropdown } from "./react-select-dropdown";
+import { GitProviderIcon } from "../shared/git-provider-icon";
+import { SelectOption } from "./react-select-styles";
+import { ReactSelectCustomControl } from "./react-select-custom-control";
 
 export interface GitProviderDropdownProps {
   providers: Provider[];
@@ -11,8 +15,12 @@ export interface GitProviderDropdownProps {
   disabled?: boolean;
   isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
+  styles?: StylesConfig<SelectOption, false>;
+  classNamePrefix?: string;
 }
 
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/jsx-props-no-spreading */
 export function GitProviderDropdown({
   providers,
   value,
@@ -22,6 +30,8 @@ export function GitProviderDropdown({
   disabled = false,
   isLoading = false,
   onChange,
+  styles,
+  classNamePrefix,
 }: GitProviderDropdownProps) {
   const options: SelectOption[] = useMemo(
     () =>
@@ -53,6 +63,24 @@ export function GitProviderDropdown({
       isSearchable={false}
       isLoading={isLoading}
       onChange={handleChange}
+      styles={styles}
+      components={{
+        IndicatorSeparator: () => null,
+        Control: (props) => (
+          <ReactSelectCustomControl
+            {...props}
+            startIcon={
+              selectedOption && (
+                <GitProviderIcon
+                  gitProvider={selectedOption.value as Provider}
+                  className="min-w-[14px] min-h-[14px] w-[14px] h-[14px]"
+                />
+              )
+            }
+          />
+        ),
+      }}
+      classNamePrefix={classNamePrefix}
     />
   );
 }

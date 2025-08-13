@@ -9,12 +9,11 @@ import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { cn } from "#/utils/utils";
 import CloseIcon from "#/icons/close.svg?react";
 import { I18nKey } from "#/i18n/declaration";
+import { useConversationTabs } from "../conversation/conversation-tabs/use-conversation-tabs";
 
-type TerminalProps = {
-  onClose(): void;
-};
-
-function Terminal({ onClose }: TerminalProps) {
+function Terminal() {
+  // eslint-disable-next-line @typescript-eslint/naming-convention, @typescript-eslint/no-unused-vars
+  const [_, { onTerminalChange }] = useConversationTabs();
   const { commands } = useSelector((state: RootState) => state.cmd);
   const { curAgentState } = useSelector((state: RootState) => state.agent);
   const isRuntimeInactive = RUNTIME_INACTIVE_STATES.includes(curAgentState);
@@ -58,7 +57,11 @@ function Terminal({ onClose }: TerminalProps) {
               size={18}
             />
           </button>
-          <button className="cursor-pointer" type="button" onClick={onClose}>
+          <button
+            className="cursor-pointer"
+            type="button"
+            onClick={() => onTerminalChange(false)}
+          >
             <CloseIcon />
           </button>
         </div>

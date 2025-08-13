@@ -86,6 +86,21 @@ export const getExtension = (code: string) => {
 };
 
 /**
+ * Get file extension from file name in uppercase format
+ * @param fileName The file name to extract extension from
+ * @returns The file extension in uppercase, or "FILE" if no extension found
+ *
+ * @example
+ * getFileExtension("document.pdf") // "PDF"
+ * getFileExtension("image.jpeg") // "JPEG"
+ * getFileExtension("noextension") // "FILE"
+ */
+export const getFileExtension = (fileName: string): string => {
+  const extension = fileName.split(".").pop()?.toUpperCase();
+  return extension || "FILE";
+};
+
+/**
  * Format a timestamp to a human-readable format
  * @param timestamp The timestamp to format (ISO 8601)
  * @returns The formatted timestamp

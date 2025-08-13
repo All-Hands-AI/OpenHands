@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from "react";
+import React, { useRef, useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -7,6 +7,8 @@ import { ChatSendButton } from "./chat-send-button";
 import { ChatAddFileButton } from "./chat-add-file-button";
 import { cn } from "#/utils/utils";
 import { useAutoResize } from "#/hooks/use-auto-resize";
+import { DragOver } from "./drag-over";
+import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
 
 export interface CustomChatInputProps {
@@ -36,7 +38,10 @@ export function CustomChatInput({
   className = "",
   buttonClassName = "",
 }: CustomChatInputProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const { t } = useTranslation();
+
   const chatInputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -92,7 +97,7 @@ export function CustomChatInput({
   const handleDragOver = (e: React.DragEvent) => {
     if (disabled) return;
     e.preventDefault();
-    chatContainerRef.current?.classList.add("drag-over");
+    setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
@@ -100,14 +105,14 @@ export function CustomChatInput({
     e.preventDefault();
     // Only remove drag-over class if we're leaving the container entirely
     if (!chatContainerRef.current?.contains(e.relatedTarget as Node)) {
-      chatContainerRef.current?.classList.remove("drag-over");
+      setIsDragOver(false);
     }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     if (disabled) return;
     e.preventDefault();
-    chatContainerRef.current?.classList.remove("drag-over");
+    setIsDragOver(false);
 
     const files = Array.from(e.dataTransfer.files);
     addFiles(files);
@@ -291,6 +296,11 @@ export function CustomChatInput({
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
       >
+        {/* Drag Over UI */}
+        {isDragOver && <DragOver />}
+
+        <UploadedFiles />
+
         {/* Main Input Row */}
         <div className="box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px] gap-2">
           <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-end justify-start min-h-px min-w-px p-0 relative shrink-0">
