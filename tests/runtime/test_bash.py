@@ -876,6 +876,150 @@ def test_git_operation(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific git hooks and file operations'
+)
+def test_git_co_authorship_hook(temp_dir, runtime_cls):
+    """Test that the git prepare-commit-msg hook automatically adds co-authorship."""
+    runtime, config = _load_runtime(
+        temp_dir=temp_dir,
+        use_workspace=False,
+        runtime_cls=runtime_cls,
+        run_as_openhands=True,
+    )
+
+    try:
+        # Set up git repository
+        obs = _run_cmd_action(runtime, 'git init')
+        assert obs.exit_code == 0
+
+        # Set up a different git user (not openhands) to test the hook fallback
+        obs = _run_cmd_action(
+            runtime,
+            'git config user.name "testuser" && git config user.email "testuser@example.com"',
+        )
+        assert obs.exit_code == 0
+
+        # Create the git hook directory and copy our hook script
+        obs = _run_cmd_action(runtime, 'mkdir -p .git/hooks')
+        assert obs.exit_code == 0
+
+        # Copy the git hook script from the OpenHands source
+        git_hook_path = str(
+            Path(__file__).parent.parent.parent
+            / 'openhands'
+            / 'runtime'
+            / 'utils'
+            / 'git_hooks'
+            / 'prepare-commit-msg'
+        )
+        obs = _run_cmd_action(runtime, f'cp "{git_hook_path}" .git/hooks/')
+        assert obs.exit_code == 0
+
+        # Make the hook executable
+        obs = _run_cmd_action(runtime, 'chmod +x .git/hooks/prepare-commit-msg')
+        assert obs.exit_code == 0
+
+        # Create a test file and add it to git
+        obs = _run_cmd_action(runtime, 'echo "test content" > test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
+        assert obs.exit_code == 0
+
+        # Commit without manually adding co-authorship - the hook should add it
+        obs = _run_cmd_action(
+            runtime, 'git commit -m "Test commit without manual co-authorship"'
+        )
+        assert obs.exit_code == 0
+
+        # Check the commit message to verify co-authorship was added by the hook
+        obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
+        assert obs.exit_code == 0
+        assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
+
+        # Test that the hook is a no-op when co-authorship is already present
+        obs = _run_cmd_action(runtime, 'echo "more content" >> test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
+        assert obs.exit_code == 0
+
+        # Commit with manual co-authorship - hook should not duplicate it
+        commit_msg = 'Test commit with manual co-authorship\n\nCo-authored-by: openhands <openhands@all-hands.dev>'
+        obs = _run_cmd_action(runtime, f'git commit -m "{commit_msg}"')
+        assert obs.exit_code == 0
+
+        # Check that there's only one co-authorship line
+        obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
+        assert obs.exit_code == 0
+        co_author_count = obs.content.count(
+            'Co-authored-by: openhands <openhands@all-hands.dev>'
+        )
+        assert co_author_count == 1, (
+            f'Expected 1 co-authorship line, found {co_author_count}'
+        )
+
+    finally:
+        _close_test_runtime(runtime)
+
+
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific git wrapper and file operations'
+)
+def test_git_co_authorship_wrapper_always_enabled(temp_dir, runtime_cls):
+    """Test that git co-authorship wrapper is always enabled in CLI runtime."""
+    # Only test with CLIRuntime since other runtimes handle git co-authorship differently
+    if runtime_cls.__name__ != 'CLIRuntime':
+        pytest.skip('This test is specific to CLIRuntime')
+
+    runtime, config = _load_runtime(
+        temp_dir=temp_dir,
+        use_workspace=False,
+        runtime_cls=runtime_cls,
+        run_as_openhands=True,
+    )
+
+    try:
+        # Initialize git repository in the workspace
+        obs = _run_cmd_action(runtime, 'git init')
+        assert obs.exit_code == 0
+
+        # Set up a different git user (not openhands) to test the wrapper
+        obs = _run_cmd_action(
+            runtime,
+            'git config user.name "testuser" && git config user.email "testuser@example.com"',
+        )
+        assert obs.exit_code == 0
+
+        # The git wrapper should have been set up during runtime initialization
+        # Check if the wrapper exists in the bin directory
+        obs = _run_cmd_action(
+            runtime, 'test -x .openhands_bin/git && echo "wrapper exists"'
+        )
+        assert obs.exit_code == 0
+        assert 'wrapper exists' in obs.content
+
+        # Create a test file and commit to verify the wrapper works
+        obs = _run_cmd_action(runtime, 'echo "test content" > test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
+        assert obs.exit_code == 0
+
+        # Commit without manually adding co-authorship - the wrapper should add it
+        obs = _run_cmd_action(runtime, 'git commit -m "Test commit with wrapper"')
+        assert obs.exit_code == 0
+
+        # Check the commit message to verify co-authorship was added by the wrapper
+        obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
+        assert obs.exit_code == 0
+        assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_python_version(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:

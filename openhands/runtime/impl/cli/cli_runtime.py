@@ -156,6 +156,9 @@ class CLIRuntime(Runtime):
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
 
+        # Initialize git wrapper path
+        self._git_wrapper_path: str | None = None
+
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
@@ -213,6 +216,74 @@ class CLIRuntime(Runtime):
 
         # We don't use self.run() here because this method is called
         # during initialization before self._runtime_initialized is True.
+
+    def setup_initial_env(self) -> None:
+        """Override to add git wrapper setup for CLIRuntime."""
+        super().setup_initial_env()
+
+        # Always enable git co-authorship in CLI runtime
+        self._setup_git_wrapper()
+
+    def _setup_git_wrapper(self) -> None:
+        """Set up git wrapper to automatically add co-authorship."""
+        try:
+            # Path to our git wrapper script
+            git_wrapper_source = os.path.join(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(__file__))
+                ),  # openhands/runtime/
+                'utils',
+                'git_wrapper.sh',
+            )
+
+            if not os.path.exists(git_wrapper_source):
+                logger.warning(
+                    f'[CLIRuntime] Git wrapper not found at {git_wrapper_source}'
+                )
+                return
+
+            # Find the real git executable path
+            import subprocess
+
+            try:
+                real_git_path = subprocess.check_output(
+                    ['which', 'git'], text=True
+                ).strip()
+            except subprocess.CalledProcessError:
+                logger.warning('[CLIRuntime] Could not find git executable')
+                return
+
+            # Create a bin directory in the workspace for our git wrapper
+            bin_dir = os.path.join(self._workspace_path, '.openhands_bin')
+            os.makedirs(bin_dir, exist_ok=True)
+
+            # Create a modified wrapper that calls the real git with full path
+            git_wrapper_dest = os.path.join(bin_dir, 'git')
+            with open(git_wrapper_source, 'r') as src:
+                wrapper_content = src.read()
+
+            # Replace 'command git' with the full path to avoid recursion
+            wrapper_content = wrapper_content.replace(
+                'command git', f'"{real_git_path}"'
+            )
+
+            with open(git_wrapper_dest, 'w') as dest:
+                dest.write(wrapper_content)
+
+            os.chmod(git_wrapper_dest, 0o755)
+
+            # Prepend the bin directory to PATH so our git wrapper is found first
+            # This works for all commands including chained ones like "cd dir && git commit"
+            current_path = os.environ.get('PATH', '')
+            new_path = f'{bin_dir}:{current_path}'
+            os.environ['PATH'] = new_path
+
+            logger.info(
+                '[CLIRuntime] Set up OpenHands git wrapper in PATH for co-authorship'
+            )
+
+        except Exception as e:
+            logger.warning(f'[CLIRuntime] Failed to set up git wrapper: {e}')
 
     def _safe_terminate_process(self, process_obj, signal_to_send=signal.SIGTERM):
         """Safely attempts to terminate/kill a process group or a single process.
@@ -455,15 +526,20 @@ class CLIRuntime(Runtime):
                 f'Running command in CLIRuntime: "{action.command}" with effective timeout: {effective_timeout}s'
             )
 
+            # Use the command as-is since git alias is set up
+            command_to_execute = action.command
+
             # Use PowerShell on Windows if available, otherwise use subprocess
             if self._is_windows and self._powershell_session is not None:
-                return self._execute_powershell_command(
-                    action.command, timeout=effective_timeout
+                result = self._execute_powershell_command(
+                    command_to_execute, timeout=effective_timeout
                 )
             else:
-                return self._execute_shell_command(
-                    action.command, timeout=effective_timeout
+                result = self._execute_shell_command(
+                    command_to_execute, timeout=effective_timeout
                 )
+
+            return result
         except Exception as e:
             logger.error(
                 f'Error in CLIRuntime.run for command "{action.command}": {str(e)}'
