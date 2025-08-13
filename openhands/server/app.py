@@ -11,6 +11,7 @@ with warnings.catch_warnings():
 from fastapi import (
     FastAPI,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -66,6 +67,14 @@ app = FastAPI(
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
+# CORS (allow configurable origins; default to *)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 app.include_router(public_api_router)
 app.include_router(files_api_router)

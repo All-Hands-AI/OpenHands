@@ -97,3 +97,29 @@ docker build -t gp-khayal:latest -f containers/app/Dockerfile .
 ---
 
 This repository is branded as “GP‑KhayaL – Khayal Virtual Cyber Security”.
+
+# Deployment (Cloudflare Tunnel and VPS with Caddy)
+
+## Quick (Cloudflare Tunnel)
+
+1. Install cloudflared and login: `cloudflared tunnel login`
+2. Run dev tunnel for backend: `cloudflared tunnel --url http://localhost:3000`
+3. Use the public URL to access the app without password.
+
+## Production (VPS + Docker Compose + Caddy)
+
+1. Set DNS A for `gp-khayal.top` to your VPS IP.
+2. Copy `docker-compose.yml` and `Caddyfile` to the server.
+3. Create `.env` with:
+   - `GITHUB_APP_CLIENT_ID=...`
+   - `GITHUB_APP_CLIENT_SECRET=...`
+   - `FRONTEND_REDIRECT_URL=https://gp-khayal.top`
+4. Launch:
+```
+docker compose up -d --build
+```
+Caddy will obtain TLS automatically and reverse proxy to the app.
+
+## OAuth (GitHub)
+- Callback URL: `https://gp-khayal.top/api/auth/github/callback`
+- Scopes: `repo read:user user:email`

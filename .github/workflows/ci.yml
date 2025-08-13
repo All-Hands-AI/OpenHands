@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Poetry
+        run: pip install poetry==2.1.2
+      - name: Install backend deps
+        run: poetry install
+      - name: Lint (ruff)
+        run: poetry run ruff check .
+      - name: Run backend tests
+        run: poetry run pytest -q
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci --no-audit --no-fund
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build

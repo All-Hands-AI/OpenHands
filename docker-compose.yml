@@ -21,3 +21,28 @@ services:
     pull_policy: build
     stdin_open: true
     tty: true
+
+  caddy:
+    image: caddy:2
+    container_name: caddy-${DATE:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - openhands
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-${DATE:-}
+    command: tunnel --no-autoupdate --url http://openhands:3000
+    restart: unless-stopped
+    depends_on:
+      - openhands
+
+volumes:
+  caddy_data:
+  caddy_config:
