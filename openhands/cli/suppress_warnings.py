@@ -53,7 +53,6 @@ def suppress_cli_warnings():
         'ignore',
         message="coroutine 'close_litellm_async_clients' was never awaited",
         category=RuntimeWarning,
-
     )
 
 
