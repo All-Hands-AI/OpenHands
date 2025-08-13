@@ -51,5 +51,3 @@ if [ -d /opt/miniconda3 ]; then
     . /opt/miniconda3/etc/profile.d/conda.sh
     conda activate $CONDA_ENV_NAME
 fi
-
-
