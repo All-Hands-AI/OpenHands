@@ -88,7 +88,7 @@ uvx --python 3.12 --from openhands-ai openhands serve --mount-cwd
 
 This will automatically handle Docker requirements checking, image pulling, and launching the GUI server. The `--gpu` flag enables GPU support via nvidia-docker, and `--mount-cwd` mounts your current directory into the container.
 
-**Alternative: Traditional pip installation**
+<Accordion title="Alternative: Traditional pip installation">
 
 If you prefer to use pip and have Python 3.12+ installed:
 
@@ -101,6 +101,8 @@ openhands serve
 ```
 
 Note that you'll still need `uv` installed for the default MCP servers to work properly.
+
+</Accordion>
 
 #### Option 2: Using Docker Directly
 
