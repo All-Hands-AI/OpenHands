@@ -221,15 +221,7 @@ RUN \
     touch /openhands/code/openhands/__init__.py && \
     # Set global git configuration to ensure proper author/committer information
     git config --global user.name "openhands" && \
-    git config --global user.email "openhands@all-hands.dev" && \
-    # Set up global git hook template directory for automatic co-authorship fallback
-    mkdir -p /openhands/git-hooks/hooks && \
-    git config --global init.templateDir /openhands/git-hooks && \
-    # Copy git hooks from source code
-    cp /openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg /openhands/git-hooks/hooks/ && \
-    chmod +x /openhands/git-hooks/hooks/prepare-commit-msg && \
-    # Set up global git hooks path for existing repositories
-    git config --global core.hooksPath /openhands/git-hooks/hooks
+    git config --global user.email "openhands@all-hands.dev"
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
@@ -251,6 +243,17 @@ RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagen
 COPY ./code/microagents /openhands/code/microagents
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
+
+# Set up global git hooks for automatic co-authorship
+RUN \
+    # Set up global git hook template directory for automatic co-authorship fallback
+    mkdir -p /openhands/git-hooks/hooks && \
+    git config --global init.templateDir /openhands/git-hooks && \
+    # Copy git hooks from source code
+    cp /openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg /openhands/git-hooks/hooks/ && \
+    chmod +x /openhands/git-hooks/hooks/prepare-commit-msg && \
+    # Set up global git hooks path for existing repositories
+    git config --global core.hooksPath /openhands/git-hooks/hooks
 
 
 
