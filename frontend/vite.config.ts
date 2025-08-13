@@ -31,6 +31,24 @@ export default defineConfig(({ mode }) => {
       svgr(),
       tailwindcss(),
     ],
+    optimizeDeps: {
+      include: [
+        // Pre-bundle dependencies used in conversation interface to prevent
+        // runtime optimization and page reloads when launching conversations
+        "react-icons/vsc",
+        "react-icons/lu", 
+        "react-icons/di",
+        "react-icons/io5",
+        "@monaco-editor/react",
+        "react-textarea-autosize",
+        "react-markdown",
+        "remark-gfm",
+        "remark-breaks",
+        "react-syntax-highlighter",
+        "react-syntax-highlighter/dist/esm/styles/prism",
+        "react-syntax-highlighter/dist/esm/styles/hljs",
+      ],
+    },
     server: {
       port: FE_PORT,
       host: true,
