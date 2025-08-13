@@ -31,6 +31,36 @@ if ! nc -z localhost 12000; then
   exit 1
 fi
 
-# Run the test
-echo "Running end-to-end tests..."
-poetry run python -m pytest test_workflow.py::test_openhands_workflow -v
+# Create test-results directory if it doesn't exist
+mkdir -p test-results
+
+# Run the tests in sequence with a visible browser
+echo "Running end-to-end tests with visible browser..."
+
+# Step 1: Run the GitHub token configuration test
+echo "Step 1: Running GitHub token configuration test..."
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_github_token_config.py
+
+# Check if the test passed
+if [ $? -ne 0 ]; then
+    echo "GitHub token configuration test failed"
+    echo "Please check the test output and screenshots in the test-results directory"
+    exit 1
+fi
+
+echo "GitHub token configuration test passed"
+
+# Step 2: Run the conversation start test
+echo "Step 2: Running conversation start test..."
+poetry run pytest -v --no-header --capture=no --no-headless --slow-mo=50 test_conversation_start.py
+
+# Check if the test passed
+if [ $? -ne 0 ]; then
+    echo "Conversation start test failed"
+    echo "Please check the test output and screenshots in the test-results directory"
+    exit 1
+fi
+
+echo "Conversation start test passed"
+
+echo "All end-to-end tests passed successfully!"

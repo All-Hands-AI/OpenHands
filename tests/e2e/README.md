@@ -25,18 +25,53 @@ Optional environment variables:
 
 ### Running Locally
 
-To run the tests locally, you can use the provided script:
+To run the full end-to-end test suite locally, you can use the provided script:
 
 ```bash
 cd tests/e2e
 ./run_e2e_tests.sh
 ```
 
-Or run the test directly:
+This script runs the tests in sequence:
+1. First, it runs the GitHub token configuration test
+2. Then, it runs the conversation start test
+
+### Running Individual Tests
+
+You can run individual tests directly:
 
 ```bash
 cd tests/e2e
-poetry run python -m pytest test_workflow.py::test_openhands_workflow -v --timeout=600
+# Run the GitHub token configuration test
+poetry run pytest test_github_token_config.py -v
+
+# Run the conversation start test
+poetry run pytest test_conversation_start.py -v
+```
+
+### Running with Visible Browser
+
+To run the tests with a visible browser (non-headless mode) so you can watch the browser interactions:
+
+```bash
+cd tests/e2e
+./run_visible_browser_test.sh test_github_token_config
+./run_visible_browser_test.sh test_conversation_start
+```
+
+You can also run a simple navigation test to verify your setup:
+
+```bash
+cd tests/e2e
+./run_visible_browser_test.sh test_simple_browser_navigation
+```
+
+Or run the tests directly with pytest:
+
+```bash
+cd tests/e2e
+poetry run pytest test_github_token_config.py -v --no-headless --slow-mo=50
+poetry run pytest test_conversation_start.py -v --no-headless --slow-mo=50
 ```
 
 ### GitHub Workflow
@@ -46,19 +81,33 @@ The tests can also be run as part of a GitHub workflow. The workflow is triggere
 1. Adding the "end-to-end" label to a pull request
 2. Manually triggering the workflow from the GitHub Actions tab
 
-## Test Description
+## Test Descriptions
 
-The end-to-end test performs the following steps:
+### GitHub Token Configuration Test
 
-1. Starts OpenHands according to the development workflow (using `make build; make run`)
-2. Uses Playwright to manipulate the interface to:
-   a. Click on the "All-Hands-AI/OpenHands" repo in the "Select a repo" dropdown
-   b. Click "Launch"
-   c. Check that the interface changes to the interface where we can control the agent
-   d. Check that we go through the "Connecting", "Initializing Agent", and "Agent is waiting for user input..." states
-   e. Enter "How many lines are there in the main README.md file?" and click the submit button
-   f. Check that we go through the "Agent is running task" and "Agent has finished the task." states
-   g. Check that the final agent message contains a number that matches "wc -l README.md"
+The GitHub token configuration test (`test_github_token_config.py`) performs the following steps:
+
+1. Navigates to the OpenHands application
+2. Checks if the GitHub token is already configured:
+   - If not configured, it navigates to the settings page and configures it
+   - If already configured, it verifies the repository selection is available
+3. Verifies that the GitHub token is saved and the repository selection is available
+
+### Conversation Start Test
+
+The conversation start test (`test_conversation_start.py`) performs the following steps:
+
+1. Navigates to the OpenHands application (assumes GitHub token is already configured)
+2. Selects the "openhands-agent/OpenHands" repository
+3. Clicks the "Launch" button
+4. Waits for the conversation interface to load
+5. Waits for the agent to initialize
+6. Asks "How many lines are there in the main README.md file?"
+7. Waits for and verifies the agent's response
+
+### Simple Browser Navigation Test
+
+A simple test (`test_simple_browser_navigation` in `test_workflow.py`) that just navigates to the OpenHands GitHub repository to verify the browser setup works correctly.
 
 ## Troubleshooting
 
