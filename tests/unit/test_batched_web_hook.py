@@ -265,7 +265,10 @@ class TestBatchedWebHookFileStore:
                     if 'content' in item:
                         event_key += f':{item["content"]}'
                     sent_events.append(event_key)
-            return original_post(*args, **kwargs)
+            # Return a mock response instead of calling original_post
+            response = Mock()
+            response.raise_for_status = Mock()
+            return response
 
         mock_client.post.side_effect = track_post
 
@@ -315,7 +318,10 @@ class TestBatchedWebHookFileStore:
                     if 'content' in item:
                         event_key += f':{item["content"]}'
                     sent_events.append(event_key)
-            return original_post(*args, **kwargs)
+            # Return a mock response instead of calling original_post
+            response = Mock()
+            response.raise_for_status = Mock()
+            return response
 
         mock_client.post.side_effect = track_post
 
@@ -358,7 +364,10 @@ class TestBatchedWebHookFileStore:
                     if 'content' in item:
                         event_key += f':{item["content"]}'
                     sent_events.append(event_key)
-            return original_post(*args, **kwargs)
+            # Return a mock response instead of calling original_post
+            response = Mock()
+            response.raise_for_status = Mock()
+            return response
 
         mock_client.post.side_effect = track_post
 
@@ -417,7 +426,10 @@ class TestBatchedWebHookFileStore:
         def track_post(*args, **kwargs):
             nonlocal call_count
             call_count += 1
-            return original_post(*args, **kwargs)
+            # Return a mock response instead of calling original_post
+            response = Mock()
+            response.raise_for_status = Mock()
+            return response
 
         mock_client.post.side_effect = track_post
 
@@ -476,7 +488,6 @@ class TestBatchedWebHookFileStore:
 
             # Track webhook calls
             sent_events = []
-            original_post = mock_client.post
 
             def track_post(*args, **kwargs):
                 if 'json' in kwargs:
@@ -486,7 +497,10 @@ class TestBatchedWebHookFileStore:
                         if 'content' in item:
                             event_key += f':{item["content"]}'
                         sent_events.append(event_key)
-                return original_post(*args, **kwargs)
+                # Return a mock response instead of calling original_post
+                response = Mock()
+                response.raise_for_status = Mock()
+                return response
 
             mock_client.post.side_effect = track_post
 
@@ -554,7 +568,6 @@ class TestBatchedWebHookFileStore:
 
             # Track webhook calls
             sent_events = []
-            original_post = mock_client.post
 
             def track_post(*args, **kwargs):
                 if 'json' in kwargs:
@@ -564,7 +577,10 @@ class TestBatchedWebHookFileStore:
                         if 'content' in item:
                             event_key += f':{item["content"]}'
                         sent_events.append(event_key)
-                return original_post(*args, **kwargs)
+                # Return a mock response instead of calling original_post
+                response = Mock()
+                response.raise_for_status = Mock()
+                return response
 
             mock_client.post.side_effect = track_post
 
@@ -632,7 +648,6 @@ class TestBatchedWebHookFileStore:
 
             # Track webhook calls
             sent_events = []
-            original_post = mock_client.post
 
             def track_post(*args, **kwargs):
                 if 'json' in kwargs:
@@ -642,7 +657,10 @@ class TestBatchedWebHookFileStore:
                         if 'content' in item:
                             event_key += f':{item["content"]}'
                         sent_events.append(event_key)
-                return original_post(*args, **kwargs)
+                # Return a mock response instead of calling original_post
+                response = Mock()
+                response.raise_for_status = Mock()
+                return response
 
             mock_client.post.side_effect = track_post
 

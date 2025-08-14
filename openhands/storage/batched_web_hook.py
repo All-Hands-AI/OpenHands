@@ -191,8 +191,8 @@ class BatchedWebHookFileStore(FileStore):
         This method is called by the timer and submits the actual sending to the executor.
         """
         with self._batch_lock:
-            # Only submit if no send is already in progress
-            if not self._send_in_progress:
+            # Only submit if no send is already in progress and there's something to send
+            if not self._send_in_progress and self._batch:
                 self._send_in_progress = True
                 EXECUTOR.submit(self._send_batch)
 
