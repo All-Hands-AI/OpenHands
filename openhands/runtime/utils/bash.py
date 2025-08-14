@@ -312,7 +312,11 @@ class BashSession:
         return command_output.rstrip()
 
     def _handle_completed_command(
-        self, command: str, pane_content: str, ps1_matches: list[re.Match], is_static: bool
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        is_static: bool,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
