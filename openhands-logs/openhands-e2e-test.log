@@ -1,0 +1,33 @@
+[33mRunning the app...(B[m
+[33mStarting backend server...(B[m
+[33mWaiting for the backend to start...(B[m
+[92m01:47:06 - openhands:INFO[0m: server_config.py:56 - Using config class None
+INFO:     Started server process [4856]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
+Connection to localhost (127.0.0.1) 3000 port [tcp/*] succeeded!
+[32mBackend started successfully.(B[m
+[33mStarting frontend...(B[m
+
+> openhands-frontend@0.52.1 dev
+> npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev --port 12000 --host 0.0.0.0
+
+
+> openhands-frontend@0.52.1 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m12000[22m/[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.1.0.144:[1m12000[22m/[39m
+[2m1:47:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mreact-redux, posthog-js, @tanstack/react-query, react-hot-toast, @reduxjs/toolkit, i18next, i18next-http-backend, i18next-browser-languagedetector, react-i18next, axios, date-fns, @uidotdev/usehooks, react-icons/fa6, react-icons/fa, clsx, tailwind-merge, @heroui/react, lucide-react, react-select, react-select/async, @microlink/react-json-view, socket.io-client[32m[39m
+[2m1:47:22 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+INFO:     127.0.0.1:35268 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35284 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38040 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38048 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38062 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38068 - "GET /api/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:38078 - "GET /api/options/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38084 - "GET /api/options/agents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38094 - "GET /api/options/security-analyzers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:38102 - "GET /api/settings HTTP/1.1" 404 Not Found

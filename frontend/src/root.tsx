@@ -11,13 +11,27 @@ import "./index.css";
 import React from "react";
 import { Toaster } from "react-hot-toast";
 
+function SafeMeta() {
+  try {
+    return <Meta />;
+  } catch (error) {
+    console.warn("Meta component failed to render:", error);
+    return (
+      <>
+        <title>OpenHands</title>
+        <meta name="description" content="Let's Start Building!" />
+      </>
+    );
+  }
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
+        <SafeMeta />
         <Links />
       </head>
       <body>
