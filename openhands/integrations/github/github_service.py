@@ -327,7 +327,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         try:
             response, _ = await self._make_request(url)
             orgs = [org['login'] for org in response]
-            logger.info(f'Found {len(orgs)} organizations: {orgs}')
             return orgs
         except Exception as e:
             logger.warning(f'Failed to get user organizations: {e}')
@@ -363,20 +362,18 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             user = await self.get_user()
             user_orgs = await self.get_user_organizations()
 
-            # Try a simpler query format: search in user repos and org repos separately
+            # Search in user repos and org repos separately
             all_repos = []
             
             # Search in user repositories
             user_query = f'{query} user:{user.login}'
             user_params = params.copy()
             user_params['q'] = user_query
-            logger.info(f'Searching user repos with query: {user_query}')
             
             try:
                 user_response, _ = await self._make_request(url, user_params)
                 user_items = user_response.get('items', [])
                 all_repos.extend(user_items)
-                logger.info(f'Found {len(user_items)} repos in user search')
             except Exception as e:
                 logger.warning(f'User search failed: {e}')
             
@@ -385,36 +382,20 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 org_query = f'{query} org:{org}'
                 org_params = params.copy()
                 org_params['q'] = org_query
-                logger.info(f'Searching org {org} with query: {org_query}')
                 
                 try:
                     org_response, _ = await self._make_request(url, org_params)
                     org_items = org_response.get('items', [])
                     all_repos.extend(org_items)
-                    logger.info(f'Found {len(org_items)} repos in org {org} search')
                 except Exception as e:
                     logger.warning(f'Org {org} search failed: {e}')
             
-            # Remove duplicates and return
-            seen_ids = set()
-            unique_repos = []
-            for repo in all_repos:
-                if repo['id'] not in seen_ids:
-                    seen_ids.add(repo['id'])
-                    unique_repos.append(repo)
-            
-            logger.info(f'Total unique repos found: {len(unique_repos)}')
-            return [self._parse_repository(repo) for repo in unique_repos]
+            return [self._parse_repository(repo) for repo in all_repos]
 
         # Default case (public search or slash query)
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
-        logger.info(f'GitHub search returned {len(repo_items)} repositories')
-        if repo_items:
-            logger.info(f'First few repos: {[item.get("full_name") for item in repo_items[:3]]}')
-        repos = [self._parse_repository(repo) for repo in repo_items]
-
-        return repos
+        return [self._parse_repository(repo) for repo in repo_items]
 
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any]
