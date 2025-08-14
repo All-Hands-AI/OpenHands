@@ -1567,3 +1567,89 @@ def test_llm_reinit_resets_cost_flag(default_config):
     # Same model, but reinit should reset the flag to True
     llm.reinit(copy.deepcopy(default_config))
     assert llm.cost_metric_supported is True
+
+
+def test_llm_reinit_thread_safety_with_inflight_completion(default_config):
+    """Concurrent reinit during an in-flight completion should not raise,
+    and subsequent completions should use the new config.
+    """
+    import threading
+    import time
+    from unittest.mock import patch
+
+    llm = LLM(default_config)
+
+    calls = []
+
+    def fake_completion(*args, **kwargs):
+        # Simulate provider latency and record the model used
+        calls.append(kwargs.get('model'))
+        time.sleep(0.2)
+        return {
+            'id': 'test-1',
+            'choices': [{'message': {'content': 'ok'}}],
+            'usage': {'prompt_tokens': 1, 'completion_tokens': 1},
+        }
+
+    with patch('openhands.llm.llm.litellm_completion') as mock_completion:
+        mock_completion.side_effect = fake_completion
+
+        # Start an in-flight completion with the initial model
+        t = threading.Thread(
+            target=llm.completion, args=([{'role': 'user', 'content': 'hi'}],)
+        )
+        t.start()
+
+        # Reinit while the completion is in-flight
+        time.sleep(0.05)
+        new_cfg = copy.deepcopy(default_config)
+        new_cfg.model = 'claude-3-5-sonnet-20241022'
+        llm.reinit(new_cfg)
+
+        t.join()
+
+        # Subsequent completion should use the new config
+        llm.completion(messages=[{'role': 'user', 'content': 'again'}])
+
+        # Ensure the latest call used the new model and metrics reflect it
+        assert len(calls) >= 1
+        assert calls[-1] == 'claude-3-5-sonnet-20241022'
+        assert llm.metrics.model_name == 'claude-3-5-sonnet-20241022'
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_llm_reinit_provider_mappings(mock_completion, default_config):
+    """Reinit should apply provider-specific mappings (openhands proxy, azure max_tokens)."""
+    # Return a minimal, valid response
+    mock_completion.return_value = {
+        'id': 'call',
+        'choices': [{'message': {'content': 'ok'}}],
+        'usage': {'prompt_tokens': 1, 'completion_tokens': 1},
+    }
+
+    llm = LLM(default_config)
+
+    # 1) OpenHands provider rewrite to litellm_proxy
+    cfg_proxy = copy.deepcopy(default_config)
+    cfg_proxy.model = 'openhands/qwen3-coder'
+    llm.reinit(cfg_proxy)
+    llm.completion(messages=[{'role': 'user', 'content': 'x'}])
+
+    model_arg = mock_completion.call_args.kwargs.get('model')
+    base_url_arg = mock_completion.call_args.kwargs.get('base_url')
+    assert model_arg == 'litellm_proxy/qwen3-coder'
+    assert base_url_arg == 'https://llm-proxy.app.all-hands.dev/'
+
+    # 2) Azure mapping: max_completion_tokens -> max_tokens
+    mock_completion.reset_mock()
+    cfg_azure = copy.deepcopy(default_config)
+    cfg_azure.model = 'azure/gpt-4o'
+    cfg_azure.max_output_tokens = 777
+    cfg_azure.api_version = '2024-06-01'
+    llm.reinit(cfg_azure)
+    llm.completion(messages=[{'role': 'user', 'content': 'y'}])
+
+    kwargs = mock_completion.call_args.kwargs
+    assert kwargs.get('model') == 'azure/gpt-4o'
+    assert 'max_tokens' in kwargs and kwargs['max_tokens'] == 777
+    assert 'max_completion_tokens' not in kwargs
