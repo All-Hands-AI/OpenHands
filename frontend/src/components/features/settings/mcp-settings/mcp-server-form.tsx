@@ -47,52 +47,113 @@ export function MCPServerForm({
     { key: "shttp", label: t(I18nKey.SETTINGS$MCP_SERVER_TYPE_SHTTP) },
   ];
 
+  const validateUrl = (url: string): string | null => {
+    if (!url) return t(I18nKey.SETTINGS$MCP_ERROR_URL_REQUIRED);
+    try {
+      const urlObj = new URL(url);
+      if (!["http:", "https:"].includes(urlObj.protocol)) {
+        return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID_PROTOCOL);
+      }
+    } catch {
+      return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID);
+    }
+    return null;
+  };
+
+  const validateName = (name: string): string | null => {
+    if (!name) return t(I18nKey.SETTINGS$MCP_ERROR_NAME_REQUIRED);
+    if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
+    }
+    return null;
+  };
+
+  const validateNameUniqueness = (name: string): string | null => {
+    if (!existingServers) return null;
+    const shouldCheckUniqueness =
+      mode === "add" || (mode === "edit" && server?.name !== name);
+    if (!shouldCheckUniqueness) return null;
+
+    const existingStdioNames = existingServers
+      .filter((s) => s.type === "stdio")
+      .map((s) => s.name)
+      .filter(Boolean);
+    if (existingStdioNames.includes(name)) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_NAME_DUPLICATE);
+    }
+    return null;
+  };
+
+  const validateCommand = (command: string): string | null => {
+    if (!command) return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_REQUIRED);
+    if (command.includes(" ")) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_NO_SPACES);
+    }
+    return null;
+  };
+
+  const validateUrlUniqueness = (url: string): string | null => {
+    if (!existingServers) return null;
+    const originalUrl = server?.url;
+    const changed = mode === "add" || (mode === "edit" && originalUrl !== url);
+    if (!changed) return null;
+    const exists = existingServers.some(
+      (s) => s.type === serverType && s.url === url,
+    );
+    if (exists) {
+      return t(I18nKey.SETTINGS$MCP_ERROR_URL_DUPLICATE);
+    }
+    return null;
+  };
+
+  const validateEnvFormat = (envString: string): string | null => {
+    if (!envString.trim()) return null;
+    const lines = envString.split("\n");
+    for (let i = 0; i < lines.length; i += 1) {
+      const trimmed = lines[i].trim();
+      if (trimmed) {
+        const eq = trimmed.indexOf("=");
+        if (eq === -1) return t(I18nKey.SETTINGS$MCP_ERROR_ENV_INVALID_FORMAT);
+        const key = trimmed.substring(0, eq).trim();
+        if (!key) return t(I18nKey.SETTINGS$MCP_ERROR_ENV_INVALID_FORMAT);
+      }
+    }
+    return null;
+  };
+
+  const validateStdioServer = (formData: FormData): string | null => {
+    const name = formData.get("name")?.toString().trim() || "";
+    const command = formData.get("command")?.toString().trim() || "";
+    const envString = formData.get("env")?.toString() || "";
+
+    const nameError = validateName(name);
+    if (nameError) return nameError;
+
+    const uniquenessError = validateNameUniqueness(name);
+    if (uniquenessError) return uniquenessError;
+
+    const commandError = validateCommand(command);
+    if (commandError) return commandError;
+
+    // Validate environment variable format
+    const envError = validateEnvFormat(envString);
+    if (envError) return envError;
+
+    return null;
+  };
+
   const validateForm = (formData: FormData): string | null => {
     if (serverType === "sse" || serverType === "shttp") {
-      const url = formData.get("url")?.toString().trim();
-      if (!url) {
-        return t(I18nKey.SETTINGS$MCP_ERROR_URL_REQUIRED);
-      }
-      try {
-        const urlObj = new URL(url);
-        if (!["http:", "https:"].includes(urlObj.protocol)) {
-          return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID_PROTOCOL);
-        }
-      } catch {
-        return t(I18nKey.SETTINGS$MCP_ERROR_URL_INVALID);
-      }
+      const url = formData.get("url")?.toString().trim() || "";
+      const urlError = validateUrl(url);
+      if (urlError) return urlError;
+      const urlDupError = validateUrlUniqueness(url);
+      if (urlDupError) return urlDupError;
+      return null;
     }
 
     if (serverType === "stdio") {
-      const name = formData.get("name")?.toString().trim();
-      const command = formData.get("command")?.toString().trim();
-
-      if (!name) {
-        return t(I18nKey.SETTINGS$MCP_ERROR_NAME_REQUIRED);
-      }
-      if (!/^[a-zA-Z0-9_-]+$/.test(name)) {
-        return t(I18nKey.SETTINGS$MCP_ERROR_NAME_INVALID);
-      }
-
-      // Check for uniqueness (only for add mode or if name changed in edit mode)
-      if (
-        existingServers &&
-        (mode === "add" || (mode === "edit" && server?.name !== name))
-      ) {
-        const existingStdioNames = existingServers
-          .filter((s) => s.type === "stdio")
-          .map((s) => s.name)
-          .filter(Boolean);
-        if (existingStdioNames.includes(name)) {
-          return t(I18nKey.SETTINGS$MCP_ERROR_NAME_DUPLICATE);
-        }
-      }
-      if (!command) {
-        return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_REQUIRED);
-      }
-      if (command.includes(" ")) {
-        return t(I18nKey.SETTINGS$MCP_ERROR_COMMAND_NO_SPACES);
-      }
+      return validateStdioServer(formData);
     }
 
     return null;
@@ -102,17 +163,21 @@ export function MCPServerForm({
     envString: string,
   ): Record<string, string> => {
     const env: Record<string, string> = {};
-    if (!envString.trim()) return env;
+    if (!envString.trim()) {
+      return env;
+    }
 
     const lines = envString.split("\n");
-    for (const line of lines) {
-      const trimmedLine = line.trim();
-      if (trimmedLine) {
+    for (let i = 0; i < lines.length; i += 1) {
+      const trimmedLine = lines[i].trim();
+      if (!trimmedLine) {
+        // skip blank lines
+      } else {
         const equalIndex = trimmedLine.indexOf("=");
         if (equalIndex !== -1) {
           const key = trimmedLine.substring(0, equalIndex).trim();
-          const value = trimmedLine.substring(equalIndex + 1).trim();
           if (key) {
+            const value = trimmedLine.substring(equalIndex + 1).trim();
             env[key] = value;
           }
         }
@@ -199,7 +264,10 @@ export function MCPServerForm({
           isClearable={false}
           allowsCustomValue={false}
           required
-          wrapperClassName="w-full max-w-[350px]"
+          wrapperClassName={cn(
+            "w-full",
+            serverType === "stdio" ? "max-w-[350px]" : "max-w-[680px]",
+          )}
         />
       )}
 
