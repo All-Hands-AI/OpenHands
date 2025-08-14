@@ -173,7 +173,11 @@ def response_to_actions(
 
                 action = AgentFinishAction(
                     final_thought=validated_args.get('summary', ''),
-                    outputs={'task_completed': validated_args.get('task_completed', None)} if 'task_completed' in validated_args else {},
+                    outputs={
+                        'task_completed': validated_args.get('task_completed', None)
+                    }
+                    if 'task_completed' in validated_args
+                    else {},
                 )
 
             # ================================================
