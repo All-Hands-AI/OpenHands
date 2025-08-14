@@ -6,6 +6,8 @@ from fastapi.responses import FileResponse, JSONResponse
 from pathspec import PathSpec
 from pathspec.patterns import GitWildMatchPattern
 from starlette.background import BackgroundTask
+import tempfile
+import shutil
 
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
@@ -299,14 +301,26 @@ async def upload_files(
         )
         try:
             file_content = await file.read()
-            write_action = FileWriteAction(
-                # TODO: DISCUSS UTF8 encoding here
-                path=file_path,
-                content=file_content.decode('utf-8', errors='replace'),
-            )
-            # TODO: DISCUSS file name unique issues
-            await call_sync_from_async(runtime.run_action, write_action)
-            uploaded_files.append(file_path)
+            # Try to treat as UTF-8 text; if fails, handle as binary via copy_to
+            try:
+                text = file_content.decode('utf-8')
+                write_action = FileWriteAction(path=file_path, content=text)
+                await call_sync_from_async(runtime.run_action, write_action)
+                uploaded_files.append(file_path)
+            except UnicodeDecodeError:
+                # Binary file: write to a temporary file on host, then copy into sandbox
+                with tempfile.NamedTemporaryFile(delete=False) as tmp:
+                    tmp.write(file_content)
+                    tmp.flush()
+                    host_src = tmp.name
+                try:
+                    await call_sync_from_async(runtime.copy_to, host_src, file_path, False)
+                    uploaded_files.append(file_path)
+                finally:
+                    try:
+                        os.unlink(host_src)
+                    except Exception:
+                        pass
         except Exception as e:
             skipped_files.append({'name': file.filename, 'reason': str(e)})
     return JSONResponse(

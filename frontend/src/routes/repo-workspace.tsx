@@ -36,14 +36,14 @@ export default function RepoWorkspaceScreen() {
 
   return (
     <div className="flex flex-col h-full p-6 gap-4">
-      <div className="flex items-end gap-3">
+      <div className="card-glow-accent p-4 flex items-end gap-3">
         <div className="flex flex-col">
           <label className="text-xs opacity-70" htmlFor="repo-input">
             Repository (owner/repo)
           </label>
           <input
             id="repo-input"
-            className="bg-tertiary border border-tertiary-alt rounded px-2 py-1"
+            className="bg-tertiary border border-[#717888] rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-gold"
             placeholder="owner/repo"
             value={repoInput}
             onChange={(e) => setRepoInput(e.target.value)}
@@ -55,7 +55,7 @@ export default function RepoWorkspaceScreen() {
           </label>
           <input
             id="branch-input"
-            className="bg-tertiary border border-tertiary-alt rounded px-2 py-1"
+            className="bg-tertiary border border-[#717888] rounded px-2 py-1 text-white focus:outline-none focus:ring-2 focus:ring-gold"
             placeholder="(optional)"
             value={branchInput}
             onChange={(e) => setBranchInput(e.target.value)}
@@ -66,23 +66,28 @@ export default function RepoWorkspaceScreen() {
           type="button"
           isDisabled={isOpening || !repoInput}
           onClick={openRepo}
+          className="btn-3d"
         >
           {isOpening ? "Opening..." : "Open"}
         </BrandButton>
       </div>
 
-      <GitBar conversationId={conversationId} />
+      <div className="card-glow-gold p-2">
+        <GitBar conversationId={conversationId} />
+      </div>
 
-      <JobCenter conversationId={conversationId} initialJobId={cloneJobId} />
+      <div className="card-glow-accent p-2">
+        <JobCenter conversationId={conversationId} initialJobId={cloneJobId} />
+      </div>
 
       <div className="grid grid-cols-3 gap-4 h-[70vh]">
-        <div className="col-span-1 border border-tertiary rounded">
+        <div className="col-span-1 card-glow-gold p-2">
           <FileTree
             conversationId={conversationId}
             onOpenFile={(p) => setCurrentFile(p)}
           />
         </div>
-        <div className="col-span-2 border border-tertiary rounded">
+        <div className="col-span-2 card-glow-accent p-2">
           <EditorPanel conversationId={conversationId} path={currentFile} />
         </div>
       </div>

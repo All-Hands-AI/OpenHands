@@ -1,5 +1,4 @@
-"""
-MCP Proxy Manager for OpenHands.
+"""MCP Proxy Manager for OpenHands.
 
 This module provides a manager class for handling FastMCP proxy instances,
 including initialization, configuration, and mounting to FastAPI applications.
@@ -20,8 +19,7 @@ fastmcp_logger = fastmcp_get_logger('fastmcp')
 
 
 class MCPProxyManager:
-    """
-    Manager for FastMCP proxy instances.
+    """Manager for FastMCP proxy instances.
 
     This class encapsulates all the functionality related to creating, configuring,
     and managing FastMCP proxy instances, including mounting them to FastAPI applications.
@@ -33,8 +31,7 @@ class MCPProxyManager:
         api_key: Optional[str] = None,
         logger_level: Optional[int] = None,
     ):
-        """
-        Initialize the MCP Proxy Manager.
+        """Initialize the MCP Proxy Manager.
 
         Args:
             name: Name of the proxy server
@@ -55,8 +52,7 @@ class MCPProxyManager:
             fastmcp_logger.setLevel(logger_level)
 
     def initialize(self) -> None:
-        """
-        Initialize the FastMCP proxy with the current configuration.
+        """Initialize the FastMCP proxy with the current configuration.
         """
         if len(self.config['mcpServers']) == 0:
             logger.info(
@@ -76,8 +72,7 @@ class MCPProxyManager:
     async def mount_to_app(
         self, app: FastAPI, allow_origins: Optional[list[str]] = None
     ) -> None:
-        """
-        Mount the SSE server app to a FastAPI application.
+        """Mount the SSE server app to a FastAPI application.
 
         Args:
             app: FastAPI application to mount to
@@ -128,8 +123,7 @@ class MCPProxyManager:
         stdio_servers: list[MCPStdioServerConfig],
         allow_origins: Optional[list[str]] = None,
     ) -> None:
-        """
-        Update the tools configuration and remount the proxy to the app.
+        """Update the tools configuration and remount the proxy to the app.
 
         This is a convenience method that combines updating the tools,
         shutting down the existing proxy, initializing a new one, and

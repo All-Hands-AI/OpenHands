@@ -57,7 +57,7 @@ function ServedApp() {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full card-glow-accent">
       <div className="w-full p-2 flex items-center gap-4 border-b border-neutral-600">
         <button
           type="button"

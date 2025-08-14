@@ -27,7 +27,7 @@ export function ConversationTabs() {
 
   return (
     <Container
-      className="h-full w-full"
+      className="card-glow-accent h-full w-full"
       labels={[
         {
           label: "Changes",

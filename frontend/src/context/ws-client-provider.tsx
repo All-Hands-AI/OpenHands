@@ -327,6 +327,11 @@ export function WsClientProvider({
     sio = io(baseUrl, {
       transports: ["websocket"],
       query,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 5000,
+      timeout: 10000,
     });
 
     sio.on("connect", handleConnect);

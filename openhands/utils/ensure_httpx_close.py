@@ -1,5 +1,4 @@
-"""
-LiteLLM currently have an issue where HttpHandlers are being created but not
+"""LiteLLM currently have an issue where HttpHandlers are being created but not
 closed. We have submitted a PR to them, (https://github.com/BerriAI/litellm/pull/8711)
 and their dev team say they are in the process of a refactor that will fix this, but
 in the meantime, we need to manage the lifecycle of the httpx.Client manually.
@@ -26,8 +25,7 @@ def ensure_httpx_close():
     proxys = []
 
     class ClientProxy:
-        """
-        Sometimes LiteLLM opens a new httpx client for each connection, and does not close them.
+        """Sometimes LiteLLM opens a new httpx client for each connection, and does not close them.
         Sometimes it does close them. Sometimes, it reuses a client between connections. For cases
         where a client is reused, we need to be able to reuse the client even after closing it.
         """

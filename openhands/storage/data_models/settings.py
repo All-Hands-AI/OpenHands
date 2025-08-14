@@ -18,8 +18,7 @@ from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class Settings(BaseModel):
-    """
-    Persisted settings for OpenHands sessions
+    """Persisted settings for OpenHands sessions
     """
 
     language: str | None = None
@@ -106,7 +105,6 @@ class Settings(BaseModel):
     @field_serializer('secrets_store')
     def secrets_store_serializer(self, secrets: UserSecrets, info: SerializationInfo):
         """Custom serializer for secrets store."""
-
         """Force invalidate secret store"""
         return {'provider_tokens': {}}
 

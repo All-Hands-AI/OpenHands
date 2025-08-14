@@ -24,6 +24,11 @@ from openhands.server.services.jobs import job_manager, JobStatus
 from openhands.events.action.commands import CmdRunAction
 import asyncio
 
+# Initialize router before using it in route decorators
+app = APIRouter(
+    prefix='/api/conversations/{conversation_id}/repos', dependencies=get_dependencies()
+)
+
 
 @app.get('/diff')
 async def get_diff(
@@ -39,11 +44,6 @@ async def get_diff(
     except Exception as e:
         logger.error(f'Error getting diff for {path}: {e}')
         return JSONResponse(status_code=500, content={'error': str(e)})
-
-
-app = APIRouter(
-    prefix='/api/conversations/{conversation_id}/repos', dependencies=get_dependencies()
-)
 
 
 class OpenRepoRequest(BaseModel):

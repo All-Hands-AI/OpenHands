@@ -187,13 +187,7 @@ export function ModelSelector({
                 models[selectedProvider || ""]?.models?.includes(model),
               )
               .map((model) => (
-                <AutocompleteItem key={model}>
-                  {getDisplayName(
-                    selectedProvider,
-                    model,
-                    models[selectedProvider || ""]?.separator || "/",
-                  )}
-                </AutocompleteItem>
+                <AutocompleteItem key={model}>{model}</AutocompleteItem>
               ))}
           </AutocompleteSection>
           {models[selectedProvider || ""]?.models?.some(
@@ -207,11 +201,7 @@ export function ModelSelector({
                     data-testid={`model-item-${model}`}
                     key={model}
                   >
-                    {getDisplayName(
-                      selectedProvider,
-                      model,
-                      models[selectedProvider || ""]?.separator || "/",
-                    )}
+                    {model}
                   </AutocompleteItem>
                 ))}
             </AutocompleteSection>

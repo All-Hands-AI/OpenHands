@@ -322,10 +322,8 @@ def json_log_handler(
     level: int = logging.INFO,
     _out: TextIO = sys.stdout,
 ) -> logging.Handler:
+    """Configure logger instance for structured logging as json lines.
     """
-    Configure logger instance for structured logging as json lines.
-    """
-
     handler = logging.StreamHandler(_out)
     handler.setLevel(level)
     handler.setFormatter(json_formatter())
@@ -496,8 +494,7 @@ class OpenHandsLoggerAdapter(logging.LoggerAdapter):
     def process(
         self, msg: str, kwargs: MutableMapping[str, Any]
     ) -> tuple[str, MutableMapping[str, Any]]:
-        """
-        If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
+        """If 'extra' is supplied in kwargs, merge it with the adapters 'extra' dict
         Starting in Python 3.13, LoggerAdapter's merge_extra option will do this.
         """
         if 'extra' in kwargs and isinstance(kwargs['extra'], dict):

@@ -1,0 +1,9 @@
+{
+  "name": "GP-Khayal",
+  "short_name": "Khayal",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0D0F11",
+  "theme_color": "#CFB755",
+  "icons": []
+}

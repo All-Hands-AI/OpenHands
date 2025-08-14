@@ -12,7 +12,12 @@ export const useAddGitProviders = () => {
       providers: Record<Provider, ProviderToken>;
     }) => SecretsService.addGitProvider(providers),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+      // Refresh settings (providers), installations list, and repositories right away
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["settings"], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["installations"], exact: false }),
+        queryClient.invalidateQueries({ queryKey: ["repositories"], exact: false }),
+      ]);
     },
     meta: {
       disableToast: true,

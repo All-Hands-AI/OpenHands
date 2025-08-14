@@ -11,6 +11,7 @@ with warnings.catch_warnings():
 from fastapi import (
     FastAPI,
 )
+from fastapi.middleware.cors import CORSMiddleware
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 from openhands import __version__
@@ -29,6 +30,11 @@ from openhands.server.routes.security import app as security_api_router
 from openhands.server.routes.settings import app as settings_router
 from openhands.server.routes.trajectory import app as trajectory_router
 from openhands.server.routes.repos import app as repos_router
+from openhands.server.routes.chat import app as chat_router
+from openhands.server.routes.media import app as media_router
+from openhands.server.routes.oauth_github import app as oauth_github_router
+from openhands.server.routes.vision import app as vision_router
+from openhands.server.routes.runtime import app as runtime_router
 from openhands.server.shared import conversation_manager, server_config
 from openhands.server.types import AppMode
 
@@ -61,6 +67,14 @@ app = FastAPI(
     routes=[Mount(path='/mcp', app=mcp_app)],
 )
 
+# CORS (allow configurable origins; default to *)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['*'],
+    allow_credentials=True,
+    allow_methods=['*'],
+    allow_headers=['*'],
+)
 
 app.include_router(public_api_router)
 app.include_router(files_api_router)
@@ -71,6 +85,11 @@ app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
 app.include_router(secrets_router)
 app.include_router(repos_router)
+app.include_router(chat_router)
+app.include_router(media_router)
+app.include_router(oauth_github_router)
+app.include_router(vision_router)
+app.include_router(runtime_router)
 if server_config.app_mode == AppMode.OSS:
     app.include_router(git_api_router)
 app.include_router(trajectory_router)

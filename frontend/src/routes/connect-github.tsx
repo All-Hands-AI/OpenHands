@@ -12,6 +12,8 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { RepoConnector } from "#/components/features/home/repo-connector";
+import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router";
 
 interface ProviderAuth {
   token: string;
@@ -27,6 +29,9 @@ interface ProvidersPayload {
 
 export default function ConnectGitHubScreen() {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
   const { data: settings, isLoading } = useSettings();
   const { providers } = useUserProviders();
 
@@ -39,6 +44,19 @@ export default function ConnectGitHubScreen() {
 
   const existingGithubHost = settings?.PROVIDER_TOKENS_SET.github;
   const isGitHubTokenSet = providers.includes("github");
+
+  const repoSectionRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    // When providers are set, ensure repository queries are hot and scroll into view
+    if (providers.length > 0) {
+      queryClient.invalidateQueries({ queryKey: ["repositories"], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["installations"], exact: false });
+      if (repoSectionRef.current) {
+        repoSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+  }, [providers.length, queryClient]);
 
   const onSave = async (formData: FormData) => {
     const githubToken = formData.get("github-token-input")?.toString() || "";
@@ -58,6 +76,10 @@ export default function ConnectGitHubScreen() {
           displaySuccessToast(t("SETTINGS$SAVED"));
           setGithubTokenInputHasValue(false);
           setGithubHostInputHasValue(false);
+          // Bring repo list into view right after save
+          if (repoSectionRef.current) {
+            repoSectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+          }
         },
         onError: (error) => {
           const errorMessage = retrieveAxiosErrorMessage(error);
@@ -65,6 +87,27 @@ export default function ConnectGitHubScreen() {
         },
       },
     );
+  };
+
+  const handleRepoSelection = React.useCallback((repo: any) => {
+    if (!repo) return;
+    // Navigate to workspace route after selection
+    navigate("/workspace", { replace: false });
+  }, [navigate]);
+
+  const startGithubOAuth = async () => {
+    try {
+      const res = await fetch("/api/auth/github/start");
+      if (!res.ok) throw new Error("Failed to start GitHub OAuth");
+      const data = await res.json();
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      } else {
+        displayErrorToast("OAuth URL not received");
+      }
+    } catch (e) {
+      displayErrorToast("Failed to start GitHub OAuth");
+    }
   };
 
   return (
@@ -83,7 +126,15 @@ export default function ConnectGitHubScreen() {
           githubHostSet={existingGithubHost}
         />
 
-        <div className="flex gap-3 justify-end">
+        <div className="flex gap-3 justify-between">
+          <BrandButton
+            variant="secondary"
+            type="button"
+            onClick={startGithubOAuth}
+          >
+            Connect with GitHub (OAuth)
+          </BrandButton>
+
           <BrandButton
             testId="connect-github-save"
             type="submit"
@@ -99,11 +150,11 @@ export default function ConnectGitHubScreen() {
         </div>
       </form>
 
-      <section className="mt-2">
+      <section ref={repoSectionRef} className="mt-2">
         <h2 className="text-xl font-medium text-white mb-3">
           Select Repository
         </h2>
-        {!isLoading && <RepoConnector onRepoSelection={() => {}} />}
+        {!isLoading && <RepoConnector onRepoSelection={handleRepoSelection} />}
       </section>
     </div>
   );

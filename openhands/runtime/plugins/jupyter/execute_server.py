@@ -18,21 +18,21 @@ logging.basicConfig(level=logging.INFO)
 
 
 def strip_ansi(o: str) -> str:
-    """Removes ANSI escape sequences from `o`, as defined by ECMA-048 in
+    r"""Removes ANSI escape sequences from `o`, as defined by ECMA-048 in
     http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
 
     # https://github.com/ewen-lbh/python-strip-ansi/blob/master/strip_ansi/__init__.py
 
-    >>> strip_ansi("\\033[33mLorem ipsum\\033[0m")
+    >>> strip_ansi("\033[33mLorem ipsum\033[0m")
     'Lorem ipsum'
 
-    >>> strip_ansi("Lorem \\033[38;25mIpsum\\033[0m sit\\namet.")
+    >>> strip_ansi("Lorem \033[38;25mIpsum\033[0m sit\namet.")
     'Lorem Ipsum sit\\namet.'
 
     >>> strip_ansi("")
     ''
 
-    >>> strip_ansi("\\x1b[0m")
+    >>> strip_ansi("\x1b[0m")
     ''
 
     >>> strip_ansi("Lorem")
@@ -44,10 +44,9 @@ def strip_ansi(o: str) -> str:
     >>> strip_ansi('\\x1b[1m\\x1b[46m\\x1b[31mLorem dolor sit ipsum\\x1b[0m')
     'Lorem dolor sit ipsum'
     """
-    # pattern = re.compile(r'/(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]/')
-    pattern = re.compile(r'\x1B\[\d+(;\d+){0,2}m')
-    stripped = pattern.sub('', o)
-    return stripped
+    # pattern = re.compile(r"/(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]/")
+    pattern = re.compile(r"\x1B\[\d+(;\d+){0,2}m")
+    return pattern.sub('', o)
 
 
 class JupyterKernel:

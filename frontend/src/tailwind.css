@@ -21,6 +21,19 @@
   @apply text-[28px] leading-8 -tracking-[0.02em] font-bold text-content-2;
 }
 
+/* Neon/glow cards and panels */
+.card-glow-gold {
+  @apply border border-logo/40 shadow-glow-gold rounded-lg bg-base-secondary/60 backdrop-blur-sm;
+}
+
+.card-glow-accent {
+  @apply border border-accent/40 shadow-glow-accent rounded-lg bg-base-secondary/60 backdrop-blur-sm;
+}
+
+.btn-3d {
+  @apply shadow-inner-soft hover:shadow-glow-gold active:translate-y-[1px];
+}
+
 .loader {
   background: #C9B974;
   animation: l5 1s infinite linear alternate;

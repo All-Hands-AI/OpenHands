@@ -1,0 +1,15 @@
+gp-khayal.top {
+  encode zstd gzip
+  @static {
+    path /assets/*
+  }
+  handle @static {
+    uri strip_prefix /
+    reverse_proxy openhands:3000
+  }
+  reverse_proxy openhands:3000 {
+    header_up Host {host}
+    header_up X-Forwarded-For {remote}
+    header_up X-Forwarded-Proto {scheme}
+  }
+}

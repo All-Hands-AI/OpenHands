@@ -20,6 +20,7 @@ export default [
       route("secrets", "routes/secrets-settings.tsx"),
       route("api-keys", "routes/api-keys.tsx"),
     ]),
+    route("chat", "routes/chat.tsx"),
     route("conversations/:conversationId", "routes/conversation.tsx", [
       index("routes/changes-tab.tsx"),
       route("browser", "routes/browser-tab.tsx"),

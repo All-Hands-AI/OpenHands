@@ -20,6 +20,16 @@ function StatusMessage({ children }: React.PropsWithChildren) {
   );
 }
 
+function Skeleton() {
+  return (
+    <div className="animate-pulse space-y-3 w-full">
+      <div className="h-4 bg-[#2c2f36] rounded w-1/3" />
+      <div className="h-3 bg-[#2c2f36] rounded w-2/3" />
+      <div className="h-3 bg-[#2c2f36] rounded w-5/6" />
+    </div>
+  );
+}
+
 function GitChanges() {
   const { t } = useTranslation();
   const {
@@ -66,31 +76,41 @@ function GitChanges() {
     setStatusMessage,
   ]);
 
+  const showSkeleton = loadingGitChanges && !isSuccess;
+
   return (
     <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
-      {!isSuccess || !gitChanges.length ? (
-        <div className="relative flex h-full w-full items-center">
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-            {statusMessage && (
-              <StatusMessage>
-                {statusMessage.map((msg) => (
-                  <span key={msg}>{t(msg)}</span>
-                ))}
-              </StatusMessage>
-            )}
+      <div className="card-glow-accent p-4 w-full">
+        {showSkeleton ? (
+          <div className="space-y-4">
+            <Skeleton />
+            <Skeleton />
+            <Skeleton />
           </div>
+        ) : !isSuccess || !gitChanges.length ? (
+          <div className="relative flex h-full w-full items-center">
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+              {statusMessage && (
+                <StatusMessage>
+                  {statusMessage.map((msg) => (
+                    <span key={msg}>{t(msg)}</span>
+                  ))}
+                </StatusMessage>
+              )}
+            </div>
 
-          <div className="absolute inset-x-0 bottom-0">
-            {!isError && gitChanges?.length === 0 && (
-              <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
-                <RandomTip />
-              </div>
-            )}
+            <div className="absolute inset-x-0 bottom-0">
+              {!isError && gitChanges?.length === 0 && (
+                <div className="max-w-2xl mb-4 text-m bg-tertiary rounded-xl p-4 text-left mx-auto">
+                  <RandomTip />
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      ) : (
-        <ChangesList />
-      )}
+        ) : (
+          <ChangesList />
+        )}
+      </div>
     </main>
   );
 }

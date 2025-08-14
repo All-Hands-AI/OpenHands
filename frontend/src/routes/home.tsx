@@ -26,9 +26,15 @@ function HomeScreen() {
       <hr className="border-[#717888]" />
 
       <main className="flex flex-col lg:flex-row justify-between gap-8">
-        <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
+        <div className="card-glow-accent p-4 w-full">
+          <RepoConnector onRepoSelection={(repo) => setSelectedRepo(repo)} />
+        </div>
         <hr className="md:hidden border-[#717888]" />
-        {providersAreSet && <TaskSuggestions filterFor={selectedRepo} />}
+        {providersAreSet && (
+          <div className="card-glow-gold p-4 w-full">
+            <TaskSuggestions filterFor={selectedRepo} />
+          </div>
+        )}
       </main>
     </div>
   );

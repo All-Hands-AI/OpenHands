@@ -1,0 +1,13 @@
+your url is: https://tough-beds-live.loca.lt
+/home/ubuntu/.npm/_npx/75ac80b86e83d4a2/node_modules/localtunnel/bin/lt.js:81
+    throw err;
+    ^
+
+Error: connection refused: localtunnel.me:25513 (check your firewall settings)
+    at Socket.<anonymous> (/home/ubuntu/.npm/_npx/75ac80b86e83d4a2/node_modules/localtunnel/lib/TunnelCluster.js:52:11)
+    at Socket.emit (node:events:518:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at process.processTicksAndRejections (node:internal/process/task_queues:90:21)
+
+Node.js v22.16.0

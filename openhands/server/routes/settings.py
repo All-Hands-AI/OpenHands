@@ -104,8 +104,7 @@ async def load_settings(
     },
 )
 async def reset_settings() -> JSONResponse:
-    """
-    Resets user settings. (Deprecated)
+    """Resets user settings. (Deprecated)
     """
     logger.warning('Deprecated endpoint /api/reset-settings called by user')
     return JSONResponse(
