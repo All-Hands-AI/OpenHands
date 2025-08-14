@@ -63,7 +63,23 @@ def attempt_vscode_extension_install():
     - Tracks attempt timestamps and uses exponential backoff between retries
     - Distinguishes permanent failures (e.g., command not found) from transient ones
     - Supports multiple editor variants (e.g., VS Code stable and insiders)
-    - Allows user reset via OPENHANDS_RESET_vscode=1
+    - Allows user reset via OPENHANDS_RESET_VSCODE=1
+
+    Status file format (first use creates ~/.openhands/.editor_extension_status.json):
+    {
+      "vscode": {
+        "attempts": 2,
+        "last_attempt": "2025-08-14T05:12:00Z",
+        "last_success": "2025-08-14T05:15:26Z",
+        "permanent_failure": null
+      },
+      "windsurf": {
+        "attempts": 1,
+        "last_attempt": "2025-08-13T02:01:00Z",
+        "last_success": null,
+        "permanent_failure": "command_not_found"
+      }
+    }
     """
     # Check if we are in a supported editor environment
     is_vscode_like = os.environ.get('TERM_PROGRAM') == 'vscode'
@@ -103,7 +119,7 @@ def attempt_vscode_extension_install():
         logger.debug(f'Could not read status file: {e}')
         status = {}
 
-    if os.environ.get('OPENHANDS_RESET_vscode') == '1':
+    if os.environ.get('OPENHANDS_RESET_VSCODE') == '1':
         status.pop(editor_key, None)
         try:
             status_file.write_text(json.dumps(status))
@@ -143,7 +159,7 @@ def attempt_vscode_extension_install():
         # Don't spam attempts if we know it cannot work without user action
         print(
             f'INFO: Skipping automatic {editor_name} extension install (permanent failure: {permanent_failure}).\n'
-            '      See docs to resolve or set OPENHANDS_RESET_vscode=1 to retry.'
+            '      See docs to resolve or set OPENHANDS_RESET_VSCODE=1 to retry.'
         )
         return
 
@@ -154,7 +170,7 @@ def attempt_vscode_extension_install():
             hrs = max(1, remaining // 3600)
             print(
                 f'INFO: Previous {editor_name} extension install attempt failed. Will retry later (~{hrs}h).\n'
-                '      Set OPENHANDS_RESET_vscode=1 to force retry sooner.'
+                '      Set OPENHANDS_RESET_VSCODE=1 to force retry sooner.'
             )
             return
 
