@@ -63,7 +63,7 @@ def attempt_vscode_extension_install():
     - Tracks attempt timestamps and uses exponential backoff between retries
     - Distinguishes permanent failures (e.g., command not found) from transient ones
     - Supports multiple editor variants (e.g., VS Code stable and insiders)
-    - Allows user reset via OPENHANDS_RESET_EDITOR_EXTENSION=1
+    - Allows user reset via OPENHANDS_RESET_vscode=1
     """
     # Check if we are in a supported editor environment
     is_vscode_like = os.environ.get('TERM_PROGRAM') == 'vscode'
@@ -103,7 +103,7 @@ def attempt_vscode_extension_install():
         logger.debug(f'Could not read status file: {e}')
         status = {}
 
-    if os.environ.get('OPENHANDS_RESET_EDITOR_EXTENSION') == '1':
+    if os.environ.get('OPENHANDS_RESET_vscode') == '1':
         status.pop(editor_key, None)
         try:
             status_file.write_text(json.dumps(status))
@@ -143,7 +143,7 @@ def attempt_vscode_extension_install():
         # Don't spam attempts if we know it cannot work without user action
         print(
             f'INFO: Skipping automatic {editor_name} extension install (permanent failure: {permanent_failure}).\n'
-            '      See docs to resolve or set OPENHANDS_RESET_EDITOR_EXTENSION=1 to retry.'
+            '      See docs to resolve or set OPENHANDS_RESET_vscode=1 to retry.'
         )
         return
 
@@ -154,7 +154,7 @@ def attempt_vscode_extension_install():
             hrs = max(1, remaining // 3600)
             print(
                 f'INFO: Previous {editor_name} extension install attempt failed. Will retry later (~{hrs}h).\n'
-                '      Set OPENHANDS_RESET_EDITOR_EXTENSION=1 to force retry sooner.'
+                '      Set OPENHANDS_RESET_vscode=1 to force retry sooner.'
             )
             return
 
