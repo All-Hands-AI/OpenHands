@@ -79,8 +79,7 @@ def create_test_events(event_specs: list[dict]) -> list[Event]:
 
 
 def test_get_contextual_events_basic_retrieval():
-    """
-    Tests basic retrieval of events, ensuring correct count, order, and string formatting.
+    """Tests basic retrieval of events, ensuring correct count, order, and string formatting.
     All events in this test are of types that are NOT filtered out by default.
     """
     mock_event_stream = MagicMock(spec=EventStream)
@@ -196,9 +195,7 @@ def test_get_contextual_events_basic_retrieval():
 
 
 def test_get_contextual_events_filtering():
-    """
-    Tests that specified event types and hidden events are filtered out.
-    """
+    """Tests that specified event types and hidden events are filtered out."""
     mock_event_stream = MagicMock(spec=EventStream)
     target_event_id = 3  # Target a non-filtered event
 
@@ -320,8 +317,7 @@ def test_get_contextual_events_filtering():
 
 
 def test_get_contextual_events_target_at_beginning():
-    """
-    Tests behavior when the target event_id is at the beginning of the stream,
+    """Tests behavior when the target event_id is at the beginning of the stream,
     resulting in fewer than context_size events before it.
     """
     mock_event_stream = MagicMock(spec=EventStream)
@@ -391,8 +387,7 @@ def test_get_contextual_events_target_at_beginning():
 
 
 def test_get_contextual_events_target_at_end():
-    """
-    Tests behavior when the target event_id is at the end of the stream,
+    """Tests behavior when the target event_id is at the end of the stream,
     resulting in fewer than context_size + 1 events after it.
     """
     mock_event_stream = MagicMock(spec=EventStream)
@@ -472,9 +467,7 @@ def test_get_contextual_events_target_at_end():
 
 
 def test_get_contextual_events_empty_search_results():
-    """
-    Tests behavior when search_events returns empty lists for before and after.
-    """
+    """Tests behavior when search_events returns empty lists for before and after."""
     mock_event_stream = MagicMock(spec=EventStream)
     target_event_id = 10
     context_size = 4
@@ -505,8 +498,7 @@ def test_get_contextual_events_empty_search_results():
 
 
 def test_get_contextual_events_all_events_filtered():
-    """
-    Tests behavior when all events in the context window are of types
+    """Tests behavior when all events in the context window are of types
     that should be filtered out.
     """
     mock_event_stream = MagicMock(spec=EventStream)

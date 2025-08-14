@@ -86,4 +86,10 @@ async def test_get_instance():
 
         assert isinstance(store, FileSettingsStore)
         assert store.file_store == mock_store
-        mock_get_store.assert_called_once_with('local', '/test/path', None, None)
+        mock_get_store.assert_called_once_with(
+            file_store_type='local',
+            file_store_path='/test/path',
+            file_store_web_hook_url=None,
+            file_store_web_hook_headers=None,
+            file_store_web_hook_batch=False,
+        )

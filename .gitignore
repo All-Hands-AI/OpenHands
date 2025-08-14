@@ -259,3 +259,6 @@ containers/runtime/code
 openhands/integrations/vscode/.vscode-test/
 openhands/integrations/vscode/out/
 openhands/integrations/vscode/node_modules/
+
+# test results
+test-results

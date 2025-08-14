@@ -37,7 +37,16 @@
                   "usage/cloud/bitbucket-installation",
                   "usage/cloud/github-installation",
                   "usage/cloud/gitlab-installation",
-                  "usage/cloud/slack-installation"
+                  "usage/cloud/slack-installation",
+                  {
+                    "group": "Project Management Tools",
+                    "pages": [
+                      "usage/cloud/project-management/overview",
+                      "usage/cloud/project-management/jira-integration",
+                      "usage/cloud/project-management/jira-dc-integration",
+                      "usage/cloud/project-management/linear-integration"
+                    ]
+                  }
                 ]
               },
               "usage/cloud/cloud-ui",
@@ -62,6 +71,7 @@
                     {
                       "group": "Providers",
                       "pages": [
+                        "usage/llms/openhands-llms",
                         "usage/llms/azure-llms",
                         "usage/llms/google-llms",
                         "usage/llms/groq",
@@ -69,7 +79,6 @@
                         "usage/llms/litellm-proxy",
                         "usage/llms/moonshot",
                         "usage/llms/openai-llms",
-                        "usage/llms/openhands-llms",
                         "usage/llms/openrouter"
                       ]
                     }
