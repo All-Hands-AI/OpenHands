@@ -332,6 +332,25 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             logger.warning(f'Failed to get user organizations: {e}')
             return []
 
+    def _fuzzy_match_org_name(self, query: str, org_name: str) -> bool:
+        """Check if query fuzzy matches organization name."""
+        query_lower = query.lower().replace('-', '').replace('_', '').replace(' ', '')
+        org_lower = org_name.lower().replace('-', '').replace('_', '').replace(' ', '')
+        
+        # Exact match after normalization
+        if query_lower == org_lower:
+            return True
+            
+        # Query is a substring of org name
+        if query_lower in org_lower:
+            return True
+            
+        # Org name is a substring of query (less common but possible)
+        if org_lower in query_lower:
+            return True
+            
+        return False
+
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
@@ -377,7 +396,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             except Exception as e:
                 logger.warning(f'User search failed: {e}')
             
-            # Search in each organization
+            # Search for repos named "query" in each organization
             for org in user_orgs:
                 org_query = f'{query} org:{org}'
                 org_params = params.copy()
@@ -389,6 +408,22 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                     all_repos.extend(org_items)
                 except Exception as e:
                     logger.warning(f'Org {org} search failed: {e}')
+            
+            # Also search for top repos from orgs that match the query name
+            for org in user_orgs:
+                if self._fuzzy_match_org_name(query, org):
+                    org_repos_query = f'org:{org}'
+                    org_repos_params = params.copy()
+                    org_repos_params['q'] = org_repos_query
+                    org_repos_params['sort'] = 'stars'
+                    org_repos_params['per_page'] = 2  # Limit to first 2 repos
+                    
+                    try:
+                        org_repos_response, _ = await self._make_request(url, org_repos_params)
+                        org_repo_items = org_repos_response.get('items', [])
+                        all_repos.extend(org_repo_items)
+                    except Exception as e:
+                        logger.warning(f'Org repos search for {org} failed: {e}')
             
             return [self._parse_repository(repo) for repo in all_repos]
 
