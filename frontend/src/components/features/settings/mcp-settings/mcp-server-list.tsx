@@ -162,7 +162,7 @@ export function MCPServerList({
     <div className="border border-tertiary rounded-md overflow-hidden">
       <table className="w-full">
         <thead className="bg-base-tertiary">
-          <tr className="grid grid-cols-[25%_120px_1fr_120px] gap-4 items-start">
+          <tr className="grid grid-cols-[minmax(0,0.25fr)_120px_minmax(0,1fr)_120px] gap-4 items-start">
             <th className="text-left p-3 text-sm font-medium">
               {t(I18nKey.SETTINGS$NAME)}
             </th>
