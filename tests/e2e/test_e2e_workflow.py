@@ -718,7 +718,16 @@ def test_conversation_start(page):
                         for i in range(elements.count()):
                             text = elements.nth(i).text_content()
                             if text and text.strip():
-                                status_messages.append(text.strip())
+                                # Filter out CSS content and xterm styling
+                                clean_text = text.strip()
+                                # Only keep text that doesn't contain CSS or xterm content
+                                if (
+                                    '.xterm-' not in clean_text
+                                    and 'background-color:' not in clean_text
+                                    and 'color: #' not in clean_text
+                                    and len(clean_text) < 200
+                                ):  # Reasonable length limit
+                                    status_messages.append(clean_text)
                 except Exception:
                     continue
 
@@ -1157,7 +1166,26 @@ def test_conversation_start(page):
                             print(
                                 '✅ Found agent response about README.md with line count!'
                             )
-                            print(f'✅ Agent response: {content}')
+                            # Filter out CSS content for logging
+                            clean_content = content
+                            if '.xterm-' in content or 'background-color:' in content:
+                                # Extract just the meaningful text, skip CSS
+                                lines = content.split('\n')
+                                meaningful_lines = []
+                                for line in lines:
+                                    line = line.strip()
+                                    if (
+                                        line
+                                        and not line.startswith('.xterm-')
+                                        and 'background-color:' not in line
+                                        and 'color: #' not in line
+                                        and len(line) < 200
+                                    ):
+                                        meaningful_lines.append(line)
+                                clean_content = '\n'.join(
+                                    meaningful_lines[:5]
+                                )  # Only first 5 meaningful lines
+                            print(f'✅ Agent response: {clean_content}')
 
                             # Take final screenshots
                             page.screenshot(
