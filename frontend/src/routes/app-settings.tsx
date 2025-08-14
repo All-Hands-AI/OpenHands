@@ -276,11 +276,11 @@ function AppSettingsScreen() {
             className="w-full max-w-[680px]" // Match the width of the language field
           />
 
-          <div className="border-t border-t-tertiary pt-6 mt-2 hidden">
+          <div className="border-t border-t-tertiary pt-6 mt-2">
             <h3 className="text-lg font-medium mb-2">
               {t(I18nKey.SETTINGS$GIT_SETTINGS)}
             </h3>
-            <p className="text-sm text-secondary mb-4">
+            <p className="text-xs mb-4">
               {t(I18nKey.SETTINGS$GIT_SETTINGS_DESCRIPTION)}
             </p>
             <div className="flex flex-col gap-6">

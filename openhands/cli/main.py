@@ -745,9 +745,6 @@ def run_cli_command(args):
     except ConnectionRefusedError as e:
         print_formatted_text(f'Connection refused: {e}')
         sys.exit(1)
-    except Exception as e:
-        print_formatted_text(f'An error occurred: {e}')
-        sys.exit(1)
     finally:
         try:
             # Cancel all running tasks
