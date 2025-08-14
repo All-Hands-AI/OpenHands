@@ -1567,4 +1567,3 @@ def test_llm_reinit_resets_cost_flag(default_config):
     # Same model, but reinit should reset the flag to True
     llm.reinit(copy.deepcopy(default_config))
     assert llm.cost_metric_supported is True
-

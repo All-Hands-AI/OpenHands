@@ -3,10 +3,10 @@ import os
 import time
 import warnings
 from functools import partial
+from threading import RLock
 from typing import Any, Callable
 
 import httpx
-from threading import RLock
 
 from openhands.core.config import LLMConfig
 
@@ -161,7 +161,6 @@ class LLM(RetryMixin, DebugMixin):
 
         # Initialize core internals in a single pass
         self._initialize_core()
-
 
     def _initialize_core(self) -> None:
         """Initialize or re-initialize all components derived from config.
