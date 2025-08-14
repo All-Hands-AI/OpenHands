@@ -171,15 +171,6 @@ async def store_settings(
             config.git_user_email = settings.git_user_email
             git_config_updated = True
 
-        # Apply LLM settings in-memory only; persistence to TOML handled by config write API in separate flows
-        if settings.llm_model is not None:
-            config.update_llm_config('llm', model=settings.llm_model)
-        if settings.llm_api_key is not None:
-            config.update_llm_config('llm', api_key=settings.llm_api_key)
-        if settings.llm_base_url is not None:
-            config.update_llm_config('llm', base_url=settings.llm_base_url)
-        # search_api_key remains in Settings/Secrets; TOML persistence is out of scope here
-
         # Note: Git configuration will be applied when new sessions are initialized
         # Existing sessions will continue with their current git configuration
         if git_config_updated:

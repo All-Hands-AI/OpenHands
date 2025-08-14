@@ -146,20 +146,6 @@ class OpenHandsConfig(BaseModel):
     def set_llm_config(self, value: LLMConfig, name: str = 'llm') -> None:
         self.llms[name] = value
 
-    def update_llm_config(self, name: str = 'llm', **updates: Any) -> LLMConfig:
-        """Update fields on an LLM config in-memory.
-
-        Only non-None values in updates are applied. Returns the updated config.
-        """
-        current = self.get_llm_config(name)
-        # Filter out None to avoid overwriting with nulls
-        valid_updates = {k: v for k, v in updates.items() if v is not None}
-        if not valid_updates:
-            return current
-        updated = current.model_copy(update=valid_updates)
-        self.set_llm_config(updated, name)
-        return updated
-
     def get_agent_config(self, name: str = 'agent') -> AgentConfig:
         """'agent' is the name for default config (for backward compatibility prior to 0.8)."""
         if name in self.agents:
