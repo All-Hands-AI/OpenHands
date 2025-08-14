@@ -955,7 +955,6 @@ def cli_confirm(
         layout=layout,
         key_bindings=kb,
         style=style,
-        mouse_support=True,
         full_screen=False,
     )
 
