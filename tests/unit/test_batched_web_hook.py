@@ -1,3 +1,4 @@
+import threading
 import time
 from unittest.mock import MagicMock
 
@@ -233,3 +234,218 @@ class TestBatchedWebHookFileStore:
 
         decoded = base64.b64decode(batch_payload[0]['content'].encode('ascii'))
         assert decoded == binary_content
+
+    def test_race_condition_multiple_size_triggers(self, file_store, mock_client):
+        """Test race condition where multiple threads trigger size limit simultaneously."""
+        # Create a store with a very small size limit to easily trigger the condition
+        batched_store = BatchedWebHookFileStore(
+            file_store=file_store,
+            base_url='http://example.com',
+            client=mock_client,
+            batch_timeout_seconds=10.0,  # Long timeout so only size triggers
+            batch_size_limit_bytes=100,  # Small limit to easily trigger
+        )
+
+        # Track all calls to post method
+        call_count = 0
+        original_post = mock_client.post
+
+        def counting_post(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            return original_post(*args, **kwargs)
+
+        mock_client.post.side_effect = counting_post
+
+        # Create multiple threads that will simultaneously add content to trigger size limit
+        num_threads = 5
+        content_size = (
+            50  # Each content is 50 bytes, so 2 should trigger the 100 byte limit
+        )
+        threads = []
+        results = []
+
+        def write_large_content(thread_id):
+            try:
+                content = f'Thread {thread_id} content: ' + 'x' * content_size
+                batched_store.write(f'/file_{thread_id}.txt', content)
+                results.append(f'Thread {thread_id} completed')
+            except Exception as e:
+                results.append(f'Thread {thread_id} error: {e}')
+
+        # Start all threads simultaneously
+        for i in range(num_threads):
+            thread = threading.Thread(target=write_large_content, args=(i,))
+            threads.append(thread)
+
+        # Start all threads at roughly the same time
+        for thread in threads:
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join(timeout=5.0)
+
+        # Wait a bit for any async operations to complete
+        time.sleep(0.5)
+
+        # Verify all threads completed successfully
+        assert len(results) == num_threads
+        for result in results:
+            assert 'completed' in result, f'Unexpected result: {result}'
+
+        # Verify that webhook calls were made (should be multiple due to size triggers)
+        assert call_count > 0, 'No webhook calls were made'
+
+        # Collect all the data that was sent
+        all_sent_data = {}
+        for call_args in mock_client.post.call_args_list:
+            args, kwargs = call_args
+            batch_payload = kwargs['json']
+            for item in batch_payload:
+                path = item['path']
+                all_sent_data[path] = item
+
+        # Verify that all files were sent exactly once (no duplicates or missing files)
+        expected_files = {f'/file_{i}.txt' for i in range(num_threads)}
+        sent_files = set(all_sent_data.keys())
+        assert sent_files == expected_files, (
+            f'Expected {expected_files}, got {sent_files}'
+        )
+
+        # Verify content integrity
+        for i in range(num_threads):
+            path = f'/file_{i}.txt'
+            expected_content = f'Thread {i} content: ' + 'x' * content_size
+            assert all_sent_data[path]['content'] == expected_content
+            assert all_sent_data[path]['method'] == 'POST'
+
+    def test_race_condition_timer_vs_size_trigger(self, file_store, mock_client):
+        """Test race condition between timer expiration and size limit trigger."""
+        batched_store = BatchedWebHookFileStore(
+            file_store=file_store,
+            base_url='http://example.com',
+            client=mock_client,
+            batch_timeout_seconds=0.2,  # Short timeout
+            batch_size_limit_bytes=200,  # Medium size limit
+        )
+
+        # Track calls to ensure no duplicates
+        call_data = []
+        original_post = mock_client.post
+
+        def tracking_post(*args, **kwargs):
+            call_data.append(kwargs['json'])
+            return original_post(*args, **kwargs)
+
+        mock_client.post.side_effect = tracking_post
+
+        # Add some content that's close to but under the size limit
+        batched_store.write('/file1.txt', 'x' * 80)  # 80 bytes
+        batched_store.write('/file2.txt', 'y' * 80)  # 80 bytes, total 160 bytes
+
+        # Wait a bit, then add content that will trigger size limit
+        # This creates a race between the timer (which should fire soon) and size trigger
+        time.sleep(0.1)  # Wait half the timeout period
+
+        # This should trigger the size limit (160 + 60 = 220 > 200)
+        batched_store.write('/file3.txt', 'z' * 60)
+
+        # Wait for both timer and size-triggered sends to potentially complete
+        time.sleep(0.5)
+
+        # Verify that we got the expected data without duplication
+        assert len(call_data) >= 1, 'At least one webhook call should have been made'
+
+        # Collect all sent files across all calls
+        all_sent_files = {}
+        for batch_payload in call_data:
+            for item in batch_payload:
+                path = item['path']
+                # If we see the same file twice, that's a problem
+                assert path not in all_sent_files, (
+                    f'File {path} was sent multiple times'
+                )
+                all_sent_files[path] = item
+
+        # Verify all files were sent exactly once
+        expected_files = {'/file1.txt', '/file2.txt', '/file3.txt'}
+        sent_files = set(all_sent_files.keys())
+        assert sent_files == expected_files, (
+            f'Expected {expected_files}, got {sent_files}'
+        )
+
+        # Verify content integrity
+        assert all_sent_files['/file1.txt']['content'] == 'x' * 80
+        assert all_sent_files['/file2.txt']['content'] == 'y' * 80
+        assert all_sent_files['/file3.txt']['content'] == 'z' * 60
+
+    def test_race_condition_concurrent_batch_sends(self, file_store, mock_client):
+        """Test race condition where _send_batch is called concurrently from multiple sources."""
+        batched_store = BatchedWebHookFileStore(
+            file_store=file_store,
+            base_url='http://example.com',
+            client=mock_client,
+            batch_timeout_seconds=0.1,  # Very short timeout
+            batch_size_limit_bytes=50,  # Very small size limit
+        )
+
+        # Use a lock to simulate slow webhook processing and increase chance of race
+        webhook_lock = threading.Lock()
+        call_order = []
+        original_post = mock_client.post
+
+        def slow_post(*args, **kwargs):
+            with webhook_lock:
+                call_order.append(len(kwargs['json']))  # Record batch size
+                time.sleep(0.05)  # Simulate slow webhook processing
+                return original_post(*args, **kwargs)
+
+        mock_client.post.side_effect = slow_post
+
+        # Create a scenario where both timer and size limit can trigger simultaneously
+        def writer_thread(thread_id):
+            for i in range(3):
+                content = f'Thread{thread_id}_File{i}: ' + 'x' * 20  # ~40 bytes each
+                batched_store.write(f'/t{thread_id}_f{i}.txt', content)
+                time.sleep(0.02)  # Small delay between writes
+
+        # Start multiple writer threads
+        threads = []
+        for i in range(3):
+            thread = threading.Thread(target=writer_thread, args=(i,))
+            threads.append(thread)
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join(timeout=2.0)
+
+        # Wait for any remaining async operations
+        time.sleep(0.5)
+
+        # Verify that webhook was called
+        assert len(call_order) > 0, 'No webhook calls were made'
+
+        # Collect all sent data to verify no duplicates or missing files
+        all_sent_files = {}
+        for call_args in mock_client.post.call_args_list:
+            args, kwargs = call_args
+            batch_payload = kwargs['json']
+            for item in batch_payload:
+                path = item['path']
+                assert path not in all_sent_files, (
+                    f'File {path} was sent multiple times'
+                )
+                all_sent_files[path] = item
+
+        # Verify all expected files were sent
+        expected_files = set()
+        for thread_id in range(3):
+            for file_id in range(3):
+                expected_files.add(f'/t{thread_id}_f{file_id}.txt')
+
+        sent_files = set(all_sent_files.keys())
+        assert sent_files == expected_files, (
+            f'Expected {expected_files}, got {sent_files}'
+        )
