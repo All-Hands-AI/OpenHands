@@ -296,8 +296,12 @@ async def new_conversation(request: Request, data: InitSessionRequest):
                 existed_config = await space_section_module._get_space_section_config(
                     space_id, space_section_id
                 )
-                current_hash = get_hash(json.dumps(section_config))
-                logger.debug(f'current_hash: {current_hash}')
+                section_config['userPrompt'] = user_prompt
+                json_text = json.dumps(section_config, sort_keys=True)
+                current_hash = get_hash(json_text)
+                logger.debug(
+                    f'current_hash: {current_hash}, current_config: {json_text}'
+                )
                 if existed_config and (existed_config['hash_config'] != current_hash):
                     logger.debug(
                         f'Remove the space section actions: {space_section_id}'

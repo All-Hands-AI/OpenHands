@@ -1550,12 +1550,17 @@ class AgentController:
                             )
                         )
 
-                    # Execute bulk insert
+                    # Execute bulk insert with conflict handling
                     cursor.executemany(
                         """
                         INSERT INTO space_section_actions
                         (space_section_id, space_id, event_id, metadata, created_at)
                         VALUES (%s, %s, %s, %s, CURRENT_TIMESTAMP)
+                        ON CONFLICT (space_section_id, event_id)
+                        DO UPDATE SET
+                            space_id = EXCLUDED.space_id,
+                            metadata = EXCLUDED.metadata,
+                            created_at = CURRENT_TIMESTAMP
                         """,
                         bulk_data,
                     )
