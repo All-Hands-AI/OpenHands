@@ -8,7 +8,14 @@ from pydantic import BaseModel, SecretStr
 
 from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.cli_config import CLIConfig
+from openhands.core.config.condenser_config import CondenserConfig
+from openhands.core.config.extended_config import ExtendedConfig
+from openhands.core.config.kubernetes_config import KubernetesConfig
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
+from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
 
 
 def _strip_none(d: dict[str, Any]) -> dict[str, Any]:
@@ -97,11 +104,53 @@ class TOMLConfigWriter:
                     continue
                 agent[k] = v
         else:
+            # Write into [agent.<name>] subsection
             subsection = agent.get(name)
             if not isinstance(subsection, dict):
                 subsection = {}
                 agent[name] = subsection
             subsection.update(cfg_dict)
+
+
+    def update_security(self, config: SecurityConfig) -> None:
+        sec = self._ensure_section('security')
+        sec.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+
+    def update_sandbox(self, config: SandboxConfig) -> None:
+        sb = self._ensure_section('sandbox')
+        sb.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+
+    def update_kubernetes(self, config: KubernetesConfig) -> None:
+        k8s = self._ensure_section('kubernetes')
+        k8s.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+
+    def update_cli(self, config: CLIConfig) -> None:
+        cli = self._ensure_section('cli')
+        cli.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+
+    def update_extended(self, data: ExtendedConfig | dict[str, Any]) -> None:
+        ext = self._ensure_section('extended')
+        if isinstance(data, ExtendedConfig):
+            data = data.model_dump()
+        ext.update(_serialize_dict(_strip_none(data)))
+
+    def update_condenser(self, config: CondenserConfig | dict[str, Any]) -> None:
+        cond = self._ensure_section('condenser')
+        if isinstance(config, BaseModel):
+            # For union models like CondenserConfig, ensure 'type' is persisted even if default
+            data = config.model_dump(exclude_none=True)
+            if 'type' not in data and hasattr(config, 'type'):
+                try:
+                    data['type'] = getattr(config, 'type')
+                except Exception:
+                    pass
+        else:
+            data = config
+        cond.update(_serialize_dict(_strip_none(data)))
+
+    def update_mcp(self, config: MCPConfig) -> None:
+        mcp = self._ensure_section('mcp')
+        mcp.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
 
     def write(self) -> None:
         os.makedirs(os.path.dirname(self.toml_file) or '.', exist_ok=True)
