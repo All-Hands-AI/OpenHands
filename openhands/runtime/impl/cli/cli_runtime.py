@@ -372,10 +372,6 @@ class CLIRuntime(Runtime):
                     if ready_to_read:
                         line = process.stdout.readline()
                         if line:
-<<<<<<< HEAD
-                            logger.debug(f'LINE: {line[:50]}')
-=======
->>>>>>> origin/main
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)
@@ -386,10 +382,6 @@ class CLIRuntime(Runtime):
                     while line:
                         line = process.stdout.readline()
                         if line:
-<<<<<<< HEAD
-                            logger.debug(f'LINE: {line[:50]}')
-=======
->>>>>>> origin/main
                             output_lines.append(line)
                             if self._shell_stream_callback:
                                 self._shell_stream_callback(line)

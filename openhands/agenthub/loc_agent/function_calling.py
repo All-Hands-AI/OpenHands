@@ -11,22 +11,11 @@ from litellm import (
 )
 
 from openhands.agenthub.codeact_agent.function_calling import combine_thought
-
-# Legacy tool imports with aliases
-from openhands.agenthub.codeact_agent.tools.unified.base import ToolValidationError
-
-# Unified tool imports
-from openhands.agenthub.codeact_agent.tools.unified.finish_tool import (
-    FinishTool as UnifiedFinishTool,
-)
-from openhands.agenthub.loc_agent.tools.unified.explore_structure_tool import (
-    ExploreStructureTool as UnifiedExploreStructureTool,
-)
-from openhands.agenthub.loc_agent.tools.unified.search_entity_tool import (
-    SearchEntityTool as UnifiedSearchEntityTool,
-)
-from openhands.agenthub.loc_agent.tools.unified.search_repo_tool import (
-    SearchRepoTool as UnifiedSearchRepoTool,
+from openhands.agenthub.codeact_agent.tools import FinishTool
+from openhands.agenthub.loc_agent.tools import (
+    SearchEntityTool,
+    SearchRepoTool,
+    create_explore_tree_structure_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -39,15 +28,6 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.tool_names import FINISH_TOOL_NAME
-
-# Tool instances for validation
-_TOOL_INSTANCES = {
-    FINISH_TOOL_NAME: UnifiedFinishTool(),
-    'search_code_snippets': UnifiedSearchRepoTool(),
-    'get_entity_contents': UnifiedSearchEntityTool(),
-    'explore_tree_structure': UnifiedExploreStructureTool(),
-}
 
 
 def response_to_actions(
@@ -98,38 +78,10 @@ def response_to_actions(
             # ================================================
             # AgentFinishAction
             # ================================================
-<<<<<<< HEAD
-            elif tool_call.function.name == FINISH_TOOL_NAME:
-                # Use unified tool validation
-                try:
-                    validated_args = _TOOL_INSTANCES[
-                        FINISH_TOOL_NAME
-                    ].validate_parameters(arguments)
-                    action = AgentFinishAction(
-                        final_thought=validated_args.get('summary', ''),
-                        task_completed=validated_args.get('outputs', {}).get(
-                            'task_completed', None
-                        ),
-                    )
-                except ToolValidationError as e:
-                    raise FunctionCallNotExistsError(
-                        f'FinishTool validation failed: {e}'
-                    ) from e
-                except Exception as e:
-                    # Fallback to legacy behavior
-                    logger.warning(
-                        f'FinishTool unified validation failed, falling back to legacy: {e}'
-                    )
-                    action = AgentFinishAction(
-                        final_thought=arguments.get('message', ''),
-                        task_completed=arguments.get('task_completed', None),
-                    )
-=======
             elif tool_call.function.name == FinishTool['function']['name']:
                 action = AgentFinishAction(
                     final_thought=arguments.get('message', ''),
                 )
->>>>>>> origin/main
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'
@@ -166,12 +118,8 @@ def response_to_actions(
 
 
 def get_tools() -> list[ChatCompletionToolParam]:
-    tools = []
-    # Use unified tool schemas
-    tools.append(_TOOL_INSTANCES[FINISH_TOOL_NAME].get_schema())
-    tools.append(_TOOL_INSTANCES['search_code_snippets'].get_schema())
-    tools.append(_TOOL_INSTANCES['get_entity_contents'].get_schema())
-    tools.append(
-        _TOOL_INSTANCES['explore_tree_structure'].get_schema(use_short_description=True)
-    )
+    tools = [FinishTool]
+    tools.append(SearchRepoTool)
+    tools.append(SearchEntityTool)
+    tools.append(create_explore_tree_structure_tool(use_simplified_description=True))
     return tools
