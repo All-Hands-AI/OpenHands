@@ -1,8 +1,8 @@
 [33mRunning the app...(B[m
 [33mStarting backend server...(B[m
 [33mWaiting for the backend to start...(B[m
-[92m02:09:49 - openhands:INFO[0m: server_config.py:56 - Using config class None
-INFO:     Started server process [4940]
+[92m02:32:20 - openhands:INFO[0m: server_config.py:56 - Using config class None
+INFO:     Started server process [4851]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:3000 (Press CTRL+C to quit)
@@ -18,81 +18,16 @@ Connection to localhost (127.0.0.1) 3000 port [tcp/*] succeeded!
 > node scripts/make-i18n-translations.cjs
 
   [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m12000[22m/[39m
-  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.1.0.133:[1m12000[22m/[39m
-[2m2:10:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mreact-redux, posthog-js, @tanstack/react-query, react-hot-toast, @reduxjs/toolkit, i18next, i18next-http-backend, i18next-browser-languagedetector, react-i18next, axios, date-fns, @uidotdev/usehooks, react-icons/fa6, react-icons/fa, clsx, tailwind-merge, lucide-react, @heroui/react, @microlink/react-json-view, socket.io-client, react-select, react-select/async[32m[39m
-[2m2:10:03 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
-INFO:     127.0.0.1:53476 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53478 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43490 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43504 - "GET /api/settings HTTP/1.1" 404 Not Found
-INFO:     127.0.0.1:43518 - "GET /api/options/models HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43532 - "GET /api/options/agents HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43544 - "GET /api/options/security-analyzers HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43554 - "GET /api/settings HTTP/1.1" 404 Not Found
-[92m02:10:06 - openhands:INFO[0m: settings.py:177 - Updated global git configuration: name=openhands, email=openhands@all-hands.dev
-INFO:     127.0.0.1:43560 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43570 - "GET /api/settings HTTP/1.1" 200 OK
-[92m02:10:08 - openhands:INFO[0m: settings.py:177 - Updated global git configuration: name=openhands, email=openhands@all-hands.dev
-INFO:     127.0.0.1:43572 - "POST /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43576 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43590 - "POST /api/add-git-providers HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43600 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43604 - "GET /api/user/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43608 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:43622 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35860 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35864 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35874 - "GET /api/user/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35904 - "GET /api/user/repositories?selected_provider=github&sort=pushed&page=1&per_page=30 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35890 - "GET /api/user/suggested-tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35916 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35930 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35936 - "GET /api/options/config HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35938 - "GET /api/settings HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35940 - "GET /api/user/info HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35958 - "GET /api/user/repositories?selected_provider=github&sort=pushed&page=1&per_page=30 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:35956 - "GET /api/user/suggested-tasks HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53198 - "GET /api/user/search/repositories?query=openha&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53186 - "GET /api/user/search/repositories?query=open&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53210 - "GET /api/user/search/repositories?query=openhan&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53176 - "GET /api/user/search/repositories?query=ope&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53192 - "GET /api/user/search/repositories?query=openh&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53160 - "GET /api/user/search/repositories?query=op&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53230 - "GET /api/user/search/repositories?query=openhands&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53222 - "GET /api/user/search/repositories?query=openhand&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53236 - "GET /api/user/search/repositories?query=openhands-&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53238 - "GET /api/user/search/repositories?query=openhands-a&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53268 - "GET /api/user/search/repositories?query=openhands-agent%2F&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53270 - "GET /api/user/search/repositories?query=openhands-agent%2FO&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53250 - "GET /api/user/search/repositories?query=openhands-agen&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53252 - "GET /api/user/search/repositories?query=openhands-agent&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53272 - "GET /api/user/search/repositories?query=openhands-agent%2FOp&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53282 - "GET /api/user/search/repositories?query=openhands-agent%2FOpe&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53284 - "GET /api/user/search/repositories?query=openhands-agent%2FOpen&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53286 - "GET /api/user/search/repositories?query=openhands-agent%2FOpenH&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53242 - "GET /api/user/search/repositories?query=openhands-ag&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53296 - "GET /api/user/search/repositories?query=openhands-agent%2FOpenHa&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53298 - "GET /api/user/search/repositories?query=openhands-agent%2FOpenHan&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53244 - "GET /api/user/search/repositories?query=openhands-age&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53314 - "GET /api/user/search/repositories?query=openhands-agent%2FOpenHand&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53328 - "GET /api/user/search/repositories?query=openhands-agent%2FOpenHands&per_page=10 HTTP/1.1" 200 OK
-INFO:     127.0.0.1:53338 - "GET /api/user/repository/branches?repository=openhands-agent%2FOpenHands HTTP/1.1" 200 OK
-[92m02:10:30 - openhands:INFO[0m: manage_conversations.py:125 - initializing_new_conversation:repository='openhands-agent/OpenHands' git_provider=<ProviderType.GITHUB: 'github'> selected_branch='main' initial_user_msg=None image_urls=None replay_json=None suggested_task=None create_microagent=None conversation_instructions=None mcp_config=None
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:50 - Creating conversation
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:58 - Loading settings
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:61 - Settings loaded
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:92 - Loading conversation store
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:94 - ServerConversation store loaded
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:101 - New conversation ID: 5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:111 - Saving metadata for conversation 5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:125 - Starting agent loop for conversation 5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:INFO[0m: standalone_conversation_manager.py:283 - maybe_start_agent_loop:5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:INFO[0m: standalone_conversation_manager.py:299 - starting_agent_loop:5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:INFO[0m: conversation_service.py:146 - Finished initializing conversation 5f60206b74e44cb2abc823acb6a548b5
-[92m02:10:30 - openhands:WARNING[0m: mcp_config.py:331 - No search engine API key found, skipping search engine
-[92m02:10:30 - openhands:INFO[0m: session.py:208 - Enabling pipeline condenser with: browser_output_masking(attention_window=2),  llm(model="litellm_proxy/claude-sonnet-4-20250514",  base_url="https://llm-proxy.app.all-hands.dev/",  keep_first=4, max_size=80)
-[92m02:10:31 - openhands:INFO[0m: llm.py:481 - Error parsing JSON response from LiteLLM proxy: Extra data: line 1 column 5 (char 4)
-INFO:     127.0.0.1:53342 - "POST /api/conversations HTTP/1.1" 200 OK
-[92m02:10:33 - openhands:INFO[0m: runtime_build.py:189 - Building image: ghcr.io/all-hands-ai/runtime:oh_v0.52.1_agsqdpcycctkjk1t_85u5sftey1e2lrt9
-[2m2:10:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mreact-icons/vsc, react-icons/di, @monaco-editor/react, react-icons/lu, react-icons/io5, react-markdown, remark-gfm, remark-breaks, react-textarea-autosize, react-syntax-highlighter, react-syntax-highlighter/dist/esm/styles/prism[32m[39m
-[2m2:10:35 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+  [32m➜[39m  [1mNetwork[22m: [36mhttp://10.1.0.150:[1m12000[22m/[39m
+[2m2:32:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ new dependencies optimized: [33mreact-redux, posthog-js, @tanstack/react-query, react-hot-toast, @reduxjs/toolkit, i18next, i18next-http-backend, i18next-browser-languagedetector, react-i18next, axios, date-fns, @uidotdev/usehooks, react-icons/fa6, react-icons/fa, clsx, tailwind-merge, @heroui/react, lucide-react, react-select, react-select/async, @microlink/react-json-view, socket.io-client[32m[39m
+[2m2:32:31 AM[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32m✨ optimized dependencies changed. reloading[39m
+INFO:     127.0.0.1:45308 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45316 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40000 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40006 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40022 - "GET /api/options/config HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40028 - "GET /api/settings HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:40040 - "GET /api/options/models HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40054 - "GET /api/options/agents HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40070 - "GET /api/options/security-analyzers HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40084 - "GET /api/settings HTTP/1.1" 404 Not Found

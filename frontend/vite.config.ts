@@ -33,8 +33,31 @@ export default defineConfig(({ mode }) => {
     ],
     optimizeDeps: {
       include: [
-        // Pre-bundle dependencies used in conversation interface to prevent
-        // runtime optimization and page reloads when launching conversations
+        // Pre-bundle ALL dependencies to prevent runtime optimization and page reloads
+        // These are discovered during initial app load:
+        "react-redux",
+        "posthog-js",
+        "@tanstack/react-query",
+        "react-hot-toast",
+        "@reduxjs/toolkit",
+        "i18next",
+        "i18next-http-backend",
+        "i18next-browser-languagedetector",
+        "react-i18next",
+        "axios",
+        "date-fns",
+        "@uidotdev/usehooks",
+        "react-icons/fa6",
+        "react-icons/fa",
+        "clsx",
+        "tailwind-merge",
+        "@heroui/react",
+        "lucide-react",
+        "react-select",
+        "react-select/async",
+        "@microlink/react-json-view",
+        "socket.io-client",
+        // These are discovered when launching conversations:
         "react-icons/vsc",
         "react-icons/lu",
         "react-icons/di",
