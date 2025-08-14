@@ -192,8 +192,7 @@ def run_mutation_testing(
 def grade_test_output(
     test_suite: str, instance: pd.Series, test_output: str, test_spec: TestSpec, runtime
 ):
-    """
-    Two-pass test grading with short-circuiting:
+    """Two-pass test grading with short-circuiting:
     1. Run all tests to identify passing/failing tests
     2. If no failing tests, evaluate coverage immediately
     3. Otherwise, run only passing tests for coverage analysis
@@ -280,8 +279,7 @@ def process_instance(
     reset_logger: bool = True,
     log_dir: str | None = None,
 ) -> EvalOutput:
-    """
-    Evaluate agent performance on a TestGenEval problem instance.
+    """Evaluate agent performance on a TestGenEval problem instance.
 
     Note that this signature differs from the expected input to `run_evaluation`. Use
     `functools.partial` to provide optional arguments before passing to the evaluation harness.
@@ -453,8 +451,7 @@ def process_instance(
 
 
 def count_and_log_fields(evaluated_predictions, fields, key):
-    """
-    Count and log the sum of specified fields in the evaluated predictions,
+    """Count and log the sum of specified fields in the evaluated predictions,
     ignoring fields with a value of -1. If all values for a field are -1,
     return -1.
 

@@ -305,8 +305,11 @@ class LLM(RetryMixin, DebugMixin):
                 )
                 kwargs['messages'] = messages
 
-                # add stop words if the model supports it
-                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                # add stop words if the model supports it and stop words are not disabled
+                if (
+                    self.config.model not in MODELS_WITHOUT_STOP_WORDS
+                    and not self.config.disable_stop_word
+                ):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
@@ -705,6 +708,7 @@ class LLM(RetryMixin, DebugMixin):
 
         Args:
             messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
+
         Returns:
             int: The number of tokens.
         """
