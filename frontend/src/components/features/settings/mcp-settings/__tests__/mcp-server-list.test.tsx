@@ -97,10 +97,10 @@ describe("MCPServerList", () => {
     const detailsCells = screen.getAllByTitle(longUrlServer.url);
     expect(detailsCells).toHaveLength(2); // Name and Details columns both have the URL
 
-    // Check that name cell has truncate class and details cell has break-all class
+    // Check that both name and details cells use truncation and have title for tooltip
     const [nameCell, detailsCell] = detailsCells;
     expect(nameCell).toHaveClass("truncate");
-    expect(detailsCell).toHaveClass("break-all");
+    expect(detailsCell).toHaveClass("truncate");
   });
 
   it("should display command and arguments for STDIO servers", () => {

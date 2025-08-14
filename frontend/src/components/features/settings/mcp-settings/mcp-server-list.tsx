@@ -109,10 +109,7 @@ function MCPServerListItem({
         className="p-3 text-sm text-content-2 opacity-80 italic min-w-0 truncate"
         title={serverDescription}
       >
-        <span
-          className="inline-block max-w-full align-bottom"
-          title={serverDescription}
-        >
+        <span className="inline-block max-w-full align-bottom">
           {serverDescription}
         </span>
       </td>
