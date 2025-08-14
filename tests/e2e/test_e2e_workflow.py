@@ -33,7 +33,7 @@ def get_readme_line_count():
         with open(readme_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             return len(lines)
-    except Exception as e:
+    except (FileNotFoundError, IOError, OSError) as e:
         print(f'Error reading README.md: {e}')
         return 0
 
@@ -94,7 +94,7 @@ def openhands_app():
                 time.sleep(5)
 
     # If we get here, all attempts failed
-    raise Exception(
+    raise ConnectionError(
         'OpenHands is not running on port 12000. Make sure to run "make run" before running the tests.'
     )
 
@@ -651,7 +651,7 @@ def test_conversation_start(page):
         print('Timed out waiting for conversation interface to load')
         page.screenshot(path='test-results/conv_06_timeout.png')
         print('Screenshot saved: conv_06_timeout.png')
-        raise Exception('Timed out waiting for conversation interface to load')
+        raise TimeoutError('Timed out waiting for conversation interface to load')
 
     # Step 5: Wait for agent to initialize
     print('Step 5: Waiting for agent to initialize...')
@@ -976,7 +976,7 @@ def test_conversation_start(page):
         if not button_enabled:
             page.screenshot(path='test-results/conv_09_submit_failed.png')
             print('Screenshot saved: conv_09_submit_failed.png')
-            raise Exception('Could not submit message')
+            raise RuntimeError('Could not submit message')
     else:
         submit_button.click()
 

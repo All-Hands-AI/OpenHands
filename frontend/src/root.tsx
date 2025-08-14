@@ -1,5 +1,6 @@
 import {
   Links,
+  Meta,
   MetaFunction,
   Outlet,
   Scripts,
@@ -16,9 +17,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        {/* eslint-disable-next-line i18next/no-literal-string */}
-        <title>OpenHands</title>
-        <meta name="description" content="Let's Start Building!" />
+        <Meta />
         <Links />
       </head>
       <body>
