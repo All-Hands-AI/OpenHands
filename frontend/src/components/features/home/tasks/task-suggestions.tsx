@@ -17,7 +17,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: tasks, isLoading } = useSuggestedTasks();
 
-  const suggestedTasks = filterFor
+  let suggestedTasks = filterFor
     ? tasks?.filter(
         (element) =>
           element.title === filterFor.full_name &&
@@ -26,6 +26,8 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           ),
       )
     : tasks;
+
+  suggestedTasks = [...(suggestedTasks ?? []), ...(suggestedTasks ?? [])];
 
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
 
@@ -54,7 +56,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           !hasSuggestedTasks && "mb-[14px]",
         )}
       >
-        <h3 className="text-xs leading-4 text-white font-bold py-[14px] pl-4">
+        <h3 className="text-xs leading-4 text-white font-semibold py-[14px] pl-4">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
         </h3>
       </div>
@@ -71,7 +73,12 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           displayedTaskGroups &&
           displayedTaskGroups.length > 0 && (
             <div className="flex flex-col">
-              <div className="transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar">
+              <div
+                className={cn(
+                  "transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar",
+                  isExpanded && "max-h-[640px]",
+                )}
+              >
                 <div className="flex flex-col">
                   {displayedTaskGroups.map((taskGroup, index) => (
                     <TaskGroup
