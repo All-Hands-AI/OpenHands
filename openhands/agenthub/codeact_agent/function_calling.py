@@ -4,6 +4,7 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+import re
 
 from litellm import (
     ModelResponse,
@@ -29,6 +30,7 @@ from openhands.agenthub.codeact_agent.tools.unified import (
     FileEditorTool,
     FinishTool,
 )
+from openhands.agenthub.codeact_agent.tools.unified.base import ToolValidationError
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -110,10 +112,19 @@ def response_to_actions(
             if tool_call.function.name == EXECUTE_BASH_TOOL_NAME:
                 # Use unified tool validation
                 bash_tool = _TOOL_INSTANCES[EXECUTE_BASH_TOOL_NAME]
-                validated_args = bash_tool.validate_parameters(arguments)
+                try:
+                    validated_args = bash_tool.validate_parameters(arguments)
+                except ToolValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
 
                 # convert is_input to boolean
-                is_input = validated_args.get('is_input', 'false') == 'true'
+                is_input = bool(validated_args.get('is_input', False))
                 action = CmdRunAction(
                     command=validated_args['command'], is_input=is_input
                 )
@@ -169,15 +180,20 @@ def response_to_actions(
             elif tool_call.function.name == FINISH_TOOL_NAME:
                 # Use unified tool validation
                 finish_tool = _TOOL_INSTANCES[FINISH_TOOL_NAME]
-                validated_args = finish_tool.validate_parameters(arguments)
+                try:
+                    validated_args = finish_tool.validate_parameters(arguments)
+                except ToolValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
 
                 action = AgentFinishAction(
                     final_thought=validated_args.get('summary', ''),
-                    outputs={
-                        'task_completed': validated_args.get('task_completed', None)
-                    }
-                    if 'task_completed' in validated_args
-                    else {},
+                    outputs=validated_args.get('outputs', {}),
                 )
 
             # ================================================
@@ -216,7 +232,16 @@ def response_to_actions(
             elif tool_call.function.name == STR_REPLACE_EDITOR_TOOL_NAME:
                 # Use unified tool validation
                 file_editor_tool = _TOOL_INSTANCES[STR_REPLACE_EDITOR_TOOL_NAME]
-                validated_args = file_editor_tool.validate_parameters(arguments)
+                try:
+                    validated_args = file_editor_tool.validate_parameters(arguments)
+                except ToolValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
 
                 path = validated_args['path']
                 command = validated_args['command']
@@ -315,7 +340,16 @@ def response_to_actions(
             elif tool_call.function.name == BROWSER_TOOL_NAME:
                 # Use unified tool validation
                 browser_tool = _TOOL_INSTANCES[BROWSER_TOOL_NAME]
-                validated_args = browser_tool.validate_parameters(arguments)
+                try:
+                    validated_args = browser_tool.validate_parameters(arguments)
+                except ToolValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
 
                 action = BrowseInteractiveAction(browser_actions=validated_args['code'])
 

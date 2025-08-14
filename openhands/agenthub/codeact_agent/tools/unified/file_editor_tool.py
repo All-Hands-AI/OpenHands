@@ -79,6 +79,21 @@ class FileEditorTool(Tool):
 
     def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize file editor tool parameters."""
+        # Reject unexpected arguments early
+        allowed_keys = {
+            'command',
+            'path',
+            'file_text',
+            'old_str',
+            'new_str',
+            'insert_line',
+            'view_range',
+        }
+        for k in parameters.keys():
+            if k not in allowed_keys:
+                raise ToolValidationError(
+                    f'Unexpected argument {k}. Allowed arguments are: {sorted(allowed_keys)}'
+                )
         if 'command' not in parameters:
             raise ToolValidationError("Missing required parameter 'command'")
         if 'path' not in parameters:
