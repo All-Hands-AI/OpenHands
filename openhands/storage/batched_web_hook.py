@@ -1,5 +1,5 @@
 import threading
-from typing import Optional, Union
+from typing import Optional
 
 import httpx
 import tenacity
@@ -38,7 +38,7 @@ class BatchedWebHookFileStore(FileStore):
     batch_timeout_seconds: float
     batch_size_limit_bytes: int
     _batch_lock: threading.Lock
-    _batch: dict[str, tuple[str, Optional[Union[str, bytes]]]]
+    _batch: dict[str, tuple[str, str | bytes | None]]
     _batch_timer: Optional[threading.Timer]
     _batch_size: int
 
@@ -81,7 +81,7 @@ class BatchedWebHookFileStore(FileStore):
         self._batch_timer = None
         self._batch_size = 0
 
-    def write(self, path: str, contents: Union[str, bytes]) -> None:
+    def write(self, path: str, contents: str | bytes) -> None:
         """Write contents to a file and queue a webhook update.
 
         Args:
@@ -123,7 +123,7 @@ class BatchedWebHookFileStore(FileStore):
         self._queue_update(path, 'delete', None)
 
     def _queue_update(
-        self, path: str, operation: str, contents: Optional[Union[str, bytes]]
+        self, path: str, operation: str, contents: str | bytes | None
     ) -> None:
         """Queue an update to be sent to the webhook.
 
@@ -199,7 +199,7 @@ class BatchedWebHookFileStore(FileStore):
             self._batch_timer = None
 
     def _send_batch(
-        self, batch_to_send: dict[str, tuple[str, Optional[Union[str, bytes]]]]
+        self, batch_to_send: dict[str, tuple[str, str | bytes | None]]
     ) -> None:
         """Send the current batch of updates to the webhook as a single request.
         This method acquires the batch lock and processes all pending updates in one batch.
@@ -217,7 +217,7 @@ class BatchedWebHookFileStore(FileStore):
         stop=tenacity.stop_after_attempt(3),
     )
     def _send_batch_request(
-        self, batch: dict[str, tuple[str, Optional[Union[str, bytes]]]]
+        self, batch: dict[str, tuple[str, str | bytes | None]]
     ) -> None:
         """Send a single batch request to the webhook URL with all updates.
 
