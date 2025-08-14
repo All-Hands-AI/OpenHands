@@ -43,7 +43,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
   return (
     <ContextMenu
       testId="macros-submenu"
-      className="text-white bg-tertiary rounded-[6px] py-[6px] flex flex-col gap-2 overflow-visible"
+      className="text-white bg-tertiary rounded-[6px] py-[6px] px-1 flex flex-col gap-2 overflow-visible"
     >
       <ContextMenuListItem
         testId="increase-test-coverage-button"
