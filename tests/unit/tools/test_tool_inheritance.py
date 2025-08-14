@@ -113,13 +113,19 @@ class TestInheritancePattern:
         """Test that ReadOnly doesn't have access to dangerous CodeAct tools."""
         # ReadOnly should not be able to import dangerous tools directly
         with pytest.raises(ImportError):
-            pass
+            from openhands.agenthub.readonly_agent.tools.unified import (
+                BashTool,  # noqa: F401
+            )
 
         with pytest.raises(ImportError):
-            pass
+            from openhands.agenthub.readonly_agent.tools.unified import (
+                FileEditorTool,  # noqa: F401
+            )
 
         with pytest.raises(ImportError):
-            pass
+            from openhands.agenthub.readonly_agent.tools.unified import (
+                BrowserTool,  # noqa: F401
+            )
 
 
 class TestToolSafety:
