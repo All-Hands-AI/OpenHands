@@ -152,6 +152,7 @@ def response_to_actions(
             # ================================================
             # AgentFinishAction
             # ================================================
+<<<<<<< HEAD
             if tool_call.function.name == FINISH_TOOL_NAME:
                 # Use unified tool validation
                 try:
@@ -177,6 +178,12 @@ def response_to_actions(
                         final_thought=arguments.get('message', ''),
                         task_completed=arguments.get('task_completed', None),
                     )
+=======
+            if tool_call.function.name == FinishTool['function']['name']:
+                action = AgentFinishAction(
+                    final_thought=arguments.get('message', ''),
+                )
+>>>>>>> origin/main
 
             # ================================================
             # ViewTool (ACI-based file viewer, READ-ONLY)

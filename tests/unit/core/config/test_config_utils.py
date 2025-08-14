@@ -9,8 +9,7 @@ DEFAULT_AGENT_NAME = 'CodeActAgent'
 
 
 def test_finalize_config_cli_disables_jupyter_and_browsing_when_true():
-    """
-    Test that finalize_config sets enable_jupyter and enable_browsing to False
+    """Test that finalize_config sets enable_jupyter and enable_browsing to False
     when runtime is 'cli' and they were initially True.
     """
     app_config = OpenHandsConfig()
@@ -30,8 +29,7 @@ def test_finalize_config_cli_disables_jupyter_and_browsing_when_true():
 
 
 def test_finalize_config_cli_keeps_jupyter_and_browsing_false_when_false():
-    """
-    Test that finalize_config keeps enable_jupyter and enable_browsing as False
+    """Test that finalize_config keeps enable_jupyter and enable_browsing as False
     when runtime is 'cli' and they were initially False.
     """
     app_config = OpenHandsConfig()
@@ -51,8 +49,7 @@ def test_finalize_config_cli_keeps_jupyter_and_browsing_false_when_false():
 
 
 def test_finalize_config_other_runtime_keeps_jupyter_and_browsing_true_by_default():
-    """
-    Test that finalize_config keeps enable_jupyter and enable_browsing as True (default)
+    """Test that finalize_config keeps enable_jupyter and enable_browsing as True (default)
     when runtime is not 'cli'.
     """
     app_config = OpenHandsConfig()
@@ -73,8 +70,7 @@ def test_finalize_config_other_runtime_keeps_jupyter_and_browsing_true_by_defaul
 
 
 def test_finalize_config_other_runtime_keeps_jupyter_and_browsing_false_if_set():
-    """
-    Test that finalize_config keeps enable_jupyter and enable_browsing as False
+    """Test that finalize_config keeps enable_jupyter and enable_browsing as False
     when runtime is not 'cli' but they were explicitly set to False.
     """
     app_config = OpenHandsConfig()
@@ -94,8 +90,7 @@ def test_finalize_config_other_runtime_keeps_jupyter_and_browsing_false_if_set()
 
 
 def test_finalize_config_no_agents_defined():
-    """
-    Test that finalize_config runs without error if no agents are defined in the config,
+    """Test that finalize_config runs without error if no agents are defined in the config,
     even when runtime is 'cli'.
     """
     app_config = OpenHandsConfig()
@@ -109,8 +104,7 @@ def test_finalize_config_no_agents_defined():
 
 
 def test_finalize_config_multiple_agents_cli_runtime():
-    """
-    Test that finalize_config correctly disables jupyter and browsing for multiple agents
+    """Test that finalize_config correctly disables jupyter and browsing for multiple agents
     when runtime is 'cli'.
     """
     app_config = OpenHandsConfig()
@@ -138,8 +132,7 @@ def test_finalize_config_multiple_agents_cli_runtime():
 
 
 def test_finalize_config_multiple_agents_other_runtime():
-    """
-    Test that finalize_config correctly keeps jupyter and browsing enabled (or as set)
+    """Test that finalize_config correctly keeps jupyter and browsing enabled (or as set)
     for multiple agents when runtime is not 'cli'.
     """
     app_config = OpenHandsConfig()

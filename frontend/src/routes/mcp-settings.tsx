@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import posthog from "posthog-js";
 import { useSettings } from "#/hooks/query/use-settings";
@@ -18,10 +18,14 @@ function MCPSettingsScreen() {
   const { data: settings, isLoading } = useSettings();
   const { mutate: saveSettings, isPending } = useSaveSettings();
 
-  const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(
-    settings?.MCP_CONFIG,
-  );
+  const [mcpConfig, setMcpConfig] = useState<MCPConfig | undefined>(undefined);
   const [isDirty, setIsDirty] = useState(false);
+
+  useEffect(() => {
+    if (!mcpConfig && settings?.MCP_CONFIG) {
+      setMcpConfig(settings.MCP_CONFIG);
+    }
+  }, [settings, mcpConfig]);
 
   const handleConfigChange = (config: MCPConfig) => {
     setMcpConfig(config);

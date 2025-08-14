@@ -37,8 +37,7 @@ def extract_preamble_classes_and_functions(code):
     current_position = 0
 
     def extract_class_body(code: str, start_index: int) -> tuple[str, int]:
-        """
-        Extracts the body of a class from the given code starting from the specified index.
+        """Extracts the body of a class from the given code starting from the specified index.
         Returns the class body and the end index of the class body.
         """
         if not code or start_index < 0 or start_index >= len(code):
@@ -168,8 +167,8 @@ def extract_preamble_classes_and_functions(code):
 def filter_passing_tests(
     test_content: str, test_output: str, repo: str
 ) -> tuple[str, list[str], list[str]]:
-    """
-    Filter tests based on their execution results.
+    """Filter tests based on their execution results.
+
     Returns:
         Tuple containing:
         - Modified test content with only passing tests
@@ -246,8 +245,7 @@ def filter_passing_tests(
 def filter_tests(
     test_content: str, test_output: str, repo: str
 ) -> tuple[str, list[str], list[str]]:
-    """
-    Filter tests using AST parsing to remove failing test functions from the test file.
+    """Filter tests using AST parsing to remove failing test functions from the test file.
     Non-test functions (e.g. setup or helper methods) and classes (even if all test methods are failing)
     are preserved.
 

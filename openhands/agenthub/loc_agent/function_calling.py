@@ -98,6 +98,7 @@ def response_to_actions(
             # ================================================
             # AgentFinishAction
             # ================================================
+<<<<<<< HEAD
             elif tool_call.function.name == FINISH_TOOL_NAME:
                 # Use unified tool validation
                 try:
@@ -123,6 +124,12 @@ def response_to_actions(
                         final_thought=arguments.get('message', ''),
                         task_completed=arguments.get('task_completed', None),
                     )
+=======
+            elif tool_call.function.name == FinishTool['function']['name']:
+                action = AgentFinishAction(
+                    final_thought=arguments.get('message', ''),
+                )
+>>>>>>> origin/main
             else:
                 raise FunctionCallNotExistsError(
                     f'Tool {tool_call.function.name} is not registered. (arguments: {arguments}). Please check the tool name and retry with an existing tool.'

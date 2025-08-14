@@ -182,7 +182,6 @@ def response_to_actions(
             elif tool_call.function.name == LegacyFinishTool['function']['name']:
                 action = AgentFinishAction(
                     final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
                 )
 
             # ================================================

@@ -14,11 +14,12 @@ from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.constants import ROOM_KEY
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.server.session.conversation import ServerConversation
-from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.session import Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -331,10 +332,12 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
+        config = self.config.model_copy(deep=True)
+
         session = Session(
             sid=sid,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )

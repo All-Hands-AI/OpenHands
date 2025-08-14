@@ -87,7 +87,6 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
-
         events = condensed_history
 
         # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
@@ -242,7 +241,10 @@ class ConversationMemory:
 
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
+<<<<<<< HEAD
             logger.debug(f'Tool calls type: {type(assistant_msg.tool_calls)}')
+=======
+>>>>>>> origin/main
             pending_tool_call_action_messages[llm_response.id] = Message(
                 role=getattr(assistant_msg, 'role', 'assistant'),
                 # tool call content SHOULD BE a string
@@ -513,6 +515,7 @@ class ConversationMemory:
                     repo_info = RepositoryInfo(
                         repo_name=obs.repo_name or '',
                         repo_directory=obs.repo_directory or '',
+                        branch_name=obs.repo_branch or None,
                     )
                 else:
                     repo_info = None
