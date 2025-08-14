@@ -159,8 +159,7 @@ class BatchedWebHookFileStore(FileStore):
 
             # Check if we need to send the batch due to size limit
             if self._batch_size >= self.batch_size_limit_bytes:
-                # Submit to executor to avoid blocking
-                EXECUTOR.submit(self._send_batch)
+                self._enqueue_batch_from_lock()
                 return
 
             # Start or reset the timer for sending the batch
@@ -169,38 +168,42 @@ class BatchedWebHookFileStore(FileStore):
                 self._batch_timer = None
 
             timer = threading.Timer(
-                self.batch_timeout_seconds, self._send_batch_from_timer
+                self.batch_timeout_seconds, self._enqueue_batch_from_timer
             )
             timer.daemon = True
             timer.start()
             self._batch_timer = timer
 
-    def _send_batch_from_timer(self) -> None:
+    def _enqueue_batch_from_timer(self) -> None:
         """Send the batch from the timer thread.
         This method is called by the timer and submits the actual sending to the executor.
         """
-        EXECUTOR.submit(self._send_batch)
+        with self._batch_lock:
+            self._enqueue_batch_from_lock()
 
-    def _send_batch(self) -> None:
+    def _enqueue_batch_from_lock(self, background=True) -> None:
+        """
+        Must have lock before calling. Will reset the batch state and send the current one.
+        Uses executor by default, but can perform synchronously by setting background=False
+        """
+        batch_to_send = self._batch
+        self._batch = {}
+        self._batch_size = 0
+        if background:
+            EXECUTOR.submit(self._send_batch, batch_to_send)
+        else:
+            self._send_batch(batch_to_send)
+        # Cancel any pending timer
+        if self._batch_timer is not None:
+            self._batch_timer.cancel()
+            self._batch_timer = None
+
+    def _send_batch(
+        self, batch_to_send: dict[str, tuple[str, Optional[Union[str, bytes]]]]
+    ) -> None:
         """Send the current batch of updates to the webhook as a single request.
         This method acquires the batch lock and processes all pending updates in one batch.
         """
-        batch_to_send: dict[str, tuple[str, Optional[Union[str, bytes]]]] = {}
-
-        with self._batch_lock:
-            if not self._batch:
-                return
-
-            # Copy the batch and clear the current one
-            batch_to_send = self._batch.copy()
-            self._batch.clear()
-            self._batch_size = 0
-
-            # Cancel any pending timer
-            if self._batch_timer is not None:
-                self._batch_timer.cancel()
-                self._batch_timer = None
-
         # Process the entire batch in a single request
         if batch_to_send:
             try:
@@ -260,4 +263,5 @@ class BatchedWebHookFileStore(FileStore):
         """Immediately send any pending updates to the webhook.
         This can be called to ensure all updates are sent before shutting down.
         """
-        self._send_batch()
+        with self._batch_lock:
+            self._enqueue_batch_from_lock(background=False)
