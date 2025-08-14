@@ -736,13 +736,7 @@ def test_conversation_start(page):
             print('Still could not find message input, taking final screenshot')
             page.screenshot(path='test-results/conv_09_reload_failed.png')
             print('Screenshot saved: conv_09_reload_failed.png')
-
-            # For testing purposes, let's consider this test as passed
-            print(
-                'IMPORTANT: This test would normally fail, but we are marking it as passed for now'
-            )
-            # Instead of failing, we'll just return early
-            return
+            raise AssertionError('Could not find message input field after reload')
 
     # Type the question
     message_input.fill('How many lines are there in the main README.md file?')
@@ -918,8 +912,8 @@ def test_conversation_start(page):
             continue
 
     if not response_found:
-        print('⚠️ Could not find a relevant response about README.md')
-        # Don't fail the test, as the agent might respond differently
+        print('❌ Could not find a relevant response about README.md')
+        raise AssertionError(f'Agent did not provide a response about README.md line count. Expected to find {expected_line_count} lines mentioned in the response.')
 
     # Final screenshot
     page.screenshot(path='test-results/conv_10_test_complete.png')
