@@ -80,7 +80,7 @@ export function ConversationMain() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
-        initialSize={500}
+        initialSize={(width - 101) * 0.5}
         firstClassName="overflow-hidden bg-base"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={
