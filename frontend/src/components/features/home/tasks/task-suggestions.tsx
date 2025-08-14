@@ -17,7 +17,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const { data: tasks, isLoading } = useSuggestedTasks();
 
-  let suggestedTasks = filterFor
+  const suggestedTasks = filterFor
     ? tasks?.filter(
         (element) =>
           element.title === filterFor.full_name &&
@@ -26,8 +26,6 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           ),
       )
     : tasks;
-
-  suggestedTasks = [...(suggestedTasks ?? []), ...(suggestedTasks ?? [])];
 
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
 
