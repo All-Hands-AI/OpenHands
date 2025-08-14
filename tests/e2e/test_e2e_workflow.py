@@ -698,10 +698,21 @@ def test_conversation_start(page):
 
         # Check for agent ready states by looking for status indicators
         try:
-            # Check current status using the specific status bar component
+            # Check current status messages to understand agent state
             status_messages = []
-            status_bar_selector = '.bg-base-secondary .text-stone-400'
+            status_selectors = [
+                'div:has-text("Connecting")',
+                'div:has-text("Starting Runtime")',
+                'div:has-text("Waiting for runtime to start")',
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Awaiting input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
+            ]
 
+            # Target the specific status bar component first (most reliable)
+            status_bar_selector = '.bg-base-secondary .text-stone-400'
             try:
                 status_elements = page.locator(status_bar_selector)
                 if status_elements.count() > 0:
@@ -712,10 +723,31 @@ def test_conversation_start(page):
             except Exception:
                 pass
 
-            # Log status every 20 seconds with elapsed time
-            if status_messages and elapsed % 20 == 0:
+            # Fallback: check for status text in broader selectors but with strict filtering
+            for selector in status_selectors:
+                try:
+                    elements = page.locator(selector)
+                    if elements.count() > 0:
+                        for i in range(elements.count()):
+                            text = elements.nth(i).text_content()
+                            if text and text.strip():
+                                # Filter out CSS content and xterm styling
+                                clean_text = text.strip()
+                                # Only keep text that doesn't contain CSS or xterm content
+                                if (
+                                    '.xterm-' not in clean_text
+                                    and 'background-color:' not in clean_text
+                                    and 'color: #' not in clean_text
+                                    and len(clean_text) < 200
+                                ):  # Reasonable length limit
+                                    status_messages.append(clean_text)
+                except Exception:
+                    continue
+
+            if status_messages:
+                # Remove duplicates and limit output
                 unique_statuses = list(dict.fromkeys(status_messages))[:3]
-                print(f'Current status (elapsed {elapsed}s): {unique_statuses}')
+                print(f'Current status: {unique_statuses}')
 
             # Check if agent is truly ready for input (not just connecting or starting)
             ready_indicators = [
