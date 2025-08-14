@@ -112,6 +112,7 @@ export function GitRepositoryDropdown({
         const searchResults = await OpenHands.searchGitRepositories(
           inputValue,
           10,
+          provider,
         );
         // Cache the search results
         searchCache.current[inputValue] = searchResults;

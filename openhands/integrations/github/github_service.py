@@ -321,6 +321,18 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         installations = response.get('installations', [])
         return [str(i['id']) for i in installations]
 
+    async def get_user_organizations(self) -> list[str]:
+        """Get list of organization logins that the user is a member of."""
+        url = f'{self.BASE_URL}/user/orgs'
+        try:
+            response, _ = await self._make_request(url)
+            orgs = [org['login'] for org in response]
+            logger.info(f'Found {len(orgs)} organizations: {orgs}')
+            return orgs
+        except Exception as e:
+            logger.warning(f'Failed to get user organizations: {e}')
+            return []
+
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
@@ -341,18 +353,65 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             # Add is:public to the query to ensure we only search for public repositories
             params['q'] = f'in:name {org}/{repo_name} is:public'
 
-        # Perhaps we should go through all orgs and the search for repos under every org
-        # Currently it will only search user repos, and org repos when '/' is in the name
+        # Handle private repository searches
         if not public and '/' in query:
             org, repo_query = query.split('/', 1)
             query_with_user = f'org:{org} in:name {repo_query}'
             params['q'] = query_with_user
         elif not public:
+            # Expand search scope to include user's repositories and organizations they're a member of
             user = await self.get_user()
-            params['q'] = f'in:name {query} user:{user.login}'
+            user_orgs = await self.get_user_organizations()
 
+            # Try a simpler query format: search in user repos and org repos separately
+            all_repos = []
+            
+            # Search in user repositories
+            user_query = f'{query} user:{user.login}'
+            user_params = params.copy()
+            user_params['q'] = user_query
+            logger.info(f'Searching user repos with query: {user_query}')
+            
+            try:
+                user_response, _ = await self._make_request(url, user_params)
+                user_items = user_response.get('items', [])
+                all_repos.extend(user_items)
+                logger.info(f'Found {len(user_items)} repos in user search')
+            except Exception as e:
+                logger.warning(f'User search failed: {e}')
+            
+            # Search in each organization
+            for org in user_orgs:
+                org_query = f'{query} org:{org}'
+                org_params = params.copy()
+                org_params['q'] = org_query
+                logger.info(f'Searching org {org} with query: {org_query}')
+                
+                try:
+                    org_response, _ = await self._make_request(url, org_params)
+                    org_items = org_response.get('items', [])
+                    all_repos.extend(org_items)
+                    logger.info(f'Found {len(org_items)} repos in org {org} search')
+                except Exception as e:
+                    logger.warning(f'Org {org} search failed: {e}')
+            
+            # Remove duplicates and return
+            seen_ids = set()
+            unique_repos = []
+            for repo in all_repos:
+                if repo['id'] not in seen_ids:
+                    seen_ids.add(repo['id'])
+                    unique_repos.append(repo)
+            
+            logger.info(f'Total unique repos found: {len(unique_repos)}')
+            return [self._parse_repository(repo) for repo in unique_repos]
+
+        # Default case (public search or slash query)
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
+        logger.info(f'GitHub search returned {len(repo_items)} repositories')
+        if repo_items:
+            logger.info(f'First few repos: {[item.get("full_name") for item in repo_items[:3]]}')
         repos = [self._parse_repository(repo) for repo in repo_items]
 
         return repos
