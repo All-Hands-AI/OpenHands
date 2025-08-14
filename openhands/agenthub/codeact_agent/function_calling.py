@@ -91,7 +91,11 @@ def response_to_actions(
                     )
                 # convert is_input to boolean
                 is_input = arguments.get('is_input', 'false') == 'true'
-                action = CmdRunAction(command=arguments['command'], is_input=is_input)
+                # convert reset_terminal to boolean
+                reset_terminal = arguments.get('reset_terminal', False)
+                if isinstance(reset_terminal, str):
+                    reset_terminal = reset_terminal.lower() == 'true'
+                action = CmdRunAction(command=arguments['command'], is_input=is_input, reset_terminal=reset_terminal)
 
                 # Set hard timeout if provided
                 if 'timeout' in arguments:

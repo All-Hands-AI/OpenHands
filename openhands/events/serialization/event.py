@@ -121,6 +121,9 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
+    # Remove reset_terminal from serialization when it's False (backward compatibility)
+    if 'reset_terminal' in props and props['reset_terminal'] is False:
+        props.pop('reset_terminal')
     # Remove task_completed from serialization when it's None (backward compatibility)
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
