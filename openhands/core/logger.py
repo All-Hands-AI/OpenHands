@@ -290,11 +290,11 @@ def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
 
 
 def get_file_handler(
-        log_dir: str,
-        log_level: int = logging.INFO,
-        when: str = 'd',
-        backup_count: int = 7,
-        utc: bool = False,
+    log_dir: str,
+    log_level: int = logging.INFO,
+    when: str = 'd',
+    backup_count: int = 7,
+    utc: bool = False,
 ) -> TimedRotatingFileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
@@ -303,7 +303,7 @@ def get_file_handler(
         os.path.join(log_dir, file_name),
         when=when,
         backupCount=backup_count,
-        utc=utc
+        utc=utc,
     )
     file_handler.setLevel(log_level)
     if LOG_JSON:
