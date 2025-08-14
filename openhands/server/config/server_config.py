@@ -51,6 +51,14 @@ class ServerConfig(ServerConfigInterface):
         return config
 
 
+class CursorLikeServerConfig(ServerConfig):
+    """Override to use cookie-based GitHub auth (cursor-like)."""
+
+    user_auth_class: str = (
+        'openhands.server.user_auth.github_cookie_auth.GithubCookieUserAuth'
+    )
+
+
 def load_server_config() -> ServerConfig:
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     logger.info(f'Using config class {config_cls}')
