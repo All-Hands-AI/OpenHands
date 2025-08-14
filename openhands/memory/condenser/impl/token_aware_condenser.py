@@ -40,10 +40,15 @@ class TokenAwareCondenser(RollingCondenser):
 
     def get_condensation(self, view: View) -> Condensation:
         head = view[: self.keep_first]
-        target_size = len(view) // 2
+        if len(view) <= self.keep_first + 1:
+            # Not enough events to justify condensation; still return a no-op condensation
+            # to keep pipeline consistent when forced by tests.
+            target_size = len(view)
+        else:
+            target_size = len(view) // 2
         # Number of events to keep from the tail -- target size, minus however many
         # prefix events from the head, minus one for the summarization event
-        events_from_tail = target_size - len(head) - 1
+        events_from_tail = max(0, target_size - len(head) - 1)
 
         summary_event = (
             view[self.keep_first]
@@ -53,7 +58,8 @@ class TokenAwareCondenser(RollingCondenser):
 
         # Identify events to be forgotten (those not in head or tail)
         forgotten_events = []
-        for event in view[self.keep_first : -events_from_tail]:
+        tail_slice_end = -events_from_tail if events_from_tail > 0 else None
+        for event in view[self.keep_first : tail_slice_end]:
             if not isinstance(event, AgentCondensationObservation):
                 forgotten_events.append(event)
 
@@ -108,14 +114,23 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        return Condensation(
-            action=CondensationAction(
-                forgotten_events_start_id=min(event.id for event in forgotten_events),
-                forgotten_events_end_id=max(event.id for event in forgotten_events),
+        # Build condensation action; handle case where there are no events to forget
+        forgotten_ids = [event.id for event in forgotten_events]
+        if forgotten_ids:
+            action = CondensationAction(
+                forgotten_events_start_id=min(forgotten_ids),
+                forgotten_events_end_id=max(forgotten_ids),
                 summary=summary,
                 summary_offset=self.keep_first,
             )
-        )
+        else:
+            action = CondensationAction(
+                forgotten_event_ids=[],
+                summary=summary,
+                summary_offset=self.keep_first,
+            )
+
+        return Condensation(action=action)
 
     def should_condense(self, view: View) -> bool:
         # Check if we exceed the token limit using the last eligible event
