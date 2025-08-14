@@ -38,6 +38,14 @@ from openhands.storage.files import FileStore
 
 
 class Session:
+    """Web server-bound session wrapper.
+
+    Manages a single web client connection and orchestrates the AgentSession lifecycle
+    for that conversation. Conceptually this is a WebSession. The attribute `sid` is
+    the conversation_id which uniquely identifies a conversation and is shared across
+    all modes (Web, CLI, Headless).
+    """
+
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
@@ -81,6 +89,11 @@ class Session:
         )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+
+    @property
+    def conversation_id(self) -> str:
+        """Alias for sid to emphasize conversation identity across modes."""
+        return self.sid
 
     async def close(self) -> None:
         if self.sio:

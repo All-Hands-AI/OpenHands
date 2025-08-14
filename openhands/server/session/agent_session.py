@@ -39,7 +39,11 @@ WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
 
 class AgentSession:
-    """Represents a session with an Agent
+    """Conversation-scoped agent lifecycle manager.
+
+    This class is transport-agnostic and manages the runtime, memory and
+    agent controller for a single conversation. It is used by the web server
+    via the Web Session wrapper and could be used in a similar way by the CLI.
 
     Attributes:
         controller: The AgentController instance for controlling the agent.
