@@ -336,19 +336,19 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         """Check if query fuzzy matches organization name."""
         query_lower = query.lower().replace('-', '').replace('_', '').replace(' ', '')
         org_lower = org_name.lower().replace('-', '').replace('_', '').replace(' ', '')
-        
+
         # Exact match after normalization
         if query_lower == org_lower:
             return True
-            
+
         # Query is a substring of org name
         if query_lower in org_lower:
             return True
-            
+
         # Org name is a substring of query (less common but possible)
         if org_lower in query_lower:
             return True
-            
+
         return False
 
     async def search_repositories(
@@ -383,32 +383,32 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
             # Search in user repos and org repos separately
             all_repos = []
-            
+
             # Search in user repositories
             user_query = f'{query} user:{user.login}'
             user_params = params.copy()
             user_params['q'] = user_query
-            
+
             try:
                 user_response, _ = await self._make_request(url, user_params)
                 user_items = user_response.get('items', [])
                 all_repos.extend(user_items)
             except Exception as e:
                 logger.warning(f'User search failed: {e}')
-            
+
             # Search for repos named "query" in each organization
             for org in user_orgs:
                 org_query = f'{query} org:{org}'
                 org_params = params.copy()
                 org_params['q'] = org_query
-                
+
                 try:
                     org_response, _ = await self._make_request(url, org_params)
                     org_items = org_response.get('items', [])
                     all_repos.extend(org_items)
                 except Exception as e:
                     logger.warning(f'Org {org} search failed: {e}')
-            
+
             # Also search for top repos from orgs that match the query name
             for org in user_orgs:
                 if self._fuzzy_match_org_name(query, org):
@@ -417,14 +417,16 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                     org_repos_params['q'] = org_repos_query
                     org_repos_params['sort'] = 'stars'
                     org_repos_params['per_page'] = 2  # Limit to first 2 repos
-                    
+
                     try:
-                        org_repos_response, _ = await self._make_request(url, org_repos_params)
+                        org_repos_response, _ = await self._make_request(
+                            url, org_repos_params
+                        )
                         org_repo_items = org_repos_response.get('items', [])
                         all_repos.extend(org_repo_items)
                     except Exception as e:
                         logger.warning(f'Org repos search for {org} failed: {e}')
-            
+
             return [self._parse_repository(repo) for repo in all_repos]
 
         # Default case (public search or slash query)
