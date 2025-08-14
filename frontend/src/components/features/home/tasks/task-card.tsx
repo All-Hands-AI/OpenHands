@@ -51,7 +51,7 @@ export function TaskCard({ task }: TaskCardProps) {
   if (task.git_provider === "gitlab") {
     const issueType =
       task.task_type === "OPEN_ISSUE" ? "issues" : "merge_requests";
-    href = `https://gitlab.com/${task.repo}/-/${issueType}/${task.issue_number}`;
+    href = `http://localost/${task.repo}/-/${issueType}/${task.issue_number}`;
   } else if (task.git_provider === "bitbucket") {
     const issueType =
       task.task_type === "OPEN_ISSUE" ? "issues" : "pull-requests";

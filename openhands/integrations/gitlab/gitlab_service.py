@@ -35,7 +35,7 @@ class GitLabService(BaseGitService, GitService):
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'https://gitlab.com/api/v4'
+    BASE_URL = 'http://localhost/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
     refresh = False

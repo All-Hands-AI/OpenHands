@@ -127,7 +127,7 @@ export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
     case "github":
       return "https://github.com";
     case "gitlab":
-      return "https://gitlab.com";
+      return "http://localhost";
     case "bitbucket":
       return "https://bitbucket.org";
     default:

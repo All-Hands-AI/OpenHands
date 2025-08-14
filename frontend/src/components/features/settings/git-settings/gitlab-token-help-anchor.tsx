@@ -12,7 +12,7 @@ export function GitLabTokenHelpAnchor() {
           <a
             key="gitlab-token-help-anchor-link"
             aria-label={t(I18nKey.GIT$GITLAB_TOKEN_HELP_LINK)}
-            href="https://gitlab.com/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
+            href="http://localost/-/user_settings/personal_access_tokens?name=openhands-app&scopes=api,read_user,read_repository,write_repository"
             target="_blank"
             className="underline underline-offset-2"
             rel="noopener noreferrer"
