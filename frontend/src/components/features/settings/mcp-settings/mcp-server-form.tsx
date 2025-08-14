@@ -97,12 +97,11 @@ export function MCPServerForm({
     const originalUrl = server?.url;
     const changed = mode === "add" || (mode === "edit" && originalUrl !== url);
     if (!changed) return null;
+    // For URL-based servers (sse/shttp), ensure URL is unique across both types
     const exists = existingServers.some(
-      (s) => s.type === serverType && s.url === url,
+      (s) => (s.type === "sse" || s.type === "shttp") && s.url === url,
     );
-    if (exists) {
-      return t(I18nKey.SETTINGS$MCP_ERROR_URL_DUPLICATE);
-    }
+    if (exists) return t(I18nKey.SETTINGS$MCP_ERROR_URL_DUPLICATE);
     return null;
   };
 
@@ -163,16 +162,11 @@ export function MCPServerForm({
     envString: string,
   ): Record<string, string> => {
     const env: Record<string, string> = {};
-    if (!envString.trim()) {
-      return env;
-    }
+    if (!envString.trim()) return env;
 
-    const lines = envString.split("\n");
-    for (let i = 0; i < lines.length; i += 1) {
-      const trimmedLine = lines[i].trim();
-      if (!trimmedLine) {
-        // skip blank lines
-      } else {
+    for (const line of envString.split("\n")) {
+      const trimmedLine = line.trim();
+      if (trimmedLine) {
         const equalIndex = trimmedLine.indexOf("=");
         if (equalIndex !== -1) {
           const key = trimmedLine.substring(0, equalIndex).trim();
