@@ -1,29 +1,25 @@
 import { ComponentType } from "react";
-import { Tooltip } from "@heroui/react";
 import { cn } from "#/utils/utils";
 
 type ConversationTabNavProps = {
   icon: ComponentType<{ className: string }>;
-  rightContent?: React.ReactNode;
   onClick(): void;
   isActive?: boolean;
 };
 
 export function ConversationTabNav({
   icon: Icon,
-  rightContent,
   onClick,
   isActive,
 }: ConversationTabNavProps) {
-  const showTooltip = !!rightContent;
-  const content = () => (
+  return (
     <button
       type="button"
       onClick={() => {
         onClick();
       }}
       className={cn(
-        "p-1 rounded-md",
+        "p-1 rounded-md cursor-pointer",
         "text-[#9299AA] bg-[#0D0F11]",
         isActive && "bg-[#25272D]",
         isActive
@@ -37,24 +33,4 @@ export function ConversationTabNav({
       <Icon className={cn("w-5 h-5 text-inherit")} />
     </button>
   );
-
-  if (showTooltip) {
-    return (
-      <Tooltip
-        showArrow
-        content={<div>{rightContent}</div>}
-        closeDelay={100}
-        placement="right"
-        classNames={{
-          base: "before:bg-tertiary before:w-4 before:h-4",
-
-          content:
-            "p-1 rounded-sm text-[#9299AA] bg-tertiary cursor-pointer hover:text-white",
-        }}
-      >
-        {content()}
-      </Tooltip>
-    );
-  }
-  return content();
 }
