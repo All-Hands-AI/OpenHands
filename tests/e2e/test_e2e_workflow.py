@@ -711,6 +711,19 @@ def test_conversation_start(page):
                 'div:has-text("Agent has finished")',
             ]
 
+            # Target the specific status bar component first (most reliable)
+            status_bar_selector = '.bg-base-secondary .text-stone-400'
+            try:
+                status_elements = page.locator(status_bar_selector)
+                if status_elements.count() > 0:
+                    for i in range(status_elements.count()):
+                        text = status_elements.nth(i).text_content()
+                        if text and text.strip():
+                            status_messages.append(text.strip())
+            except Exception:
+                pass
+
+            # Fallback: check for status text in broader selectors but with strict filtering
             for selector in status_selectors:
                 try:
                     elements = page.locator(selector)
@@ -732,7 +745,9 @@ def test_conversation_start(page):
                     continue
 
             if status_messages:
-                print(f'Current status messages: {status_messages}')
+                # Remove duplicates and limit output
+                unique_statuses = list(dict.fromkeys(status_messages))[:3]
+                print(f'Current status: {unique_statuses}')
 
             # Check if agent is truly ready for input (not just connecting or starting)
             ready_indicators = [
