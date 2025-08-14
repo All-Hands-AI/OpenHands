@@ -1,5 +1,4 @@
-"""
-This is the main file for the runtime client.
+"""This is the main file for the runtime client.
 It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
@@ -341,38 +340,10 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
+        # You can add any bash commands you want to run on startup here
+        # It is empty because: Git configuration is now handled by the runtime client after connection
         INIT_COMMANDS = []
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
-
-        # Determine git config commands based on platform and runtime mode
-        if is_local_runtime:
-            if is_windows:
-                # Windows, local - split into separate commands
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.name "openhands"'
-                )
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
-                )
-                INIT_COMMANDS.append(
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                )
-            else:
-                # Linux/macOS, local
-                base_git_config = (
-                    'git config --file ./.git_config user.name "openhands" && '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
-                    'export GIT_CONFIG=$(pwd)/.git_config'
-                )
-                INIT_COMMANDS.append(base_git_config)
-        else:
-            # Non-local (implies Linux/macOS)
-            base_git_config = (
-                'git config --global user.name "openhands" && '
-                'git config --global user.email "openhands@all-hands.dev"'
-            )
-            INIT_COMMANDS.append(base_git_config)
 
         # Determine no-pager command
         if is_windows:
