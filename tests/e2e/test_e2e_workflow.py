@@ -986,14 +986,15 @@ def test_conversation_start(page):
                 try:
                     content = msg.text_content()
                     if content and len(content.strip()) > 10:
-                        # Filter out CSS/HTML noise and only show meaningful content
+                        # Much more aggressive filtering to remove CSS/HTML noise
                         lines = content.split('\n')
                         meaningful_lines = []
                         for line in lines:
                             line = line.strip()
-                            # Skip CSS, HTML, and other noise
+                            # Skip CSS, HTML, and other noise - much more comprehensive
                             if (
                                 line
+                                and len(line) < 500  # Skip very long lines (likely CSS)
                                 and not line.startswith('.')
                                 and not line.startswith('#')
                                 and not line.startswith('stroke')
@@ -1003,17 +1004,105 @@ def test_conversation_start(page):
                                 and not line.startswith('}')
                                 and not line.startswith('color:')
                                 and not line.startswith('background-color:')
-                                and len(line) < 200
-                            ):  # Skip very long lines (likely CSS)
+                                and not line.startswith('rgb(')
+                                and not line.startswith('rgba(')
+                                and not line.startswith('var(')
+                                and not line.startswith('calc(')
+                                and not line.startswith('url(')
+                                and not line.startswith('linear-gradient')
+                                and not line.startswith('radial-gradient')
+                                and not line.startswith('transform:')
+                                and not line.startswith('transition:')
+                                and not line.startswith('animation:')
+                                and not line.startswith('font-')
+                                and not line.startswith('border')
+                                and not line.startswith('margin')
+                                and not line.startswith('padding')
+                                and not line.startswith('width:')
+                                and not line.startswith('height:')
+                                and not line.startswith('position:')
+                                and not line.startswith('display:')
+                                and not line.startswith('flex')
+                                and not line.startswith('grid')
+                                and not line.startswith('overflow')
+                                and not line.startswith('z-index')
+                                and not line.startswith('opacity')
+                                and not line.startswith('visibility')
+                                and not line.startswith('cursor')
+                                and not line.startswith('pointer-events')
+                                and not line.startswith('user-select')
+                                and not line.startswith('box-')
+                                and not line.startswith('text-')
+                                and not line.startswith('white-space')
+                                and not line.startswith('word-')
+                                and not line.startswith('line-height')
+                                and not line.startswith('letter-spacing')
+                                and not line.startswith('text-align')
+                                and not line.startswith('vertical-align')
+                                and not line.startswith('list-style')
+                                and not line.startswith('outline')
+                                and not line.startswith('box-shadow')
+                                and not line.startswith('text-shadow')
+                                and not line.startswith('filter')
+                                and not line.startswith('backdrop-filter')
+                                and not line.startswith('clip')
+                                and not line.startswith('mask')
+                                and not line.startswith('scroll')
+                                and not line.startswith('resize')
+                                and not line.startswith('content:')
+                                and not line.startswith('quotes:')
+                                and not line.startswith('counter-')
+                                and not line.startswith('page-')
+                                and not line.startswith('break-')
+                                and not line.startswith('orphans')
+                                and not line.startswith('widows')
+                                and not line.startswith('column-')
+                                and not line.startswith('table-')
+                                and not line.startswith('caption-')
+                                and not line.startswith('empty-cells')
+                                and not line.startswith('border-collapse')
+                                and not line.startswith('border-spacing')
+                                and not line.startswith('speak')
+                                and not line.startswith('voice-')
+                                and not line.startswith('azimuth')
+                                and not line.startswith('elevation')
+                                and not line.startswith('stress')
+                                and not line.startswith('richness')
+                                and not line.startswith('speech-rate')
+                                and not line.startswith('volume')
+                                and not line.startswith('pause')
+                                and not line.startswith('cue')
+                                and not line.startswith('play-during')
+                                and not line.startswith('mix-blend-mode')
+                                and not line.startswith('isolation')
+                                and not line.startswith('will-change')
+                                and not line.startswith('contain')
+                                and not line.startswith('appearance')
+                                and not line.startswith('-webkit-')
+                                and not line.startswith('-moz-')
+                                and not line.startswith('-ms-')
+                                and not line.startswith('-o-')
+                                and '{ color:' not in line
+                                and '{ background-color:' not in line
+                                and 'background-color: #' not in line
+                                and 'color: #' not in line
+                                and '.xterm-' not in line
+                                and 'renderer-owner' not in line
+                                and not (line.count('{') > 3 or line.count('}') > 3)  # Skip lines with many braces
+                                and not (line.count(':') > 5)  # Skip lines with many colons (CSS properties)
+                                and not (line.count(';') > 5)  # Skip lines with many semicolons (CSS rules)
+                                and not (line.count('#') > 2)  # Skip lines with many hash symbols (colors)
+                                and not line.replace(' ', '').replace('.', '').replace('#', '').replace(':', '').replace(';', '').replace('{', '').replace('}', '').replace('-', '').replace('_', '').isdigit()  # Skip lines that are mostly CSS values
+                            ):
                                 meaningful_lines.append(line)
 
                         if meaningful_lines:
                             meaningful_content = ' '.join(
-                                meaningful_lines[:3]
-                            )  # Only first 3 meaningful lines
+                                meaningful_lines[:2]
+                            )  # Only first 2 meaningful lines
                             print(
-                                f'Agent message {i}: {meaningful_content[:150]}...'
-                                if len(meaningful_content) > 150
+                                f'Agent message {i}: {meaningful_content[:100]}...'
+                                if len(meaningful_content) > 100
                                 else f'Agent message {i}: {meaningful_content}'
                             )
 
@@ -1073,27 +1162,124 @@ def test_conversation_start(page):
         for i, msg in enumerate(agent_messages):
             try:
                 content = msg.text_content()
-                # Filter content for readability
+                # Filter content for readability with comprehensive CSS filtering
                 if content:
                     lines = content.split('\n')
-                    meaningful_lines = [
-                        line.strip()
-                        for line in lines
-                        if line.strip()
-                        and not line.strip().startswith('.')
-                        and not line.strip().startswith('#')
-                        and not line.strip().startswith('stroke')
-                        and not line.strip().startswith('fill')
-                        and not line.strip().startswith('xterm')
-                        and len(line.strip()) < 200
-                    ]
+                    meaningful_lines = []
+                    for line in lines:
+                        line = line.strip()
+                        # Apply the same comprehensive filtering as above
+                        if (
+                            line
+                            and len(line) < 500
+                            and not line.startswith('.')
+                            and not line.startswith('#')
+                            and not line.startswith('stroke')
+                            and not line.startswith('fill')
+                            and not line.startswith('xterm')
+                            and not line.startswith('{')
+                            and not line.startswith('}')
+                            and not line.startswith('color:')
+                            and not line.startswith('background-color:')
+                            and not line.startswith('rgb(')
+                            and not line.startswith('rgba(')
+                            and not line.startswith('var(')
+                            and not line.startswith('calc(')
+                            and not line.startswith('url(')
+                            and not line.startswith('linear-gradient')
+                            and not line.startswith('radial-gradient')
+                            and not line.startswith('transform:')
+                            and not line.startswith('transition:')
+                            and not line.startswith('animation:')
+                            and not line.startswith('font-')
+                            and not line.startswith('border')
+                            and not line.startswith('margin')
+                            and not line.startswith('padding')
+                            and not line.startswith('width:')
+                            and not line.startswith('height:')
+                            and not line.startswith('position:')
+                            and not line.startswith('display:')
+                            and not line.startswith('flex')
+                            and not line.startswith('grid')
+                            and not line.startswith('overflow')
+                            and not line.startswith('z-index')
+                            and not line.startswith('opacity')
+                            and not line.startswith('visibility')
+                            and not line.startswith('cursor')
+                            and not line.startswith('pointer-events')
+                            and not line.startswith('user-select')
+                            and not line.startswith('box-')
+                            and not line.startswith('text-')
+                            and not line.startswith('white-space')
+                            and not line.startswith('word-')
+                            and not line.startswith('line-height')
+                            and not line.startswith('letter-spacing')
+                            and not line.startswith('text-align')
+                            and not line.startswith('vertical-align')
+                            and not line.startswith('list-style')
+                            and not line.startswith('outline')
+                            and not line.startswith('box-shadow')
+                            and not line.startswith('text-shadow')
+                            and not line.startswith('filter')
+                            and not line.startswith('backdrop-filter')
+                            and not line.startswith('clip')
+                            and not line.startswith('mask')
+                            and not line.startswith('scroll')
+                            and not line.startswith('resize')
+                            and not line.startswith('content:')
+                            and not line.startswith('quotes:')
+                            and not line.startswith('counter-')
+                            and not line.startswith('page-')
+                            and not line.startswith('break-')
+                            and not line.startswith('orphans')
+                            and not line.startswith('widows')
+                            and not line.startswith('column-')
+                            and not line.startswith('table-')
+                            and not line.startswith('caption-')
+                            and not line.startswith('empty-cells')
+                            and not line.startswith('border-collapse')
+                            and not line.startswith('border-spacing')
+                            and not line.startswith('speak')
+                            and not line.startswith('voice-')
+                            and not line.startswith('azimuth')
+                            and not line.startswith('elevation')
+                            and not line.startswith('stress')
+                            and not line.startswith('richness')
+                            and not line.startswith('speech-rate')
+                            and not line.startswith('volume')
+                            and not line.startswith('pause')
+                            and not line.startswith('cue')
+                            and not line.startswith('play-during')
+                            and not line.startswith('mix-blend-mode')
+                            and not line.startswith('isolation')
+                            and not line.startswith('will-change')
+                            and not line.startswith('contain')
+                            and not line.startswith('appearance')
+                            and not line.startswith('-webkit-')
+                            and not line.startswith('-moz-')
+                            and not line.startswith('-ms-')
+                            and not line.startswith('-o-')
+                            and '{ color:' not in line
+                            and '{ background-color:' not in line
+                            and 'background-color: #' not in line
+                            and 'color: #' not in line
+                            and '.xterm-' not in line
+                            and 'renderer-owner' not in line
+                            and not (line.count('{') > 3 or line.count('}') > 3)
+                            and not (line.count(':') > 5)
+                            and not (line.count(';') > 5)
+                            and not (line.count('#') > 2)
+                            and not line.replace(' ', '').replace('.', '').replace('#', '').replace(':', '').replace(';', '').replace('{', '').replace('}', '').replace('-', '').replace('_', '').isdigit()
+                        ):
+                            meaningful_lines.append(line)
+                    
                     if meaningful_lines:
                         filtered_content = ' '.join(
-                            meaningful_lines[:5]
-                        )  # First 5 meaningful lines
+                            meaningful_lines[:3]
+                        )  # First 3 meaningful lines
                         print(
-                            f'Agent Message {i}: {filtered_content[:300]}...'
-                            if len(filtered_content) > 300
+                            f'Agent Message {i}: {filtered_content[:200]}...'
+                            if len(filtered_content) > 200
                             else f'Agent Message {i}: {filtered_content}'
                         )
                     else:
