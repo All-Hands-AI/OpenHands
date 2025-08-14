@@ -1,7 +1,6 @@
 import argparse
 import os
 import pathlib
-import platform
 import sys
 from ast import literal_eval
 from types import UnionType
