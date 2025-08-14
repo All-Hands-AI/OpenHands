@@ -294,6 +294,14 @@ def _calc_backoff_seconds(attempts: int) -> int:
 
 
 def _available_commands(candidates: list[str]) -> list[str]:
+    """Filter the candidate list to only available commands.
+
+    Args:
+        candidates: List of command names to check for availability.
+
+    Returns:
+        List of command names that are available (i.e., can be run with '--version' and return exit code 0).
+    """
     available: list[str] = []
     for c in candidates:
         try:
