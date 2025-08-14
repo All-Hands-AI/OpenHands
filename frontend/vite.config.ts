@@ -62,6 +62,7 @@ export default defineConfig(({ mode }) => {
         "react-icons/lu",
         "react-icons/di",
         "react-icons/io5",
+        "react-icons/io",  // Added to prevent runtime optimization
         "@monaco-editor/react",
         "react-textarea-autosize",
         "react-markdown",
@@ -70,6 +71,10 @@ export default defineConfig(({ mode }) => {
         "react-syntax-highlighter",
         "react-syntax-highlighter/dist/esm/styles/prism",
         "react-syntax-highlighter/dist/esm/styles/hljs",
+        // Terminal dependencies - added to prevent runtime optimization
+        "@xterm/addon-fit",
+        "@xterm/xterm",
+        "@xterm/xterm/css/xterm.css",
       ],
     },
     server: {
