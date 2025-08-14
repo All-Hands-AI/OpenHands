@@ -30,7 +30,20 @@ from openhands.runtime.utils.command import (
     get_action_execution_server_startup_command,
 )
 from openhands.runtime.utils.request import send_request
-from openhands.runtime.utils.runtime_build import build_runtime_image
+
+try:
+    from openhands.runtime.utils.runtime_build import build_runtime_image
+
+    RUNTIME_BUILD_AVAILABLE = True
+except ImportError:
+    RUNTIME_BUILD_AVAILABLE = False
+
+    def build_runtime_image(*args, **kwargs):  # type: ignore
+        raise ImportError(
+            'Docker is required for remote runtime image building. Install with: pip install docker'
+        )
+
+
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -244,6 +257,11 @@ class RemoteRuntime(ActionExecutionClient):
             )
 
         # Build the container image
+        if not RUNTIME_BUILD_AVAILABLE:
+            raise ImportError(
+                'Docker is required for remote runtime image building. '
+                'Install with: pip install docker'
+            )
         self.container_image = build_runtime_image(
             self.config.sandbox.base_container_image,
             self.runtime_builder,

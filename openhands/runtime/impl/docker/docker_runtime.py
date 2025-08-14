@@ -1,5 +1,4 @@
 import os
-import platform
 import typing
 from functools import lru_cache
 from typing import Callable
@@ -24,6 +23,12 @@ from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
+from openhands.runtime.impl.constants import (
+    APP_PORT_RANGE_1,
+    APP_PORT_RANGE_2,
+    EXECUTION_SERVER_PORT_RANGE,
+    VSCODE_PORT_RANGE,
+)
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
@@ -40,17 +45,6 @@ from openhands.utils.shutdown_listener import add_shutdown_listener
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
 CONTAINER_NAME_PREFIX = 'openhands-runtime-'
-
-EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
-VSCODE_PORT_RANGE = (40000, 49999)
-APP_PORT_RANGE_1 = (50000, 54999)
-APP_PORT_RANGE_2 = (55000, 59999)
-
-if os.name == 'nt' or platform.release().endswith('microsoft-standard-WSL2'):
-    EXECUTION_SERVER_PORT_RANGE = (30000, 34999)
-    VSCODE_PORT_RANGE = (35000, 39999)
-    APP_PORT_RANGE_1 = (40000, 44999)
-    APP_PORT_RANGE_2 = (45000, 49151)
 
 
 def _is_retryablewait_until_alive_error(exception: Exception) -> bool:

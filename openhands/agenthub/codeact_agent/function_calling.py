@@ -10,7 +10,6 @@ from litellm import (
 )
 
 from openhands.agenthub.codeact_agent.tools import (
-    BrowserTool,
     CondensationRequestTool,
     FinishTool,
     IPythonTool,
@@ -19,6 +18,14 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+
+try:
+    from openhands.agenthub.codeact_agent.tools import BrowserTool
+
+    BROWSER_TOOL_AVAILABLE = True
+except ImportError:
+    BROWSER_TOOL_AVAILABLE = False
+    BrowserTool = None
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -213,7 +220,10 @@ def response_to_actions(
             # ================================================
             # BrowserTool
             # ================================================
-            elif tool_call.function.name == BrowserTool['function']['name']:
+            elif (
+                BROWSER_TOOL_AVAILABLE
+                and tool_call.function.name == BrowserTool['function']['name']
+            ):
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'

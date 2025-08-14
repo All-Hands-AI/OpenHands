@@ -2,7 +2,13 @@ import asyncio
 from typing import Any
 from uuid import uuid4
 
-from fastapi import Request
+try:
+    from fastapi import Request
+
+    FASTAPI_AVAILABLE = True
+except ImportError:
+    FASTAPI_AVAILABLE = False
+    Request = None
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
@@ -42,7 +48,7 @@ class SecurityAnalyzer:
         except Exception as e:
             logger.error(f'Error occurred while analyzing the event: {e}')
 
-    async def handle_api_request(self, request: Request) -> Any:
+    async def handle_api_request(self, request: Any) -> Any:
         """Handles the incoming API request."""
         raise NotImplementedError(
             'Need to implement handle_api_request method in SecurityAnalyzer subclass'

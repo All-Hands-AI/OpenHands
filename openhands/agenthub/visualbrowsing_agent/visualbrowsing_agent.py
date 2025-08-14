@@ -1,5 +1,12 @@
-from browsergym.core.action.highlevel import HighLevelActionSet
-from browsergym.utils.obs import flatten_axtree_to_str
+try:
+    from browsergym.core.action.highlevel import HighLevelActionSet
+    from browsergym.utils.obs import flatten_axtree_to_str
+
+    BROWSERGYM_AVAILABLE = True
+except ImportError:
+    BROWSERGYM_AVAILABLE = False
+    HighLevelActionSet = None
+    flatten_axtree_to_str = None
 
 from openhands.agenthub.browsing_agent.response_parser import BrowsingResponseParser
 from openhands.controller.agent import Agent
@@ -137,6 +144,12 @@ class VisualBrowsingAgent(Agent):
         Parameters:
         - llm (LLM): The llm to be used by this agent
         """
+        if not BROWSERGYM_AVAILABLE:
+            raise ImportError(
+                'VisualBrowsingAgent requires browsergym-core to be installed. '
+                'Install it with: pip install browsergym-core==0.13.3'
+            )
+
         super().__init__(llm, config)
         # define a configurable action space, with chat functionality, web navigation, and webpage grounding using accessibility tree and HTML.
         # see https://github.com/ServiceNow/BrowserGym/blob/main/core/src/browsergym/core/action/highlevel.py for more details
@@ -254,6 +267,8 @@ Note:
                 )
             tabs = get_tabs(last_obs)
             try:
+                if not BROWSERGYM_AVAILABLE:
+                    raise ImportError('browsergym-core is not available')
                 # IMPORTANT: keep AX Tree of full webpage, add visible and clickable tags
                 cur_axtree_txt = flatten_axtree_to_str(
                     last_obs.axtree_object,
