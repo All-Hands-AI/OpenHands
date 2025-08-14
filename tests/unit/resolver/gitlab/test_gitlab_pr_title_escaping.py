@@ -91,7 +91,7 @@ def test_pr_title_with_quotes(monkeypatch):
     monkeypatch.setattr('httpx.post', mock_post)
     monkeypatch.setattr('httpx.get', lambda *args, **kwargs: MockGetResponse())
     monkeypatch.setattr(
-        'openhands.resolver.interfaces.github.GithubIssueHandler.branch_exists',
+        'openhands.resolver.interfaces.gitlab.GitlabIssueHandler.branch_exists',
         lambda *args, **kwargs: False,
     )
 

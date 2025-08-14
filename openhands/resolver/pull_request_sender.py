@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 from argparse import Namespace
-from typing import cast
+from typing import Optional
 
 import jinja2
 from pydantic import SecretStr
@@ -28,6 +28,22 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 class PullRequestSender:
     """Class for handling pull request sending operations."""
+
+    token: str
+    username: str
+    platform: ProviderType
+    output_dir: str
+    pr_type: str
+    issue_number: int
+    fork_owner: Optional[str]
+    send_on_failure: bool
+    target_branch: Optional[str]
+    reviewer: Optional[str]
+    pr_title: Optional[str]
+    base_domain: Optional[str]
+    git_user_name: str
+    git_user_email: str
+    llm_config: Optional[LLMConfig]
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the PullRequestSender with the given parameters."""
@@ -297,17 +313,15 @@ class PullRequestSender:
             raise ValueError(f'Invalid pr_type: {self.pr_type}')
 
         # Determine default base_domain based on platform
-        base_domain = self.base_domain
-        if base_domain is None:
+        if self.base_domain is None:
             if self.platform == ProviderType.GITHUB:
                 base_domain = 'github.com'
             elif self.platform == ProviderType.GITLAB:
                 base_domain = 'gitlab.com'
             else:  # platform == ProviderType.BITBUCKET
                 base_domain = 'bitbucket.org'
-
-        # At this point, base_domain is guaranteed to be a string
-        base_domain = cast(str, base_domain)
+        else:
+            base_domain = self.base_domain
 
         # Create the appropriate handler based on platform
         handler = None
@@ -448,14 +462,12 @@ class PullRequestSender:
             additional_message: The additional messages to post as a comment on the PR in json list format.
         """
         # Determine default base_domain based on platform
-        base_domain = self.base_domain
-        if base_domain is None:
+        if self.base_domain is None:
             base_domain = (
                 'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
             )
-
-        # At this point, base_domain is guaranteed to be a string
-        base_domain = cast(str, base_domain)
+        else:
+            base_domain = self.base_domain
 
         handler = None
         if self.platform == ProviderType.GITHUB:

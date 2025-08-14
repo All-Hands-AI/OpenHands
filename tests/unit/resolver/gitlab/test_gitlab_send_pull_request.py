@@ -10,10 +10,10 @@ from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread
 from openhands.resolver.resolver_output import Issue, ResolverOutput
+from openhands.resolver.io_utils import load_single_resolver_output
 from openhands.resolver.send_pull_request import (
     apply_patch,
     initialize_repo,
-    load_single_resolver_output,
     main,
     make_commit,
     process_single_issue,
@@ -1020,8 +1020,8 @@ def test_send_pull_request_branch_naming(
 
 @patch('openhands.resolver.send_pull_request.argparse.ArgumentParser')
 @patch('openhands.resolver.send_pull_request.process_single_issue')
-@patch('openhands.resolver.send_pull_request.load_single_resolver_output')
-@patch('openhands.resolver.send_pull_request.identify_token')
+@patch('openhands.resolver.io_utils.load_single_resolver_output')
+@patch('openhands.resolver.utils.identify_token')
 @patch('os.path.exists')
 @patch('os.getenv')
 def test_main(

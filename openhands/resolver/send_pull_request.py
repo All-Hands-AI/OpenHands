@@ -4,6 +4,7 @@ import os
 from openhands.core.config import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
+from openhands.resolver.io_utils import load_single_resolver_output
 from openhands.resolver.pull_request_sender import PullRequestSender
 from openhands.resolver.resolver_output import ResolverOutput
 
@@ -469,6 +470,7 @@ def process_single_issue(
     )
     sender = PullRequestSender(args)
     sender.process_single_issue(resolver_output)
+
 
 
 def main() -> None:
