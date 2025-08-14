@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from pydantic import (
     BaseModel,
@@ -11,7 +11,8 @@ from pydantic import (
 )
 from pydantic.json import pydantic_encoder
 
-from openhands.events.stream import EventStream
+if TYPE_CHECKING:
+    from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
@@ -139,7 +140,7 @@ class UserSecrets(BaseModel):
 
         return new_data
 
-    def set_event_stream_secrets(self, event_stream: EventStream) -> None:
+    def set_event_stream_secrets(self, event_stream: 'EventStream') -> None:
         """This ensures that provider tokens and custom secrets masked from the event stream
         Args:
             event_stream: Agent session's event stream
