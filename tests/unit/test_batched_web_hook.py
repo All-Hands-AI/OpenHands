@@ -507,18 +507,25 @@ class TestBatchedWebHookFileStore:
                 # This simulates the timer firing and submitting another task
                 batched_store._batch_timer.function()
 
-            # Should have two tasks now (size limit + timer)
-            assert len(submitted_tasks) == 2
+            # With the race condition fix, should only have one task (timer prevented)
+            assert len(submitted_tasks) == 1, (
+                f'Race condition fix failed: expected 1 task, got {len(submitted_tasks)}'
+            )
 
-            # Execute both tasks to see if we get duplicates
+            # Execute the single task
             for fn, args, kwargs in submitted_tasks:
                 fn(*args, **kwargs)
 
-            # Check for duplicates - this should fail if race condition exists
+            # Check that events are sent correctly without duplicates
             unique_events = set(sent_events)
             assert len(sent_events) == len(unique_events), (
-                f'Race condition detected: {len(sent_events)} events sent, '
+                f'Duplicate events detected: {len(sent_events)} events sent, '
                 f'but only {len(unique_events)} unique events'
+            )
+            
+            # Should have exactly 2 unique events (small.txt and large.txt)
+            assert len(unique_events) == 2, (
+                f'Expected 2 unique events, got {len(unique_events)}: {unique_events}'
             )
 
     def test_race_condition_concurrent_flush_deterministic(
@@ -566,28 +573,37 @@ class TestBatchedWebHookFileStore:
             assert len(submitted_tasks) == 0  # No size limit exceeded
             assert batched_store._batch_timer is not None
 
+            # Save timer reference before flush cancels it
+            original_timer = batched_store._batch_timer
+            
             # Call flush() which should send immediately
             batched_store.flush()
 
             # Flush calls _send_batch directly, so no new executor tasks
             assert len(submitted_tasks) == 0
+            
+            # Timer should be cancelled after flush
+            assert batched_store._batch_timer is None
 
-            # But now simulate the timer also firing (race condition)
-            if batched_store._batch_timer:
-                batched_store._batch_timer.function()
+            # Simulate the original timer firing (race condition)
+            if original_timer:
+                original_timer.function()
 
-            # Timer should submit a task
-            assert len(submitted_tasks) == 1
+            # With race condition fix, timer should not submit a task (batch is empty)
+            assert len(submitted_tasks) == 0, (
+                f'Race condition fix failed: timer submitted task after flush'
+            )
 
-            # Execute the timer task
-            for fn, args, kwargs in submitted_tasks:
-                fn(*args, **kwargs)
-
-            # Check for duplicates - flush + timer should not duplicate events
+            # Check that flush sent the event correctly
             unique_events = set(sent_events)
             assert len(sent_events) == len(unique_events), (
-                f'Race condition detected: {len(sent_events)} events sent, '
+                f'Duplicate events detected: {len(sent_events)} events sent, '
                 f'but only {len(unique_events)} unique events'
+            )
+            
+            # Should have exactly 1 event from flush
+            assert len(unique_events) == 1, (
+                f'Expected 1 unique event, got {len(unique_events)}: {unique_events}'
             )
 
     def test_race_condition_multiple_concurrent_writes_deterministic(
@@ -635,22 +651,27 @@ class TestBatchedWebHookFileStore:
             for i, content in enumerate(contents):
                 batched_store.write(f'/file{i}.txt', content)
 
-            # Each write should trigger size limit and submit a task
-            assert len(submitted_tasks) == len(contents)
+            # With race condition fix, only first write should trigger task submission
+            # Subsequent writes are prevented by _send_in_progress flag
+            assert len(submitted_tasks) == 1, (
+                f'Race condition fix failed: expected 1 task, got {len(submitted_tasks)}'
+            )
 
-            # Execute all tasks to simulate concurrent execution
+            # Execute the single task
             for fn, args, kwargs in submitted_tasks:
                 fn(*args, **kwargs)
 
             # Check for duplicates
             unique_events = set(sent_events)
             assert len(sent_events) == len(unique_events), (
-                f'Race condition detected: {len(sent_events)} events sent, '
+                f'Duplicate events detected: {len(sent_events)} events sent, '
                 f'but only {len(unique_events)} unique events'
             )
 
-            # Verify all expected events were sent
+            # Should have all 3 files in a single batch (no duplicates)
             expected_events = set()
             for i, content in enumerate(contents):
                 expected_events.add(f'POST:/file{i}.txt:{content}')
-            assert unique_events == expected_events
+            assert unique_events == expected_events, (
+                f'Expected {expected_events}, got {unique_events}'
+            )
