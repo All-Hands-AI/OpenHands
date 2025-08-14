@@ -82,14 +82,14 @@ const getFinishActionContent = (event: FinishAction): string =>
   event.args.final_thought.trim();
 
 const getTaskTrackingActionContent = (event: TaskTrackingAction): string => {
-  let content = `**Command:** ${event.args.command}`;
+  let content = `**Command:** \`${event.args.command}\``;
 
   if (
     event.args.command === "plan" &&
     event.args.task_list &&
     event.args.task_list.length > 0
   ) {
-    content += `\n\n**Task List (${event.args.task_list.length} items):**\n`;
+    content += `\n\n**Task List (${event.args.task_list.length} ${event.args.task_list.length === 1 ? "item" : "items"}):**\n`;
 
     event.args.task_list.forEach((task, index) => {
       const statusIcon =
@@ -99,7 +99,8 @@ const getTaskTrackingActionContent = (event: TaskTrackingAction): string => {
           done: "✅",
         }[task.status] || "❓";
 
-      content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase()}]** ${task.title}`;
+      content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase().replace("_", " ")}]** ${task.title}`;
+      content += `\n   *ID: ${task.id}*`;
       if (task.notes) {
         content += `\n   *Notes: ${task.notes}*`;
       }

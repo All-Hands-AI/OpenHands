@@ -106,8 +106,35 @@ const getRecallObservationContent = (event: RecallObservation): string => {
 const getTaskTrackingObservationContent = (
   event: TaskTrackingObservation,
 ): string => {
-  const content = event.content?.trim() || "Task tracking operation completed";
-  return `**Result:** ${content}`;
+  const { command, task_list: taskList } = event.extras;
+  let content = `**Command:** \`${command}\``;
+
+  if (command === "plan" && taskList.length > 0) {
+    content += `\n\n**Task List (${taskList.length} ${taskList.length === 1 ? "item" : "items"}):**\n`;
+
+    taskList.forEach((task, index) => {
+      const statusIcon =
+        {
+          todo: "⏳",
+          in_progress: "🔄",
+          done: "✅",
+        }[task.status] || "❓";
+
+      content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase().replace("_", " ")}]** ${task.title}`;
+      content += `\n   *ID: ${task.id}*`;
+      if (task.notes) {
+        content += `\n   *Notes: ${task.notes}*`;
+      }
+    });
+  } else if (command === "plan") {
+    content += "\n\n**Task List:** Empty";
+  }
+
+  if (event.content && event.content.trim()) {
+    content += `\n\n**Result:** ${event.content.trim()}`;
+  }
+
+  return content;
 };
 
 export const getObservationContent = (event: OpenHandsObservation): string => {

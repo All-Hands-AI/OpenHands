@@ -1,8 +1,6 @@
 import React from "react";
-import ReactJsonView from "@microlink/react-json-view";
 import { useTranslation } from "react-i18next";
 import { TaskTrackingObservation } from "#/types/core/observations";
-import { JSON_VIEW_THEME } from "#/utils/constants";
 
 interface TaskTrackingObservationContentProps {
   event: TaskTrackingObservation;
@@ -15,15 +13,6 @@ export function TaskTrackingObservationContent({
 
   const { command, task_list: taskList } = event.extras;
   const shouldShowTaskList = command === "plan" && taskList.length > 0;
-
-  // Parse the content as JSON if possible, otherwise use raw content
-  let outputData: unknown;
-  try {
-    outputData = JSON.parse(event.content);
-  } catch (e) {
-    // If parsing fails, use the raw content
-    outputData = event.content;
-  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -71,7 +60,7 @@ export function TaskTrackingObservationContent({
               {taskList.length === 1 ? "item" : "items"})
             </h3>
           </div>
-          <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
+          <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[400px] shadow-inner">
             <div className="space-y-3">
               {taskList.map((task, index) => (
                 <div key={task.id} className="border-l-2 border-gray-600 pl-3">
@@ -80,7 +69,7 @@ export function TaskTrackingObservationContent({
                       {getStatusIcon(task.status)}
                     </span>
                     <div className="flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 mb-1">
                         <span className="text-sm text-gray-400">
                           {index + 1}.
                         </span>
@@ -92,12 +81,15 @@ export function TaskTrackingObservationContent({
                           {task.status.replace("_", " ")}
                         </span>
                       </div>
-                      <h4 className="font-medium text-white mt-1">
+                      <h4 className="font-medium text-white mb-1">
                         {task.title}
                       </h4>
-                      <p className="text-xs text-gray-400 mt-1">{task.id}</p>
+                      <p className="text-xs text-gray-400 mb-1">
+                        {t("TASK_TRACKING_OBSERVATION$TASK_ID")}: {task.id}
+                      </p>
                       {task.notes && (
-                        <p className="text-sm text-gray-300 mt-2 italic">
+                        <p className="text-sm text-gray-300 italic">
+                          {t("TASK_TRACKING_OBSERVATION$TASK_NOTES")}:{" "}
                           {task.notes}
                         </p>
                       )}
@@ -110,29 +102,21 @@ export function TaskTrackingObservationContent({
         </div>
       )}
 
-      {/* Output section */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-300">
-            {t("TASK_TRACKING_OBSERVATION$OUTPUT")}
-          </h3>
-        </div>
-        <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 max-h-[300px] shadow-inner">
-          {typeof outputData === "object" && outputData !== null ? (
-            <ReactJsonView
-              name={false}
-              src={outputData}
-              theme={JSON_VIEW_THEME}
-              collapsed={1}
-              displayDataTypes={false}
-            />
-          ) : (
-            <pre className="whitespace-pre-wrap">
-              {event.content.trim() || t("OBSERVATION$TASK_TRACKING_NO_OUTPUT")}
+      {/* Result message - only show if there's meaningful content */}
+      {event.content && event.content.trim() && (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-300">
+              {t("TASK_TRACKING_OBSERVATION$RESULT")}
+            </h3>
+          </div>
+          <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 shadow-inner">
+            <pre className="whitespace-pre-wrap text-sm">
+              {event.content.trim()}
             </pre>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
