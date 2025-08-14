@@ -350,7 +350,7 @@ def complete_runtime(
     )
     json_report = obs.content.strip()
 
-    try:
+    ry:
         report = json.loads(json_report)
         tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
 
@@ -381,64 +381,15 @@ def complete_runtime(
             'num_tests': len(test_ids),
         }
 
-    except json.JSONDecodeError as e:
-        logger.error(f'Failed to parse test report JSON: {e}')
-        logger.error(f'JSON report content (first 500 chars): {json_report[:500]}')
-        
-        # Fallback: parse test results from text output
-        logger.info('Attempting to parse test results from text output as fallback')
-        import re
-        
-        # Look for pytest summary line like "53 failed, 148 passed in 1.33s"
-        summary_pattern = r'(\d+)\s+failed,\s+(\d+)\s+passed'
-        summary_match = re.search(summary_pattern, test_output)
-        
-        if summary_match:
-            num_failed = int(summary_match.group(1))
-            num_passed = int(summary_match.group(2))
-            total_tests = num_failed + num_passed
-            passed_ratio = num_passed / total_tests if total_tests > 0 else 0
-            
-            logger.info(f'Parsed from text output: {num_passed} passed, {num_failed} failed')
-            eval_result = {
-                'name': workspace_dir_name,
-                'sum': 0,  # Can't get runtime from text output
-                'passed': passed_ratio,
-                'num_passed': num_passed,
-                'num_tests': len(test_ids),
-            }
-        else:
-            # Look for alternative patterns
-            passed_pattern = r'(\d+)\s+passed'
-            failed_pattern = r'(\d+)\s+failed'
-            
-            passed_match = re.search(passed_pattern, test_output)
-            failed_match = re.search(failed_pattern, test_output)
-            
-            num_passed = int(passed_match.group(1)) if passed_match else 0
-            num_failed = int(failed_match.group(1)) if failed_match else 0
-            
-            if num_passed > 0 or num_failed > 0:
-                total_tests = num_passed + num_failed
-                passed_ratio = num_passed / total_tests if total_tests > 0 else 0
-                
-                logger.info(f'Parsed from text output (alternative): {num_passed} passed, {num_failed} failed')
-                eval_result = {
-                    'name': workspace_dir_name,
-                    'sum': 0,
-                    'passed': passed_ratio,
-                    'num_passed': num_passed,
-                    'num_tests': len(test_ids),
-                }
-            else:
-                logger.error('Could not parse test results from text output either')
-                eval_result = {
-                    'name': workspace_dir_name,
-                    'sum': 0,
-                    'passed': 0,
-                    'num_passed': 0,
-                    'num_tests': len(test_ids),
-                }
+    except json.JSONDecodeError:
+        logger.error('Failed to parse test report JSON')
+        eval_result = {
+            'name': workspace_dir_name,
+            'sum': 0,
+            'passed': 0,
+            'num_passed': 0,
+            'num_tests': len(test_ids),
+        }
 
     # Create tarball of workspace
     temp_zip = runtime.copy_from(f'/workspace/{workspace_dir_name}')
