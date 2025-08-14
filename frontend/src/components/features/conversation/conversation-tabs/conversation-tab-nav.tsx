@@ -25,7 +25,7 @@ export function ConversationTabNav({
       className={cn(
         "p-1 rounded-md",
         "text-[#9299AA] bg-[#0D0F11]",
-        isActive && "bg-[#25272D]",
+        isActive && "bg-[#25272D] text-white",
         isActive
           ? "hover:text-white hover:bg-tertiary"
           : "hover:text-white hover:bg-[#0D0F11]",
