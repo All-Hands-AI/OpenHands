@@ -1,6 +1,6 @@
 {
-    "name": "",
-    "short_name": "",
+    "name": "GP-KhayaL | VIRTUAL CYBER SECURITY",
+    "short_name": "GP-KhayaL",
     "icons": [
         {
             "src": "/android-chrome-192x192.png",
@@ -13,7 +13,7 @@
             "type": "image/png"
         }
     ],
-    "theme_color": "#ffffff",
-    "background_color": "#ffffff",
+    "theme_color": "#00F5D4",
+    "background_color": "#0A1128",
     "display": "standalone"
 }
