@@ -350,7 +350,7 @@ def complete_runtime(
     )
     json_report = obs.content.strip()
 
-    ry:
+    try:
         report = json.loads(json_report)
         tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
 
@@ -566,7 +566,6 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     Returns:
         Filtered dataset based on split type
     """
-
     filtered_dataset = pd.concat(
         [
             dataset[dataset['repo'].str.split('/').str[1] == repo]
