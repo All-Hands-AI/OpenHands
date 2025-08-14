@@ -1,6 +1,7 @@
 import atexit
 import json
 import multiprocessing
+import os
 import time
 import uuid
 
@@ -87,6 +88,13 @@ class BrowserEnv:
                 )
             env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
         else:
+            # Use configurable workspace path for downloads
+            workspace_base = os.getenv('WORKSPACE_BASE', '/workspace')
+            downloads_path = os.path.join(workspace_base, '.downloads')
+
+            # Ensure downloads directory exists
+            os.makedirs(downloads_path, exist_ok=True)
+
             env = gym.make(
                 'browsergym/openended',
                 task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
@@ -96,7 +104,7 @@ class BrowserEnv:
                 tags_to_mark='all',
                 timeout=100000,
                 pw_context_kwargs={'accept_downloads': True},
-                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
+                pw_chromium_kwargs={'downloads_path': downloads_path},
             )
         obs, info = env.reset()
 

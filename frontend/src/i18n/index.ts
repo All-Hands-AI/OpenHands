@@ -27,6 +27,7 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
+    load: "currentOnly",
 
     // Define supported languages explicitly to prevent 404 errors
     // According to i18next documentation, this is the recommended way to prevent

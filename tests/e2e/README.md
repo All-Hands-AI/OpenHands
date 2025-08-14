@@ -25,14 +25,14 @@ Optional environment variables:
 
 ### Running Locally
 
-To run the full end-to-end test suite locally:
+To run the full end-to-end test suite locally, you can use the provided script:
 
 ```bash
 cd tests/e2e
-poetry run pytest test_e2e_workflow.py -v
+./run_e2e_tests.sh
 ```
 
-This runs all tests in sequence:
+This script runs the tests in sequence:
 1. GitHub token configuration
 2. Conversation start
 
@@ -54,6 +54,22 @@ poetry run pytest test_e2e_workflow.py::test_conversation_start -v
 ### Running with Visible Browser
 
 To run the tests with a visible browser (non-headless mode) so you can watch the browser interactions:
+
+```bash
+cd tests/e2e
+./run_visible_browser_test.sh test_github_token_configuration
+./run_visible_browser_test.sh test_conversation_start
+
+```
+
+You can also run a simple navigation test to verify your setup:
+
+```bash
+cd tests/e2e
+./run_visible_browser_test.sh test_simple_browser_navigation
+```
+
+Or run the tests directly with pytest:
 
 ```bash
 cd tests/e2e
