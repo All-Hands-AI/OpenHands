@@ -56,78 +56,246 @@ def download_latest_vsix_from_github() -> str | None:
 
 
 def attempt_vscode_extension_install():
-    """Checks if running in a supported editor and attempts to install the OpenHands companion extension.
-    This is a best-effort, one-time attempt.
+    """Attempt to install the OpenHands editor extension with verification and retry.
+
+    Improvements over the previous approach:
+    - Verifies actual installation via the editor CLI before/after attempts
+    - Tracks attempt timestamps and uses exponential backoff between retries
+    - Distinguishes permanent failures (e.g., command not found) from transient ones
+    - Supports multiple editor variants (e.g., VS Code stable and insiders)
+    - Allows user reset via OPENHANDS_RESET_EDITOR_EXTENSION=1
     """
-    # 1. Check if we are in a supported editor environment
+    # Check if we are in a supported editor environment
     is_vscode_like = os.environ.get('TERM_PROGRAM') == 'vscode'
     is_windsurf = (
         os.environ.get('__CFBundleIdentifier') == 'com.exafunction.windsurf'
         or 'windsurf' in os.environ.get('PATH', '').lower()
         or any(
-            'windsurf' in val.lower()
+            isinstance(val, str) and 'windsurf' in val.lower()
             for val in os.environ.values()
-            if isinstance(val, str)
         )
     )
     if not (is_vscode_like or is_windsurf):
         return
 
-    # 2. Determine editor-specific commands and flags
-    if is_windsurf:
-        editor_command, editor_name, flag_suffix = 'surf', 'Windsurf', 'windsurf'
-    else:
-        editor_command, editor_name, flag_suffix = 'code', 'VS Code', 'vscode'
+    # Determine editor context and candidate commands
+    editor_key = 'windsurf' if is_windsurf else 'vscode'
+    editor_name = 'Windsurf' if is_windsurf else 'VS Code'
+    candidate_commands = ['surf'] if is_windsurf else ['code', 'code-insiders']
 
-    # 3. Check if we've already successfully installed the extension.
     flag_dir = pathlib.Path.home() / '.openhands'
-    flag_file = flag_dir / f'.{flag_suffix}_extension_installed'
+    status_file = flag_dir / '.editor_extension_status.json'
+    legacy_flag_file = flag_dir / f'.{editor_key}_extension_installed'
     extension_id = 'openhands.openhands-vscode'
 
     try:
         flag_dir.mkdir(parents=True, exist_ok=True)
-        if flag_file.exists():
-            return  # Already successfully installed, exit.
     except OSError as e:
-        logger.debug(
-            f'Could not create or check {editor_name} extension flag directory: {e}'
-        )
-        return  # Don't proceed if we can't manage the flag.
-
-    # 4. Check if the extension is already installed (even without our flag).
-    if _is_extension_installed(editor_command, extension_id):
-        print(f'INFO: OpenHands {editor_name} extension is already installed.')
-        # Create flag to avoid future checks
-        _mark_installation_successful(flag_file, editor_name)
+        logger.debug(f'Could not ensure status directory exists: {e}')
         return
 
-    # 5. Extension is not installed, attempt installation.
+    # Load status and optionally reset
+    status = {}
+    try:
+        if status_file.exists():
+            status = json.loads(status_file.read_text())
+    except Exception as e:
+        logger.debug(f'Could not read status file: {e}')
+        status = {}
+
+    if os.environ.get('OPENHANDS_RESET_EDITOR_EXTENSION') == '1':
+        status.pop(editor_key, None)
+        try:
+            status_file.write_text(json.dumps(status))
+        except Exception:
+            pass
+
+    entry = status.get(editor_key, {})
+
+    # If legacy success flag exists, respect it but verify installation anyway
+    if legacy_flag_file.exists():
+        # If actually installed, keep and exit
+        if _is_extension_installed_by_any(candidate_commands, extension_id):
+            return
+        else:
+            # Legacy flag exists but extension missing; remove the flag and continue
+            try:
+                legacy_flag_file.unlink(missing_ok=True)
+            except Exception:
+                pass
+
+    # If already installed (any variant), mark success and exit
+    if _is_extension_installed_by_any(candidate_commands, extension_id):
+        _mark_installation_successful(legacy_flag_file, editor_name)
+        # Update status
+        entry.update({'last_success': _now_iso(), 'permanent_failure': None})
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        print(f'INFO: OpenHands {editor_name} extension is already installed.')
+        return
+
+    # Decide if we should attempt now based on backoff
+    attempts = int(entry.get('attempts', 0) or 0)
+    last_attempt = entry.get('last_attempt')
+    permanent_failure = entry.get('permanent_failure')
+
+    if permanent_failure:
+        # Don't spam attempts if we know it cannot work without user action
+        print(
+            f'INFO: Skipping automatic {editor_name} extension install (permanent failure: {permanent_failure}).\n'
+            '      See docs to resolve or set OPENHANDS_RESET_EDITOR_EXTENSION=1 to retry.'
+        )
+        return
+
+    if last_attempt:
+        wait_seconds = _calc_backoff_seconds(max(1, attempts))
+        if not _elapsed_enough(last_attempt, wait_seconds):
+            remaining = int(_remaining_seconds(last_attempt, wait_seconds))
+            hrs = max(1, remaining // 3600)
+            print(
+                f'INFO: Previous {editor_name} extension install attempt failed. Will retry later (~{hrs}h).\n'
+                '      Set OPENHANDS_RESET_EDITOR_EXTENSION=1 to force retry sooner.'
+            )
+            return
+
+    # Prepare available editor commands
+    available = _available_commands(candidate_commands)
+    if not available:
+        # Permanent failure: no editor CLI found
+        entry.update(
+            {
+                'attempts': attempts + 1,
+                'last_attempt': _now_iso(),
+                'permanent_failure': 'command_not_found',
+            }
+        )
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        print(
+            f'INFO: Cannot auto-install {editor_name} extension: no editor CLI found in PATH.\n'
+            f'      Tried commands: {", ".join(candidate_commands)}.\n'
+            f'      Install the editor CLI or install the extension manually (Extensions: Install from VSIX).'
+        )
+        return
+
+    editor_command = available[0]  # Prefer the first available variant
+
     print(
-        f'INFO: First-time setup: attempting to install the OpenHands {editor_name} extension...'
+        f'INFO: Attempting to install the OpenHands {editor_name} extension (via {editor_command})...'
     )
 
-    # Attempt 1: Install from bundled .vsix
-    if _attempt_bundled_install(editor_command, editor_name):
-        _mark_installation_successful(flag_file, editor_name)
-        return  # Success! We are done.
+    entry.update({'attempts': attempts + 1, 'last_attempt': _now_iso()})
 
-    # Attempt 2: Download from GitHub Releases
-    if _attempt_github_install(editor_command, editor_name):
-        _mark_installation_successful(flag_file, editor_name)
-        return  # Success! We are done.
+    # Attempt 1: bundled VSIX
+    try:
+        if _attempt_bundled_install(editor_command, editor_name):
+            _mark_installation_successful(legacy_flag_file, editor_name)
+            entry.update({'last_success': _now_iso(), 'permanent_failure': None})
+            status[editor_key] = entry
+            _save_status(status_file, status)
+            return
+    except FileNotFoundError:
+        # Permanent failure for this environment until user fixes PATH
+        entry.update({'permanent_failure': 'command_not_found'})
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        print(
+            f"INFO: '{editor_command}' not found. Please add it to PATH or install the extension manually."
+        )
+        return
+    except Exception as e:
+        logger.debug(f'Bundled install attempt error: {e}')
 
-    # TODO: Attempt 3: Install from Marketplace (when extension is published)
-    # if _attempt_marketplace_install(editor_command, editor_name, extension_id):
-    #     _mark_installation_successful(flag_file, editor_name)
-    #     return  # Success! We are done.
+    # Attempt 2: GitHub Releases
+    github_ok = False
+    try:
+        github_ok = _attempt_github_install(editor_command, editor_name)
+    except FileNotFoundError:
+        entry.update({'permanent_failure': 'command_not_found'})
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        print(
+            f"INFO: '{editor_command}' not found. Please add it to PATH or install the extension manually."
+        )
+        return
+    except Exception as e:
+        logger.debug(f'GitHub install attempt error: {e}')
 
-    # If all attempts failed, inform the user (but don't create flag - allow retry).
+    if github_ok:
+        _mark_installation_successful(legacy_flag_file, editor_name)
+        entry.update({'last_success': _now_iso(), 'permanent_failure': None})
+        status[editor_key] = entry
+        _save_status(status_file, status)
+        return
+
+    # If all attempts failed, inform the user (transient failure)
+    status[editor_key] = entry
+    _save_status(status_file, status)
+    print('INFO: Automatic installation failed. Please install manually if needed.')
     print(
-        'INFO: Automatic installation failed. Please check the OpenHands documentation for manual installation instructions.'
+        f'INFO: Will retry installation later based on backoff policy for {editor_name}.'
     )
-    print(
-        f'INFO: Will retry installation next time you run OpenHands in {editor_name}.'
-    )
+
+
+def _save_status(path: pathlib.Path, data: dict) -> None:
+    try:
+        path.write_text(json.dumps(data))
+    except Exception as e:
+        logger.debug(f'Could not write status file: {e}')
+
+
+def _now_iso() -> str:
+    import datetime as _dt
+
+    return _dt.datetime.utcnow().isoformat() + 'Z'
+
+
+def _elapsed_enough(since_iso: str, wait_seconds: int) -> bool:
+    import datetime as _dt
+
+    try:
+        t = _dt.datetime.fromisoformat(since_iso.replace('Z', ''))
+    except Exception:
+        return True
+    return (_dt.datetime.utcnow() - t).total_seconds() >= wait_seconds
+
+
+def _remaining_seconds(since_iso: str, wait_seconds: int) -> int:
+    import datetime as _dt
+
+    try:
+        t = _dt.datetime.fromisoformat(since_iso.replace('Z', ''))
+    except Exception:
+        return 0
+    elapsed = (_dt.datetime.utcnow() - t).total_seconds()
+    return max(0, int(wait_seconds - elapsed))
+
+
+def _calc_backoff_seconds(attempts: int) -> int:
+    # Start with 24 hours and exponentially back off, capped at 72 hours
+    base = 24 * 3600
+    return min(72 * 3600, base * (2 ** max(0, attempts - 1)))
+
+
+def _available_commands(candidates: list[str]) -> list[str]:
+    available: list[str] = []
+    for c in candidates:
+        try:
+            proc = subprocess.run([c, '--version'], capture_output=True, text=True)
+            if proc.returncode == 0:
+                available.append(c)
+        except FileNotFoundError:
+            continue
+        except Exception:
+            continue
+    return available
+
+
+def _is_extension_installed_by_any(commands: list[str], extension_id: str) -> bool:
+    for cmd in _available_commands(commands):
+        if _is_extension_installed(cmd, extension_id):
+            return True
+    return False
 
 
 def _mark_installation_successful(flag_file: pathlib.Path, editor_name: str) -> None:
