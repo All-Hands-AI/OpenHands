@@ -12,6 +12,7 @@ from openhands.server.settings import (
     GETSettingsModel,
 )
 from openhands.server.shared import config
+from openhands.core.config.toml_writer import TOMLConfigWriter
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
@@ -170,6 +171,27 @@ async def store_settings(
         if settings.git_user_email is not None:
             config.git_user_email = settings.git_user_email
             git_config_updated = True
+
+        # Persist LLM settings into config.toml via write API
+        llm_updates: dict = {}
+        if settings.llm_model is not None:
+            llm_updates['model'] = settings.llm_model
+        if settings.llm_api_key is not None:
+            llm_updates['api_key'] = settings.llm_api_key
+        if settings.llm_base_url is not None:
+            llm_updates['base_url'] = settings.llm_base_url
+        if settings.search_api_key is not None:
+            # store under [core] as search_api_key
+            writer = TOMLConfigWriter()
+            writer.update_core({'search_api_key': settings.search_api_key})
+            writer.write()
+        if llm_updates:
+            # apply in-memory
+            config.update_llm_config('llm', **llm_updates)
+            # persist to toml
+            writer = TOMLConfigWriter()
+            writer.update_llm('llm', config.get_llm_config('llm'))
+            writer.write()
 
         # Note: Git configuration will be applied when new sessions are initialized
         # Existing sessions will continue with their current git configuration
