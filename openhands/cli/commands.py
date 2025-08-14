@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import toml
+import tomlkit
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
@@ -520,9 +521,18 @@ def load_config_file(file_path: Path) -> dict:
     if file_path.exists():
         try:
             with open(file_path, 'r') as f:
-                return toml.load(f)
-        except Exception:
-            pass
+                # Use tomlkit for loading to handle inline tables properly
+                loaded = tomlkit.load(f)
+                # Convert to regular dict for compatibility
+                return dict(loaded)
+        except Exception as e:
+            # Fallback to regular toml library for backward compatibility
+            try:
+                with open(file_path, 'r') as f:
+                    return toml.load(f)
+            except Exception:
+                print(f'Warning: Failed to load config file {file_path}: {e}')
+                pass
 
     # Create directory if it doesn't exist
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -530,9 +540,42 @@ def load_config_file(file_path: Path) -> dict:
 
 
 def save_config_file(config_data: dict, file_path: Path) -> None:
-    """Save the config file."""
+    """Save the config file with proper MCP formatting."""
+    # Convert to tomlkit document to handle MCP inline tables properly
+    doc = tomlkit.document()
+
+    for section_name, section_data in config_data.items():
+        if section_name == 'mcp' and isinstance(section_data, dict):
+            # Handle MCP section specially to use inline tables
+            mcp_section = tomlkit.table()
+
+            for key, value in section_data.items():
+                if key in [
+                    'stdio_servers',
+                    'sse_servers',
+                    'shttp_servers',
+                ] and isinstance(value, list):
+                    # Convert array of dictionaries to array of inline tables
+                    servers_array = tomlkit.array()
+                    for server_config in value:
+                        if isinstance(server_config, dict):
+                            inline_table = tomlkit.inline_table()
+                            for server_key, server_value in server_config.items():
+                                inline_table[server_key] = server_value
+                            servers_array.append(inline_table)
+                        else:
+                            servers_array.append(server_config)
+                    mcp_section[key] = servers_array
+                else:
+                    mcp_section[key] = value
+
+            doc[section_name] = mcp_section
+        else:
+            # Handle other sections normally
+            doc[section_name] = section_data
+
     with open(file_path, 'w') as f:
-        toml.dump(config_data, f)
+        f.write(tomlkit.dumps(doc))
 
 
 def _ensure_mcp_config_structure(config_data: dict) -> None:
