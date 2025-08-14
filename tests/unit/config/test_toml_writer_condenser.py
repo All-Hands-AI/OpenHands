@@ -1,9 +1,9 @@
-import toml
 from pathlib import Path
+
+import toml
 
 from openhands.core.config.condenser_config import (
     LLMSummarizingCondenserConfig,
-    LLMAttentionCondenserConfig,
     NoOpCondenserConfig,
 )
 from openhands.core.config.llm_config import LLMConfig

@@ -1,7 +1,13 @@
-import toml
 from pathlib import Path
 
-from openhands.core.config.mcp_config import MCPConfig, MCPSSEServerConfig, MCPStdioServerConfig, MCPSHTTPServerConfig
+import toml
+
+from openhands.core.config.mcp_config import (
+    MCPConfig,
+    MCPSHTTPServerConfig,
+    MCPSSEServerConfig,
+    MCPStdioServerConfig,
+)
 from openhands.core.config.toml_writer import TOMLConfigWriter
 
 
@@ -10,7 +16,11 @@ def test_write_mcp_lists(tmp_path: Path):
 
     mcp = MCPConfig(
         sse_servers=[MCPSSEServerConfig(url='https://a.example')],
-        stdio_servers=[MCPStdioServerConfig(name='tavily', command='npx', args=['-y','tavily-mcp'])],
+        stdio_servers=[
+            MCPStdioServerConfig(
+                name='tavily', command='npx', args=['-y', 'tavily-mcp']
+            )
+        ],
         shttp_servers=[MCPSHTTPServerConfig(url='https://b.example')],
     )
 
@@ -21,6 +31,15 @@ def test_write_mcp_lists(tmp_path: Path):
     data = toml.load(cfg_path)
     assert 'mcp' in data
     m = data['mcp']
-    assert isinstance(m['sse_servers'], list) and m['sse_servers'][0]['url'] == 'https://a.example'
-    assert isinstance(m['stdio_servers'], list) and m['stdio_servers'][0]['name'] == 'tavily'
-    assert isinstance(m['shttp_servers'], list) and m['shttp_servers'][0]['url'] == 'https://b.example'
+    assert (
+        isinstance(m['sse_servers'], list)
+        and m['sse_servers'][0]['url'] == 'https://a.example'
+    )
+    assert (
+        isinstance(m['stdio_servers'], list)
+        and m['stdio_servers'][0]['name'] == 'tavily'
+    )
+    assert (
+        isinstance(m['shttp_servers'], list)
+        and m['shttp_servers'][0]['url'] == 'https://b.example'
+    )

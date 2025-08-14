@@ -111,28 +111,45 @@ class TOMLConfigWriter:
                 agent[name] = subsection
             subsection.update(cfg_dict)
 
-
     def update_security(self, config: SecurityConfig) -> None:
         sec = self._ensure_section('security')
-        sec.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+        sec.update(
+            _serialize_dict(
+                _strip_none(config.model_dump(exclude_none=True, exclude_unset=True))
+            )
+        )
 
     def update_sandbox(self, config: SandboxConfig) -> None:
         sb = self._ensure_section('sandbox')
-        sb.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+        sb.update(
+            _serialize_dict(
+                _strip_none(config.model_dump(exclude_none=True, exclude_unset=True))
+            )
+        )
 
     def update_kubernetes(self, config: KubernetesConfig) -> None:
         k8s = self._ensure_section('kubernetes')
-        k8s.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+        k8s.update(
+            _serialize_dict(
+                _strip_none(config.model_dump(exclude_none=True, exclude_unset=True))
+            )
+        )
 
     def update_cli(self, config: CLIConfig) -> None:
         cli = self._ensure_section('cli')
-        cli.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+        cli.update(
+            _serialize_dict(
+                _strip_none(config.model_dump(exclude_none=True, exclude_unset=True))
+            )
+        )
 
     def update_extended(self, data: ExtendedConfig | dict[str, Any]) -> None:
         ext = self._ensure_section('extended')
         if isinstance(data, ExtendedConfig):
-            data = data.model_dump()
-        ext.update(_serialize_dict(_strip_none(data)))
+            payload: dict[str, Any] = data.model_dump()
+        else:
+            payload = data
+        ext.update(_serialize_dict(_strip_none(payload)))
 
     def update_condenser(self, config: CondenserConfig | dict[str, Any]) -> None:
         cond = self._ensure_section('condenser')
@@ -150,7 +167,11 @@ class TOMLConfigWriter:
 
     def update_mcp(self, config: MCPConfig) -> None:
         mcp = self._ensure_section('mcp')
-        mcp.update(_serialize_dict(_strip_none(config.model_dump(exclude_none=True, exclude_unset=True))))
+        mcp.update(
+            _serialize_dict(
+                _strip_none(config.model_dump(exclude_none=True, exclude_unset=True))
+            )
+        )
 
     def write(self) -> None:
         os.makedirs(os.path.dirname(self.toml_file) or '.', exist_ok=True)

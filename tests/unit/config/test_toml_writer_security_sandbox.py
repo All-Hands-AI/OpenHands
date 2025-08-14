@@ -1,8 +1,9 @@
-import toml
 from pathlib import Path
 
-from openhands.core.config.security_config import SecurityConfig
+import toml
+
 from openhands.core.config.sandbox_config import SandboxConfig
+from openhands.core.config.security_config import SecurityConfig
 from openhands.core.config.toml_writer import TOMLConfigWriter
 
 

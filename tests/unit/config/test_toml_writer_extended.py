@@ -1,5 +1,6 @@
-import toml
 from pathlib import Path
+
+import toml
 
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.config.toml_writer import TOMLConfigWriter
