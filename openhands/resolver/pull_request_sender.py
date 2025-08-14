@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 from argparse import Namespace
-from typing import Any
+from typing import cast
 
 import jinja2
 from pydantic import SecretStr
@@ -31,27 +31,29 @@ class PullRequestSender:
 
     def __init__(self, args: Namespace) -> None:
         """Initialize the PullRequestSender with the given parameters."""
-        self.token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        self.token = (
+            args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        )
         if not self.token:
             raise ValueError(
                 'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
             )
-        
+
         self.username = args.username if args.username else os.getenv('GIT_USERNAME')
         if not self.username:
             raise ValueError('username is required.')
-        
+
         self.platform = call_async_from_sync(
             identify_token,
             GENERAL_TIMEOUT,
             self.token,
             args.base_domain,
         )
-        
+
         self.output_dir = args.output_dir
         if not os.path.exists(self.output_dir):
             raise ValueError(f'Output directory {self.output_dir} does not exist.')
-        
+
         self.pr_type = args.pr_type
         self.issue_number = int(args.issue_number)
         self.fork_owner = args.fork_owner
@@ -60,16 +62,21 @@ class PullRequestSender:
         self.reviewer = args.reviewer
         self.pr_title = args.pr_title
         self.base_domain = args.base_domain
-        self.git_user_name = args.git_user_name
-        self.git_user_email = args.git_user_email
-        
-        # Configure LLM
-        api_key = args.llm_api_key or os.environ['LLM_API_KEY']
-        self.llm_config = LLMConfig(
-            model=args.llm_model or os.environ['LLM_MODEL'],
-            api_key=SecretStr(api_key) if api_key else None,
-            base_url=args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
-        )
+        # Set git configuration with defaults if None
+        self.git_user_name = args.git_user_name or 'openhands'
+        self.git_user_email = args.git_user_email or 'openhands@all-hands.dev'
+
+        # Configure LLM - only if API key and model are available
+        api_key = args.llm_api_key or os.environ.get('LLM_API_KEY')
+        model = args.llm_model or os.environ.get('LLM_MODEL')
+        if api_key and model:
+            self.llm_config = LLMConfig(
+                model=model,
+                api_key=SecretStr(api_key),
+                base_url=args.llm_base_url or os.environ.get('LLM_BASE_URL', None),
+            )
+        else:
+            self.llm_config = None
 
     def apply_patch(self, repo_dir: str, patch: str) -> None:
         """Apply a patch to a repository.
@@ -177,7 +184,9 @@ class PullRequestSender:
             base_commit: The base commit to checkout (if issue_type is pr)
         """
         src_dir = os.path.join(self.output_dir, 'repo')
-        dest_dir = os.path.join(self.output_dir, 'patches', f'{issue_type}_{issue_number}')
+        dest_dir = os.path.join(
+            self.output_dir, 'patches', f'{issue_type}_{issue_number}'
+        )
 
         if not os.path.exists(src_dir):
             raise ValueError(f'Source directory {src_dir} does not exist.')
@@ -232,7 +241,9 @@ class PullRequestSender:
                 shell=True,
                 check=True,
             )
-            logger.info(f'Git user configured as {self.git_user_name} <{self.git_user_email}>')
+            logger.info(
+                f'Git user configured as {self.git_user_name} <{self.git_user_email}>'
+            )
 
         # Add all changes to the git index
         result = subprocess.run(
@@ -295,16 +306,23 @@ class PullRequestSender:
             else:  # platform == ProviderType.BITBUCKET
                 base_domain = 'bitbucket.org'
 
+        # At this point, base_domain is guaranteed to be a string
+        base_domain = cast(str, base_domain)
+
         # Create the appropriate handler based on platform
         handler = None
         if self.platform == ProviderType.GITHUB:
             handler = ServiceContextIssue(
-                GithubIssueHandler(issue.owner, issue.repo, self.token, self.username, base_domain),
+                GithubIssueHandler(
+                    issue.owner, issue.repo, self.token, self.username, base_domain
+                ),
                 None,
             )
         elif self.platform == ProviderType.GITLAB:
             handler = ServiceContextIssue(
-                GitlabIssueHandler(issue.owner, issue.repo, self.token, self.username, base_domain),
+                GitlabIssueHandler(
+                    issue.owner, issue.repo, self.token, self.username, base_domain
+                ),
                 None,
             )
         elif self.platform == ProviderType.BITBUCKET:
@@ -365,7 +383,9 @@ class PullRequestSender:
 
         # Prepare the PR data: title and body
         final_pr_title = (
-            self.pr_title if self.pr_title else f'Fix issue #{issue.number}: {issue.title}'
+            self.pr_title
+            if self.pr_title
+            else f'Fix issue #{issue.number}: {issue.title}'
         )
         pr_body = f'This pull request fixes #{issue.number}.'
         if additional_message:
@@ -386,7 +406,9 @@ class PullRequestSender:
             # Prepare the PR for the GitHub API
             data = {
                 'title': final_pr_title,
-                ('body' if self.platform == ProviderType.GITHUB else 'description'): pr_body,
+                (
+                    'body' if self.platform == ProviderType.GITHUB else 'description'
+                ): pr_body,
                 (
                     'head' if self.platform == ProviderType.GITHUB else 'source_branch'
                 ): head_branch,
@@ -428,17 +450,26 @@ class PullRequestSender:
         # Determine default base_domain based on platform
         base_domain = self.base_domain
         if base_domain is None:
-            base_domain = 'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
+            base_domain = (
+                'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
+            )
+
+        # At this point, base_domain is guaranteed to be a string
+        base_domain = cast(str, base_domain)
 
         handler = None
         if self.platform == ProviderType.GITHUB:
             handler = ServiceContextIssue(
-                GithubIssueHandler(issue.owner, issue.repo, self.token, self.username, base_domain),
+                GithubIssueHandler(
+                    issue.owner, issue.repo, self.token, self.username, base_domain
+                ),
                 self.llm_config,
             )
         else:  # platform == Platform.GITLAB
             handler = ServiceContextIssue(
-                GitlabIssueHandler(issue.owner, issue.repo, self.token, self.username, base_domain),
+                GitlabIssueHandler(
+                    issue.owner, issue.repo, self.token, self.username, base_domain
+                ),
                 self.llm_config,
             )
 
@@ -452,7 +483,9 @@ class PullRequestSender:
         )
 
         # Push the changes to the existing branch
-        result = subprocess.run(push_command, shell=True, capture_output=True, text=True)
+        result = subprocess.run(
+            push_command, shell=True, capture_output=True, text=True
+        )
         if result.returncode != 0:
             logger.error(f'Error pushing changes: {result.stderr}')
             raise RuntimeError('Failed to push changes to the remote repository')
@@ -465,9 +498,7 @@ class PullRequestSender:
             try:
                 explanations = json.loads(additional_message)
                 if explanations:
-                    comment_message = (
-                        'OpenHands made the following changes to resolve the issues:\n\n'
-                    )
+                    comment_message = 'OpenHands made the following changes to resolve the issues:\n\n'
                     for explanation in explanations:
                         comment_message += f'- {explanation}\n'
 
@@ -515,8 +546,10 @@ class PullRequestSender:
         """Process a single issue and send a pull request."""
         # Determine default base_domain based on platform
         if self.base_domain is None:
-            self.base_domain = 'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
-        
+            self.base_domain = (
+                'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
+            )
+
         if not resolver_output.success and not self.send_on_failure:
             logger.info(
                 f'Issue {resolver_output.issue.number} was not successfully resolved. Skipping PR creation.'

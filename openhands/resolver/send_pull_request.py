@@ -1,27 +1,11 @@
 import argparse
-import json
 import os
-import subprocess
-
-import jinja2
-from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
-from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import ProviderType
-from openhands.llm.llm import LLM
-from openhands.resolver.interfaces.bitbucket import BitbucketIssueHandler
-from openhands.resolver.interfaces.github import GithubIssueHandler
-from openhands.resolver.interfaces.gitlab import GitlabIssueHandler
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.interfaces.issue_definitions import ServiceContextIssue
-from openhands.resolver.io_utils import (
-    load_single_resolver_output,
-)
 from openhands.resolver.pull_request_sender import PullRequestSender
 from openhands.resolver.resolver_output import ResolverOutput
-from openhands.resolver.utils import identify_token
-from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 
 # Legacy function - kept for backward compatibility
@@ -35,23 +19,36 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     # This is now a wrapper function for backward compatibility
     # Create a temporary PullRequestSender instance to use the method
     from argparse import Namespace
+
     args = Namespace(
-        token=None, username=None, output_dir='.', pr_type='draft', issue_number='0',
-        fork_owner=None, send_on_failure=False, target_branch=None, reviewer=None,
-        pr_title=None, base_domain=None, git_user_name=None,
-        git_user_email=None, llm_model=None, llm_api_key=None,
-        llm_base_url=None
+        token=None,
+        username=None,
+        output_dir='.',
+        pr_type='draft',
+        issue_number='0',
+        fork_owner=None,
+        send_on_failure=False,
+        target_branch=None,
+        reviewer=None,
+        pr_title=None,
+        base_domain=None,
+        git_user_name=None,
+        git_user_email=None,
+        llm_model=None,
+        llm_api_key=None,
+        llm_base_url=None,
     )
     try:
         sender = PullRequestSender(args)
         sender.apply_patch(repo_dir, patch)
     except ValueError:
         # If PullRequestSender fails due to missing args, fall back to direct implementation
-        from openhands.resolver.patching import apply_diff, parse_patch
-        from openhands.core.logger import openhands_logger as logger
         import os
         import shutil
-        
+
+        from openhands.core.logger import openhands_logger as logger
+        from openhands.resolver.patching import apply_diff, parse_patch
+
         diffs = parse_patch(patch)
         for diff in diffs:
             if not diff.header.new_path:
@@ -155,23 +152,36 @@ def initialize_repo(
     """
     # Create a temporary PullRequestSender instance
     from argparse import Namespace
+
     args = Namespace(
-        token=None, username=None, output_dir=output_dir, pr_type='draft', issue_number=str(issue_number),
-        fork_owner=None, send_on_failure=False, target_branch=None, reviewer=None,
-        pr_title=None, base_domain=None, git_user_name=None,
-        git_user_email=None, llm_model=None, llm_api_key=None,
-        llm_base_url=None
+        token=None,
+        username=None,
+        output_dir=output_dir,
+        pr_type='draft',
+        issue_number=str(issue_number),
+        fork_owner=None,
+        send_on_failure=False,
+        target_branch=None,
+        reviewer=None,
+        pr_title=None,
+        base_domain=None,
+        git_user_name=None,
+        git_user_email=None,
+        llm_model=None,
+        llm_api_key=None,
+        llm_base_url=None,
     )
     try:
         sender = PullRequestSender(args)
         return sender.initialize_repo(issue_number, issue_type, base_commit)
     except ValueError:
         # Fall back to direct implementation if PullRequestSender fails
-        from openhands.core.logger import openhands_logger as logger
         import os
         import shutil
         import subprocess
-        
+
+        from openhands.core.logger import openhands_logger as logger
+
         src_dir = os.path.join(output_dir, 'repo')
         dest_dir = os.path.join(output_dir, 'patches', f'{issue_type}_{issue_number}')
 
@@ -218,21 +228,34 @@ def make_commit(
     """
     # Create a temporary PullRequestSender instance
     from argparse import Namespace
+
     args = Namespace(
-        token=None, username=None, output_dir='.', pr_type='draft', issue_number=str(issue.number),
-        fork_owner=None, send_on_failure=False, target_branch=None, reviewer=None,
-        pr_title=None, base_domain=None, git_user_name=git_user_name,
-        git_user_email=git_user_email, llm_model=None, llm_api_key=None,
-        llm_base_url=None
+        token=None,
+        username=None,
+        output_dir='.',
+        pr_type='draft',
+        issue_number=str(issue.number),
+        fork_owner=None,
+        send_on_failure=False,
+        target_branch=None,
+        reviewer=None,
+        pr_title=None,
+        base_domain=None,
+        git_user_name=git_user_name,
+        git_user_email=git_user_email,
+        llm_model=None,
+        llm_api_key=None,
+        llm_base_url=None,
     )
     try:
         sender = PullRequestSender(args)
         sender.make_commit(repo_dir, issue, issue_type)
     except ValueError:
         # Fall back to direct implementation
-        from openhands.core.logger import openhands_logger as logger
         import subprocess
-        
+
+        from openhands.core.logger import openhands_logger as logger
+
         # Check if git username is set
         result = subprocess.run(
             f'git -C {repo_dir} config user.name',
@@ -325,13 +348,24 @@ def send_pull_request(
     """
     # Create a temporary PullRequestSender instance
     from argparse import Namespace
+
     args = Namespace(
-        token=token, username=username, output_dir=os.path.dirname(patch_dir), 
-        pr_type=pr_type, issue_number=str(issue.number),
-        fork_owner=fork_owner, send_on_failure=False, target_branch=target_branch, 
-        reviewer=reviewer, pr_title=pr_title, base_domain=base_domain, 
-        git_user_name=git_user_name, git_user_email=git_user_email, 
-        llm_model=None, llm_api_key=None, llm_base_url=None
+        token=token,
+        username=username,
+        output_dir=os.path.dirname(patch_dir),
+        pr_type=pr_type,
+        issue_number=str(issue.number),
+        fork_owner=fork_owner,
+        send_on_failure=False,
+        target_branch=target_branch,
+        reviewer=reviewer,
+        pr_title=pr_title,
+        base_domain=base_domain,
+        git_user_name=git_user_name,
+        git_user_email=git_user_email,
+        llm_model=None,
+        llm_api_key=None,
+        llm_base_url=None,
     )
     sender = PullRequestSender(args)
     return sender.send_pull_request(issue, patch_dir, additional_message)
@@ -364,17 +398,31 @@ def update_existing_pull_request(
     """
     # Create a temporary PullRequestSender instance
     from argparse import Namespace
+
     args = Namespace(
-        token=token, username=username, output_dir=os.path.dirname(patch_dir), 
-        pr_type='draft', issue_number=str(issue.number), fork_owner=None, 
-        send_on_failure=False, target_branch=None, reviewer=None, pr_title=None, 
-        base_domain=base_domain, git_user_name=None, 
-        git_user_email=None, llm_model=llm_config.model if llm_config else None, 
-        llm_api_key=llm_config.api_key.get_secret_value() if llm_config and llm_config.api_key else None, 
-        llm_base_url=llm_config.base_url if llm_config else None
+        token=token,
+        username=username,
+        output_dir=os.path.dirname(patch_dir),
+        pr_type='draft',
+        issue_number=str(issue.number),
+        fork_owner=None,
+        send_on_failure=False,
+        target_branch=None,
+        reviewer=None,
+        pr_title=None,
+        base_domain=base_domain,
+        git_user_name=None,
+        git_user_email=None,
+        llm_model=llm_config.model if llm_config else None,
+        llm_api_key=llm_config.api_key.get_secret_value()
+        if llm_config and llm_config.api_key
+        else None,
+        llm_base_url=llm_config.base_url if llm_config else None,
     )
     sender = PullRequestSender(args)
-    return sender.update_existing_pull_request(issue, patch_dir, comment_message, additional_message)
+    return sender.update_existing_pull_request(
+        issue, patch_dir, comment_message, additional_message
+    )
 
 
 # Legacy function - kept for backward compatibility
@@ -398,14 +446,26 @@ def process_single_issue(
     """Process a single issue and send a pull request."""
     # Create a temporary PullRequestSender instance
     from argparse import Namespace
+
     args = Namespace(
-        token=token, username=username, output_dir=output_dir, pr_type=pr_type, 
-        issue_number=str(resolver_output.issue.number), fork_owner=fork_owner, 
-        send_on_failure=send_on_failure, target_branch=target_branch, reviewer=reviewer, 
-        pr_title=pr_title, base_domain=base_domain, git_user_name=git_user_name, 
-        git_user_email=git_user_email, llm_model=llm_config.model if llm_config else None, 
-        llm_api_key=llm_config.api_key.get_secret_value() if llm_config and llm_config.api_key else None, 
-        llm_base_url=llm_config.base_url if llm_config else None
+        token=token,
+        username=username,
+        output_dir=output_dir,
+        pr_type=pr_type,
+        issue_number=str(resolver_output.issue.number),
+        fork_owner=fork_owner,
+        send_on_failure=send_on_failure,
+        target_branch=target_branch,
+        reviewer=reviewer,
+        pr_title=pr_title,
+        base_domain=base_domain,
+        git_user_name=git_user_name,
+        git_user_email=git_user_email,
+        llm_model=llm_config.model if llm_config else None,
+        llm_api_key=llm_config.api_key.get_secret_value()
+        if llm_config and llm_config.api_key
+        else None,
+        llm_base_url=llm_config.base_url if llm_config else None,
     )
     sender = PullRequestSender(args)
     sender.process_single_issue(resolver_output)
