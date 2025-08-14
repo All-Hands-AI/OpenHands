@@ -38,8 +38,8 @@ def apply_patch(repo_dir: str, patch: str) -> None:
     args = Namespace(
         token=None, username=None, output_dir='.', pr_type='draft', issue_number='0',
         fork_owner=None, send_on_failure=False, target_branch=None, reviewer=None,
-        pr_title=None, base_domain=None, git_user_name='openhands',
-        git_user_email='openhands@all-hands.dev', llm_model=None, llm_api_key=None,
+        pr_title=None, base_domain=None, git_user_name=None,
+        git_user_email=None, llm_model=None, llm_api_key=None,
         llm_base_url=None
     )
     try:
@@ -158,8 +158,8 @@ def initialize_repo(
     args = Namespace(
         token=None, username=None, output_dir=output_dir, pr_type='draft', issue_number=str(issue_number),
         fork_owner=None, send_on_failure=False, target_branch=None, reviewer=None,
-        pr_title=None, base_domain=None, git_user_name='openhands',
-        git_user_email='openhands@all-hands.dev', llm_model=None, llm_api_key=None,
+        pr_title=None, base_domain=None, git_user_name=None,
+        git_user_email=None, llm_model=None, llm_api_key=None,
         llm_base_url=None
     )
     try:
@@ -368,8 +368,8 @@ def update_existing_pull_request(
         token=token, username=username, output_dir=os.path.dirname(patch_dir), 
         pr_type='draft', issue_number=str(issue.number), fork_owner=None, 
         send_on_failure=False, target_branch=None, reviewer=None, pr_title=None, 
-        base_domain=base_domain, git_user_name='openhands', 
-        git_user_email='openhands@all-hands.dev', llm_model=llm_config.model if llm_config else None, 
+        base_domain=base_domain, git_user_name=None, 
+        git_user_email=None, llm_model=llm_config.model if llm_config else None, 
         llm_api_key=llm_config.api_key.get_secret_value() if llm_config and llm_config.api_key else None, 
         llm_base_url=llm_config.base_url if llm_config else None
     )
