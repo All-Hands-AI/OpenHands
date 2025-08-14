@@ -27,6 +27,7 @@ from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStream
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 
 # GLOBAL_SOCKET_IO_CLIENT = None # Removed
 
@@ -45,7 +46,7 @@ class VsCodeRuntime(Runtime):
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
-        status_callback: Callable[[str, str, str], None] | None = None,
+        status_callback: Callable[[str, RuntimeStatus, str], None] | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = False,
         user_id: str | None = None,
@@ -53,7 +54,7 @@ class VsCodeRuntime(Runtime):
         sio_server: socketio.AsyncServer | None = None,
         socket_connection_id: str | None = None,
     ):
-        super().__init__(config=config, event_stream=event_stream)
+        super().__init__(config=config, event_stream=event_stream, sid=sid, plugins=plugins, env_vars=env_vars, status_callback=status_callback, attach_to_existing=attach_to_existing, headless_mode=headless_mode, user_id=user_id)
         self.sid = sid
         self.plugins = plugins or []
         self.env_vars = env_vars or {}
