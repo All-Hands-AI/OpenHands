@@ -127,7 +127,9 @@ class CodeActAgent(Agent):
 
         # New unified tools
         if self.config.enable_cmd:
-            tools.append(BashTool().get_schema(use_short_description=use_short_tool_desc))
+            tools.append(
+                BashTool().get_schema(use_short_description=use_short_tool_desc)
+            )
         if self.config.enable_finish:
             tools.append(
                 FinishTool().get_schema(use_short_description=use_short_tool_desc)
@@ -137,15 +139,11 @@ class CodeActAgent(Agent):
                 logger.warning('Windows runtime does not support browsing yet')
             else:
                 tools.append(
-                    BrowserTool().get_schema(
-                        use_short_description=use_short_tool_desc
-                    )
+                    BrowserTool().get_schema(use_short_description=use_short_tool_desc)
                 )
         if self.config.enable_editor:
             tools.append(
-                FileEditorTool().get_schema(
-                    use_short_description=use_short_tool_desc
-                )
+                FileEditorTool().get_schema(use_short_description=use_short_tool_desc)
             )
 
         # Legacy tools (to be migrated)
