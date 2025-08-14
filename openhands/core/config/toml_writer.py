@@ -4,9 +4,10 @@ import os
 from typing import Any
 
 import toml
-from pydantic import SecretStr
+from pydantic import BaseModel, SecretStr
 
 from openhands.core import logger
+from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 
 
@@ -17,6 +18,12 @@ def _strip_none(d: dict[str, Any]) -> dict[str, Any]:
 def _serialize_value(v: Any) -> Any:
     if isinstance(v, SecretStr):
         return v.get_secret_value()
+    if isinstance(v, BaseModel):
+        return _serialize_dict(v.model_dump(exclude_unset=True, exclude_none=True))
+    if isinstance(v, list):
+        return [_serialize_value(i) for i in v]
+    if isinstance(v, dict):
+        return {k: _serialize_value(val) for k, val in v.items()}
     return v
 
 
@@ -77,6 +84,23 @@ class TOMLConfigWriter:
             if not isinstance(subsection, dict):
                 subsection = {}
                 llm[name] = subsection
+            subsection.update(cfg_dict)
+
+    def update_agent(self, name: str, config: AgentConfig) -> None:
+        agent = self._ensure_section('agent')
+        cfg_dict = _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        )
+        if name == 'agent':
+            for k, v in list(cfg_dict.items()):
+                if isinstance(v, dict):
+                    continue
+                agent[k] = v
+        else:
+            subsection = agent.get(name)
+            if not isinstance(subsection, dict):
+                subsection = {}
+                agent[name] = subsection
             subsection.update(cfg_dict)
 
     def write(self) -> None:
