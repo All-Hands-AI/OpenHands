@@ -1,6 +1,6 @@
 import threading
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, Mock, patch
 
 import httpx
 import pytest
@@ -669,13 +669,13 @@ class TestBatchedWebHookFileStore:
             for i, content in enumerate(contents):
                 batched_store.write(f'/file{i}.txt', content)
 
-            # With race condition fix, only first write should trigger task submission
-            # Subsequent writes are prevented by _send_in_progress flag
-            assert len(submitted_tasks) == 1, (
-                f'Race condition fix failed: expected 1 task, got {len(submitted_tasks)}'
+            # With the new approach, each write that exceeds size limit creates its own batch
+            # This prevents race conditions by atomically moving batch to pending
+            assert len(submitted_tasks) == 3, (
+                f'Expected 3 separate batches, got {len(submitted_tasks)}'
             )
 
-            # Execute the single task
+            # Execute all tasks
             for fn, args, kwargs in submitted_tasks:
                 fn(*args, **kwargs)
 
@@ -686,7 +686,7 @@ class TestBatchedWebHookFileStore:
                 f'but only {len(unique_events)} unique events'
             )
 
-            # Should have all 3 files in a single batch (no duplicates)
+            # Should have all 3 files sent in separate batches (no duplicates)
             expected_events = set()
             for i, content in enumerate(contents):
                 expected_events.add(f'POST:/file{i}.txt:{content}')
