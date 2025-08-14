@@ -54,7 +54,17 @@ class VsCodeRuntime(Runtime):
         sio_server: socketio.AsyncServer | None = None,
         socket_connection_id: str | None = None,
     ):
-        super().__init__(config=config, event_stream=event_stream, sid=sid, plugins=plugins, env_vars=env_vars, status_callback=status_callback, attach_to_existing=attach_to_existing, headless_mode=headless_mode, user_id=user_id)
+        super().__init__(
+            config=config,
+            event_stream=event_stream,
+            sid=sid,
+            plugins=plugins,
+            env_vars=env_vars,
+            status_callback=status_callback,
+            attach_to_existing=attach_to_existing,
+            headless_mode=headless_mode,
+            user_id=user_id,
+        )
         self.sid = sid
         self.plugins = plugins or []
         self.env_vars = env_vars or {}
