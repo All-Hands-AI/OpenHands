@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
-from openhands.core.config.toml_writer import TOMLConfigWriter
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -172,26 +171,14 @@ async def store_settings(
             config.git_user_email = settings.git_user_email
             git_config_updated = True
 
-        # Persist LLM settings into config.toml via write API
-        llm_updates: dict = {}
+        # Apply LLM settings in-memory only; persistence to TOML handled by config write API in separate flows
         if settings.llm_model is not None:
-            llm_updates['model'] = settings.llm_model
+            config.update_llm_config('llm', model=settings.llm_model)
         if settings.llm_api_key is not None:
-            llm_updates['api_key'] = settings.llm_api_key
+            config.update_llm_config('llm', api_key=settings.llm_api_key)
         if settings.llm_base_url is not None:
-            llm_updates['base_url'] = settings.llm_base_url
-        if settings.search_api_key is not None:
-            # store under [core] as search_api_key
-            writer = TOMLConfigWriter()
-            writer.update_core({'search_api_key': settings.search_api_key})
-            writer.write()
-        if llm_updates:
-            # apply in-memory
-            config.update_llm_config('llm', **llm_updates)
-            # persist to toml
-            writer = TOMLConfigWriter()
-            writer.update_llm('llm', config.get_llm_config('llm'))
-            writer.write()
+            config.update_llm_config('llm', base_url=settings.llm_base_url)
+        # search_api_key remains in Settings/Secrets; TOML persistence is out of scope here
 
         # Note: Git configuration will be applied when new sessions are initialized
         # Existing sessions will continue with their current git configuration

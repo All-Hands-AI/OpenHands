@@ -72,10 +72,10 @@ def client_with_temp_config(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_settings_post_persists_to_toml(client_with_temp_config):
+async def test_settings_post_updates_config_in_memory_only(client_with_temp_config):
     client, tmp_path = client_with_temp_config
 
-    # POST settings to update/persist LLM fields + search key
+    # POST settings to update LLM fields (no TOML persistence here)
     payload = {
         'llm_model': 'persist-model',
         'llm_api_key': 'persist-key',
@@ -86,15 +86,14 @@ async def test_settings_post_persists_to_toml(client_with_temp_config):
     r = client.post('/api/settings', json=payload)
     assert r.status_code == 200
 
-    # Verify config.toml was created and contains expected keys
+    # Verify in-memory config was updated
+    from openhands.server.shared import config as shared_config
+
+    llm = shared_config.get_llm_config('llm')
+    assert llm.model == 'persist-model'
+    assert llm.api_key and llm.api_key.get_secret_value() == 'persist-key'
+    assert llm.base_url == 'https://persist.example'
+
+    # Verify config.toml was NOT created by this endpoint (write API is separate)
     toml_file = os.path.join(tmp_path, 'config.toml')
-    assert os.path.exists(toml_file)
-    content = open(toml_file, 'r', encoding='utf-8').read()
-
-    assert '[llm]' in content
-    assert 'model = "persist-model"' in content
-    assert 'api_key = "persist-key"' in content
-    assert 'base_url = "https://persist.example"' in content
-
-    assert '[core]' in content
-    assert 'search_api_key = "tavily-secret"' in content
+    assert not os.path.exists(toml_file)
