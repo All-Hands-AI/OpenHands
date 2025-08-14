@@ -197,6 +197,17 @@ def get_cli_parser() -> argparse.ArgumentParser:
         type=bool,
         default=False,
     )
+    cli_parser.add_argument(
+        '--editor-mode',
+        choices=['emacs', 'vi', 'auto'],
+        default='auto',
+        help='Editor mode for CLI input (default: auto - detects from $EDITOR environment variable)',
+    )
+    cli_parser.add_argument(
+        '--vi-mode',
+        action='store_true',
+        help='Enable vi mode for CLI input (deprecated: use --editor-mode vi)',
+    )
     parser.add_argument(
         '--conversation',
         help='The conversation id to continue',

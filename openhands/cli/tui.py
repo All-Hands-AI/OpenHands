@@ -731,8 +731,22 @@ class CommandCompleter(Completer):
 
 
 def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
-    """Creates a prompt session with VI mode enabled if specified in the config."""
-    return PromptSession(style=DEFAULT_STYLE, vi_mode=config.cli.vi_mode)
+    """Creates a prompt session with enhanced editor bindings based on config."""
+    from openhands.cli.editor_bindings import create_enhanced_key_bindings
+    
+    # Determine the effective editor mode
+    editor_mode = config.cli.get_effective_editor_mode()
+    vi_mode = config.cli.is_vi_mode()
+    
+    # Create enhanced key bindings for emacs mode
+    # Vi mode uses prompt_toolkit's built-in vi_mode=True
+    key_bindings = None if vi_mode else create_enhanced_key_bindings(editor_mode)
+    
+    return PromptSession(
+        style=DEFAULT_STYLE, 
+        vi_mode=vi_mode,
+        key_bindings=key_bindings
+    )
 
 
 async def read_prompt_input(
@@ -745,7 +759,14 @@ async def read_prompt_input(
         )
 
         if multiline:
-            kb = KeyBindings()
+            # Create multiline key bindings that include enhanced editor bindings
+            from openhands.cli.editor_bindings import create_enhanced_key_bindings
+            
+            editor_mode = config.cli.get_effective_editor_mode()
+            vi_mode = config.cli.is_vi_mode()
+            
+            # Start with enhanced bindings if not in vi mode
+            kb = create_enhanced_key_bindings(editor_mode) if not vi_mode else KeyBindings()
 
             @kb.add('c-d')
             def _(event: KeyPressEvent) -> None:

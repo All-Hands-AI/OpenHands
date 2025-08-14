@@ -791,4 +791,10 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
     if hasattr(args, 'selected_repo') and args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
 
+    # Override CLI editor mode settings if provided
+    if hasattr(args, 'editor_mode') and args.editor_mode is not None:
+        config.cli.editor_mode = args.editor_mode
+    if hasattr(args, 'vi_mode') and args.vi_mode:
+        config.cli.vi_mode = args.vi_mode
+
     return config
