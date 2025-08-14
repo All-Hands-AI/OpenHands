@@ -1088,11 +1088,28 @@ def test_conversation_start(page):
                                 and 'color: #' not in line
                                 and '.xterm-' not in line
                                 and 'renderer-owner' not in line
-                                and not (line.count('{') > 3 or line.count('}') > 3)  # Skip lines with many braces
-                                and not (line.count(':') > 5)  # Skip lines with many colons (CSS properties)
-                                and not (line.count(';') > 5)  # Skip lines with many semicolons (CSS rules)
-                                and not (line.count('#') > 2)  # Skip lines with many hash symbols (colors)
-                                and not line.replace(' ', '').replace('.', '').replace('#', '').replace(':', '').replace(';', '').replace('{', '').replace('}', '').replace('-', '').replace('_', '').isdigit()  # Skip lines that are mostly CSS values
+                                and not (
+                                    line.count('{') > 3 or line.count('}') > 3
+                                )  # Skip lines with many braces
+                                and not (
+                                    line.count(':') > 5
+                                )  # Skip lines with many colons (CSS properties)
+                                and not (
+                                    line.count(';') > 5
+                                )  # Skip lines with many semicolons (CSS rules)
+                                and not (
+                                    line.count('#') > 2
+                                )  # Skip lines with many hash symbols (colors)
+                                and not line.replace(' ', '')
+                                .replace('.', '')
+                                .replace('#', '')
+                                .replace(':', '')
+                                .replace(';', '')
+                                .replace('{', '')
+                                .replace('}', '')
+                                .replace('-', '')
+                                .replace('_', '')
+                                .isdigit()  # Skip lines that are mostly CSS values
                             ):
                                 meaningful_lines.append(line)
 
@@ -1269,10 +1286,19 @@ def test_conversation_start(page):
                             and not (line.count(':') > 5)
                             and not (line.count(';') > 5)
                             and not (line.count('#') > 2)
-                            and not line.replace(' ', '').replace('.', '').replace('#', '').replace(':', '').replace(';', '').replace('{', '').replace('}', '').replace('-', '').replace('_', '').isdigit()
+                            and not line.replace(' ', '')
+                            .replace('.', '')
+                            .replace('#', '')
+                            .replace(':', '')
+                            .replace(';', '')
+                            .replace('{', '')
+                            .replace('}', '')
+                            .replace('-', '')
+                            .replace('_', '')
+                            .isdigit()
                         ):
                             meaningful_lines.append(line)
-                    
+
                     if meaningful_lines:
                         filtered_content = ' '.join(
                             meaningful_lines[:3]
