@@ -350,14 +350,6 @@ class OpenHandsMCPConfig:
         search_engine_stdio_server = OpenHandsMCPConfig.add_search_engine(config)
         if search_engine_stdio_server:
             stdio_servers.append(search_engine_stdio_server)
-        if config.get_agent_config().enable_plan_mode:
-            stdio_servers.append(
-                MCPStdioServerConfig(
-                    name='sequential-thinking',
-                    command='npx',
-                    args=['-y', '@modelcontextprotocol/server-sequential-thinking'],
-                )
-            )
 
         shttp_servers = MCPSHTTPServerConfig(url=f'http://{host}/mcp/mcp', api_key=None)
 

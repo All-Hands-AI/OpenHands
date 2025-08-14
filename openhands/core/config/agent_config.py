@@ -47,7 +47,7 @@ class AgentConfig(BaseModel):
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
     enable_plan_mode: bool = Field(default=True)
-    """Whether to enable plan mode, which uses the long horizon system message and add two new tools - task_tracker and sequential_thinking - for planning, tracking and executing complex tasks."""
+    """Whether to enable plan mode, which uses the long horizon system message and add the new tool - task_tracker - for planning, tracking and executing complex tasks."""
     condenser: CondenserConfig = Field(
         # The default condenser is set to the conversation window condenser -- if
         # we use NoOp and the conversation hits the LLM context length limit,
