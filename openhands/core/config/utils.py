@@ -132,6 +132,29 @@ def load_from_env(
     # load default agent config from env
     default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
+    
+    # Auto-enable vi_mode for CLI config if EDITOR or VISUAL are set to vim-like editors
+    # Only do this if CLI_VI_MODE is not explicitly set
+    if 'CLI_VI_MODE' not in env_or_toml_dict and not cfg.cli.vi_mode:
+        editor = env_or_toml_dict.get('EDITOR', '').lower()
+        visual = env_or_toml_dict.get('VISUAL', '').lower()
+        
+        # Check if either EDITOR or VISUAL contains vim-like editor names
+        vim_editors = {'vi', 'vim', 'nvim'}
+        
+        # Extract just the command name (remove path and arguments)
+        def get_command_name(editor_path: str) -> str:
+            if not editor_path:
+                return ''
+            # Split by spaces to get the command part, then get the basename
+            command = editor_path.split()[0] if editor_path.split() else ''
+            return os.path.basename(command)
+        
+        editor_cmd = get_command_name(editor)
+        visual_cmd = get_command_name(visual)
+        
+        if editor_cmd in vim_editors or visual_cmd in vim_editors:
+            cfg.cli.vi_mode = True
 
 
 def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None:
