@@ -31,8 +31,11 @@ class TestBatchedWebHookFileStore:
     @pytest.fixture
     def mock_client(self):
         client = MagicMock(spec=httpx.Client)
-        client.post.return_value.raise_for_status = MagicMock()
-        client.delete.return_value.raise_for_status = MagicMock()
+        # Create a proper mock response that doesn't cause recursion
+        mock_response = MagicMock()
+        mock_response.raise_for_status = MagicMock()
+        client.post.return_value = mock_response
+        client.delete.return_value = mock_response
         return client
 
     @pytest.fixture
@@ -248,12 +251,14 @@ class TestBatchedWebHookFileStore:
 
         # Track all calls to post method
         call_count = 0
-        original_post = mock_client.post
 
         def counting_post(*args, **kwargs):
             nonlocal call_count
             call_count += 1
-            return original_post(*args, **kwargs)
+            # Return the mock response directly instead of calling original_post
+            mock_response = MagicMock()
+            mock_response.raise_for_status = MagicMock()
+            return mock_response
 
         mock_client.post.side_effect = counting_post
 
@@ -332,11 +337,13 @@ class TestBatchedWebHookFileStore:
 
         # Track calls to ensure no duplicates
         call_data = []
-        original_post = mock_client.post
 
         def tracking_post(*args, **kwargs):
             call_data.append(kwargs['json'])
-            return original_post(*args, **kwargs)
+            # Return the mock response directly instead of calling original_post
+            mock_response = MagicMock()
+            mock_response.raise_for_status = MagicMock()
+            return mock_response
 
         mock_client.post.side_effect = tracking_post
 
@@ -393,13 +400,15 @@ class TestBatchedWebHookFileStore:
         # Use a lock to simulate slow webhook processing and increase chance of race
         webhook_lock = threading.Lock()
         call_order = []
-        original_post = mock_client.post
 
         def slow_post(*args, **kwargs):
             with webhook_lock:
                 call_order.append(len(kwargs['json']))  # Record batch size
                 time.sleep(0.05)  # Simulate slow webhook processing
-                return original_post(*args, **kwargs)
+                # Return the mock response directly instead of calling original_post
+                mock_response = MagicMock()
+                mock_response.raise_for_status = MagicMock()
+                return mock_response
 
         mock_client.post.side_effect = slow_post
 
@@ -448,4 +457,69 @@ class TestBatchedWebHookFileStore:
         sent_files = set(all_sent_files.keys())
         assert sent_files == expected_files, (
             f'Expected {expected_files}, got {sent_files}'
+        )
+
+    def test_race_condition_with_real_synchronization(self, file_store, mock_client):
+        """Test that our synchronization fixes prevent race conditions."""
+        batched_store = BatchedWebHookFileStore(
+            file_store=file_store,
+            base_url='http://example.com',
+            client=mock_client,
+            batch_timeout_seconds=0.1,  # Short timeout
+            batch_size_limit_bytes=100,  # Small size limit
+        )
+
+        # Track calls to ensure no duplicates
+        call_data = []
+        call_lock = threading.Lock()
+
+        def tracking_post(*args, **kwargs):
+            with call_lock:
+                call_data.append(kwargs['json'])
+            # Return the mock response directly
+            mock_response = MagicMock()
+            mock_response.raise_for_status = MagicMock()
+            return mock_response
+
+        mock_client.post.side_effect = tracking_post
+
+        # Create a scenario that would trigger race conditions without synchronization
+        def writer_thread(thread_id):
+            for i in range(5):
+                content = f'Thread{thread_id}_File{i}: ' + 'x' * 20  # ~40 bytes each
+                batched_store.write(f'/t{thread_id}_f{i}.txt', content)
+                time.sleep(0.01)  # Small delay between writes
+
+        # Start multiple writer threads to create concurrent load
+        threads = []
+        for i in range(3):
+            thread = threading.Thread(target=writer_thread, args=(i,))
+            threads.append(thread)
+            thread.start()
+
+        # Wait for all threads to complete
+        for thread in threads:
+            thread.join(timeout=2.0)
+
+        # Wait for any pending batches to be sent
+        time.sleep(0.5)
+
+        # Verify that no files were sent multiple times
+        all_sent_files = set()
+        for batch_payload in call_data:
+            for item in batch_payload:
+                path = item['path']
+                assert path not in all_sent_files, (
+                    f'File {path} was sent multiple times across batches'
+                )
+                all_sent_files.add(path)
+
+        # Verify all expected files were sent
+        expected_files = set()
+        for thread_id in range(3):
+            for file_id in range(5):
+                expected_files.add(f'/t{thread_id}_f{file_id}.txt')
+        
+        assert all_sent_files == expected_files, (
+            f'Expected {len(expected_files)} files, but got {len(all_sent_files)}'
         )

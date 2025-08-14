@@ -80,6 +80,7 @@ class BatchedWebHookFileStore(FileStore):
         self._batch = {}  # Maps path -> (operation, content)
         self._batch_timer = None
         self._batch_size = 0
+        self._sending_batch = False  # Flag to prevent concurrent batch sends
 
     def write(self, path: str, contents: Union[str, bytes]) -> None:
         """Write contents to a file and queue a webhook update.
@@ -159,8 +160,16 @@ class BatchedWebHookFileStore(FileStore):
 
             # Check if we need to send the batch due to size limit
             if self._batch_size >= self.batch_size_limit_bytes:
-                # Submit to executor to avoid blocking
-                EXECUTOR.submit(self._send_batch)
+                # Only send if not already sending a batch
+                if not self._sending_batch:
+                    # Cancel any existing timer before sending
+                    if self._batch_timer is not None:
+                        self._batch_timer.cancel()
+                        self._batch_timer = None
+                    # Mark that we're sending a batch to prevent concurrent sends
+                    self._sending_batch = True
+                    # Submit to executor to avoid blocking
+                    EXECUTOR.submit(self._send_batch)
                 return
 
             # Start or reset the timer for sending the batch
@@ -179,6 +188,13 @@ class BatchedWebHookFileStore(FileStore):
         """Send the batch from the timer thread.
         This method is called by the timer and submits the actual sending to the executor.
         """
+        with self._batch_lock:
+            # Skip if already sending a batch or no batch to send
+            if self._sending_batch or not self._batch:
+                return
+            # Mark that we're sending a batch
+            self._sending_batch = True
+        
         EXECUTOR.submit(self._send_batch)
 
     def _send_batch(self) -> None:
@@ -189,6 +205,8 @@ class BatchedWebHookFileStore(FileStore):
 
         with self._batch_lock:
             if not self._batch:
+                # Reset sending flag and return
+                self._sending_batch = False
                 return
 
             # Copy the batch and clear the current one
@@ -202,12 +220,16 @@ class BatchedWebHookFileStore(FileStore):
                 self._batch_timer = None
 
         # Process the entire batch in a single request
-        if batch_to_send:
-            try:
+        try:
+            if batch_to_send:
                 self._send_batch_request(batch_to_send)
-            except Exception as e:
-                # Log the error
-                print(f'Error sending webhook batch: {e}')
+        except Exception as e:
+            # Log the error
+            print(f'Error sending webhook batch: {e}')
+        finally:
+            # Always reset the sending flag
+            with self._batch_lock:
+                self._sending_batch = False
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(1),
