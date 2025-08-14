@@ -846,36 +846,75 @@ def test_conversation_start(page):
         
         # Check for agent ready states by looking for status indicators
         try:
-            # Look for signs that agent is ready for input
+            # Check current status messages to understand agent state
+            status_messages = []
+            status_selectors = [
+                'div:has-text("Connecting")',
+                'div:has-text("Starting Runtime")',
+                'div:has-text("Waiting for runtime to start")',
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
+            ]
+            
+            for selector in status_selectors:
+                try:
+                    elements = page.locator(selector)
+                    if elements.count() > 0:
+                        for i in range(elements.count()):
+                            text = elements.nth(i).text_content()
+                            if text and text.strip():
+                                status_messages.append(text.strip())
+                except Exception:
+                    continue
+            
+            if status_messages:
+                print(f'Current status messages: {status_messages}')
+            
+            # Check if agent is truly ready for input (not just connecting or starting)
             ready_indicators = [
                 'div:has-text("Agent is ready")',
                 'div:has-text("Waiting for user input")',
                 'div:has-text("Task completed")',
                 'div:has-text("Agent has finished")',
-                # Check if the "Connecting..." message is gone and replaced with ready state
-                'textarea[placeholder*="Ask OpenHands"]',  # Input field becomes available
-                '[data-testid="chat-input"] textarea:not([disabled])',  # Input is enabled
             ]
             
+            # Also check if input field is enabled and visible
+            input_ready = False
+            try:
+                input_field = page.locator('[data-testid="chat-input"] textarea')
+                if input_field.is_visible(timeout=2000) and input_field.is_enabled(timeout=2000):
+                    print('Chat input field is visible and enabled')
+                    input_ready = True
+            except Exception:
+                pass
+            
+            # Agent is ready if we have ready indicators OR if input is ready AND no connecting/starting messages
+            connecting_or_starting = any(
+                msg for msg in status_messages 
+                if 'connecting' in msg.lower() or 'starting' in msg.lower() or 'runtime to start' in msg.lower()
+            )
+            
+            has_ready_indicator = False
             for indicator in ready_indicators:
                 try:
                     element = page.locator(indicator)
                     if element.is_visible(timeout=2000):
                         print(f'Agent appears ready (found: {indicator})')
-                        agent_ready = True
+                        has_ready_indicator = True
                         break
                 except Exception:
                     continue
             
-            if agent_ready:
+            if has_ready_indicator or (input_ready and not connecting_or_starting):
+                print('✅ Agent appears to be ready for user input')
+                agent_ready = True
                 break
-                
-            # Also check if "Connecting..." message is gone
-            connecting_messages = page.locator('div:has-text("Connecting")')
-            if connecting_messages.count() == 0:
-                print('Connecting message is gone, agent may be ready')
-                # Wait a bit more to be sure
-                page.wait_for_timeout(10000)
+            elif not connecting_or_starting and not status_messages:
+                # No status messages and no connecting/starting - might be ready
+                print('No status messages found, checking if agent is ready...')
+                page.wait_for_timeout(5000)  # Wait a bit more
                 agent_ready = True
                 break
                 
