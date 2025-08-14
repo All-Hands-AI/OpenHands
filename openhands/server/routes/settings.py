@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from fastapi.responses import JSONResponse
 
+from openhands.core.config.toml_writer import TOMLConfigWriter
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -12,7 +13,6 @@ from openhands.server.settings import (
     GETSettingsModel,
 )
 from openhands.server.shared import config
-from openhands.core.config.toml_writer import TOMLConfigWriter
 from openhands.server.user_auth import (
     get_provider_tokens,
     get_secrets_store,
