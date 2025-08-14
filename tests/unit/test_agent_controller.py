@@ -506,7 +506,6 @@ async def test_budget_reset_on_continue(mock_agent, mock_event_stream):
     2. LLM budget does not reset when user continues
     3. Budget is extended by adding the initial budget cap to the current accumulated cost
     """
-
     # Create a real Metrics instance shared between controller state and llm
     metrics = Metrics()
     metrics.accumulated_cost = 6.0
@@ -1414,7 +1413,6 @@ async def test_action_metrics_copy(mock_agent):
 @pytest.mark.asyncio
 async def test_condenser_metrics_included(mock_agent, test_event_stream):
     """Test that metrics from the condenser's LLM are included in the action metrics."""
-
     # Set up agent metrics
     agent_metrics = Metrics(model_name='agent-model')
     agent_metrics.accumulated_cost = 0.05

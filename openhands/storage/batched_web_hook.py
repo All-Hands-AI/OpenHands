@@ -13,8 +13,7 @@ WEBHOOK_BATCH_SIZE_LIMIT_BYTES = 1048576  # 1MB
 
 
 class BatchedWebHookFileStore(FileStore):
-    """
-    File store which batches updates before sending them to a webhook.
+    """File store which batches updates before sending them to a webhook.
 
     This class wraps another FileStore implementation and sends HTTP requests
     to a specified URL when files are written or deleted. Updates are batched
@@ -51,8 +50,7 @@ class BatchedWebHookFileStore(FileStore):
         batch_timeout_seconds: Optional[float] = None,
         batch_size_limit_bytes: Optional[int] = None,
     ):
-        """
-        Initialize a BatchedWebHookFileStore.
+        """Initialize a BatchedWebHookFileStore.
 
         Args:
             file_store: The underlying FileStore implementation
@@ -84,8 +82,7 @@ class BatchedWebHookFileStore(FileStore):
         self._batch_size = 0
 
     def write(self, path: str, contents: Union[str, bytes]) -> None:
-        """
-        Write contents to a file and queue a webhook update.
+        """Write contents to a file and queue a webhook update.
 
         Args:
             path: The path to write to
@@ -95,8 +92,7 @@ class BatchedWebHookFileStore(FileStore):
         self._queue_update(path, 'write', contents)
 
     def read(self, path: str) -> str:
-        """
-        Read contents from a file.
+        """Read contents from a file.
 
         Args:
             path: The path to read from
@@ -107,8 +103,7 @@ class BatchedWebHookFileStore(FileStore):
         return self.file_store.read(path)
 
     def list(self, path: str) -> list[str]:
-        """
-        List files in a directory.
+        """List files in a directory.
 
         Args:
             path: The directory path to list
@@ -119,8 +114,7 @@ class BatchedWebHookFileStore(FileStore):
         return self.file_store.list(path)
 
     def delete(self, path: str) -> None:
-        """
-        Delete a file and queue a webhook update.
+        """Delete a file and queue a webhook update.
 
         Args:
             path: The path to delete
@@ -131,8 +125,7 @@ class BatchedWebHookFileStore(FileStore):
     def _queue_update(
         self, path: str, operation: str, contents: Optional[Union[str, bytes]]
     ) -> None:
-        """
-        Queue an update to be sent to the webhook.
+        """Queue an update to be sent to the webhook.
 
         Args:
             path: The path that was modified
@@ -183,15 +176,13 @@ class BatchedWebHookFileStore(FileStore):
             self._batch_timer = timer
 
     def _send_batch_from_timer(self) -> None:
-        """
-        Send the batch from the timer thread.
+        """Send the batch from the timer thread.
         This method is called by the timer and submits the actual sending to the executor.
         """
         EXECUTOR.submit(self._send_batch)
 
     def _send_batch(self) -> None:
-        """
-        Send the current batch of updates to the webhook as a single request.
+        """Send the current batch of updates to the webhook as a single request.
         This method acquires the batch lock and processes all pending updates in one batch.
         """
         batch_to_send: dict[str, tuple[str, Optional[Union[str, bytes]]]] = {}
@@ -225,8 +216,7 @@ class BatchedWebHookFileStore(FileStore):
     def _send_batch_request(
         self, batch: dict[str, tuple[str, Optional[Union[str, bytes]]]]
     ) -> None:
-        """
-        Send a single batch request to the webhook URL with all updates.
+        """Send a single batch request to the webhook URL with all updates.
 
         This method is retried up to 3 times with a 1-second delay between attempts.
 
@@ -267,8 +257,7 @@ class BatchedWebHookFileStore(FileStore):
         response.raise_for_status()
 
     def flush(self) -> None:
-        """
-        Immediately send any pending updates to the webhook.
+        """Immediately send any pending updates to the webhook.
         This can be called to ensure all updates are sent before shutting down.
         """
         self._send_batch()

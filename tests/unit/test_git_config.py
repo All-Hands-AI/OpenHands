@@ -28,8 +28,12 @@ class TestGitConfig:
             assert config.git_user_name == 'testuser'
             assert config.git_user_email == 'testuser@example.com'
 
-    def test_git_config_in_command_generation(self):
-        """Test that git configuration is properly passed to action execution server command."""
+    def test_git_config_not_in_command_generation(self):
+        """Test that git configuration is NOT passed as command line arguments.
+
+        Git configuration is handled by the runtime base class via git config commands,
+        not through command line arguments to the action execution server.
+        """
         config = OpenHandsConfig()
         config.git_user_name = 'customuser'
         config.git_user_email = 'customuser@example.com'
@@ -42,14 +46,19 @@ class TestGitConfig:
             python_executable='python',
         )
 
-        # Check that git config arguments are in the command
-        assert '--git-user-name' in cmd
-        assert 'customuser' in cmd
-        assert '--git-user-email' in cmd
-        assert 'customuser@example.com' in cmd
+        # Check that git config arguments are NOT in the command
+        assert '--git-user-name' not in cmd
+        assert '--git-user-email' not in cmd
+        # The git config values themselves should also not be in the command
+        assert 'customuser' not in cmd
+        assert 'customuser@example.com' not in cmd
 
-    def test_git_config_with_special_characters(self):
-        """Test that git configuration handles special characters correctly."""
+    def test_git_config_with_special_characters_not_in_command(self):
+        """Test that git configuration with special characters is NOT in command.
+
+        Git configuration is handled by the runtime base class via git config commands,
+        not through command line arguments to the action execution server.
+        """
         config = OpenHandsConfig()
         config.git_user_name = 'User With Spaces'
         config.git_user_email = 'user+tag@example.com'
@@ -62,8 +71,9 @@ class TestGitConfig:
             python_executable='python',
         )
 
-        assert 'User With Spaces' in cmd
-        assert 'user+tag@example.com' in cmd
+        # Git config values should NOT be in the command
+        assert 'User With Spaces' not in cmd
+        assert 'user+tag@example.com' not in cmd
 
     def test_git_config_empty_values(self):
         """Test behavior with empty git configuration values."""

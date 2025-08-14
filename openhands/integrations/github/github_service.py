@@ -186,8 +186,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
-        """
-        Fetch repositories with pagination support.
+        """Fetch repositories with pagination support.
 
         Args:
             url: The API endpoint URL
@@ -228,8 +227,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        """
-        Parse a GitHub API repository response into a Repository object.
+        """Parse a GitHub API repository response into a Repository object.
 
         Args:
             repo: Repository data from GitHub API
@@ -498,15 +496,15 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         """Get branches for a repository"""
         url = f'{self.BASE_URL}/repos/{repository}/branches'
 
-        # Set maximum branches to fetch (10 pages with 100 per page)
-        MAX_BRANCHES = 1000
+        # Set maximum branches to fetch (100 per page)
+        MAX_BRANCHES = 5_000
         PER_PAGE = 100
 
         all_branches: list[Branch] = []
         page = 1
 
         # Fetch up to 10 pages of branches
-        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+        while len(all_branches) < MAX_BRANCHES:
             params = {'per_page': str(PER_PAGE), 'page': str(page)}
             response, headers = await self._make_request(url, params)
 
@@ -550,8 +548,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         draft: bool = True,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a PR using user credentials
+        """Creates a PR using user credentials
 
         Args:
             repo_name: The full name of the repository (owner/repo)
@@ -566,7 +563,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             - PR URL when successful
             - Error message when unsuccessful
         """
-
         url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
         # Set default body if none provided
