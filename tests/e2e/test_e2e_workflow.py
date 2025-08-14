@@ -826,203 +826,146 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_08_question_sent.png')
     print('Screenshot saved: conv_08_question_sent.png')
 
-    # Step 7: Wait for and verify the agent's response
-    print('Step 7: Waiting for agent response...')
+    # Step 7: Wait for agent to be ready and respond
+    print('Step 7: Waiting for agent to be ready and respond...')
 
-    # Wait for the agent to process the question - try multiple approaches
-    agent_processing = False
-    
-    # Try to detect agent processing with multiple selectors
-    processing_selectors = [
-        '.bg-tertiary.px-3.py-1\\.5.rounded-full',  # Original typing indicator
-        '[data-testid="typing-indicator"]',
-        '.typing-indicator',
-        'div:has-text("Agent is running")',
-        'div:has-text("Processing")',
-        'div:has-text("Thinking")',
-        '.spinner',
-        '.loading'
-    ]
-    
-    for selector in processing_selectors:
-        try:
-            indicator = page.locator(selector)
-            if indicator.is_visible(timeout=5000):
-                print(f'Agent is processing (found indicator: {selector})')
-                agent_processing = True
-                break
-        except Exception:
-            continue
-    
-    if not agent_processing:
-        print('Could not detect agent processing indicator, but continuing...')
-
-    # Wait longer for the agent to respond - up to 2 minutes
-    max_wait_time = 120  # 2 minutes
+    # Wait for agent to transition from "Connecting..." to ready state (up to 5 minutes)
+    max_wait_time = 300  # 5 minutes
     start_time = time.time()
+    agent_ready = False
     
-    print(f'Waiting up to {max_wait_time} seconds for agent response...')
+    print(f'Waiting up to {max_wait_time} seconds for agent to be ready...')
     
     while time.time() - start_time < max_wait_time:
-        # Take periodic screenshots
         elapsed = int(time.time() - start_time)
-        if elapsed % 15 == 0 and elapsed > 0:  # Every 15 seconds
+        
+        # Take periodic screenshots
+        if elapsed % 30 == 0 and elapsed > 0:  # Every 30 seconds
             page.screenshot(path=f'test-results/conv_waiting_{elapsed}s.png')
             print(f'Screenshot saved: conv_waiting_{elapsed}s.png (waiting {elapsed}s)')
         
-        # Check if we have any messages yet
-        message_selectors = [
-            'div[data-testid*="message"]',
-            '.message',
-            '.chat-message', 
-            'div:has-text("README")',
-            'div:has-text("lines")',
-            'div:has-text("183")',  # Expected line count
-            'div[role="presentation"]',
-            '.prose',
-            '.markdown-body',
-            '.EventMessage',
-            'main div',
-            '[data-testid="chat-messages"] > div',
-            '.scrollbar div'
-        ]
-        
-        messages_found = False
-        for selector in message_selectors:
-            try:
-                messages = page.locator(selector).all()
-                if len(messages) > 0:
-                    print(f'Found {len(messages)} potential messages with selector: {selector}')
-                    # Check if any contain meaningful content
-                    for msg in messages:
-                        try:
-                            content = msg.text_content()
-                            if content and len(content.strip()) > 10:  # Non-empty meaningful content
-                                print(f'Found message content: {content[:100]}...' if len(content) > 100 else f'Found message content: {content}')
-                                messages_found = True
-                                break
-                        except Exception:
-                            continue
-                    if messages_found:
-                        break
-            except Exception:
-                continue
-        
-        if messages_found:
-            print('Found messages, waiting a bit more for completion...')
-            page.wait_for_timeout(10000)  # Wait 10 more seconds
-            break
+        # Check for agent ready states by looking for status indicators
+        try:
+            # Look for signs that agent is ready for input
+            ready_indicators = [
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
+                # Check if the "Connecting..." message is gone and replaced with ready state
+                'textarea[placeholder*="Ask OpenHands"]',  # Input field becomes available
+                '[data-testid="chat-input"] textarea:not([disabled])',  # Input is enabled
+            ]
             
+            for indicator in ready_indicators:
+                try:
+                    element = page.locator(indicator)
+                    if element.is_visible(timeout=2000):
+                        print(f'Agent appears ready (found: {indicator})')
+                        agent_ready = True
+                        break
+                except Exception:
+                    continue
+            
+            if agent_ready:
+                break
+                
+            # Also check if "Connecting..." message is gone
+            connecting_messages = page.locator('div:has-text("Connecting")')
+            if connecting_messages.count() == 0:
+                print('Connecting message is gone, agent may be ready')
+                # Wait a bit more to be sure
+                page.wait_for_timeout(10000)
+                agent_ready = True
+                break
+                
+        except Exception as e:
+            print(f'Error checking agent ready state: {e}')
+        
         page.wait_for_timeout(5000)  # Wait 5 seconds before checking again
 
-    # Take final screenshots
-    page.screenshot(path='test-results/conv_09_agent_response.png')
-    print('Screenshot saved: conv_09_agent_response.png')
+    if not agent_ready:
+        print('⚠️ Agent may not be fully ready, but continuing with test...')
+    else:
+        print('✅ Agent appears to be ready')
 
-    # Step 8: Verify the response contains the correct line count
-    print('Step 8: Verifying agent response...')
-
-    # Wait a bit more for the full response to be rendered
-    page.wait_for_timeout(5000)
-
-    # Take a screenshot of the final state
-    page.screenshot(path='test-results/conv_10_final_state.png')
-    print('Screenshot saved: conv_10_final_state.png')
-
-    # Debug: Print page content to understand the structure
-    try:
-        page_content = page.content()
-        print(f'Page HTML length: {len(page_content)} characters')
-        # Look for any text containing README or numbers
-        if 'README' in page_content:
-            print('✓ Page contains "README" text')
-        if '183' in page_content:
-            print('✓ Page contains "183" text')
-        if str(expected_line_count) in page_content:
-            print(f'✓ Page contains expected line count "{expected_line_count}"')
-    except Exception as e:
-        print(f'Error checking page content: {e}')
-
-    # Try comprehensive selectors to find message content
-    selectors = [
-        # Specific message selectors
-        'div[data-testid*="message"]',
-        '[data-testid="chat-messages"] > div',
-        '[data-testid="message-content"]',
+    # Wait for agent to process the question and provide a response
+    print('Step 8: Waiting for agent response to README question...')
+    
+    response_wait_time = 120  # 2 minutes for response
+    response_start_time = time.time()
+    
+    while time.time() - response_start_time < response_wait_time:
+        elapsed = int(time.time() - response_start_time)
         
-        # General message containers
-        '.EventMessage',
-        '.message',
-        '.chat-message',
+        # Take periodic screenshots
+        if elapsed % 15 == 0 and elapsed > 0:  # Every 15 seconds
+            page.screenshot(path=f'test-results/conv_response_wait_{elapsed}s.png')
+            print(f'Screenshot saved: conv_response_wait_{elapsed}s.png (waiting {elapsed}s for response)')
         
-        # Content areas
-        '.scrollbar.flex.flex-col.grow > div',
-        '.prose',
-        '.markdown-body',
-        'div[role="presentation"]',
-        
-        # Broad selectors
-        'main div',
-        'div:has-text("README")',
-        'div:has-text("lines")',
-        f'div:has-text("{expected_line_count}")',
-        
-        # Fallback - all divs with substantial text
-        'div'
-    ]
-
-    # Look for the line count in the messages using different selectors
-    response_found = False
-    all_content = []
-
-    for selector in selectors:
+        # Check specifically for agent messages containing the line count
         try:
-            messages = page.locator(selector).all()
-            print(f'Found {len(messages)} elements with selector: {selector}')
-
-            for i, message in enumerate(messages):
+            agent_messages = page.locator('[data-testid="agent-message"]').all()
+            print(f'Found {len(agent_messages)} agent messages')
+            
+            for i, msg in enumerate(agent_messages):
                 try:
-                    content = message.text_content()
-                    if content and len(content.strip()) > 5:  # Only meaningful content
-                        content_preview = content[:200] + '...' if len(content) > 200 else content
-                        print(f'  Element {i}: {content_preview}')
-                        all_content.append(content)
-
-                        # Check if the message contains the line count or something about README
+                    content = msg.text_content()
+                    if content and len(content.strip()) > 10:
+                        print(f'Agent message {i}: {content[:150]}...' if len(content) > 150 else f'Agent message {i}: {content}')
+                        
+                        # Check if this agent message contains the README line count
                         content_lower = content.lower()
                         if (
                             (str(expected_line_count) in content and 'readme' in content_lower) or
-                            ('line' in content_lower and 'readme' in content_lower) or
-                            ('183' in content and 'readme' in content_lower)  # Specific expected count
+                            ('line' in content_lower and 'readme' in content_lower and any(num in content for num in ['183', str(expected_line_count)]))
                         ):
-                            print('✅ Found relevant response about README.md')
-                            print(f'✅ Matching content: {content}')
-                            response_found = True
-                            break
+                            print('✅ Found agent response about README.md with line count!')
+                            print(f'✅ Agent response: {content}')
+                            
+                            # Take final screenshots
+                            page.screenshot(path='test-results/conv_09_agent_response.png')
+                            print('Screenshot saved: conv_09_agent_response.png')
+                            page.screenshot(path='test-results/conv_10_final_state.png')
+                            print('Screenshot saved: conv_10_final_state.png')
+                            
+                            print('✅ Test completed successfully - agent provided correct README line count')
+                            return  # Success!
+                            
                 except Exception as e:
-                    print(f'Error processing element {i} with selector {selector}: {e}')
+                    print(f'Error processing agent message {i}: {e}')
                     continue
-
-            if response_found:
-                break
+                    
         except Exception as e:
-            print(f'Error with selector {selector}: {e}')
-            continue
+            print(f'Error checking for agent messages: {e}')
+        
+        page.wait_for_timeout(5000)  # Wait 5 seconds before checking again
 
-    # If still not found, print all content for debugging
-    if not response_found and all_content:
-        print('\n=== ALL CONTENT FOUND ON PAGE ===')
-        for i, content in enumerate(all_content[:20]):  # Limit to first 20 items
-            print(f'Content {i}: {content}')
-        print('=== END ALL CONTENT ===\n')
+    # If we get here, we didn't find the expected response
+    print('❌ Did not find agent response with README line count within time limit')
+    
+    # Take final screenshots for debugging
+    page.screenshot(path='test-results/conv_09_agent_response.png')
+    print('Screenshot saved: conv_09_agent_response.png')
+    page.screenshot(path='test-results/conv_10_final_state.png')
+    print('Screenshot saved: conv_10_final_state.png')
+    
+    # Debug: Print all agent messages found
+    try:
+        agent_messages = page.locator('[data-testid="agent-message"]').all()
+        print(f'\n=== ALL AGENT MESSAGES FOUND ({len(agent_messages)}) ===')
+        for i, msg in enumerate(agent_messages):
+            try:
+                content = msg.text_content()
+                print(f'Agent Message {i}: {content}')
+            except Exception as e:
+                print(f'Agent Message {i}: Error reading content - {e}')
+        print('=== END AGENT MESSAGES ===\n')
+    except Exception as e:
+        print(f'Error listing agent messages: {e}')
 
-    if not response_found:
-        print('❌ Could not find a relevant response about README.md')
-        raise AssertionError(f'Agent did not provide a response about README.md line count. Expected to find {expected_line_count} lines mentioned in the response.')
-
-    # Final screenshot
-    page.screenshot(path='test-results/conv_10_test_complete.png')
-    print('Screenshot saved: conv_10_test_complete.png')
+    # Fail the test
+    raise AssertionError(f'Agent did not provide a response about README.md line count within {response_wait_time} seconds. Expected to find {expected_line_count} lines mentioned in an agent message.')
 
     # Test passed if we got this far
     print('Conversation test completed successfully')
