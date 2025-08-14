@@ -354,6 +354,14 @@ classpath = "my_package.my_module.MyCustomAgent"
 # [sandbox]
 # volumes = "/my/host/dir:/workspace:rw,/path2:/workspace/path2:ro"
 
+#################################### CLI ########################################
+# Configuration for CLI mode
+##############################################################################
+[cli]
+
+# Enable vi-style key bindings in CLI mode (default: false, uses emacs-style)
+#vi_mode = false
+
 #################################### Security ###################################
 # Configuration for security features
 ##############################################################################

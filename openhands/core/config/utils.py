@@ -316,6 +316,12 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
                 f'Cannot parse [extended] config from toml, values have not been applied.\nError: {e}'
             )
 
+    # Process CLI section if present
+    if 'cli' in toml_config:
+        cli_config = toml_config['cli']
+        if 'vi_mode' in cli_config:
+            cfg.cli.vi_mode = cli_config['vi_mode']
+
     # Check for unknown sections
     known_sections = {
         'core',
@@ -327,6 +333,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
         'condenser',
         'mcp',
         'kubernetes',
+        'cli',
     }
     for key in toml_config:
         if key.lower() not in known_sections:
@@ -790,5 +797,9 @@ def setup_config_from_args(args: argparse.Namespace) -> OpenHandsConfig:
     # Read selected repository in config for use by CLI and main.py
     if hasattr(args, 'selected_repo') and args.selected_repo is not None:
         config.sandbox.selected_repo = args.selected_repo
+
+    # Set vi_mode if provided
+    if hasattr(args, 'vi_mode') and args.vi_mode:
+        config.cli.vi_mode = True
 
     return config

@@ -62,6 +62,12 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         '-v', '--version', action='store_true', help='Show version information'
     )
+    parser.add_argument(
+        '--vi-mode',
+        action='store_true',
+        default=False,
+        help='Enable vi-style key bindings in CLI mode (default: emacs-style)'
+    )
 
 
 def add_evaluation_arguments(parser: argparse.ArgumentParser) -> None:
