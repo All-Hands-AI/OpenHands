@@ -92,7 +92,7 @@ function MCPServerListItem({
   return (
     <tr
       data-testid="mcp-server-item"
-      className="grid grid-cols-[25%_120px_1fr_120px] gap-4 items-start border-t border-tertiary"
+      className="grid grid-cols-[minmax(0,0.25fr)_120px_minmax(0,1fr)_120px] gap-4 items-start border-t border-tertiary"
     >
       <td
         className="p-3 text-sm text-content-2 truncate min-w-0"
@@ -106,10 +106,15 @@ function MCPServerListItem({
       </td>
 
       <td
-        className="p-3 text-sm text-content-2 opacity-80 italic min-w-0 break-all"
+        className="p-3 text-sm text-content-2 opacity-80 italic min-w-0 truncate"
         title={serverDescription}
       >
-        {serverDescription}
+        <span
+          className="inline-block max-w-full align-bottom"
+          title={serverDescription}
+        >
+          {serverDescription}
+        </span>
       </td>
 
       <td className="p-3 flex items-start justify-end gap-4 whitespace-nowrap">
