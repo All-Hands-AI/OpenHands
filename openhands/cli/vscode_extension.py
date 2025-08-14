@@ -308,6 +308,15 @@ def _available_commands(candidates: list[str]) -> list[str]:
 
 
 def _is_extension_installed_by_any(commands: list[str], extension_id: str) -> bool:
+    """Check if the extension is installed using any of the provided editor commands.
+
+    Args:
+        commands: A list of editor command names to check (e.g., ['code', 'windsurf']).
+        extension_id: The extension ID to check for.
+
+    Returns:
+        bool: True if the extension is installed by any of the commands, False otherwise.
+    """
     for cmd in _available_commands(commands):
         if _is_extension_installed(cmd, extension_id):
             return True
