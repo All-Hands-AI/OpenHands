@@ -24,25 +24,32 @@ def mock_env_and_dependencies():
         ) as mock_download,
         mock.patch('builtins.print') as mock_print,
         mock.patch('openhands.cli.vscode_extension.logger.debug') as mock_logger,
-        mock.patch('openhands.cli.vscode_extension._available_commands') as mock_available,
+        mock.patch(
+            'openhands.cli.vscode_extension._available_commands'
+        ) as mock_available,
     ):
         # Setup a temporary directory for home
         temp_dir = pathlib.Path.cwd() / 'temp_test_home'
         temp_dir.mkdir(exist_ok=True)
         mock_home.return_value = temp_dir
+
         # Default: pretend 'code' CLI is available in VS Code, 'surf' in Windsurf
         def _avail_side_effect(candidates):
             env = os.environ
             is_windsurf = (
                 env.get('__CFBundleIdentifier') == 'com.exafunction.windsurf'
                 or 'windsurf' in env.get('PATH', '').lower()
-                or any(isinstance(val, str) and 'windsurf' in val.lower() for val in env.values())
+                or any(
+                    isinstance(val, str) and 'windsurf' in val.lower()
+                    for val in env.values()
+                )
             )
             if is_windsurf:
                 return [c for c in candidates if c == 'surf']
             if env.get('TERM_PROGRAM') == 'vscode':
                 return [c for c in candidates if c in ('code', 'code-insiders')]
             return []
+
         mock_available.side_effect = _avail_side_effect
 
         try:
@@ -86,7 +93,9 @@ def test_not_in_vscode_environment(mock_env_and_dependencies):
 def test_already_attempted_flag_prevents_execution(mock_env_and_dependencies):
     """If legacy flag exists and extension is installed, exit early without attempting install."""
     os.environ['TERM_PROGRAM'] = 'vscode'
-    mock_env_and_dependencies['exists'].return_value = True  # Simulate legacy flag exists
+    mock_env_and_dependencies[
+        'exists'
+    ].return_value = True  # Simulate legacy flag exists
     # Simulate extension is actually installed (verified via --list-extensions)
     mock_env_and_dependencies['subprocess'].return_value = subprocess.CompletedProcess(
         returncode=0, args=[], stdout='openhands.openhands-vscode\n', stderr=''
@@ -124,7 +133,7 @@ def test_extension_already_installed_detected(mock_env_and_dependencies):
         'INFO: OpenHands VS Code extension is already installed.'
     )
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
-    assert mock_env_and_dependencies['touch'].call_count in (0,1)
+    assert mock_env_and_dependencies['touch'].call_count in (0, 1)
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
 
@@ -148,7 +157,7 @@ def test_extension_detection_in_middle_of_list(mock_env_and_dependencies):
         'INFO: OpenHands VS Code extension is already installed.'
     )
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
-    assert mock_env_and_dependencies['touch'].call_count in (0,1)
+    assert mock_env_and_dependencies['touch'].call_count in (0, 1)
 
 
 def test_extension_detection_partial_match_ignored(mock_env_and_dependencies):
@@ -266,12 +275,19 @@ def test_mark_installation_successful_os_error(mock_env_and_dependencies):
 
     def fake_run(args, capture_output=True, text=True, check=False):
         if '--list-extensions' in args:
-            return subprocess.CompletedProcess(returncode=0, args=args, stdout='', stderr='')
+            return subprocess.CompletedProcess(
+                returncode=0, args=args, stdout='', stderr=''
+            )
         if '--install-extension' in args:
-            return subprocess.CompletedProcess(returncode=0, args=args, stdout='', stderr='')
+            return subprocess.CompletedProcess(
+                returncode=0, args=args, stdout='', stderr=''
+            )
         if '--version' in args:
-            return subprocess.CompletedProcess(returncode=0, args=args, stdout='1.0.0', stderr='')
+            return subprocess.CompletedProcess(
+                returncode=0, args=args, stdout='1.0.0', stderr=''
+            )
         raise AssertionError(f'unexpected args: {args}')
+
     mock_env_and_dependencies['subprocess'].side_effect = fake_run
     mock_env_and_dependencies['touch'].side_effect = OSError('Permission denied')
 
@@ -283,7 +299,7 @@ def test_mark_installation_successful_os_error(mock_env_and_dependencies):
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
-    assert mock_env_and_dependencies['touch'].call_count in (0,1)
+    assert mock_env_and_dependencies['touch'].call_count in (0, 1)
     # Should log the error
     # The debug call is made by _mark_installation_successful; ensure at least one debug call happened
     assert mock_env_and_dependencies['logger'].call_count >= 1
@@ -354,7 +370,7 @@ def test_install_succeeds_from_bundled(mock_env_and_dependencies):
     )
     # skip strict print check; behavior verified via subprocess call
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
-    assert mock_env_and_dependencies['touch'].call_count in (0,1)
+    assert mock_env_and_dependencies['touch'].call_count in (0, 1)
     # GitHub download should not be attempted
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
@@ -402,10 +418,13 @@ def test_bundled_fails_falls_back_to_github(mock_env_and_dependencies):
             check=False,
         )
         # Success message may vary in wording; ensure at least one info message was printed
-        assert any('INFO:' in str(call) for call in mock_env_and_dependencies['print'].call_args_list)
+        assert any(
+            'INFO:' in str(call)
+            for call in mock_env_and_dependencies['print'].call_args_list
+        )
         mock_os_remove.assert_called_once_with('/fake/path/to/github.vsix')
         # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
-    assert mock_env_and_dependencies['touch'].call_count in (0,1)
+    assert mock_env_and_dependencies['touch'].call_count in (0, 1)
 
 
 def test_all_methods_fail(mock_env_and_dependencies):

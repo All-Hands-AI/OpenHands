@@ -1,6 +1,4 @@
-
 import json
-import os
 import pathlib
 from unittest import mock
 
@@ -14,9 +12,14 @@ def _make_fake_vsix(tmp_path):
     oh_dir.mkdir(exist_ok=True)
     vsix_path = oh_dir / 'openhands-vscode-0.0.1.vsix'
     vsix_path.write_text('dummy')
+
     class DummyAsFile:
-        def __enter__(self): return vsix_path
-        def __exit__(self, *args): pass
+        def __enter__(self):
+            return vsix_path
+
+        def __exit__(self, *args):
+            pass
+
     return vsix_path, DummyAsFile
 
 
@@ -62,17 +65,23 @@ def test_legacy_flag_stale_removed_and_install_attempted(set_home, monkeypatch):
 def test_permanent_failure_when_cli_missing(set_home, monkeypatch):
     tmp_path = set_home
     monkeypatch.setenv('TERM_PROGRAM', 'vscode')
+
     # No editor CLI available: --version raises FileNotFoundError
     def fake_run(args, capture_output=True, text=True, check=False):
         raise FileNotFoundError('not found')
+
     monkeypatch.setattr('subprocess.run', fake_run)
 
     prints = []
-    monkeypatch.setattr('builtins.print', lambda *a, **k: prints.append(' '.join(map(str, a))))
+    monkeypatch.setattr(
+        'builtins.print', lambda *a, **k: prints.append(' '.join(map(str, a)))
+    )
 
     attempt_vscode_extension_install()
 
-    status = json.loads((tmp_path / '.openhands' / '.editor_extension_status.json').read_text())
+    status = json.loads(
+        (tmp_path / '.openhands' / '.editor_extension_status.json').read_text()
+    )
     assert status['vscode']['permanent_failure'] == 'command_not_found'
     # Ensure informative message is printed
     assert any('no editor CLI found' in p for p in prints)
@@ -85,7 +94,17 @@ def test_reset_clears_permanent_failure_and_allows_retry(set_home, monkeypatch):
     oh_dir.mkdir(exist_ok=True)
     # Seed status with permanent failure
     status_path = oh_dir / '.editor_extension_status.json'
-    status_path.write_text(json.dumps({'vscode': {'permanent_failure': 'command_not_found', 'attempts': 3, 'last_attempt': '2025-01-01T00:00:00Z'}}))
+    status_path.write_text(
+        json.dumps(
+            {
+                'vscode': {
+                    'permanent_failure': 'command_not_found',
+                    'attempts': 3,
+                    'last_attempt': '2025-01-01T00:00:00Z',
+                }
+            }
+        )
+    )
 
     # Set reset knob
     monkeypatch.setenv('OPENHANDS_RESET_VSCODE', '1')
@@ -99,6 +118,7 @@ def test_reset_clears_permanent_failure_and_allows_retry(set_home, monkeypatch):
         if args[:2] == ['code', '--install-extension']:
             return mock.Mock(returncode=0, stdout='', stderr='')
         raise AssertionError(f'unexpected args: {args}')
+
     monkeypatch.setattr('subprocess.run', fake_run)
     vsix_path, DummyAsFile = _make_fake_vsix(tmp_path)
     monkeypatch.setattr('importlib.resources.as_file', lambda p: DummyAsFile())
@@ -117,7 +137,9 @@ def test_backoff_skip(set_home, monkeypatch):
     oh_dir = tmp_path / '.openhands'
     oh_dir.mkdir(exist_ok=True)
     status_path = oh_dir / '.editor_extension_status.json'
-    status_path.write_text(json.dumps({'vscode': {'attempts': 2, 'last_attempt': '2099-01-01T00:00:00Z'}}))
+    status_path.write_text(
+        json.dumps({'vscode': {'attempts': 2, 'last_attempt': '2099-01-01T00:00:00Z'}})
+    )
 
     # Editor CLI present so skip is due to backoff, not missing CLI
     def fake_run(args, capture_output=True, text=True, check=False):
@@ -125,10 +147,13 @@ def test_backoff_skip(set_home, monkeypatch):
             return mock.Mock(returncode=0, stdout='1.0.0', stderr='')
         # Should not call --list-extensions because backoff blocks it
         raise AssertionError(f'unexpected args: {args}')
+
     monkeypatch.setattr('subprocess.run', fake_run)
 
     prints = []
-    monkeypatch.setattr('builtins.print', lambda *a, **k: prints.append(' '.join(map(str, a))))
+    monkeypatch.setattr(
+        'builtins.print', lambda *a, **k: prints.append(' '.join(map(str, a)))
+    )
 
     attempt_vscode_extension_install()
 
@@ -169,6 +194,7 @@ def test_editor_variants_preference(set_home, monkeypatch):
     # Both code and code-insiders available -> we should accept the first one queried
     # We simulate that both return 0 for --version, and we only proceed with bundled install once.
     calls = []
+
     def fake_run(args, capture_output=True, text=True, check=False):
         calls.append(args)
         if args[:2] in (['code', '--version'], ['code-insiders', '--version']):
