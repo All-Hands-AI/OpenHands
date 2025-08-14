@@ -61,6 +61,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
 ]
 
 # function calling supporting models

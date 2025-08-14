@@ -142,10 +142,10 @@ def get_config(
     sandbox_config.base_container_image = base_container_image
     sandbox_config.enable_auto_lint = True
     sandbox_config.use_host_network = False
-    sandbox_config.timeout = 1800
+    sandbox_config.timeout = 3600
 
     sandbox_config.platform = 'linux/amd64'
-    sandbox_config.remote_runtime_resource_factor = 1.0
+    sandbox_config.remote_runtime_resource_factor = 4.0
     sandbox_config.runtime_startup_env_vars.update(
         {
             "NO_CHANGE_TIMEOUT_SECONDS": '900',  # 15 minutes
@@ -292,23 +292,23 @@ def initialize_runtime(
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
-    # HACK: Some containers have uncommitted changes, please add all changes and commit them.
-    action = CmdRunAction(command='git add -A')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
+    # # HACK: Some containers have uncommitted changes, please add all changes and commit them.
+    # action = CmdRunAction(command='git add -A')
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # # assert_and_raise(obs.exit_code == 0, f'Failed to git add -A: {str(obs)}')
 
-    action = CmdRunAction(command='git commit -m "Fix environment"')
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    # assert_and_raise(
-    #     obs.exit_code == 0,
-    #     f'Failed to git commit -m "Fix environment": {str(obs)}',
-    # )
+    # action = CmdRunAction(command='git commit -m "Fix environment"')
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # # assert_and_raise(
+    # #     obs.exit_code == 0,
+    # #     f'Failed to git commit -m "Fix environment": {str(obs)}',
+    # # )
 
     action = CmdRunAction(command='git reset --hard')
     action.set_hard_timeout(600)
@@ -827,7 +827,7 @@ if __name__ == '__main__':
             timeout_seconds=8
             * 60
             * 60,  # 8 hour PER instance should be more than enough
-            max_retries=5,
+            max_retries=1,
         )
     else:
         critic = AgentFinishedCritic()
@@ -876,7 +876,7 @@ if __name__ == '__main__':
                 timeout_seconds=8
                 * 60
                 * 60,  # 8 hour PER instance should be more than enough
-                max_retries=5,
+                max_retries=1,
             )
 
             # When eval is done, we update eval_ids to the instances that failed the current attempt
