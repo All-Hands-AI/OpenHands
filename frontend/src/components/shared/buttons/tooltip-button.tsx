@@ -5,7 +5,7 @@ import { cn } from "#/utils/utils";
 
 export interface TooltipButtonProps {
   children: ReactNode;
-  tooltip: string;
+  tooltip: string | ReactNode;
   onClick?: () => void;
   href?: string;
   navLinkTo?: string;
