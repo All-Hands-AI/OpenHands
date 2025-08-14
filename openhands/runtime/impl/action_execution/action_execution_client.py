@@ -322,8 +322,8 @@ class ActionExecutionClient(Runtime):
                 )
                 assert response.is_closed
                 output = response.json()
-                if getattr(action, 'is_static', False):
-                    output.get('extras')['is_static'] = True
+                if getattr(action, 'hidden', False):
+                    output.get('extras')['hidden'] = True
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except httpx.TimeoutException:

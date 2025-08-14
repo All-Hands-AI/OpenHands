@@ -316,7 +316,7 @@ class BashSession:
         command: str,
         pane_content: str,
         ps1_matches: list[re.Match],
-        is_static: bool,
+        hidden: bool,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -363,7 +363,7 @@ class BashSession:
             content=command_output,
             command=command,
             metadata=metadata,
-            is_static=is_static,
+            hidden=hidden,
         )
 
     def _handle_nochange_timeout_command(
@@ -571,7 +571,7 @@ class BashSession:
                 command=command,
                 content=command_output,
                 metadata=metadata,
-                is_static=getattr(action, 'is_static', False),
+                hidden=getattr(action, 'hidden', False),
             )
 
         # Send actual command/inputs to the pane
@@ -622,7 +622,7 @@ class BashSession:
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
-                    is_static=getattr(action, 'is_static', False),
+                    hidden=getattr(action, 'hidden', False),
                 )
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.
