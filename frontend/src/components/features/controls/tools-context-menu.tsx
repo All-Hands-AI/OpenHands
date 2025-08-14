@@ -46,7 +46,7 @@ export function ToolsContextMenu({
       ref={ref}
       testId="tools-context-menu"
       className={cn(
-        "flex flex-col gap-2 left-[-16px] absolute mb-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px]",
+        "flex flex-col gap-2 left-[-16px] absolute mb-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1",
         "bottom-full overflow-visible",
       )}
     >
@@ -88,7 +88,7 @@ export function ToolsContextMenu({
         </div>
       </div>
 
-      <ContextMenuSeparator className="bg-[#959CB2]" />
+      <ContextMenuSeparator className="bg-[#5C5D62]" />
 
       {/* Show Available Microagents */}
       <ContextMenuListItem

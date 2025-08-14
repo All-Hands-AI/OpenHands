@@ -58,7 +58,7 @@ export function ConversationNameContextMenu({
       ref={ref}
       testId="conversation-name-context-menu"
       className={cn(
-        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px]",
+        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1",
         position === "top" && "bottom-full",
         position === "bottom" && "top-full",
       )}
@@ -76,7 +76,7 @@ export function ConversationNameContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasTools && <ContextMenuSeparator className="bg-[#959CB2]" />}
+      {hasTools && <ContextMenuSeparator className="bg-[#5C5D62]" />}
 
       {onShowMicroagents && (
         <ContextMenuListItem
@@ -105,7 +105,7 @@ export function ConversationNameContextMenu({
       )}
 
       {(hasExport || hasDownload) && (
-        <ContextMenuSeparator className="bg-[#959CB2]" />
+        <ContextMenuSeparator className="bg-[#5C5D62]" />
       )}
 
       {onExportConversation && (
@@ -135,7 +135,7 @@ export function ConversationNameContextMenu({
       )}
 
       {(hasInfo || hasControl) && (
-        <ContextMenuSeparator className="bg-[#959CB2]" />
+        <ContextMenuSeparator className="bg-[#5C5D62]" />
       )}
 
       {onDisplayCost && (
