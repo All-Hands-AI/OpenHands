@@ -38,7 +38,7 @@ describe("TaskTrackingObservationContent", () => {
           notes: "This is a test task",
         },
         {
-          id: "task-2", 
+          id: "task-2",
           title: "Fix bug B",
           status: "in_progress",
         },
@@ -54,14 +54,14 @@ describe("TaskTrackingObservationContent", () => {
 
   it("renders command section", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
-    
+
     expect(screen.getByText("Command")).toBeInTheDocument();
     expect(screen.getByText("plan")).toBeInTheDocument();
   });
 
   it("renders task list when command is 'plan' and tasks exist", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
-    
+
     expect(screen.getByText("Task List (3 items)")).toBeInTheDocument();
     expect(screen.getByText("Implement feature A")).toBeInTheDocument();
     expect(screen.getByText("Fix bug B")).toBeInTheDocument();
@@ -70,7 +70,7 @@ describe("TaskTrackingObservationContent", () => {
 
   it("displays correct status icons and badges", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
-    
+
     // Check for status text (the icons are emojis)
     expect(screen.getByText("todo")).toBeInTheDocument();
     expect(screen.getByText("in progress")).toBeInTheDocument();
@@ -79,18 +79,18 @@ describe("TaskTrackingObservationContent", () => {
 
   it("displays task IDs and notes", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
-    
+
     expect(screen.getByText("ID: task-1")).toBeInTheDocument();
     expect(screen.getByText("ID: task-2")).toBeInTheDocument();
     expect(screen.getByText("ID: task-3")).toBeInTheDocument();
-    
+
     expect(screen.getByText("Notes: This is a test task")).toBeInTheDocument();
     expect(screen.getByText("Notes: Completed successfully")).toBeInTheDocument();
   });
 
   it("renders result section when content exists", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
-    
+
     expect(screen.getByText("Result")).toBeInTheDocument();
     expect(screen.getByText("Task tracking operation completed successfully")).toBeInTheDocument();
   });
@@ -105,7 +105,7 @@ describe("TaskTrackingObservationContent", () => {
     };
 
     render(<TaskTrackingObservationContent event={eventWithoutPlan} />);
-    
+
     expect(screen.getByText("Command")).toBeInTheDocument();
     expect(screen.getByText("view")).toBeInTheDocument();
     expect(screen.queryByText("Task List")).not.toBeInTheDocument();
@@ -121,7 +121,7 @@ describe("TaskTrackingObservationContent", () => {
     };
 
     render(<TaskTrackingObservationContent event={eventWithEmptyTasks} />);
-    
+
     expect(screen.queryByText("Task List")).not.toBeInTheDocument();
   });
 
@@ -132,7 +132,7 @@ describe("TaskTrackingObservationContent", () => {
     };
 
     render(<TaskTrackingObservationContent event={eventWithoutContent} />);
-    
+
     expect(screen.queryByText("Result")).not.toBeInTheDocument();
   });
 });
