@@ -124,12 +124,15 @@ celerybeat.pid
 frontend/.env
 .venv
 env/
-venv/
 ENV/
 env.bak/
 .env.bak
 venv.bak/
 *venv/
+
+# Local deployment overrides (keep secrets out of git)
+docker-compose.override.yml
+.env.app
 
 # Spyder project settings
 .spyderproject
