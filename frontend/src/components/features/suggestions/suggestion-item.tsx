@@ -34,7 +34,7 @@ export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
   return (
     <button
       type="button"
-      className="list-none border border-[#525252] rounded-[15px] hover:bg-tertiary flex-1 flex items-center justify-center cursor-pointer gap-[10px] h-[55px]"
+      className="list-none border border-[#525252] rounded-[15px] hover:bg-tertiary flex-1 flex items-center justify-center cursor-pointer gap-[10px] h-[55px] px-4"
       onClick={() => onClick(suggestion.value)}
     >
       {itemIcon}
