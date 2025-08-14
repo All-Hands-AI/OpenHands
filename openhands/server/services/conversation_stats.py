@@ -72,6 +72,6 @@ class ConversationStats:
 
         if service_id in self.restored_metrics:
             llm.metrics = self.restored_metrics[service_id].copy()
-            del self.restored_metrics
+            del self.restored_metrics[service_id]
 
         self.service_to_metrics[service_id] = llm.metrics

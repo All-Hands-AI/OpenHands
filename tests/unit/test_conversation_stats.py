@@ -232,8 +232,11 @@ def test_register_llm_with_restored_metrics(conversation_stats):
         assert conversation_stats.service_to_metrics[service_id] is llm.metrics
         assert llm.metrics.accumulated_cost == 0.1  # Restored cost
 
-        # Verify restored_metrics was deleted
-        assert not hasattr(conversation_stats, 'restored_metrics')
+        # Verify the specific service was removed from restored_metrics
+        assert service_id not in conversation_stats.restored_metrics
+        assert hasattr(
+            conversation_stats, 'restored_metrics'
+        )  # The dict should still exist
 
 
 def test_llm_registry_notifications(connected_registry_and_stats):
@@ -355,6 +358,68 @@ def test_multiple_llm_services(connected_registry_and_stats):
     assert (
         combined.accumulated_token_usage.context_window == 8000
     )  # max of 8000 and 4000
+
+
+def test_register_llm_with_multiple_restored_services_bug(conversation_stats):
+    """Test that reproduces the bug where del self.restored_metrics deletes entire dict instead of specific service."""
+    # Create restored metrics for multiple services
+    service_id_1 = 'service-1'
+    service_id_2 = 'service-2'
+
+    restored_metrics_1 = Metrics(model_name='gpt-4')
+    restored_metrics_1.add_cost(0.1)
+
+    restored_metrics_2 = Metrics(model_name='gpt-3.5')
+    restored_metrics_2.add_cost(0.05)
+
+    # Set up restored metrics for both services
+    conversation_stats.restored_metrics = {
+        service_id_1: restored_metrics_1,
+        service_id_2: restored_metrics_2,
+    }
+
+    # Create LLM configs
+    llm_config_1 = LLMConfig(
+        model='gpt-4o',
+        api_key='test_key',
+        num_retries=2,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
+
+    llm_config_2 = LLMConfig(
+        model='gpt-3.5-turbo',
+        api_key='test_key',
+        num_retries=2,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
+
+    # Patch the LLM class to avoid actual API calls
+    with patch('openhands.llm.llm.litellm_completion'):
+        # Register first LLM
+        llm_1 = LLM(service_id=service_id_1, config=llm_config_1)
+        event_1 = RegistryEvent(llm=llm_1, service_id=service_id_1)
+        conversation_stats.register_llm(event_1)
+
+        # Verify first service was registered with restored metrics
+        assert service_id_1 in conversation_stats.service_to_metrics
+        assert llm_1.metrics.accumulated_cost == 0.1
+
+        # After registering first service, restored_metrics should still contain service_id_2
+        assert service_id_2 in conversation_stats.restored_metrics
+
+        # Register second LLM - this should also work with restored metrics
+        llm_2 = LLM(service_id=service_id_2, config=llm_config_2)
+        event_2 = RegistryEvent(llm=llm_2, service_id=service_id_2)
+        conversation_stats.register_llm(event_2)
+
+        # Verify second service was registered with restored metrics
+        assert service_id_2 in conversation_stats.service_to_metrics
+        assert llm_2.metrics.accumulated_cost == 0.05
+
+        # After both services are registered, restored_metrics should be empty
+        assert len(conversation_stats.restored_metrics) == 0
 
 
 def test_save_and_restore_workflow(mock_file_store):
