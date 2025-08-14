@@ -872,7 +872,9 @@ def test_conversation_start(page):
             raise AssertionError('Could not find message input field after reload')
 
     # Type the question
-    message_input.fill('How many lines are there in the README.md file in the root directory of this repository? Please use wc -l README.md to count the lines.')
+    message_input.fill(
+        'How many lines are there in the README.md file in the root directory of this repository? Please use wc -l README.md to count the lines.'
+    )
     print('Entered question about README.md line count')
 
     # Find and wait for the submit button using multiple selectors
@@ -990,21 +992,25 @@ def test_conversation_start(page):
                         for line in lines:
                             line = line.strip()
                             # Skip CSS, HTML, and other noise
-                            if (line and 
-                                not line.startswith('.') and 
-                                not line.startswith('#') and
-                                not line.startswith('stroke') and
-                                not line.startswith('fill') and
-                                not line.startswith('xterm') and
-                                not line.startswith('{') and
-                                not line.startswith('}') and
-                                not line.startswith('color:') and
-                                not line.startswith('background-color:') and
-                                len(line) < 200):  # Skip very long lines (likely CSS)
+                            if (
+                                line
+                                and not line.startswith('.')
+                                and not line.startswith('#')
+                                and not line.startswith('stroke')
+                                and not line.startswith('fill')
+                                and not line.startswith('xterm')
+                                and not line.startswith('{')
+                                and not line.startswith('}')
+                                and not line.startswith('color:')
+                                and not line.startswith('background-color:')
+                                and len(line) < 200
+                            ):  # Skip very long lines (likely CSS)
                                 meaningful_lines.append(line)
-                        
+
                         if meaningful_lines:
-                            meaningful_content = ' '.join(meaningful_lines[:3])  # Only first 3 meaningful lines
+                            meaningful_content = ' '.join(
+                                meaningful_lines[:3]
+                            )  # Only first 3 meaningful lines
                             print(
                                 f'Agent message {i}: {meaningful_content[:150]}...'
                                 if len(meaningful_content) > 150
@@ -1070,16 +1076,26 @@ def test_conversation_start(page):
                 # Filter content for readability
                 if content:
                     lines = content.split('\n')
-                    meaningful_lines = [line.strip() for line in lines if line.strip() and 
-                                      not line.strip().startswith('.') and 
-                                      not line.strip().startswith('#') and
-                                      not line.strip().startswith('stroke') and
-                                      not line.strip().startswith('fill') and
-                                      not line.strip().startswith('xterm') and
-                                      len(line.strip()) < 200]
+                    meaningful_lines = [
+                        line.strip()
+                        for line in lines
+                        if line.strip()
+                        and not line.strip().startswith('.')
+                        and not line.strip().startswith('#')
+                        and not line.strip().startswith('stroke')
+                        and not line.strip().startswith('fill')
+                        and not line.strip().startswith('xterm')
+                        and len(line.strip()) < 200
+                    ]
                     if meaningful_lines:
-                        filtered_content = ' '.join(meaningful_lines[:5])  # First 5 meaningful lines
-                        print(f'Agent Message {i}: {filtered_content[:300]}...' if len(filtered_content) > 300 else f'Agent Message {i}: {filtered_content}')
+                        filtered_content = ' '.join(
+                            meaningful_lines[:5]
+                        )  # First 5 meaningful lines
+                        print(
+                            f'Agent Message {i}: {filtered_content[:300]}...'
+                            if len(filtered_content) > 300
+                            else f'Agent Message {i}: {filtered_content}'
+                        )
                     else:
                         print(f'Agent Message {i}: [Filtered out CSS/HTML content]')
                 else:
