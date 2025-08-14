@@ -95,8 +95,13 @@ jobs:
 
           # Docker runtime will handle workspace directory creation
 
-          # Start the application using make run with custom parameters
+          # Start the application using make run with custom parameters and reduced logging
           echo "Starting OpenHands using make run..."
+          # Set environment variables to reduce logging verbosity
+          export PYTHONUNBUFFERED=1
+          export LOG_LEVEL=WARNING
+          export UVICORN_LOG_LEVEL=warning
+          export OPENHANDS_LOG_LEVEL=WARNING
           FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
           # Store the PID of the make run process

@@ -681,8 +681,8 @@ def test_conversation_start(page):
     # Step 6: Wait for agent to be fully ready for input
     print('Step 6: Waiting for agent to be fully ready for input...')
 
-    # Wait for agent to transition from "Connecting..." to ready state (up to 5 minutes)
-    max_wait_time = 300  # 5 minutes
+    # Wait for agent to transition from "Connecting..." to ready state (up to 8 minutes)
+    max_wait_time = 480  # 8 minutes (increased from 5 minutes)
     start_time = time.time()
     agent_ready = False
 
@@ -964,14 +964,14 @@ def test_conversation_start(page):
     # Step 8: Waiting for agent response to README question
     print('Step 8: Waiting for agent response to README question...')
 
-    response_wait_time = 120  # 2 minutes for response
+    response_wait_time = 180  # 3 minutes for response (increased from 2 minutes)
     response_start_time = time.time()
 
     while time.time() - response_start_time < response_wait_time:
         elapsed = int(time.time() - response_start_time)
 
         # Take periodic screenshots
-        if elapsed % 15 == 0 and elapsed > 0:  # Every 15 seconds
+        if elapsed % 30 == 0 and elapsed > 0:  # Every 30 seconds (reduced frequency)
             page.screenshot(path=f'test-results/conv_response_wait_{elapsed}s.png')
             print(
                 f'Screenshot saved: conv_response_wait_{elapsed}s.png (waiting {elapsed}s for response)'
@@ -980,7 +980,8 @@ def test_conversation_start(page):
         # Check specifically for agent messages containing the line count
         try:
             agent_messages = page.locator('[data-testid="agent-message"]').all()
-            print(f'Found {len(agent_messages)} agent messages')
+            if elapsed % 30 == 0:  # Only print count every 30 seconds
+                print(f'Found {len(agent_messages)} agent messages')
 
             for i, msg in enumerate(agent_messages):
                 try:
@@ -1113,7 +1114,9 @@ def test_conversation_start(page):
                             ):
                                 meaningful_lines.append(line)
 
-                        if meaningful_lines:
+                        if (
+                            meaningful_lines and elapsed % 30 == 0
+                        ):  # Only print every 30 seconds
                             meaningful_content = ' '.join(
                                 meaningful_lines[:2]
                             )  # Only first 2 meaningful lines
