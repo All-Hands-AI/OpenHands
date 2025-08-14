@@ -7,6 +7,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
+import { RootState } from "#/store";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -28,7 +29,6 @@ import { ConversationName } from "#/components/features/conversation/conversatio
 import { Controls } from "#/components/features/controls/controls";
 import { ConversationTabProvider } from "#/components/features/conversation/conversation-tabs/use-conversation-tabs";
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
-import { RootState } from "#/store";
 
 function AppContent() {
   useConversationConfig();
@@ -37,15 +37,15 @@ function AppContent() {
   const { data: conversation, isFetched, refetch } = useActiveConversation();
   const { data: isAuthed } = useIsAuthed();
   const { providers } = useUserProviders();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
   const isRightPanelShown = useSelector(
     (state: RootState) => state.conversation.isRightPanelShown,
   );
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
-
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   // Set the document title to the conversation title when available
   useDocumentTitleFromState();

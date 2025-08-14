@@ -14,6 +14,8 @@ export const conversationSlice = createSlice({
   name: "conversation",
   initialState: {
     isRightPanelShown: true,
+    shouldStopConversation: false,
+    shouldStartConversation: false,
     images: [],
     files: [],
     loadingFiles: [],

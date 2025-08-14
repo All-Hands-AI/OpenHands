@@ -1,12 +1,19 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
+import { Provider } from "#/types/settings";
 
-export const useStopConversation = () => {
+export const useStartConversation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (variables: { conversationId: string }) =>
-      OpenHands.stopConversation(variables.conversationId),
+    mutationFn: (variables: {
+      conversationId: string;
+      providers?: Provider[];
+    }) =>
+      OpenHands.startConversation(
+        variables.conversationId,
+        variables.providers,
+      ),
     onMutate: async () => {
       await queryClient.cancelQueries({ queryKey: ["user", "conversations"] });
       const previousConversations = queryClient.getQueryData([

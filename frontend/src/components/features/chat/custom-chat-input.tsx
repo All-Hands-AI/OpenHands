@@ -40,6 +40,10 @@ export function CustomChatInput({
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
+  // Disable input when conversation is stopped
+  const isConversationStopped = conversationStatus === "STOPPED";
+  const isDisabled = disabled || isConversationStopped;
+
   const { t } = useTranslation();
 
   const chatInputRef = useRef<HTMLDivElement>(null);
@@ -82,7 +86,7 @@ export function CustomChatInput({
 
   // File icon click handler
   const handleFileIconClick = () => {
-    if (!disabled && fileInputRef.current) {
+    if (!isDisabled && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -95,13 +99,13 @@ export function CustomChatInput({
 
   // Drag and drop event handlers
   const handleDragOver = (e: React.DragEvent) => {
-    if (disabled) return;
+    if (isDisabled) return;
     e.preventDefault();
     setIsDragOver(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
-    if (disabled) return;
+    if (isDisabled) return;
     e.preventDefault();
     // Only remove drag-over class if we're leaving the container entirely
     if (!chatContainerRef.current?.contains(e.relatedTarget as Node)) {
@@ -110,7 +114,7 @@ export function CustomChatInput({
   };
 
   const handleDrop = (e: React.DragEvent) => {
-    if (disabled) return;
+    if (isDisabled) return;
     e.preventDefault();
     setIsDragOver(false);
 
@@ -319,9 +323,9 @@ export function CustomChatInput({
                   ref={chatInputRef}
                   className={cn(
                     "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
-                    disabled && "cursor-not-allowed",
+                    isDisabled && "cursor-not-allowed",
                   )}
-                  contentEditable={!disabled}
+                  contentEditable={!isDisabled}
                   data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
                   data-testid="chat-input"
                   onInput={handleInput}
@@ -339,7 +343,7 @@ export function CustomChatInput({
             <ChatSendButton
               buttonClassName={cn(buttonClassName, "translate-y-[3px]")}
               handleSubmit={handleSubmit}
-              disabled={disabled}
+              disabled={isDisabled}
             />
           )}
         </div>
