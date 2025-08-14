@@ -288,19 +288,30 @@ async def test_github_search_repositories_with_organizations():
             query='openhands', per_page=10, sort='stars', order='desc', public=False
         )
 
-        # Verify the search query includes user and organizations
-        mock_request.assert_called_once()
-        call_args = mock_request.call_args
-        params = call_args[0][1]  # Second argument is params
+        # Verify that separate requests were made for user and each organization
+        assert mock_request.call_count == 3
 
-        expected_query = (
-            'in:name openhands (user:testuser OR org:All-Hands-AI OR org:example-org)'
-        )
-        assert params['q'] == expected_query
+        # Check the calls made
+        calls = mock_request.call_args_list
 
-        # Verify repository is returned
-        assert len(repositories) == 1
-        assert repositories[0].full_name == 'All-Hands-AI/OpenHands'
+        # First call should be for user repositories
+        user_call = calls[0]
+        user_params = user_call[0][1]  # Second argument is params
+        assert user_params['q'] == 'openhands user:testuser'
+
+        # Second call should be for first organization
+        org1_call = calls[1]
+        org1_params = org1_call[0][1]
+        assert org1_params['q'] == 'openhands org:All-Hands-AI'
+
+        # Third call should be for second organization
+        org2_call = calls[2]
+        org2_params = org2_call[0][1]
+        assert org2_params['q'] == 'openhands org:example-org'
+
+        # Verify repositories are returned (3 copies since each call returns the same mock response)
+        assert len(repositories) == 3
+        assert all(repo.full_name == 'All-Hands-AI/OpenHands' for repo in repositories)
 
 
 @pytest.mark.asyncio
