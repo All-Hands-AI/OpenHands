@@ -18,6 +18,7 @@ from litellm import ModelInfo, PromptTokensDetails
 from litellm import completion as litellm_completion
 from litellm import completion_cost as litellm_completion_cost
 from litellm.exceptions import (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
 )
@@ -40,6 +41,7 @@ __all__ = ['LLM']
 
 # tuple of exceptions to retry on
 LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
+    APIConnectionError,
     RateLimitError,
     ServiceUnavailableError,
     litellm.Timeout,
@@ -61,6 +63,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
 ]
 
 # function calling supporting models
@@ -75,6 +78,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
@@ -89,6 +93,8 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'kimi-k2-0711-preview',
     'kimi-k2-instruct',
     'Qwen3-Coder-480B-A35B-Instruct',
+    'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
+    'gpt-5-2025-08-07',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -102,6 +108,7 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
+    'gpt-5-2025-08-07',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -194,7 +201,24 @@ class LLM(RetryMixin, DebugMixin):
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
         ):
-            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            # For Gemini models, only map 'low' to optimized thinking budget
+            # Let other reasoning_effort values pass through to API as-is
+            if 'gemini-2.5-pro' in self.config.model:
+                logger.debug(
+                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
+                )
+                if self.config.reasoning_effort in {None, 'low', 'none'}:
+                    kwargs['thinking'] = {'budget_tokens': 128}
+                    kwargs['allowed_openai_params'] = ['thinking']
+                    kwargs.pop('reasoning_effort', None)
+                else:
+                    kwargs['reasoning_effort'] = self.config.reasoning_effort
+                logger.debug(
+                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
+                )
+
+            else:
+                kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
                 'temperature'
             )  # temperature is not supported for reasoning models
@@ -281,8 +305,11 @@ class LLM(RetryMixin, DebugMixin):
                 )
                 kwargs['messages'] = messages
 
-                # add stop words if the model supports it
-                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                # add stop words if the model supports it and stop words are not disabled
+                if (
+                    self.config.model not in MODELS_WITHOUT_STOP_WORDS
+                    and not self.config.disable_stop_word
+                ):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
@@ -443,12 +470,16 @@ class LLM(RetryMixin, DebugMixin):
                 },
             )
 
-            resp_json = response.json()
-            if 'data' not in resp_json:
-                logger.error(
-                    f'Error getting model info from LiteLLM proxy: {resp_json}'
-                )
-            all_model_info = resp_json.get('data', [])
+            try:
+                resp_json = response.json()
+                if 'data' not in resp_json:
+                    logger.info(
+                        f'No data field in model info response from LiteLLM proxy: {resp_json}'
+                    )
+                all_model_info = resp_json.get('data', [])
+            except Exception as e:
+                logger.info(f'Error parsing JSON response from LiteLLM proxy: {e}')
+                all_model_info = []
             current_model_info = next(
                 (
                     info
@@ -672,6 +703,7 @@ class LLM(RetryMixin, DebugMixin):
 
         Args:
             messages (list): A list of messages, either as a list of dicts or as a list of Message objects.
+
         Returns:
             int: The number of tokens.
         """

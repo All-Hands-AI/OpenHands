@@ -51,10 +51,17 @@ export interface GetConfigResponse {
   POSTHOG_CLIENT_KEY: string;
   STRIPE_PUBLISHABLE_KEY?: string;
   PROVIDERS_CONFIGURED?: Provider[];
+  AUTH_URL?: string;
   FEATURE_FLAGS: {
     ENABLE_BILLING: boolean;
     HIDE_LLM_SETTINGS: boolean;
     HIDE_MICROAGENT_MANAGEMENT?: boolean;
+    ENABLE_JIRA: boolean;
+    ENABLE_JIRA_DC: boolean;
+    ENABLE_LINEAR: boolean;
+  };
+  MAINTENANCE?: {
+    startTime: string;
   };
 }
 
@@ -143,4 +150,17 @@ export interface CreateMicroagent {
   repo: string;
   git_provider?: Provider;
   title?: string;
+}
+
+export interface MicroagentContentResponse {
+  content: string;
+  path: string;
+  git_provider: Provider;
+  triggers: string[];
+}
+
+export type GetFilesResponse = string[];
+
+export interface GetFileResponse {
+  code: string;
 }

@@ -1,5 +1,4 @@
-"""
-Unit tests for the NestedEventStore class.
+"""Unit tests for the NestedEventStore class.
 
 These tests focus on the search_events method, which retrieves events from a remote API
 and applies filtering based on various criteria.

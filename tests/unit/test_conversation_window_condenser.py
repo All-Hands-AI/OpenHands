@@ -1,5 +1,4 @@
-"""
-Unit tests for ConversationWindowCondenser.
+"""Unit tests for ConversationWindowCondenser.
 
 These tests mirror the tests for `_apply_conversation_window` in the AgentController,
 but adapted to test the condenser implementation. The ConversationWindowCondenser

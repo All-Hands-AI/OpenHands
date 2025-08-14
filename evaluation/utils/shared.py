@@ -263,19 +263,20 @@ def prepare_dataset(
             f'Randomly sampling {eval_n_limit} unique instances with random seed 42.'
         )
 
-    def make_serializable(instance: pd.Series) -> dict:
+    def make_serializable(instance_dict: dict) -> dict:
         import numpy as np
 
-        instance_dict = instance.to_dict()
         for k, v in instance_dict.items():
             if isinstance(v, np.ndarray):
                 instance_dict[k] = v.tolist()
             elif isinstance(v, pd.Timestamp):
                 instance_dict[k] = str(v)
+            elif isinstance(v, dict):
+                instance_dict[k] = make_serializable(v)
         return instance_dict
 
     new_dataset = [
-        make_serializable(instance)
+        make_serializable(instance.to_dict())
         for _, instance in dataset.iterrows()
         if str(instance[id_column]) not in finished_ids
     ]
@@ -621,8 +622,7 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
-    """
-    The AgentController class overrides last error for certain exceptions
+    """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here
     This is because we do a comparisino against the stringified error
     """

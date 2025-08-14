@@ -46,8 +46,7 @@ class TrafficControlState(str, Enum):
 
 @dataclass
 class State:
-    """
-    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
+    """Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)
@@ -79,6 +78,7 @@ class State:
     """
 
     session_id: str = ''
+    user_id: str | None = None
     iteration_flag: IterationControlFlag = field(
         default_factory=lambda: IterationControlFlag(
             limit_increase_amount=100, current_value=0, max_value=100
@@ -142,10 +142,7 @@ class State:
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
     ) -> 'State':
-        """
-        Restores the state from the previously saved session.
-        """
-
+        """Restores the state from the previously saved session."""
         state: State
         try:
             encoded = file_store.read(
@@ -265,16 +262,19 @@ class State:
                 return event
         return None
 
-    def to_llm_metadata(self, agent_name: str) -> dict:
-        return {
+    def to_llm_metadata(self, model_name: str, agent_name: str) -> dict:
+        metadata = {
             'session_id': self.session_id,
             'trace_version': openhands.__version__,
+            'trace_user_id': self.user_id,
             'tags': [
+                f'model:{model_name}',
                 f'agent:{agent_name}',
                 f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
                 f'openhands_version:{openhands.__version__}',
             ],
         }
+        return metadata
 
     def get_local_step(self):
         if not self.parent_iteration:

@@ -89,15 +89,12 @@ function SecretsSettingsScreen() {
           to="/settings/integrations"
           data-testid="connect-git-button"
           type="button"
+          className="self-start"
         >
           <BrandButton type="button" variant="secondary">
             {t(I18nKey.SECRETS$CONNECT_GIT_PROVIDER)}
           </BrandButton>
         </Link>
-      )}
-
-      {secrets?.length === 0 && view === "list" && (
-        <p data-testid="no-secrets-message">{t("SECRETS$NO_SECRETS_FOUND")}</p>
       )}
 
       {!shouldRenderConnectToGitButton && view === "list" && (
