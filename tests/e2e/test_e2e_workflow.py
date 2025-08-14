@@ -872,7 +872,7 @@ def test_conversation_start(page):
             raise AssertionError('Could not find message input field after reload')
 
     # Type the question
-    message_input.fill('How many lines are there in the main README.md file?')
+    message_input.fill('How many lines are there in the README.md file in the root directory of this repository? Please use wc -l README.md to count the lines.')
     print('Entered question about README.md line count')
 
     # Find and wait for the submit button using multiple selectors
@@ -984,11 +984,32 @@ def test_conversation_start(page):
                 try:
                     content = msg.text_content()
                     if content and len(content.strip()) > 10:
-                        print(
-                            f'Agent message {i}: {content[:150]}...'
-                            if len(content) > 150
-                            else f'Agent message {i}: {content}'
-                        )
+                        # Filter out CSS/HTML noise and only show meaningful content
+                        lines = content.split('\n')
+                        meaningful_lines = []
+                        for line in lines:
+                            line = line.strip()
+                            # Skip CSS, HTML, and other noise
+                            if (line and 
+                                not line.startswith('.') and 
+                                not line.startswith('#') and
+                                not line.startswith('stroke') and
+                                not line.startswith('fill') and
+                                not line.startswith('xterm') and
+                                not line.startswith('{') and
+                                not line.startswith('}') and
+                                not line.startswith('color:') and
+                                not line.startswith('background-color:') and
+                                len(line) < 200):  # Skip very long lines (likely CSS)
+                                meaningful_lines.append(line)
+                        
+                        if meaningful_lines:
+                            meaningful_content = ' '.join(meaningful_lines[:3])  # Only first 3 meaningful lines
+                            print(
+                                f'Agent message {i}: {meaningful_content[:150]}...'
+                                if len(meaningful_content) > 150
+                                else f'Agent message {i}: {meaningful_content}'
+                            )
 
                         # Check if this agent message contains the README line count
                         content_lower = content.lower()
@@ -1039,14 +1060,30 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_10_final_state.png')
     print('Screenshot saved: conv_10_final_state.png')
 
-    # Debug: Print all agent messages found
+    # Debug: Print all agent messages found (filtered for readability)
     try:
         agent_messages = page.locator('[data-testid="agent-message"]').all()
         print(f'\n=== ALL AGENT MESSAGES FOUND ({len(agent_messages)}) ===')
         for i, msg in enumerate(agent_messages):
             try:
                 content = msg.text_content()
-                print(f'Agent Message {i}: {content}')
+                # Filter content for readability
+                if content:
+                    lines = content.split('\n')
+                    meaningful_lines = [line.strip() for line in lines if line.strip() and 
+                                      not line.strip().startswith('.') and 
+                                      not line.strip().startswith('#') and
+                                      not line.strip().startswith('stroke') and
+                                      not line.strip().startswith('fill') and
+                                      not line.strip().startswith('xterm') and
+                                      len(line.strip()) < 200]
+                    if meaningful_lines:
+                        filtered_content = ' '.join(meaningful_lines[:5])  # First 5 meaningful lines
+                        print(f'Agent Message {i}: {filtered_content[:300]}...' if len(filtered_content) > 300 else f'Agent Message {i}: {filtered_content}')
+                    else:
+                        print(f'Agent Message {i}: [Filtered out CSS/HTML content]')
+                else:
+                    print(f'Agent Message {i}: [Empty content]')
             except Exception as e:
                 print(f'Agent Message {i}: Error reading content - {e}')
         print('=== END AGENT MESSAGES ===\n')
