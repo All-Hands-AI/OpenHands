@@ -891,13 +891,19 @@ fi
                         )
 
                     return TaskTrackingObservation(
-                        content=f'Task list has been updated with {len(action.task_list)} items.'
+                        content=f'Task list has been updated with {len(action.task_list)} items.',
+                        command=action.command,
+                        task_list=action.task_list,
                     )
                 elif action.command == 'view':
                     # If `command` is `view`, read the TASKS.md file and return its content
                     read_obs = self.read(FileReadAction(path='TASKS.md'))
                     if isinstance(read_obs, FileReadObservation):
-                        return TaskTrackingObservation(content=read_obs.content)
+                        return TaskTrackingObservation(
+                            content=read_obs.content,
+                            command=action.command,
+                            task_list=[],  # Empty for view command
+                        )
                     else:
                         return ErrorObservation(
                             f'Failed to read the task list. Error: {read_obs.content}'

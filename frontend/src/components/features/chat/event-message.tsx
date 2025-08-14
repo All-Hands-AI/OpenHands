@@ -10,12 +10,14 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
+  isTaskTrackingObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
 import { MCPObservationContent } from "./mcp-observation-content";
+import { TaskTrackingObservationContent } from "./task-tracking-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
@@ -202,6 +204,19 @@ export function EventMessage({
         <GenericEventMessage
           title={getEventContent(event).title}
           details={<MCPObservationContent event={event} />}
+          success={getObservationResult(event)}
+        />
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      </div>
+    );
+  }
+
+  if (isTaskTrackingObservation(event)) {
+    return (
+      <div>
+        <GenericEventMessage
+          title={getEventContent(event).title}
+          details={<TaskTrackingObservationContent event={event} />}
           success={getObservationResult(event)}
         />
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
