@@ -1,5 +1,4 @@
-"""
-End-to-end tests for the OpenHands application.
+"""End-to-end tests for the OpenHands application.
 
 This file contains tests for:
 1. GitHub token configuration
@@ -38,10 +37,97 @@ def get_readme_line_count():
         return 0
 
 
+def configure_llm_settings(page):
+    """Configure LLM settings in the AI Provider Configuration modal."""
+    # Configure LLM provider and model
+    llm_model_env = os.getenv('LLM_MODEL', 'gpt-4o')
+    print(f'Configuring LLM model: {llm_model_env}')
+    
+    # Extract provider and model from LLM_MODEL (format: provider/model)
+    if '/' in llm_model_env:
+        provider, model = llm_model_env.split('/', 1)
+    else:
+        provider = 'openai'  # default provider
+        model = llm_model_env
+    
+    # Fill in the LLM provider
+    llm_provider_input = page.locator('[data-testid="llm-provider-input"]')
+    if llm_provider_input.is_visible(timeout=3000):
+        llm_provider_input.click()
+        page.wait_for_timeout(1000)
+        # Clear any existing text and type the provider name
+        page.keyboard.press('Control+a')
+        page.keyboard.type(provider)
+        page.wait_for_timeout(1000)
+        # Try to select the provider option
+        try:
+            provider_option = page.locator(f'[data-testid="provider-item-{provider}"]')
+            if provider_option.is_visible(timeout=2000):
+                provider_option.click()
+                print(f'Selected LLM provider: {provider}')
+            else:
+                # Fallback: press Enter to select
+                page.keyboard.press('Enter')
+                print(f'Selected LLM provider via Enter: {provider}')
+        except Exception:
+            page.keyboard.press('Enter')
+            print(f'Selected LLM provider via Enter fallback: {provider}')
+        
+        page.wait_for_timeout(1000)
+
+    # Fill in the LLM model
+    llm_model_input = page.locator('[data-testid="llm-model-input"]')
+    if llm_model_input.is_visible(timeout=3000):
+        llm_model_input.click()
+        page.wait_for_timeout(1000)
+        # Clear any existing text and type the model name
+        page.keyboard.press('Control+a')
+        page.keyboard.type(model)
+        page.wait_for_timeout(1000)
+        # Try to select the model option
+        try:
+            model_option = page.locator(f'[data-testid="model-item-{model}"]')
+            if model_option.is_visible(timeout=2000):
+                model_option.click()
+                print(f'Selected LLM model: {model}')
+            else:
+                # Fallback: press Enter to select
+                page.keyboard.press('Enter')
+                print(f'Selected LLM model via Enter: {model}')
+        except Exception:
+            page.keyboard.press('Enter')
+            print(f'Selected LLM model via Enter fallback: {model}')
+        
+        page.wait_for_timeout(1000)
+
+    # Fill in the LLM API key
+    llm_api_key_input = page.locator('[data-testid="llm-api-key-input"]')
+    if llm_api_key_input.is_visible(timeout=3000):
+        llm_api_key = os.getenv('LLM_API_KEY', 'test-key')
+        llm_api_key_input.fill(llm_api_key)
+        print(f'Filled LLM API key (length: {len(llm_api_key)})')
+
+    # Handle advanced options if base URL is provided
+    llm_base_url = os.getenv('LLM_BASE_URL', '')
+    if llm_base_url:
+        # Check if advanced options toggle exists and enable it
+        advanced_toggle = page.locator('[name="use-advanced-options"]')
+        if advanced_toggle.is_visible(timeout=3000):
+            if not advanced_toggle.is_checked():
+                advanced_toggle.click()
+                page.wait_for_timeout(1000)
+                print('Enabled advanced options')
+        
+        # Fill in the base URL
+        base_url_input = page.locator('[name="base-url"]')
+        if base_url_input.is_visible(timeout=3000):
+            base_url_input.fill(llm_base_url)
+            print(f'Filled LLM base URL: {llm_base_url}')
+
+
 @pytest.fixture(scope='module')
 def openhands_app():
-    """
-    Fixture that assumes OpenHands is already running on localhost.
+    """Fixture that assumes OpenHands is already running on localhost.
 
     This fixture checks if the OpenHands application is running on the expected port
     and raises an exception if it's not available.
@@ -117,8 +203,8 @@ def test_simple_browser_navigation(page: Page):
 
 
 def test_github_token_configuration(page):
-    """
-    Test the GitHub token configuration flow:
+    """Test the GitHub token configuration flow.
+
     1. Navigate to OpenHands
     2. Configure LLM API key if needed
     3. Check if GitHub token is already configured
@@ -137,26 +223,20 @@ def test_github_token_configuration(page):
     page.screenshot(path='test-results/token_01_initial_load.png')
     print('Screenshot saved: token_01_initial_load.png')
 
-    # Step 1.5: Handle any initial modals that might appear (LLM API key configuration)
+    # Step 1.5: Handle any initial modals that might appear (LLM configuration)
     try:
         # Check for AI Provider Configuration modal
         config_modal = page.locator('text=AI Provider Configuration')
         if config_modal.is_visible(timeout=5000):
             print('AI Provider Configuration modal detected')
-
-            # Fill in the LLM API key if available
-            llm_api_key_input = page.locator('[data-testid="llm-api-key-input"]')
-            if llm_api_key_input.is_visible(timeout=3000):
-                llm_api_key = os.getenv('LLM_API_KEY', 'test-key')
-                llm_api_key_input.fill(llm_api_key)
-                print(f'Filled LLM API key (length: {len(llm_api_key)})')
+            configure_llm_settings(page)
 
             # Click the Save button
             save_button = page.locator('button:has-text("Save")')
             if save_button.is_visible(timeout=3000):
                 save_button.click()
                 page.wait_for_timeout(2000)
-                print('Saved LLM API key configuration')
+                print('Saved LLM configuration')
 
         # Check for Privacy Preferences modal
         privacy_modal = page.locator('text=Your Privacy Preferences')
@@ -396,8 +476,8 @@ def test_github_token_configuration(page):
 
 
 def test_conversation_start(page):
-    """
-    Test starting a conversation with the OpenHands agent:
+    """Test starting a conversation with the OpenHands agent.
+
     1. Navigate to OpenHands (assumes GitHub token is already configured)
     2. Select the OpenHands repository
     3. Click Launch
@@ -420,7 +500,34 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_01_initial_load.png')
     print('Screenshot saved: conv_01_initial_load.png')
 
-    # Note: Initial modals are handled in test_github_token_configuration
+    # Step 1.5: Handle any initial modals that might appear (LLM configuration)
+    try:
+        # Check for AI Provider Configuration modal
+        config_modal = page.locator('text=AI Provider Configuration')
+        if config_modal.is_visible(timeout=5000):
+            print('AI Provider Configuration modal detected')
+            configure_llm_settings(page)
+
+            # Click the Save button
+            save_button = page.locator('button:has-text("Save")')
+            if save_button.is_visible(timeout=3000):
+                save_button.click()
+                page.wait_for_timeout(2000)
+                print('Saved LLM configuration')
+
+        # Check for Privacy Preferences modal
+        privacy_modal = page.locator('text=Your Privacy Preferences')
+        if privacy_modal.is_visible(timeout=5000):
+            print('Privacy Preferences modal detected')
+            confirm_button = page.locator('button:has-text("Confirm Preferences")')
+            if confirm_button.is_visible(timeout=3000):
+                confirm_button.click()
+                page.wait_for_timeout(2000)
+                print('Confirmed privacy preferences')
+    except Exception as e:
+        print(f'Error handling initial modals: {e}')
+        page.screenshot(path='test-results/conv_01_5_modal_error.png')
+        print('Screenshot saved: conv_01_5_modal_error.png')
 
     # Step 2: Select the OpenHands repository
     print('Step 2: Selecting openhands-agent/OpenHands repository...')
