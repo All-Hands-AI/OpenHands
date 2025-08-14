@@ -288,7 +288,18 @@ def _remaining_seconds(since_iso: str, wait_seconds: int) -> int:
 
 
 def _calc_backoff_seconds(attempts: int) -> int:
-    # Start with 24 hours and exponentially back off, capped at 72 hours
+    """
+    Calculate the number of seconds to wait before the next retry attempt using exponential backoff.
+
+    The backoff starts at 24 hours (86,400 seconds) and doubles with each additional attempt,
+    but is capped at a maximum of 72 hours (259,200 seconds).
+
+    Args:
+        attempts: The number of failed attempts (int). The first attempt uses the base delay.
+
+    Returns:
+        int: The number of seconds to wait before the next attempt.
+    """
     base = 24 * 3600
     return min(72 * 3600, base * (2 ** max(0, attempts - 1)))
 
