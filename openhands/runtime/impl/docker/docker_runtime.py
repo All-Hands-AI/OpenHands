@@ -1,7 +1,8 @@
 import os
+import platform
+import typing
 from functools import lru_cache
 from typing import Callable
-import typing
 from uuid import UUID
 
 import docker
@@ -17,18 +18,21 @@ from openhands.core.exceptions import (
 from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.runtime.impl.docker.containers import stop_all_containers
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import (
     DEFAULT_MAIN_MODULE,
     get_action_execution_server_startup_command,
 )
 from openhands.runtime.utils.log_streamer import LogStreamer
+from openhands.runtime.utils.port_lock import PortLock, find_available_port_with_lock
 from openhands.runtime.utils.runtime_build import build_runtime_image
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.shutdown_listener import add_shutdown_listener
@@ -40,6 +44,12 @@ EXECUTION_SERVER_PORT_RANGE = (30000, 39999)
 VSCODE_PORT_RANGE = (40000, 49999)
 APP_PORT_RANGE_1 = (50000, 54999)
 APP_PORT_RANGE_2 = (55000, 59999)
+
+if os.name == 'nt' or platform.release().endswith('microsoft-standard-WSL2'):
+    EXECUTION_SERVER_PORT_RANGE = (30000, 34999)
+    VSCODE_PORT_RANGE = (35000, 39999)
+    APP_PORT_RANGE_1 = (40000, 44999)
+    APP_PORT_RANGE_2 = (45000, 49151)
 
 
 def _is_retryablewait_until_alive_error(exception: Exception) -> bool:
@@ -85,6 +95,8 @@ class DockerRuntime(ActionExecutionClient):
         status_callback: Callable | None = None,
         attach_to_existing: bool = False,
         headless_mode: bool = True,
+        user_id: str | None = None,
+        git_provider_tokens: PROVIDER_TOKEN_TYPE | None = None,
         main_module: str = DEFAULT_MAIN_MODULE,
     ):
         if not DockerRuntime._shutdown_listener_id:
@@ -99,6 +111,11 @@ class DockerRuntime(ActionExecutionClient):
         self._container_port = -1
         self._vscode_port = -1
         self._app_ports: list[int] = []
+
+        # Port locks to prevent race conditions
+        self._host_port_lock: PortLock | None = None
+        self._vscode_port_lock: PortLock | None = None
+        self._app_port_locks: list[PortLock] = []
 
         if os.environ.get('DOCKER_HOST_ADDR'):
             logger.info(
@@ -131,6 +148,8 @@ class DockerRuntime(ActionExecutionClient):
             status_callback,
             attach_to_existing,
             headless_mode,
+            user_id,
+            git_provider_tokens,
         )
 
         # Log runtime_extra_deps after base class initialization so self.sid is available
@@ -145,7 +164,7 @@ class DockerRuntime(ActionExecutionClient):
         return self.api_url
 
     async def connect(self) -> None:
-        self.send_status_message('STATUS$STARTING_RUNTIME')
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
         try:
             await call_sync_from_async(self._attach_to_container)
         except docker.errors.NotFound as e:
@@ -172,7 +191,7 @@ class DockerRuntime(ActionExecutionClient):
 
         if not self.attach_to_existing:
             self.log('info', f'Waiting for client to become ready at {self.api_url}...')
-            self.send_status_message('STATUS$WAITING_FOR_CLIENT')
+            self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
 
         await call_sync_from_async(self.wait_until_alive)
 
@@ -187,7 +206,7 @@ class DockerRuntime(ActionExecutionClient):
             f'Container initialized with plugins: {[plugin.name for plugin in self.plugins]}. VSCode URL: {self.vscode_url}',
         )
         if not self.attach_to_existing:
-            self.send_status_message(' ')
+            self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
 
     def maybe_build_runtime_container_image(self):
@@ -196,7 +215,7 @@ class DockerRuntime(ActionExecutionClient):
                 raise ValueError(
                     'Neither runtime container image nor base container image is set'
                 )
-            self.send_status_message('STATUS$STARTING_CONTAINER')
+            self.set_runtime_status(RuntimeStatus.BUILDING_RUNTIME)
             self.runtime_container_image = build_runtime_image(
                 self.base_container_image,
                 self.runtime_builder,
@@ -204,6 +223,7 @@ class DockerRuntime(ActionExecutionClient):
                 extra_deps=self.config.sandbox.runtime_extra_deps,
                 force_rebuild=self.config.sandbox.force_rebuild_runtime,
                 extra_build_args=self.config.sandbox.runtime_extra_build_args,
+                enable_browser=self.config.enable_browser,
             )
 
     @staticmethod
@@ -255,7 +275,8 @@ class DockerRuntime(ActionExecutionClient):
             mount_mode = 'rw'  # Default mode
 
             # e.g. result would be: {"/home/user/openhands/workspace": {'bind': "/workspace", 'mode': 'rw'}}
-            volumes[self.config.workspace_mount_path] = {
+            # Add os.path.abspath() here so that relative paths can be used when workspace_mount_path is configured in config.toml
+            volumes[os.path.abspath(self.config.workspace_mount_path)] = {
                 'bind': self.config.workspace_mount_path_in_sandbox,
                 'mode': mount_mode,
             }
@@ -267,22 +288,38 @@ class DockerRuntime(ActionExecutionClient):
 
     def init_container(self) -> None:
         self.log('debug', 'Preparing to start container...')
-        self.send_status_message('STATUS$PREPARING_CONTAINER')
-        self._host_port = self._find_available_port(EXECUTION_SERVER_PORT_RANGE)
-        self._container_port = self._host_port
-        # Use the configured vscode_port if provided, otherwise find an available port
-        self._vscode_port = (
-            self.config.sandbox.vscode_port
-            or self._find_available_port(VSCODE_PORT_RANGE)
+        self.set_runtime_status(RuntimeStatus.STARTING_RUNTIME)
+
+        # Allocate host port with locking to prevent race conditions
+        self._host_port, self._host_port_lock = self._find_available_port_with_lock(
+            EXECUTION_SERVER_PORT_RANGE
         )
-        self._app_ports = [
-            self._find_available_port(APP_PORT_RANGE_1),
-            self._find_available_port(APP_PORT_RANGE_2),
+        self._container_port = self._host_port
+
+        # Use the configured vscode_port if provided, otherwise find an available port
+        if self.config.sandbox.vscode_port:
+            self._vscode_port = self.config.sandbox.vscode_port
+            self._vscode_port_lock = None  # No lock needed for configured port
+        else:
+            self._vscode_port, self._vscode_port_lock = (
+                self._find_available_port_with_lock(VSCODE_PORT_RANGE)
+            )
+
+        # Allocate app ports with locking
+        app_port_1, app_lock_1 = self._find_available_port_with_lock(APP_PORT_RANGE_1)
+        app_port_2, app_lock_2 = self._find_available_port_with_lock(APP_PORT_RANGE_2)
+
+        self._app_ports = [app_port_1, app_port_2]
+        self._app_port_locks = [
+            lock for lock in [app_lock_1, app_lock_2] if lock is not None
         ]
+
         self.api_url = f'{self.config.sandbox.local_runtime_url}:{self._container_port}'
 
         use_host_network = self.config.sandbox.use_host_network
-        network_mode: typing.Literal['host'] | None = 'host' if use_host_network else None
+        network_mode: typing.Literal['host'] | None = (
+            'host' if use_host_network else None
+        )
 
         # Initialize port mappings
         port_mapping: dict[str, list[dict[str, str]]] | None = None
@@ -352,10 +389,26 @@ class DockerRuntime(ActionExecutionClient):
         )
 
         command = self.get_action_execution_server_startup_command()
+        self.log('info', f'Starting server with command: {command}')
 
+        if self.config.sandbox.enable_gpu:
+            gpu_ids = self.config.sandbox.cuda_visible_devices
+            if gpu_ids is None:
+                device_requests = [
+                    docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)
+                ]
+            else:
+                device_requests = [
+                    docker.types.DeviceRequest(
+                        capabilities=[['gpu']],
+                        device_ids=[str(i) for i in gpu_ids.split(',')],
+                    )
+                ]
+        else:
+            device_requests = None
         try:
             if self.runtime_container_image is None:
-                raise ValueError("Runtime container image is not set")
+                raise ValueError('Runtime container image is not set')
             self.container = self.docker_client.containers.run(
                 self.runtime_container_image,
                 command=command,
@@ -368,15 +421,11 @@ class DockerRuntime(ActionExecutionClient):
                 detach=True,
                 environment=environment,
                 volumes=volumes,  # type: ignore
-                device_requests=(
-                    [docker.types.DeviceRequest(capabilities=[['gpu']], count=-1)]
-                    if self.config.sandbox.enable_gpu
-                    else None
-                ),
+                device_requests=device_requests,
                 **(self.config.sandbox.docker_runtime_kwargs or {}),
             )
             self.log('debug', f'Container started. Server url: {self.api_url}')
-            self.send_status_message('STATUS$CONTAINER_STARTED')
+            self.set_runtime_status(RuntimeStatus.RUNTIME_STARTED)
         except Exception as e:
             self.log(
                 'error',
@@ -454,6 +503,28 @@ class DockerRuntime(ActionExecutionClient):
             CONTAINER_NAME_PREFIX if rm_all_containers else self.container_name
         )
         stop_all_containers(close_prefix)
+        self._release_port_locks()
+
+    def _release_port_locks(self) -> None:
+        """Release all acquired port locks."""
+        if self._host_port_lock:
+            self._host_port_lock.release()
+            self._host_port_lock = None
+            logger.debug(f'Released host port lock for port {self._host_port}')
+
+        if self._vscode_port_lock:
+            self._vscode_port_lock.release()
+            self._vscode_port_lock = None
+            logger.debug(f'Released VSCode port lock for port {self._vscode_port}')
+
+        for i, lock in enumerate(self._app_port_locks):
+            if lock:
+                lock.release()
+                logger.debug(
+                    f'Released app port lock for port {self._app_ports[i] if i < len(self._app_ports) else "unknown"}'
+                )
+
+        self._app_port_locks.clear()
 
     def _is_port_in_use_docker(self, port: int) -> bool:
         containers = self.docker_client.containers.list()
@@ -463,15 +534,58 @@ class DockerRuntime(ActionExecutionClient):
                 return True
         return False
 
+    def _find_available_port_with_lock(
+        self, port_range: tuple[int, int], max_attempts: int = 5
+    ) -> tuple[int, PortLock | None]:
+        """Find an available port with race condition protection.
+
+        This method uses file-based locking to prevent multiple workers
+        from allocating the same port simultaneously.
+
+        Args:
+            port_range: Tuple of (min_port, max_port)
+            max_attempts: Maximum number of attempts to find a port
+
+        Returns:
+            Tuple of (port_number, port_lock) where port_lock may be None if locking failed
+        """
+        # Try to find and lock an available port
+        result = find_available_port_with_lock(
+            min_port=port_range[0],
+            max_port=port_range[1],
+            max_attempts=max_attempts,
+            bind_address='0.0.0.0',
+            lock_timeout=1.0,
+        )
+
+        if result is None:
+            # Fallback to original method if port locking fails
+            logger.warning(
+                f'Port locking failed for range {port_range}, falling back to original method'
+            )
+            port = port_range[1]
+            for _ in range(max_attempts):
+                port = find_available_tcp_port(port_range[0], port_range[1])
+                if not self._is_port_in_use_docker(port):
+                    return port, None
+            return port, None
+
+        port, port_lock = result
+
+        # Additional check with Docker to ensure port is not in use
+        if self._is_port_in_use_docker(port):
+            port_lock.release()
+            # Try again with a different port
+            logger.debug(f'Port {port} is in use by Docker, trying again')
+            return self._find_available_port_with_lock(port_range, max_attempts - 1)
+
+        return port, port_lock
+
     def _find_available_port(
         self, port_range: tuple[int, int], max_attempts: int = 5
     ) -> int:
-        port = port_range[1]
-        for _ in range(max_attempts):
-            port = find_available_tcp_port(port_range[0], port_range[1])
-            if not self._is_port_in_use_docker(port):
-                return port
-        # If no port is found after max_attempts, return the last tried port
+        """Find an available port (legacy method for backward compatibility)."""
+        port, _ = self._find_available_port_with_lock(port_range, max_attempts)
         return port
 
     @property

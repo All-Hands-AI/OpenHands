@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     SecretStr,
     SerializationInfo,
@@ -40,12 +41,14 @@ class Settings(BaseModel):
     sandbox_runtime_container_image: str | None = None
     mcp_config: MCPConfig | None = None
     search_api_key: SecretStr | None = None
+    sandbox_api_key: SecretStr | None = None
+    max_budget_per_task: float | None = None
     email: str | None = None
     email_verified: bool | None = None
 
-    model_config = {
-        'validate_assignment': True,
-    }
+    model_config = ConfigDict(
+        validate_assignment=True,
+    )
 
     @field_serializer('llm_api_key', 'search_api_key')
     def api_key_serializer(self, api_key: SecretStr | None, info: SerializationInfo):
@@ -76,10 +79,10 @@ class Settings(BaseModel):
         custom_secrets = secrets_store.get('custom_secrets')
         tokens = secrets_store.get('provider_tokens')
 
-        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})
+        secret_store = UserSecrets(provider_tokens={}, custom_secrets={})  # type: ignore[arg-type]
 
         if isinstance(tokens, dict):
-            converted_store = UserSecrets(provider_tokens=tokens)
+            converted_store = UserSecrets(provider_tokens=tokens)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'provider_tokens': converted_store.provider_tokens}
             )
@@ -87,7 +90,7 @@ class Settings(BaseModel):
             secret_store.model_copy(update={'provider_tokens': tokens})
 
         if isinstance(custom_secrets, dict):
-            converted_store = UserSecrets(custom_secrets=custom_secrets)
+            converted_store = UserSecrets(custom_secrets=custom_secrets)  # type: ignore[arg-type]
             secret_store = secret_store.model_copy(
                 update={'custom_secrets': converted_store.custom_secrets}
             )
@@ -131,5 +134,36 @@ class Settings(BaseModel):
             remote_runtime_resource_factor=app_config.sandbox.remote_runtime_resource_factor,
             mcp_config=mcp_config,
             search_api_key=app_config.search_api_key,
+            max_budget_per_task=app_config.max_budget_per_task,
         )
         return settings
+
+    def merge_with_config_settings(self) -> 'Settings':
+        """Merge config.toml settings with stored settings.
+
+        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
+        This method can be used by both server mode and CLI mode.
+        """
+        # Get config.toml settings
+        config_settings = Settings.from_config()
+        if not config_settings or not config_settings.mcp_config:
+            return self
+
+        # If stored settings don't have MCP config, use config.toml MCP config
+        if not self.mcp_config:
+            self.mcp_config = config_settings.mcp_config
+            return self
+
+        # Both have MCP config - merge them with config.toml taking priority
+        merged_mcp = MCPConfig(
+            sse_servers=list(config_settings.mcp_config.sse_servers)
+            + list(self.mcp_config.sse_servers),
+            stdio_servers=list(config_settings.mcp_config.stdio_servers)
+            + list(self.mcp_config.stdio_servers),
+            shttp_servers=list(config_settings.mcp_config.shttp_servers)
+            + list(self.mcp_config.shttp_servers),
+        )
+
+        # Create new settings with merged MCP config
+        self.mcp_config = merged_mcp
+        return self

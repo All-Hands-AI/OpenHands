@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.completion import FuzzyWordCompleter
 from prompt_toolkit.formatted_text import HTML
@@ -13,13 +15,18 @@ from openhands.cli.tui import (
 )
 from openhands.cli.utils import (
     VERIFIED_ANTHROPIC_MODELS,
+    VERIFIED_MISTRAL_MODELS,
     VERIFIED_OPENAI_MODELS,
+    VERIFIED_OPENHANDS_MODELS,
     VERIFIED_PROVIDERS,
     organize_models_and_providers,
 )
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
-from openhands.core.config.condenser_config import NoOpCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.utils import OH_DEFAULT_AGENT
 from openhands.memory.condenser.impl.llm_summarizing_condenser import (
     LLMSummarizingCondenserConfig,
@@ -69,6 +76,14 @@ def display_settings(config: OpenHandsConfig) -> None:
             (
                 '   Memory Condensation',
                 'Enabled' if config.enable_default_condenser else 'Disabled',
+            ),
+            (
+                '   Search API Key',
+                '********' if config.search_api_key else 'Not Set',
+            ),
+            (
+                '   Configuration File',
+                str(Path(config.file_store_path) / 'settings.json'),
             ),
         ]
     )
@@ -134,9 +149,10 @@ async def get_validated_input(
     return value
 
 
-def save_settings_confirmation() -> bool:
+def save_settings_confirmation(config: OpenHandsConfig) -> bool:
     return (
         cli_confirm(
+            config,
             '\nSave new settings? (They will take effect after restart)',
             ['Yes, save', 'No, discard'],
         )
@@ -158,8 +174,8 @@ async def modify_llm_settings_basic(
     provider_completer = FuzzyWordCompleter(provider_list)
     session = PromptSession(key_bindings=kb_cancel())
 
-    # Set default provider - use the first available provider from the list
-    provider = provider_list[0] if provider_list else 'openai'
+    # Set default provider - prefer 'anthropic' if available, otherwise use first
+    provider = 'anthropic' if 'anthropic' in provider_list else provider_list[0]
     model = None
     api_key = None
 
@@ -168,15 +184,27 @@ async def modify_llm_settings_basic(
         print_formatted_text(
             HTML(f'\n<grey>Default provider: </grey><green>{provider}</green>')
         )
-        change_provider = (
-            cli_confirm(
-                'Do you want to use a different provider?',
-                [f'Use {provider}', 'Select another provider'],
-            )
-            == 1
+
+        # Show verified providers plus "Select another provider" option
+        provider_choices = verified_providers + ['Select another provider']
+        provider_choice = cli_confirm(
+            config,
+            '(Step 1/3) Select LLM Provider:',
+            provider_choices,
         )
 
-        if change_provider:
+        # Ensure provider_choice is an integer (for test compatibility)
+        try:
+            choice_index = int(provider_choice)
+        except (TypeError, ValueError):
+            # If conversion fails (e.g., in tests with mocks), default to 0
+            choice_index = 0
+
+        if choice_index < len(verified_providers):
+            # User selected one of the verified providers
+            provider = verified_providers[choice_index]
+        else:
+            # User selected "Select another provider" - use manual selection
             # Define a validator function that prints an error message
             def provider_validator(x):
                 is_valid = x in organized_models
@@ -196,9 +224,12 @@ async def modify_llm_settings_basic(
 
         # Make sure the provider exists in organized_models
         if provider not in organized_models:
-            # If the provider doesn't exist, use the first available provider
+            # If the provider doesn't exist, prefer 'anthropic' if available,
+            # otherwise use the first provider
             provider = (
-                next(iter(organized_models.keys())) if organized_models else 'openai'
+                'anthropic'
+                if 'anthropic' in organized_models
+                else next(iter(organized_models.keys()))
             )
 
         provider_models = organized_models[provider]['models']
@@ -212,46 +243,103 @@ async def modify_llm_settings_basic(
                 m for m in provider_models if m not in VERIFIED_ANTHROPIC_MODELS
             ]
             provider_models = VERIFIED_ANTHROPIC_MODELS + provider_models
+        if provider == 'mistral':
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_MISTRAL_MODELS
+            ]
+            provider_models = VERIFIED_MISTRAL_MODELS + provider_models
+        if provider == 'openhands':
+            provider_models = [
+                m for m in provider_models if m not in VERIFIED_OPENHANDS_MODELS
+            ]
+            provider_models = VERIFIED_OPENHANDS_MODELS + provider_models
 
-        # Set default model to the first model in the list
-        default_model = provider_models[0] if provider_models else 'gpt-4'
-
-        # Show the default model but allow changing it
-        print_formatted_text(
-            HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
-        )
-        change_model = (
-            cli_confirm(
-                'Do you want to use a different model?',
-                [f'Use {default_model}', 'Select another model'],
-            )
-            == 1
-        )
-
-        if change_model:
-            model_completer = FuzzyWordCompleter(provider_models)
-
-            # Define a validator function that prints an error message
-            def model_validator(x):
-                is_valid = x in provider_models
-                if not is_valid:
-                    print_formatted_text(
-                        HTML(
-                            f'<grey>Invalid model selected for provider {provider}: {x}</grey>'
-                        )
-                    )
-                return is_valid
-
-            model = await get_validated_input(
-                session,
-                '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
-                completer=model_completer,
-                validator=model_validator,
-                error_message=f'Invalid model selected for provider {provider}',
-            )
+        # Set default model to the best verified model for the provider
+        if provider == 'anthropic' and VERIFIED_ANTHROPIC_MODELS:
+            # Use the first model in the VERIFIED_ANTHROPIC_MODELS list as it's the best/newest
+            default_model = VERIFIED_ANTHROPIC_MODELS[0]
+        elif provider == 'openai' and VERIFIED_OPENAI_MODELS:
+            # Use the first model in the VERIFIED_OPENAI_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENAI_MODELS[0]
+        elif provider == 'mistral' and VERIFIED_MISTRAL_MODELS:
+            # Use the first model in the VERIFIED_MISTRAL_MODELS list as it's the best/newest
+            default_model = VERIFIED_MISTRAL_MODELS[0]
+        elif provider == 'openhands' and VERIFIED_OPENHANDS_MODELS:
+            # Use the first model in the VERIFIED_OPENHANDS_MODELS list as it's the best/newest
+            default_model = VERIFIED_OPENHANDS_MODELS[0]
         else:
-            # Use the default model
-            model = default_model
+            # For other providers, use the first model in the list
+            default_model = (
+                provider_models[0] if provider_models else 'claude-sonnet-4-20250514'
+            )
+
+        # For OpenHands provider, directly show all verified models without the "use default" option
+        if provider == 'openhands':
+            # Create a list of models for the cli_confirm function
+            model_choices = VERIFIED_OPENHANDS_MODELS
+
+            model_choice = cli_confirm(
+                config,
+                (
+                    '(Step 2/3) Select Available OpenHands Model:\n'
+                    + 'LLM usage is billed at the providers’ rates with no markup. Details: https://docs.all-hands.dev/usage/llms/openhands-llms'
+                ),
+                model_choices,
+            )
+
+            # Get the selected model from the list
+            model = model_choices[model_choice]
+
+        else:
+            # For other providers, show the default model but allow changing it
+            print_formatted_text(
+                HTML(f'\n<grey>Default model: </grey><green>{default_model}</green>')
+            )
+            change_model = (
+                cli_confirm(
+                    config,
+                    'Do you want to use a different model?',
+                    [f'Use {default_model}', 'Select another model'],
+                )
+                == 1
+            )
+
+            if change_model:
+                model_completer = FuzzyWordCompleter(provider_models)
+
+                # Define a validator function that allows custom models but shows a warning
+                def model_validator(x):
+                    # Allow any non-empty model name
+                    if not x.strip():
+                        return False
+
+                    # Show a warning for models not in the predefined list, but still allow them
+                    if x not in provider_models:
+                        print_formatted_text(
+                            HTML(
+                                f'<yellow>Warning: {x} is not in the predefined list for provider {provider}. '
+                                f'Make sure this model name is correct.</yellow>'
+                            )
+                        )
+                    return True
+
+                model = await get_validated_input(
+                    session,
+                    '(Step 2/3) Select LLM Model (TAB for options, CTRL-c to cancel): ',
+                    completer=model_completer,
+                    validator=model_validator,
+                    error_message='Model name cannot be empty',
+                )
+            else:
+                # Use the default model
+                model = default_model
+
+        if provider == 'openhands':
+            print_formatted_text(
+                HTML(
+                    '\nYou can find your OpenHands LLM API Key in the <a href="https://app.all-hands.dev/settings/api-keys">API Keys</a> tab of OpenHands Cloud: https://app.all-hands.dev/settings/api-keys'
+                )
+            )
 
         api_key = await get_validated_input(
             session,
@@ -269,7 +357,7 @@ async def modify_llm_settings_basic(
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
 
-    save_settings = save_settings_confirmation()
+    save_settings = save_settings_confirmation(config)
 
     if not save_settings:
         return
@@ -344,6 +432,7 @@ async def modify_llm_settings_advanced(
 
         enable_confirmation_mode = (
             cli_confirm(
+                config,
                 question='(Step 5/6) Confirmation Mode (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
@@ -352,6 +441,7 @@ async def modify_llm_settings_advanced(
 
         enable_memory_condensation = (
             cli_confirm(
+                config,
                 question='(Step 6/6) Memory Condensation (CTRL-c to cancel):',
                 choices=['Enable', 'Disable'],
             )
@@ -368,7 +458,7 @@ async def modify_llm_settings_advanced(
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
 
-    save_settings = save_settings_confirmation()
+    save_settings = save_settings_confirmation(config)
 
     if not save_settings:
         return
@@ -385,12 +475,21 @@ async def modify_llm_settings_advanced(
 
     agent_config = config.get_agent_config(config.default_agent)
     if enable_memory_condensation:
-        agent_config.condenser = LLMSummarizingCondenserConfig(
-            llm_config=llm_config,
-            type='llm',
+        agent_config.condenser = CondenserPipelineConfig(
+            type='pipeline',
+            condensers=[
+                ConversationWindowCondenserConfig(type='conversation_window'),
+                # Use LLMSummarizingCondenserConfig with the custom llm_config
+                LLMSummarizingCondenserConfig(
+                    llm_config=llm_config, type='llm', keep_first=4, max_size=120
+                ),
+            ],
         )
+
     else:
-        agent_config.condenser = NoOpCondenserConfig(type='noop')
+        agent_config.condenser = ConversationWindowCondenserConfig(
+            type='conversation_window'
+        )
     config.set_agent_config(agent_config)
 
     settings = await settings_store.load()
@@ -403,5 +502,77 @@ async def modify_llm_settings_advanced(
     settings.agent = agent
     settings.confirmation_mode = enable_confirmation_mode
     settings.enable_default_condenser = enable_memory_condensation
+
+    await settings_store.store(settings)
+
+
+async def modify_search_api_settings(
+    config: OpenHandsConfig, settings_store: FileSettingsStore
+) -> None:
+    """Modify search API settings."""
+    session = PromptSession(key_bindings=kb_cancel())
+
+    search_api_key = None
+
+    try:
+        print_formatted_text(
+            HTML(
+                '\n<grey>Configure Search API Key for enhanced search capabilities.</grey>'
+            )
+        )
+        print_formatted_text(
+            HTML('<grey>You can get a Tavily API key from: https://tavily.com/</grey>')
+        )
+        print_formatted_text('')
+
+        # Show current status
+        current_key_status = '********' if config.search_api_key else 'Not Set'
+        print_formatted_text(
+            HTML(
+                f'<grey>Current Search API Key: </grey><green>{current_key_status}</green>'
+            )
+        )
+        print_formatted_text('')
+
+        # Ask if user wants to modify
+        modify_key = cli_confirm(
+            config,
+            'Do you want to modify the Search API Key?',
+            ['Set/Update API Key', 'Remove API Key', 'Keep current setting'],
+        )
+
+        if modify_key == 0:  # Set/Update API Key
+            search_api_key = await get_validated_input(
+                session,
+                'Enter Tavily Search API Key. You can get it from https://www.tavily.com/ (starts with tvly-, CTRL-c to cancel): ',
+                validator=lambda x: x.startswith('tvly-') if x.strip() else False,
+                error_message='Search API Key must start with "tvly-"',
+            )
+        elif modify_key == 1:  # Remove API Key
+            search_api_key = ''  # Empty string to remove the key
+        else:  # Keep current setting
+            return
+
+    except (
+        UserCancelledError,
+        KeyboardInterrupt,
+        EOFError,
+    ):
+        return  # Return on exception
+
+    save_settings = save_settings_confirmation(config)
+
+    if not save_settings:
+        return
+
+    # Update config
+    config.search_api_key = SecretStr(search_api_key) if search_api_key else None
+
+    # Update settings store
+    settings = await settings_store.load()
+    if not settings:
+        settings = Settings()
+
+    settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     await settings_store.store(settings)

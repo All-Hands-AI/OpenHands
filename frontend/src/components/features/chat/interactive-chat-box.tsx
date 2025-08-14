@@ -3,11 +3,15 @@ import { ChatInput } from "./chat-input";
 import { cn } from "#/utils/utils";
 import { ImageCarousel } from "../images/image-carousel";
 import { UploadImageInput } from "../images/upload-image-input";
+import { FileList } from "../files/file-list";
+import { isFileImage } from "#/utils/is-file-image";
+import { displayErrorToast } from "#/utils/custom-toast-handlers";
+import { validateFiles } from "#/utils/file-validation";
 
 interface InteractiveChatBoxProps {
   isDisabled?: boolean;
   mode?: "stop" | "submit";
-  onSubmit: (message: string, images: File[]) => void;
+  onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
   value?: string;
   onChange?: (message: string) => void;
@@ -22,21 +26,41 @@ export function InteractiveChatBox({
   onChange,
 }: InteractiveChatBoxProps) {
   const [images, setImages] = React.useState<File[]>([]);
+  const [files, setFiles] = React.useState<File[]>([]);
 
-  const handleUpload = (files: File[]) => {
-    setImages((prevImages) => [...prevImages, ...files]);
+  const handleUpload = (selectedFiles: File[]) => {
+    // Validate files before adding them
+    const validation = validateFiles(selectedFiles, [...images, ...files]);
+
+    if (!validation.isValid) {
+      displayErrorToast(`Error: ${validation.errorMessage}`);
+      return; // Don't add any files if validation fails
+    }
+
+    // Filter valid files by type
+    const validFiles = selectedFiles.filter((f) => !isFileImage(f));
+    const validImages = selectedFiles.filter((f) => isFileImage(f));
+
+    setFiles((prevFiles) => [...prevFiles, ...validFiles]);
+    setImages((prevImages) => [...prevImages, ...validImages]);
   };
 
+  const removeElementByIndex = (array: Array<File>, index: number) => {
+    const newArray = [...array];
+    newArray.splice(index, 1);
+    return newArray;
+  };
+
+  const handleRemoveFile = (index: number) => {
+    setFiles(removeElementByIndex(files, index));
+  };
   const handleRemoveImage = (index: number) => {
-    setImages((prevImages) => {
-      const newImages = [...prevImages];
-      newImages.splice(index, 1);
-      return newImages;
-    });
+    setImages(removeElementByIndex(images, index));
   };
 
   const handleSubmit = (message: string) => {
-    onSubmit(message, images);
+    onSubmit(message, images, files);
+    setFiles([]);
     setImages([]);
     if (message) {
       onChange?.("");
@@ -53,6 +77,12 @@ export function InteractiveChatBox({
           size="small"
           images={images.map((image) => URL.createObjectURL(image))}
           onRemove={handleRemoveImage}
+        />
+      )}
+      {files.length > 0 && (
+        <FileList
+          files={files.map((f) => f.name)}
+          onRemove={handleRemoveFile}
         />
       )}
 
@@ -72,7 +102,7 @@ export function InteractiveChatBox({
           onSubmit={handleSubmit}
           onStop={onStop}
           value={value}
-          onImagePaste={handleUpload}
+          onFilesPaste={handleUpload}
           className="py-[10px]"
           buttonClassName="py-[10px]"
         />

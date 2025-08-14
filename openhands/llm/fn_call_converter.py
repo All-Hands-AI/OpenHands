@@ -306,12 +306,11 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 """,
     },
     'finish': {
-        'task_completed': """
+        'example': """
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 <function=finish>
 <parameter=message>The task has been completed. The web server is running and displaying numbers 1-10 in a table format at http://127.0.0.1:5000.</parameter>
-<parameter=task_completed>true</parameter>
 </function>
 """
     },
@@ -373,7 +372,7 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
         example += TOOL_EXAMPLES['execute_bash']['run_server_again']
 
     if 'finish' in available_tools:
-        example += TOOL_EXAMPLES['finish']['task_completed']
+        example += TOOL_EXAMPLES['finish']['example']
 
     example += """
 --------------------- END OF EXAMPLE ---------------------
@@ -426,7 +425,10 @@ def convert_tool_call_to_string(tool_call: dict) -> str:
         ret += f'<parameter={param_name}>'
         if is_multiline:
             ret += '\n'
-        ret += f'{param_value}'
+        if isinstance(param_value, list) or isinstance(param_value, dict):
+            ret += json.dumps(param_value)
+        else:
+            ret += f'{param_value}'
         if is_multiline:
             ret += '\n'
         ret += '</parameter>\n'
@@ -791,17 +793,19 @@ def convert_non_fncall_messages_to_fncall_messages(
                 )
 
             if tool_result_match:
-                if not (
-                    isinstance(content, str)
-                    or (
-                        isinstance(content, list)
-                        and len(content) == 1
-                        and content[0].get('type') == 'text'
-                    )
-                ):
+                if isinstance(content, list):
+                    text_content_items = [
+                        item for item in content if item.get('type') == 'text'
+                    ]
+                    if not text_content_items:
+                        raise FunctionCallConversionError(
+                            f'Could not find text content in message with tool result. Content: {content}'
+                        )
+                elif not isinstance(content, str):
                     raise FunctionCallConversionError(
-                        f'Expected str or list with one text item when tool result is present in the message. Content: {content}'
+                        f'Unexpected content type {type(content)}. Expected str or list. Content: {content}'
                     )
+
                 tool_name = tool_result_match.group(1)
                 tool_result = tool_result_match.group(2).strip()
 

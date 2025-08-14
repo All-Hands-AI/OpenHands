@@ -16,6 +16,7 @@ from openhands.core.config import (
     load_openhands_config,
 )
 from openhands.core.config.condenser_config import (
+    ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
     NoOpCondenserConfig,
     RecentEventsCondenserConfig,
@@ -680,7 +681,7 @@ def test_agent_config_condenser_with_no_enabled():
     """Test default agent condenser with enable_default_condenser=False."""
     config = OpenHandsConfig(enable_default_condenser=False)
     agent_config = config.get_agent_config()
-    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+    assert isinstance(agent_config.condenser, ConversationWindowCondenserConfig)
 
 
 def test_sandbox_volumes_toml(default_config, temp_toml_file):
@@ -907,9 +908,9 @@ def test_default_condenser_behavior_disabled(default_config, temp_toml_file):
     default_config.enable_default_condenser = False
     load_from_toml(default_config, temp_toml_file)
 
-    # Verify the agent config uses NoOpCondenserConfig
+    # Verify the agent config uses ConversationWindowCondenserConfig
     agent_config = default_config.get_agent_config()
-    assert isinstance(agent_config.condenser, NoOpCondenserConfig)
+    assert isinstance(agent_config.condenser, ConversationWindowCondenserConfig)
 
 
 def test_default_condenser_explicit_toml_override(default_config, temp_toml_file):
@@ -990,34 +991,15 @@ def test_api_keys_repr_str():
     app_config = OpenHandsConfig(
         llms={'llm': llm_config},
         agents={'agent': agent_config},
-        e2b_api_key='my_e2b_api_key',
-        jwt_secret='my_jwt_secret',
-        modal_api_token_id='my_modal_api_token_id',
-        modal_api_token_secret='my_modal_api_token_secret',
-        runloop_api_key='my_runloop_api_key',
-        daytona_api_key='my_daytona_api_key',
+        search_api_key='my_search_api_key',
     )
-    assert 'my_e2b_api_key' not in repr(app_config)
-    assert 'my_e2b_api_key' not in str(app_config)
-    assert 'my_jwt_secret' not in repr(app_config)
-    assert 'my_jwt_secret' not in str(app_config)
-    assert 'my_modal_api_token_id' not in repr(app_config)
-    assert 'my_modal_api_token_id' not in str(app_config)
-    assert 'my_modal_api_token_secret' not in repr(app_config)
-    assert 'my_modal_api_token_secret' not in str(app_config)
-    assert 'my_runloop_api_key' not in repr(app_config)
-    assert 'my_runloop_api_key' not in str(app_config)
-    assert 'my_daytona_api_key' not in repr(app_config)
-    assert 'my_daytona_api_key' not in str(app_config)
+
+    assert 'my_search_api_key' not in repr(app_config)
+    assert 'my_search_api_key' not in str(app_config)
 
     # Check that no other attrs in OpenHandsConfig have 'key' or 'token' in their name
     # This will fail when new attrs are added, and attract attention
     known_key_token_attrs_app = [
-        'e2b_api_key',
-        'modal_api_token_id',
-        'modal_api_token_secret',
-        'runloop_api_key',
-        'daytona_api_key',
         'search_api_key',
     ]
     for attr_name in OpenHandsConfig.model_fields.keys():
@@ -1211,3 +1193,39 @@ def test_agent_config_from_toml_section_with_invalid_base():
     assert 'CustomAgent' in result
     assert result['CustomAgent'].enable_browsing is False
     assert result['CustomAgent'].enable_jupyter is True
+
+
+def test_agent_config_system_prompt_filename_default():
+    """Test that AgentConfig defaults to 'system_prompt.j2' for system_prompt_filename."""
+    config = AgentConfig()
+    assert config.system_prompt_filename == 'system_prompt.j2'
+
+
+def test_agent_config_system_prompt_filename_toml_integration(
+    default_config, temp_toml_file
+):
+    """Test that system_prompt_filename is correctly loaded from TOML configuration."""
+    with open(temp_toml_file, 'w', encoding='utf-8') as toml_file:
+        toml_file.write(
+            """
+[agent]
+enable_browsing = true
+system_prompt_filename = "custom_prompt.j2"
+
+[agent.CodeReviewAgent]
+system_prompt_filename = "code_review_prompt.j2"
+enable_browsing = false
+"""
+        )
+
+    load_from_toml(default_config, temp_toml_file)
+
+    # Check default agent config
+    default_agent_config = default_config.get_agent_config()
+    assert default_agent_config.system_prompt_filename == 'custom_prompt.j2'
+    assert default_agent_config.enable_browsing is True
+
+    # Check custom agent config
+    custom_agent_config = default_config.get_agent_config('CodeReviewAgent')
+    assert custom_agent_config.system_prompt_filename == 'code_review_prompt.j2'
+    assert custom_agent_config.enable_browsing is False

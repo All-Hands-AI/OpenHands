@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import Markdown from "react-markdown";
 import { Link } from "react-router";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
 import ArrowDown from "#/icons/angle-down-solid.svg?react";
@@ -114,7 +115,7 @@ export function ExpandableMessage({
             {t(I18nKey.STATUS$ERROR_LLM_OUT_OF_CREDITS)}
           </div>
           <Link
-            className="mt-2 mb-2 w-full h-10 rounded flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
+            className="mt-2 mb-2 w-full h-10 rounded-sm flex items-center justify-center gap-2 bg-primary text-[#0D0F11]"
             to="/settings/billing"
           >
             {t(I18nKey.BILLING$CLICK_TO_TOP_UP)}
@@ -199,7 +200,7 @@ export function ExpandableMessage({
                 ol,
                 p: paragraph,
               }}
-              remarkPlugins={[remarkGfm]}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
             >
               {details}
             </Markdown>

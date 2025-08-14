@@ -15,8 +15,8 @@ class AsyncEventStoreWrapper:
         loop = asyncio.get_running_loop()
 
         # Create an async generator that yields events
-        for event in self.event_store.get_events(*self.args, **self.kwargs):
-            # Run the blocking get_events() in a thread pool
+        for event in self.event_store.search_events(*self.args, **self.kwargs):
+            # Run the blocking search_events() in a thread pool
             def get_event(e: Event = event) -> Event:
                 return e
 

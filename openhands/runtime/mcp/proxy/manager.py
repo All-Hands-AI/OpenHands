@@ -8,6 +8,7 @@ including initialization, configuration, and mounting to FastAPI applications.
 import logging
 from typing import Any, Optional
 
+from anyio import get_cancelled_exc_class
 from fastapi import FastAPI
 from fastmcp import FastMCP
 from fastmcp.utilities.logging import get_logger as fastmcp_get_logger
@@ -59,7 +60,7 @@ class MCPProxyManager:
         """
         if len(self.config['mcpServers']) == 0:
             logger.info(
-                f"No MCP servers configured for FastMCP Proxy, skipping initialization."
+                'No MCP servers configured for FastMCP Proxy, skipping initialization.'
             )
             return None
 
@@ -70,7 +71,7 @@ class MCPProxyManager:
             api_key=self.api_key,
         )
 
-        logger.info(f"FastMCP Proxy initialized successfully")
+        logger.info('FastMCP Proxy initialized successfully')
 
     async def mount_to_app(
         self, app: FastAPI, allow_origins: Optional[list[str]] = None
@@ -83,17 +84,35 @@ class MCPProxyManager:
             allow_origins: List of allowed origins for CORS
         """
         if len(self.config['mcpServers']) == 0:
-            logger.info(
-                f"No MCP servers configured for FastMCP Proxy, skipping mount."
-            )
+            logger.info('No MCP servers configured for FastMCP Proxy, skipping mount.')
             return
 
         if not self.proxy:
             raise ValueError('FastMCP Proxy is not initialized')
 
+        def close_on_double_start(app):
+            async def wrapped(scope, receive, send):
+                start_sent = False
+
+                async def check_send(message):
+                    nonlocal start_sent
+                    if message['type'] == 'http.response.start':
+                        if start_sent:
+                            raise get_cancelled_exc_class()(
+                                'closed because of double http.response.start (mcp issue https://github.com/modelcontextprotocol/python-sdk/issues/883)'
+                            )
+                        start_sent = True
+                    await send(message)
+
+                await app(scope, receive, check_send)
+
+            return wrapped
+
         # Get the SSE app
         # mcp_app = self.proxy.http_app(path='/shttp')
-        mcp_app = self.proxy.http_app(path='/sse', transport='sse')
+        mcp_app = close_on_double_start(
+            self.proxy.http_app(path='/sse', transport='sse')
+        )
         app.mount('/mcp', mcp_app)
 
         # Remove any existing mounts at root path
@@ -101,8 +120,7 @@ class MCPProxyManager:
             app.routes.remove('/mcp')
 
         app.mount('/', mcp_app)
-        logger.info(f"Mounted FastMCP Proxy app at /mcp")
-
+        logger.info('Mounted FastMCP Proxy app at /mcp')
 
     async def update_and_remount(
         self,
@@ -122,10 +140,7 @@ class MCPProxyManager:
             tools: List of tool configurations
             allow_origins: List of allowed origins for CORS
         """
-        tools = {
-            t.name: t.model_dump()
-            for t in stdio_servers
-        }
+        tools = {t.name: t.model_dump() for t in stdio_servers}
         self.config['mcpServers'] = tools
 
         del self.proxy

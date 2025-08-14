@@ -46,6 +46,12 @@ def main() -> None:
         help='Container image to use.',
     )
     parser.add_argument(
+        '--runtime',
+        type=str,
+        default=None,
+        help='Runtime environment to use (default: docker).',
+    )
+    parser.add_argument(
         '--max-iterations',
         type=int,
         default=50,
@@ -116,7 +122,7 @@ def main() -> None:
         '--base-domain',
         type=str,
         default=None,
-        help='Base domain for the git server (defaults to "github.com" for GitHub and "gitlab.com" for GitLab)',
+        help='Base domain for the git server (defaults to "github.com" for GitHub, "gitlab.com" for GitLab, and "bitbucket.org" for Bitbucket)',
     )
 
     my_args = parser.parse_args()

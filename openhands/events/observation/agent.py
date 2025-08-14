@@ -70,12 +70,14 @@ class RecallObservation(Observation):
     # workspace context
     repo_name: str = ''
     repo_directory: str = ''
+    repo_branch: str = ''
     repo_instructions: str = ''
     runtime_hosts: dict[str, int] = field(default_factory=dict)
     additional_agent_instructions: str = ''
     date: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
     conversation_instructions: str = ''
+    working_dir: str = ''
 
     # knowledge
     microagent_knowledge: list[MicroagentKnowledge] = field(default_factory=list)

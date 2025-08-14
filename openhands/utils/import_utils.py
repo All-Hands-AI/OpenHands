@@ -58,7 +58,7 @@ def get_impl(cls: type[T], impl_name: str | None) -> type[T]:
     Common Use Cases:
         - Server components (ConversationManager, UserAuth, etc.)
         - Storage implementations (ConversationStore, SettingsStore, etc.)
-        - Service integrations (GitHub, GitLab services)
+        - Service integrations (GitHub, GitLab, Bitbucket services)
 
     The implementation is cached to avoid repeated imports of the same class.
     """

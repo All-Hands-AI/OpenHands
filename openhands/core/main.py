@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
+import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
@@ -23,6 +24,7 @@ from openhands.core.setup import (
     create_memory,
     create_runtime,
     generate_sid,
+    get_provider_tokens,
     initialize_repository_for_runtime,
 )
 from openhands.events import EventSource, EventStreamSubscriber
@@ -102,11 +104,14 @@ async def run_controller(
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
     if runtime is None:
+        # In itialize repository if needed
+        repo_tokens = get_provider_tokens()
         runtime = create_runtime(
             config,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
+            git_provider_tokens=repo_tokens,
         )
         # Connect to the runtime
         call_async_from_sync(runtime.connect)
@@ -115,6 +120,7 @@ async def run_controller(
         if config.sandbox.selected_repo:
             repo_directory = initialize_repository_for_runtime(
                 runtime,
+                immutable_provider_tokens=repo_tokens,
                 selected_repository=config.sandbox.selected_repo,
             )
 
@@ -129,6 +135,7 @@ async def run_controller(
             selected_repository=config.sandbox.selected_repo,
             repo_directory=repo_directory,
             conversation_instructions=conversation_instructions,
+            working_dir=config.workspace_mount_path_in_sandbox,
         )
 
     # Add MCP tools to the agent
@@ -139,9 +146,9 @@ async def run_controller(
                 config.mcp_host, config, None
             )
         )
-        config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+        runtime.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
 
-        await add_mcp_tools_to_agent(agent, runtime, memory, config)
+        await add_mcp_tools_to_agent(agent, runtime, memory)
 
     replay_events: list[Event] | None = None
     if config.replay_trajectory_path:

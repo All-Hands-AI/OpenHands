@@ -192,6 +192,8 @@ def get_config(
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
+    oh_aci_li_cmd = '/openhands/micromamba/bin/micromamba run -n openhands poetry run pip install openhands-aci[llama]'
+    sandbox_config.runtime_extra_deps = oh_aci_li_cmd
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     sandbox_config.runtime_startup_env_vars = {
         'REPO_PATH': f'/workspace/{workspace_dir_name}/',
@@ -201,6 +203,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
+        enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
         # do not mount workspace
@@ -216,6 +219,7 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=False,
+        enable_mcp=os.environ.get('ENABLE_MCP', False),
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
     )

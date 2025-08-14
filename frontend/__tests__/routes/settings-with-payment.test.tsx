@@ -30,7 +30,7 @@ vi.mock("react-i18next", async () => {
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_GIT": "Git",
+          "SETTINGS$NAV_INTEGRATIONS": "Integrations",
           "SETTINGS$NAV_APPLICATION": "Application",
           "SETTINGS$NAV_CREDITS": "Credits",
           "SETTINGS$NAV_API_KEYS": "API Keys",
@@ -61,7 +61,7 @@ describe("Settings Billing", () => {
         },
         {
           Component: () => <div data-testid="git-settings-screen" />,
-          path: "/settings/git",
+          path: "/settings/integrations",
         },
         {
           Component: () => <div data-testid="user-settings-screen" />,
@@ -86,6 +86,9 @@ describe("Settings Billing", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: false,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
 
@@ -104,6 +107,9 @@ describe("Settings Billing", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
 
@@ -122,6 +128,9 @@ describe("Settings Billing", () => {
       FEATURE_FLAGS: {
         ENABLE_BILLING: true,
         HIDE_LLM_SETTINGS: false,
+        ENABLE_JIRA: false,
+        ENABLE_JIRA_DC: false,
+        ENABLE_LINEAR: false,
       },
     });
 

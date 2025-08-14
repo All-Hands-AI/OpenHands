@@ -31,7 +31,7 @@ const RouterStub = createRoutesStub([
       },
       {
         Component: () => <div data-testid="git-settings-screen" />,
-        path: "/settings/git",
+        path: "/settings/integrations",
       },
     ],
   },
@@ -101,7 +101,8 @@ describe("Content", () => {
 
     renderSecretsSettings();
 
-    expect(getSecretsSpy).not.toHaveBeenCalled();
+    // In SAAS mode, getSecrets is still called because the user is authenticated
+    await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
     await waitFor(() =>
       expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
     );
@@ -473,7 +474,7 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText(/secret already exists/i)).toBeInTheDocument();
+    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
 
     await userEvent.clear(nameInput);
     await userEvent.type(nameInput, "My_Custom_Secret");
@@ -557,7 +558,7 @@ describe("Secret actions", () => {
 
     // make POST request
     expect(createSecretSpy).not.toHaveBeenCalled();
-    expect(screen.queryByText(/secret already exists/i)).toBeInTheDocument();
+    expect(screen.queryByText("SECRETS$SECRET_ALREADY_EXISTS")).toBeInTheDocument();
 
     expect(nameInput).toHaveValue(MOCK_GET_SECRETS_RESPONSE[0].name);
     expect(valueInput).toHaveValue("my-custom-secret-value");
