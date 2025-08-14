@@ -5,6 +5,7 @@ from collections import Counter
 from typing import Any
 
 import pandas as pd
+import toml
 from commit0.harness.constants import SPLIT
 from datasets import load_dataset
 
@@ -174,6 +175,17 @@ def initialize_runtime(
         f'Failed to cd to /workspace/{workspace_dir_name}: {str(obs)}',
     )
 
+    # Fix Git dubious ownership issue by adding the directory to safe.directory
+    action = CmdRunAction(command=f'git config --global --add safe.directory /workspace/{workspace_dir_name}')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert_and_raise(
+        obs.exit_code == 0,
+        f'Failed to configure git safe.directory: {str(obs)}',
+    )
+
     action = CmdRunAction(command='git checkout -b openhands')
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -263,8 +275,17 @@ def complete_runtime(
     assert_and_raise(git_patch is not None, 'Failed to get git diff (None)')
 
     test_dir = instance['test']['test_dir']
+    
+    # Check if pytest-json-report plugin is available
+    action = CmdRunAction(command='python -c "import pytest_jsonreport; print(\'pytest-json-report available\')" 2>/dev/null || echo "pytest-json-report not available"')
+    action.set_hard_timeout(60)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    
+    # Run tests with JSON report generation, but don't redirect stderr to avoid interfering with JSON report
     action = CmdRunAction(
-        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt 2>&1'
+        command=f'{instance["test"]["test_cmd"]} --json-report --json-report-file=report.json --continue-on-collection-errors {test_dir} > test_output.txt'
     )
     action.set_hard_timeout(600)
     logger.info(action, extra={'msg_type': 'ACTION'})
@@ -310,6 +331,13 @@ def complete_runtime(
     # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
     test_ids = obs.content.strip().split('\n')
 
+    # Check if report.json exists and read it
+    action = CmdRunAction(command='ls -la report.json')
+    action.set_hard_timeout(600)
+    logger.info(action, extra={'msg_type': 'ACTION'})
+    obs = runtime.run_action(action)
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    
     # Read the test report
     action = CmdRunAction(command='cat report.json')
     action.set_hard_timeout(600)
@@ -322,7 +350,7 @@ def complete_runtime(
     )
     json_report = obs.content.strip()
 
-    try:
+    ry:
         report = json.loads(json_report)
         tests = {x['nodeid']: x['call'] for x in report['tests'] if 'call' in x}
 
@@ -496,6 +524,38 @@ def process_instance(
     return output
 
 
+def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
+    file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.toml')
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as file:
+            data = toml.load(file)
+            if 'selected_ids' in data:
+                selected_ids = data['selected_ids']
+                logger.info(
+                    f'Filtering {len(selected_ids)} tasks from "selected_ids"...'
+                )
+                subset = dataset[dataset[filter_column].isin(selected_ids)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+            if 'selected_repos' in data:
+                selected_repos = data['selected_repos']
+                if isinstance(selected_repos, str):
+                    selected_repos = [selected_repos]
+                assert isinstance(selected_repos, list)
+                logger.info(
+                    f'Filtering {selected_repos} tasks from "selected_repos"...'
+                )
+                subset = dataset[dataset['repo'].isin(selected_repos)]
+                logger.info(f'Retained {subset.shape[0]} tasks after filtering')
+                return subset
+
+    skip_ids = os.environ.get('SKIP_IDS', '').split(',')
+    if len(skip_ids) > 0:
+        logger.info(f'Filtering {len(skip_ids)} tasks from "SKIP_IDS"...')
+        return dataset[~dataset[filter_column].isin(skip_ids)]
+    return dataset
+
+
 def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     """Setup Commit0 dataset based on split type.
 
@@ -519,6 +579,8 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
 
     # Replace all forward slashes in instance_id with hyphens
     filtered_dataset['instance_id'] = filtered_dataset['repo'].str.split('/').str[1]
+
+    filtered_dataset = filter_dataset(filtered_dataset, 'instance_id')
 
     return filtered_dataset
 
@@ -556,9 +618,9 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
+        llm_config.log_completions = True
         # modify_params must be False for evaluation purpose, for reproducibility and accurancy of results
         llm_config.modify_params = False
-        llm_config.log_completions = True
 
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
