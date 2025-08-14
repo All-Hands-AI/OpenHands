@@ -5,6 +5,7 @@ import re
 import sys
 import traceback
 from datetime import datetime
+from logging.handlers import TimedRotatingFileHandler
 from types import TracebackType
 from typing import Any, Literal, Mapping, MutableMapping, TextIO
 
@@ -294,13 +295,21 @@ def get_console_handler(log_level: int = logging.INFO) -> logging.StreamHandler:
 
 
 def get_file_handler(
-    log_dir: str, log_level: int = logging.INFO
-) -> logging.FileHandler:
+    log_dir: str,
+    log_level: int = logging.INFO,
+    when: str = 'd',
+    backup_count: int = 7,
+    utc: bool = False,
+) -> TimedRotatingFileHandler:
     """Returns a file handler for logging."""
     os.makedirs(log_dir, exist_ok=True)
-    timestamp = datetime.now().strftime('%Y-%m-%d')
-    file_name = f'openhands_{timestamp}.log'
-    file_handler = logging.FileHandler(os.path.join(log_dir, file_name))
+    file_name = 'openhands.log'
+    file_handler = TimedRotatingFileHandler(
+        os.path.join(log_dir, file_name),
+        when=when,
+        backupCount=backup_count,
+        utc=utc,
+    )
     file_handler.setLevel(log_level)
     if LOG_JSON:
         file_handler.setFormatter(json_formatter())
