@@ -678,8 +678,115 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_07_agent_ready.png')
     print('Screenshot saved: conv_07_agent_ready.png')
 
-    # Step 6: Ask a question about the README.md file
-    print('Step 6: Asking question about README.md file...')
+    # Step 6: Wait for agent to be fully ready for input
+    print('Step 6: Waiting for agent to be fully ready for input...')
+
+    # Wait for agent to transition from "Connecting..." to ready state (up to 5 minutes)
+    max_wait_time = 300  # 5 minutes
+    start_time = time.time()
+    agent_ready = False
+    
+    print(f'Waiting up to {max_wait_time} seconds for agent to be ready...')
+    
+    while time.time() - start_time < max_wait_time:
+        elapsed = int(time.time() - start_time)
+        
+        # Take periodic screenshots
+        if elapsed % 30 == 0 and elapsed > 0:  # Every 30 seconds
+            page.screenshot(path=f'test-results/conv_waiting_{elapsed}s.png')
+            print(f'Screenshot saved: conv_waiting_{elapsed}s.png (waiting {elapsed}s)')
+        
+        # Check for agent ready states by looking for status indicators
+        try:
+            # Check current status messages to understand agent state
+            status_messages = []
+            status_selectors = [
+                'div:has-text("Connecting")',
+                'div:has-text("Starting Runtime")',
+                'div:has-text("Waiting for runtime to start")',
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Awaiting input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
+            ]
+            
+            for selector in status_selectors:
+                try:
+                    elements = page.locator(selector)
+                    if elements.count() > 0:
+                        for i in range(elements.count()):
+                            text = elements.nth(i).text_content()
+                            if text and text.strip():
+                                status_messages.append(text.strip())
+                except Exception:
+                    continue
+            
+            if status_messages:
+                print(f'Current status messages: {status_messages}')
+            
+            # Check if agent is truly ready for input (not just connecting or starting)
+            ready_indicators = [
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Awaiting input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
+            ]
+            
+            # Also check if input field is enabled and visible
+            input_ready = False
+            submit_ready = False
+            try:
+                input_field = page.locator('[data-testid="chat-input"] textarea')
+                submit_button = page.locator('[data-testid="chat-input"] button[type="submit"]')
+                
+                if (input_field.is_visible(timeout=2000) and input_field.is_enabled(timeout=2000) and
+                    submit_button.is_visible(timeout=2000) and submit_button.is_enabled(timeout=2000)):
+                    print('Chat input field and submit button are both visible and enabled')
+                    input_ready = True
+                    submit_ready = True
+            except Exception:
+                pass
+            
+            # Agent is ready if we have ready indicators AND input/submit are ready
+            connecting_or_starting = any(
+                msg for msg in status_messages 
+                if 'connecting' in msg.lower() or 'starting' in msg.lower() or 'runtime to start' in msg.lower()
+            )
+            
+            has_ready_indicator = False
+            for indicator in ready_indicators:
+                try:
+                    element = page.locator(indicator)
+                    if element.is_visible(timeout=2000):
+                        print(f'Agent appears ready (found: {indicator})')
+                        has_ready_indicator = True
+                        break
+                except Exception:
+                    continue
+            
+            if (has_ready_indicator or not connecting_or_starting) and input_ready and submit_ready:
+                print('✅ Agent is ready for user input - input field and submit button are enabled')
+                agent_ready = True
+                break
+            elif not connecting_or_starting and not status_messages and input_ready and submit_ready:
+                # No status messages and no connecting/starting - might be ready
+                print('No status messages found and input is ready, agent appears ready...')
+                agent_ready = True
+                break
+                
+        except Exception as e:
+            print(f'Error checking agent ready state: {e}')
+        
+        page.wait_for_timeout(2000)  # Wait 2 seconds before checking again
+    
+    if not agent_ready:
+        page.screenshot(path='test-results/conv_timeout_waiting_for_agent.png')
+        raise AssertionError(f"Agent did not become ready for input within {max_wait_time} seconds")
+
+    # Step 7: Ask a question about the README.md file
+    print('Step 7: Asking question about README.md file...')
 
     # Find the message input field using multiple selectors
     input_selectors = [
@@ -826,109 +933,7 @@ def test_conversation_start(page):
     page.screenshot(path='test-results/conv_08_question_sent.png')
     print('Screenshot saved: conv_08_question_sent.png')
 
-    # Step 7: Wait for agent to be ready and respond
-    print('Step 7: Waiting for agent to be ready and respond...')
-
-    # Wait for agent to transition from "Connecting..." to ready state (up to 5 minutes)
-    max_wait_time = 300  # 5 minutes
-    start_time = time.time()
-    agent_ready = False
-    
-    print(f'Waiting up to {max_wait_time} seconds for agent to be ready...')
-    
-    while time.time() - start_time < max_wait_time:
-        elapsed = int(time.time() - start_time)
-        
-        # Take periodic screenshots
-        if elapsed % 30 == 0 and elapsed > 0:  # Every 30 seconds
-            page.screenshot(path=f'test-results/conv_waiting_{elapsed}s.png')
-            print(f'Screenshot saved: conv_waiting_{elapsed}s.png (waiting {elapsed}s)')
-        
-        # Check for agent ready states by looking for status indicators
-        try:
-            # Check current status messages to understand agent state
-            status_messages = []
-            status_selectors = [
-                'div:has-text("Connecting")',
-                'div:has-text("Starting Runtime")',
-                'div:has-text("Waiting for runtime to start")',
-                'div:has-text("Agent is ready")',
-                'div:has-text("Waiting for user input")',
-                'div:has-text("Task completed")',
-                'div:has-text("Agent has finished")',
-            ]
-            
-            for selector in status_selectors:
-                try:
-                    elements = page.locator(selector)
-                    if elements.count() > 0:
-                        for i in range(elements.count()):
-                            text = elements.nth(i).text_content()
-                            if text and text.strip():
-                                status_messages.append(text.strip())
-                except Exception:
-                    continue
-            
-            if status_messages:
-                print(f'Current status messages: {status_messages}')
-            
-            # Check if agent is truly ready for input (not just connecting or starting)
-            ready_indicators = [
-                'div:has-text("Agent is ready")',
-                'div:has-text("Waiting for user input")',
-                'div:has-text("Task completed")',
-                'div:has-text("Agent has finished")',
-            ]
-            
-            # Also check if input field is enabled and visible
-            input_ready = False
-            try:
-                input_field = page.locator('[data-testid="chat-input"] textarea')
-                if input_field.is_visible(timeout=2000) and input_field.is_enabled(timeout=2000):
-                    print('Chat input field is visible and enabled')
-                    input_ready = True
-            except Exception:
-                pass
-            
-            # Agent is ready if we have ready indicators OR if input is ready AND no connecting/starting messages
-            connecting_or_starting = any(
-                msg for msg in status_messages 
-                if 'connecting' in msg.lower() or 'starting' in msg.lower() or 'runtime to start' in msg.lower()
-            )
-            
-            has_ready_indicator = False
-            for indicator in ready_indicators:
-                try:
-                    element = page.locator(indicator)
-                    if element.is_visible(timeout=2000):
-                        print(f'Agent appears ready (found: {indicator})')
-                        has_ready_indicator = True
-                        break
-                except Exception:
-                    continue
-            
-            if has_ready_indicator or (input_ready and not connecting_or_starting):
-                print('✅ Agent appears to be ready for user input')
-                agent_ready = True
-                break
-            elif not connecting_or_starting and not status_messages:
-                # No status messages and no connecting/starting - might be ready
-                print('No status messages found, checking if agent is ready...')
-                page.wait_for_timeout(5000)  # Wait a bit more
-                agent_ready = True
-                break
-                
-        except Exception as e:
-            print(f'Error checking agent ready state: {e}')
-        
-        page.wait_for_timeout(5000)  # Wait 5 seconds before checking again
-
-    if not agent_ready:
-        print('⚠️ Agent may not be fully ready, but continuing with test...')
-    else:
-        print('✅ Agent appears to be ready')
-
-    # Wait for agent to process the question and provide a response
+    # Step 8: Waiting for agent response to README question
     print('Step 8: Waiting for agent response to README question...')
     
     response_wait_time = 120  # 2 minutes for response
