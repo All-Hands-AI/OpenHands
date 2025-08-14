@@ -67,26 +67,20 @@ function Terminal() {
         </div>
       </div>
 
-      {expanded && (
-        // eslint-disable-next-line react/jsx-no-useless-fragment
-        <>
-          {isRuntimeInactive ? (
-            <div className="w-full h-full flex items-center text-center justify-center text-2xl text-tertiary-light">
-              {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
-            </div>
-          ) : (
-            <div
-              ref={ref}
-              className={cn(
-                "p-4",
-                isRuntimeInactive
-                  ? "w-0 h-0 opacity-0 overflow-hidden"
-                  : "h-full w-full",
-              )}
-            />
-          )}
-        </>
+      {isRuntimeInactive && (
+        <div className="w-full flex items-center text-center justify-center text-2xl text-tertiary-light pt-16">
+          {t("DIFF_VIEWER$WAITING_FOR_RUNTIME")}
+        </div>
       )}
+
+      <div
+        ref={ref}
+        className={cn(
+          isRuntimeInactive || !expanded
+            ? "p-0 w-0 h-0 opacity-0 overflow-hidden"
+            : "p-4 h-full w-full",
+        )}
+      />
     </div>
   );
 }
