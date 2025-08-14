@@ -6,7 +6,7 @@
  */
 
 import { HydratedRouter } from "react-router/dom";
-import React, { startTransition, StrictMode, Suspense } from "react";
+import React, { startTransition, StrictMode } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import posthog from "posthog-js";
@@ -65,9 +65,7 @@ prepareApp().then(() =>
       <StrictMode>
         <Provider store={store}>
           <QueryClientProvider client={queryClient}>
-            <Suspense fallback={<div>Loading...</div>}>
-              <HydratedRouter />
-            </Suspense>
+            <HydratedRouter />
             <PosthogInit />
           </QueryClientProvider>
         </Provider>
