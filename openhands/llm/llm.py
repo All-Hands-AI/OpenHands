@@ -284,6 +284,8 @@ class LLM(RetryMixin, DebugMixin):
         refreshes model info and tokenizer as needed.
         """
         with self._lock:
+            # Reset capability/cost flags so the new config gets a clean slate
+            self.cost_metric_supported = True
             old_model = self.config.model
             old_tokenizer = self.config.custom_tokenizer
 

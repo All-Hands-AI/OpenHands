@@ -1514,3 +1514,57 @@ def test_gemini_performance_optimization_end_to_end(mock_completion):
     # Verify temperature and top_p were removed for reasoning models
     assert 'temperature' not in call_kwargs
     assert 'top_p' not in call_kwargs
+
+
+def test_llm_reinit_basic(default_config):
+    """Reinit should update config and metrics like update_config."""
+    llm = LLM(default_config)
+    assert llm.metrics.model_name == 'gpt-4o'
+
+    new_config = LLMConfig(
+        model='claude-3-5-sonnet-20241022',
+        api_key='new_test_key',
+        temperature=0.7,
+        max_output_tokens=1234,
+    )
+
+    llm.reinit(new_config)
+
+    assert llm.config.model == 'claude-3-5-sonnet-20241022'
+    assert llm.config.api_key.get_secret_value() == 'new_test_key'
+    assert llm.config.temperature == 0.7
+    assert llm.config.max_output_tokens == 1234
+    assert llm.metrics.model_name == 'claude-3-5-sonnet-20241022'
+    assert callable(llm._completion)
+    assert callable(llm._completion_unwrapped)
+
+
+def test_llm_reinit_recomputes_function_calling_capability():
+    """Reinit should recompute function-calling capability even if model doesn't change."""
+    base = LLMConfig(model='gpt-3.5-turbo', api_key='key')
+    llm = LLM(base)
+    # gpt-3.5-turbo is not in FUNCTION_CALLING_SUPPORTED_MODELS
+    assert llm.is_function_calling_active() is False
+
+    # Turn on native tool calling; same model
+    cfg_on = copy.deepcopy(base)
+    cfg_on.native_tool_calling = True
+    llm.reinit(cfg_on)
+    assert llm.is_function_calling_active() is True
+
+    # Turn off explicitly
+    cfg_off = copy.deepcopy(base)
+    cfg_off.native_tool_calling = False
+    llm.reinit(cfg_off)
+    assert llm.is_function_calling_active() is False
+
+
+def test_llm_reinit_resets_cost_flag(default_config):
+    """Reinit should reset cost_metric_supported so a new model can report cost."""
+    llm = LLM(default_config)
+    llm.cost_metric_supported = False
+
+    # Same model, but reinit should reset the flag to True
+    llm.reinit(copy.deepcopy(default_config))
+    assert llm.cost_metric_supported is True
+
