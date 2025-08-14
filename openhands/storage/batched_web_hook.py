@@ -4,6 +4,7 @@ from typing import Optional
 import httpx
 import tenacity
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR
 
@@ -17,8 +18,8 @@ class BatchedWebHookFileStore(FileStore):
 
     This class wraps another FileStore implementation and sends HTTP requests
     to a specified URL when files are written or deleted. Updates are batched
-    and sent together after a certain amount of time passes or if the content
-    size exceeds a threshold.
+    and sent together after a certain amount of time or size exceeds a threshold.
+    Time is counted from the last insert.
 
     Attributes:
         file_store: The underlying FileStore implementation
@@ -208,9 +209,8 @@ class BatchedWebHookFileStore(FileStore):
         if batch_to_send:
             try:
                 self._send_batch_request(batch_to_send)
-            except Exception as e:
-                # Log the error
-                print(f'Error sending webhook batch: {e}')
+            except Exception:
+                logger.exception('Error sending webhook batch')
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(1),
