@@ -60,6 +60,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           INSTALL_DOCKER: 1
           RUNTIME: docker
           FRONTEND_PORT: 12000
@@ -172,6 +173,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
           # Check if the application is running
           if ! nc -z localhost 12000; then
@@ -181,7 +183,7 @@ jobs:
             exit 1
           fi
 
-          # Run the tests with detailed output
+          # Run the core tests first
           cd tests/e2e
           poetry run python -m pytest \
             test_settings.py::test_github_token_configuration \
@@ -189,6 +191,14 @@ jobs:
             test_browsing_catchphrase.py::test_browsing_catchphrase \
             test_multi_conversation_resume.py::test_multi_conversation_resume \
             -v --no-header --capture=no --timeout=900
+
+          # Run the web search test only if TAVILY_API_KEY is available
+          if [ -n "$TAVILY_API_KEY" ]; then
+            echo "Running web search test with Tavily API key..."
+            poetry run python -m pytest test_web_search.py::test_web_search_current_us_president -v --no-header --capture=no --timeout=600
+          else
+            echo "Skipping web search test - TAVILY_API_KEY not available"
+          fi
 
       - name: Upload test results
         if: always()
