@@ -432,6 +432,7 @@ class Runtime(FileEditRuntimeMixin):
         action = cd_checkout_action
         self.log('info', f'Cloning repo: {selected_repository}')
         await call_sync_from_async(self.run_action, action)
+
         return dir_name
 
     def maybe_run_setup_script(self):
