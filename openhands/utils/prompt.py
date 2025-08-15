@@ -16,6 +16,8 @@ class RuntimeInfo:
     additional_agent_instructions: str = ''
     custom_secrets_descriptions: dict[str, str] = field(default_factory=dict)
     working_dir: str = ''
+    git_user_name: str = ''
+    git_user_email: str = ''
 
 
 @dataclass

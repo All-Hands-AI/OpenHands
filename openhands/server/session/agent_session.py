@@ -155,6 +155,8 @@ class AgentSession:
                 conversation_instructions=conversation_instructions,
                 custom_secrets_descriptions=custom_secrets_handler.get_custom_secrets_descriptions(),
                 working_dir=config.workspace_mount_path_in_sandbox,
+                git_user_name=config.git_user_name,
+                git_user_email=config.git_user_email,
             )
 
             # NOTE: this needs to happen before controller is created
@@ -463,6 +465,8 @@ class AgentSession:
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
+        git_user_name: str,
+        git_user_email: str,
     ) -> Memory:
         memory = Memory(
             event_stream=self.event_stream,
@@ -473,7 +477,11 @@ class AgentSession:
         if self.runtime:
             # sets available hosts and other runtime info
             memory.set_runtime_info(
-                self.runtime, custom_secrets_descriptions, working_dir
+                self.runtime,
+                custom_secrets_descriptions,
+                working_dir,
+                git_user_name=git_user_name,
+                git_user_email=git_user_email,
             )
             memory.set_conversation_instructions(conversation_instructions)
 
