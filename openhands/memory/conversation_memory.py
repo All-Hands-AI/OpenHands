@@ -316,7 +316,7 @@ class ConversationMemory:
             content = [TextContent(text=f'User requested to read file: {action.path}')]
             return [
                 Message(
-                    role='user',  # Always user for FileReadAction from user
+                    role='user',
                     content=content,
                 )
             ]
