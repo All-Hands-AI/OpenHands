@@ -1,7 +1,6 @@
 import argparse
 import os
 import pathlib
-import platform
 import sys
 from ast import literal_eval
 from types import UnionType
@@ -407,12 +406,6 @@ def finalize_config(cfg: OpenHandsConfig) -> None:
     # make sure log_completions_folder is an absolute path
     for llm in cfg.llms.values():
         llm.log_completions_folder = os.path.abspath(llm.log_completions_folder)
-
-    if cfg.sandbox.use_host_network and platform.system() == 'Darwin':
-        logger.openhands_logger.warning(
-            'Please upgrade to Docker Desktop 4.29.0 or later to use host network mode on macOS. '
-            'See https://github.com/docker/roadmap/issues/238#issuecomment-2044688144 for more information.'
-        )
 
     # make sure cache dir exists
     if cfg.cache_dir:
