@@ -70,7 +70,6 @@ recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
 
 # Color and styling constants
-# Now sourced from pt_style to ensure we merge with prompt_toolkit defaults
 DEFAULT_STYLE = get_cli_style()
 
 COMMANDS = {
