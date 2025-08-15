@@ -103,7 +103,7 @@ jobs:
           export LOG_LEVEL=WARNING
           export UVICORN_LOG_LEVEL=warning
           export OPENHANDS_LOG_LEVEL=WARNING
-          # Pass Tavily key to the application as SEARCH_API_KEY (also read directly by server)
+          # Pass TAVILY_API_KEY to the application as SEARCH_API_KEY
           export SEARCH_API_KEY="${TAVILY_API_KEY}"
           FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
