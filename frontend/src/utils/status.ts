@@ -122,5 +122,5 @@ export function getStatusCode(
     return runtimeStatus;
   }
 
-  return I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE; // illegal state
+  return I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE;
 }
