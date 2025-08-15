@@ -8,9 +8,8 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 from pydantic import SecretStr
 
-from openhands.cli.pt_style import get_cli_style
+from openhands.cli.pt_style import COLOR_GREY, get_cli_style
 from openhands.cli.tui import (
-    COLOR_GREY,
     UserCancelledError,
     cli_confirm,
     kb_cancel,

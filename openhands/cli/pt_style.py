@@ -17,11 +17,11 @@ def get_cli_style() -> Style:
             'gold': COLOR_GOLD,
             'grey': COLOR_GREY,
             'prompt': f'{COLOR_GOLD} bold',
-            # The following entries are mostly redundant because default_ui_style
-            # already sets sane values. We keep them minimal on purpose to avoid
-            # clutter and ensure high contrast on various themes.
-            # 'completion-menu': 'bg:#bbbbbb #000000',
-            # 'completion-menu.completion.current': 'reverse',
+            # Ensure good contrast for fuzzy matches on the selected completion row
+            # across terminals/themes (e.g., Ubuntu GNOME, Alacritty, Kitty).
+            # See https://github.com/All-Hands-AI/OpenHands/issues/10330
+            'completion-menu.completion.current fuzzymatch.outside': 'fg:#ffffff bg:#888888',
+            # If #ffffff feels too bright on your terminal, consider using #dddddd instead for the fg.
         }
     )
     return merge_styles([base, custom])
