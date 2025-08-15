@@ -143,38 +143,69 @@ def test_gitlab_repository_cloning(page: Page):
     # Step 4: Select provider (GitLab)
     print('Step 4: Selecting GitLab provider...')
     
-    # Try multiple selectors for the provider dropdown
+    # Try multiple approaches to find and click the provider dropdown
+    provider_clicked = False
+    
+    # Approach 1: Try to find the dropdown control/container
     provider_selectors = [
-        'text=Select Provider',
-        '[placeholder="Select Provider"]',
-        'div:has-text("Select Provider")',
-        '.react-select__placeholder:has-text("Select Provider")',
-        '[data-testid*="provider"] >> text=Select Provider',
-        'div:has-text("Connect to a Repository") >> div:has-text("Select Provider")',
+        '.react-select__control:has-text("Select Provider")',
+        'div[class*="select"]:has-text("Select Provider")',
+        '[role="combobox"]:has-text("Select Provider")',
+        'div:has-text("Select Provider") >> ..',  # Parent of text element
+        'div:has-text("Connect to a Repository") >> div[class*="select"]:first',
     ]
     
-    provider_dropdown = None
     for selector in provider_selectors:
         try:
             element = page.locator(selector).first
             if element.is_visible(timeout=3000):
-                provider_dropdown = element
-                print(f'Found provider dropdown with selector: {selector}')
+                element.click()
+                print(f'Clicked provider dropdown with selector: {selector}')
+                provider_clicked = True
                 break
-        except Exception:
+        except Exception as e:
+            print(f'Failed with selector {selector}: {e}')
             continue
     
-    if provider_dropdown is None:
-        print('Could not find provider dropdown, trying to click first dropdown in Connect section')
-        # Try to find the first dropdown in the Connect to a Repository section
-        connect_section = page.locator('div:has-text("Connect to a Repository")').first
-        first_dropdown = connect_section.locator('div[class*="select"]').first
-        if first_dropdown.is_visible(timeout=5000):
-            provider_dropdown = first_dropdown
-            print('Using first dropdown in Connect section')
+    # Approach 2: If still not clicked, try clicking by position
+    if not provider_clicked:
+        print('Trying to click provider dropdown by finding first dropdown in Connect section')
+        try:
+            connect_section = page.locator('div:has-text("Connect to a Repository")').first
+            # Look for any clickable dropdown elements
+            dropdown_selectors = [
+                'div[class*="select"]',
+                '[role="combobox"]',
+                'div[class*="control"]',
+                'div[tabindex="0"]',
+            ]
+            
+            for dropdown_sel in dropdown_selectors:
+                dropdowns = connect_section.locator(dropdown_sel)
+                if dropdowns.count() > 0:
+                    first_dropdown = dropdowns.first
+                    if first_dropdown.is_visible(timeout=3000):
+                        first_dropdown.click()
+                        print(f'Clicked first dropdown with selector: {dropdown_sel}')
+                        provider_clicked = True
+                        break
+            
+            if not provider_clicked:
+                # Last resort: click at coordinates of the first dropdown area
+                connect_box = connect_section.bounding_box()
+                if connect_box:
+                    # Click roughly where the first dropdown should be
+                    click_x = connect_box['x'] + 300  # Approximate position
+                    click_y = connect_box['y'] + 80
+                    page.mouse.click(click_x, click_y)
+                    print(f'Clicked at coordinates ({click_x}, {click_y})')
+                    provider_clicked = True
+        except Exception as e:
+            print(f'Error in approach 2: {e}')
     
-    expect(provider_dropdown).to_be_visible(timeout=10000)
-    provider_dropdown.click()
+    if not provider_clicked:
+        raise Exception('Could not click provider dropdown with any method')
+    
     page.wait_for_timeout(2000)
 
     # Select GitLab from provider options
