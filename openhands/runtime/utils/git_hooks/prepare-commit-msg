@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# OpenHands Git Hook: prepare-commit-msg
+# This hook automatically adds "Co-authored-by: openhands <openhands@all-hands.dev>"
+# to commit messages if it's not already present. This serves as a fallback when
+# the agent doesn't manually add the co-authorship line.
+
+COMMIT_MSG_FILE=$1
+
+# Check if co-authorship line already exists (case-insensitive)
+if ! grep -qi "co-authored-by.*openhands.*<openhands@all-hands.dev>" "$COMMIT_MSG_FILE"; then
+    # Add two empty lines and co-authorship line
+    echo "" >> "$COMMIT_MSG_FILE"
+    echo "" >> "$COMMIT_MSG_FILE"
+    echo "Co-authored-by: openhands <openhands@all-hands.dev>" >> "$COMMIT_MSG_FILE"
+fi

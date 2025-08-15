@@ -877,6 +877,111 @@ def test_git_operation(temp_dir, runtime_cls):
         _close_test_runtime(runtime)
 
 
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific git hooks and file operations'
+)
+def test_git_co_authorship_runtime_setup(temp_dir, runtime_cls):
+    """Test that all runtimes have git co-authorship enabled via Dockerfile.j2 hooks."""
+    runtime, config = _load_runtime(
+        temp_dir=temp_dir,
+        use_workspace=False,
+        runtime_cls=runtime_cls,
+        run_as_openhands=True,
+    )
+
+    try:
+        # Set up git repository
+        obs = _run_cmd_action(runtime, 'git init')
+        assert obs.exit_code == 0
+
+        # Set up a different git user (not openhands) to test the co-authorship
+        obs = _run_cmd_action(
+            runtime,
+            'git config user.name "testuser" && git config user.email "testuser@example.com"',
+        )
+        assert obs.exit_code == 0
+
+        # Create a test file and add it to git
+        obs = _run_cmd_action(runtime, 'echo "test content" > test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
+        assert obs.exit_code == 0
+
+        # Commit without manually adding co-authorship - the runtime should add it
+        obs = _run_cmd_action(
+            runtime, 'git commit -m "Test commit without manual co-authorship"'
+        )
+        assert obs.exit_code == 0
+
+        # Check the commit message to verify co-authorship was added by the runtime
+        obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
+        assert obs.exit_code == 0
+
+        # All runtimes should have git co-authorship enabled via hooks in Dockerfile.j2
+        # CLI runtime uses additional PATH-based wrapper, but hooks work for all
+        assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
+@pytest.mark.skipif(
+    is_windows(), reason='Test uses Linux-specific git wrapper and file operations'
+)
+def test_git_co_authorship_wrapper_always_enabled(temp_dir, runtime_cls):
+    """Test that git co-authorship wrapper is always enabled in CLI runtime."""
+    # Only test with CLIRuntime since other runtimes handle git co-authorship differently
+    if runtime_cls.__name__ != 'CLIRuntime':
+        pytest.skip('This test is specific to CLIRuntime')
+
+    runtime, config = _load_runtime(
+        temp_dir=temp_dir,
+        use_workspace=False,
+        runtime_cls=runtime_cls,
+        run_as_openhands=True,
+    )
+
+    try:
+        # Initialize git repository in the workspace
+        obs = _run_cmd_action(runtime, 'git init')
+        assert obs.exit_code == 0
+
+        # Set up a different git user (not openhands) to test the wrapper
+        obs = _run_cmd_action(
+            runtime,
+            'git config user.name "testuser" && git config user.email "testuser@example.com"',
+        )
+        assert obs.exit_code == 0
+
+        # The git wrapper should have been set up during runtime initialization
+        # Check if the wrapper exists in the user's bin directory
+        obs = _run_cmd_action(
+            runtime, 'test -x ~/.openhands/bin/git && echo "wrapper exists"'
+        )
+        assert obs.exit_code == 0
+        assert 'wrapper exists' in obs.content
+
+        # Create a test file and commit to verify the wrapper works
+        obs = _run_cmd_action(runtime, 'echo "test content" > test_file.txt')
+        assert obs.exit_code == 0
+
+        obs = _run_cmd_action(runtime, 'git add test_file.txt')
+        assert obs.exit_code == 0
+
+        # Commit without manually adding co-authorship - the wrapper should add it
+        obs = _run_cmd_action(runtime, 'git commit -m "Test commit with wrapper"')
+        assert obs.exit_code == 0
+
+        # Check the commit message to verify co-authorship was added by the wrapper
+        obs = _run_cmd_action(runtime, 'git log --format="%B" -n 1')
+        assert obs.exit_code == 0
+        assert 'Co-authored-by: openhands <openhands@all-hands.dev>' in obs.content
+
+    finally:
+        _close_test_runtime(runtime)
+
+
 def test_python_version(temp_dir, runtime_cls, run_as_openhands):
     runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
     try:
