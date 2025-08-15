@@ -161,7 +161,7 @@ def test_react_app_creation_and_serving(page: Page):
     # Wait for conversation interface to be ready
     start_time = time.time()
     conversation_loaded = False
-    navigation_timeout = 300  # 5 minutes
+    navigation_timeout = 180  # 3 minutes (reduced for CI)
 
     while time.time() - start_time < navigation_timeout:
         try:
@@ -201,7 +201,7 @@ def test_react_app_creation_and_serving(page: Page):
     # Step 5: Wait for agent to be ready
     print('Step 5: Waiting for agent to be ready for input...')
 
-    max_wait_time = 480  # 8 minutes
+    max_wait_time = 240  # 4 minutes (reduced for CI)
     start_time = time.time()
     agent_ready = False
     print(f'Waiting up to {max_wait_time} seconds for agent to be ready...')
@@ -339,7 +339,7 @@ Make sure the server stays running so I can access it."""
     print('Step 7: Waiting for agent to complete React app creation and serving...')
 
     # Wait for agent to process and complete the task
-    max_completion_time = 600  # 10 minutes for React app creation and serving
+    max_completion_time = 300  # 5 minutes for React app creation and serving (reduced for CI)
     start_time = time.time()
     task_completed = False
 
