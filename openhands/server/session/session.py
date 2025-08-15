@@ -31,8 +31,8 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.constants import ROOM_KEY
-from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
+from openhands.session.agent_session import AgentSession
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
