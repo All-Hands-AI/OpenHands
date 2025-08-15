@@ -76,33 +76,7 @@ poetry run pytest test_conversation.py::test_conversation_start -v
 # Run individual tests with custom base URL
 poetry run pytest test_settings.py::test_github_token_configuration -v --base-url=https://my-instance.com
 
-# Run the base URL configuration test
-poetry run pytest test_base_url_configuration.py -v
-
-# Test base URL functionality with different URLs
-poetry run pytest test_base_url_configuration.py -v --base-url=https://demo.openhands.ai
 ```
-
-### Testing Base URL Configuration
-
-The E2E test suite includes a specific test (`test_base_url_configuration.py`) that validates the base URL functionality:
-
-```bash
-# Test with default localhost URL
-poetry run pytest test_base_url_configuration.py
-
-# Test with custom URL
-poetry run pytest test_base_url_configuration.py --base-url=https://demo.openhands.ai
-
-# Test with CI environment URL
-poetry run pytest test_base_url_configuration.py --base-url=http://ci-instance:8080
-```
-
-This test verifies that:
-- The base URL configuration is properly applied
-- Tests can navigate to the configured URL
-- The OpenHands application loads correctly at the target URL
-- Screenshots are captured for verification
 
 ### Running with Visible Browser
 
