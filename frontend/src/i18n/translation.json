@@ -11632,10 +11632,10 @@
         "uk": "Натисніть тут"
     },
     "COMMON$OPEN_REPOSITORY": {
-        "en": "Open repository",
+        "en": "Open Repository",
         "ja": "リポジトリを開く",
         "zh-CN": "打开仓库",
-        "zh-TW": "開啟存儲庫",
+        "zh-TW": "打開存儲庫",
         "ko-KR": "저장소 열기",
         "no": "Åpne repository",
         "it": "Apri repository",
@@ -11643,7 +11643,7 @@
         "es": "Abrir repositorio",
         "ar": "افتح المستودع",
         "fr": "Ouvrir le dépôt",
-        "tr": "Depoyu aç",
+        "tr": "Depoyu Aç",
         "de": "Repository öffnen",
         "uk": "Відкрити репозиторій"
     },
