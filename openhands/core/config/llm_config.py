@@ -67,7 +67,7 @@ class LLMConfig(BaseModel):
         default=30_000
     )  # maximum number of characters in an observation's content when sent to the llm
     temperature: float = Field(default=0.0)
-    top_p: float | None = Field(default=None)
+    top_p: float = Field(default=1.0)
     top_k: float | None = Field(default=None)
     custom_llm_provider: str | None = Field(default=None)
     max_input_tokens: int | None = Field(default=None)

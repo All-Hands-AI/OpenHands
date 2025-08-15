@@ -111,6 +111,7 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'gemini-2.5-pro',
     'gpt-5',
     'gpt-5-2025-08-07',
+    'claude-opus-4-1-20250805',  # we need to remove top_p for opus 4.1
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
