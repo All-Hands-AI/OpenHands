@@ -14,15 +14,14 @@ from playwright.sync_api import Page, expect
 
 def test_gitlab_repository_cloning(page: Page):
     """
-    Test repository integration with GitLab token configuration:
+    Test GitLab repository integration with GitLab token configuration:
     1. Navigate to OpenHands and configure GitLab token in settings
-    2. Select the OpenHands repository (to test basic functionality)
+    2. Select a GitLab repository (gitlab-org/gitlab-foss)
     3. Launch the repository and wait for agent initialization
     4. Ask the agent to count lines in README.md to verify repository access
-    5. Verify the agent can successfully work with the cloned repository
+    5. Verify the agent can successfully work with the cloned GitLab repository
     
-    Note: Using OpenHands repository initially to test basic functionality.
-    GitLab-specific repository testing can be added once basic flow works.
+    This test verifies that OpenHands can properly clone and work with GitLab repositories.
     """
     # Create test-results directory if it doesn't exist
     os.makedirs('test-results', exist_ok=True)
@@ -150,26 +149,27 @@ def test_gitlab_repository_cloning(page: Page):
     repo_dropdown.click()
     page.wait_for_timeout(1000)
 
-    # Type the repository name (using exact logic from conversation test)
+    # Type a GitLab repository name (using a well-known public GitLab repository)
+    gitlab_repo = 'gitlab-org/gitlab-foss'
     try:
         page.keyboard.press('Control+a')  # Select all
-        page.keyboard.type('openhands-agent/OpenHands')
-        print('Used keyboard.type() for React Select component')
+        page.keyboard.type(gitlab_repo)
+        print(f'Used keyboard.type() for React Select component: {gitlab_repo}')
     except Exception as e:
         print(f'Keyboard input failed: {e}')
 
     page.wait_for_timeout(2000)  # Wait for search results
 
-    # Try to find and click the repository option (exact logic from conversation test)
+    # Try to find and click the repository option
     option_selectors = [
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
-        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("openhands-agent/OpenHands")',
-        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("OpenHands")',
-        '[role="option"]:has-text("openhands-agent/OpenHands")',
-        '[role="option"]:has-text("OpenHands")',
-        'div:has-text("openhands-agent/OpenHands"):not([id="aria-results"])',
-        'div:has-text("OpenHands"):not([id="aria-results"])',
+        f'[data-testid="repo-dropdown"] [role="option"]:has-text("{gitlab_repo}")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("gitlab-foss")',
+        f'[data-testid="repo-dropdown"] div[id*="option"]:has-text("{gitlab_repo}")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("gitlab-foss")',
+        f'[role="option"]:has-text("{gitlab_repo}")',
+        '[role="option"]:has-text("gitlab-foss")',
+        f'div:has-text("{gitlab_repo}"):not([id="aria-results"])',
+        'div:has-text("gitlab-foss"):not([id="aria-results"])',
     ]
 
     option_found = False
