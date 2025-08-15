@@ -8,8 +8,8 @@
   "paths": {
     "/api/options/models": {
       "get": {
-        "summary": "Get Litellm Models",
-        "description": "Get all models supported by LiteLLM.\n\nThis function combines models from litellm and Bedrock, removing any\nerror-prone Bedrock models.\n\nTo get the models:\n```sh\ncurl http://localhost:3000/api/litellm-models\n```\n\nReturns:\n    list[str]: A sorted list of unique model names.",
+        "summary": "List Supported Models",
+        "description": "Get all models supported by configured model providers.\n\nThis function combines models from configured providers and , removing any\nerror-prone  models.\n\nTo get the models:",
         "operationId": "get_litellm_models_api_options_models_get",
         "responses": {
           "200": {
@@ -36,8 +36,8 @@
     },
     "/api/options/agents": {
       "get": {
-        "summary": "Get Agents",
-        "description": "Get all agents supported by LiteLLM.\n\nTo get the agents:\n```sh\ncurl http://localhost:3000/api/agents\n```\n\nReturns:\n    list[str]: A sorted list of agent names.",
+        "summary": "List Agents",
+        "description": "Get all agents supported by configured model providers.\n\nTo get the agents:",
         "operationId": "get_agents_api_options_agents_get",
         "responses": {
           "200": {
@@ -64,8 +64,8 @@
     },
     "/api/options/security-analyzers": {
       "get": {
-        "summary": "Get Security Analyzers",
-        "description": "Get all supported security analyzers.\n\nTo get the security analyzers:\n```sh\ncurl http://localhost:3000/api/security-analyzers\n```\n\nReturns:\n    list[str]: A sorted list of security analyzer names.",
+        "summary": "List Security Analyzers",
+        "description": "Get all supported security analyzers.\n\nTo get the security analyzers:",
         "operationId": "get_security_analyzers_api_options_security_analyzers_get",
         "responses": {
           "200": {
@@ -93,7 +93,7 @@
     "/api/options/config": {
       "get": {
         "summary": "Get Config",
-        "description": "Get current config.\n\nReturns:\n    dict[str, Any]: The current server configuration.",
+        "description": "Get current config.",
         "operationId": "get_config_api_options_config_get",
         "responses": {
           "200": {
@@ -119,7 +119,7 @@
     "/api/conversations/{conversation_id}/list-files": {
       "get": {
         "summary": "List Files",
-        "description": "List files in the specified path.\n\nThis function retrieves a list of files from the agent's runtime file store,\nexcluding certain system and hidden files/directories.\n\nTo list files:\n```sh\ncurl http://localhost:3000/api/conversations/{conversation_id}/list-files\n```\n\nArgs:\n    request (Request): The incoming request object.\n    path (str, optional): The path to list files from. Defaults to None.\n\nReturns:\n    list: A list of file names in the specified path.\n\nRaises:\n    HTTPException: If there's an error listing the files.",
+        "description": "List files in the specified path.\n\nThis function retrieves a list of files from the agent's runtime file store,\nexcluding certain system and hidden files/directories.\n\nTo list files:",
         "operationId": "list_files_api_conversations__conversation_id__list_files_get",
         "security": [
           {
@@ -208,7 +208,7 @@
     "/api/conversations/{conversation_id}/select-file": {
       "get": {
         "summary": "Select File",
-        "description": "Retrieve the content of a specified file.\n\nTo select a file:\n```sh\ncurl http://localhost:3000/api/conversations/{conversation_id}select-file?file=<file_path>\n```\n\nArgs:\n    file (str): The path of the file to be retrieved.\n        Expect path to be absolute inside the runtime.\n    request (Request): The incoming request object.\n\nReturns:\n    dict: A dictionary containing the file content.\n\nRaises:\n    HTTPException: If there's an error opening the file.",
+        "description": "Retrieve the content of a specified file.\n\nTo select a file:",
         "operationId": "select_file_api_conversations__conversation_id__select_file_get",
         "security": [
           {
@@ -540,7 +540,7 @@
     "/api/conversations/{conversation_id}/submit-feedback": {
       "post": {
         "summary": "Submit Feedback",
-        "description": "Submit user feedback.\n\nThis function stores the provided feedback data.\n\nTo submit feedback:\n```sh\ncurl -X POST -d '{\"email\": \"test@example.com\"}' -H \"Authorization:\"\n```\n\nArgs:\n    request (Request): The incoming request object.\n    feedback (FeedbackDataModel): The feedback data to be stored.\n\nReturns:\n    dict: The stored feedback data.\n\nRaises:\n    HTTPException: If there's an error submitting the feedback.",
+        "description": "Submit user feedback.\n\nThis function stores the provided feedback data.\n\nTo submit feedback:",
         "operationId": "submit_feedback_api_conversations__conversation_id__submit_feedback_post",
         "security": [
           {
@@ -623,96 +623,10 @@
         }
       }
     },
-    "/api/conversations/{conversation_id}/vscode-url": {
-      "get": {
-        "summary": "Get Vscode Url",
-        "description": "Get the VSCode URL.\n\nThis endpoint allows getting the VSCode URL.\n\nArgs:\n    request (Request): The incoming FastAPI request object.\n\nReturns:\n    JSONResponse: A JSON response indicating the success of the operation.",
-        "operationId": "get_vscode_url_api_conversations__conversation_id__vscode_url_get",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Conversation Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/web-hosts": {
-      "get": {
-        "summary": "Get Hosts",
-        "description": "Get the hosts used by the runtime.\n\nThis endpoint allows getting the hosts used by the runtime.\n\nArgs:\n    request (Request): The incoming FastAPI request object.\n\nReturns:\n    JSONResponse: A JSON response indicating the success of the operation.",
-        "operationId": "get_hosts_api_conversations__conversation_id__web_hosts_get",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Conversation Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/conversations/{conversation_id}/events": {
       "get": {
         "summary": "Search Events",
-        "description": "Search through the event stream with filtering and pagination.\n\nArgs:\n    conversation_id: The conversation ID\n    start_id: Starting ID in the event stream. Defaults to 0\n    end_id: Ending ID in the event stream\n    reverse: Whether to retrieve events in reverse order. Defaults to False.\n    filter: Filter for events\n    limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20\n    metadata: Conversation metadata (injected by dependency)\n    user_id: User ID (injected by dependency)\n\nReturns:\n    dict: Dictionary containing:\n        - events: List of matching events\n        - has_more: Whether there are more matching events after this batch\nRaises:\n    HTTPException: If conversation is not found or access is denied\n    ValueError: If limit is less than 1 or greater than 100",
+        "description": "Search through the event stream with filtering and pagination.",
         "operationId": "search_events_api_conversations__conversation_id__events_get",
         "security": [
           {
@@ -858,7 +772,7 @@
     "/api/conversations/{conversation_id}/microagents": {
       "get": {
         "summary": "Get Microagents",
-        "description": "Get all microagents associated with the conversation.\n\nThis endpoint returns all repository and knowledge microagents that are loaded for the conversation.\n\nReturns:\n    JSONResponse: A JSON response containing the list of microagents.",
+        "description": "Get all microagents associated with the conversation.\n\nThis endpoint returns all repository and knowledge microagents that are loaded for the conversation.",
         "operationId": "get_microagents_api_conversations__conversation_id__microagents_get",
         "security": [
           {
@@ -1129,7 +1043,7 @@
       },
       "patch": {
         "summary": "Update Conversation",
-        "description": "Update conversation metadata.\n\nThis endpoint allows updating conversation details like title.\nOnly the conversation owner can update the conversation.\n\nArgs:\n    conversation_id: The ID of the conversation to update\n    data: The conversation update data (title, etc.)\n    user_id: The authenticated user ID\n    conversation_store: The conversation store dependency\n\nReturns:\n    bool: True if the conversation was updated successfully\n\nRaises:\n    HTTPException: If conversation is not found or user lacks permission",
+        "description": "Update conversation metadata.\n\nThis endpoint allows updating conversation details like title.\nOnly the conversation owner can update the conversation.",
         "operationId": "update_conversation_api_conversations__conversation_id__patch",
         "security": [
           {
@@ -1316,61 +1230,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ConversationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/exp-config": {
-      "post": {
-        "summary": "Add Experiment Config For Conversation",
-        "operationId": "add_experiment_config_for_conversation_api_conversations__conversation_id__exp_config_post",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Conversation Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExperimentConfig"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean",
-                  "title": "Response Add Experiment Config For Conversation Api Conversations  Conversation Id  Exp Config Post"
                 }
               }
             }
@@ -1758,53 +1617,6 @@
         }
       }
     },
-    "/api/user/installations": {
-      "get": {
-        "summary": "Get User Installations",
-        "operationId": "get_user_installations_api_user_installations_get",
-        "security": [
-          {
-            "APIKeyHeader": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "provider",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/ProviderType"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  },
-                  "title": "Response Get User Installations Api User Installations Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/user/repositories": {
       "get": {
         "summary": "Get User Repositories",
@@ -2038,7 +1850,7 @@
     "/api/user/suggested-tasks": {
       "get": {
         "summary": "Get Suggested Tasks",
-        "description": "Get suggested tasks for the authenticated user across their most recently pushed repositories.\n\nReturns:\n- PRs owned by the user\n- Issues assigned to the user.",
+        "description": "Get suggested tasks for the authenticated user across their most recently pushed repositories.",
         "operationId": "get_suggested_tasks_api_user_suggested_tasks_get",
         "responses": {
           "200": {
@@ -2066,7 +1878,7 @@
     "/api/user/repository/branches": {
       "get": {
         "summary": "Get Repository Branches",
-        "description": "Get branches for a repository.\n\nArgs:\n    repository: The repository name in the format 'owner/repo'\n\nReturns:\n    A list of branches for the repository",
+        "description": "Get branches for a repository.",
         "operationId": "get_repository_branches_api_user_repository_branches_get",
         "security": [
           {
@@ -2115,7 +1927,7 @@
     "/api/user/repository/{repository_name}/microagents": {
       "get": {
         "summary": "Get Repository Microagents",
-        "description": "Scan the microagents directory of a repository and return the list of microagents.\n\nThe microagents directory location depends on the git provider and actual repository name:\n- If git provider is not GitLab and actual repository name is \".openhands\": scans \"microagents\" folder\n- If git provider is GitLab and actual repository name is \"openhands-config\": scans \"microagents\" folder\n- Otherwise: scans \".openhands/microagents\" folder\n\nNote: This API returns microagent metadata without content for performance.\nUse the separate content API to fetch individual microagent content.\n\nArgs:\n    repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'\n    provider_tokens: Provider tokens for authentication\n    access_token: Access token for external authentication\n    user_id: User ID for authentication\n\nReturns:\n    List of microagents found in the repository's microagents directory (without content)",
+        "description": "Scan the microagents directory of a repository and return the list of microagents.\n\nThe microagents directory location depends on the git provider and actual repository name:\n- If git provider is not GitLab and actual repository name is \".openhands\": scans \"microagents\" folder\n- If git provider is GitLab and actual repository name is \"openhands-config\": scans \"microagents\" folder\n- Otherwise: scans \".openhands/microagents\" folder",
         "operationId": "get_repository_microagents_api_user_repository__repository_name__microagents_get",
         "security": [
           {
@@ -2164,7 +1976,7 @@
     "/api/user/repository/{repository_name}/microagents/content": {
       "get": {
         "summary": "Get Repository Microagent Content",
-        "description": "Fetch the content of a specific microagent file from a repository.\n\nArgs:\n    repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'\n    file_path: Query parameter - Path to the microagent file within the repository\n    provider_tokens: Provider tokens for authentication\n    access_token: Access token for external authentication\n    user_id: User ID for authentication\n\nReturns:\n    Microagent file content and metadata\n\nExample:\n    GET /api/user/repository/owner/repo/microagents/content?file_path=.openhands/microagents/my-agent.md",
+        "description": "Fetch the content of a specific microagent file from a repository.",
         "operationId": "get_repository_microagent_content_api_user_repository__repository_name__microagents_content_get",
         "security": [
           {
@@ -2220,7 +2032,7 @@
     "/api/conversations/{conversation_id}/trajectory": {
       "get": {
         "summary": "Get Trajectory",
-        "description": "Get trajectory.\n\nThis function retrieves the current trajectory and returns it.\n\nArgs:\n    request (Request): The incoming request object.\n\nReturns:\n    JSONResponse: A JSON response containing the trajectory as a list of\n    events.",
+        "description": "Get trajectory.\n\nThis function retrieves the current trajectory and returns it.",
         "operationId": "get_trajectory_api_conversations__conversation_id__trajectory_get",
         "security": [
           {
@@ -2289,22 +2101,6 @@
                   "type": "string",
                   "title": "Response Health Health Get"
                 }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/server_info": {
-      "get": {
-        "summary": "Get Server Info",
-        "operationId": "get_server_info_server_info_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {}
               }
             }
           }
