@@ -11,6 +11,7 @@ import WaterIcon from "#/icons/u-water.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { setMessageToSend } from "#/state/conversation-slice";
 import { REPO_SUGGESTIONS } from "#/utils/suggestions/repo-suggestions";
+import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
 const contextMenuListItemClassName =
   "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px] !w-auto whitespace-nowrap";
@@ -53,6 +54,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<TachometerFastIcon width={16} height={16} />}
           text={t(I18nKey.INCREASE_TEST_COVERAGE)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -64,6 +66,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<DocumentIcon width={16} height={16} />}
           text={t(I18nKey.FIX_README)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -75,6 +78,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<PrStatusIcon width={16} height={16} />}
           text={t(I18nKey.AUTO_MERGE_PRS)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -86,6 +90,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<WaterIcon width={16} height={16} />}
           text={t(I18nKey.CLEAN_DEPENDENCIES)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
     </ContextMenu>
