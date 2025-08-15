@@ -735,8 +735,8 @@ After reviewing the file, please ask the user what they would like to do with it
         # Find the most recent conversation via FileConversationStore
         store = await FileConversationStore.get_instance(config=config, user_id=None)
         result = await store.search(limit=1)
-        if result.conversations:
-            initial_conversation_id = result.conversations[0].conversation_id
+        if result.results:
+            initial_conversation_id = result.results[0].conversation_id
 
     # Run the first session
     new_session_requested = await run_session(
