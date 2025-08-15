@@ -126,6 +126,5 @@ export function getStatusCode(
     return runtimeStatus;
   }
 
-  // Default error state
-  return "STATUS$ERROR";
+  return I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE;
 }
