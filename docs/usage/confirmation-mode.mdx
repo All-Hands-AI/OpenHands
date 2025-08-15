@@ -32,7 +32,7 @@ The LLM Analyzer uses a language model to intelligently assess the risk level of
 - Provides detailed explanations for risk assessments
 
 **Cons:**
-- Requires additional LLM calls, which may increase latency
+- May be susceptible to prompt injection attacks
 - Depends on the quality and capabilities of the underlying LLM
 - May have occasional false positives or negatives
 
@@ -128,8 +128,8 @@ If risky actions aren't being caught:
 
 ### Performance Issues
 If you experience slow response times:
-- Switch from "LLM Analyzer" to "Invariant Analyzer" for faster analysis
-- Check your LLM configuration and response times
+- Check your LLM configuration and response times (LLM analyzer uses the same LLM call as the agent)
+- Switch to "Invariant Analyzer" if you prefer rule-based analysis
 - Consider adjusting confirmation thresholds
 
 ## Security Considerations
