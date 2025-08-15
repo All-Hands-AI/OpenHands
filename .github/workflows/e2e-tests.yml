@@ -183,7 +183,12 @@ jobs:
 
           # Run the tests with detailed output
           cd tests/e2e
-          poetry run python -m pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --no-header --capture=no --timeout=600
+          poetry run python -m pytest \
+            test_settings.py::test_github_token_configuration \
+            test_conversation.py::test_conversation_start \
+            test_microagents.py::test_microagent_flarglebargle \
+            test_microagents.py::test_microagent_kubernetes \
+            -v --no-header --capture=no --timeout=600
 
       - name: Upload test results
         if: always()
