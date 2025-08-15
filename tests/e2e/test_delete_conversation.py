@@ -21,7 +21,7 @@ from playwright.sync_api import Page, expect
 def test_delete_conversation(page: Page):
     """
     Test deleting a conversation from the conversation list.
-    
+
     This test creates a conversation and then deletes it to verify the functionality.
     """
     # Create test-results directory
@@ -37,7 +37,7 @@ def test_delete_conversation(page: Page):
 
     # Step 2: Wait for home screen and create a conversation
     print('Step 2: Creating a test conversation...')
-    
+
     # Wait for the home screen to load
     home_screen = page.locator('[data-testid="home-screen"]')
     expect(home_screen).to_be_visible(timeout=15000)
@@ -77,7 +77,6 @@ def test_delete_conversation(page: Page):
     # Click Launch button
     launch_button = page.locator('[data-testid="repo-launch-button"]')
     expect(launch_button).to_be_visible(timeout=10000)
-    
     # Wait for button to be enabled
     for _ in range(10):
         if not launch_button.is_disabled():
@@ -124,9 +123,8 @@ def test_delete_conversation(page: Page):
 
     # Step 4: Select first conversation and open context menu
     print('Step 4: Opening context menu...')
-    
+
     first_conversation = conversation_cards.first
-    
     # Find and click ellipsis button
     ellipsis_button = first_conversation.locator('[data-testid="ellipsis-button"]')
     expect(ellipsis_button).to_be_visible(timeout=10000)
@@ -180,7 +178,8 @@ def test_delete_conversation(page: Page):
 
     # Verify count decreased
     assert updated_count < conversation_count, (
-        f'Conversation count should have decreased from {conversation_count} to {updated_count}'
+        f'Conversation count should have decreased from {conversation_count} '
+        f'to {updated_count}'
     )
     print('✅ Conversation removed from UI')
 
