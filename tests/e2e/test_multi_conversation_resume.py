@@ -607,8 +607,8 @@ def test_multi_conversation_resume(page: Page):
         print(
             'Could not find conversation in list, navigating directly to conversation URL as fallback'
         )
-        # Fallback to direct navigation
-        conversation_url = f'http://localhost:12000/conversation/{conversation_id}'
+        # Fallback to direct navigation (use plural 'conversations' to match actual URL pattern)
+        conversation_url = f'http://localhost:12000/conversations/{conversation_id}'
         print(f'Navigating to conversation URL: {conversation_url}')
         page.goto(conversation_url)
         page.wait_for_load_state('networkidle', timeout=30000)
