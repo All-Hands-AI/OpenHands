@@ -72,6 +72,6 @@ app.include_router(settings_router)
 app.include_router(secrets_router)
 if server_config.app_mode == AppMode.OSS:
     app.include_router(git_api_router)
+    app.include_router(vscode_api_router)
 app.include_router(trajectory_router)
-app.include_router(vscode_api_router)
 add_health_endpoints(app)
