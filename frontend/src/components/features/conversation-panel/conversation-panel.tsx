@@ -51,9 +51,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   } = usePaginatedConversations();
 
   // Flatten all pages into a single array of conversations
-  let conversations = data?.pages.flatMap((page) => page.results) ?? [];
-
-  conversations = [...conversations, ...conversations, ...conversations];
+  const conversations = data?.pages.flatMap((page) => page.results) ?? [];
 
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
