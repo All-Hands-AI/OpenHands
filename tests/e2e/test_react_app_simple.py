@@ -28,98 +28,180 @@ def test_react_app_creation_simple(page: Page):
 
     # Navigate to the OpenHands application
     print('Step 1: Navigating to OpenHands...')
-    page.goto('http://localhost:3000')
+    page.goto('http://localhost:12000')
+    page.wait_for_load_state('networkidle', timeout=30000)
     page.screenshot(path='test-results/react_simple_01_home.png')
     print('Screenshot saved: react_simple_01_home.png')
 
-    # Wait for the page to load and find the repository selector
-    print('Step 2: Looking for repository selector...')
-    
-    # Wait for repository selector to be available
+    # Step 2: Select the OpenHands repository (following working test pattern)
+    print('Step 2: Selecting openhands-agent/OpenHands repository...')
+
+    # Wait for the home screen to load
+    home_screen = page.locator('[data-testid="home-screen"]')
+    expect(home_screen).to_be_visible(timeout=15000)
+    print('Home screen is visible')
+
+    # Look for the repository dropdown/selector
+    repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
+    expect(repo_dropdown).to_be_visible(timeout=15000)
+    print('Repository dropdown is visible')
+
+    # Click on the repository input to open dropdown
+    repo_dropdown.click()
+    page.wait_for_timeout(1000)
+
+    # Type the repository name
     try:
-        # Try different selectors for the repository dropdown
-        selectors = [
-            'select[data-testid="repository-selector"]',
-            'select',
-            '[data-testid="repository-selector"]',
-            '.repository-selector',
-        ]
-        
-        repo_selector = None
-        for selector in selectors:
-            try:
-                element = page.locator(selector)
-                if element.is_visible(timeout=5000):
-                    repo_selector = element
-                    print(f'Found repository selector with: {selector}')
-                    break
-            except Exception:
-                continue
-        
-        if not repo_selector:
-            print('Repository selector not found, taking screenshot for debugging')
-            page.screenshot(path='test-results/react_simple_02_no_selector.png')
-            print('Screenshot saved: react_simple_02_no_selector.png')
-            raise Exception('Repository selector not found')
-
-        # Select the OpenHands repository
-        print('Step 3: Selecting OpenHands repository...')
-        repo_selector.select_option('All-Hands-AI/OpenHands')
-        page.screenshot(path='test-results/react_simple_03_repo_selected.png')
-        print('Screenshot saved: react_simple_03_repo_selected.png')
-
+        page.keyboard.press('Control+a')  # Select all
+        page.keyboard.type('openhands-agent/OpenHands')
+        print('Used keyboard.type() for React Select component')
     except Exception as e:
-        print(f'Error selecting repository: {e}')
-        page.screenshot(path='test-results/react_simple_error_repo.png')
-        print('Screenshot saved: react_simple_error_repo.png')
-        raise
+        print(f'Keyboard input failed: {e}')
 
-    # Click Launch button
-    print('Step 4: Clicking Launch button...')
+    page.wait_for_timeout(2000)  # Wait for search results
+
+    # Try to find and click the repository option
+    option_selectors = [
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
+        '[role="option"]:has-text("openhands-agent/OpenHands")',
+        '[role="option"]:has-text("OpenHands")',
+    ]
+
+    option_found = False
+    for selector in option_selectors:
+        try:
+            option = page.locator(selector)
+            if option.is_visible(timeout=2000):
+                option.click()
+                print(f'Clicked repository option with selector: {selector}')
+                option_found = True
+                break
+        except Exception:
+            continue
+
+    if not option_found:
+        print('Repository option not found, taking screenshot for debugging')
+        page.screenshot(path='test-results/react_simple_02_no_option.png')
+        print('Screenshot saved: react_simple_02_no_option.png')
+        raise Exception('Repository option not found')
+
+    page.screenshot(path='test-results/react_simple_03_repo_selected.png')
+    print('Screenshot saved: react_simple_03_repo_selected.png')
+
+    # Step 3: Click Launch button (following working test pattern)
+    print('Step 3: Clicking Launch button...')
+
+    launch_button = page.locator('[data-testid="repo-launch-button"]')
+    expect(launch_button).to_be_visible(timeout=10000)
+
+    # Wait for the button to be enabled (not disabled)
+    max_wait_attempts = 30
+    button_enabled = False
+    for attempt in range(max_wait_attempts):
+        try:
+            is_disabled = launch_button.is_disabled()
+            if not is_disabled:
+                print(f'Repository Launch button is now enabled (attempt {attempt + 1})')
+                button_enabled = True
+                break
+            else:
+                print(f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
+                page.wait_for_timeout(2000)
+        except Exception as e:
+            print(f'Error checking button state: {e}')
+            page.wait_for_timeout(2000)
+
+    if not button_enabled:
+        print('Launch button never became enabled')
+        page.screenshot(path='test-results/react_simple_04_button_disabled.png')
+        print('Screenshot saved: react_simple_04_button_disabled.png')
+        raise Exception('Launch button never became enabled')
+
+    # Click the launch button
+    launch_button.click()
+    print('Launch button clicked successfully')
+
+    page.screenshot(path='test-results/react_simple_04_launch_clicked.png')
+    print('Screenshot saved: react_simple_04_launch_clicked.png')
+
+    # Step 4: Wait for conversation interface to load (following working test pattern)
+    print('Step 4: Waiting for conversation interface to load...')
+
+    navigation_timeout = 300000  # 5 minutes
+    check_interval = 10000  # 10 seconds
+
+    page.screenshot(path='test-results/react_simple_05_after_launch.png')
+    print('Screenshot saved: react_simple_05_after_launch.png')
+
+    # Check for loading indicators first
+    loading_selectors = [
+        '[data-testid="loading-indicator"]',
+        '[data-testid="loading-spinner"]',
+        '.loading-spinner',
+        '.spinner',
+        'div:has-text("Loading...")',
+        'div:has-text("Initializing...")',
+        'div:has-text("Please wait...")',
+    ]
+
+    for selector in loading_selectors:
+        try:
+            loading = page.locator(selector)
+            if loading.is_visible(timeout=5000):
+                print(f'Found loading indicator with selector: {selector}')
+                print('Waiting for loading to complete...')
+                expect(loading).not_to_be_visible(timeout=120000)
+                print('Loading completed')
+                break
+        except Exception:
+            continue
+
+    # Check URL to see if we're on conversation page
     try:
-        launch_button = page.locator('button:has-text("Launch")')
-        launch_button.click()
-        page.screenshot(path='test-results/react_simple_04_launch_clicked.png')
-        print('Screenshot saved: react_simple_04_launch_clicked.png')
+        current_url = page.url
+        print(f'Current URL: {current_url}')
+        if '/conversation/' in current_url or '/chat/' in current_url:
+            print('URL indicates conversation page has loaded')
     except Exception as e:
-        print(f'Error clicking launch button: {e}')
-        page.screenshot(path='test-results/react_simple_error_launch.png')
-        print('Screenshot saved: react_simple_error_launch.png')
-        raise
+        print(f'Error checking URL: {e}')
 
-    # Wait for conversation interface to be ready
-    print('Step 5: Waiting for conversation interface...')
+    # Wait for conversation interface elements
     start_time = time.time()
     conversation_loaded = False
-    navigation_timeout = 120  # 2 minutes
-
-    while time.time() - start_time < navigation_timeout:
+    while time.time() - start_time < navigation_timeout / 1000:
         try:
             selectors = [
+                '.scrollbar.flex.flex-col.grow',
                 '[data-testid="chat-input"]',
+                '[data-testid="app-route"]',
                 '[data-testid="conversation-screen"]',
                 '[data-testid="message-input"]',
+                '.conversation-container',
+                '.chat-container',
                 'textarea',
-                'input[type="text"]',
+                'form textarea',
+                'div[role="main"]',
+                'main',
             ]
 
             for selector in selectors:
                 try:
                     element = page.locator(selector)
                     if element.is_visible(timeout=2000):
-                        print(f'Found conversation interface with: {selector}')
+                        print(f'Found conversation interface element with selector: {selector}')
                         conversation_loaded = True
                         break
                 except Exception:
                     continue
-            
+
             if conversation_loaded:
                 break
-                
+
         except Exception as e:
             print(f'Error checking conversation interface: {e}')
-        
-        time.sleep(5)
+
+        time.sleep(check_interval / 1000)
 
     if not conversation_loaded:
         print('Conversation interface not loaded within timeout')
