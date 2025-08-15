@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
@@ -7,6 +7,7 @@ from openhands.events.action.action import (
     ActionConfirmationStatus,
     ActionSecurityRisk,
 )
+from openhands.events.action.thoughts import ThoughtsDict
 
 
 @dataclass
@@ -15,7 +16,7 @@ class CmdRunAction(Action):
         str  # When `command` is empty, it will be used to print the current tmux window
     )
     is_input: bool = False  # if True, the command is an input to the running process
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     blocking: bool = False  # if True, the command will be run in a blocking manner, but a timeout must be set through _set_hard_timeout
     is_static: bool = False  # if True, runs the command in a separate process
     cwd: str | None = None  # current working directory, only used if is_static is True
@@ -42,7 +43,7 @@ class CmdRunAction(Action):
 @dataclass
 class IPythonRunCellAction(Action):
     code: str
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     include_extra: bool = (
         True  # whether to include CWD & Python interpreter in the output
     )

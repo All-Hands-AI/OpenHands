@@ -1,14 +1,15 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.thoughts import ThoughtsDict
 
 
 @dataclass
 class BrowseURLAction(Action):
     url: str
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
@@ -29,7 +30,7 @@ class BrowseURLAction(Action):
 @dataclass
 class BrowseInteractiveAction(Action):
     browser_actions: str
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True

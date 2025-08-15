@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import ClassVar
+from typing import Any, ClassVar
 
 from openhands.events.event import Event
 
@@ -18,6 +18,25 @@ class ActionSecurityRisk(int, Enum):
     HIGH = 2
 
 
+class ThoughtsMixin:
+    """Mixin to handle backward compatibility for thought field assignment."""
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name == 'thought' and isinstance(value, str):
+            # Import here to avoid circular imports
+            from openhands.events.action.thoughts import ThoughtsDict
+
+            # Convert string assignment to ThoughtsDict
+            if hasattr(self, 'thought') and isinstance(
+                getattr(self, 'thought'), ThoughtsDict
+            ):
+                getattr(self, 'thought').set_default(value)
+                return
+            else:
+                value = ThoughtsDict(value)
+        super().__setattr__(name, value)
+
+
 @dataclass
-class Action(Event):
+class Action(ThoughtsMixin, Event):
     runnable: ClassVar[bool] = False

@@ -3,13 +3,14 @@ from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.thoughts import ThoughtsDict
 
 
 @dataclass
 class MCPAction(Action):
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None

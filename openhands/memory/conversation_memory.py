@@ -269,7 +269,7 @@ class ConversationMemory:
                     if action.thought != content:
                         action.thought += '\n' + content
                 else:
-                    action.thought = content
+                    action.thought.set_default(content)
 
                 # remove the tool call metadata
                 action.tool_call_metadata = None
@@ -278,7 +278,7 @@ class ConversationMemory:
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
-                    content=[TextContent(text=action.thought)],
+                    content=[TextContent(text=str(action.thought))],
                 )
             ]
         elif isinstance(action, MessageAction):
