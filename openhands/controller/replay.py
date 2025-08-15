@@ -57,8 +57,7 @@ class ReplayManager:
         )
 
     def should_replay(self) -> bool:
-        """
-        Whether the controller is in trajectory replay mode, and the replay
+        """Whether the controller is in trajectory replay mode, and the replay
         hasn't finished. Note: after the replay is finished, the user and
         the agent could continue to message/act.
 

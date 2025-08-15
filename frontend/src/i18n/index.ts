@@ -27,7 +27,15 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
-    load: "currentOnly",
+
+    // Define supported languages explicitly to prevent 404 errors
+    // According to i18next documentation, this is the recommended way to prevent
+    // 404 requests for unsupported language codes like 'en-US@posix'
+    supportedLngs: AvailableLanguages.map((lang) => lang.value),
+
+    // Do NOT set nonExplicitSupportedLngs: true as it causes 404 errors
+    // for region-specific codes not in supportedLngs (per i18next developer)
+    nonExplicitSupportedLngs: false,
   });
 
 export default i18n;

@@ -1,5 +1,4 @@
-"""
-This module monitors the app for shutdown signals. This exists because the atexit module
+"""This module monitors the app for shutdown signals. This exists because the atexit module
 does not play nocely with stareltte / uvicorn shutdown signals.
 """
 

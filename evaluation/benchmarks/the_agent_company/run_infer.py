@@ -68,8 +68,7 @@ def get_config(
 
 
 def load_dependencies(runtime: Runtime) -> list[str]:
-    """
-    Every task has a dependencies.yml file, which lists all the services that the
+    """Every task has a dependencies.yml file, which lists all the services that the
     task depends on. This function loads the file and returns all dependent service names.
     """
     command = 'cat /utils/dependencies.yml'

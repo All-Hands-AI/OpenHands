@@ -15,28 +15,27 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
    - Go to **Directory** > **Users**
 
 2. **Create OpenHands Service Account**
-   - Click **Add user**
-   - Email: `openhands@yourcompany.com` (replace with your preferred service account email)
-   - Display name: `OpenHands Agent`
-   - Send invitation: **No** (you'll set password manually)
-   - Click **Add user**
-
-3. **Configure Account**
-   - Locate the created user and click on it
-   - Set a secure password
-   - Add to relevant Jira projects with appropriate permissions
+   - Click **Service accounts**
+   - Click **Create a service account**
+   - Name: `OpenHands Agent`
+   - Click **Next**
+   - Select **User** role for Jira app
+   - Click **Create**
 
 ### Step 2: Generate API Token
 
-1. **Access API Token Management**
-   - Log in as the OpenHands service account
-   - Go to [API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
-
-2. **Create API Token**
+1. **Access Service Account Configuration**
+   - Locate the created service account from above step and click on it
    - Click **Create API token**
-   - Label: `OpenHands Cloud Integration`
-   - Expiry: Set appropriate expiration (recommend 1 year)
-   - Click **Create**
+   - Set the expiry to 365 days (maximum allowed value)
+   - Click **Next**
+   - In **Select token scopes** screen, filter by following values
+      - App: Jira
+      - Scope type: Classic
+      - Scope actions: Write, Read
+   - Select `read:jira-work` and `write:jira-work` scopes
+   - Click **Next**
+   - Review and create API token
    - **Important**: Copy and securely store the token immediately
 
 ### Step 3: Configure Webhook
@@ -83,6 +82,14 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
          - **Service Account API Key**: The API token from Step 2 above
          - Ensure **Active** toggle is enabled
 
+<Note>
+Workspace name is the host name when accessing a resource in Jira Cloud.
+
+Eg: https://all-hands.atlassian.net/browse/OH-55
+
+Here the workspace name is **all-hands**.
+</Note>
+
 3. **Complete OAuth Flow**
    - You'll be redirected to Jira Cloud to complete OAuth verification
    - Grant the necessary permissions to verify your workspace access.
@@ -106,18 +113,18 @@ description: Complete guide for setting up Jira Cloud integration with OpenHands
 
 <AccordionGroup>
 <Accordion title="Workspace link flow">
-![workspace-link.png](/static/img/workspace-link.png)
+![workspace-link.png](/static/img/jira-user-link.png)
 </Accordion>
 
 <Accordion title="Workspace Configure flow">
-![workspace-link.png](/static/img/workspace-configure.png)
+![workspace-link.png](/static/img/jira-admin-configure.png)
 </Accordion>
 
 <Accordion title="Edit view as a user">
-![workspace-link.png](/static/img/workspace-user-edit.png)
+![workspace-link.png](/static/img/jira-user-unlink.png)
 </Accordion>
 
 <Accordion title="Edit view as the workspace creator">
-![workspace-link.png](/static/img/workspace-admin-edit.png)
+![workspace-link.png](/static/img/jira-admin-edit.png)
 </Accordion>
 </AccordionGroup>

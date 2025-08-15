@@ -70,7 +70,6 @@ class IssueResolver:
             comment_id: Optional ID of a specific comment to focus on.
             base_domain: The base domain for the git server.
         """
-
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
             raise ValueError('Invalid repository format. Expected owner/repo')
@@ -540,7 +539,6 @@ class IssueResolver:
         Args:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
-
         issue = self.extract_issue()
 
         if self.comment_id is not None:

@@ -10,7 +10,6 @@ from openhands.core.message import ImageContent
 
 def test_image_content_serializes_all_urls():
     """Test that ImageContent serializes all URLs it's given, including empty ones."""
-
     # Create ImageContent with mixed valid and invalid URLs
     image_content = ImageContent(
         image_urls=[
@@ -45,7 +44,6 @@ def test_image_content_serializes_all_urls():
 
 def test_image_content_serializes_empty_urls():
     """Test that ImageContent serializes empty URLs (filtering happens upstream)."""
-
     # Create ImageContent with only empty URLs
     image_content = ImageContent(image_urls=['', '   '])
 
@@ -60,7 +58,6 @@ def test_image_content_serializes_empty_urls():
 
 def test_image_content_all_valid_urls():
     """Test that ImageContent preserves all valid URLs."""
-
     valid_urls = [
         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
         'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwA/wA==',

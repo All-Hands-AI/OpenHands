@@ -78,6 +78,14 @@ description: Complete guide for setting up Jira Data Center integration with Ope
          - **Service Account API Key**: The personal access token from Step 2 above
          - Ensure **Active** toggle is enabled
 
+<Note>
+Workspace name is the host name of your Jira Data Center instance.
+
+Eg: http://jira.all-hands.dev/projects/OH/issues/OH-77
+
+Here the workspace name is **jira.all-hands.dev**.
+</Note>
+
 3. **Complete OAuth Flow**
    - You'll be redirected to Jira Data Center to complete OAuth verification
    - Grant the necessary permissions to verify your workspace access. If you have access to multiple workspaces, select the correct one that you initially provided
@@ -101,18 +109,18 @@ description: Complete guide for setting up Jira Data Center integration with Ope
 
 <AccordionGroup>
 <Accordion title="Workspace link flow">
-![workspace-link.png](/static/img/workspace-link.png)
+![workspace-link.png](/static/img/jira-dc-user-link.png)
 </Accordion>
 
 <Accordion title="Workspace Configure flow">
-![workspace-link.png](/static/img/workspace-configure.png)
+![workspace-link.png](/static/img/jira-dc-admin-configure.png)
 </Accordion>
 
 <Accordion title="Edit view as a user">
-![workspace-link.png](/static/img/workspace-user-edit.png)
+![workspace-link.png](/static/img/jira-dc-user-unlink.png)
 </Accordion>
 
 <Accordion title="Edit view as the workspace creator">
-![workspace-link.png](/static/img/workspace-admin-edit.png)
+![workspace-link.png](/static/img/jira-dc-admin-edit.png)
 </Accordion>
 </AccordionGroup>

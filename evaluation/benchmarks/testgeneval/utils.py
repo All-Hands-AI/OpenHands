@@ -11,8 +11,7 @@ from evaluation.benchmarks.testgeneval.constants import (
 
 
 def get_test_directives(instance: TestGenEvalInstance) -> list:
-    """
-    Get test directives from the test_patch of a task instance
+    """Get test directives from the test_patch of a task instance
 
     Args:
         instance (dict): task instance
@@ -43,9 +42,7 @@ def get_test_directives(instance: TestGenEvalInstance) -> list:
 def load_testgeneval_dataset(
     name='kjain14/testgeneval', split='test', ids=None
 ) -> list[TestGenEvalInstance]:
-    """
-    Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file
-    """
+    """Load SWE-bench dataset from Hugging Face Datasets or local .json/.jsonl file"""
     # check that all instance IDs are in the dataset
     if ids:
         ids = set(ids)

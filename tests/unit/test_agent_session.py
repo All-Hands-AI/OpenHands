@@ -55,7 +55,6 @@ def mock_agent():
 @pytest.mark.asyncio
 async def test_agent_session_start_with_no_state(mock_agent):
     """Test that AgentSession.start() works correctly when there's no state to restore"""
-
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -143,7 +142,6 @@ async def test_agent_session_start_with_no_state(mock_agent):
 @pytest.mark.asyncio
 async def test_agent_session_start_with_restored_state(mock_agent):
     """Test that AgentSession.start() works correctly when there's a state to restore"""
-
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -234,7 +232,6 @@ async def test_agent_session_start_with_restored_state(mock_agent):
 @pytest.mark.asyncio
 async def test_metrics_centralization_and_sharing(mock_agent):
     """Test that metrics are centralized and shared between controller and agent."""
-
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(
@@ -322,7 +319,6 @@ async def test_metrics_centralization_and_sharing(mock_agent):
 @pytest.mark.asyncio
 async def test_budget_control_flag_syncs_with_metrics(mock_agent):
     """Test that BudgetControlFlag's current value matches the accumulated costs."""
-
     # Setup
     file_store = InMemoryFileStore({})
     session = AgentSession(

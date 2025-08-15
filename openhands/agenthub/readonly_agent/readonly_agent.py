@@ -1,6 +1,4 @@
-"""
-ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools.
-"""
+"""ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools."""
 
 import os
 from typing import TYPE_CHECKING

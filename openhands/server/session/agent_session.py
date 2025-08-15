@@ -72,7 +72,6 @@ class AgentSession:
         - sid: The session ID
         - file_store: Instance of the FileStore
         """
-
         self.sid = sid
         self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
@@ -253,8 +252,7 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None,
         agent_configs: dict[str, AgentConfig] | None,
     ) -> MessageAction:
-        """
-        Replays a trajectory from a JSON file. Note that once the replay session
+        """Replays a trajectory from a JSON file. Note that once the replay session
         finishes, the controller will continue to run with further user instructions,
         so we still need to pass llm configs, budget, etc., even though the replay
         itself does not call LLM or cost money.
@@ -279,7 +277,6 @@ class AgentSession:
         Parameters:
         - security_analyzer: The name of the security analyzer to use
         """
-
         if security_analyzer:
             self.logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
@@ -325,7 +322,6 @@ class AgentSession:
         Return True on successfully connected, False if could not connect.
         Raises if already created, possibly in other situations.
         """
-
         if self.runtime is not None:
             raise RuntimeError('Runtime already created')
 
@@ -422,7 +418,6 @@ class AgentSession:
         Returns:
             Agent Controller and a bool indicating if state was restored from a previous conversation
         """
-
         if self.controller is not None:
             raise RuntimeError('Controller already created')
         if self.runtime is None:

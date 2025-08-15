@@ -239,8 +239,7 @@ def display_mcp_errors() -> None:
 
 # Prompt output display functions
 def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
-    """
-    Display a thought only if it hasn't been displayed recently.
+    """Display a thought only if it hasn't been displayed recently.
 
     Args:
         thought: The thought to display
@@ -301,8 +300,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
 
 def display_message(message: str, is_agent_message: bool = False) -> None:
-    """
-    Display a message in the terminal with markdown rendering.
+    """Display a message in the terminal with markdown rendering.
 
     Args:
         message: The message to display
@@ -338,8 +336,7 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
 
 
 def convert_markdown_to_html(text: str) -> str:
-    """
-    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+    """Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
 
     Args:
         text: Markdown text to convert
@@ -845,6 +842,7 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    initial_selection: int = 0,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -852,7 +850,7 @@ def cli_confirm(
     """
     if choices is None:
         choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
+    selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
         return [
@@ -908,7 +906,6 @@ def cli_confirm(
         layout=layout,
         key_bindings=kb,
         style=style,
-        mouse_support=True,
         full_screen=False,
     )
 

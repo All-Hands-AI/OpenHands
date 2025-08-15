@@ -1,6 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
 import { renderWithProviders } from "test-utils";
 import OpenHands from "#/api/open-hands";
@@ -36,6 +36,8 @@ vi.mock("react-i18next", async () => {
           "SETTINGS$NAV_API_KEYS": "API Keys",
           "SETTINGS$NAV_LLM": "LLM",
           "SETTINGS$NAV_USER": "User",
+          "SETTINGS$NAV_SECRETS": "Secrets",
+          "SETTINGS$NAV_MCP": "MCP",
           "SETTINGS$TITLE": "Settings"
         };
         return translations[key] || key;
@@ -47,8 +49,33 @@ vi.mock("react-i18next", async () => {
   };
 });
 
+// Mock useConfig hook
+const { mockUseConfig } = vi.hoisted(() => ({
+  mockUseConfig: vi.fn(),
+}));
+vi.mock("#/hooks/query/use-config", () => ({
+  useConfig: mockUseConfig,
+}));
+
 describe("Settings Billing", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
+  beforeEach(() => {
+    // Set default config to OSS mode
+    mockUseConfig.mockReturnValue({
+      data: {
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
+      },
+      isLoading: false,
+    });
+  });
 
   const RoutesStub = createRoutesStub([
     {
@@ -79,19 +106,7 @@ describe("Settings Billing", () => {
   });
 
   it("should not render the credits tab if OSS mode", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
-      },
-    });
-
+    // OSS mode is set by default in beforeEach
     renderSettingsScreen();
 
     const navbar = await screen.findByTestId("settings-navbar");
@@ -100,17 +115,20 @@ describe("Settings Billing", () => {
   });
 
   it("should render the credits tab if SaaS mode and billing is enabled", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: true,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
+    mockUseConfig.mockReturnValue({
+      data: {
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: true,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
       },
+      isLoading: false,
     });
 
     renderSettingsScreen();
@@ -121,17 +139,20 @@ describe("Settings Billing", () => {
 
   it("should render the billing settings if clicking the credits item", async () => {
     const user = userEvent.setup();
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: true,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
+    mockUseConfig.mockReturnValue({
+      data: {
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: true,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
       },
+      isLoading: false,
     });
 
     renderSettingsScreen();

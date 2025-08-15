@@ -55,8 +55,7 @@ class Agent(ABC):
         return self._prompt_manager
 
     def get_system_message(self) -> 'SystemMessageAction | None':
-        """
-        Returns a SystemMessageAction containing the system message and tools.
+        """Returns a SystemMessageAction containing the system message and tools.
         This will be added to the event stream as the first message.
 
         Returns:

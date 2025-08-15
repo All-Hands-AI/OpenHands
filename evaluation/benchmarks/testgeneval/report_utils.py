@@ -30,8 +30,7 @@ def check_mutation(mutation_output):
 
 
 def count_methods(code_str):
-    """
-    Counts the number of methods/functions in a given string of code.
+    """Counts the number of methods/functions in a given string of code.
 
     Args:
     code_str (str): A string containing code.
@@ -46,8 +45,7 @@ def count_methods(code_str):
 
 
 def get_lines_of_code(code_str):
-    """
-    Extracts lines of code from a given string.
+    """Extracts lines of code from a given string.
 
     Args:
     code_str (str): A string containing code.

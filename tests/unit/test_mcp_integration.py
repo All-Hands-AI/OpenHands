@@ -13,7 +13,6 @@ from openhands.storage.settings.file_settings_store import FileSettingsStore
 @pytest.mark.asyncio
 async def test_user_auth_mcp_merging_integration():
     """Test that MCP merging works in the user auth flow."""
-
     # Mock config.toml settings
     config_settings = Settings(
         mcp_config=MCPConfig(
@@ -57,7 +56,6 @@ async def test_user_auth_mcp_merging_integration():
 @pytest.mark.asyncio
 async def test_user_auth_caching_behavior():
     """Test that user auth caches the merged settings correctly."""
-
     config_settings = Settings(
         mcp_config=MCPConfig(
             sse_servers=[MCPSSEServerConfig(url='http://config-server.com')]
@@ -102,7 +100,6 @@ async def test_user_auth_caching_behavior():
 @pytest.mark.asyncio
 async def test_user_auth_no_stored_settings():
     """Test behavior when no settings are stored (first time user)."""
-
     user_auth = DefaultUserAuth()
 
     # Mock settings store to return None (no stored settings)

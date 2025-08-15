@@ -1,5 +1,4 @@
-"""
-This runtime runs commands locally using subprocess and performs file operations using Python's standard library.
+"""This runtime runs commands locally using subprocess and performs file operations using Python's standard library.
 It does not implement browser functionality.
 """
 
@@ -88,8 +87,7 @@ After installing .NET SDK, restart your terminal and try again.
 
 
 class CLIRuntime(Runtime):
-    """
-    A runtime implementation that runs commands locally using subprocess and performs
+    """A runtime implementation that runs commands locally using subprocess and performs
     file operations using Python's standard library. It does not implement browser functionality.
 
     Args:
@@ -191,8 +189,7 @@ class CLIRuntime(Runtime):
         logger.info(f'CLIRuntime initialized with workspace at {self._workspace_path}')
 
     def add_env_vars(self, env_vars: dict[str, Any]) -> None:
-        """
-        Adds environment variables to the current runtime environment.
+        """Adds environment variables to the current runtime environment.
         For CLIRuntime, this means updating os.environ for the current process,
         so that subsequent commands inherit these variables.
         This overrides the BaseRuntime behavior which tries to run shell commands
@@ -218,8 +215,7 @@ class CLIRuntime(Runtime):
         # during initialization before self._runtime_initialized is True.
 
     def _safe_terminate_process(self, process_obj, signal_to_send=signal.SIGTERM):
-        """
-        Safely attempts to terminate/kill a process group or a single process.
+        """Safely attempts to terminate/kill a process group or a single process.
 
         Args:
             process_obj: the subprocess.Popen object started with start_new_session=True
@@ -292,8 +288,8 @@ class CLIRuntime(Runtime):
     def _execute_powershell_command(
         self, command: str, timeout: float
     ) -> CmdOutputObservation | ErrorObservation:
-        """
-        Execute a command using PowerShell session on Windows.
+        """Execute a command using PowerShell session on Windows.
+
         Args:
             command: The command to execute
             timeout: Timeout in seconds for the command
@@ -326,8 +322,8 @@ class CLIRuntime(Runtime):
     def _execute_shell_command(
         self, command: str, timeout: float
     ) -> CmdOutputObservation:
-        """
-        Execute a shell command and stream its output to a callback function.
+        """Execute a shell command and stream its output to a callback function.
+
         Args:
             command: The shell command to execute
             timeout: Timeout in seconds for the command
@@ -965,8 +961,7 @@ class CLIRuntime(Runtime):
     def subscribe_to_shell_stream(
         self, callback: Callable[[str], None] | None = None
     ) -> bool:
-        """
-        Subscribe to shell command output stream.
+        """Subscribe to shell command output stream.
 
         Args:
             callback: A function that will be called with each line of output from shell commands.

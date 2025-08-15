@@ -19,6 +19,9 @@ vi.mock("react-i18next", async () => {
           SETTINGS$NAV_CREDITS: "Credits",
           SETTINGS$NAV_API_KEYS: "API Keys",
           SETTINGS$NAV_LLM: "LLM",
+          SETTINGS$NAV_SECRETS: "Secrets",
+          SETTINGS$NAV_MCP: "MCP",
+          SETTINGS$NAV_USER: "User",
           SETTINGS$TITLE: "Settings",
         };
         return translations[key] || key;
@@ -119,22 +122,21 @@ describe("Settings Screen", () => {
   });
 
   it("should render the saas navbar", async () => {
-    const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-    // @ts-expect-error - only return app mode
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-    });
+    const saasConfig = { APP_MODE: "saas" };
+
+    // Clear any existing query data and set the config
+    mockQueryClient.clear();
+    mockQueryClient.setQueryData(["config"], saasConfig);
+
     const sectionsToInclude = [
+      "user",
       "integrations",
       "application",
       "credits", // The nav item shows "credits" text but routes to /billing
       "secrets",
       "api keys",
     ];
-    const sectionsToExclude = ["llm"];
-
-    // Clear any existing query data
-    mockQueryClient.clear();
+    const sectionsToExclude = ["llm", "mcp"];
 
     renderSettingsScreen();
 
@@ -151,8 +153,6 @@ describe("Settings Screen", () => {
       });
       expect(sectionElement).not.toBeInTheDocument();
     });
-
-    getConfigSpy.mockRestore();
   });
 
   it("should not be able to access saas-only routes in oss mode", async () => {

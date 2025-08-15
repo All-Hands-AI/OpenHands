@@ -214,7 +214,8 @@ def test_long_running_command(windows_bash_session):
 
 def test_multiple_commands_rejected_and_individual_execution(windows_bash_session):
     """Test that executing multiple commands separated by newline is rejected,
-    but individual commands (including multiline) execute correctly."""
+    but individual commands (including multiline) execute correctly.
+    """
     # Define a list of commands, including multiline and special characters
     cmds = [
         'Get-ChildItem',

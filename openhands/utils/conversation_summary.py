@@ -63,8 +63,7 @@ async def generate_conversation_title(
 
 
 def get_default_conversation_title(conversation_id: str) -> str:
-    """
-    Generate a default title for a conversation based on its ID.
+    """Generate a default title for a conversation based on its ID.
 
     Args:
         conversation_id: The ID of the conversation
@@ -78,8 +77,7 @@ def get_default_conversation_title(conversation_id: str) -> str:
 async def auto_generate_title(
     conversation_id: str, user_id: str | None, file_store: FileStore, settings: Settings
 ) -> str:
-    """
-    Auto-generate a title for a conversation based on the first user message.
+    """Auto-generate a title for a conversation based on the first user message.
     Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
 
     Args:
