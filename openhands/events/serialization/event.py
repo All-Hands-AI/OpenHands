@@ -127,10 +127,6 @@ def event_to_dict(event: 'Event') -> dict:
     if 'task_completed' in props:
         props.pop('task_completed')
 
-    # Special handling for AgentFinishAction
-    if hasattr(event, '__class__') and event.__class__.__name__ == 'AgentFinishAction':
-        if 'task_completed' in props:
-            props.pop('task_completed')
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
