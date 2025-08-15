@@ -114,21 +114,23 @@ INTENT: Fix precision while maintaining FITS compliance"""
         self.add_metadata('response', response.model_dump())
         self.add_metadata('metrics', self.llm.metrics.get())
 
-        # Build condensation action; handle case where there are no events to forget
+        # Build condensation action; if nothing to forget, return an explicit no-op condensation
         forgotten_ids = [event.id for event in forgotten_events]
-        if forgotten_ids:
-            action = CondensationAction(
-                forgotten_events_start_id=min(forgotten_ids),
-                forgotten_events_end_id=max(forgotten_ids),
-                summary=summary,
-                summary_offset=self.keep_first,
+        if not forgotten_ids:
+            return Condensation(
+                action=CondensationAction(
+                    forgotten_event_ids=[],
+                    summary=summary,
+                    summary_offset=self.keep_first,
+                )
             )
-        else:
-            action = CondensationAction(
-                forgotten_event_ids=[],
-                summary=summary,
-                summary_offset=self.keep_first,
-            )
+
+        action = CondensationAction(
+            forgotten_events_start_id=min(forgotten_ids),
+            forgotten_events_end_id=max(forgotten_ids),
+            summary=summary,
+            summary_offset=self.keep_first,
+        )
 
         return Condensation(action=action)
 
@@ -137,17 +139,28 @@ INTENT: Fix precision while maintaining FITS compliance"""
         estimated_tokens = int(self.threshold * self.max_input_tokens)
         logger.debug(f'Estimated max tokens to keep: {estimated_tokens}')
 
-        # FIXME: if we just went through a condensation, don't do it again
+        # Avoid immediate re-condensation loops on the same step
         if len(view) > 1 and isinstance(view[-1], CondensationAction):
             return False
 
-        if exceeds_token_limit(
+        # Only condense if there will actually be events to forget
+        if len(view) <= self.keep_first + 1:
+            return False
+        target_size = len(view) // 2
+        events_from_tail = max(0, target_size - self.keep_first - 1)
+        tail_slice_end = -events_from_tail if events_from_tail > 0 else None
+        would_forget_any = any(
+            not isinstance(e, AgentCondensationObservation)
+            for e in view[self.keep_first : tail_slice_end]
+        )
+        if not would_forget_any:
+            return False
+
+        return exceeds_token_limit(
             view.events,
             self.agent_llm.metrics,
             estimated_tokens,
-        ):
-            return True
-        return False
+        )
 
     @classmethod
     def from_config(cls, config: TokenAwareCondenserConfig) -> TokenAwareCondenser:
