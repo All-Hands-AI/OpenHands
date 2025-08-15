@@ -939,16 +939,15 @@ def test_token_aware_condenser_integration(mock_llm):
             view_count += 1
             last_view_length = len(view)
 
-            # Before first condensation (8 events), we should get normal views
+            # Before first condensation, views grow monotonically. When condensation happens,
+            # the harness yields the condensed view in the same iteration.
             if not summary_event_seen:
-                assert len(view) == i + 1
-                if len(view) > 8:
-                    # Check that we see a summary event at the expected position
-                    assert len(view) > 2
-                    assert isinstance(view[2], AgentCondensationObservation)
+                if len(view) > 2 and isinstance(view[2], AgentCondensationObservation):
                     summary_event_seen = True
-                    # Verify the view is actually condensed (smaller than before)
+                    # Verify the view is actually condensed (smaller than threshold)
                     assert len(view) < 8
+                else:
+                    assert len(view) == i + 1
             else:
                 # After first condensation, verify we maintain the condensed structure
                 assert len(view) > 2
