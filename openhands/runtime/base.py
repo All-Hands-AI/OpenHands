@@ -1038,7 +1038,9 @@ fi
         self, command: str, cwd: str | None
     ) -> CommandResult:
         """This function is used by the GitHandler to execute shell commands."""
-        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        obs = self.run(
+            CmdRunAction(command=command, is_static=True, hidden=True, cwd=cwd)
+        )
         exit_code = 0
         content = ''
 
