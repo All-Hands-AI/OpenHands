@@ -141,3 +141,13 @@ openhands-aci:
 Notes:
 - Commit co-author trailer to use: `Co-authored-by: OpenHands-GPT-5 openhands@all-hands.dev`.
 - Ensure schema trimming for Gemini (removing unsupported JSON Schema formats) continues to apply via `llm_utils.check_tools`.
+
+## Mapping to existing OpenHands Actions (pragmatic reuse)
+
+To minimize churn and keep the model-level tool API clean while reusing proven runtime pathways:
+- read_file → FileReadAction (impl_source=OH_ACI). Map offset/limit → view_range.
+- write_file → FileWriteAction (direct file write path).
+- replace → FileEditAction (impl_source=OH_ACI) with command='replace' and parameters old_str/new_str/expected_replacements routed to GeminiEditor.replace().
+- For list_directory, glob, search_file_content, read_many_files: introduce lightweight dedicated Actions (e.g., DirectoryListAction, GlobAction, SearchFileContentAction, ReadManyFilesAction) so we can pass tool-specific parameters (ignore, include, respect_git_ignore, etc.) without overloading FileReadAction. These remain internal plumbing; the LLM still sees Gemini-CLI-compatible tool names and schemas.
+
+This approach keeps the external tool surface identical to Gemini CLI while leveraging OpenHands’ existing Action types wherever they naturally fit.
