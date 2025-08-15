@@ -11,18 +11,18 @@ export type Thoughts = string | ThoughtsDict;
 
 // Utility function to extract the default thought from the Thoughts type
 export function getDefaultThought(thoughts: Thoughts): string {
-  if (typeof thoughts === 'string') {
+  if (typeof thoughts === "string") {
     return thoughts;
   }
-  return thoughts.default || '';
+  return thoughts.default || "";
 }
 
 // Utility function to extract the reasoning content from the Thoughts type
 export function getReasoningContent(thoughts: Thoughts): string {
-  if (typeof thoughts === 'string') {
-    return '';
+  if (typeof thoughts === "string") {
+    return "";
   }
-  return thoughts.reasoning_content || '';
+  return thoughts.reasoning_content || "";
 }
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
