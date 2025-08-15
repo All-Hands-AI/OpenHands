@@ -61,24 +61,22 @@ class TestVsCodeRuntimeDiscovery:
     @pytest.mark.asyncio
     async def test_discover_vscode_instances_success(self, runtime):
         """Test successful discovery of VSCode instances."""
-        mock_response_data = {
-            'instances': [
-                {
-                    'id': 'vscode-1',
-                    'name': 'VSCode Instance 1',
-                    'port': 3001,
-                    'status': 'active',
-                    'workspace': '/path/to/workspace1',
-                },
-                {
-                    'id': 'vscode-2',
-                    'name': 'VSCode Instance 2',
-                    'port': 3002,
-                    'status': 'active',
-                    'workspace': '/path/to/workspace2',
-                },
-            ]
-        }
+        mock_response_data = [
+            {
+                'id': 'vscode-1',
+                'name': 'VSCode Instance 1',
+                'port': 3001,
+                'status': 'active',
+                'workspace': '/path/to/workspace1',
+            },
+            {
+                'id': 'vscode-2',
+                'name': 'VSCode Instance 2',
+                'port': 3002,
+                'status': 'active',
+                'workspace': '/path/to/workspace2',
+            },
+        ]
 
         with patch('aiohttp.ClientSession.get') as mock_get:
             mock_response = AsyncMock()
@@ -117,7 +115,7 @@ class TestVsCodeRuntimeDiscovery:
     @pytest.mark.asyncio
     async def test_discovery_multiple_calls(self, runtime):
         """Test that multiple discovery calls work correctly."""
-        mock_response_data = {'instances': [{'id': 'vscode-1', 'port': 3001}]}
+        mock_response_data = [{'id': 'vscode-1', 'port': 3001}]
 
         with patch('aiohttp.ClientSession.get') as mock_get:
             mock_response = AsyncMock()
@@ -408,9 +406,7 @@ class TestVsCodeRuntimeIntegration:
             # Mock discovery - return proper format with 'instances' key
             mock_discovery_response = AsyncMock()
             mock_discovery_response.status = 200
-            mock_discovery_response.json = AsyncMock(
-                return_value={'instances': mock_instances}
-            )
+            mock_discovery_response.json = AsyncMock(return_value=mock_instances)
 
             # Mock Socket.IO server directly
             runtime.sio_server = Mock()

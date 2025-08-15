@@ -89,14 +89,12 @@ class VsCodeRuntime(Runtime):
                     f'{self._server_url}/api/vscode/instances'
                 ) as response:
                     if response.status == 200:
-                        data = await response.json()
-                        # Support both dict {"instances": [...]} and plain list [..]
-                        if isinstance(data, dict):
-                            instances = data.get('instances', [])
-                        elif isinstance(data, list):
-                            instances = data
-                        else:
-                            instances = []
+                        instances = await response.json()
+                        if not isinstance(instances, list):
+                            logger.error(
+                                'Unexpected response shape for /api/vscode/instances; expected a list'
+                            )
+                            return []
                         logger.info(
                             f'Found {len(instances)} available VSCode instances'
                         )
