@@ -101,13 +101,13 @@ export function AccountSettingsContextMenu({
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
-      className="absolute right-0 md:right-full md:left-full mt-2 md:mt-0 md:bottom-0 ml-2 z-10 w-fit bg-tertiary rounded-[6px] p-[6px]"
+      className="absolute right-0 md:right-full md:left-full mt-2 md:mt-0 md:bottom-0 ml-2 z-10 w-fit bg-tertiary rounded-[6px] py-[6px] px-1 flex flex-col gap-2"
     >
       {navItems.map(({ to, text, icon }) => (
         <Link key={to} to={to} className="text-decoration-none">
           <ContextMenuListItem
             onClick={() => handleNavigationClick()}
-            className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded"
+            className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded h-[30px]"
           >
             {icon}
             <span className="text-white text-sm">{t(text)}</span>
@@ -115,11 +115,11 @@ export function AccountSettingsContextMenu({
         </Link>
       ))}
 
-      <ContextMenuSeparator className="bg-[#959CB2] my-[6px]" />
+      <ContextMenuSeparator className="bg-[#5C5D62]" />
 
       <ContextMenuListItem
         onClick={onLogout}
-        className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded"
+        className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded h-[30px]"
       >
         <LogOutIcon width={16} height={16} />
         <span className="text-white text-sm">
