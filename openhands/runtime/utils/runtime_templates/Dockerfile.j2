@@ -244,6 +244,10 @@ COPY ./code/microagents /openhands/code/microagents
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 
+# Copy apply_patch utility to /usr/bin for agent access
+COPY ./code/openhands/runtime/utils/apply_patch.py /usr/bin/apply_patch
+RUN chmod +x /usr/bin/apply_patch
+
 
 
 # ================================================================
