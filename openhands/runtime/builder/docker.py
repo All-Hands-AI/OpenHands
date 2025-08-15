@@ -37,7 +37,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
 
     @staticmethod
     def check_buildx(is_podman: bool = False) -> bool:
-        """Check if Docker Buildx is available"""
+        """Check if Docker Buildx is available."""
         try:
             result = subprocess.run(
                 ['docker' if not is_podman else 'podman', 'buildx', 'version'],
