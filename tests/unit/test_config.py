@@ -1196,9 +1196,9 @@ def test_agent_config_from_toml_section_with_invalid_base():
 
 
 def test_agent_config_system_prompt_filename_default():
-    """Test that AgentConfig defaults to 'system_prompt_tech_philosophy.j2' for system_prompt_filename."""
+    """Test that AgentConfig defaults to 'system_prompt.j2' for system_prompt_filename."""
     config = AgentConfig()
-    assert config.system_prompt_filename == 'system_prompt_tech_philosophy.j2'
+    assert config.system_prompt_filename == 'system_prompt.j2'
 
 
 def test_agent_config_system_prompt_filename_toml_integration(
