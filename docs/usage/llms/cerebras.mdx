@@ -1,0 +1,17 @@
+---
+title: Cerebras
+description: OpenHands uses LiteLLM to make calls to chat models on Cerebras. You can find their documentation on using Cerebras as a provider [here](https://docs.litellm.ai/docs/providers/cerebras).
+---
+
+## Configuration
+
+When running OpenHands, you'll need to set the following in the OpenHands UI through the Settings under the `LLM` tab:
+- `LLM Provider` to `Cerebras`
+- `LLM Model` to the model you will be using. [Visit here to see the list of models that Cerebras hosts](https://cloud.cerebras.ai/). If the model is not in the list, enable `Advanced` options, and enter it in `Custom Model` (e.g. `cerebras/<model-name>`).
+- `API Key` to your Cerebras API key. To find or create your Cerebras API Key, visit [Cerebras Cloud](https://cloud.cerebras.ai/) and sign up for an account.
+
+## Pricing
+
+Notably, Cerebras allows for standard API pricing and also a Cerebras Code offering that provides a subscription for $50 or $200 for a larger amount of usage.
+
+For current pricing details, visit the [Cerebras pricing page](https://www.cerebras.ai/pricing) or [contact sales](https://www.cerebras.ai/build-with-us) for Enterprise pricing.
