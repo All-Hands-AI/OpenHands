@@ -127,7 +127,7 @@ export function RepositorySelectionForm({
       <GitRepositoryDropdown
         provider={selectedProvider || providers[0]}
         value={selectedRepository?.id || null}
-        placeholder=“user/repo"
+        placeholder="user/repo"
         disabled={!selectedProvider}
         onChange={handleRepoSelection}
         className="max-w-auto"
@@ -143,7 +143,7 @@ export function RepositorySelectionForm({
       testId="branch-dropdown"
       repositoryName={selectedRepository?.full_name}
       value={selectedBranch?.name || null}
-      placeholder=“your-branch"
+      placeholder="your-branch"
       className="max-w-auto"
       disabled={!selectedRepository}
       onChange={handleBranchSelection}
