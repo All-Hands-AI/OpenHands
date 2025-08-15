@@ -144,8 +144,8 @@ class Comment(BaseModel):
     id: int
     body: str
     author: str
-    created_at: str  # ISO 8601 format date string
-    updated_at: str  # ISO 8601 format date string
+    created_at: datetime
+    updated_at: datetime
     system: bool = False  # Whether this is a system-generated comment
 
 

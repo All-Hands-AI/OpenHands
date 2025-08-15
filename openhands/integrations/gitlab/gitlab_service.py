@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -729,8 +730,12 @@ class GitLabService(BaseGitService, GitService):
                     id=comment_data['id'],
                     body=comment_data['body'],
                     author=comment_data.get('author', {}).get('username', 'unknown'),
-                    created_at=comment_data['created_at'],
-                    updated_at=comment_data['updated_at'],
+                    created_at=datetime.fromisoformat(
+                        comment_data['created_at'].replace('Z', '+00:00')
+                    ),
+                    updated_at=datetime.fromisoformat(
+                        comment_data['updated_at'].replace('Z', '+00:00')
+                    ),
                     system=comment_data.get('system', False),
                 )
                 all_comments.append(comment)
