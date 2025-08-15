@@ -11,7 +11,6 @@ from openhands.integrations.provider import (
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
-    AuthenticationError,
     Branch,
     ProviderType,
     Repository,
@@ -92,15 +91,6 @@ async def get_user_repositories(
                 installation_id,
             )
 
-        except AuthenticationError as e:
-            logger.info(
-                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
-            )
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
         except UnknownException as e:
             return JSONResponse(
                 content=str(e),
@@ -130,15 +120,6 @@ async def get_user(
         try:
             user: User = await client.get_user()
             return user
-
-        except AuthenticationError as e:
-            logger.info(
-                f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
-            )
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
 
         except UnknownException as e:
             return JSONResponse(
@@ -178,12 +159,6 @@ async def search_repositories(
             )
             return repos
 
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
-
         except UnknownException as e:
             return JSONResponse(
                 content=str(e),
@@ -218,12 +193,6 @@ async def get_suggested_tasks(
         try:
             tasks: list[SuggestedTask] = await client.get_suggested_tasks()
             return tasks
-
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
 
         except UnknownException as e:
             return JSONResponse(
@@ -260,12 +229,6 @@ async def get_repository_branches(
         try:
             branches: list[Branch] = await client.get_branches(repository)
             return branches
-
-        except AuthenticationError as e:
-            return JSONResponse(
-                content=str(e),
-                status_code=status.HTTP_401_UNAUTHORIZED,
-            )
 
         except UnknownException as e:
             return JSONResponse(
@@ -339,15 +302,6 @@ async def get_repository_microagents(
         logger.info(f'Found {len(microagents)} microagents in {repository_name}')
         return microagents
 
-    except AuthenticationError as e:
-        logger.info(
-            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
-        )
-        return JSONResponse(
-            content=str(e),
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
-
     except RuntimeError as e:
         return JSONResponse(
             content=str(e),
@@ -411,15 +365,6 @@ async def get_repository_microagent_content(
         )
 
         return response
-
-    except AuthenticationError as e:
-        logger.info(
-            f'Returning 401 Unauthorized - Authentication error for user_id: {user_id}, error: {str(e)}'
-        )
-        return JSONResponse(
-            content=str(e),
-            status_code=status.HTTP_401_UNAUTHORIZED,
-        )
 
     except RuntimeError as e:
         return JSONResponse(
