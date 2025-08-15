@@ -68,13 +68,14 @@ jobs:
           BACKEND_PORT: 3000
           ENABLE_BROWSER: true
           INSTALL_PLAYWRIGHT: 1
+          VITE_BACKEND_BASE_URL: 127.0.0.1:3000
         run: |
           # Fix poetry.lock file if needed
           echo "Fixing poetry.lock file if needed..."
           poetry lock
 
-          # Build OpenHands using make build
-          echo "Running make build..."
+          # Build OpenHands using make build with production frontend target (VITE_BACKEND_BASE_URL embedded)
+          echo "Running make build (production frontend)..."
           make build
 
           # Install Chromium Headless Shell for Playwright (needed for pytest-playwright)
@@ -93,78 +94,72 @@ jobs:
             echo "Playwright browsers are properly installed for e2e tests."
           fi
 
-          # Docker runtime will handle workspace directory creation
-
-          # Start the application using make run with custom parameters and reduced logging
-          echo "Starting OpenHands using make run..."
-          # Set environment variables to reduce logging verbosity
+          # Start backend (FastAPI/Uvicorn)
+          echo "Starting OpenHands backend (Uvicorn)..."
           export PYTHONUNBUFFERED=1
           export LOG_LEVEL=WARNING
           export UVICORN_LOG_LEVEL=warning
           export OPENHANDS_LOG_LEVEL=WARNING
-          FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
+          poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 > /tmp/openhands-backend.log 2>&1 &
+          BACKEND_PID=$!
 
-          # Store the PID of the make run process
-          MAKE_PID=$!
-          echo "OpenHands started with PID: $MAKE_PID"
-
-          # Wait for the application to start
-          echo "Waiting for OpenHands to start..."
-          max_attempts=15
+          # Wait for backend to be healthy
+          echo "Waiting for backend to be ready on :3000..."
+          max_attempts=30
           attempt=1
-
-          while [ $attempt -le $max_attempts ]; do
-            echo "Checking if OpenHands is running (attempt $attempt of $max_attempts)..."
-
-            # Check if the process is still running
-            if ! ps -p $MAKE_PID > /dev/null; then
-              echo "ERROR: OpenHands process has terminated unexpectedly"
-              echo "Last 50 lines of the log:"
-              tail -n 50 /tmp/openhands-e2e-test.log
+          until nc -z localhost 3000 && curl -s http://localhost:3000/health | grep -qi "ok"; do
+            if ! ps -p $BACKEND_PID > /dev/null; then
+              echo "ERROR: Backend process terminated unexpectedly"
+              tail -n 50 /tmp/openhands-backend.log || true
               exit 1
             fi
-
-            # Check if frontend port is open
-            if nc -z localhost 12000; then
-              # Verify we can get HTML content
-              if curl -s http://localhost:12000 | grep -q "<html"; then
-                echo "SUCCESS: OpenHands is running and serving HTML content on port 12000"
-                break
-              else
-                echo "Port 12000 is open but not serving HTML content yet"
-              fi
-            else
-              echo "Frontend port 12000 is not open yet"
-            fi
-
-            # Show log output on each attempt
-            echo "Recent log output:"
-            tail -n 20 /tmp/openhands-e2e-test.log
-
-            # Wait before next attempt
-            echo "Waiting 10 seconds before next check..."
-            sleep 10
+            echo "Backend not ready yet (attempt $attempt/$max_attempts)..."
+            tail -n 10 /tmp/openhands-backend.log || true
+            sleep 5
             attempt=$((attempt + 1))
-
-            # Exit if we've reached the maximum number of attempts
             if [ $attempt -gt $max_attempts ]; then
-              echo "ERROR: OpenHands failed to start after $max_attempts attempts"
-              echo "Last 50 lines of the log:"
-              tail -n 50 /tmp/openhands-e2e-test.log
+              echo "ERROR: Backend failed to start"
+              tail -n 100 /tmp/openhands-backend.log || true
+              exit 1
+            fi
+          done
+          echo "Backend is ready."
+
+          # Serve production frontend (static)
+          echo "Starting frontend (production build via sirv) on :12000..."
+          pushd frontend >/dev/null
+          npm run start -- -p 12000 -H 0.0.0.0 > /tmp/openhands-frontend.log 2>&1 &
+          FRONTEND_PID=$!
+          popd >/dev/null
+
+          # Wait for frontend to serve HTML
+          echo "Waiting for frontend to be ready on :12000..."
+          max_attempts=30
+          attempt=1
+          while [ $attempt -le $max_attempts ]; do
+            if ! ps -p $FRONTEND_PID > /dev/null; then
+              echo "ERROR: Frontend process terminated unexpectedly"
+              tail -n 50 /tmp/openhands-frontend.log || true
+              exit 1
+            fi
+            if nc -z localhost 12000 && curl -s http://localhost:12000 | grep -q "<html"; then
+              echo "SUCCESS: Frontend is serving HTML on port 12000"
+              break
+            fi
+            echo "Frontend not ready yet (attempt $attempt/$max_attempts)..."
+            tail -n 10 /tmp/openhands-frontend.log || true
+            sleep 5
+            attempt=$((attempt + 1))
+            if [ $attempt -gt $max_attempts ]; then
+              echo "ERROR: Frontend failed to start"
+              tail -n 100 /tmp/openhands-frontend.log || true
               exit 1
             fi
           done
 
-          # Final verification that the app is running
-          if ! nc -z localhost 12000 || ! curl -s http://localhost:12000 | grep -q "<html"; then
-            echo "ERROR: OpenHands is not running properly on port 12000"
-            echo "Last 50 lines of the log:"
-            tail -n 50 /tmp/openhands-e2e-test.log
-            exit 1
-          fi
-
-          # Print success message
-          echo "OpenHands is running successfully on port 12000"
+          # Final verification
+          curl -s http://localhost:12000 >/dev/null || { echo "ERROR: Frontend check failed"; exit 1; }
+          echo "OpenHands (prod frontend + backend) is running successfully."
 
       - name: Run end-to-end tests
         env:
@@ -214,10 +209,12 @@ jobs:
         run: |
           # Stop OpenHands processes
           echo "Stopping OpenHands processes..."
+          pkill -f "uvicorn openhands.server.listen:app" || true
+          pkill -f "sirv" || true
           pkill -f "python -m openhands.server" || true
           pkill -f "npm run dev" || true
           pkill -f "make run" || true
 
           # Print process status for debugging
           echo "Checking if any OpenHands processes are still running:"
-          ps aux | grep -E "openhands|npm run dev" || true
+          ps aux | grep -E "uvicorn|sirv|openhands|npm run dev" || true
