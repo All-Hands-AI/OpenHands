@@ -4,7 +4,6 @@ import os
 from openhands.core.config import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.issue import Issue
-from openhands.resolver.io_utils import load_single_resolver_output
 from openhands.resolver.pull_request_sender import PullRequestSender
 from openhands.resolver.resolver_output import ResolverOutput
 
@@ -368,7 +367,7 @@ def send_pull_request(
         llm_api_key=None,
         llm_base_url=None,
     )
-    sender = PullRequestSender(args)
+    sender = PullRequestSender(args, platform)
     return sender.send_pull_request(issue, patch_dir, additional_message)
 
 
@@ -420,7 +419,7 @@ def update_existing_pull_request(
         else None,
         llm_base_url=llm_config.base_url if llm_config else None,
     )
-    sender = PullRequestSender(args)
+    sender = PullRequestSender(args, platform)
     return sender.update_existing_pull_request(
         issue, patch_dir, comment_message, additional_message
     )
@@ -468,9 +467,8 @@ def process_single_issue(
         else None,
         llm_base_url=llm_config.base_url if llm_config else None,
     )
-    sender = PullRequestSender(args)
+    sender = PullRequestSender(args, platform)
     sender.process_single_issue(resolver_output)
-
 
 
 def main() -> None:

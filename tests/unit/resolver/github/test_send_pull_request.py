@@ -3,13 +3,14 @@ import tempfile
 from unittest.mock import ANY, MagicMock, call, patch
 
 import pytest
+from pydantic import SecretStr
 
 from openhands.core.config import LLMConfig
 from openhands.integrations.service_types import ProviderType
 from openhands.resolver.interfaces.github import GithubIssueHandler
 from openhands.resolver.interfaces.issue import ReviewThread
-from openhands.resolver.resolver_output import Issue, ResolverOutput
 from openhands.resolver.io_utils import load_single_resolver_output
+from openhands.resolver.resolver_output import Issue, ResolverOutput
 from openhands.resolver.send_pull_request import (
     apply_patch,
     initialize_repo,
@@ -245,7 +246,7 @@ def test_initialize_repo(mock_output_dir):
 @patch('openhands.resolver.interfaces.github.GithubIssueHandler.reply_to_comment')
 @patch('httpx.post')
 @patch('subprocess.run')
-@patch('openhands.resolver.send_pull_request.LLM')
+@patch('openhands.resolver.pull_request_sender.LLM')
 def test_update_existing_pull_request(
     mock_llm_class,
     mock_subprocess_run,
@@ -282,7 +283,7 @@ def test_update_existing_pull_request(
     mock_llm_instance.completion.return_value = mock_completion_response
     mock_llm_class.return_value = mock_llm_instance
 
-    llm_config = LLMConfig()
+    llm_config = LLMConfig(model='test-model', api_key=SecretStr('test-key'))
 
     # Act: Call the function without comment_message to test auto-generation
     result = update_existing_pull_request(
@@ -808,10 +809,12 @@ def test_reply_to_comment(mock_post, mock_issue):
     mock_response.raise_for_status.assert_called_once()
 
 
-@patch('openhands.resolver.send_pull_request.initialize_repo')
-@patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.update_existing_pull_request')
-@patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.initialize_repo')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.apply_patch')
+@patch(
+    'openhands.resolver.pull_request_sender.PullRequestSender.update_existing_pull_request'
+)
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.make_commit')
 def test_process_single_pr_update(
     mock_make_commit,
     mock_update_existing_pull_request,
@@ -869,7 +872,7 @@ def test_process_single_pr_update(
         None,
     )
 
-    mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'pr', 'branch 1')
+    mock_initialize_repo.assert_called_once_with(1, 'pr', 'branch 1')
     mock_apply_patch.assert_called_once_with(
         f'{mock_output_dir}/patches/pr_1', resolver_output.git_patch
     )
@@ -877,25 +880,18 @@ def test_process_single_pr_update(
         f'{mock_output_dir}/patches/pr_1',
         resolver_output.issue,
         'pr',
-        'openhands',
-        'openhands@all-hands.dev',
     )
     mock_update_existing_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
-        token=token,
-        username=username,
-        platform=ProviderType.GITHUB,
         patch_dir=f'{mock_output_dir}/patches/pr_1',
         additional_message='[Test success 1]',
-        llm_config=mock_llm_config,
-        base_domain='github.com',
     )
 
 
-@patch('openhands.resolver.send_pull_request.initialize_repo')
-@patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request')
-@patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.initialize_repo')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.apply_patch')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.send_pull_request')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.make_commit')
 def test_process_single_issue(
     mock_make_commit,
     mock_send_pull_request,
@@ -951,7 +947,7 @@ def test_process_single_issue(
     )
 
     # Assert that the mocked functions were called with correct arguments
-    mock_initialize_repo.assert_called_once_with(mock_output_dir, 1, 'issue', 'def456')
+    mock_initialize_repo.assert_called_once_with(1, 'issue', 'def456')
     mock_apply_patch.assert_called_once_with(
         f'{mock_output_dir}/patches/issue_1', resolver_output.git_patch
     )
@@ -959,31 +955,18 @@ def test_process_single_issue(
         f'{mock_output_dir}/patches/issue_1',
         resolver_output.issue,
         'issue',
-        'openhands',
-        'openhands@all-hands.dev',
     )
     mock_send_pull_request.assert_called_once_with(
         issue=resolver_output.issue,
-        token=token,
-        username=username,
-        platform=platform,
         patch_dir=f'{mock_output_dir}/patches/issue_1',
-        pr_type=pr_type,
-        fork_owner=None,
         additional_message=resolver_output.result_explanation,
-        target_branch=None,
-        reviewer=None,
-        pr_title=None,
-        base_domain='github.com',
-        git_user_name='openhands',
-        git_user_email='openhands@all-hands.dev',
     )
 
 
-@patch('openhands.resolver.send_pull_request.initialize_repo')
-@patch('openhands.resolver.send_pull_request.apply_patch')
-@patch('openhands.resolver.send_pull_request.send_pull_request')
-@patch('openhands.resolver.send_pull_request.make_commit')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.initialize_repo')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.apply_patch')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.send_pull_request')
+@patch('openhands.resolver.pull_request_sender.PullRequestSender.make_commit')
 def test_process_single_issue_unsuccessful(
     mock_make_commit,
     mock_send_pull_request,

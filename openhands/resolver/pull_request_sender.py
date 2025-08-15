@@ -3,7 +3,7 @@ import os
 import shutil
 import subprocess
 from argparse import Namespace
-from typing import Optional
+from typing import Optional, cast
 
 import jinja2
 from pydantic import SecretStr
@@ -30,8 +30,9 @@ class PullRequestSender:
     """Class for handling pull request sending operations."""
 
     token: str
-    username: str
-    platform: ProviderType
+    username: Optional[str]
+    _platform: Optional[ProviderType]
+    _platform_identified: bool
     output_dir: str
     pr_type: str
     issue_number: int
@@ -45,30 +46,27 @@ class PullRequestSender:
     git_user_email: str
     llm_config: Optional[LLMConfig]
 
-    def __init__(self, args: Namespace) -> None:
+    def __init__(
+        self, args: Namespace, platform: Optional[ProviderType] = None
+    ) -> None:
         """Initialize the PullRequestSender with the given parameters."""
-        self.token = (
-            args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
-        )
-        if not self.token:
+        token = args.token or os.getenv('GITHUB_TOKEN') or os.getenv('GITLAB_TOKEN')
+        if not token:
             raise ValueError(
                 'token is not set, set via --token or GITHUB_TOKEN or GITLAB_TOKEN environment variable.'
             )
+        self.token = cast(str, token)
 
-        self.username = args.username if args.username else os.getenv('GIT_USERNAME')
-        if not self.username:
-            raise ValueError('username is required.')
+        username = args.username if args.username else os.getenv('GIT_USERNAME')
+        # Username is optional for some platforms
+        self.username = username
 
-        self.platform = call_async_from_sync(
-            identify_token,
-            GENERAL_TIMEOUT,
-            self.token,
-            args.base_domain,
-        )
+        # Store platform if provided, otherwise identify it later
+        self._platform = platform
+        self._platform_identified = platform is not None
 
         self.output_dir = args.output_dir
-        if not os.path.exists(self.output_dir):
-            raise ValueError(f'Output directory {self.output_dir} does not exist.')
+        # Note: Output directory validation is deferred until actually needed
 
         self.pr_type = args.pr_type
         self.issue_number = int(args.issue_number)
@@ -93,6 +91,22 @@ class PullRequestSender:
             )
         else:
             self.llm_config = None
+
+    @property
+    def platform(self) -> ProviderType:
+        """Get the platform, identifying it if not already done."""
+        if not self._platform_identified:
+            self._platform = call_async_from_sync(
+                identify_token,
+                GENERAL_TIMEOUT,
+                self.token,
+                self.base_domain,
+            )
+            self._platform_identified = True
+
+        if self._platform is None:
+            raise ValueError('Unable to identify platform from token')
+        return self._platform
 
     def apply_patch(self, repo_dir: str, patch: str) -> None:
         """Apply a patch to a repository.
@@ -199,6 +213,10 @@ class PullRequestSender:
             issue_type: The type of the issue
             base_commit: The base commit to checkout (if issue_type is pr)
         """
+        # Validate output directory exists when actually needed
+        if not os.path.exists(self.output_dir):
+            raise ValueError(f'Output directory {self.output_dir} does not exist.')
+
         src_dir = os.path.join(self.output_dir, 'repo')
         dest_dir = os.path.join(
             self.output_dir, 'patches', f'{issue_type}_{issue_number}'
@@ -216,8 +234,7 @@ class PullRequestSender:
         # Checkout the base commit if provided
         if base_commit:
             result = subprocess.run(
-                f'git -C {dest_dir} checkout {base_commit}',
-                shell=True,
+                ['git', '-C', dest_dir, 'checkout', base_commit],
                 capture_output=True,
                 text=True,
             )
@@ -313,6 +330,7 @@ class PullRequestSender:
             raise ValueError(f'Invalid pr_type: {self.pr_type}')
 
         # Determine default base_domain based on platform
+        base_domain: str
         if self.base_domain is None:
             if self.platform == ProviderType.GITHUB:
                 base_domain = 'github.com'
@@ -462,6 +480,7 @@ class PullRequestSender:
             additional_message: The additional messages to post as a comment on the PR in json list format.
         """
         # Determine default base_domain based on platform
+        base_domain: str
         if self.base_domain is None:
             base_domain = (
                 'github.com' if self.platform == ProviderType.GITHUB else 'gitlab.com'
@@ -608,6 +627,10 @@ class PullRequestSender:
 
     def run(self) -> None:
         """Main entry point for the PullRequestSender."""
+        # Validate output directory exists when actually needed
+        if not os.path.exists(self.output_dir):
+            raise ValueError(f'Output directory {self.output_dir} does not exist.')
+
         output_path = os.path.join(self.output_dir, 'output.jsonl')
         resolver_output = load_single_resolver_output(output_path, self.issue_number)
         self.process_single_issue(resolver_output)
