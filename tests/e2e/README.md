@@ -108,7 +108,7 @@ The multi-conversation resume test (`test_multi_conversation_resume`) performs t
 6. Asks about the project name in the pyproject.toml file
 7. Waits for and verifies the agent's response
 8. Extracts the conversation ID and navigates away from the conversation
-9. Resumes the same conversation by navigating back to its URL
+9. Resumes the same conversation by navigating via conversation list
 10. Verifies that the conversation history is preserved
 11. Asks a follow-up question that requires context from the first interaction
 12. Verifies that the agent responds with context awareness, demonstrating conversation continuity
