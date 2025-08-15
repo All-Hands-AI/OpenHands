@@ -8,6 +8,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { SettingsSwitchWithTooltip } from "#/components/features/settings/settings-switch-with-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -53,6 +54,11 @@ function LlmSettingsScreen() {
     string | null
   >(null);
 
+  // Track confirmation mode state to control security analyzer visibility
+  const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
+    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE
+  );
+
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
   );
@@ -83,6 +89,13 @@ function LlmSettingsScreen() {
       setCurrentSelectedModel(settings.LLM_MODEL);
     }
   }, [settings?.LLM_MODEL]);
+
+  // Update confirmation mode state when settings change
+  React.useEffect(() => {
+    if (settings?.CONFIRMATION_MODE !== undefined) {
+      setConfirmationModeEnabled(settings.CONFIRMATION_MODE);
+    }
+  }, [settings?.CONFIRMATION_MODE]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
@@ -252,6 +265,7 @@ function LlmSettingsScreen() {
       ...prev,
       confirmationMode: confirmationModeIsDirty,
     }));
+    setConfirmationModeEnabled(isToggled);
   };
 
   const handleEnableDefaultCondenserIsDirty = (isToggled: boolean) => {
@@ -362,34 +376,37 @@ function LlmSettingsScreen() {
                 href="https://tavily.com/"
               />
 
-              <SettingsSwitch
+              <SettingsSwitchWithTooltip
                 testId="enable-confirmation-mode-switch"
                 name="enable-confirmation-mode-switch"
                 onToggle={handleConfirmationModeIsDirty}
                 defaultIsToggled={settings.CONFIRMATION_MODE}
+                tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
                 isBeta
               >
                 {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              </SettingsSwitch>
+              </SettingsSwitchWithTooltip>
 
-              <SettingsDropdownInput
-                testId="security-analyzer-input"
-                name="security-analyzer-input"
-                label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                items={
-                  resources?.securityAnalyzers.map((analyzer) => ({
-                    key: analyzer,
-                    label: analyzer === "llm" ? "LLM Analyzer (Default)" : analyzer === "none" ? "None (Ask for every command)" : analyzer,
-                  })) || []
-                }
-                placeholder={t(
-                  I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
-                )}
-                defaultSelectedKey={settings.SECURITY_ANALYZER}
-                isClearable={false}
-                onInputChange={handleSecurityAnalyzerIsDirty}
-                wrapperClassName="w-full max-w-[680px]"
-              />
+              {confirmationModeEnabled && (
+                <SettingsDropdownInput
+                  testId="security-analyzer-input"
+                  name="security-analyzer-input"
+                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+                  items={
+                    resources?.securityAnalyzers.map((analyzer) => ({
+                      key: analyzer,
+                      label: analyzer === "llm" ? "LLM Analyzer (Default)" : analyzer === "none" ? "None (Ask for every command)" : analyzer,
+                    })) || []
+                  }
+                  placeholder={t(
+                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                  )}
+                  defaultSelectedKey={settings.SECURITY_ANALYZER}
+                  isClearable={false}
+                  onInputChange={handleSecurityAnalyzerIsDirty}
+                  wrapperClassName="w-full max-w-[680px]"
+                />
+              )}
             </div>
           )}
 
