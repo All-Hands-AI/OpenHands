@@ -24,9 +24,15 @@ export type MCPStdioServer = {
   env?: Record<string, string>;
 };
 
+export type MCPSHTTPServer = {
+  url: string;
+  api_key?: string;
+};
+
 export type MCPConfig = {
   sse_servers: (string | MCPSSEServer)[];
   stdio_servers: MCPStdioServer[];
+  shttp_servers: (string | MCPSHTTPServer)[];
 };
 
 export type Settings = {
@@ -77,6 +83,7 @@ export type ApiSettings = {
   mcp_config?: {
     sse_servers: (string | MCPSSEServer)[];
     stdio_servers: MCPStdioServer[];
+    shttp_servers: (string | MCPSHTTPServer)[];
   };
   email?: string;
   email_verified?: boolean;
