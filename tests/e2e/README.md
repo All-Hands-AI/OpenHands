@@ -22,6 +22,7 @@ The following environment variables are required:
 Optional environment variables:
 
 - `LLM_BASE_URL`: The base URL for the LLM API (if using a custom endpoint)
+- `BITBUCKET_TOKEN`: A Bitbucket app password in format `username:app_password` for testing Bitbucket integration
 
 ### Running Locally
 
@@ -43,12 +44,14 @@ You can run individual tests directly:
 ```bash
 cd tests/e2e
 # Run the GitHub token configuration test
-poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v
+poetry run pytest test_settings.py::test_github_token_configuration -v
 
 # Run the conversation start test
-poetry run pytest test_e2e_workflow.py::test_conversation_start -v
+poetry run pytest test_conversation.py::test_conversation_start -v
 
-
+# Run the Bitbucket integration tests
+poetry run pytest test_bitbucket_integration.py::test_bitbucket_token_configuration -v
+poetry run pytest test_bitbucket_integration.py::test_bitbucket_repository_cloning -v
 ```
 
 ### Running with Visible Browser
@@ -57,8 +60,9 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 
 ```bash
 cd tests/e2e
-poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v --no-headless --slow-mo=50
-poetry run pytest test_e2e_workflow.py::test_conversation_start -v --no-headless --slow-mo=50
+poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50
+poetry run pytest test_conversation.py::test_conversation_start -v --no-headless --slow-mo=50
+poetry run pytest test_bitbucket_integration.py::test_bitbucket_repository_cloning -v --no-headless --slow-mo=50
 ```
 
 ### GitHub Workflow
@@ -101,6 +105,32 @@ A simple test (`test_simple_browser_navigation`) that just navigates to the Open
 ### Local Runtime Test
 
 A separate test (`test_headless_mode_with_dummy_agent_no_browser` in `test_local_runtime.py`) that tests the local runtime with a dummy agent in headless mode.
+
+### Bitbucket Integration Tests
+
+The Bitbucket integration tests (`test_bitbucket_integration.py`) perform the following:
+
+#### Bitbucket Token Configuration Test
+
+The Bitbucket token configuration test (`test_bitbucket_token_configuration`) performs the following steps:
+
+1. Navigates to the OpenHands application
+2. Handles any initial modals (LLM API key configuration, privacy preferences)
+3. Navigates to Settings → Integrations
+4. Configures the Bitbucket token (app password in format `username:app_password`)
+5. Saves the configuration and verifies the repository selection is available
+
+#### Bitbucket Repository Cloning Test
+
+The Bitbucket repository cloning test (`test_bitbucket_repository_cloning`) performs the following steps:
+
+1. Navigates to the OpenHands application (assumes Bitbucket token is already configured)
+2. Selects a public Bitbucket repository (e.g., `atlassian/atlaskit-mk-2`)
+3. Clicks the "Launch" button
+4. Waits for the conversation interface to load
+5. Waits for the agent to initialize
+6. Asks a question to verify the repository content is accessible
+7. Verifies that the agent can interact with the cloned repository files
 
 ## Troubleshooting
 
