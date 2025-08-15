@@ -28,6 +28,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
+    AuthenticationError,
     CreateMicroagent,
     ProviderType,
     SuggestedTask,
@@ -205,6 +206,16 @@ async def new_conversation(
                 'status': 'error',
                 'message': str(e),
                 'msg_id': RuntimeStatus.ERROR_LLM_AUTHENTICATION.value,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    except AuthenticationError as e:
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': str(e),
+                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
