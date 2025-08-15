@@ -157,6 +157,7 @@ describe("Content", () => {
     getConfigSpy.mockResolvedValue(VALID_OSS_CONFIG);
     getSettingsSpy.mockResolvedValue({
       ...MOCK_DEFAULT_USER_SETTINGS,
+      provider_tokens_set: {},
     });
 
     const { rerender } = renderGitSettingsScreen();
