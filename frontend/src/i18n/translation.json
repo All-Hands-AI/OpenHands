@@ -8175,22 +8175,6 @@
         "tr": "Konuşma yok",
         "uk": "Розмов не знайдено"
     },
-    "CONVERSATION$RUN": {
-        "en": "Run",
-        "ja": "実行",
-        "zh-CN": "运行",
-        "zh-TW": "運行",
-        "ko-KR": "실행",
-        "fr": "Exécuter",
-        "es": "Ejecutar",
-        "de": "Ausführen",
-        "it": "Esegui",
-        "pt": "Executar",
-        "ar": "تشغيل",
-        "no": "Kjør",
-        "tr": "Çalıştır",
-        "uk": "Запустити"
-    },
     "LANDING$SELECT_GIT_REPO": {
         "en": "Select a Git project",
         "ja": "Gitプロジェクトを選択",
