@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 import { ReasoningContent } from "./reasoning-content";
+import { I18nKey } from "#/i18n/declaration";
 
 describe("ReasoningContent", () => {
   it("should not render when content is empty", () => {
@@ -19,7 +20,7 @@ describe("ReasoningContent", () => {
     const content = "This is my reasoning for the action.";
     render(<ReasoningContent content={content} />);
 
-    expect(screen.getByText("Reasoning")).toBeInTheDocument();
+    expect(screen.getByText(I18nKey.REASONING$TITLE)).toBeInTheDocument();
     expect(screen.getByRole("button")).toBeInTheDocument();
   });
 

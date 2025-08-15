@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { cn } from "#/utils/utils";
 import { code } from "../markdown/code";
 import { ul, ol } from "../markdown/list";
@@ -18,7 +20,7 @@ export function ReasoningContent({
   content,
   className,
 }: ReasoningContentProps) {
-  // const { t } = useTranslation();
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!content || content.trim() === "") {
@@ -38,7 +40,7 @@ export function ReasoningContent({
         className="flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800 transition-colors cursor-pointer w-full text-left py-2"
       >
         <LightbulbIcon className="h-4 w-4 fill-blue-600" />
-        <span>Reasoning</span>
+        <span>{t(I18nKey.REASONING$TITLE)}</span>
         {isExpanded ? (
           <ArrowUp className="h-3 w-3 fill-blue-600 ml-auto" />
         ) : (
