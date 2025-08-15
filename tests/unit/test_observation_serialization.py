@@ -303,11 +303,11 @@ def test_microagent_observation_serialization():
         microagent_knowledge=[],
         conversation_instructions='additional_context',
     )
-    
+
     # Convert to dict and back
     observation_dict = event_to_dict(original)
     observation_instance = event_from_dict(observation_dict)
-    
+
     # Verify the result
     assert isinstance(observation_instance, RecallObservation)
     assert observation_instance.recall_type == RecallType.WORKSPACE_CONTEXT
@@ -342,11 +342,11 @@ def test_microagent_observation_microagent_knowledge_serialization():
             ),
         ],
     )
-    
+
     # Convert to dict and back
     observation_dict = event_to_dict(original)
     observation_instance = event_from_dict(observation_dict)
-    
+
     # Verify the result
     assert isinstance(observation_instance, RecallObservation)
     assert observation_instance.recall_type == RecallType.KNOWLEDGE

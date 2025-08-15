@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.51.1"
+version = "0.53.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -42,6 +42,7 @@ numpy = "*"
 json-repair = "*"
 browsergym-core = "0.13.3"                         # integrate browsergym-core as the browsing interface
 html2text = "*"
+markdown = "*"                                     # For markdown to HTML conversion
 deprecated = "*"
 pexpect = "*"
 jinja2 = "^3.1.3"
@@ -115,6 +116,7 @@ pre-commit = "4.2.0"
 build = "*"
 types-setuptools = "*"
 pytest = "^8.4.0"
+types-markdown = "^3.8.0.20250809"
 
 [tool.poetry.group.test]
 optional = true
@@ -125,6 +127,8 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 pytest-xdist = "*"
+pytest-playwright = "^0.7.0"
+pytest-timeout = "^2.4.0"
 openai = "*"
 pandas = "*"
 reportlab = "*"
@@ -167,7 +171,7 @@ joblib = "*"
 swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-modal-patch-eval" }
 
 [tool.poetry.scripts]
-openhands = "openhands.cli.main:main"
+openhands = "openhands.cli.entry:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"

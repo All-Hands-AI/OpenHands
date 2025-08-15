@@ -16,6 +16,7 @@ from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
     GitService,
+    InstallationsService,
     OwnerType,
     ProviderType,
     Repository,
@@ -30,7 +31,7 @@ from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitHubService(BaseGitService, GitService):
+class GitHubService(BaseGitService, GitService, InstallationsService):
     """Default implementation of GitService for GitHub integration.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
@@ -185,8 +186,7 @@ class GitHubService(BaseGitService, GitService):
     async def _fetch_paginated_repos(
         self, url: str, params: dict, max_repos: int, extract_key: str | None = None
     ) -> list[dict]:
-        """
-        Fetch repositories with pagination support.
+        """Fetch repositories with pagination support.
 
         Args:
             url: The API endpoint URL
@@ -224,14 +224,65 @@ class GitHubService(BaseGitService, GitService):
         ts = repo.get('pushed_at')
         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """Parse a GitHub API repository response into a Repository object.
+
+        Args:
+            repo: Repository data from GitHub API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        return Repository(
+            id=str(repo.get('id')),  # type: ignore[arg-type]
+            full_name=repo.get('full_name'),  # type: ignore[arg-type]
+            stargazers_count=repo.get('stargazers_count'),
+            git_provider=ProviderType.GITHUB,
+            is_public=not repo.get('private', True),
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('owner', {}).get('type') == 'Organization'
+                else OwnerType.USER
+            ),
+            link_header=link_header,
+        )
+
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
+    ):
+        params = {'page': str(page), 'per_page': str(per_page)}
+        if installation_id:
+            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
+            response, headers = await self._make_request(url, params)
+            response = response.get('repositories', [])
+        else:
+            url = f'{self.BASE_URL}/user/repos'
+            params['sort'] = sort
+            response, headers = await self._make_request(url, params)
+
+        next_link: str = headers.get('Link', '')
+        return [
+            self._parse_repository(repo, link_header=next_link) for repo in response
+        ]
+
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitHub API
         all_repos: list[dict] = []
 
         if app_mode == AppMode.SAAS:
             # Get all installation IDs and fetch repos for each one
-            installation_ids = await self.get_installation_ids()
+            installation_ids = await self.get_installations()
 
             # Iterate through each installation ID
             for installation_id in installation_ids:
@@ -262,59 +313,47 @@ class GitHubService(BaseGitService, GitService):
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
 
         # Convert to Repository objects
-        return [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('full_name'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=not repo.get('private', True),
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in all_repos
-        ]
+        return [self._parse_repository(repo) for repo in all_repos]
 
-    async def get_installation_ids(self) -> list[int]:
+    async def get_installations(self) -> list[str]:
         url = f'{self.BASE_URL}/user/installations'
         response, _ = await self._make_request(url)
         installations = response.get('installations', [])
-        return [i['id'] for i in installations]
+        return [str(i['id']) for i in installations]
 
     async def search_repositories(
-        self, query: str, per_page: int, sort: str, order: str
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/search/repositories'
-        # Add is:public to the query to ensure we only search for public repositories
-        query_with_visibility = f'{query} is:public'
         params = {
-            'q': query_with_visibility,
             'per_page': per_page,
             'sort': sort,
             'order': order,
         }
 
+        if public:
+            url_parts = query.split('/')
+            if len(url_parts) < 4:
+                return []
+
+            org = url_parts[3]
+            repo_name = url_parts[4]
+            # Add is:public to the query to ensure we only search for public repositories
+            params['q'] = f'in:name {org}/{repo_name} is:public'
+
+        # Perhaps we should go through all orgs and the search for repos under every org
+        # Currently it will only search user repos, and org repos when '/' is in the name
+        if not public and '/' in query:
+            org, repo_query = query.split('/', 1)
+            query_with_user = f'org:{org} in:name {repo_query}'
+            params['q'] = query_with_user
+        elif not public:
+            user = await self.get_user()
+            params['q'] = f'in:name {query} user:{user.login}'
+
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
-
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('full_name'),
-                stargazers_count=repo.get('stargazers_count'),
-                git_provider=ProviderType.GITHUB,
-                is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('owner', {}).get('type') == 'Organization'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in repo_items
-        ]
+        repos = [self._parse_repository(repo) for repo in repo_items]
 
         return repos
 
@@ -451,32 +490,21 @@ class GitHubService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/repos/{repository}'
         repo, _ = await self._make_request(url)
 
-        return Repository(
-            id=str(repo.get('id')),
-            full_name=repo.get('full_name'),
-            stargazers_count=repo.get('stargazers_count'),
-            git_provider=ProviderType.GITHUB,
-            is_public=not repo.get('private', True),
-            owner_type=(
-                OwnerType.ORGANIZATION
-                if repo.get('owner', {}).get('type') == 'Organization'
-                else OwnerType.USER
-            ),
-        )
+        return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
         url = f'{self.BASE_URL}/repos/{repository}/branches'
 
-        # Set maximum branches to fetch (10 pages with 100 per page)
-        MAX_BRANCHES = 1000
+        # Set maximum branches to fetch (100 per page)
+        MAX_BRANCHES = 5_000
         PER_PAGE = 100
 
         all_branches: list[Branch] = []
         page = 1
 
         # Fetch up to 10 pages of branches
-        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+        while len(all_branches) < MAX_BRANCHES:
             params = {'per_page': str(PER_PAGE), 'page': str(page)}
             response, headers = await self._make_request(url, params)
 
@@ -520,8 +548,7 @@ class GitHubService(BaseGitService, GitService):
         draft: bool = True,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a PR using user credentials
+        """Creates a PR using user credentials
 
         Args:
             repo_name: The full name of the repository (owner/repo)
@@ -536,7 +563,6 @@ class GitHubService(BaseGitService, GitService):
             - PR URL when successful
             - Error message when unsuccessful
         """
-
         url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
         # Set default body if none provided

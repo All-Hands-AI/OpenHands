@@ -44,8 +44,7 @@ class MessageAction(Action):
 
 @dataclass
 class SystemMessageAction(Action):
-    """
-    Action that represents a system message for an agent, including the system prompt
+    """Action that represents a system message for an agent, including the system prompt
     and available tools. This should be the first message in the event stream.
     """
 

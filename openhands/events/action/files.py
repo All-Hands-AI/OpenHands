@@ -35,7 +35,7 @@ class FileReadAction(Action):
             ret += f'Reasoning: {self.reasoning_content}\n'
         ret += f'Thought: {self.thought}\n'
         return ret
-        
+
     def __str__(self) -> str:
         return self.__repr__()
 
@@ -69,7 +69,7 @@ class FileWriteAction(Action):
         ret += f'Thought: {self.thought}\n'
         ret += f'Content:\n```\n{self.content}\n```\n'
         return ret
-        
+
     def __str__(self) -> str:
         return self.__repr__()
 
@@ -154,6 +154,6 @@ class FileEditAction(Action):
                 ret += 'Undo Edit\n'
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
-        
+
     def __str__(self) -> str:
         return self.__repr__()
