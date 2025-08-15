@@ -75,6 +75,9 @@ def main() -> None:
         action='store_true',
         help='Set OPENHANDS_GEMINI_CLI_COMPAT=1 for this run',
     )
+    parser.add_argument(
+        '--log-dir', default=None, help='Enable log_completions to this directory'
+    )
     args = parser.parse_args()
 
     if not args.api_key:
@@ -93,7 +96,8 @@ def main() -> None:
         top_p=args.top_p,
         max_output_tokens=args.max_output_tokens,
         reasoning_effort=args.reasoning,
-        log_completions=True,
+        log_completions=bool(args.log_dir),
+        log_completions_folder=args.log_dir,
     )
 
     llm = LLM(cfg)
