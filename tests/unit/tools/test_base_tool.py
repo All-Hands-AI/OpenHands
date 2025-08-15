@@ -5,7 +5,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from openhands.agenthub.codeact_agent.tools.unified.base import Tool
+from openhands.agenthub.codeact_agent.tools.base import Tool
 from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
 
 # ToolError no longer exists as a separate class in the unified base; tests updated accordingly.

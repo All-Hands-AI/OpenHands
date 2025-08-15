@@ -24,12 +24,10 @@ from openhands.agenthub.codeact_agent.tools import (
 from openhands.agenthub.codeact_agent.tools import (
     FinishTool as LegacyFinishTool,
 )
-from openhands.agenthub.codeact_agent.tools.unified import (
-    BashTool,
-    BrowserTool,
-    FileEditorTool,
-    FinishTool,
-)
+from openhands.agenthub.codeact_agent.tools.bash_tool import BashTool
+from openhands.agenthub.codeact_agent.tools.browser_tool import BrowserTool
+from openhands.agenthub.codeact_agent.tools.file_editor_tool import FileEditorTool
+from openhands.agenthub.codeact_agent.tools.finish_tool import FinishTool
 from openhands.core.exceptions import FunctionCallNotExistsError, FunctionCallValidationError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (

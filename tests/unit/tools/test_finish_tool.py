@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from openhands.agenthub.codeact_agent.tools.unified import FinishTool
+from openhands.agenthub.codeact_agent.tools.finish_tool import FinishTool
 from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
 
 
