@@ -113,5 +113,7 @@ Potential differences to test for latency impact:
 - experiments/gemini_latency_harness.py to benchmark OpenHands path.
 
 ## TODO
+- Harness: add --log-dir flag to write OpenHands log_completions; llm.py now captures LiteLLM raw_request_typed_dict (curl/body/headers) when logging is enabled.
+
 - Add minimal Node @google/genai script for parity tests and to log raw request payloads.
 - Monkey-patch LiteLLM to log final JSON request body for Gemini generateContent (temporary) to compare shapes.

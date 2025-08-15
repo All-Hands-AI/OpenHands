@@ -78,6 +78,12 @@ def main() -> None:
     parser.add_argument(
         '--log-dir', default=None, help='Enable log_completions to this directory'
     )
+    parser.add_argument(
+        '--modify-params',
+        default=os.getenv('OPENHANDS_MODIFY_PARAMS', 'true'),
+        choices=['true', 'false', '1', '0', 'yes', 'no'],
+        help='Set litellm.modify_params behavior for this run (default: true)',
+    )
     args = parser.parse_args()
 
     if not args.api_key:
@@ -96,6 +102,7 @@ def main() -> None:
         top_p=args.top_p,
         max_output_tokens=args.max_output_tokens,
         reasoning_effort=args.reasoning,
+        modify_params=(str(args.modify_params).lower() in ('1', 'true', 'yes')),
         log_completions=bool(args.log_dir),
         log_completions_folder=args.log_dir,
     )
