@@ -991,16 +991,8 @@ async def test_new_conversation_with_provider_authentication_error(
             )
 
             # Call new_conversation
-            response = await create_new_test_conversation(test_request)
-
-            # Verify the response
-            assert isinstance(response, JSONResponse)
-            assert response.status_code == 400
-            assert json.loads(response.body.decode('utf-8')) == {
-                'status': 'error',
-                'message': 'auth error',
-                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
-            }
+            with pytest.raises(AuthenticationError):
+                await create_new_test_conversation(test_request)
 
             # Verify that verify_repo_provider was called with the repository
             provider_handler_mock.verify_repo_provider.assert_called_once_with(
