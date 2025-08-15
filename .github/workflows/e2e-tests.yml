@@ -35,7 +35,7 @@ jobs:
       - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libgbm1 libasound2t64 netcat-openbsd
+          sudo apt-get install -y libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 xauth xvfb libgbm1 libasound2t64 netcat-openbsd ruby
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -183,7 +183,7 @@ jobs:
 
           # Run the tests with detailed output
           cd tests/e2e
-          poetry run python -m pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --no-header --capture=no --timeout=600
+          poetry run python -m pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start test_ruby_extract_version.py::test_ruby_extract_version_functionality -v --no-header --capture=no --timeout=600
 
       - name: Upload test results
         if: always()
