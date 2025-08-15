@@ -60,6 +60,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
           INSTALL_DOCKER: 1
           RUNTIME: docker
           FRONTEND_PORT: 12000
@@ -102,6 +103,8 @@ jobs:
           export LOG_LEVEL=WARNING
           export UVICORN_LOG_LEVEL=warning
           export OPENHANDS_LOG_LEVEL=WARNING
+          # Pass TAVILY_API_KEY to the application as SEARCH_API_KEY
+          export SEARCH_API_KEY="${TAVILY_API_KEY}"
           FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
           # Store the PID of the make run process
@@ -172,6 +175,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
         run: |
           # Check if the application is running
           if ! nc -z localhost 12000; then
@@ -183,7 +187,7 @@ jobs:
 
           # Run the tests with detailed output
           cd tests/e2e
-          poetry run python -m pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --no-header --capture=no --timeout=600
+          poetry run python -m pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start test_web_search.py::test_web_search_current_us_president -v --no-header --capture=no --timeout=600
 
       - name: Upload test results
         if: always()
