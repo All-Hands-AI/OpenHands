@@ -102,8 +102,13 @@ class VSCodePlugin(Plugin):
         current_dir = Path(__file__).parent
         settings_path = current_dir / 'settings.json'
 
-        # Create the .vscode directory in the workspace if it doesn't exist
-        workspace_dir = Path(os.getenv('WORKSPACE_BASE', '/workspace'))
+        # Use workspace_mount_path_in_sandbox instead of WORKSPACE_BASE
+        workspace_dir = Path(os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace'))
+        if not workspace_dir.exists():
+            logger.warning(f'Workspace directory {workspace_dir} does not exist')
+            return
+
+        # Create .vscode directory in the actual workspace root
         vscode_dir = workspace_dir / '.vscode'
         vscode_dir.mkdir(parents=True, exist_ok=True)
 
