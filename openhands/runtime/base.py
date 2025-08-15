@@ -872,7 +872,7 @@ fi
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
             elif isinstance(action, TaskTrackingAction):
-                # If `command` is `plan`, write the serialized task list to the file TASKS.md under /workspace
+                # If `command` is `plan`, write the serialized task list to the file TASKS.md under `.openhands/`
                 if action.command == 'plan':
                     content = '# Task List\n\n'
                     for i, task in enumerate(action.task_list, 1):
@@ -883,11 +883,11 @@ fi
                         }.get(task.get('status', 'todo'), '⏳')
                         content += f'{i}. {status_icon} {task.get("title", "")}\n{task.get("notes", "")}\n'
                     write_obs = self.write(
-                        FileWriteAction(path='TASKS.md', content=content)
+                        FileWriteAction(path='.openhands/TASKS.md', content=content)
                     )
                     if isinstance(write_obs, ErrorObservation):
                         return ErrorObservation(
-                            f'Failed to write task list to TASKS.md: {write_obs.content}'
+                            f'Failed to write task list to .openhands/TASKS.md: {write_obs.content}'
                         )
 
                     return TaskTrackingObservation(
@@ -897,7 +897,7 @@ fi
                     )
                 elif action.command == 'view':
                     # If `command` is `view`, read the TASKS.md file and return its content
-                    read_obs = self.read(FileReadAction(path='TASKS.md'))
+                    read_obs = self.read(FileReadAction(path='.openhands/TASKS.md'))
                     if isinstance(read_obs, FileReadObservation):
                         return TaskTrackingObservation(
                             content=read_obs.content,
