@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import toml
 import tomlkit
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -524,12 +523,7 @@ def load_config_file(file_path: Path) -> dict:
             with open(file_path, 'r') as f:
                 return dict(tomlkit.load(f))
         except Exception:
-            try:
-                # Fallback to regular toml for backward compatibility
-                with open(file_path, 'r') as f:
-                    return toml.load(f)
-            except Exception:
-                pass
+            pass
 
     # Create directory if it doesn't exist
     file_path.parent.mkdir(parents=True, exist_ok=True)
@@ -538,31 +532,6 @@ def load_config_file(file_path: Path) -> dict:
 
 def save_config_file(config_data: dict, file_path: Path) -> None:
     """Save the config file with proper MCP formatting."""
-    # Check if we have MCP configuration that needs special handling
-    if 'mcp' in config_data and _has_mcp_server_arrays(config_data['mcp']):
-        # Use tomlkit for proper inline array formatting
-        doc = _convert_to_tomlkit_document(config_data)
-        with open(file_path, 'w') as f:
-            f.write(tomlkit.dumps(doc))
-    else:
-        # Use regular toml for other configurations
-        with open(file_path, 'w') as f:
-            toml.dump(config_data, f)
-
-
-def _has_mcp_server_arrays(mcp_config: dict) -> bool:
-    """Check if MCP config contains server arrays that need special formatting."""
-    server_types = ['stdio_servers', 'sse_servers', 'shttp_servers']
-    return any(
-        server_type in mcp_config
-        and isinstance(mcp_config[server_type], list)
-        and len(mcp_config[server_type]) > 0
-        for server_type in server_types
-    )
-
-
-def _convert_to_tomlkit_document(config_data: dict) -> tomlkit.document:
-    """Convert config data to tomlkit document with proper MCP formatting."""
     doc = tomlkit.document()
 
     for key, value in config_data.items():
@@ -571,34 +540,27 @@ def _convert_to_tomlkit_document(config_data: dict) -> tomlkit.document:
             mcp_section = tomlkit.table()
 
             for mcp_key, mcp_value in value.items():
-                if mcp_key in [
-                    'stdio_servers',
-                    'sse_servers',
-                    'shttp_servers',
-                ] and isinstance(mcp_value, list):
-                    # Create array with inline tables for server configurations
-                    server_array = tomlkit.array()
-                    for server_config in mcp_value:
-                        if isinstance(server_config, dict):
-                            # Create inline table for each server
-                            inline_table = tomlkit.inline_table()
-                            for server_key, server_val in server_config.items():
-                                inline_table[server_key] = server_val
-                            server_array.append(inline_table)
-                        else:
-                            # Handle non-dict values (like string URLs)
-                            server_array.append(server_config)
-                    mcp_section[mcp_key] = server_array
-                else:
-                    # Handle other MCP config values normally
-                    mcp_section[mcp_key] = mcp_value
+                # Create array with inline tables for server configurations
+                server_array = tomlkit.array()
+                for server_config in mcp_value:
+                    if isinstance(server_config, dict):
+                        # Create inline table for each server
+                        inline_table = tomlkit.inline_table()
+                        for server_key, server_val in server_config.items():
+                            inline_table[server_key] = server_val
+                        server_array.append(inline_table)
+                    else:
+                        # Handle non-dict values (like string URLs)
+                        server_array.append(server_config)
+                mcp_section[mcp_key] = server_array
 
             doc[key] = mcp_section
         else:
             # Handle non-MCP sections normally
             doc[key] = value
 
-    return doc
+    with open(file_path, 'w') as f:
+        f.write(tomlkit.dumps(doc))
 
 
 def _ensure_mcp_config_structure(config_data: dict) -> None:
