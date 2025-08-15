@@ -513,40 +513,29 @@ def test_multi_conversation_resume(page: Page):
     print('Waiting 10 seconds to simulate time passing...')
     page.wait_for_timeout(10000)
 
-    # Step 9: Resume the conversation via conversation list
-    print('Step 9: Resuming the previous conversation via conversation list...')
+    # Step 9: Resume the conversation via conversation panel
+    print('Step 9: Resuming the previous conversation via conversation panel...')
 
-    # Look for conversations list or navigation to conversations
-    conversations_selectors = [
-        '[data-testid="conversations-list"]',
-        '[data-testid="conversation-history"]',
-        'a[href*="/conversations"]',
-        'button:has-text("Conversations")',
-        'nav a:has-text("Conversations")',
-        '.conversations',
-        '[data-testid="nav-conversations"]',
-    ]
-
+    # Click the conversation panel button (the "sandwich button")
+    conversation_panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
+    
     conversations_found = False
-    for selector in conversations_selectors:
-        try:
-            conversations_element = page.locator(selector)
-            if conversations_element.is_visible(timeout=5000):
-                print(f'Found conversations element with selector: {selector}')
-                conversations_element.click()
-                conversations_found = True
-                page.wait_for_timeout(2000)
-                break
-        except Exception:
-            continue
+    try:
+        if conversation_panel_button.is_visible(timeout=10000):
+            print('Found conversation panel button, clicking to open conversations list')
+            conversation_panel_button.click()
+            conversations_found = True
+            page.wait_for_timeout(3000)  # Wait for panel to open
+        else:
+            print('Conversation panel button not visible')
+    except Exception as e:
+        print(f'Error clicking conversation panel button: {e}')
 
     if not conversations_found:
         print(
-            'Could not find conversations list, trying to navigate to conversations page'
+            'Could not find conversation panel button, will try direct navigation fallback'
         )
-        # Try navigating to conversations page directly
-        page.goto('http://localhost:12000/conversations')
-        page.wait_for_load_state('networkidle', timeout=30000)
+        # Fallback will be handled in the conversation finding section below
 
     page.screenshot(path='test-results/multi_conv_12_conversations_list.png')
     print('Screenshot saved: multi_conv_12_conversations_list.png')
@@ -554,14 +543,12 @@ def test_multi_conversation_resume(page: Page):
     # Look for the specific conversation in the list
     print(f'Looking for conversation {conversation_id} in the list...')
 
-    # Try different selectors to find the conversation
+    # Try different selectors to find the conversation in the panel
     conversation_selectors = [
-        f'[data-testid="conversation-{conversation_id}"]',
-        f'a[href*="{conversation_id}"]',
-        f'div:has-text("{conversation_id}")',
-        '[data-testid="conversation-item"]',
-        '.conversation-item',
-        'a[href*="/conversation/"]',
+        '[data-testid="conversation-card"]',  # Main conversation card selector
+        f'a[href*="{conversation_id}"]',      # Link containing conversation ID
+        f'div:has-text("{conversation_id}")', # Any div containing the ID
+        'a[href*="/conversations/"]',         # Any conversation link (note: plural)
     ]
 
     conversation_link_found = False
@@ -585,7 +572,7 @@ def test_multi_conversation_resume(page: Page):
                         break
                     # Also try clicking the first conversation if we can't find the specific one
                     elif (
-                        selector == 'a[href*="/conversation/"]'
+                        selector == 'a[href*="/conversations/"]'
                         and not conversation_link_found
                     ):
                         print(
