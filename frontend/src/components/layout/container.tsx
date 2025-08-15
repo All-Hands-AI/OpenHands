@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { NavTab } from "./nav-tab";
 import { ScrollLeftButton } from "./scroll-left-button";
 import { ScrollRightButton } from "./scroll-right-button";
@@ -25,17 +25,11 @@ export function Container({
   children,
   className,
 }: ContainerProps) {
-  const [containerWidth, setContainerWidth] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  // Track container width using ResizeObserver
-  useTrackElementWidth({
-    elementRef: containerRef,
-    callback: setContainerWidth,
-  });
 
   // Check scroll position and update button states
   const updateScrollButtons = () => {
@@ -47,10 +41,19 @@ export function Container({
     }
   };
 
-  // Update scroll buttons when tabs change or container width changes
-  useEffect(() => {
-    updateScrollButtons();
-  }, [labels, containerWidth]);
+  // Track container width using ResizeObserver
+  useTrackElementWidth({
+    elementRef: containerRef,
+    callback: (width: number) => {
+      // Only update scroll button visibility when crossing the threshold
+      const shouldShowScrollButtons =
+        width < 598 && Boolean(labels) && labels!.length > 0;
+      if (shouldShowScrollButtons) {
+        setShowScrollButtons(shouldShowScrollButtons);
+      }
+      updateScrollButtons();
+    },
+  });
 
   // Scroll functions
   const scrollLeft = () => {
@@ -64,8 +67,6 @@ export function Container({
       scrollContainerRef.current.scrollBy({ left: 200, behavior: "smooth" });
     }
   };
-
-  const showScrollButtons = containerWidth < 598 && labels && labels.length > 0;
 
   return (
     <div
