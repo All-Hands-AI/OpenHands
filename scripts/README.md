@@ -15,10 +15,13 @@ python scripts/update_openapi.py
 ### What it does
 
 1. Generates the OpenAPI specification from the live FastAPI application
-2. Preserves server configuration from the existing documentation
-3. Updates the API version to match the package version
-4. Creates a backup of the current documentation
-5. Writes the updated specification to `docs/openapi.json`
+2. Excludes certain endpoints that are not useful for typical API users:
+   - `/api/conversations/{conversation_id}/exp-config` - Internal experimentation endpoint
+   - `/api/user/installations` - More suited for frontend applications than API automation
+3. Preserves server configuration from the existing documentation
+4. Updates the API version to match the package version
+5. Creates a backup of the current documentation
+6. Writes the updated specification to `docs/openapi.json`
 
 ### When to run
 

@@ -35,7 +35,21 @@ except ImportError as e:
 
 def generate_openapi_spec():
     """Generate the OpenAPI specification from the FastAPI app."""
-    return app.openapi()
+    spec = app.openapi()
+
+    # Explicitly exclude certain endpoints that are not useful for typical API users
+    excluded_endpoints = [
+        '/api/conversations/{conversation_id}/exp-config',  # Internal experimentation endpoint
+        '/api/user/installations',  # More suited for frontend applications
+    ]
+
+    if 'paths' in spec:
+        for endpoint in excluded_endpoints:
+            if endpoint in spec['paths']:
+                del spec['paths'][endpoint]
+                print(f'Excluded endpoint: {endpoint}')
+
+    return spec
 
 
 def load_current_spec(spec_path):
