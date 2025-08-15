@@ -126,17 +126,7 @@ def action_from_dict(action: dict) -> Action:
     args = handle_action_deprecated_args(args)
 
     try:
-        # Special handling for AgentFinishAction with task_completed
-        if action_class == AgentFinishAction and 'task_completed' in args:
-            # Store task_completed value
-            task_completed_value = args.pop('task_completed')
-            # Create action without task_completed
-            decoded_action = action_class(**args)
-            # Set task_completed after creation for backward compatibility
-            setattr(decoded_action, 'task_completed', task_completed_value)
-        else:
-            decoded_action = action_class(**args)
-
+        decoded_action = action_class(**args)
         if 'timeout' in action:
             blocking = args.get('blocking', False)
             decoded_action.set_hard_timeout(action['timeout'], blocking=blocking)
