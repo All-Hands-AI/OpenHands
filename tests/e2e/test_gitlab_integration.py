@@ -140,32 +140,45 @@ def test_gitlab_repository_cloning(page: Page):
     expect(home_screen).to_be_visible(timeout=15000)
     print('Home screen is visible')
 
-    # Look for the repository dropdown/selector
-    repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
-    expect(repo_dropdown).to_be_visible(timeout=15000)
-    print('Repository dropdown is visible')
+    # Step 4: Select provider (GitLab)
+    print('Step 4: Selecting GitLab provider...')
+    provider_dropdown = page.locator('text=Select Provider').first
+    expect(provider_dropdown).to_be_visible(timeout=10000)
+    provider_dropdown.click()
+    page.wait_for_timeout(1000)
 
-    # Click on the repository input to open dropdown
-    repo_dropdown.click()
+    # Select GitLab from provider options
+    gitlab_option = page.locator('[role="option"]:has-text("GitLab")').first
+    if gitlab_option.is_visible(timeout=5000):
+        gitlab_option.click()
+        print('Selected GitLab provider')
+    else:
+        print('GitLab provider option not found, trying keyboard navigation')
+        page.keyboard.press('ArrowDown')
+        page.keyboard.press('ArrowDown')  # Assuming GitLab is second option
+        page.keyboard.press('Enter')
+
+    page.wait_for_timeout(2000)
+
+    # Step 5: Search for repository
+    print('Step 5: Searching for GitLab repository...')
+    repo_search = page.locator('text=Search repositories...').first
+    expect(repo_search).to_be_visible(timeout=10000)
+    repo_search.click()
     page.wait_for_timeout(1000)
 
     # Type a GitLab repository name (using a well-known public GitLab repository)
     gitlab_repo = 'gitlab-org/gitlab-foss'
     try:
-        page.keyboard.press('Control+a')  # Select all
         page.keyboard.type(gitlab_repo)
-        print(f'Used keyboard.type() for React Select component: {gitlab_repo}')
+        print(f'Typed repository name: {gitlab_repo}')
     except Exception as e:
         print(f'Keyboard input failed: {e}')
 
-    page.wait_for_timeout(2000)  # Wait for search results
+    page.wait_for_timeout(3000)  # Wait for search results
 
     # Try to find and click the repository option
     option_selectors = [
-        f'[data-testid="repo-dropdown"] [role="option"]:has-text("{gitlab_repo}")',
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("gitlab-foss")',
-        f'[data-testid="repo-dropdown"] div[id*="option"]:has-text("{gitlab_repo}")',
-        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("gitlab-foss")',
         f'[role="option"]:has-text("{gitlab_repo}")',
         '[role="option"]:has-text("gitlab-foss")',
         f'div:has-text("{gitlab_repo}"):not([id="aria-results"])',
@@ -180,7 +193,7 @@ def test_gitlab_repository_cloning(page: Page):
                 print(f'Found repository option with selector: {selector}')
                 try:
                     option.click(force=True)
-                    print('Successfully clicked option with force=True')
+                    print('Successfully clicked repository option')
                     option_found = True
                     page.wait_for_timeout(2000)
                     break
@@ -190,19 +203,39 @@ def test_gitlab_repository_cloning(page: Page):
             continue
 
     if not option_found:
-        print(
-            'Could not find repository option in dropdown, trying keyboard navigation'
-        )
+        print('Could not find repository option, trying keyboard navigation')
         page.keyboard.press('ArrowDown')
         page.wait_for_timeout(500)
         page.keyboard.press('Enter')
-        print('Used keyboard navigation to select option')
+        print('Used keyboard navigation to select repository')
+
+    page.wait_for_timeout(2000)
+
+    # Step 6: Select branch (main)
+    print('Step 6: Selecting branch...')
+    branch_dropdown = page.locator('text=Select branch...').first
+    if branch_dropdown.is_visible(timeout=5000):
+        branch_dropdown.click()
+        page.wait_for_timeout(1000)
+        
+        # Select main branch
+        main_branch = page.locator('[role="option"]:has-text("main")').first
+        if main_branch.is_visible(timeout=3000):
+            main_branch.click()
+            print('Selected main branch')
+        else:
+            # Try keyboard navigation
+            page.keyboard.press('ArrowDown')
+            page.keyboard.press('Enter')
+            print('Used keyboard navigation to select branch')
+    else:
+        print('Branch dropdown not visible, may have been auto-selected')
 
     page.screenshot(path='test-results/gitlab_04_repo_selected.png')
     print('Screenshot saved: gitlab_04_repo_selected.png')
 
-    # Step 4: Launch the repository
-    print('Step 4: Launching GitLab repository...')
+    # Step 7: Launch the repository
+    print('Step 7: Launching GitLab repository...')
 
     launch_button = page.locator('[data-testid="repo-launch-button"]')
     expect(launch_button).to_be_visible(timeout=10000)
@@ -249,8 +282,8 @@ def test_gitlab_repository_cloning(page: Page):
         print('Screenshot saved: gitlab_05_launch_error.png')
         raise
 
-    # Step 5: Wait for conversation interface to load
-    print('Step 5: Waiting for conversation interface to load...')
+    # Step 8: Wait for conversation interface to load
+    print('Step 8: Waiting for conversation interface to load...')
 
     navigation_timeout = 300000  # 5 minutes
     check_interval = 10000  # 10 seconds
@@ -327,8 +360,8 @@ def test_gitlab_repository_cloning(page: Page):
         print('Screenshot saved: gitlab_07_timeout.png')
         raise TimeoutError('Timed out waiting for conversation interface to load')
 
-    # Step 6: Wait for agent to be ready
-    print('Step 6: Waiting for agent to be ready for input...')
+    # Step 9: Wait for agent to be ready
+    print('Step 9: Waiting for agent to be ready for input...')
 
     max_wait_time = 480  # 8 minutes
     start_time = time.time()
@@ -397,8 +430,8 @@ def test_gitlab_repository_cloning(page: Page):
     page.screenshot(path='test-results/gitlab_08_agent_ready.png')
     print('Screenshot saved: gitlab_08_agent_ready.png')
 
-    # Step 7: Ask the agent to count lines in README.md to verify repository access
-    print('Step 7: Asking agent to count lines in README.md...')
+    # Step 10: Ask the agent to count lines in README.md to verify repository access
+    print('Step 10: Asking agent to count lines in README.md...')
 
     # Find the message input
     message_input = page.locator('[data-testid="chat-input"] textarea')
@@ -418,8 +451,8 @@ def test_gitlab_repository_cloning(page: Page):
     page.screenshot(path='test-results/gitlab_09_question_sent.png')
     print('Screenshot saved: gitlab_09_question_sent.png')
 
-    # Step 8: Wait for agent response
-    print('Step 8: Waiting for agent response...')
+    # Step 11: Wait for agent response
+    print('Step 11: Waiting for agent response...')
 
     response_timeout = 300  # 5 minutes
     start_time = time.time()
