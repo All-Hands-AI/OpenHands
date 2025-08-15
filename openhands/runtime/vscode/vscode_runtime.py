@@ -90,7 +90,13 @@ class VsCodeRuntime(Runtime):
                 ) as response:
                     if response.status == 200:
                         data = await response.json()
-                        instances = data.get('instances', [])
+                        # Support both dict {"instances": [...]} and plain list [..]
+                        if isinstance(data, dict):
+                            instances = data.get('instances', [])
+                        elif isinstance(data, list):
+                            instances = data
+                        else:
+                            instances = []
                         logger.info(
                             f'Found {len(instances)} available VSCode instances'
                         )
