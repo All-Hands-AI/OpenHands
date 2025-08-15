@@ -14,13 +14,13 @@ evaluation_path = 'evaluation/benchmarks/'
 def check_config_vbackup(path):
     vbackup = os.path.join(path, 'config_vbackup.toml')
     if os.path.exists(vbackup):
-        if os.environ.get('preserve_vconfigs'):
+        if os.environ.get('VERSABENCH_SKIP_CONFIG_BACKUP'):
             shutil.move(vbackup, os.path.join(path, 'config.toml'))
         else:
             raise RuntimeError(
                 'Versabench backups config files from individual benchmarks to restore after evaluation.'
                 f'A backup file already exists ({vbackup}). Probably because an evaluation was ended prematurely'
-                'If you want to preserve the already existing backups, you can export preserve_vconfigs="true" and rerun'
+                'If you want to preserve the already existing backups, you can export VERSABENCH_SKIP_CONFIG_BACKUP="true" and rerun'
                 f'Otherwise sort the backups by hand to continue.'
             )
 
