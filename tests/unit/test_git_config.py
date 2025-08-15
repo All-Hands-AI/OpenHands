@@ -1,11 +1,7 @@
 """Tests for git configuration functionality."""
 
 import os
-import sys
 from unittest.mock import patch
-
-# Add the current directory to the path to ensure we use the local version
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from openhands.core.config import OpenHandsConfig, load_from_env
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
