@@ -905,8 +905,10 @@ fi
                             task_list=[],  # Empty for view command
                         )
                     else:
-                        return ErrorObservation(
-                            f'Failed to read the task list. Error: {read_obs.content}'
+                        return TaskTrackingObservation(  # Return observation if error occurs because file might not exist yet
+                            command=action.command,
+                            task_list=[],
+                            content=f'Failed to read the task list. Error: {read_obs.content}',
                         )
 
             return NullObservation('')
