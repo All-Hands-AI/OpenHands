@@ -639,22 +639,6 @@
         "de": "Ausgabe",
         "uk": "Вивід"
     },
-    "TASK_TRACKING_OBSERVATION$COMMAND": {
-        "en": "Command",
-        "ja": "コマンド",
-        "zh-CN": "命令",
-        "zh-TW": "命令",
-        "ko-KR": "명령",
-        "no": "Kommando",
-        "it": "Comando",
-        "pt": "Comando",
-        "es": "Comando",
-        "ar": "الأمر",
-        "fr": "Commande",
-        "tr": "Komut",
-        "de": "Befehl",
-        "uk": "Команда"
-    },
     "TASK_TRACKING_OBSERVATION$TASK_LIST": {
         "en": "Task List",
         "ja": "タスクリスト",
@@ -7998,22 +7982,6 @@
         "tr": "Düşünce",
         "de": "Gedanke",
         "uk": "Думка"
-    },
-    "OBSERVATION_MESSAGE$TASK_TRACKING": {
-        "en": "Task tracking completed",
-        "zh-CN": "任务跟踪完成",
-        "zh-TW": "任務追蹤完成",
-        "ko-KR": "작업 추적 완료",
-        "ja": "タスク追跡完了",
-        "no": "Oppgavesporing fullført",
-        "ar": "تم إكمال تتبع المهام",
-        "de": "Aufgabenverfolgung abgeschlossen",
-        "fr": "Suivi des tâches terminé",
-        "it": "Tracciamento delle attività completato",
-        "pt": "Rastreamento de tarefas concluído",
-        "es": "Seguimiento de tareas completado",
-        "tr": "Görev takibi tamamlandı",
-        "uk": "Відстеження завдань завершено"
     },
     "OBSERVATION_MESSAGE$TASK_TRACKING_PLAN": {
         "en": "Agent updated the plan",

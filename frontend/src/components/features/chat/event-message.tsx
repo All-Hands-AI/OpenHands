@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -29,7 +30,6 @@ import { LikertScale } from "../feedback/likert-scale";
 
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
-import { useTranslation } from "react-i18next";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -222,11 +222,9 @@ export function EventMessage({
     if (command === "plan") {
       title = t("OBSERVATION_MESSAGE$TASK_TRACKING_PLAN");
       initiallyExpanded = true;
-    } else if (command === "view") {
-      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_VIEW");
-      initiallyExpanded = false;
     } else {
-      title = getEventContent(event).title;
+      // command === "view"
+      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_VIEW");
       initiallyExpanded = false;
     }
 

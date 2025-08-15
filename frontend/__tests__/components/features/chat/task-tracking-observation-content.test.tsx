@@ -8,7 +8,6 @@ vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        "TASK_TRACKING_OBSERVATION$COMMAND": "Command",
         "TASK_TRACKING_OBSERVATION$TASK_LIST": "Task List",
         "TASK_TRACKING_OBSERVATION$TASK_ID": "ID",
         "TASK_TRACKING_OBSERVATION$TASK_NOTES": "Notes",
