@@ -3,14 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRoutesStub } from "react-router";
 import { renderWithProviders } from "test-utils";
-import OpenHands from "#/api/open-hands";
 import SettingsScreen from "#/routes/settings";
 import { PaymentForm } from "#/components/features/payment/payment-form";
-import * as useSettingsModule from "#/hooks/query/use-settings";
+import { useConfig } from "#/hooks/query/use-config";
 
 // Mock the useSettings hook
 vi.mock("#/hooks/query/use-settings", async () => {
-  const actual = await vi.importActual<typeof import("#/hooks/query/use-settings")>("#/hooks/query/use-settings");
+  const actual = await vi.importActual<
+    typeof import("#/hooks/query/use-settings")
+  >("#/hooks/query/use-settings");
   return {
     ...actual,
     useSettings: vi.fn().mockReturnValue({
@@ -22,21 +23,29 @@ vi.mock("#/hooks/query/use-settings", async () => {
   };
 });
 
+// Mock the useConfig hook
+vi.mock("#/hooks/query/use-config", () => ({
+  useConfig: vi.fn(),
+}));
+
 // Mock the i18next hook
 vi.mock("react-i18next", async () => {
-  const actual = await vi.importActual<typeof import("react-i18next")>("react-i18next");
+  const actual =
+    await vi.importActual<typeof import("react-i18next")>("react-i18next");
   return {
     ...actual,
     useTranslation: () => ({
       t: (key: string) => {
         const translations: Record<string, string> = {
-          "SETTINGS$NAV_INTEGRATIONS": "Integrations",
-          "SETTINGS$NAV_APPLICATION": "Application",
-          "SETTINGS$NAV_CREDITS": "Credits",
-          "SETTINGS$NAV_API_KEYS": "API Keys",
-          "SETTINGS$NAV_LLM": "LLM",
-          "SETTINGS$NAV_USER": "User",
-          "SETTINGS$TITLE": "Settings"
+          SETTINGS$NAV_INTEGRATIONS: "Integrations",
+          SETTINGS$NAV_APPLICATION: "Application",
+          SETTINGS$NAV_CREDITS: "Credits",
+          SETTINGS$NAV_API_KEYS: "API Keys",
+          SETTINGS$NAV_LLM: "LLM",
+          SETTINGS$NAV_MCP: "MCP",
+          SETTINGS$NAV_SECRETS: "Secrets",
+          SETTINGS$NAV_USER: "User",
+          SETTINGS$TITLE: "Settings",
         };
         return translations[key] || key;
       },
@@ -48,8 +57,6 @@ vi.mock("react-i18next", async () => {
 });
 
 describe("Settings Billing", () => {
-  const getConfigSpy = vi.spyOn(OpenHands, "getConfig");
-
   const RoutesStub = createRoutesStub([
     {
       Component: SettingsScreen,
@@ -79,16 +86,18 @@ describe("Settings Billing", () => {
   });
 
   it("should not render the credits tab if OSS mode", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "oss",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: false,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
+    (useConfig as any).mockReturnValue({
+      data: {
+        APP_MODE: "oss",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: false,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
       },
     });
 
@@ -100,16 +109,18 @@ describe("Settings Billing", () => {
   });
 
   it("should render the credits tab if SaaS mode and billing is enabled", async () => {
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: true,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
+    (useConfig as any).mockReturnValue({
+      data: {
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: true,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
       },
     });
 
@@ -121,16 +132,18 @@ describe("Settings Billing", () => {
 
   it("should render the billing settings if clicking the credits item", async () => {
     const user = userEvent.setup();
-    getConfigSpy.mockResolvedValue({
-      APP_MODE: "saas",
-      GITHUB_CLIENT_ID: "123",
-      POSTHOG_CLIENT_KEY: "456",
-      FEATURE_FLAGS: {
-        ENABLE_BILLING: true,
-        HIDE_LLM_SETTINGS: false,
-        ENABLE_JIRA: false,
-        ENABLE_JIRA_DC: false,
-        ENABLE_LINEAR: false,
+    (useConfig as any).mockReturnValue({
+      data: {
+        APP_MODE: "saas",
+        GITHUB_CLIENT_ID: "123",
+        POSTHOG_CLIENT_KEY: "456",
+        FEATURE_FLAGS: {
+          ENABLE_BILLING: true,
+          HIDE_LLM_SETTINGS: false,
+          ENABLE_JIRA: false,
+          ENABLE_JIRA_DC: false,
+          ENABLE_LINEAR: false,
+        },
       },
     });
 
