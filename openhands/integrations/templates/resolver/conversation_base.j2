@@ -1,0 +1,19 @@
+{# Base template for conversation handling #}
+
+{% block conversation_type %}
+{# Override in child templates to specify new vs existing conversation #}
+{% endblock %}
+
+{% block issue_details %}
+{% block issue_identifier %}Issue: {{ issue_key }}{% endblock %}
+Title: {{ issue_title }}
+Description: {{ issue_description }}
+{% endblock %}
+
+{% block user_message %}
+User's message: {{ user_message }}
+{% endblock %}
+
+{% block additional_context %}
+{# Additional context can be added by child templates #}
+{% endblock %}

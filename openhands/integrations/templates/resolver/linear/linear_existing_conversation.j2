@@ -1,9 +1,16 @@
+{% extends "resolver/conversation_base.j2" %}
+
+{% block conversation_type %}
 You have received a follow-up message regarding issue {{ issue_key }}.
+{% endblock %}
 
+{% block user_message %}
 User's new message: {{ user_message }}
+{% endblock %}
 
+{% block additional_context %}
 The latest issue title and description are included below as the user might have provided additional context or updates.
 Compare these with the previous issue details to ensure you have the most current information.
+{% endblock %}
 
-Title: {{ issue_title }}
-Description: {{ issue_description }}
+{% block issue_identifier %}Issue: {{ issue_key }}{% endblock %}

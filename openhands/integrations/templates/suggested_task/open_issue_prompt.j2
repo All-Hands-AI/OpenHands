@@ -1,4 +1,14 @@
-You are working on Issue #{{ issue_number }} in repository {{ repo }}. Your goal is to fix the issue.
-Use the {{ apiName }} with the {{ tokenEnvVar }} environment variable to retrieve the issue details and any comments on the issue.
-Then check out a new branch and investigate what changes will need to be made.
+{% extends "suggested_task_base.j2" %}
+
+{% block request_type %}Issue{% endblock %}
+
+{% block task_goal %}Your goal is to fix the issue.{% endblock %}
+
+{% block retrieval_target %}issue details and any comments on the issue{% endblock %}
+
+{% block checkout_instructions %}Then check out a new branch{% endblock %}
+
+{% block task_specific_instructions %}
+and investigate what changes will need to be made.
 Finally, make the required changes and open up a {{ requestVerb }}. Be sure to reference the issue in the {{ requestTypeShort }} description.
+{% endblock %}
