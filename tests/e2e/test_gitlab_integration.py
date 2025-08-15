@@ -142,27 +142,101 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Step 4: Select provider (GitLab)
     print('Step 4: Selecting GitLab provider...')
-    provider_dropdown = page.locator('text=Select Provider').first
+    
+    # Try multiple selectors for the provider dropdown
+    provider_selectors = [
+        'text=Select Provider',
+        '[placeholder="Select Provider"]',
+        'div:has-text("Select Provider")',
+        '.react-select__placeholder:has-text("Select Provider")',
+        '[data-testid*="provider"] >> text=Select Provider',
+        'div:has-text("Connect to a Repository") >> div:has-text("Select Provider")',
+    ]
+    
+    provider_dropdown = None
+    for selector in provider_selectors:
+        try:
+            element = page.locator(selector).first
+            if element.is_visible(timeout=3000):
+                provider_dropdown = element
+                print(f'Found provider dropdown with selector: {selector}')
+                break
+        except Exception:
+            continue
+    
+    if provider_dropdown is None:
+        print('Could not find provider dropdown, trying to click first dropdown in Connect section')
+        # Try to find the first dropdown in the Connect to a Repository section
+        connect_section = page.locator('div:has-text("Connect to a Repository")').first
+        first_dropdown = connect_section.locator('div[class*="select"]').first
+        if first_dropdown.is_visible(timeout=5000):
+            provider_dropdown = first_dropdown
+            print('Using first dropdown in Connect section')
+    
     expect(provider_dropdown).to_be_visible(timeout=10000)
     provider_dropdown.click()
-    page.wait_for_timeout(1000)
+    page.wait_for_timeout(2000)
 
     # Select GitLab from provider options
-    gitlab_option = page.locator('[role="option"]:has-text("GitLab")').first
-    if gitlab_option.is_visible(timeout=5000):
-        gitlab_option.click()
-        print('Selected GitLab provider')
-    else:
+    gitlab_selectors = [
+        '[role="option"]:has-text("GitLab")',
+        'div:has-text("GitLab")',
+        '.react-select__option:has-text("GitLab")',
+    ]
+    
+    gitlab_selected = False
+    for selector in gitlab_selectors:
+        try:
+            gitlab_option = page.locator(selector).first
+            if gitlab_option.is_visible(timeout=3000):
+                gitlab_option.click()
+                print(f'Selected GitLab provider with selector: {selector}')
+                gitlab_selected = True
+                break
+        except Exception:
+            continue
+    
+    if not gitlab_selected:
         print('GitLab provider option not found, trying keyboard navigation')
         page.keyboard.press('ArrowDown')
         page.keyboard.press('ArrowDown')  # Assuming GitLab is second option
         page.keyboard.press('Enter')
+        print('Used keyboard navigation to select GitLab')
 
     page.wait_for_timeout(2000)
 
     # Step 5: Search for repository
     print('Step 5: Searching for GitLab repository...')
-    repo_search = page.locator('text=Search repositories...').first
+    
+    # Try multiple selectors for the repository search dropdown
+    repo_selectors = [
+        'text=Search repositories...',
+        '[placeholder="Search repositories..."]',
+        'div:has-text("Search repositories...")',
+        '.react-select__placeholder:has-text("Search repositories...")',
+        '[data-testid*="repo"] >> text=Search repositories...',
+    ]
+    
+    repo_search = None
+    for selector in repo_selectors:
+        try:
+            element = page.locator(selector).first
+            if element.is_visible(timeout=3000):
+                repo_search = element
+                print(f'Found repository search with selector: {selector}')
+                break
+        except Exception:
+            continue
+    
+    if repo_search is None:
+        print('Could not find repository search, trying second dropdown in Connect section')
+        # Try to find the second dropdown in the Connect to a Repository section
+        connect_section = page.locator('div:has-text("Connect to a Repository")').first
+        dropdowns = connect_section.locator('div[class*="select"]')
+        if dropdowns.count() >= 2:
+            repo_search = dropdowns.nth(1)
+            print('Using second dropdown in Connect section')
+    
     expect(repo_search).to_be_visible(timeout=10000)
     repo_search.click()
     page.wait_for_timeout(1000)
@@ -213,17 +287,60 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Step 6: Select branch (main)
     print('Step 6: Selecting branch...')
-    branch_dropdown = page.locator('text=Select branch...').first
-    if branch_dropdown.is_visible(timeout=5000):
+    
+    # Try multiple selectors for the branch dropdown
+    branch_selectors = [
+        'text=Select branch...',
+        '[placeholder="Select branch..."]',
+        'div:has-text("Select branch...")',
+        '.react-select__placeholder:has-text("Select branch...")',
+        '[data-testid*="branch"] >> text=Select branch...',
+    ]
+    
+    branch_dropdown = None
+    for selector in branch_selectors:
+        try:
+            element = page.locator(selector).first
+            if element.is_visible(timeout=3000):
+                branch_dropdown = element
+                print(f'Found branch dropdown with selector: {selector}')
+                break
+        except Exception:
+            continue
+    
+    if branch_dropdown is None:
+        print('Could not find branch dropdown, trying third dropdown in Connect section')
+        # Try to find the third dropdown in the Connect to a Repository section
+        connect_section = page.locator('div:has-text("Connect to a Repository")').first
+        dropdowns = connect_section.locator('div[class*="select"]')
+        if dropdowns.count() >= 3:
+            branch_dropdown = dropdowns.nth(2)
+            print('Using third dropdown in Connect section')
+    
+    if branch_dropdown and branch_dropdown.is_visible(timeout=5000):
         branch_dropdown.click()
         page.wait_for_timeout(1000)
         
         # Select main branch
-        main_branch = page.locator('[role="option"]:has-text("main")').first
-        if main_branch.is_visible(timeout=3000):
-            main_branch.click()
-            print('Selected main branch')
-        else:
+        main_selectors = [
+            '[role="option"]:has-text("main")',
+            'div:has-text("main")',
+            '.react-select__option:has-text("main")',
+        ]
+        
+        main_selected = False
+        for selector in main_selectors:
+            try:
+                main_branch = page.locator(selector).first
+                if main_branch.is_visible(timeout=3000):
+                    main_branch.click()
+                    print(f'Selected main branch with selector: {selector}')
+                    main_selected = True
+                    break
+            except Exception:
+                continue
+        
+        if not main_selected:
             # Try keyboard navigation
             page.keyboard.press('ArrowDown')
             page.keyboard.press('Enter')
