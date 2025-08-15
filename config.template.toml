@@ -360,13 +360,28 @@ classpath = "my_package.my_module.MyCustomAgent"
 [security]
 
 # Enable confirmation mode (For Headless / CLI only -  In Web this is overridden by Session Init)
-#confirmation_mode = false
+# When using command_approval analyzer, this should be enabled
+confirmation_mode = true
 
 # The security analyzer to use (For Headless / CLI only -  In Web this is overridden by Session Init)
-#security_analyzer = ""
+# Available options: "invariant", "command_approval"
+# For CLI with confirmation mode, "command_approval" is recommended
+security_analyzer = "command_approval"
 
 # Whether to enable security analyzer
-#enable_security_analyzer = false
+# When using command_approval analyzer, this should be enabled
+enable_security_analyzer = true
+
+# Dictionary of approved commands that don't require confirmation
+# The key is the command, and the value is a boolean (true to approve)
+#approved_commands = { "ls -la" = true, "git status" = true }
+
+# List of approved command patterns (regex) that don't require confirmation
+#approved_command_patterns = [
+#  { pattern = "^ls( -[a-zA-Z]+)?( \\S+)?$", description = "List directory contents" },
+#  { pattern = "^cd \\S+$", description = "Change directory" },
+#  { pattern = "^git (status|log|diff)$", description = "Basic git commands" }
+#]
 
 #################################### Condenser #################################
 # Condensers control how conversation history is managed and compressed when

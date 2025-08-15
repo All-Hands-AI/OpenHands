@@ -874,9 +874,40 @@ class AgentController:
             if self.state.confirmation_mode and (
                 type(action) is CmdRunAction or type(action) is IPythonRunCellAction
             ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
-                )
+                # Check if the command is already approved
+                command = ''
+                if type(action) is CmdRunAction:
+                    command = action.command
+                elif type(action) is IPythonRunCellAction:
+                    command = action.code
+
+                # Get the security config
+                import toml
+
+                from openhands.core.config import SecurityConfig
+
+                # Load security config from the config file
+                security_config = SecurityConfig()
+                try:
+                    with open('config.toml', 'r', encoding='utf-8') as f:
+                        config_data = toml.load(f)
+                        if 'security' in config_data:
+                            security_config = SecurityConfig.model_validate(
+                                config_data['security']
+                            )
+                except Exception:
+                    # If loading fails, use default config
+                    pass
+
+                # Check if the command is approved
+                if security_config.is_command_approved(command):
+                    # Command is already approved, no need for confirmation
+                    action.confirmation_state = ActionConfirmationStatus.CONFIRMED
+                else:
+                    # Command needs confirmation
+                    action.confirmation_state = (
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
