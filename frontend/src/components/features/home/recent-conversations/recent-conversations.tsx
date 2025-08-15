@@ -3,20 +3,20 @@ import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { RecentConversationsSkeleton } from "./recent-conversations-skeleton";
 import { RecentConversation } from "./recent-conversation";
-import { Conversation } from "#/api/open-hands.types";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
+import { cn } from "#/utils/utils";
 
 export function RecentConversations() {
   const { t } = useTranslation();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [displayCount, setDisplayCount] = useState(3);
 
   const {
     data: conversationsList,
     isFetching,
+    isFetchingNextPage,
     error,
     hasNextPage,
-    isFetchingNextPage,
     fetchNextPage,
   } = usePaginatedConversations();
 
@@ -31,21 +31,37 @@ export function RecentConversations() {
   const conversations =
     conversationsList?.pages.flatMap((page) => page.results) ?? [];
 
-  // Get the conversations to display based on expanded state
-  let displayedConversations: Conversation[] = [];
-  if (conversations && conversations.length > 0) {
-    if (isExpanded) {
-      displayedConversations = conversations.slice(0, 10);
-    } else {
-      displayedConversations = conversations.slice(0, 3);
-    }
-  }
+  // Get the conversations to display based on current display count
+  const displayedConversations = conversations.slice(0, displayCount);
+
+  const hasConversations = conversations && conversations.length > 0;
 
   // Check if there are more conversations to show
-  const hasMoreConversations = conversations && conversations.length > 3;
+  const hasMoreConversations =
+    conversations && conversations.length > displayCount;
 
-  const handleToggle = () => {
-    setIsExpanded((prev) => !prev);
+  // Check if we've reached the maximum display limit
+  const isAtMaxDisplay = displayCount >= 10;
+
+  // Check if we can show more conversations (not at max and have more available)
+  const canShowMore = !isAtMaxDisplay && hasMoreConversations;
+
+  // Check if we should show the "View Less" button (showing all conversations or at max)
+  const shouldShowViewLess =
+    displayCount > 3 && (!hasMoreConversations || isAtMaxDisplay);
+
+  // Check if this is the initial load (no data yet)
+  const isInitialLoading = isFetching && !conversationsList;
+
+  const handleViewMore = () => {
+    // Calculate the next display count (increment by 3, but don't exceed 10)
+    const nextCount = Math.min(displayCount + 3, 10);
+    setDisplayCount(nextCount);
+  };
+
+  const handleViewLess = () => {
+    // Reset to showing only 3 conversations
+    setDisplayCount(3);
   };
 
   return (
@@ -53,33 +69,42 @@ export function RecentConversations() {
       data-testid="recent-conversations"
       className="flex flex-col w-full"
     >
-      <div className="flex items-center gap-2">
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          !hasConversations && "mb-[14px]",
+        )}
+      >
         <h3 className="text-xs leading-4 text-white font-bold py-[14px] pl-4">
           {t(I18nKey.COMMON$RECENT_CONVERSATIONS)}
         </h3>
       </div>
 
       {error && (
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className="flex flex-col items-center justify-center h-full pl-4">
           <p className="text-danger">{error.message}</p>
         </div>
       )}
 
       <div className="flex flex-col">
-        {isFetching && <RecentConversationsSkeleton />}
+        {isInitialLoading && (
+          <div className="pl-4">
+            <RecentConversationsSkeleton />
+          </div>
+        )}
       </div>
 
-      {!isFetching && displayedConversations?.length === 0 && (
-        <span className="text-sm leading-[16px] text-white font-medium">
+      {!isInitialLoading && displayedConversations?.length === 0 && (
+        <span className="text-xs leading-4 text-white font-medium pl-4">
           {t(I18nKey.HOME$NO_RECENT_CONVERSATIONS)}
         </span>
       )}
 
-      {!isFetching &&
+      {!isInitialLoading &&
         displayedConversations &&
         displayedConversations.length > 0 && (
           <div className="flex flex-col">
-            <div className="transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar">
+            <div className="transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar">
               <div ref={scrollContainerRef} className="flex flex-col">
                 {displayedConversations.map((conversation) => (
                   <RecentConversation
@@ -92,14 +117,14 @@ export function RecentConversations() {
           </div>
         )}
 
-      {!isFetching && hasMoreConversations && (
+      {!isInitialLoading && (canShowMore || shouldShowViewLess) && (
         <div className="flex justify-start mt-6 mb-8 ml-4">
           <button
             type="button"
-            onClick={handleToggle}
+            onClick={shouldShowViewLess ? handleViewLess : handleViewMore}
             className="text-xs leading-4 text-[#FAFAFA] font-normal cursor-pointer hover:underline"
           >
-            {isExpanded
+            {shouldShowViewLess
               ? t(I18nKey.COMMON$VIEW_LESS)
               : t(I18nKey.COMMON$VIEW_MORE)}
           </button>
