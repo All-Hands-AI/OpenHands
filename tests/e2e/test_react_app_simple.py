@@ -45,7 +45,7 @@ def test_react_app_creation_simple(page: Page):
     print('Screenshot saved: react_simple_01_home.png')
 
     # Step 2: Select the OpenHands repository (following working test pattern)
-    print('Step 2: Selecting openhands-agent/OpenHands repository...')
+    print('Step 2: Selecting All-Hands-AI/OpenHands repository...')
 
     # Wait for the home screen to load
     home_screen = page.locator('[data-testid="home-screen"]')
@@ -64,7 +64,7 @@ def test_react_app_creation_simple(page: Page):
     # Type the repository name
     try:
         page.keyboard.press('Control+a')  # Select all
-        page.keyboard.type('openhands-agent/OpenHands')
+        page.keyboard.type('All-Hands-AI/OpenHands')
         print('Used keyboard.type() for React Select component')
     except Exception as e:
         print(f'Keyboard input failed: {e}')
@@ -73,9 +73,9 @@ def test_react_app_creation_simple(page: Page):
 
     # Try to find and click the repository option
     option_selectors = [
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("All-Hands-AI/OpenHands")',
         '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
-        '[role="option"]:has-text("openhands-agent/OpenHands")',
+        '[role="option"]:has-text("All-Hands-AI/OpenHands")',
         '[role="option"]:has-text("OpenHands")',
     ]
 
