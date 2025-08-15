@@ -1,4 +1,4 @@
-import { useDisclosure } from "@heroui/react";
+
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
@@ -18,7 +18,7 @@ import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
-import Security from "#/components/shared/modals/security/security";
+
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useSettings } from "#/hooks/query/use-settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -83,11 +83,7 @@ function AppContent() {
     };
   }, []);
 
-  const {
-    isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
-    onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
+
 
   function renderMain() {
     if (width <= 1024) {
@@ -123,16 +119,8 @@ function AppContent() {
             <div className="flex h-full overflow-auto">{renderMain()}</div>
 
             <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings?.SECURITY_ANALYZER}
+              showSecurityLock={!!settings?.CONFIRMATION_MODE}
             />
-            {settings && (
-              <Security
-                isOpen={securityModalIsOpen}
-                onOpenChange={onSecurityModalOpenChange}
-                securityAnalyzer={settings.SECURITY_ANALYZER}
-              />
-            )}
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

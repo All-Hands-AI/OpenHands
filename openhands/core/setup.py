@@ -63,9 +63,10 @@ def create_runtime(
 
     # set up the security analyzer
     if config.security.security_analyzer:
-        options.SecurityAnalyzers.get(
+        analyzer_cls = options.SecurityAnalyzers.get(
             config.security.security_analyzer, SecurityAnalyzer
-        )(event_stream)
+        )
+        analyzer_cls(event_stream)
 
     # agent class
     if agent:

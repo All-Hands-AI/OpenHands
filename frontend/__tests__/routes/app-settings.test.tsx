@@ -46,6 +46,21 @@ describe("Content", () => {
     });
   });
 
+  it("should render the security analyzer toggle", async () => {
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue({
+      ...MOCK_DEFAULT_USER_SETTINGS,
+      security_analyzer: "llm",
+    });
+
+    renderAppSettingsScreen();
+
+    await waitFor(() => {
+      const securityAnalyzer = screen.getByTestId("enable-security-analyzer-switch");
+      expect(securityAnalyzer).toBeChecked();
+    });
+  });
+
   it("should render the language options", async () => {
     renderAppSettingsScreen();
 
@@ -101,6 +116,30 @@ describe("Form submission", () => {
         language: "no",
         user_consents_to_analytics: true,
         enable_sound_notifications: true,
+      }),
+    );
+  });
+
+  it("should submit the form with security analyzer enabled", async () => {
+    const saveSettingsSpy = vi.spyOn(OpenHands, "saveSettings");
+    const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
+    getSettingsSpy.mockResolvedValue(MOCK_DEFAULT_USER_SETTINGS);
+
+    renderAppSettingsScreen();
+
+    const securityAnalyzer = await screen.findByTestId("enable-security-analyzer-switch");
+    expect(securityAnalyzer).not.toBeChecked();
+
+    // toggle security analyzer
+    await userEvent.click(securityAnalyzer);
+    expect(securityAnalyzer).toBeChecked();
+
+    // submit the form
+    const submit = await screen.findByTestId("submit-button");
+    await userEvent.click(submit);
+    expect(saveSettingsSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        security_analyzer: "llm",
       }),
     );
   });

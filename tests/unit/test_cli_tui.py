@@ -378,7 +378,7 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg)
+        result = await read_confirmation_input(config=cfg, safety_risk='LOW')
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -389,18 +389,29 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg)
+        result = await read_confirmation_input(config=cfg, safety_risk='MEDIUM')
         assert result == 'no'
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.cli_confirm')
-    async def test_read_confirmation_input_always(self, mock_confirm):
+    async def test_read_confirmation_input_smart(self, mock_confirm):
         mock_confirm.return_value = 2  # user picked third menu item
 
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg)
+        result = await read_confirmation_input(config=cfg, safety_risk='LOW')
+        assert result == 'smart'
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.tui.cli_confirm')
+    async def test_read_confirmation_input_high_risk_always(self, mock_confirm):
+        mock_confirm.return_value = 2  # user picked third menu item
+
+        cfg = MagicMock()  # <- no spec for simplicity
+        cfg.cli = MagicMock(vi_mode=False)
+
+        result = await read_confirmation_input(config=cfg, safety_risk='HIGH')
         assert result == 'always'
 
 
