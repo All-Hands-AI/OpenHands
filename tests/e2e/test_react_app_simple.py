@@ -44,97 +44,48 @@ def test_react_app_creation_simple(page: Page):
     page.screenshot(path='test-results/react_simple_01_home.png')
     print('Screenshot saved: react_simple_01_home.png')
 
-    # Step 2: Select the OpenHands repository (following working test pattern)
-    print('Step 2: Selecting All-Hands-AI/OpenHands repository...')
+    # Step 2: Launch from scratch (do NOT select a repository)
+    print('Step 2: Launching from scratch via header button...')
 
     # Wait for the home screen to load
     home_screen = page.locator('[data-testid="home-screen"]')
     expect(home_screen).to_be_visible(timeout=15000)
     print('Home screen is visible')
 
-    # Look for the repository dropdown/selector
-    repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
-    expect(repo_dropdown).to_be_visible(timeout=15000)
-    print('Repository dropdown is visible')
+    # Find and click the "Launch from Scratch" header button
+    header_button = page.locator('[data-testid="header-launch-button"]')
+    expect(header_button).to_be_visible(timeout=15000)
+    page.screenshot(path='test-results/react_simple_02_header_visible.png')
+    print('Screenshot saved: react_simple_02_header_visible.png')
 
-    # Click on the repository input to open dropdown
-    repo_dropdown.click()
-    page.wait_for_timeout(1000)
-
-    # Type the repository name
-    try:
-        page.keyboard.press('Control+a')  # Select all
-        page.keyboard.type('All-Hands-AI/OpenHands')
-        print('Used keyboard.type() for React Select component')
-    except Exception as e:
-        print(f'Keyboard input failed: {e}')
-
-    page.wait_for_timeout(2000)  # Wait for search results
-
-    # Try to find and click the repository option
-    option_selectors = [
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("All-Hands-AI/OpenHands")',
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
-        '[role="option"]:has-text("All-Hands-AI/OpenHands")',
-        '[role="option"]:has-text("OpenHands")',
-    ]
-
-    option_found = False
-    for selector in option_selectors:
-        try:
-            option = page.locator(selector)
-            if option.is_visible(timeout=2000):
-                option.click()
-                print(f'Clicked repository option with selector: {selector}')
-                option_found = True
-                break
-        except Exception:
-            continue
-
-    if not option_found:
-        print('Repository option not found, taking screenshot for debugging')
-        page.screenshot(path='test-results/react_simple_02_no_option.png')
-        print('Screenshot saved: react_simple_02_no_option.png')
-        raise Exception('Repository option not found')
-
-    page.screenshot(path='test-results/react_simple_03_repo_selected.png')
-    print('Screenshot saved: react_simple_03_repo_selected.png')
-
-    # Step 3: Click Launch button (following working test pattern)
-    print('Step 3: Clicking Launch button...')
-
-    launch_button = page.locator('[data-testid="repo-launch-button"]')
-    expect(launch_button).to_be_visible(timeout=10000)
-
-    # Wait for the button to be enabled (not disabled)
+    # Wait until the button is enabled
     max_wait_attempts = 30
     button_enabled = False
     for attempt in range(max_wait_attempts):
         try:
-            is_disabled = launch_button.is_disabled()
-            if not is_disabled:
-                print(f'Repository Launch button is now enabled (attempt {attempt + 1})')
+            if header_button.is_enabled():
+                print(f'Header Launch button is now enabled (attempt {attempt + 1})')
                 button_enabled = True
                 break
             else:
-                print(f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
+                print(f'Header Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
                 page.wait_for_timeout(2000)
         except Exception as e:
-            print(f'Error checking button state: {e}')
+            print(f'Error checking header button state: {e}')
             page.wait_for_timeout(2000)
 
     if not button_enabled:
-        print('Launch button never became enabled')
-        page.screenshot(path='test-results/react_simple_04_button_disabled.png')
-        print('Screenshot saved: react_simple_04_button_disabled.png')
-        raise Exception('Launch button never became enabled')
+        print('Header Launch button never became enabled')
+        page.screenshot(path='test-results/react_simple_03_header_disabled.png')
+        print('Screenshot saved: react_simple_03_header_disabled.png')
+        raise Exception('Header Launch button never became enabled')
 
-    # Click the launch button
-    launch_button.click()
-    print('Launch button clicked successfully')
+    # Click the header launch button
+    header_button.click()
+    print('Header Launch button clicked successfully')
 
-    page.screenshot(path='test-results/react_simple_04_launch_clicked.png')
-    print('Screenshot saved: react_simple_04_launch_clicked.png')
+    page.screenshot(path='test-results/react_simple_03_after_launch_click.png')
+    print('Screenshot saved: react_simple_03_after_launch_click.png')
 
     # Step 4: Wait for conversation interface to load (following working test pattern)
     print('Step 4: Waiting for conversation interface to load...')
