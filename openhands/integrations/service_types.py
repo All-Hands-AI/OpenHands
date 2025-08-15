@@ -140,6 +140,15 @@ class Repository(BaseModel):
     main_branch: str | None = None  # The main/default branch of the repository
 
 
+class Comment(BaseModel):
+    id: int
+    body: str
+    author: str
+    created_at: str  # ISO 8601 format date string
+    updated_at: str  # ISO 8601 format date string
+    system: bool = False  # Whether this is a system-generated comment
+
+
 class AuthenticationError(ValueError):
     """Raised when there is an issue with GitHub authentication."""
 
