@@ -140,199 +140,82 @@ def test_gitlab_repository_cloning(page: Page):
     expect(home_screen).to_be_visible(timeout=15000)
     print('Home screen is visible')
 
-    # Step 4: Select provider (GitLab)
-    print('Step 4: Selecting GitLab provider...')
+    # Step 4: Check if provider selection is needed (GitLab)
+    print('Step 4: Checking provider selection...')
     
-    # First, let's debug what elements are actually present
-    print('Debugging: Looking for elements on the page...')
-    
-    # Get all elements that might be dropdowns
-    debug_result = page.evaluate("""
+    # Check if provider dropdown exists (only appears if multiple providers are configured)
+    provider_dropdown_exists = page.evaluate("""
         () => {
-            const elements = [];
-            
-            // Look for elements with "Select Provider" text
+            // Look for "Select Provider" text which indicates the dropdown exists
             const selectProviderElements = Array.from(document.querySelectorAll('*')).filter(el => 
                 el.textContent && el.textContent.includes('Select Provider')
             );
-            
-            selectProviderElements.forEach((el, i) => {
-                elements.push({
-                    type: 'select_provider_text',
-                    index: i,
-                    tagName: el.tagName,
-                    className: el.className,
-                    textContent: el.textContent.trim(),
-                    clickable: el.onclick !== null || el.style.cursor === 'pointer',
-                    hasTabIndex: el.hasAttribute('tabindex'),
-                    role: el.getAttribute('role')
-                });
-            });
-            
-            // Look for dropdown-like elements
-            const dropdownSelectors = [
-                '[class*="select"]',
-                '[role="combobox"]',
-                '[class*="dropdown"]',
-                '[tabindex="0"]'
-            ];
-            
-            dropdownSelectors.forEach(selector => {
-                const elements_found = document.querySelectorAll(selector);
-                elements_found.forEach((el, i) => {
-                    elements.push({
-                        type: 'dropdown_candidate',
-                        selector: selector,
-                        index: i,
-                        tagName: el.tagName,
-                        className: el.className,
-                        textContent: el.textContent.trim().substring(0, 100),
-                        role: el.getAttribute('role')
-                    });
-                });
-            });
-            
-            return elements;
+            return selectProviderElements.length > 0;
         }
     """)
     
-    print(f'Debug result: Found {len(debug_result)} elements')
-    for element in debug_result:
-        print(f'  - {element}')
+    print(f'Provider dropdown exists: {provider_dropdown_exists}')
     
-    # Try JavaScript-based clicking
-    provider_clicked = page.evaluate("""
-        () => {
-            // Try to find and click the provider dropdown
-            const approaches = [
-                // Approach 1: Find by text content and click parent
-                () => {
-                    const textElements = Array.from(document.querySelectorAll('*')).filter(el => 
-                        el.textContent && el.textContent.includes('Select Provider')
-                    );
-                    
-                    for (const el of textElements) {
-                        // Try clicking the element itself
-                        if (el.click) {
-                            el.click();
-                            return 'clicked_text_element';
-                        }
-                        
-                        // Try clicking parent elements
-                        let parent = el.parentElement;
-                        while (parent && parent !== document.body) {
-                            if (parent.click && (parent.className.includes('select') || parent.getAttribute('role') === 'combobox')) {
-                                parent.click();
-                                return 'clicked_parent_' + parent.tagName;
-                            }
-                            parent = parent.parentElement;
-                        }
-                    }
-                    return null;
-                },
-                
-                // Approach 2: Find by class patterns
-                () => {
-                    const selectors = [
-                        '[class*="select"][class*="control"]',
-                        '[class*="react-select"]',
-                        'div[class*="select"]:first-of-type'
-                    ];
-                    
-                    for (const selector of selectors) {
-                        const elements = document.querySelectorAll(selector);
-                        if (elements.length > 0) {
-                            elements[0].click();
-                            return 'clicked_' + selector;
-                        }
-                    }
-                    return null;
-                },
-                
-                // Approach 3: Find first clickable element in Connect section
-                () => {
-                    const connectSection = Array.from(document.querySelectorAll('*')).find(el => 
-                        el.textContent && el.textContent.includes('Connect to a Repository')
-                    );
-                    
-                    if (connectSection) {
-                        const clickableElements = connectSection.querySelectorAll('[tabindex="0"], [role="combobox"], [class*="select"]');
-                        if (clickableElements.length > 0) {
-                            clickableElements[0].click();
-                            return 'clicked_connect_section_element';
-                        }
-                    }
-                    return null;
-                }
-            ];
-            
-            for (let i = 0; i < approaches.length; i++) {
-                const result = approaches[i]();
-                if (result) {
-                    return result;
-                }
-            }
-            
-            return null;
-        }
-    """)
-    
-    if provider_clicked:
-        print(f'Successfully clicked provider dropdown using JavaScript: {provider_clicked}')
-    else:
-        print('JavaScript clicking failed, trying Playwright selectors as fallback')
+    if provider_dropdown_exists:
+        print('Multiple providers detected, selecting GitLab...')
         
-        # Fallback to Playwright selectors
-        try:
-            # Try the most basic approach - find any dropdown in the Connect section
-            connect_section = page.locator('div:has-text("Connect to a Repository")').first
-            if connect_section.is_visible(timeout=5000):
-                # Try to click the first interactive element
-                interactive_elements = connect_section.locator('div, button, input, select').all()
-                for element in interactive_elements:
-                    try:
-                        if element.is_visible() and element.is_enabled():
-                            element.click()
-                            print('Clicked interactive element in Connect section')
-                            provider_clicked = True
-                            break
-                    except:
-                        continue
-        except Exception as e:
-            print(f'Fallback approach failed: {e}')
-    
-    if not provider_clicked:
-        raise Exception('Could not click provider dropdown with any method')
-    
-    page.wait_for_timeout(3000)
+        # Try to click the provider dropdown
+        provider_clicked = False
+        
+        # Try multiple approaches to find and click the provider dropdown
+        provider_selectors = [
+            'div:has-text("Select Provider")',
+            '[placeholder="Select Provider"]',
+            'div[class*="select"]:has-text("Select Provider")',
+        ]
+        
+        for selector in provider_selectors:
+            try:
+                element = page.locator(selector).first
+                if element.is_visible(timeout=3000):
+                    element.click()
+                    print(f'Clicked provider dropdown with selector: {selector}')
+                    provider_clicked = True
+                    break
+            except Exception as e:
+                print(f'Failed with selector {selector}: {e}')
+                continue
+        
+        if not provider_clicked:
+            raise Exception('Could not click provider dropdown')
+        
+        page.wait_for_timeout(2000)
 
-    # Select GitLab from provider options
-    gitlab_selectors = [
-        '[role="option"]:has-text("GitLab")',
-        'div:has-text("GitLab")',
-        '.react-select__option:has-text("GitLab")',
-    ]
-    
-    gitlab_selected = False
-    for selector in gitlab_selectors:
-        try:
-            gitlab_option = page.locator(selector).first
-            if gitlab_option.is_visible(timeout=3000):
-                gitlab_option.click()
-                print(f'Selected GitLab provider with selector: {selector}')
-                gitlab_selected = True
-                break
-        except Exception:
-            continue
-    
-    if not gitlab_selected:
-        print('GitLab provider option not found, trying keyboard navigation')
-        page.keyboard.press('ArrowDown')
-        page.keyboard.press('ArrowDown')  # Assuming GitLab is second option
-        page.keyboard.press('Enter')
-        print('Used keyboard navigation to select GitLab')
+        # Select GitLab from provider options
+        gitlab_selectors = [
+            '[role="option"]:has-text("GitLab")',
+            'div:has-text("GitLab")',
+            '.react-select__option:has-text("GitLab")',
+        ]
+        
+        gitlab_selected = False
+        for selector in gitlab_selectors:
+            try:
+                gitlab_option = page.locator(selector).first
+                if gitlab_option.is_visible(timeout=3000):
+                    gitlab_option.click()
+                    print(f'Selected GitLab provider with selector: {selector}')
+                    gitlab_selected = True
+                    break
+            except Exception:
+                continue
+        
+        if not gitlab_selected:
+            print('GitLab provider option not found, trying keyboard navigation')
+            page.keyboard.press('ArrowDown')
+            page.keyboard.press('ArrowDown')  # Assuming GitLab is second option
+            page.keyboard.press('Enter')
+            print('Used keyboard navigation to select GitLab')
 
-    page.wait_for_timeout(2000)
+        page.wait_for_timeout(2000)
+    else:
+        print('Single provider detected, GitLab should be auto-selected')
+        page.wait_for_timeout(1000)
 
     # Step 5: Search for repository
     print('Step 5: Searching for GitLab repository...')
