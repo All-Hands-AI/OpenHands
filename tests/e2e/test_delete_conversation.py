@@ -1,5 +1,4 @@
-"""
-E2E: Delete conversation test
+"""E2E: Delete conversation test.
 
 This test verifies that a conversation can be deleted from the conversation list.
 It creates a simple conversation first, then tests the deletion functionality.
@@ -20,8 +19,7 @@ from playwright.sync_api import Page, expect
 
 
 def test_delete_conversation(page: Page):
-    """
-    Test deleting a conversation from the conversation list.
+    """Test deleting a conversation from the conversation list.
 
     This test creates a conversation and then deletes it to verify the functionality.
     """
