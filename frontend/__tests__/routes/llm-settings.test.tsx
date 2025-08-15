@@ -107,7 +107,6 @@ describe("Content", () => {
       within(advancedForm).getByTestId("llm-api-key-input");
       within(advancedForm).getByTestId("llm-api-key-help-anchor-advanced");
       within(advancedForm).getByTestId("agent-input");
-      within(advancedForm).getByTestId("enable-confirmation-mode-switch");
       within(advancedForm).getByTestId("enable-memory-condenser-switch");
 
       await userEvent.click(advancedSwitch);
