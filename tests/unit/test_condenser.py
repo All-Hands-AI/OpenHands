@@ -637,8 +637,19 @@ def test_structured_summary_condenser_from_config():
             model='gpt-4o',
             api_key='test_key',
             caching_prompt=True,
+        ),
+    )
+    condenser = Condenser.from_config(config)
 
+    assert isinstance(condenser, StructuredSummaryCondenser)
+    assert condenser.llm.config.model == 'gpt-4o'
+    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
+    assert condenser.max_size == 50
+    assert condenser.keep_first == 10
 
+    # Since this condenser can't take advantage of caching, we intercept the
+    # passed config and manually flip the caching prompt to False.
+    assert not condenser.llm.config.caching_prompt
 def test_token_aware_condenser_from_config():
     """Test that TokenAwareCondenser objects can be made from config."""
     config = TokenAwareCondenserConfig(
@@ -673,7 +684,6 @@ def test_structured_summary_condenser_from_config():
     assert isinstance(condenser, StructuredSummaryCondenser)
     assert condenser.llm.config.model == 'gpt-4o'
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
->>>>>>> a6d20305d (🤖 Auto-fix Python linting issues)
     assert condenser.max_size == 50
     assert condenser.keep_first == 10
 
@@ -818,11 +828,6 @@ def test_condenser_pipeline_chains_sub_condensers():
 
         for event in browser_outputs[-ATTENTION_WINDOW:]:
             assert 'Content omitted' not in str(event)
-    assert isinstance(condenser, TokenAwareCondenser)
-    assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
-    assert condenser.threshold == 0.85
-    assert condenser.keep_first == 2
 
 
 def test_token_aware_condenser_invalid_config():
@@ -837,7 +842,7 @@ def test_token_aware_condenser_invalid_config():
     pytest.raises(ValueError, TokenAwareCondenser, llm=MagicMock(), threshold=1.1)
 
 
-@patch('openhands.core.message_utils.exceeds_token_limit')
+@patch('openhands.memory.condenser.impl.token_aware_condenser.exceeds_token_limit')
 def test_token_aware_condenser_should_condense(mock_exceeds_token_limit, mock_llm):
     """Test that TokenAwareCondenser correctly decides when to condense based on token metrics."""
     # Set up condenser with mock LLM
