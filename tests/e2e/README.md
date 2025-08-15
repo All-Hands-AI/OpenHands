@@ -35,6 +35,7 @@ poetry run pytest test_e2e_workflow.py -v
 This runs all tests in sequence:
 1. GitHub token configuration
 2. Conversation start
+3. Multi-conversation resume
 
 ### Running Individual Tests
 
@@ -48,6 +49,8 @@ poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v
 # Run the conversation start test
 poetry run pytest test_e2e_workflow.py::test_conversation_start -v
 
+# Run the multi-conversation resume test
+poetry run pytest test_multi_conversation_resume.py::test_multi_conversation_resume -v
 
 ```
 
@@ -59,6 +62,7 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 cd tests/e2e
 poetry run pytest test_e2e_workflow.py::test_github_token_configuration -v --no-headless --slow-mo=50
 poetry run pytest test_e2e_workflow.py::test_conversation_start -v --no-headless --slow-mo=50
+poetry run pytest test_multi_conversation_resume.py::test_multi_conversation_resume -v --no-headless --slow-mo=50
 ```
 
 ### GitHub Workflow
@@ -92,7 +96,22 @@ The conversation start test (`test_conversation_start`) performs the following s
 6. Asks "How many lines are there in the main README.md file?"
 7. Waits for and verifies the agent's response
 
+### Multi-Conversation Resume Test
 
+The multi-conversation resume test (`test_multi_conversation_resume`) performs the following steps:
+
+1. Navigates to the OpenHands application (assumes GitHub token is already configured)
+2. Selects the "openhands-agent/OpenHands" repository
+3. Clicks the "Launch" button
+4. Waits for the conversation interface to load
+5. Waits for the agent to initialize
+6. Asks about the project name in the pyproject.toml file
+7. Waits for and verifies the agent's response
+8. Extracts the conversation ID and navigates away from the conversation
+9. Resumes the same conversation by navigating back to its URL
+10. Verifies that the conversation history is preserved
+11. Asks a follow-up question that requires context from the first interaction
+12. Verifies that the agent responds with context awareness, demonstrating conversation continuity
 
 ### Simple Browser Navigation Test
 
