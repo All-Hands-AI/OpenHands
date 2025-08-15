@@ -87,3 +87,113 @@ class TestCliViMode:
         assert config.cli.vi_mode is True, (
             'vi_mode should be True when CLI_VI_MODE is set'
         )
+
+    @patch.dict(os.environ, {'EDITOR': 'vim'})
+    def test_vi_mode_auto_enabled_from_editor_vim(self):
+        """Test that vi_mode is automatically enabled when EDITOR is set to vim."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when EDITOR is set to vim'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'nvim'})
+    def test_vi_mode_auto_enabled_from_editor_nvim(self):
+        """Test that vi_mode is automatically enabled when EDITOR is set to nvim."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when EDITOR is set to nvim'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'vi'})
+    def test_vi_mode_auto_enabled_from_editor_vi(self):
+        """Test that vi_mode is automatically enabled when EDITOR is set to vi."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when EDITOR is set to vi'
+        )
+
+    @patch.dict(os.environ, {'VISUAL': 'vim'})
+    def test_vi_mode_auto_enabled_from_visual_vim(self):
+        """Test that vi_mode is automatically enabled when VISUAL is set to vim."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when VISUAL is set to vim'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': '/usr/bin/vim'})
+    def test_vi_mode_auto_enabled_from_editor_with_path(self):
+        """Test that vi_mode is automatically enabled when EDITOR is set to vim with full path."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when EDITOR is set to /usr/bin/vim'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'vim -n'})
+    def test_vi_mode_auto_enabled_from_editor_with_args(self):
+        """Test that vi_mode is automatically enabled when EDITOR is set to vim with arguments."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'vi_mode should be True when EDITOR is set to "vim -n"'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'nano', 'VISUAL': ''})
+    def test_vi_mode_not_auto_enabled_from_editor_nano(self):
+        """Test that vi_mode is not automatically enabled when EDITOR is set to nano."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is False, (
+            'vi_mode should be False when EDITOR is set to nano'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'emacs', 'VISUAL': ''})
+    def test_vi_mode_not_auto_enabled_from_editor_emacs(self):
+        """Test that vi_mode is not automatically enabled when EDITOR is set to emacs."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is False, (
+            'vi_mode should be False when EDITOR is set to emacs'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'vim', 'CLI_VI_MODE': 'False'})
+    def test_explicit_cli_vi_mode_overrides_editor(self):
+        """Test that explicit CLI_VI_MODE=False overrides EDITOR=vim."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is False, (
+            'CLI_VI_MODE=False should override EDITOR=vim'
+        )
+
+    @patch.dict(os.environ, {'EDITOR': 'nano', 'CLI_VI_MODE': 'True'})
+    def test_explicit_cli_vi_mode_overrides_non_vim_editor(self):
+        """Test that explicit CLI_VI_MODE=True overrides EDITOR=nano."""
+        from openhands.core.config.utils import load_from_env
+
+        config = OpenHandsConfig()
+        load_from_env(config, os.environ)
+        assert config.cli.vi_mode is True, (
+            'CLI_VI_MODE=True should override EDITOR=nano'
+        )
