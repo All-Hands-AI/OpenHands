@@ -11,6 +11,7 @@ from openhands.integrations.provider import (
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
+    AuthenticationError,
     Branch,
     ProviderType,
     Repository,
@@ -57,10 +58,7 @@ async def get_user_installations(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('Git provider token required. (such as GitHub).')
 
 
 @app.get('/repositories', response_model=list[Repository])
@@ -100,10 +98,7 @@ async def get_user_repositories(
     logger.info(
         f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('Git provider token required. (such as GitHub).')
 
 
 @app.get('/info', response_model=User)
@@ -130,10 +125,7 @@ async def get_user(
     logger.info(
         f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('Git provider token required. (such as GitHub).')
 
 
 @app.get('/search/repositories', response_model=list[Repository])
@@ -168,10 +160,7 @@ async def search_repositories(
     logger.info(
         f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
-    return JSONResponse(
-        content='Git provider token required.',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('Git provider token required.')
 
 
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
@@ -200,11 +189,7 @@ async def get_suggested_tasks(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
     logger.info(f'Returning 401 Unauthorized - No providers set for user_id: {user_id}')
-
-    return JSONResponse(
-        content='No providers set.',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('No providers set.')
 
 
 @app.get('/repository/branches', response_model=list[Branch])
@@ -239,11 +224,7 @@ async def get_repository_branches(
     logger.info(
         f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
     )
-
-    return JSONResponse(
-        content='Git provider token required. (such as GitHub).',
-        status_code=status.HTTP_401_UNAUTHORIZED,
-    )
+    raise AuthenticationError('Git provider token required. (such as GitHub).')
 
 
 def _extract_repo_name(repository_name: str) -> str:
@@ -301,6 +282,9 @@ async def get_repository_microagents(
 
         logger.info(f'Found {len(microagents)} microagents in {repository_name}')
         return microagents
+
+    except AuthenticationError:
+        raise
 
     except RuntimeError as e:
         return JSONResponse(
@@ -365,6 +349,9 @@ async def get_repository_microagent_content(
         )
 
         return response
+
+    except AuthenticationError:
+        raise
 
     except RuntimeError as e:
         return JSONResponse(
