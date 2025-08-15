@@ -519,7 +519,6 @@ def load_config_file(file_path: Path) -> dict:
     """Load the config file, creating it if it doesn't exist."""
     if file_path.exists():
         try:
-            # First try with tomlkit (handles inline tables)
             with open(file_path, 'r') as f:
                 return dict(tomlkit.load(f))
         except Exception:
