@@ -58,7 +58,6 @@ export function ChatActions() {
       <button
         type="button"
         onClick={onRunClick}
-        data-testid="run-button"
         className={cn(
           "bg-white py-0.75 pl-2 pr-3.5 rounded-full cursor-pointer",
           `flex flex-row items-center`,
