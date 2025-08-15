@@ -30,11 +30,7 @@ from openhands.agenthub.codeact_agent.tools.unified import (
     FileEditorTool,
     FinishTool,
 )
-from openhands.agenthub.codeact_agent.tools.unified.base import ToolValidationError
-from openhands.core.exceptions import (
-    FunctionCallNotExistsError,
-    FunctionCallValidationError,
-)
+from openhands.core.exceptions import FunctionCallNotExistsError, FunctionCallValidationError
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
@@ -114,7 +110,7 @@ def response_to_actions(
                 bash_tool = _TOOL_INSTANCES[EXECUTE_BASH_TOOL_NAME]
                 try:
                     validated_args = bash_tool.validate_parameters(arguments)
-                except ToolValidationError as e:
+                except FunctionCallValidationError as e:
                     msg = str(e)
                     m = re.search(r"Missing required parameter '([^']+)'", msg)
                     if m:
@@ -182,7 +178,7 @@ def response_to_actions(
                 finish_tool = _TOOL_INSTANCES[FINISH_TOOL_NAME]
                 try:
                     validated_args = finish_tool.validate_parameters(arguments)
-                except ToolValidationError as e:
+                except FunctionCallValidationError as e:
                     msg = str(e)
                     m = re.search(r"Missing required parameter '([^']+)'", msg)
                     if m:
@@ -234,7 +230,7 @@ def response_to_actions(
                 file_editor_tool = _TOOL_INSTANCES[STR_REPLACE_EDITOR_TOOL_NAME]
                 try:
                     validated_args = file_editor_tool.validate_parameters(arguments)
-                except ToolValidationError as e:
+                except FunctionCallValidationError as e:
                     msg = str(e)
                     m = re.search(r"Missing required parameter '([^']+)'", msg)
                     if m:
@@ -342,7 +338,7 @@ def response_to_actions(
                 browser_tool = _TOOL_INSTANCES[BROWSER_TOOL_NAME]
                 try:
                     validated_args = browser_tool.validate_parameters(arguments)
-                except ToolValidationError as e:
+                except FunctionCallValidationError as e:
                     msg = str(e)
                     m = re.search(r"Missing required parameter '([^']+)'", msg)
                     if m:

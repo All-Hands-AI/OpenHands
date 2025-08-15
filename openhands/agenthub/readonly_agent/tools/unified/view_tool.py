@@ -4,10 +4,8 @@ ViewTool for ReadOnlyAgent - safe file/directory viewing.
 
 from typing import Any
 
-from openhands.agenthub.codeact_agent.tools.unified.base import (
-    Tool,
-    ToolValidationError,
-)
+from openhands.agenthub.codeact_agent.tools.unified.base import Tool
+from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
 
 
 class ViewTool(Tool):

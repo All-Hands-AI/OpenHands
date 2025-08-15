@@ -6,7 +6,8 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
-from .base import Tool, ToolValidationError
+from .base import Tool
+from openhands.core.exceptions import FunctionCallValidationError
 
 
 class FileEditorTool(Tool):
@@ -91,18 +92,18 @@ class FileEditorTool(Tool):
         }
         for k in parameters.keys():
             if k not in allowed_keys:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     f'Unexpected argument {k}. Allowed arguments are: {sorted(allowed_keys)}'
                 )
         if 'command' not in parameters:
-            raise ToolValidationError("Missing required parameter 'command'")
+            raise FunctionCallValidationError("Missing required parameter 'command'")
         if 'path' not in parameters:
-            raise ToolValidationError("Missing required parameter 'path'")
+            raise FunctionCallValidationError("Missing required parameter 'path'")
 
         command = parameters['command']
         valid_commands = ['view', 'create', 'str_replace', 'insert', 'undo_edit']
         if command not in valid_commands:
-            raise ToolValidationError(
+            raise FunctionCallValidationError(
                 f"Invalid command '{command}'. Must be one of: {valid_commands}"
             )
 
@@ -114,14 +115,14 @@ class FileEditorTool(Tool):
         # Validate command-specific parameters
         if command == 'create':
             if 'file_text' not in parameters:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     "'create' command requires 'file_text' parameter"
                 )
             validated['file_text'] = str(parameters['file_text'])
 
         elif command == 'str_replace':
             if 'old_str' not in parameters:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     "'str_replace' command requires 'old_str' parameter"
                 )
             validated['old_str'] = str(parameters['old_str'])
@@ -129,18 +130,18 @@ class FileEditorTool(Tool):
 
         elif command == 'insert':
             if 'insert_line' not in parameters:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     "'insert' command requires 'insert_line' parameter"
                 )
             if 'new_str' not in parameters:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     "'insert' command requires 'new_str' parameter"
                 )
 
             try:
                 validated['insert_line'] = int(parameters['insert_line'])
             except (ValueError, TypeError):
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     f'Invalid insert_line value: {parameters["insert_line"]}'
                 )
 
@@ -150,13 +151,13 @@ class FileEditorTool(Tool):
             if 'view_range' in parameters:
                 view_range = parameters['view_range']
                 if not isinstance(view_range, list) or len(view_range) != 2:
-                    raise ToolValidationError(
+                    raise FunctionCallValidationError(
                         'view_range must be a list of two integers'
                     )
                 try:
                     validated['view_range'] = [int(view_range[0]), int(view_range[1])]
                 except (ValueError, TypeError):
-                    raise ToolValidationError('view_range must contain valid integers')
+                    raise FunctionCallValidationError('view_range must contain valid integers')
 
         return validated
 

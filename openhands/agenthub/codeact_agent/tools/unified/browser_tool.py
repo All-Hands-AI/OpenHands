@@ -6,7 +6,8 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
-from .base import Tool, ToolValidationError
+from .base import Tool
+from openhands.core.exceptions import FunctionCallValidationError
 
 
 class BrowserTool(Tool):
@@ -45,14 +46,14 @@ class BrowserTool(Tool):
     def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize browser tool parameters."""
         if 'code' not in parameters:
-            raise ToolValidationError("Missing required parameter 'code'")
+            raise FunctionCallValidationError("Missing required parameter 'code'")
 
         code = parameters['code']
         if not isinstance(code, str):
-            raise ToolValidationError("Parameter 'code' must be a string")
+            raise FunctionCallValidationError("Parameter 'code' must be a string")
 
         if not code.strip():
-            raise ToolValidationError("Parameter 'code' cannot be empty")
+            raise FunctionCallValidationError("Parameter 'code' cannot be empty")
 
         return {'code': code}
 

@@ -5,11 +5,10 @@ from unittest.mock import Mock
 
 import pytest
 
-from openhands.agenthub.codeact_agent.tools.unified.base import (
-    Tool,
-    ToolError,
-    ToolValidationError,
-)
+from openhands.agenthub.codeact_agent.tools.unified.base import Tool
+from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
+
+# ToolError no longer exists as a separate class in the unified base; tests updated accordingly.
 
 
 class MockTool(Tool):
@@ -60,31 +59,20 @@ class MockTool(Tool):
         return validated
 
 
-class TestToolError:
-    """Test ToolError exception."""
-
-    def test_tool_error_creation(self):
-        error = ToolError('Test error message')
-        assert str(error) == 'Test error message'
-        assert isinstance(error, Exception)
-
-    def test_tool_error_inheritance(self):
-        error = ToolError('Test error')
-        assert isinstance(error, Exception)
+# Removed TestToolError tests since ToolError has been removed in favor of using
+# FunctionCallValidationError directly for validation-related issues.
 
 
 class TestToolValidationError:
-    """Test ToolValidationError exception."""
+    """Test validation error behavior using FunctionCallValidationError alias."""
 
     def test_tool_validation_error_creation(self):
         error = ToolValidationError('Validation failed')
         assert str(error) == 'Validation failed'
-        assert isinstance(error, ToolError)
         assert isinstance(error, Exception)
 
-    def test_tool_validation_error_inheritance(self):
+    def test_tool_validation_error_is_exception(self):
         error = ToolValidationError('Validation error')
-        assert isinstance(error, ToolError)
         assert isinstance(error, Exception)
 
 

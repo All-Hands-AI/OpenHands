@@ -5,9 +5,10 @@ from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.core.exceptions import FunctionCallValidationError
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
-from .base import Tool, ToolValidationError
+from .base import Tool
 
 
 class BashTool(Tool):
@@ -62,7 +63,7 @@ class BashTool(Tool):
     def validate_parameters(self, parameters: dict[str, Any]) -> dict[str, Any]:
         """Validate and normalize bash tool parameters."""
         if 'command' not in parameters:
-            raise ToolValidationError("Missing required parameter 'command'")
+            raise FunctionCallValidationError("Missing required parameter 'command'")
 
         validated = {
             'command': str(parameters['command']),
@@ -74,10 +75,10 @@ class BashTool(Tool):
             try:
                 timeout = float(parameters['timeout'])
                 if timeout <= 0:
-                    raise ToolValidationError('Timeout must be positive')
+                    raise FunctionCallValidationError('Timeout must be positive')
                 validated['timeout'] = timeout
             except (ValueError, TypeError):
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     f'Invalid timeout value: {parameters["timeout"]}'
                 )
 

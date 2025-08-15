@@ -4,10 +4,8 @@ GrepTool for ReadOnlyAgent - safe text searching.
 
 from typing import Any
 
-from openhands.agenthub.codeact_agent.tools.unified.base import (
-    Tool,
-    ToolValidationError,
-)
+from openhands.agenthub.codeact_agent.tools.unified.base import Tool
+from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
 
 
 class GrepTool(Tool):

@@ -4,9 +4,10 @@ from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.core.exceptions import FunctionCallValidationError
 from openhands.llm.tool_names import FINISH_TOOL_NAME
 
-from .base import Tool, ToolValidationError
+from .base import Tool
 
 
 class FinishTool(Tool):
@@ -53,7 +54,7 @@ class FinishTool(Tool):
         if 'outputs' in parameters:
             outputs = parameters['outputs']
             if not isinstance(outputs, dict):
-                raise ToolValidationError("'outputs' must be a dictionary")
+                raise FunctionCallValidationError("'outputs' must be a dictionary")
             validated['outputs'] = outputs
 
         if 'summary' in parameters:

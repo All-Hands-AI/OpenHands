@@ -6,17 +6,7 @@ from typing import Any
 
 from litellm import ChatCompletionToolParam
 
-
-class ToolError(Exception):
-    """Base exception for tool-related errors."""
-
-    pass
-
-
-class ToolValidationError(ToolError):
-    """Exception raised when tool parameters fail validation."""
-
-    pass
+from openhands.core.exceptions import FunctionCallValidationError
 
 
 class Tool(ABC):
@@ -55,7 +45,7 @@ class Tool(ABC):
             Validated and normalized parameters
 
         Raises:
-            ToolValidationError: If parameters are invalid
+            FunctionCallValidationError: If parameters are invalid
         """
         pass
 
@@ -69,7 +59,7 @@ class Tool(ABC):
             Validated and normalized parameters
 
         Raises:
-            ToolValidationError: If function call is invalid
+            FunctionCallValidationError: If function call is invalid
         """
         try:
             # Parse function call arguments
@@ -81,17 +71,19 @@ class Tool(ABC):
             try:
                 parameters = json.loads(arguments_str)
             except json.JSONDecodeError as e:
-                raise ToolValidationError(
+                raise FunctionCallValidationError(
                     f'Failed to parse function call arguments: {arguments_str}. Error: {e}'
-                )
+                ) from e
 
             # Validate parameters
             return self.validate_parameters(parameters)
 
-        except ToolValidationError:
+        except FunctionCallValidationError:
             raise
         except Exception as e:
-            raise ToolValidationError(f'Unexpected error validating function call: {e}')
+            raise FunctionCallValidationError(
+                f'Unexpected error validating function call: {e}'
+            ) from e
 
     def __str__(self) -> str:
         return f'Tool({self.name})'

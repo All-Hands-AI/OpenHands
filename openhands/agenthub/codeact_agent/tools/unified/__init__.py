@@ -11,7 +11,8 @@ This decouples tool logic from agent processing, making it easier to add new too
 or modify existing ones.
 """
 
-from .base import Tool, ToolError, ToolValidationError
+from .base import Tool
+from openhands.core.exceptions import FunctionCallValidationError as ToolValidationError
 from .bash_tool import BashTool
 from .browser_tool import BrowserTool
 from .file_editor_tool import FileEditorTool
