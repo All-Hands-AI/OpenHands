@@ -6079,6 +6079,22 @@
         "ja": "エージェントのアクションを実行前に確認",
         "uk": "Очікує підтвердження користувача перед виконанням коду."
     },
+    "SETTINGS$CONFIRMATION_MODE_LOCK_TOOLTIP": {
+        "en": "The agent is in confirmation mode. It will prompt the user to confirm certain actions when security analyzer policy detected a high-risk action. Check the settings tab for more information.",
+        "de": "Der Agent befindet sich im Bestätigungsmodus. Er wird den Benutzer auffordern, bestimmte Aktionen zu bestätigen, wenn die Sicherheitsanalysator-Richtlinie eine risikoreiche Aktion erkannt hat. Weitere Informationen finden Sie auf der Registerkarte Einstellungen.",
+        "zh-CN": "代理处于确认模式。当安全分析器策略检测到高风险操作时，它会提示用户确认某些操作。查看设置选项卡了解更多信息。",
+        "zh-TW": "代理處於確認模式。當安全分析器策略檢測到高風險操作時，它會提示使用者確認某些操作。查看設定選項卡了解更多資訊。",
+        "ko-KR": "에이전트가 확인 모드에 있습니다. 보안 분석기 정책이 고위험 작업을 감지하면 사용자에게 특정 작업을 확인하도록 요청합니다. 자세한 내용은 설정 탭을 확인하세요.",
+        "no": "Agenten er i bekreftelsesmodus. Den vil be brukeren om å bekrefte visse handlinger når sikkerhetsanalysatorpolitikken oppdager en høyrisiko-handling. Sjekk innstillingsfanen for mer informasjon.",
+        "it": "L'agente è in modalità di conferma. Chiederà all'utente di confermare certe azioni quando la politica dell'analizzatore di sicurezza rileva un'azione ad alto rischio. Controlla la scheda impostazioni per maggiori informazioni.",
+        "pt": "O agente está no modo de confirmação. Ele solicitará ao usuário que confirme certas ações quando a política do analisador de segurança detectar uma ação de alto risco. Verifique a aba de configurações para mais informações.",
+        "es": "El agente está en modo de confirmación. Solicitará al usuario que confirme ciertas acciones cuando la política del analizador de seguridad detecte una acción de alto riesgo. Consulte la pestaña de configuración para obtener más información.",
+        "ar": "الوكيل في وضع التأكيد. سيطلب من المستخدم تأكيد إجراءات معينة عندما تكتشف سياسة محلل الأمان إجراءً عالي المخاطر. تحقق من علامة تبويب الإعدادات للحصول على مزيد من المعلومات.",
+        "fr": "L'agent est en mode de confirmation. Il demandera à l'utilisateur de confirmer certaines actions lorsque la politique de l'analyseur de sécurité détecte une action à haut risque. Consultez l'onglet paramètres pour plus d'informations.",
+        "tr": "Ajan onay modunda. Güvenlik analizörü politikası yüksek riskli bir eylem tespit ettiğinde kullanıcıdan belirli eylemleri onaylamasını isteyecek. Daha fazla bilgi için ayarlar sekmesini kontrol edin.",
+        "ja": "エージェントは確認モードです。セキュリティアナライザーポリシーが高リスクアクションを検出した場合、特定のアクションの確認をユーザーに求めます。詳細については設定タブを確認してください。",
+        "uk": "Агент знаходиться в режимі підтвердження. Він попросить користувача підтвердити певні дії, коли політика аналізатора безпеки виявить дію високого ризику. Перевірте вкладку налаштувань для отримання додаткової інформації."
+    },
     "SETTINGS$AGENT_SELECT_ENABLED": {
         "en": "Enable Agent Selection - Advanced Users",
         "zh-CN": "启用智能体选择 - 高级用户",

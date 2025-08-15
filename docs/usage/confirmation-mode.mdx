@@ -1,0 +1,151 @@
+# Confirmation Mode and Security Analyzers
+
+OpenHands provides a security framework to help protect users from potentially risky actions through **Confirmation Mode** and **Security Analyzers**. This system analyzes agent actions and prompts users for confirmation when high-risk operations are detected.
+
+## Overview
+
+The security system consists of two main components:
+
+1. **Confirmation Mode**: When enabled, the agent will pause and ask for user confirmation before executing actions that are flagged as high-risk by the security analyzer.
+
+2. **Security Analyzers**: These are modules that evaluate the risk level of agent actions and determine whether user confirmation is required.
+
+## Configuration
+
+You can configure the security system in the **LLM Settings** tab:
+
+- **Enable Confirmation Mode**: Toggle this to enable/disable the confirmation system
+- **Security Analyzer**: Choose which analyzer to use for risk assessment
+
+## Security Analyzers
+
+OpenHands supports three types of security analyzers:
+
+### 1. LLM Analyzer (Default)
+
+The LLM Analyzer uses a language model to intelligently assess the risk level of agent actions.
+
+**Pros:**
+- Intelligent risk assessment based on context
+- Can understand complex scenarios and edge cases
+- Adapts to different types of operations
+- Provides detailed explanations for risk assessments
+
+**Cons:**
+- Requires additional LLM calls, which may increase latency
+- Depends on the quality and capabilities of the underlying LLM
+- May have occasional false positives or negatives
+
+**Best for:** Most users who want intelligent, context-aware security analysis
+
+### 2. Invariant Analyzer
+
+The Invariant Analyzer uses predefined rules and patterns to identify risky operations.
+
+**Pros:**
+- Fast and deterministic
+- No additional LLM calls required
+- Consistent behavior across sessions
+- Lower latency
+
+**Cons:**
+- Limited to predefined rules
+- May miss complex or novel risk scenarios
+- Less context-aware than LLM-based analysis
+- Requires manual rule updates for new risk patterns
+
+**Best for:** Users who prefer rule-based, predictable security analysis
+
+### 3. None (Ask for Every Command)
+
+When set to "None", the system treats every agent action as high-risk and asks for confirmation.
+
+**Pros:**
+- Maximum user control
+- No risk of missing dangerous operations
+- Simple and transparent behavior
+
+**Cons:**
+- Frequent interruptions to workflow
+- Can be tedious for routine operations
+- May reduce productivity
+
+**Best for:** Users who want maximum control and don't mind frequent confirmations
+
+## How It Works
+
+1. **Action Analysis**: When the agent wants to perform an action, the selected security analyzer evaluates its risk level.
+
+2. **Risk Assessment**: The analyzer returns one of three risk levels:
+   - **LOW**: Action proceeds without confirmation
+   - **MEDIUM**: Action proceeds without confirmation (may be configurable in future)
+   - **HIGH**: Action is paused, and user confirmation is requested
+
+3. **User Confirmation**: For high-risk actions, a confirmation dialog appears with:
+   - Description of the action
+   - Risk assessment explanation
+   - Options to approve, deny, or modify the action
+
+4. **Action Execution**: Based on user response:
+   - **Approve**: Action proceeds as planned
+   - **Deny**: Action is cancelled
+   - **Modify**: User can edit the action before execution
+
+## Visual Indicators
+
+When Confirmation Mode is enabled, you'll see a lock icon (🔒) in the interface. Hovering over this icon shows a tooltip explaining that the agent is in confirmation mode.
+
+## Best Practices
+
+### For Most Users
+- Use the **LLM Analyzer** (default) for intelligent risk assessment
+- Enable **Confirmation Mode** when working with sensitive data or systems
+- Review confirmation prompts carefully before approving actions
+
+### For Security-Conscious Users
+- Consider using **None** analyzer for maximum control in high-security environments
+- Regularly review and understand the actions being performed
+- Keep confirmation mode enabled at all times
+
+### For Power Users
+- Use **Invariant Analyzer** if you prefer predictable, rule-based analysis
+- Customize security settings based on your specific use case
+- Monitor agent behavior and adjust settings as needed
+
+## Troubleshooting
+
+### Too Many Confirmations
+If you're getting too many confirmation prompts:
+- Switch from "None" to "LLM Analyzer" for more intelligent filtering
+- Consider disabling confirmation mode for routine tasks
+- Review your security analyzer settings
+
+### Missing Risk Detection
+If risky actions aren't being caught:
+- Ensure confirmation mode is enabled
+- Switch to "None" analyzer for maximum coverage
+- Check that your security analyzer is properly configured
+
+### Performance Issues
+If you experience slow response times:
+- Switch from "LLM Analyzer" to "Invariant Analyzer" for faster analysis
+- Check your LLM configuration and response times
+- Consider adjusting confirmation thresholds
+
+## Security Considerations
+
+- **Trust but Verify**: Even with security analyzers, always review agent actions carefully
+- **Context Matters**: Security analyzers may not understand your specific environment or constraints
+- **Regular Updates**: Keep OpenHands updated to benefit from improved security analysis
+- **Backup Strategy**: Always maintain backups when allowing agents to modify important data
+
+## Future Enhancements
+
+The security system is continuously being improved. Future versions may include:
+- Customizable risk thresholds
+- User-defined security rules
+- Integration with external security tools
+- Enhanced risk assessment algorithms
+- Audit logging and reporting features
+
+For the latest updates and features, check the OpenHands documentation and release notes.
