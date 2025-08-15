@@ -853,7 +853,7 @@ class WindowsPowershellSession:
                         )
                         metadata.suffix = (
                             f'\n[Your command "{command}" is NOT executed. '
-                            'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+                            f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
                             'By setting `is_input` to `true`, you can interact with the current process: '
                             f'{TIMEOUT_MESSAGE_TEMPLATE}]'
                         )
