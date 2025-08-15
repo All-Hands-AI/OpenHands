@@ -207,23 +207,51 @@ def _send_message(page: Page, text: str) -> None:
 def _wait_for_agent_text(page: Page, timeout_s: int = 180) -> list[str]:
     start = time.time()
     texts: list[str] = []
-    while time.time() - start < timeout_s:
+
+    def collect_texts() -> list[str]:
+        collected: list[str] = []
         try:
+            # 1) ChatMessage rendered messages (preferred)
             msgs = page.locator('[data-testid="agent-message"]').all()
-            texts = []
             for m in msgs:
                 try:
-                    t = m.text_content() or ''
-                    t = t.strip()
+                    t = (m.text_content() or '').strip()
                     if t:
-                        texts.append(t)
+                        collected.append(t)
                 except Exception:
                     continue
-            if texts:
-                return texts
         except Exception:
             pass
+
+        try:
+            # 2) GenericEventMessage (e.g., RECALL observations) — expand then read
+            containers = page.locator('div.border-l-2').all()
+            for i, c in enumerate(containers):
+                try:
+                    # Expand details if a toggle button exists
+                    btns = c.locator('button').all()
+                    for b in btns:
+                        try:
+                            b.click(timeout=500)
+                        except Exception:
+                            continue
+                    # Give time for details to render
+                    page.wait_for_timeout(200)
+                    t = (c.text_content() or '').strip()
+                    if t:
+                        collected.append(t)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+        return collected
+
+    while time.time() - start < timeout_s:
+        texts = collect_texts()
+        if texts:
+            return texts
         page.wait_for_timeout(2000)
+
     _screenshot(page, 'micro_agent_timeout.png')
     return texts
 
