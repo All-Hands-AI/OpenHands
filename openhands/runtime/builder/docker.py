@@ -175,8 +175,7 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 universal_newlines=True,
                 bufsize=1,
             )
-            # Fixed code that properly captures output
-            # Collect all output lines for error reporting
+
             output_lines = []
             if process.stdout:
                 for line in iter(process.stdout.readline, ''):
@@ -194,10 +193,9 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                     return_code,
                     process.args,
                     output=output_str,  # Use the collected output
-                    stderr=None
+                    stderr=None,
                 )
 
-        # Improved error handling
         except subprocess.CalledProcessError as e:
             logger.error(f'Image build failed with exit code {e.returncode}')
             if e.output:
