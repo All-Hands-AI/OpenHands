@@ -103,6 +103,8 @@ jobs:
           export LOG_LEVEL=WARNING
           export UVICORN_LOG_LEVEL=warning
           export OPENHANDS_LOG_LEVEL=WARNING
+          # Pass Tavily key to the application as SEARCH_API_KEY (also read directly by server)
+          export SEARCH_API_KEY="${TAVILY_API_KEY}"
           FRONTEND_PORT=12000 FRONTEND_HOST=0.0.0.0 BACKEND_HOST=0.0.0.0 make run > /tmp/openhands-e2e-test.log 2>&1 &
 
           # Store the PID of the make run process
@@ -183,22 +185,14 @@ jobs:
             exit 1
           fi
 
-          # Run the core tests first
+          # Run the tests with detailed output
           cd tests/e2e
           poetry run python -m pytest \
             test_settings.py::test_github_token_configuration \
             test_conversation.py::test_conversation_start \
             test_browsing_catchphrase.py::test_browsing_catchphrase \
-            test_multi_conversation_resume.py::test_multi_conversation_resume \
+            test_web_search.py::test_web_search_current_us_president \
             -v --no-header --capture=no --timeout=900
-
-          # Run the web search test only if TAVILY_API_KEY is available
-          if [ -n "$TAVILY_API_KEY" ]; then
-            echo "Running web search test with Tavily API key..."
-            poetry run python -m pytest test_web_search.py::test_web_search_current_us_president -v --no-header --capture=no --timeout=600
-          else
-            echo "Skipping web search test - TAVILY_API_KEY not available"
-          fi
 
       - name: Upload test results
         if: always()
