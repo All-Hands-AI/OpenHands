@@ -48,10 +48,8 @@ The intent is to cover everything that overlaps with OpenHands’ `str_replace_e
 
 ### Actions and Runtime Wiring (OpenHands)
 
-- Introduce a new Action type dedicated to Gemini tools, e.g., `GeminiToolAction(tool: Literal['replace'|'read_file'|...], args: dict)`.
-  - Rationale: keep these tools separate from the legacy `FileEditAction`/`str_replace` “command” shape, reflecting the 1-tool = 1-operation design.
-  - Update action serialization and the runtime dispatch (`ActionExecutionServer`) to handle `GeminiToolAction`.
-- In `ActionExecutionServer`, add a dispatcher that routes `GeminiToolAction` to a new `GeminiEditor` (described below). Each tool maps to a distinct method call and response formatting.
+- Prefer reusing existing OpenHands Actions where possible (FileReadAction, FileWriteAction, FileEditAction with impl_source=OH_ACI). Only if truly necessary for parameter carriage or routing clarity, introduce minimal new Actions in a later stage after proving we cannot reuse existing ones.
+- In `ActionExecutionServer`, route Gemini-file operations through the existing paths wherever feasible (e.g., FileReadAction for read_file, FileWriteAction for write_file, FileEditAction with command='replace' for replace). When adding non-edit operations (list_directory, glob, search_file_content, read_many_files), attempt to use existing read/write/edit pathways first; if they are insufficient, we will add narrow, internal-only Actions later.
 
 ### Runtime (openhands-aci)
 
