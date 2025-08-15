@@ -143,70 +143,168 @@ def test_gitlab_repository_cloning(page: Page):
     # Step 4: Select provider (GitLab)
     print('Step 4: Selecting GitLab provider...')
     
-    # Try multiple approaches to find and click the provider dropdown
-    provider_clicked = False
+    # First, let's debug what elements are actually present
+    print('Debugging: Looking for elements on the page...')
     
-    # Approach 1: Try to find the dropdown control/container
-    provider_selectors = [
-        '.react-select__control:has-text("Select Provider")',
-        'div[class*="select"]:has-text("Select Provider")',
-        '[role="combobox"]:has-text("Select Provider")',
-        'div:has-text("Select Provider") >> ..',  # Parent of text element
-        'div:has-text("Connect to a Repository") >> div[class*="select"]:first',
-    ]
-    
-    for selector in provider_selectors:
-        try:
-            element = page.locator(selector).first
-            if element.is_visible(timeout=3000):
-                element.click()
-                print(f'Clicked provider dropdown with selector: {selector}')
-                provider_clicked = True
-                break
-        except Exception as e:
-            print(f'Failed with selector {selector}: {e}')
-            continue
-    
-    # Approach 2: If still not clicked, try clicking by position
-    if not provider_clicked:
-        print('Trying to click provider dropdown by finding first dropdown in Connect section')
-        try:
-            connect_section = page.locator('div:has-text("Connect to a Repository")').first
-            # Look for any clickable dropdown elements
-            dropdown_selectors = [
-                'div[class*="select"]',
+    # Get all elements that might be dropdowns
+    debug_result = page.evaluate("""
+        () => {
+            const elements = [];
+            
+            // Look for elements with "Select Provider" text
+            const selectProviderElements = Array.from(document.querySelectorAll('*')).filter(el => 
+                el.textContent && el.textContent.includes('Select Provider')
+            );
+            
+            selectProviderElements.forEach((el, i) => {
+                elements.push({
+                    type: 'select_provider_text',
+                    index: i,
+                    tagName: el.tagName,
+                    className: el.className,
+                    textContent: el.textContent.trim(),
+                    clickable: el.onclick !== null || el.style.cursor === 'pointer',
+                    hasTabIndex: el.hasAttribute('tabindex'),
+                    role: el.getAttribute('role')
+                });
+            });
+            
+            // Look for dropdown-like elements
+            const dropdownSelectors = [
+                '[class*="select"]',
                 '[role="combobox"]',
-                'div[class*="control"]',
-                'div[tabindex="0"]',
-            ]
+                '[class*="dropdown"]',
+                '[tabindex="0"]'
+            ];
             
-            for dropdown_sel in dropdown_selectors:
-                dropdowns = connect_section.locator(dropdown_sel)
-                if dropdowns.count() > 0:
-                    first_dropdown = dropdowns.first
-                    if first_dropdown.is_visible(timeout=3000):
-                        first_dropdown.click()
-                        print(f'Clicked first dropdown with selector: {dropdown_sel}')
-                        provider_clicked = True
-                        break
+            dropdownSelectors.forEach(selector => {
+                const elements_found = document.querySelectorAll(selector);
+                elements_found.forEach((el, i) => {
+                    elements.push({
+                        type: 'dropdown_candidate',
+                        selector: selector,
+                        index: i,
+                        tagName: el.tagName,
+                        className: el.className,
+                        textContent: el.textContent.trim().substring(0, 100),
+                        role: el.getAttribute('role')
+                    });
+                });
+            });
             
-            if not provider_clicked:
-                # Last resort: click at coordinates of the first dropdown area
-                connect_box = connect_section.bounding_box()
-                if connect_box:
-                    # Click roughly where the first dropdown should be
-                    click_x = connect_box['x'] + 300  # Approximate position
-                    click_y = connect_box['y'] + 80
-                    page.mouse.click(click_x, click_y)
-                    print(f'Clicked at coordinates ({click_x}, {click_y})')
-                    provider_clicked = True
+            return elements;
+        }
+    """)
+    
+    print(f'Debug result: Found {len(debug_result)} elements')
+    for element in debug_result:
+        print(f'  - {element}')
+    
+    # Try JavaScript-based clicking
+    provider_clicked = page.evaluate("""
+        () => {
+            // Try to find and click the provider dropdown
+            const approaches = [
+                // Approach 1: Find by text content and click parent
+                () => {
+                    const textElements = Array.from(document.querySelectorAll('*')).filter(el => 
+                        el.textContent && el.textContent.includes('Select Provider')
+                    );
+                    
+                    for (const el of textElements) {
+                        // Try clicking the element itself
+                        if (el.click) {
+                            el.click();
+                            return 'clicked_text_element';
+                        }
+                        
+                        // Try clicking parent elements
+                        let parent = el.parentElement;
+                        while (parent && parent !== document.body) {
+                            if (parent.click && (parent.className.includes('select') || parent.getAttribute('role') === 'combobox')) {
+                                parent.click();
+                                return 'clicked_parent_' + parent.tagName;
+                            }
+                            parent = parent.parentElement;
+                        }
+                    }
+                    return null;
+                },
+                
+                // Approach 2: Find by class patterns
+                () => {
+                    const selectors = [
+                        '[class*="select"][class*="control"]',
+                        '[class*="react-select"]',
+                        'div[class*="select"]:first-of-type'
+                    ];
+                    
+                    for (const selector of selectors) {
+                        const elements = document.querySelectorAll(selector);
+                        if (elements.length > 0) {
+                            elements[0].click();
+                            return 'clicked_' + selector;
+                        }
+                    }
+                    return null;
+                },
+                
+                // Approach 3: Find first clickable element in Connect section
+                () => {
+                    const connectSection = Array.from(document.querySelectorAll('*')).find(el => 
+                        el.textContent && el.textContent.includes('Connect to a Repository')
+                    );
+                    
+                    if (connectSection) {
+                        const clickableElements = connectSection.querySelectorAll('[tabindex="0"], [role="combobox"], [class*="select"]');
+                        if (clickableElements.length > 0) {
+                            clickableElements[0].click();
+                            return 'clicked_connect_section_element';
+                        }
+                    }
+                    return null;
+                }
+            ];
+            
+            for (let i = 0; i < approaches.length; i++) {
+                const result = approaches[i]();
+                if (result) {
+                    return result;
+                }
+            }
+            
+            return null;
+        }
+    """)
+    
+    if provider_clicked:
+        print(f'Successfully clicked provider dropdown using JavaScript: {provider_clicked}')
+    else:
+        print('JavaScript clicking failed, trying Playwright selectors as fallback')
+        
+        # Fallback to Playwright selectors
+        try:
+            # Try the most basic approach - find any dropdown in the Connect section
+            connect_section = page.locator('div:has-text("Connect to a Repository")').first
+            if connect_section.is_visible(timeout=5000):
+                # Try to click the first interactive element
+                interactive_elements = connect_section.locator('div, button, input, select').all()
+                for element in interactive_elements:
+                    try:
+                        if element.is_visible() and element.is_enabled():
+                            element.click()
+                            print('Clicked interactive element in Connect section')
+                            provider_clicked = True
+                            break
+                    except:
+                        continue
         except Exception as e:
-            print(f'Error in approach 2: {e}')
+            print(f'Fallback approach failed: {e}')
     
     if not provider_clicked:
         raise Exception('Could not click provider dropdown with any method')
     
-    page.wait_for_timeout(2000)
+    page.wait_for_timeout(3000)
 
     # Select GitLab from provider options
     gitlab_selectors = [
