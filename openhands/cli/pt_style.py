@@ -21,7 +21,6 @@ def get_cli_style() -> Style:
             # across terminals/themes (e.g., Ubuntu GNOME, Alacritty, Kitty).
             # See https://github.com/All-Hands-AI/OpenHands/issues/10330
             'completion-menu.completion.current fuzzymatch.outside': 'fg:#ffffff bg:#888888',
-            # If #ffffff feels too bright on your terminal, consider using #dddddd instead for the fg.
         }
     )
     return merge_styles([base, custom])
