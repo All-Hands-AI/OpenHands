@@ -354,6 +354,24 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
+            # If logging is enabled, capture LiteLLM model_call_details including raw request
+            litellm_log_ctx: dict[str, Any] = {}
+            if self.config.log_completions:
+                try:
+                    # Enable raw request logging at LiteLLM (includes masked headers and body)
+                    litellm.log_raw_request_response = True
+                except Exception:
+                    pass
+
+                def _litellm_logger_fn(details: dict[str, Any]) -> None:
+                    # Keep the last seen details for this call
+                    litellm_log_ctx.clear()
+                    for k, v in details.items():
+                        litellm_log_ctx[k] = v
+
+                # Pass logger_fn per-call so we can read the context after the request
+                kwargs['logger_fn'] = _litellm_logger_fn
+
             # if we're not using litellm proxy, remove the extra_body
             if 'litellm_proxy' not in self.config.model:
                 kwargs.pop('extra_body', None)
@@ -375,6 +393,15 @@ class LLM(RetryMixin, DebugMixin):
                     category=DeprecationWarning,
                 )
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+            # Attach captured LiteLLM request context to kwargs for downstream logging if needed
+            if self.config.log_completions and litellm_log_ctx:
+                kwargs['__litellm_model_call_details__'] = {
+                    'raw_request': litellm_log_ctx.get('raw_request_typed_dict'),
+                    'optional_params': litellm_log_ctx.get('optional_params'),
+                    'custom_llm_provider': litellm_log_ctx.get('custom_llm_provider'),
+                    'model': litellm_log_ctx.get('model'),
+                }
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -440,6 +467,11 @@ class LLM(RetryMixin, DebugMixin):
                     'timestamp': time.time(),
                     'cost': cost,
                 }
+
+                # Include LiteLLM raw request typing if available
+                litellm_ctx = kwargs.get('__litellm_model_call_details__')
+                if isinstance(litellm_ctx, dict):
+                    _d['litellm_model_call_details'] = litellm_ctx
 
                 # if non-native function calling, save messages/response separately
                 if mock_function_calling:
