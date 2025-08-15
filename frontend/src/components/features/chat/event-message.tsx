@@ -29,6 +29,7 @@ import { LikertScale } from "../feedback/likert-scale";
 
 import { useConfig } from "#/hooks/query/use-config";
 import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
+import { useTranslation } from "react-i18next";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
@@ -60,6 +61,7 @@ export function EventMessage({
   actions,
   isInLast10Actions,
 }: EventMessageProps) {
+  const { t } = useTranslation();
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
@@ -212,12 +214,29 @@ export function EventMessage({
   }
 
   if (isTaskTrackingObservation(event)) {
+    const { command } = event.extras;
+    let title: React.ReactNode;
+    let initiallyExpanded = false;
+
+    // Determine title and expansion state based on command
+    if (command === "plan") {
+      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_PLAN");
+      initiallyExpanded = true;
+    } else if (command === "view") {
+      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_VIEW");
+      initiallyExpanded = false;
+    } else {
+      title = getEventContent(event).title;
+      initiallyExpanded = false;
+    }
+
     return (
       <div>
         <GenericEventMessage
-          title={getEventContent(event).title}
+          title={title}
           details={<TaskTrackingObservationContent event={event} />}
           success={getObservationResult(event)}
+          initiallyExpanded={initiallyExpanded}
         />
         {shouldShowConfirmationButtons && <ConfirmationButtons />}
       </div>

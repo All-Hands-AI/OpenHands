@@ -52,11 +52,11 @@ describe("TaskTrackingObservationContent", () => {
     },
   };
 
-  it("renders command section", () => {
+  it("does not render command section", () => {
     render(<TaskTrackingObservationContent event={mockEvent} />);
 
-    expect(screen.getByText("Command")).toBeInTheDocument();
-    expect(screen.getByText("plan")).toBeInTheDocument();
+    expect(screen.queryByText("Command")).not.toBeInTheDocument();
+    expect(screen.queryByText("plan")).not.toBeInTheDocument();
   });
 
   it("renders task list when command is 'plan' and tasks exist", () => {
@@ -106,8 +106,6 @@ describe("TaskTrackingObservationContent", () => {
 
     render(<TaskTrackingObservationContent event={eventWithoutPlan} />);
 
-    expect(screen.getByText("Command")).toBeInTheDocument();
-    expect(screen.getByText("view")).toBeInTheDocument();
     expect(screen.queryByText("Task List")).not.toBeInTheDocument();
   });
 

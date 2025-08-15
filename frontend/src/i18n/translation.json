@@ -8015,6 +8015,38 @@
         "tr": "Görev takibi tamamlandı",
         "uk": "Відстеження завдань завершено"
     },
+    "OBSERVATION_MESSAGE$TASK_TRACKING_PLAN": {
+        "en": "Agent updated the plan",
+        "zh-CN": "代理更新了计划",
+        "zh-TW": "代理更新了計劃",
+        "ko-KR": "에이전트가 계획을 업데이트했습니다",
+        "ja": "エージェントがプランを更新しました",
+        "no": "Agent oppdaterte planen",
+        "ar": "قام الوكيل بتحديث الخطة",
+        "de": "Agent hat den Plan aktualisiert",
+        "fr": "L'agent a mis à jour le plan",
+        "it": "L'agente ha aggiornato il piano",
+        "pt": "O agente atualizou o plano",
+        "es": "El agente actualizó el plan",
+        "tr": "Ajan planı güncelledi",
+        "uk": "Агент оновив план"
+    },
+    "OBSERVATION_MESSAGE$TASK_TRACKING_VIEW": {
+        "en": "Agent checked the current plan",
+        "zh-CN": "代理检查了当前计划",
+        "zh-TW": "代理檢查了當前計劃",
+        "ko-KR": "에이전트가 현재 계획을 확인했습니다",
+        "ja": "エージェントが現在のプランを確認しました",
+        "no": "Agent sjekket gjeldende plan",
+        "ar": "تحقق الوكيل من الخطة الحالية",
+        "de": "Agent hat den aktuellen Plan überprüft",
+        "fr": "L'agent a vérifié le plan actuel",
+        "it": "L'agente ha controllato il piano attuale",
+        "pt": "O agente verificou o plano atual",
+        "es": "El agente verificó el plan actual",
+        "tr": "Ajan mevcut planı kontrol etti",
+        "uk": "Агент перевірив поточний план"
+    },
     "EXPANDABLE_MESSAGE$SHOW_DETAILS": {
         "en": "Show details",
         "zh-CN": "显示详情",

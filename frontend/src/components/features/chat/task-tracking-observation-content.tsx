@@ -39,18 +39,6 @@ export function TaskTrackingObservationContent({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Command section */}
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-300">
-            {t("TASK_TRACKING_OBSERVATION$COMMAND")}
-          </h3>
-        </div>
-        <div className="p-3 bg-gray-900 rounded-md overflow-auto text-gray-300 shadow-inner">
-          <code className="text-blue-400">{command}</code>
-        </div>
-      </div>
-
       {/* Task List section - only show for 'plan' command */}
       {shouldShowTaskList && (
         <div className="flex flex-col gap-2">
