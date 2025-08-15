@@ -175,30 +175,35 @@ class DockerRuntimeBuilder(RuntimeBuilder):
                 universal_newlines=True,
                 bufsize=1,
             )
-
+            # Fixed code that properly captures output
+            # Collect all output lines for error reporting
+            output_lines = []
             if process.stdout:
                 for line in iter(process.stdout.readline, ''):
                     line = line.strip()
                     if line:
+                        output_lines.append(line)  # Store all output lines
                         self._output_logs(line)
 
             return_code = process.wait()
 
             if return_code != 0:
+                # Use the collected output for error reporting
+                output_str = '\n'.join(output_lines)
                 raise subprocess.CalledProcessError(
                     return_code,
                     process.args,
-                    output=process.stdout.read() if process.stdout else None,
-                    stderr=process.stderr.read() if process.stderr else None,
+                    output=output_str,  # Use the collected output
+                    stderr=None
                 )
 
+        # Improved error handling
         except subprocess.CalledProcessError as e:
-            logger.error(f'Image build failed:\n{e}')  # TODO: {e} is empty
-            logger.error(f'Command output:\n{e.output}')
-            if self.rolling_logger.is_enabled():
-                logger.error(
-                    'Docker build output:\n' + self.rolling_logger.all_lines
-                )  # Show the error
+            logger.error(f'Image build failed with exit code {e.returncode}')
+            if e.output:
+                logger.error(f'Command output:\n{e.output}')
+            elif self.rolling_logger.is_enabled() and self.rolling_logger.all_lines:
+                logger.error(f'Docker build output:\n{self.rolling_logger.all_lines}')
             raise
 
         except subprocess.TimeoutExpired:
