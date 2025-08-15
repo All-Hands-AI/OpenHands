@@ -79,6 +79,35 @@ describe("Content", () => {
         expect(screen.getByTestId("set-indicator")).toBeInTheDocument();
       });
     });
+
+    it("should conditionally show security analyzer based on confirmation mode", async () => {
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+      
+      // Initially confirmation mode is false, so security analyzer should not be visible
+      expect(confirmation).not.toBeChecked();
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+
+      // Enable confirmation mode
+      await userEvent.click(confirmation);
+      expect(confirmation).toBeChecked();
+      
+      // Security analyzer should now be visible
+      screen.getByTestId("security-analyzer-input");
+
+      // Disable confirmation mode again
+      await userEvent.click(confirmation);
+      expect(confirmation).not.toBeChecked();
+      
+      // Security analyzer should be hidden again
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe("Advanced form", () => {
@@ -129,9 +158,6 @@ describe("Content", () => {
       const baseUrl = screen.getByTestId("base-url-input");
       const apiKey = screen.getByTestId("llm-api-key-input");
       const agent = screen.getByTestId("agent-input");
-      const confirmation = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
       expect(model).toHaveValue("openhands/claude-sonnet-4-20250514");
@@ -139,15 +165,7 @@ describe("Content", () => {
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
       expect(agent).toHaveValue("CodeActAgent");
-      expect(confirmation).not.toBeChecked();
       expect(condensor).toBeChecked();
-
-      // check that security analyzer is present
-      expect(
-        screen.queryByTestId("security-analyzer-input"),
-      ).not.toBeInTheDocument();
-      await userEvent.click(confirmation);
-      screen.getByTestId("security-analyzer-input");
     });
 
     it("should render the advanced form if existings settings are advanced", async () => {
