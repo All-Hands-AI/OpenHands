@@ -52,3 +52,5 @@ export const GIT_PROVIDER_OPTIONS = [
     value: "bitbucket",
   },
 ];
+
+export const CONTEXT_MENU_ICON_TEXT_CLASSNAME = "h-[30px]";
