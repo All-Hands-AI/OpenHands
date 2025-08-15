@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import sys
+from datetime import datetime, timezone
 
 from prompt_toolkit import print_formatted_text
 from prompt_toolkit.formatted_text import HTML
@@ -82,12 +83,11 @@ from openhands.memory.condenser.impl.llm_summarizing_condenser import (
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.storage.settings.file_settings_store import FileSettingsStore
 from openhands.storage.conversation.file_conversation_store import (
     FileConversationStore,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from datetime import datetime, timezone
+from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
 async def cleanup_session(
@@ -180,7 +180,7 @@ async def run_session(
             )
             await convo_store.save_metadata(metadata)
     except Exception as e:
-        logger.debug(f"Unable to save conversation metadata for {sid}: {e}")
+        logger.debug(f'Unable to save conversation metadata for {sid}: {e}')
 
     event_stream = runtime.event_stream
 
@@ -430,7 +430,7 @@ async def run_session(
         metadata.last_updated_at = datetime.now(timezone.utc)
         await convo_store.save_metadata(metadata)
     except Exception as e:
-        logger.debug(f"Unable to update conversation metadata for {sid}: {e}")
+        logger.debug(f'Unable to update conversation metadata for {sid}: {e}')
 
     if exit_reason == ExitReason.INTENTIONAL:
         print_formatted_text('✅ Session terminated successfully.\n')

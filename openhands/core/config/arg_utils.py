@@ -12,7 +12,9 @@ def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
     raise ValueError(f"Subparser '{name}' not found")
 
 
-def add_common_arguments(parser: argparse.ArgumentParser, *, include_name: bool = True) -> None:
+def add_common_arguments(
+    parser: argparse.ArgumentParser, *, include_name: bool = True
+) -> None:
     """Add common arguments shared between CLI and headless modes.
 
     include_name: whether to include the -n/--name option (True for headless/eval, False for CLI)
