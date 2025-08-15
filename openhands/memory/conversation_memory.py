@@ -217,19 +217,22 @@ class ConversationMemory:
             tool call results are available.
         """
         # create a regular message from an event
-        if isinstance(
-            action,
-            (
-                AgentDelegateAction,
-                AgentThinkAction,
-                IPythonRunCellAction,
-                FileEditAction,
-                FileReadAction,
-                BrowseInteractiveAction,
-                BrowseURLAction,
-                MCPAction,
-            ),
-        ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
+        if (
+            isinstance(
+                action,
+                (
+                    AgentDelegateAction,
+                    AgentThinkAction,
+                    IPythonRunCellAction,
+                    FileEditAction,
+                    BrowseInteractiveAction,
+                    BrowseURLAction,
+                    MCPAction,
+                ),
+            )
+            or (isinstance(action, CmdRunAction) and action.source == 'agent')
+            or (isinstance(action, FileReadAction) and action.source == 'agent')
+        ):
             tool_metadata = action.tool_call_metadata
             assert tool_metadata is not None, (
                 'Tool call metadata should NOT be None when function calling is enabled. Action: '
@@ -306,6 +309,14 @@ class ConversationMemory:
             return [
                 Message(
                     role='user',  # Always user for CmdRunAction
+                    content=content,
+                )
+            ]
+        elif isinstance(action, FileReadAction) and action.source == 'user':
+            content = [TextContent(text=f'User requested to read file: {action.path}')]
+            return [
+                Message(
+                    role='user',  # Always user for FileReadAction from user
                     content=content,
                 )
             ]

@@ -11,6 +11,7 @@ from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
     AgentFinishAction,
     CmdRunAction,
+    FileReadAction,
     MessageAction,
 )
 from openhands.events.action.message import SystemMessageAction
@@ -1579,3 +1580,56 @@ def test_process_ipython_observation_with_vision_disabled(
     message = messages[0]
     assert len(message.content) == 1
     assert isinstance(message.content[0], TextContent)
+
+
+def test_process_events_with_file_read_action_from_user(conversation_memory):
+    """Test that FileReadAction from user is processed correctly without requiring tool_call_metadata."""
+    # Create a FileReadAction from user (no tool_call_metadata)
+    file_read_action = FileReadAction(path='/test/file.txt')
+    file_read_action._source = EventSource.USER
+
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
+    # Process events - this should not raise an assertion error
+    messages = conversation_memory.process_events(
+        condensed_history=[file_read_action],
+        initial_user_action=initial_user_message,
+        max_message_chars=None,
+        vision_is_active=False,
+    )
+
+    # Check that the messages were processed correctly
+    assert len(messages) == 3  # System + initial user + file read action
+
+    # Check system message
+    assert messages[0].role == 'system'
+
+    # Check initial user message
+    assert messages[1].role == 'user'
+    assert messages[1].content[0].text == 'Initial user message'
+
+    # Check file read action message
+    assert messages[2].role == 'user'
+    assert 'User requested to read file: /test/file.txt' in messages[2].content[0].text
+
+
+def test_process_events_with_file_read_action_from_agent_requires_metadata(
+    conversation_memory,
+):
+    """Test that FileReadAction from agent still requires tool_call_metadata."""
+    # Create a FileReadAction from agent (no tool_call_metadata - should fail)
+    file_read_action = FileReadAction(path='/test/file.txt')
+    file_read_action._source = EventSource.AGENT
+
+    initial_user_message = MessageAction(content='Initial user message')
+    initial_user_message._source = EventSource.USER
+
+    # Process events - this should raise an assertion error for agent actions without metadata
+    with pytest.raises(AssertionError, match='Tool call metadata should NOT be None'):
+        conversation_memory.process_events(
+            condensed_history=[file_read_action],
+            initial_user_action=initial_user_message,
+            max_message_chars=None,
+            vision_is_active=False,
+        )
