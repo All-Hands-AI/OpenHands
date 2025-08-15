@@ -96,8 +96,7 @@ class SandboxConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'SandboxConfig']:
-        """
-        Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
+        """Create a mapping of SandboxConfig instances from a toml dictionary representing the [sandbox] section.
 
         The configuration is built from all keys in data.
 

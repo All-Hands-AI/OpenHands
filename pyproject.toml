@@ -6,7 +6,7 @@ requires = [
 
 [tool.poetry]
 name = "openhands-ai"
-version = "0.52.0"
+version = "0.53.0"
 description = "OpenHands: Code Less, Make More"
 authors = [ "OpenHands" ]
 license = "MIT"
@@ -126,6 +126,8 @@ pytest-cov = "*"
 pytest-asyncio = "*"
 pytest-forked = "*"
 pytest-xdist = "*"
+pytest-playwright = "^0.7.0"
+pytest-timeout = "^2.4.0"
 openai = "*"
 pandas = "*"
 reportlab = "*"

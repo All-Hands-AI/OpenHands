@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import toml
+import tomlkit
 from prompt_toolkit import HTML, print_formatted_text
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import clear, print_container
@@ -520,7 +520,7 @@ def load_config_file(file_path: Path) -> dict:
     if file_path.exists():
         try:
             with open(file_path, 'r') as f:
-                return toml.load(f)
+                return dict(tomlkit.load(f))
         except Exception:
             pass
 
@@ -530,9 +530,36 @@ def load_config_file(file_path: Path) -> dict:
 
 
 def save_config_file(config_data: dict, file_path: Path) -> None:
-    """Save the config file."""
+    """Save the config file with proper MCP formatting."""
+    doc = tomlkit.document()
+
+    for key, value in config_data.items():
+        if key == 'mcp':
+            # Handle MCP section specially
+            mcp_section = tomlkit.table()
+
+            for mcp_key, mcp_value in value.items():
+                # Create array with inline tables for server configurations
+                server_array = tomlkit.array()
+                for server_config in mcp_value:
+                    if isinstance(server_config, dict):
+                        # Create inline table for each server
+                        inline_table = tomlkit.inline_table()
+                        for server_key, server_val in server_config.items():
+                            inline_table[server_key] = server_val
+                        server_array.append(inline_table)
+                    else:
+                        # Handle non-dict values (like string URLs)
+                        server_array.append(server_config)
+                mcp_section[mcp_key] = server_array
+
+            doc[key] = mcp_section
+        else:
+            # Handle non-MCP sections normally
+            doc[key] = value
+
     with open(file_path, 'w') as f:
-        toml.dump(config_data, f)
+        f.write(tomlkit.dumps(doc))
 
 
 def _ensure_mcp_config_structure(config_data: dict) -> None:

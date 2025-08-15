@@ -116,7 +116,6 @@ def test_settings_immutability():
 
 def test_provider_handler_immutability():
     """Test that ProviderHandler maintains token immutability"""
-
     # Create initial tokens
     tokens = MappingProxyType(
         {ProviderType.GITHUB: ProviderToken(token=SecretStr('test'))}
@@ -309,7 +308,6 @@ async def test_set_event_stream_secrets(event_stream):
 
 def test_check_cmd_action_for_provider_token_ref():
     """Test detection of provider tokens in command actions"""
-
     # Test command with GitHub token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
     providers = ProviderHandler.check_cmd_action_for_provider_token_ref(cmd)
