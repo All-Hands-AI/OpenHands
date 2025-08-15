@@ -241,7 +241,7 @@ def test_microagent_flarglebargle(page: Page):
         'Expected agent to praise intelligence when flarglebargle is sent'
     )
     # Avoid obvious unrelated technical guidance
-    forbidden = ['docker', 'kubectl', 'kind ', 'git clone', 'error:']
+    forbidden = ['docker', 'kubectl', 'kind ', 'git clone', 'error:', '```']
     assert not any(w in combined for w in forbidden), (
         'Unexpected unrelated guidance in flarglebargle response'
     )
