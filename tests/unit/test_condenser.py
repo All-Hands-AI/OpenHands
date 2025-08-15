@@ -650,6 +650,8 @@ def test_structured_summary_condenser_from_config():
     # Since this condenser can't take advantage of caching, we intercept the
     # passed config and manually flip the caching prompt to False.
     assert not condenser.llm.config.caching_prompt
+
+
 def test_token_aware_condenser_from_config():
     """Test that TokenAwareCondenser objects can be made from config."""
     config = TokenAwareCondenserConfig(
@@ -667,29 +669,6 @@ def test_token_aware_condenser_from_config():
     assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
     assert condenser.threshold == 0.85
     assert condenser.keep_first == 2
-
-def test_structured_summary_condenser_from_config():
-    """Test that StructuredSummaryCondenser objects can be made from config."""
-    config = StructuredSummaryCondenserConfig(
-        max_size=50,
-        keep_first=10,
-        llm_config=LLMConfig(
-            model='gpt-4o',
-            api_key='test_key',
-            caching_prompt=True,
-        ),
-    )
-    condenser = Condenser.from_config(config)
-
-    assert isinstance(condenser, StructuredSummaryCondenser)
-    assert condenser.llm.config.model == 'gpt-4o'
-    assert condenser.llm.config.api_key.get_secret_value() == 'test_key'
-    assert condenser.max_size == 50
-    assert condenser.keep_first == 10
-
-    # Since this condenser can't take advantage of caching, we intercept the
-    # passed config and manually flip the caching prompt to False.
-    assert not condenser.llm.config.caching_prompt
 
 
 def test_structured_summary_condenser_invalid_config():
