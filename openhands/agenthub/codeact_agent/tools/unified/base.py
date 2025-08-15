@@ -7,6 +7,8 @@ from typing import Any
 from litellm import ChatCompletionToolParam
 
 from openhands.core.exceptions import FunctionCallValidationError
+# Backwards-compat alias for legacy imports
+ToolValidationError = FunctionCallValidationError
 
 
 class Tool(ABC):
