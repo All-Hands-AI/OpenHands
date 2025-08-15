@@ -276,8 +276,9 @@ def test_browsing_catchphrase(page: Page):
 
     # 3) Send browsing instruction
     prompt = (
-        'Please browse to https://www.all-hands.dev and tell me the main '
-        'catchphrase displayed on the page. Respond with only the exact catchphrase.'
+        'Use the web-browsing tool to navigate to https://www.all-hands.dev and '
+        'tell me the main catchphrase displayed on the page. Do not answer from '
+        'memory; perform the browsing action and respond with only the exact catchphrase.'
     )
     _send_prompt(page, prompt)
 
