@@ -12,8 +12,11 @@ def get_subparser(parser: ArgumentParser, name: str) -> ArgumentParser:
     raise ValueError(f"Subparser '{name}' not found")
 
 
-def add_common_arguments(parser: argparse.ArgumentParser) -> None:
-    """Add common arguments shared between CLI and headless modes."""
+def add_common_arguments(parser: argparse.ArgumentParser, *, include_name: bool = True) -> None:
+    """Add common arguments shared between CLI and headless modes.
+
+    include_name: whether to include the -n/--name option (True for headless/eval, False for CLI)
+    """
     parser.add_argument(
         '--config-file',
         type=str,
@@ -33,13 +36,14 @@ def add_common_arguments(parser: argparse.ArgumentParser) -> None:
         type=str,
         help='Path to a file containing the task. Overrides -t if both are provided.',
     )
-    parser.add_argument(
-        '-n',
-        '--name',
-        help='Session name',
-        type=str,
-        default='',
-    )
+    if include_name:
+        parser.add_argument(
+            '-n',
+            '--name',
+            help='Session name',
+            type=str,
+            default='',
+        )
     parser.add_argument(
         '--log-level',
         help='Set the log level',
@@ -189,19 +193,36 @@ def get_cli_parser() -> argparse.ArgumentParser:
     cli_parser = subparsers.add_parser(
         'cli', help='Run OpenHands in CLI mode (terminal interface)'
     )
-    add_common_arguments(cli_parser)
+    add_common_arguments(cli_parser, include_name=False)
 
+    # CLI-specific options
     cli_parser.add_argument(
         '--override-cli-mode',
         help='Override the default settings for CLI mode',
         type=bool,
         default=False,
     )
-    parser.add_argument(
+
+    # Mutually exclusive group: --conversation | --autoresume | --name
+    group = cli_parser.add_mutually_exclusive_group()
+    group.add_argument(
         '--conversation',
-        help='The conversation id to continue',
+        help='Explicit conversation id to continue',
         type=str,
         default=None,
+    )
+    group.add_argument(
+        '--autoresume',
+        help='Resume the most recent conversation',
+        action='store_true',
+        default=False,
+    )
+    group.add_argument(
+        '-n',
+        '--name',
+        help='Session name (ignored if --conversation or --autoresume is provided)',
+        type=str,
+        default='',
     )
 
     return parser

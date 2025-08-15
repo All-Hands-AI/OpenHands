@@ -83,6 +83,11 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.storage.conversation.file_conversation_store import (
+    FileConversationStore,
+)
+from openhands.storage.data_models.conversation_metadata import ConversationMetadata
+from datetime import datetime, timezone
 
 
 async def cleanup_session(
@@ -162,6 +167,20 @@ async def run_session(
     runtime.subscribe_to_shell_stream(stream_to_console)
 
     controller, initial_state = create_controller(agent, runtime, config)
+
+    # Ensure metadata exists on session start for new sessions
+    try:
+        if not conversation_id:
+            convo_store = await FileConversationStore.get_instance(
+                config=config, user_id=None
+            )
+            metadata = ConversationMetadata(
+                conversation_id=sid,
+                selected_repository=config.sandbox.selected_repo,
+            )
+            await convo_store.save_metadata(metadata)
+    except Exception as e:
+        logger.debug(f"Unable to save conversation metadata for {sid}: {e}")
 
     event_stream = runtime.event_stream
 
@@ -395,6 +414,23 @@ async def run_session(
     )
 
     await cleanup_session(loop, agent, runtime, controller)
+
+    # Update last_updated_at on session end
+    try:
+        convo_store = await FileConversationStore.get_instance(
+            config=config, user_id=None
+        )
+        try:
+            metadata = await convo_store.get_metadata(sid)
+        except FileNotFoundError:
+            metadata = ConversationMetadata(
+                conversation_id=sid,
+                selected_repository=config.sandbox.selected_repo,
+            )
+        metadata.last_updated_at = datetime.now(timezone.utc)
+        await convo_store.save_metadata(metadata)
+    except Exception as e:
+        logger.debug(f"Unable to update conversation metadata for {sid}: {e}")
 
     if exit_reason == ExitReason.INTENTIONAL:
         print_formatted_text('✅ Session terminated successfully.\n')
@@ -690,6 +726,18 @@ After reviewing the file, please ask the user what they would like to do with it
     # Setup the runtime
     get_runtime_cls(config.runtime).setup(config)
 
+    # Determine initial conversation id based on precedence:
+    # --conversation > --autoresume > --name
+    initial_conversation_id: str | None = None
+    if getattr(args, 'conversation', None):
+        initial_conversation_id = args.conversation
+    elif getattr(args, 'autoresume', False):
+        # Find the most recent conversation via FileConversationStore
+        store = await FileConversationStore.get_instance(config=config, user_id=None)
+        result = await store.search(limit=1)
+        if result.conversations:
+            initial_conversation_id = result.conversations[0].conversation_id
+
     # Run the first session
     new_session_requested = await run_session(
         loop,
@@ -697,9 +745,9 @@ After reviewing the file, please ask the user what they would like to do with it
         settings_store,
         current_dir,
         task_str,
-        session_name=args.name,
+        session_name=None if initial_conversation_id else args.name,
         skip_banner=banner_shown,
-        conversation_id=args.conversation,
+        conversation_id=initial_conversation_id,
     )
 
     # If a new session was requested, run it
