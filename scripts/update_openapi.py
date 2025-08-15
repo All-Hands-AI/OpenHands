@@ -33,6 +33,80 @@ except ImportError as e:
     sys.exit(1)
 
 
+def _sanitize_description(text: str) -> str:
+    """Remove internal, code-centric, or redundant sections from endpoint descriptions.
+
+    - Strip fenced code blocks
+    - Remove Args/Returns/Raises/Example/Examples/Notes sections
+    - Remove inline curl examples
+    - Avoid provider-implementation specifics like LiteLLM/Bedrock
+    """
+    import re
+
+    if not text:
+        return text
+
+    # Remove fenced code blocks
+    text = re.sub(r'```[\s\S]*?```', '', text, flags=re.MULTILINE)
+
+    # Remove common docstring sections (until next blank line or end)
+    for header in [
+        r'Args?:',
+        r'Returns?:',
+        r'Raises?:',
+        r'Example[s]?:',
+        r'Notes?:',
+    ]:
+        text = re.sub(rf'(?ms)^\s*{header}.*?(?:\n\s*\n|\Z)', '', text)
+
+    # Remove lines that contain curl examples
+    text = re.sub(r'(?im)^.*\bcurl\b.*$', '', text)
+
+    # Generalize provider-implementation specifics
+    text = re.sub(r'\bLiteLLM\b', 'configured model providers', text)
+    text = re.sub(r'\blitellm\b', 'configured providers', text)
+    text = re.sub(r'\bBedrock\b', '', text)
+
+    # Collapse excessive blank lines and trim
+    text = re.sub(r'\n{3,}', '\n\n', text).strip()
+    return text
+
+
+def _sanitize_spec(spec: dict) -> dict:
+    """Sanitize descriptions and summaries to be public-API friendly."""
+    path_summary_overrides = {
+        '/api/options/models': 'List Supported Models',
+        '/api/options/agents': 'List Agents',
+        '/api/options/security-analyzers': 'List Security Analyzers',
+        '/api/conversations/{conversation_id}/list-files': 'List Workspace Files',
+        '/api/conversations/{conversation_id}/select-file': 'Get File Content',
+        '/api/conversations/{conversation_id}/zip-directory': 'Download Workspace Archive',
+    }
+    path_description_overrides = {
+        '/api/options/models': 'List model identifiers available on this server based on configured providers.',
+        '/api/options/agents': 'List available agent types supported by this server.',
+        '/api/options/security-analyzers': 'List supported security analyzers.',
+        '/api/conversations/{conversation_id}/list-files': 'List workspace files visible to the conversation runtime. Applies .gitignore and internal ignore rules.',
+        '/api/conversations/{conversation_id}/select-file': 'Return the content of the given file from the conversation workspace.',
+        '/api/conversations/{conversation_id}/zip-directory': 'Return a ZIP archive of the current conversation workspace.',
+    }
+
+    for path, methods in list(spec.get('paths', {}).items()):
+        for method, meta in list(methods.items()):
+            if not isinstance(meta, dict):
+                continue
+            # Override overly specific summaries where helpful
+            if path in path_summary_overrides:
+                meta['summary'] = path_summary_overrides[path]
+            # Override description if provided; otherwise sanitize
+            if path in path_description_overrides:
+                meta['description'] = path_description_overrides[path]
+            elif 'description' in meta and isinstance(meta['description'], str):
+                meta['description'] = _sanitize_description(meta['description'])
+
+    return spec
+
+
 def generate_openapi_spec():
     """Generate the OpenAPI specification from the FastAPI app."""
     spec = app.openapi()
@@ -40,7 +114,10 @@ def generate_openapi_spec():
     # Explicitly exclude certain endpoints that are not useful for typical API users
     excluded_endpoints = [
         '/api/conversations/{conversation_id}/exp-config',  # Internal experimentation endpoint
-        '/api/user/installations',  # More suited for frontend applications
+        '/api/user/installations',  # Frontend/account-management specific
+        '/server_info',  # Operational/system diagnostics
+        '/api/conversations/{conversation_id}/vscode-url',  # UI/runtime convenience
+        '/api/conversations/{conversation_id}/web-hosts',  # UI/runtime convenience
     ]
 
     if 'paths' in spec:
@@ -48,6 +125,9 @@ def generate_openapi_spec():
             if endpoint in spec['paths']:
                 del spec['paths'][endpoint]
                 print(f'Excluded endpoint: {endpoint}')
+
+    # Sanitize descriptions and summaries
+    spec = _sanitize_spec(spec)
 
     return spec
 
