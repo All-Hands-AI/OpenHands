@@ -14,12 +14,15 @@ from playwright.sync_api import Page, expect
 
 def test_gitlab_repository_cloning(page: Page):
     """
-    Test GitLab repository integration:
+    Test repository integration with GitLab token configuration:
     1. Navigate to OpenHands and configure GitLab token in settings
-    2. Select a GitLab repository (gitlab-org/gitlab-foss)
+    2. Select the OpenHands repository (to test basic functionality)
     3. Launch the repository and wait for agent initialization
     4. Ask the agent to count lines in README.md to verify repository access
     5. Verify the agent can successfully work with the cloned repository
+    
+    Note: Using OpenHands repository initially to test basic functionality.
+    GitLab-specific repository testing can be added once basic flow works.
     """
     # Create test-results directory if it doesn't exist
     os.makedirs('test-results', exist_ok=True)
@@ -147,22 +150,17 @@ def test_gitlab_repository_cloning(page: Page):
     repo_dropdown.click()
     page.wait_for_timeout(1000)
 
-    # Clear any existing text and type the repository name
-    # For now, let's use a GitHub repository to test the basic functionality
-    # We can switch to GitLab once we verify the test works
-    repository_name = 'openhands-agent/OpenHands'
+    # Type the repository name (using exact logic from conversation test)
     try:
         page.keyboard.press('Control+a')  # Select all
-        page.keyboard.press('Delete')     # Delete selected text
-        page.wait_for_timeout(500)
-        page.keyboard.type(repository_name)
-        print(f'Typed repository name: {repository_name}')
+        page.keyboard.type('openhands-agent/OpenHands')
+        print('Used keyboard.type() for React Select component')
     except Exception as e:
         print(f'Keyboard input failed: {e}')
 
-    page.wait_for_timeout(5000)  # Wait longer for search results
+    page.wait_for_timeout(2000)  # Wait for search results
 
-    # Try to find and click the repository option
+    # Try to find and click the repository option (exact logic from conversation test)
     option_selectors = [
         '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
         '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
@@ -192,45 +190,13 @@ def test_gitlab_repository_cloning(page: Page):
             continue
 
     if not option_found:
-        print('Could not find repository option in dropdown, trying to select first available option')
-        # Try to find any available option and click it
-        generic_option_selectors = [
-            '[data-testid="repo-dropdown"] [role="option"]',
-            '[role="option"]',
-            '[data-testid="repo-dropdown"] div[id*="option"]',
-        ]
-        
-        for selector in generic_option_selectors:
-            try:
-                options = page.locator(selector)
-                if options.count() > 0:
-                    first_option = options.first
-                    if first_option.is_visible(timeout=2000):
-                        option_text = first_option.text_content()
-                        print(f'Found option: {option_text}')
-                        if 'openhands' in option_text.lower() or 'OpenHands' in option_text:
-                            first_option.click(force=True)
-                            print(f'Clicked repository option: {option_text}')
-                            option_found = True
-                            page.wait_for_timeout(2000)
-                            break
-            except Exception as e:
-                print(f'Error with selector {selector}: {e}')
-                continue
-
-    if not option_found:
-        print('Still could not find repository option, trying keyboard navigation')
+        print(
+            'Could not find repository option in dropdown, trying keyboard navigation'
+        )
         page.keyboard.press('ArrowDown')
         page.wait_for_timeout(500)
         page.keyboard.press('Enter')
         print('Used keyboard navigation to select option')
-
-    # Verify the selected repository
-    try:
-        selected_repo = repo_dropdown.text_content()
-        print(f'Selected repository appears to be: {selected_repo}')
-    except Exception as e:
-        print(f'Could not verify selected repository: {e}')
 
     page.screenshot(path='test-results/gitlab_04_repo_selected.png')
     print('Screenshot saved: gitlab_04_repo_selected.png')
