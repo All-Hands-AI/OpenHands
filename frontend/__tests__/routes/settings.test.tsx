@@ -123,11 +123,11 @@ describe("Settings Screen", () => {
 
   it("should render the saas navbar", async () => {
     const saasConfig = { APP_MODE: "saas" };
-    
+
     // Clear any existing query data and set the config
     mockQueryClient.clear();
     mockQueryClient.setQueryData(["config"], saasConfig);
-    
+
     const sectionsToInclude = [
       "user",
       "integrations",
