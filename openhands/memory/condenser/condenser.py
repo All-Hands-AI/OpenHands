@@ -35,9 +35,17 @@ CONDENSER_REGISTRY: dict[type[CondenserConfig], type[Condenser]] = {}
 
 
 class Condensation(BaseModel):
-    """Produced by a condenser to indicate the history has been condensed."""
+    """Produced by a condenser to indicate the history has been condensed.
+
+    Provides both `action` and legacy-compatible `event` attribute for pattern matching in tests.
+    """
 
     action: CondensationAction
+
+    # Legacy-compatible alias used by older tests/harnesses
+    @property
+    def event(self) -> CondensationAction:
+        return self.action
 
 
 class Condenser(ABC):
