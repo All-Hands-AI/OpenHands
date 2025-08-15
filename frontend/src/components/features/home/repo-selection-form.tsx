@@ -143,7 +143,7 @@ export function RepositorySelectionForm({
       testId="branch-dropdown"
       repositoryName={selectedRepository?.full_name}
       value={selectedBranch?.name || null}
-      placeholder="recent-branch"
+      placeholder=“your-branch"
       className="max-w-auto"
       disabled={!selectedRepository}
       onChange={handleBranchSelection}
