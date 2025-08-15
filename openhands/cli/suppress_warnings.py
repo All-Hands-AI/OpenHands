@@ -41,6 +41,12 @@ def suppress_cli_warnings():
         category=UserWarning,
     )
 
+    # Suppress SyntaxWarnings from pydub.utils about invalid escape sequences
+    warnings.filterwarnings(
+        'ignore',
+        category=SyntaxWarning,
+        module=r'pydub\.utils',
+    )
     # Suppress LiteLLM close_litellm_async_clients was never awaited warning
     warnings.filterwarnings(
         'ignore',
