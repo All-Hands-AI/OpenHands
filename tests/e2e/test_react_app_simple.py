@@ -30,6 +30,17 @@ def test_react_app_creation_simple(page: Page):
     print('Step 1: Navigating to OpenHands...')
     page.goto('http://localhost:12000')
     page.wait_for_load_state('networkidle', timeout=30000)
+    
+    # Debug: Print page title and URL
+    print(f'Page title: {page.title()}')
+    print(f'Page URL: {page.url}')
+    
+    # Debug: Check if page has any content
+    body_text = page.locator('body').text_content()
+    print(f'Page body text length: {len(body_text) if body_text else 0}')
+    if body_text and len(body_text) > 0:
+        print(f'First 200 chars of body: {body_text[:200]}...')
+    
     page.screenshot(path='test-results/react_simple_01_home.png')
     print('Screenshot saved: react_simple_01_home.png')
 
