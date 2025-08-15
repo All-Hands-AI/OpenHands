@@ -107,3 +107,11 @@ Potential differences to test for latency impact:
 - API credentials to run live tests
 - Whether to commit monkey patches vs behind a feature flag
 - Exact request payload produced by @google/genai for our tested scenarios (we can log via a small Node script)
+
+## Changes Implemented
+- OPENHANDS_GEMINI_CLI_COMPAT flag in OpenHands LLM to send thinking={type:'enabled'} and retain temperature/top_p for gemini-2.5-pro to mimic CLI.
+- experiments/gemini_latency_harness.py to benchmark OpenHands path.
+
+## TODO
+- Add minimal Node @google/genai script for parity tests and to log raw request payloads.
+- Monkey-patch LiteLLM to log final JSON request body for Gemini generateContent (temporary) to compare shapes.
