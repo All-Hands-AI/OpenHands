@@ -189,9 +189,12 @@ class BashSession:
         self.username = username
         self._initialized = False
         self.max_memory_mb = max_memory_mb
+        self._closed: bool = True
 
     def initialize(self) -> None:
-        self.server = libtmux.Server()
+        # Use a unique tmux socket name to avoid attaching to an existing server
+        # which can cause permission issues (e.g., /tmp/tmux-0/default owned by root)
+        self.server = libtmux.Server(socket_name=f'openhands-{uuid.uuid4()}')
         _shell_command = '/bin/bash'
         if self.username in ['root', 'openhands']:
             # This starts a non-login (new) shell for the given user
@@ -241,7 +244,7 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
-        self._closed: bool = False
+        self._closed = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
