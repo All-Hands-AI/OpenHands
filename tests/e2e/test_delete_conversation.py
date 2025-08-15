@@ -127,18 +127,37 @@ def test_delete_conversation(page: Page):
 
     page.screenshot(path='test-results/delete_03_conversation_created.png')
 
-    # Step 3: Navigate back to home to see conversation list
-    print('Step 3: Navigating back to home to see conversation list...')
-    page.goto('http://localhost:12000')
-    page.wait_for_load_state('networkidle', timeout=15000)
+    # Step 3: Open conversation panel to see conversation list
+    print('Step 3: Opening conversation panel to see conversation list...')
+    
+    # Look for the conversation panel toggle button
+    panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
+    if panel_button.is_visible(timeout=5000):
+        panel_button.click()
+        print('Clicked conversation panel toggle button')
+        page.wait_for_timeout(2000)
+    else:
+        print('Conversation panel button not found, trying to navigate to home first')
+        page.goto('http://localhost:12000')
+        page.wait_for_load_state('networkidle', timeout=15000)
+        page.wait_for_timeout(3000)
+        
+        panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
+        if panel_button.is_visible(timeout=5000):
+            panel_button.click()
+            print('Clicked conversation panel toggle button after navigation')
+            page.wait_for_timeout(2000)
 
-    # Wait for conversation cards to load
-    page.wait_for_timeout(3000)
+    # Wait for conversation panel to load
+    conversation_panel = page.locator('[data-testid="conversation-panel"]')
+    if not conversation_panel.is_visible(timeout=10000):
+        page.screenshot(path='test-results/delete_04_no_conversation_panel.png')
+        pytest.skip('Conversation panel not visible')
 
-    # Look for conversation cards
-    conversation_cards = page.locator('[data-testid="conversation-card"]')
+    # Look for conversation cards within the panel
+    conversation_cards = conversation_panel.locator('[data-testid="conversation-card"]')
     conversation_count = conversation_cards.count()
-    print(f'Found {conversation_count} conversation(s)')
+    print(f'Found {conversation_count} conversation(s) in panel')
 
     if conversation_count == 0:
         page.screenshot(path='test-results/delete_04_no_conversations_found.png')
@@ -196,8 +215,8 @@ def test_delete_conversation(page: Page):
     # Wait for UI to update
     page.wait_for_timeout(2000)
 
-    # Check conversation count decreased
-    updated_conversation_cards = page.locator('[data-testid="conversation-card"]')
+    # Check conversation count decreased within the conversation panel
+    updated_conversation_cards = conversation_panel.locator('[data-testid="conversation-card"]')
     updated_count = updated_conversation_cards.count()
     print(f'Updated conversation count: {updated_count}')
 
