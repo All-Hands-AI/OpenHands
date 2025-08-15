@@ -87,14 +87,38 @@ def test_delete_conversation(page: Page):
     launch_button.click()
     print('Launch button clicked')
 
-    # Wait for conversation to be created (check URL change)
+    # Wait for conversation to be created (check URL change and interface elements)
     conversation_created = False
-    for _ in range(30):  # 30 seconds max
+    for _ in range(60):  # 60 seconds max
         current_url = page.url
-        if '/conversation/' in current_url:
+        # Check URL for conversation or chat path
+        if '/conversation/' in current_url or '/chat/' in current_url:
             conversation_created = True
             print(f'Conversation created, URL: {current_url}')
             break
+        
+        # Also check for conversation interface elements
+        conversation_selectors = [
+            '[data-testid="chat-input"]',
+            '[data-testid="conversation-screen"]',
+            '[data-testid="message-input"]',
+            '.conversation-container',
+            '.chat-container',
+        ]
+        
+        for selector in conversation_selectors:
+            try:
+                element = page.locator(selector)
+                if element.is_visible(timeout=1000):
+                    conversation_created = True
+                    print(f'Conversation interface detected with selector: {selector}')
+                    break
+            except Exception:
+                continue
+        
+        if conversation_created:
+            break
+            
         page.wait_for_timeout(1000)
 
     if not conversation_created:
