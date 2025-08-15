@@ -21,9 +21,9 @@ from prompt_toolkit.input import create_input
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.layout.containers import HSplit, VSplit, Window
-from prompt_toolkit.layout.dimension import Dimension
+from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.patch_stdout import patch_stdout
@@ -392,7 +392,7 @@ def display_error(error: str) -> None:
 def display_command(event: CmdRunAction) -> None:
     # Create simple command frame
     command_text = f'$ {event.command}'
-    
+
     container = Frame(
         TextArea(
             text=command_text,
@@ -776,18 +776,8 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig, pending_action=None) -> str:
+async def read_confirmation_input(config: OpenHandsConfig, safety_risk: str) -> str:
     try:
-        # Get risk information from the pending action
-        safety_risk = None
-        if pending_action and hasattr(pending_action, 'safety_risk'):
-            safety_risk = getattr(pending_action, 'safety_risk')
-
-        # Only show confirmation dialog for HIGH risk commands
-        # For MEDIUM and LOW risk, auto-proceed (risk will be shown in action frame)
-        if safety_risk and safety_risk != 'HIGH':
-            return 'yes'  # Auto-proceed for non-HIGH risk commands
-
         # Create risk-aware question (only for HIGH risk now)
         if safety_risk == 'HIGH':
             question = '🚨 HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
@@ -889,7 +879,9 @@ def cli_confirm(
 
     def get_choice_text() -> list:
         # Use red styling for HIGH risk questions
-        question_style = 'class:risk-high' if safety_risk == 'HIGH' else 'class:question'
+        question_style = (
+            'class:risk-high' if safety_risk == 'HIGH' else 'class:question'
+        )
 
         return [
             (question_style, f'{question}\n\n'),
@@ -946,13 +938,15 @@ def cli_confirm(
     # Add frame for HIGH risk commands
     if safety_risk == 'HIGH':
         layout = Layout(
-            HSplit([
-                Frame(
-                    content_window,
-                    title='🚨 HIGH RISK',
-                    style='fg:#FF0000 bold',  # Red color for HIGH risk
-                )
-            ])
+            HSplit(
+                [
+                    Frame(
+                        content_window,
+                        title='🚨 HIGH RISK',
+                        style='fg:#FF0000 bold',  # Red color for HIGH risk
+                    )
+                ]
+            )
         )
     else:
         layout = Layout(HSplit([content_window]))
