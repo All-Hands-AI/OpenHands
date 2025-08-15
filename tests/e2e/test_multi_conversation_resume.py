@@ -466,7 +466,7 @@ def test_multi_conversation_resume(page: Page):
     print(f'Current URL: {current_url}')
 
     # Extract conversation ID from URL
-    conversation_id_match = re.search(r'/conversation/([a-f0-9]+)', current_url)
+    conversation_id_match = re.search(r'/conversations?/([a-f0-9]+)', current_url)
     if not conversation_id_match:
         # Try alternative URL patterns
         conversation_id_match = re.search(r'/chat/([a-f0-9]+)', current_url)
@@ -479,7 +479,7 @@ def test_multi_conversation_resume(page: Page):
         conversation_id = page.evaluate("""() => {
             // Try to get conversation ID from various sources
             const url = window.location.href;
-            const match = url.match(/\\/(?:conversation|chat)\\/([a-f0-9]+)/);
+            const match = url.match(/\\/(?:conversations?|chat)\\/([a-f0-9]+)/);
             if (match) return match[1];
 
             // Try localStorage
