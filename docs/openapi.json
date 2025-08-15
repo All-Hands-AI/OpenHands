@@ -1,305 +1,169 @@
 {
-  "openapi": "3.0.3",
+  "openapi": "3.1.0",
   "info": {
-    "title": "OpenHands API",
+    "title": "OpenHands",
     "description": "OpenHands: Code Less, Make More",
-    "version": "1.0.0"
+    "version": "0.53.0"
   },
-  "servers": [
-    {
-      "url": "https://app.all-hands.dev",
-      "description": "Production server"
-    },
-    {
-      "url": "http://localhost:3000",
-      "description": "Local development server"
-    }
-  ],
   "paths": {
-    "/health": {
+    "/api/options/models": {
       "get": {
-        "summary": "Health check",
-        "description": "Check if the API is running",
-        "operationId": "health",
+        "summary": "Get Litellm Models",
+        "description": "Get all models supported by LiteLLM.\n\nThis function combines models from litellm and Bedrock, removing any\nerror-prone Bedrock models.\n\nTo get the models:\n```sh\ncurl http://localhost:3000/api/litellm-models\n```\n\nReturns:\n    list[str]: A sorted list of unique model names.",
+        "operationId": "get_litellm_models_api_options_models_get",
         "responses": {
           "200": {
-            "description": "API is running",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string",
-                  "example": "OK"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/config": {
-      "get": {
-        "summary": "Get runtime configuration",
-        "description": "Retrieve the runtime configuration (session ID and runtime ID)",
-        "operationId": "getRemoteRuntimeConfig",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Runtime configuration",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "runtime_id": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "session_id": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/vscode-url": {
-      "get": {
-        "summary": "Get VSCode URL",
-        "description": "Get the VSCode URL for the conversation",
-        "operationId": "getVscodeUrl",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "VSCode URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "vscode_url": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Error getting VSCode URL",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "vscode_url": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/web-hosts": {
-      "get": {
-        "summary": "Get runtime hosts",
-        "description": "Get the hosts used by the runtime",
-        "operationId": "getHosts",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Runtime hosts",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "hosts": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Error getting runtime hosts",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "hosts": {
-                      "type": "array",
-                      "items": {
-                        "type": "string"
-                      },
-                      "nullable": true
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/conversations/{conversation_id}/submit-feedback": {
-      "post": {
-        "summary": "Submit feedback",
-        "description": "Submit user feedback for a conversation",
-        "operationId": "submitFeedback",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "version": {
+                  "items": {
                     "type": "string"
                   },
-                  "permissions": {
-                    "type": "string",
-                    "default": "private"
-                  },
-                  "polarity": {
-                    "type": "string"
-                  },
-                  "feedback": {
-                    "type": "string"
-                  }
+                  "type": "array",
+                  "title": "Response Get Litellm Models Api Options Models Get"
                 }
               }
             }
           }
         },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/options/agents": {
+      "get": {
+        "summary": "Get Agents",
+        "description": "Get all agents supported by LiteLLM.\n\nTo get the agents:\n```sh\ncurl http://localhost:3000/api/agents\n```\n\nReturns:\n    list[str]: A sorted list of agent names.",
+        "operationId": "get_agents_api_options_agents_get",
         "responses": {
           "200": {
-            "description": "Feedback submitted successfully",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Error submitting feedback",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Agents Api Options Agents Get"
                 }
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/options/security-analyzers": {
+      "get": {
+        "summary": "Get Security Analyzers",
+        "description": "Get all supported security analyzers.\n\nTo get the security analyzers:\n```sh\ncurl http://localhost:3000/api/security-analyzers\n```\n\nReturns:\n    list[str]: A sorted list of security analyzer names.",
+        "operationId": "get_security_analyzers_api_options_security_analyzers_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array",
+                  "title": "Response Get Security Analyzers Api Options Security Analyzers Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/options/config": {
+      "get": {
+        "summary": "Get Config",
+        "description": "Get current config.\n\nReturns:\n    dict[str, Any]: The current server configuration.",
+        "operationId": "get_config_api_options_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Config Api Options Config Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
       }
     },
     "/api/conversations/{conversation_id}/list-files": {
       "get": {
-        "summary": "List files",
-        "description": "List files in the specified path",
-        "operationId": "listFiles",
+        "summary": "List Files",
+        "description": "List files in the specified path.\n\nThis function retrieves a list of files from the agent's runtime file store,\nexcluding certain system and hidden files/directories.\n\nTo list files:\n```sh\ncurl http://localhost:3000/api/conversations/{conversation_id}/list-files\n```\n\nArgs:\n    request (Request): The incoming request object.\n    path (str, optional): The path to list files from. Defaults to None.\n\nReturns:\n    list: A list of file names in the specified path.\n\nRaises:\n    HTTPException: If there's an error listing the files.",
+        "operationId": "list_files_api_conversations__conversation_id__list_files_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           },
           {
             "name": "path",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
-            },
-            "description": "Path to list files from"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Path"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "List of files",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "title": "Response List Files Api Conversations  Conversation Id  List Files Get"
                 }
               }
             }
@@ -310,26 +174,30 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 404 List Files Api Conversations  Conversation Id  List Files Get"
                 }
               }
             }
           },
           "500": {
-            "description": "Error listing files",
+            "description": "Error listing or filtering files",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 500 List Files Api Conversations  Conversation Id  List Files Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -339,56 +207,45 @@
     },
     "/api/conversations/{conversation_id}/select-file": {
       "get": {
-        "summary": "Get file content",
-        "description": "Retrieve the content of a specified file",
-        "operationId": "selectFile",
+        "summary": "Select File",
+        "description": "Retrieve the content of a specified file.\n\nTo select a file:\n```sh\ncurl http://localhost:3000/api/conversations/{conversation_id}select-file?file=<file_path>\n```\n\nArgs:\n    file (str): The path of the file to be retrieved.\n        Expect path to be absolute inside the runtime.\n    request (Request): The incoming request object.\n\nReturns:\n    dict: A dictionary containing the file content.\n\nRaises:\n    HTTPException: If there's an error opening the file.",
+        "operationId": "select_file_api_conversations__conversation_id__select_file_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           },
           {
             "name": "file",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Path of the file to be retrieved"
+              "type": "string",
+              "title": "File"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "File content",
+            "description": "File content returned as JSON",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "code": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Unable to open binary file",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response 200 Select File Api Conversations  Conversation Id  Select File Get"
                 }
               }
             }
@@ -399,11 +256,30 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 500 Select File Api Conversations  Conversation Id  Select File Get"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "Unsupported media type",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response 415 Select File Api Conversations  Conversation Id  Select File Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -413,29 +289,30 @@
     },
     "/api/conversations/{conversation_id}/zip-directory": {
       "get": {
-        "summary": "Download workspace as zip",
-        "description": "Download the current workspace as a zip file",
-        "operationId": "zipCurrentWorkspace",
+        "summary": "Zip Current Workspace",
+        "operationId": "zip_current_workspace_api_conversations__conversation_id__zip_directory_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Workspace zip file",
+            "description": "Zipped workspace returned as FileResponse",
             "content": {
-              "application/zip": {
-                "schema": {
-                  "type": "string",
-                  "format": "binary"
-                }
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -445,11 +322,18 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 500 Zip Current Workspace Api Conversations  Conversation Id  Zip Directory Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -459,42 +343,72 @@
     },
     "/api/conversations/{conversation_id}/git/changes": {
       "get": {
-        "summary": "Get git changes",
-        "description": "Get git changes in the workspace",
-        "operationId": "gitChanges",
+        "summary": "Git Changes",
+        "operationId": "git_changes_api_conversations__conversation_id__git_changes_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Git changes",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  },
+                  "title": "Response Git Changes Api Conversations  Conversation Id  Git Changes Get"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not a git repository",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response 404 Git Changes Api Conversations  Conversation Id  Git Changes Get"
                 }
               }
             }
           },
           "500": {
-            "description": "Error getting git changes",
+            "description": "Error getting changes",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 500 Git Changes Api Conversations  Conversation Id  Git Changes Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -504,51 +418,64 @@
     },
     "/api/conversations/{conversation_id}/git/diff": {
       "get": {
-        "summary": "Get git diff",
-        "description": "Get git diff for a specific file",
-        "operationId": "gitDiff",
+        "summary": "Git Diff",
+        "operationId": "git_diff_api_conversations__conversation_id__git_diff_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           },
           {
             "name": "path",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Path of the file to get diff for"
+              "type": "string",
+              "title": "Path"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Git diff",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Git Diff Api Conversations  Conversation Id  Git Diff Get"
                 }
               }
             }
           },
           "500": {
-            "description": "Error getting git diff",
+            "description": "Error getting diff",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": true,
+                  "title": "Response 500 Git Diff Api Conversations  Conversation Id  Git Diff Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -556,59 +483,53 @@
         }
       }
     },
-    "/api/conversations/{conversation_id}/trajectory": {
-      "get": {
-        "summary": "Get trajectory",
-        "description": "Get the conversation trajectory",
-        "operationId": "getTrajectory",
+    "/api/conversations/{conversation_id}/upload-files": {
+      "post": {
+        "summary": "Upload Files",
+        "operationId": "upload_files_api_conversations__conversation_id__upload_files_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_files_api_conversations__conversation_id__upload_files_post"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Conversation trajectory",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "trajectory": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/POSTUploadFilesModel"
                 }
               }
             }
           },
-          "500": {
-            "description": "Error getting trajectory",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "trajectory": {
-                      "type": "array",
-                      "items": {
-                        "type": "object"
-                      },
-                      "nullable": true
-                    },
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -616,53 +537,277 @@
         }
       }
     },
-    "/api/conversations/{conversation_id}/security/{path}": {
-      "get": {
-        "summary": "Security analyzer API (GET)",
-        "description": "Catch-all route for security analyzer API GET requests",
-        "operationId": "securityApiGet",
+    "/api/conversations/{conversation_id}/submit-feedback": {
+      "post": {
+        "summary": "Submit Feedback",
+        "description": "Submit user feedback.\n\nThis function stores the provided feedback data.\n\nTo submit feedback:\n```sh\ncurl -X POST -d '{\"email\": \"test@example.com\"}' -H \"Authorization:\"\n```\n\nArgs:\n    request (Request): The incoming request object.\n    feedback (FeedbackDataModel): The feedback data to be stored.\n\nReturns:\n    dict: The stored feedback data.\n\nRaises:\n    HTTPException: If there's an error submitting the feedback.",
+        "operationId": "submit_feedback_api_conversations__conversation_id__submit_feedback_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Security analyzer API path"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Security analyzer response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": {}
               }
             }
           },
-          "404": {
-            "description": "Security analyzer not initialized",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "detail": {
-                      "type": "string"
-                    }
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/config": {
+      "get": {
+        "summary": "Get Remote Runtime Config",
+        "description": "Retrieve the runtime configuration.\n\nCurrently, this is the session ID and runtime ID (if available).",
+        "operationId": "get_remote_runtime_config_api_conversations__conversation_id__config_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/vscode-url": {
+      "get": {
+        "summary": "Get Vscode Url",
+        "description": "Get the VSCode URL.\n\nThis endpoint allows getting the VSCode URL.\n\nArgs:\n    request (Request): The incoming FastAPI request object.\n\nReturns:\n    JSONResponse: A JSON response indicating the success of the operation.",
+        "operationId": "get_vscode_url_api_conversations__conversation_id__vscode_url_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/web-hosts": {
+      "get": {
+        "summary": "Get Hosts",
+        "description": "Get the hosts used by the runtime.\n\nThis endpoint allows getting the hosts used by the runtime.\n\nArgs:\n    request (Request): The incoming FastAPI request object.\n\nReturns:\n    JSONResponse: A JSON response indicating the success of the operation.",
+        "operationId": "get_hosts_api_conversations__conversation_id__web_hosts_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/events": {
+      "get": {
+        "summary": "Search Events",
+        "description": "Search through the event stream with filtering and pagination.\n\nArgs:\n    conversation_id: The conversation ID\n    start_id: Starting ID in the event stream. Defaults to 0\n    end_id: Ending ID in the event stream\n    reverse: Whether to retrieve events in reverse order. Defaults to False.\n    filter: Filter for events\n    limit: Maximum number of events to return. Must be between 1 and 100. Defaults to 20\n    metadata: Conversation metadata (injected by dependency)\n    user_id: User ID (injected by dependency)\n\nReturns:\n    dict: Dictionary containing:\n        - events: List of matching events\n        - has_more: Whether there are more matching events after this batch\nRaises:\n    HTTPException: If conversation is not found or access is denied\n    ValueError: If limit is less than 1 or greater than 100",
+        "operationId": "search_events_api_conversations__conversation_id__events_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          },
+          {
+            "name": "start_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Start Id"
+            }
+          },
+          {
+            "name": "end_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Id"
+            }
+          },
+          {
+            "name": "reverse",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Reverse"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "title": "Limit"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EventFilter"
+                  },
+                  {
+                    "type": "null"
                   }
+                ],
+                "title": "Filter"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -670,175 +815,82 @@
         }
       },
       "post": {
-        "summary": "Security analyzer API (POST)",
-        "description": "Catch-all route for security analyzer API POST requests",
-        "operationId": "securityApiPost",
+        "summary": "Add Event",
+        "operationId": "add_event_api_conversations__conversation_id__events_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Security analyzer API path"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
-            }
-          }
-        },
         "responses": {
           "200": {
-            "description": "Security analyzer response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": {}
               }
             }
           },
-          "404": {
-            "description": "Security analyzer not initialized",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "detail": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
           }
         }
-      },
-      "put": {
-        "summary": "Security analyzer API (PUT)",
-        "description": "Catch-all route for security analyzer API PUT requests",
-        "operationId": "securityApiPut",
+      }
+    },
+    "/api/conversations/{conversation_id}/microagents": {
+      "get": {
+        "summary": "Get Microagents",
+        "description": "Get all microagents associated with the conversation.\n\nThis endpoint returns all repository and knowledge microagents that are loaded for the conversation.\n\nReturns:\n    JSONResponse: A JSON response containing the list of microagents.",
+        "operationId": "get_microagents_api_conversations__conversation_id__microagents_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Security analyzer API path"
-          }
-        ],
-        "requestBody": {
-          "required": false,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object"
-              }
+              "type": "string",
+              "title": "Conversation Id"
             }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Security analyzer response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Security analyzer not initialized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "detail": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "summary": "Security analyzer API (DELETE)",
-        "description": "Catch-all route for security analyzer API DELETE requests",
-        "operationId": "securityApiDelete",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          },
-          {
-            "name": "path",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Security analyzer API path"
           }
         ],
         "responses": {
           "200": {
-            "description": "Security analyzer response",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "object"
-                }
+                "schema": {}
               }
             }
           },
-          "404": {
-            "description": "Security analyzer not initialized",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "detail": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -848,93 +900,41 @@
     },
     "/api/conversations": {
       "post": {
-        "summary": "Create new conversation",
-        "description": "Initialize a new conversation",
-        "operationId": "newConversation",
+        "summary": "New Conversation",
+        "description": "Initialize a new session or join an existing one.\n\nAfter successful initialization, the client should connect to the WebSocket\nusing the returned conversation ID.",
+        "operationId": "new_conversation_api_conversations_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "repository": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Full name of the repository (e.g., owner/repo)"
-                  },
-                  "git_provider": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "The Git provider (e.g., github or gitlab). If omitted, all configured providers are checked for the repository."
-                  },
-                  "selected_branch": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "initial_user_msg": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "conversation_instructions": {
-                    "type": "string",
-                    "nullable": true,
-                    "description": "Optional instructions the agent must follow throughout the conversation while addressing the user's initial task"
-                  },
-                  "image_urls": {
-                    "type": "array",
-                    "items": {
-                      "type": "string"
-                    },
-                    "nullable": true
-                  },
-                  "replay_json": {
-                    "type": "string",
-                    "nullable": true
-                  }
-                }
+                "$ref": "#/components/schemas/InitSessionRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "Conversation created successfully",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "ok"
-                    },
-                    "conversation_id": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/ConversationResponse"
                 }
               }
             }
           },
-          "400": {
-            "description": "Error creating conversation",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "status": {
-                      "type": "string",
-                      "example": "error"
-                    },
-                    "message": {
-                      "type": "string"
-                    },
-                    "msg_id": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -942,18 +942,29 @@
         }
       },
       "get": {
-        "summary": "Search conversations",
-        "description": "Search for conversations",
-        "operationId": "searchConversations",
+        "summary": "Search Conversations",
+        "operationId": "search_conversations_api_conversations_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "page_id",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
-            },
-            "description": "Page ID for pagination"
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page Id"
+            }
           },
           {
             "name": "limit",
@@ -961,58 +972,60 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "default": 20
-            },
-            "description": "Number of conversations to return"
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "selected_repository",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected Repository"
+            }
+          },
+          {
+            "name": "conversation_trigger",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ConversationTrigger"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Conversation Trigger"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Conversations",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "results": {
-                      "type": "array",
-                      "items": {
-                        "type": "object",
-                        "properties": {
-                          "conversation_id": {
-                            "type": "string"
-                          },
-                          "title": {
-                            "type": "string"
-                          },
-                          "last_updated_at": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "created_at": {
-                            "type": "string",
-                            "format": "date-time"
-                          },
-                          "selected_repository": {
-                            "type": "string",
-                            "nullable": true
-                          },
-                          "status": {
-                            "type": "string",
-                            "enum": ["RUNNING", "STOPPED"]
-                          },
-                          "trigger": {
-                            "type": "string",
-                            "enum": ["GUI", "API"]
-                          }
-                        }
-                      }
-                    },
-                    "next_page_id": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  }
+                  "$ref": "#/components/schemas/ConversationInfoResultSet"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1022,109 +1035,49 @@
     },
     "/api/conversations/{conversation_id}": {
       "get": {
-        "summary": "Get conversation",
-        "description": "Get conversation details",
-        "operationId": "getConversation",
+        "summary": "Get Conversation",
+        "operationId": "get_conversation_api_conversations__conversation_id__get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Conversation details",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "conversation_id": {
-                      "type": "string"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/ConversationInfo"
                     },
-                    "title": {
-                      "type": "string"
-                    },
-                    "last_updated_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "created_at": {
-                      "type": "string",
-                      "format": "date-time"
-                    },
-                    "selected_repository": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "status": {
-                      "type": "string",
-                      "enum": ["RUNNING", "STOPPED"]
-                    },
-                    "trigger": {
-                      "type": "string",
-                      "enum": ["GUI", "API"]
+                    {
+                      "type": "null"
                     }
-                  }
+                  ],
+                  "title": "Response Get Conversation Api Conversations  Conversation Id  Get"
                 }
               }
             }
           },
-          "404": {
-            "description": "Conversation not found",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "nullable": true
-                }
-              }
-            }
-          }
-        }
-      },
-      "patch": {
-        "summary": "Update conversation",
-        "description": "Update conversation details",
-        "operationId": "updateConversation",
-        "parameters": [
-          {
-            "name": "conversation_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "title": {
-                    "type": "string"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Conversation updated successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "boolean"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1132,103 +1085,96 @@
         }
       },
       "delete": {
-        "summary": "Delete conversation",
-        "description": "Delete a conversation",
-        "operationId": "deleteConversation",
+        "summary": "Delete Conversation",
+        "operationId": "delete_conversation_api_conversations__conversation_id__delete",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
             "name": "conversation_id",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Conversation ID"
+              "type": "string",
+              "title": "Conversation Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Conversation deleted successfully",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "boolean"
+                  "type": "boolean",
+                  "title": "Response Delete Conversation Api Conversations  Conversation Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
           }
         }
-      }
-    },
-    "/api/user/repositories": {
-      "get": {
-        "summary": "Get user repositories",
-        "description": "Get repositories for the authenticated user",
-        "operationId": "getUserRepositories",
+      },
+      "patch": {
+        "summary": "Update Conversation",
+        "description": "Update conversation metadata.\n\nThis endpoint allows updating conversation details like title.\nOnly the conversation owner can update the conversation.\n\nArgs:\n    conversation_id: The ID of the conversation to update\n    data: The conversation update data (title, etc.)\n    user_id: The authenticated user ID\n    conversation_store: The conversation store dependency\n\nReturns:\n    bool: True if the conversation was updated successfully\n\nRaises:\n    HTTPException: If conversation is not found or user lacks permission",
+        "operationId": "update_conversation_api_conversations__conversation_id__patch",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
         "parameters": [
           {
-            "name": "sort",
-            "in": "query",
-            "required": false,
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
             "schema": {
               "type": "string",
-              "default": "pushed"
-            },
-            "description": "Sort order for repositories"
+              "title": "Conversation Id"
+            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateConversationRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "User repositories",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "full_name": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string",
-                        "nullable": true
-                      },
-                      "html_url": {
-                        "type": "string"
-                      },
-                      "private": {
-                        "type": "boolean"
-                      },
-                      "fork": {
-                        "type": "boolean"
-                      },
-                      "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      }
-                    }
-                  }
+                  "type": "boolean",
+                  "title": "Response Update Conversation Api Conversations  Conversation Id  Patch"
                 }
               }
             }
           },
-          "401": {
-            "description": "Authentication error",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unknown error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1236,160 +1182,50 @@
         }
       }
     },
-    "/api/user/info": {
+    "/api/conversations/{conversation_id}/remember-prompt": {
       "get": {
-        "summary": "Get user info",
-        "description": "Get information about the authenticated user",
-        "operationId": "getUser",
-        "responses": {
-          "200": {
-            "description": "User information",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "login": {
-                      "type": "string"
-                    },
-                    "name": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "email": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "avatar_url": {
-                      "type": "string",
-                      "nullable": true
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Authentication error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unknown error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
+        "summary": "Get Prompt",
+        "operationId": "get_prompt_api_conversations__conversation_id__remember_prompt_get",
+        "security": [
+          {
+            "APIKeyHeader": []
           }
-        }
-      }
-    },
-    "/api/user/search/repositories": {
-      "get": {
-        "summary": "Search repositories",
-        "description": "Search for repositories",
-        "operationId": "searchRepositories",
+        ],
         "parameters": [
           {
-            "name": "query",
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          },
+          {
+            "name": "event_id",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
-            },
-            "description": "Search query"
-          },
-          {
-            "name": "per_page",
-            "in": "query",
-            "required": false,
-            "schema": {
               "type": "integer",
-              "default": 5
-            },
-            "description": "Number of repositories to return per page"
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "stars"
-            },
-            "description": "Sort order for repositories"
-          },
-          {
-            "name": "order",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "desc"
-            },
-            "description": "Sort direction"
+              "title": "Event Id"
+            }
           }
         ],
         "responses": {
           "200": {
-            "description": "Search results",
+            "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "full_name": {
-                        "type": "string"
-                      },
-                      "description": {
-                        "type": "string",
-                        "nullable": true
-                      },
-                      "html_url": {
-                        "type": "string"
-                      },
-                      "private": {
-                        "type": "boolean"
-                      },
-                      "fork": {
-                        "type": "boolean"
-                      },
-                      "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      }
-                    }
-                  }
-                }
+                "schema": {}
               }
             }
           },
-          "401": {
-            "description": "Authentication error",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Unknown error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1397,59 +1233,154 @@
         }
       }
     },
-    "/api/user/suggested-tasks": {
-      "get": {
-        "summary": "Get suggested tasks",
-        "description": "Get suggested tasks for the authenticated user across their most recently pushed repositories",
-        "operationId": "getSuggestedTasks",
+    "/api/conversations/{conversation_id}/start": {
+      "post": {
+        "summary": "Start Conversation",
+        "description": "Start an agent loop for a conversation.\n\nThis endpoint calls the conversation_manager's maybe_start_agent_loop method\nto start a conversation. If the conversation is already running, it will\nreturn the existing agent loop info.",
+        "operationId": "start_conversation_api_conversations__conversation_id__start_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProvidersSetModel"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Suggested tasks",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "title": {
-                        "type": "string"
-                      },
-                      "url": {
-                        "type": "string"
-                      },
-                      "repository": {
-                        "type": "string"
-                      },
-                      "type": {
-                        "type": "string"
-                      },
-                      "created_at": {
-                        "type": "string",
-                        "format": "date-time"
-                      }
-                    }
-                  }
+                  "$ref": "#/components/schemas/ConversationResponse"
                 }
               }
             }
           },
-          "401": {
-            "description": "Authentication error",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/stop": {
+      "post": {
+        "summary": "Stop Conversation",
+        "description": "Stop an agent loop for a conversation.\n\nThis endpoint calls the conversation_manager's close_session method\nto stop a conversation.",
+        "operationId": "stop_conversation_api_conversations__conversation_id__stop_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConversationResponse"
                 }
               }
             }
           },
-          "500": {
-            "description": "Unknown error",
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "string"
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/exp-config": {
+      "post": {
+        "summary": "Add Experiment Config For Conversation",
+        "operationId": "add_experiment_config_for_conversation_api_conversations__conversation_id__exp_config_post",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ExperimentConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean",
+                  "title": "Response Add Experiment Config For Conversation Api Conversations  Conversation Id  Exp Config Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1459,73 +1390,15 @@
     },
     "/api/settings": {
       "get": {
-        "summary": "Get settings",
-        "description": "Get user settings",
-        "operationId": "loadSettings",
+        "summary": "Load Settings",
+        "operationId": "load_settings_api_settings_get",
         "responses": {
           "200": {
-            "description": "User settings",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "properties": {
-                    "language": {
-                      "type": "string"
-                    },
-                    "agent": {
-                      "type": "string"
-                    },
-                    "security_analyzer": {
-                      "type": "string"
-                    },
-                    "confirmation_mode": {
-                      "type": "boolean"
-                    },
-                    "llm_model": {
-                      "type": "string"
-                    },
-                    "llm_api_key_set": {
-                      "type": "boolean"
-                    },
-                    "llm_base_url": {
-                      "type": "string",
-                      "nullable": true
-                    },
-                    "remote_runtime_resource_factor": {
-                      "type": "number"
-                    },
-                    "enable_default_condenser": {
-                      "type": "boolean"
-                    },
-                    "enable_sound_notifications": {
-                      "type": "boolean"
-                    },
-                    "user_consents_to_analytics": {
-                      "type": "boolean"
-                    },
-                    "provider_tokens_set": {
-                      "type": "object",
-                      "additionalProperties": {
-                        "type": "boolean"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Invalid token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "$ref": "#/components/schemas/GETSettingsModel"
                 }
               }
             }
@@ -1535,86 +1408,9 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Store settings",
-        "description": "Store user settings",
-        "operationId": "storeSettings",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "language": {
-                    "type": "string"
-                  },
-                  "agent": {
-                    "type": "string"
-                  },
-                  "security_analyzer": {
-                    "type": "string"
-                  },
-                  "confirmation_mode": {
-                    "type": "boolean"
-                  },
-                  "llm_model": {
-                    "type": "string"
-                  },
-                  "llm_api_key": {
-                    "type": "string"
-                  },
-                  "llm_base_url": {
-                    "type": "string",
-                    "nullable": true
-                  },
-                  "remote_runtime_resource_factor": {
-                    "type": "number"
-                  },
-                  "enable_default_condenser": {
-                    "type": "boolean"
-                  },
-                  "enable_sound_notifications": {
-                    "type": "boolean"
-                  },
-                  "user_consents_to_analytics": {
-                    "type": "boolean"
-                  },
-                  "provider_tokens": {
-                    "type": "object",
-                    "additionalProperties": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Settings stored successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "title": "Response 404 Load Settings Api Settings Get"
                 }
               }
             }
@@ -1624,12 +1420,42 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "title": "Response 401 Load Settings Api Settings Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Store Settings",
+        "operationId": "store_settings_api_settings_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Settings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Settings stored successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response 200 Store Settings Api Settings Post"
                 }
               }
             }
@@ -1639,77 +1465,292 @@
             "content": {
               "application/json": {
                 "schema": {
+                  "additionalProperties": true,
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/reset-settings": {
-      "post": {
-        "summary": "Reset settings (Deprecated)",
-        "description": "This endpoint is deprecated and will return a 410 Gone error. Reset functionality has been removed.",
-        "operationId": "resetSettings",
-        "deprecated": true,
-        "responses": {
-          "410": {
-            "description": "Feature removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string",
-                      "example": "Reset settings functionality has been removed."
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/unset-settings-tokens": {
-      "post": {
-        "summary": "Unset settings tokens",
-        "description": "Unset provider tokens in settings",
-        "operationId": "unsetSettingsTokens",
-        "responses": {
-          "200": {
-            "description": "Tokens unset successfully",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "message": {
-                      "type": "string"
-                    }
-                  }
+                  "title": "Response 500 Store Settings Api Settings Post"
                 }
               }
             }
           },
-          "500": {
-            "description": "Error unsetting tokens",
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/reset-settings": {
+      "post": {
+        "summary": "Reset Settings",
+        "description": "Resets user settings. (Deprecated)",
+        "operationId": "reset_settings_api_reset_settings_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "410": {
+            "description": "Reset settings functionality has been removed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response 410 Reset Settings Api Reset Settings Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/add-git-providers": {
+      "post": {
+        "summary": "Store Provider Tokens",
+        "operationId": "store_provider_tokens_api_add_git_providers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/POSTProviderModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/unset-provider-tokens": {
+      "post": {
+        "summary": "Unset Provider Tokens",
+        "operationId": "unset_provider_tokens_api_unset_provider_tokens_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Unset Provider Tokens Api Unset Provider Tokens Post"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/secrets": {
+      "get": {
+        "summary": "Load Custom Secrets Names",
+        "operationId": "load_custom_secrets_names_api_secrets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GETCustomSecrets"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      },
+      "post": {
+        "summary": "Create Custom Secret",
+        "operationId": "create_custom_secret_api_secrets_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomSecretModel"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object",
+                  "title": "Response Create Custom Secret Api Secrets Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/secrets/{secret_id}": {
+      "put": {
+        "summary": "Update Custom Secret",
+        "operationId": "update_custom_secret_api_secrets__secret_id__put",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "secret_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Secret Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomSecretWithoutValueModel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  }
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Update Custom Secret Api Secrets  Secret Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Custom Secret",
+        "operationId": "delete_custom_secret_api_secrets__secret_id__delete",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "secret_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Secret Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1717,21 +1758,46 @@
         }
       }
     },
-    "/api/options/models": {
+    "/api/user/installations": {
       "get": {
-        "summary": "Get models",
-        "description": "Get all models supported by LiteLLM",
-        "operationId": "getLitellmModels",
+        "summary": "Get User Installations",
+        "operationId": "get_user_installations_api_user_installations_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "provider",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ProviderType"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of models",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
                     "type": "string"
-                  }
+                  },
+                  "title": "Response Get User Installations Api User Installations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1739,21 +1805,112 @@
         }
       }
     },
-    "/api/options/agents": {
+    "/api/user/repositories": {
       "get": {
-        "summary": "Get agents",
-        "description": "Get all agents supported by OpenHands",
-        "operationId": "getAgents",
+        "summary": "Get User Repositories",
+        "operationId": "get_user_repositories_api_user_repositories_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "pushed",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "selected_provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected Provider"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Page"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "installation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Installation Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
-            "description": "List of agents",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
-                  }
+                    "$ref": "#/components/schemas/Repository"
+                  },
+                  "title": "Response Get User Repositories Api User Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1761,21 +1918,116 @@
         }
       }
     },
-    "/api/options/security-analyzers": {
+    "/api/user/info": {
       "get": {
-        "summary": "Get security analyzers",
-        "description": "Get all supported security analyzers",
-        "operationId": "getSecurityAnalyzers",
+        "summary": "Get User",
+        "operationId": "get_user_api_user_info_get",
         "responses": {
           "200": {
-            "description": "List of security analyzers",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/user/search/repositories": {
+      "get": {
+        "summary": "Search Repositories",
+        "operationId": "search_repositories_api_user_search_repositories_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Query"
+            }
+          },
+          {
+            "name": "per_page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "title": "Per Page"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "stars",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "desc",
+              "title": "Order"
+            }
+          },
+          {
+            "name": "selected_provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ProviderType"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Selected Provider"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "array",
                   "items": {
-                    "type": "string"
-                  }
+                    "$ref": "#/components/schemas/Repository"
+                  },
+                  "title": "Response Search Repositories Api User Search Repositories Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -1783,19 +2035,276 @@
         }
       }
     },
-    "/api/options/config": {
+    "/api/user/suggested-tasks": {
       "get": {
-        "summary": "Get config",
-        "description": "Get current server configuration",
-        "operationId": "getConfig",
+        "summary": "Get Suggested Tasks",
+        "description": "Get suggested tasks for the authenticated user across their most recently pushed repositories.\n\nReturns:\n- PRs owned by the user\n- Issues assigned to the user.",
+        "operationId": "get_suggested_tasks_api_user_suggested_tasks_get",
         "responses": {
           "200": {
-            "description": "Server configuration",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "items": {
+                    "$ref": "#/components/schemas/SuggestedTask"
+                  },
+                  "type": "array",
+                  "title": "Response Get Suggested Tasks Api User Suggested Tasks Get"
                 }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ]
+      }
+    },
+    "/api/user/repository/branches": {
+      "get": {
+        "summary": "Get Repository Branches",
+        "description": "Get branches for a repository.\n\nArgs:\n    repository: The repository name in the format 'owner/repo'\n\nReturns:\n    A list of branches for the repository",
+        "operationId": "get_repository_branches_api_user_repository_branches_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "repository",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Repository"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Branch"
+                  },
+                  "title": "Response Get Repository Branches Api User Repository Branches Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/repository/{repository_name}/microagents": {
+      "get": {
+        "summary": "Get Repository Microagents",
+        "description": "Scan the microagents directory of a repository and return the list of microagents.\n\nThe microagents directory location depends on the git provider and actual repository name:\n- If git provider is not GitLab and actual repository name is \".openhands\": scans \"microagents\" folder\n- If git provider is GitLab and actual repository name is \"openhands-config\": scans \"microagents\" folder\n- Otherwise: scans \".openhands/microagents\" folder\n\nNote: This API returns microagent metadata without content for performance.\nUse the separate content API to fetch individual microagent content.\n\nArgs:\n    repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'\n    provider_tokens: Provider tokens for authentication\n    access_token: Access token for external authentication\n    user_id: User ID for authentication\n\nReturns:\n    List of microagents found in the repository's microagents directory (without content)",
+        "operationId": "get_repository_microagents_api_user_repository__repository_name__microagents_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "repository_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Repository Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MicroagentResponse"
+                  },
+                  "title": "Response Get Repository Microagents Api User Repository  Repository Name  Microagents Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/user/repository/{repository_name}/microagents/content": {
+      "get": {
+        "summary": "Get Repository Microagent Content",
+        "description": "Fetch the content of a specific microagent file from a repository.\n\nArgs:\n    repository_name: Repository name in the format 'owner/repo' or 'domain/owner/repo'\n    file_path: Query parameter - Path to the microagent file within the repository\n    provider_tokens: Provider tokens for authentication\n    access_token: Access token for external authentication\n    user_id: User ID for authentication\n\nReturns:\n    Microagent file content and metadata\n\nExample:\n    GET /api/user/repository/owner/repo/microagents/content?file_path=.openhands/microagents/my-agent.md",
+        "operationId": "get_repository_microagent_content_api_user_repository__repository_name__microagents_content_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "repository_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Repository Name"
+            }
+          },
+          {
+            "name": "file_path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Path to the microagent file within the repository",
+              "title": "File Path"
+            },
+            "description": "Path to the microagent file within the repository"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MicroagentContentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/conversations/{conversation_id}/trajectory": {
+      "get": {
+        "summary": "Get Trajectory",
+        "description": "Get trajectory.\n\nThis function retrieves the current trajectory and returns it.\n\nArgs:\n    request (Request): The incoming request object.\n\nReturns:\n    JSONResponse: A JSON response containing the trajectory as a list of\n    events.",
+        "operationId": "get_trajectory_api_conversations__conversation_id__trajectory_get",
+        "security": [
+          {
+            "APIKeyHeader": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "conversation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Conversation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/alive": {
+      "get": {
+        "summary": "Alive",
+        "operationId": "alive_alive_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/server_info": {
+      "get": {
+        "summary": "Get Server Info",
+        "operationId": "get_server_info_server_info_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -1805,292 +2314,1785 @@
   },
   "components": {
     "schemas": {
-      "Repository": {
-        "type": "object",
+      "Body_upload_files_api_conversations__conversation_id__upload_files_post": {
         "properties": {
-          "full_name": {
-            "type": "string"
-          },
-          "description": {
-            "type": "string",
-            "nullable": true
-          },
-          "html_url": {
-            "type": "string"
-          },
-          "private": {
-            "type": "boolean"
-          },
-          "fork": {
-            "type": "boolean"
-          },
-          "updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "owner_type": {
-            "type": "string",
-            "enum": ["user", "organization"],
-            "nullable": true
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
           }
-        }
-      },
-      "User": {
+        },
         "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_files_api_conversations__conversation_id__upload_files_post"
+      },
+      "Branch": {
         "properties": {
-          "login": {
-            "type": "string"
-          },
           "name": {
             "type": "string",
-            "nullable": true
+            "title": "Name"
+          },
+          "commit_sha": {
+            "type": "string",
+            "title": "Commit Sha"
+          },
+          "protected": {
+            "type": "boolean",
+            "title": "Protected"
+          },
+          "last_push_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Push Date"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "commit_sha",
+          "protected"
+        ],
+        "title": "Branch"
+      },
+      "ConversationInfo": {
+        "properties": {
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "last_updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Updated At"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ConversationStatus",
+            "default": "STOPPED"
+          },
+          "runtime_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RuntimeStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "selected_repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Repository"
+          },
+          "selected_branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Branch"
+          },
+          "git_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "trigger": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationTrigger"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "num_connections": {
+            "type": "integer",
+            "title": "Num Connections",
+            "default": 0
+          },
+          "url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Url"
+          },
+          "session_api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Api Key"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "pr_number": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Pr Number"
+          }
+        },
+        "type": "object",
+        "required": [
+          "conversation_id",
+          "title"
+        ],
+        "title": "ConversationInfo"
+      },
+      "ConversationInfoResultSet": {
+        "properties": {
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/ConversationInfo"
+            },
+            "type": "array",
+            "title": "Results"
+          },
+          "next_page_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Page Id"
+          }
+        },
+        "type": "object",
+        "title": "ConversationInfoResultSet"
+      },
+      "ConversationResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "conversation_id": {
+            "type": "string",
+            "title": "Conversation Id"
+          },
+          "message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Message"
+          },
+          "conversation_status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConversationStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "conversation_id"
+        ],
+        "title": "ConversationResponse"
+      },
+      "ConversationStatus": {
+        "type": "string",
+        "enum": [
+          "STARTING",
+          "RUNNING",
+          "STOPPED"
+        ],
+        "title": "ConversationStatus"
+      },
+      "ConversationTrigger": {
+        "type": "string",
+        "enum": [
+          "resolver",
+          "gui",
+          "suggested_task",
+          "openhands_api",
+          "slack",
+          "microagent_management",
+          "jira",
+          "jira_dc",
+          "linear"
+        ],
+        "title": "ConversationTrigger"
+      },
+      "CreateMicroagent": {
+        "properties": {
+          "repo": {
+            "type": "string",
+            "title": "Repo"
+          },
+          "git_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "repo"
+        ],
+        "title": "CreateMicroagent"
+      },
+      "CustomSecretModel": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "value": {
+            "type": "string",
+            "format": "password",
+            "title": "Value",
+            "writeOnly": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "CustomSecretModel",
+        "description": "Custom secret model with value"
+      },
+      "CustomSecretWithoutValueModel": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CustomSecretWithoutValueModel",
+        "description": "Custom secret model without value"
+      },
+      "EventFilter": {
+        "properties": {
+          "exclude_hidden": {
+            "type": "boolean",
+            "title": "Exclude Hidden",
+            "default": false
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "include_types": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Include Types"
+          },
+          "exclude_types": {
+            "anyOf": [
+              {
+                "items": {},
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exclude Types"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          }
+        },
+        "type": "object",
+        "title": "EventFilter"
+      },
+      "ExperimentConfig": {
+        "properties": {
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          }
+        },
+        "type": "object",
+        "title": "ExperimentConfig"
+      },
+      "GETCustomSecrets": {
+        "properties": {
+          "custom_secrets": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/CustomSecretWithoutValueModel"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Custom Secrets"
+          }
+        },
+        "type": "object",
+        "title": "GETCustomSecrets",
+        "description": "Custom secrets names"
+      },
+      "GETSettingsModel": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "max_iterations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Iterations"
+          },
+          "security_analyzer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Security Analyzer"
+          },
+          "confirmation_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Mode"
+          },
+          "llm_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model"
+          },
+          "llm_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Api Key"
+          },
+          "llm_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Base Url"
+          },
+          "remote_runtime_resource_factor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote Runtime Resource Factor"
+          },
+          "secrets_store": {
+            "$ref": "#/components/schemas/UserSecrets-Output"
+          },
+          "enable_default_condenser": {
+            "type": "boolean",
+            "title": "Enable Default Condenser",
+            "default": true
+          },
+          "enable_sound_notifications": {
+            "type": "boolean",
+            "title": "Enable Sound Notifications",
+            "default": false
+          },
+          "enable_proactive_conversation_starters": {
+            "type": "boolean",
+            "title": "Enable Proactive Conversation Starters",
+            "default": true
+          },
+          "enable_solvability_analysis": {
+            "type": "boolean",
+            "title": "Enable Solvability Analysis",
+            "default": true
+          },
+          "user_consents_to_analytics": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Consents To Analytics"
+          },
+          "sandbox_base_container_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Base Container Image"
+          },
+          "sandbox_runtime_container_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Runtime Container Image"
+          },
+          "mcp_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MCPConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "search_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Api Key"
+          },
+          "sandbox_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Api Key"
+          },
+          "max_budget_per_task": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Budget Per Task"
           },
           "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "email_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          },
+          "git_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git User Name"
+          },
+          "git_user_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git User Email"
+          },
+          "provider_tokens_set": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "propertyNames": {
+                  "$ref": "#/components/schemas/ProviderType"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Tokens Set"
+          },
+          "llm_api_key_set": {
+            "type": "boolean",
+            "title": "Llm Api Key Set"
+          },
+          "search_api_key_set": {
+            "type": "boolean",
+            "title": "Search Api Key Set",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "llm_api_key_set"
+        ],
+        "title": "GETSettingsModel",
+        "description": "Settings with additional token data for the frontend"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "InitSessionRequest": {
+        "properties": {
+          "repository": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repository"
+          },
+          "git_provider": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "selected_branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Selected Branch"
+          },
+          "initial_user_msg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Initial User Msg"
+          },
+          "image_urls": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Urls"
+          },
+          "replay_json": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replay Json"
+          },
+          "suggested_task": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SuggestedTask"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "create_microagent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CreateMicroagent"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Instructions"
+          },
+          "mcp_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MCPConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "conversation_id": {
             "type": "string",
-            "nullable": true
+            "title": "Conversation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "InitSessionRequest"
+      },
+      "MCPConfig": {
+        "properties": {
+          "sse_servers": {
+            "items": {
+              "$ref": "#/components/schemas/MCPSSEServerConfig"
+            },
+            "type": "array",
+            "title": "Sse Servers"
+          },
+          "stdio_servers": {
+            "items": {
+              "$ref": "#/components/schemas/MCPStdioServerConfig"
+            },
+            "type": "array",
+            "title": "Stdio Servers"
+          },
+          "shttp_servers": {
+            "items": {
+              "$ref": "#/components/schemas/MCPSHTTPServerConfig"
+            },
+            "type": "array",
+            "title": "Shttp Servers"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "MCPConfig",
+        "description": "Configuration for MCP (Message Control Protocol) settings.\n\nAttributes:\n    sse_servers: List of MCP SSE server configs\n    stdio_servers: List of MCP stdio server configs. These servers will be added to the MCP Router running inside runtime container.\n    shttp_servers: List of MCP HTTP server configs."
+      },
+      "MCPSHTTPServerConfig": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "MCPSHTTPServerConfig"
+      },
+      "MCPSSEServerConfig": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url"
+          },
+          "api_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key"
+          }
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "MCPSSEServerConfig",
+        "description": "Configuration for a single MCP server.\n\nAttributes:\n    url: The server URL\n    api_key: Optional API key for authentication"
+      },
+      "MCPStdioServerConfig": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "command": {
+            "type": "string",
+            "title": "Command"
+          },
+          "args": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Args"
+          },
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Env"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "command"
+        ],
+        "title": "MCPStdioServerConfig",
+        "description": "Configuration for a MCP server that uses stdio.\n\nAttributes:\n    name: The name of the server\n    command: The command to run the server\n    args: The arguments to pass to the server\n    env: The environment variables to set for the server"
+      },
+      "MicroagentContentResponse": {
+        "properties": {
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "triggers": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Triggers",
+            "default": []
+          },
+          "git_provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Provider"
+          }
+        },
+        "type": "object",
+        "required": [
+          "content",
+          "path"
+        ],
+        "title": "MicroagentContentResponse",
+        "description": "Response model for individual microagent content endpoint."
+      },
+      "MicroagentResponse": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "path": {
+            "type": "string",
+            "title": "Path"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "path",
+          "created_at"
+        ],
+        "title": "MicroagentResponse",
+        "description": "Response model for microagents endpoint.\n\nNote: This model only includes basic metadata that can be determined\nwithout parsing microagent content. Use the separate content API\nto get detailed microagent information."
+      },
+      "OwnerType": {
+        "type": "string",
+        "enum": [
+          "user",
+          "organization"
+        ],
+        "title": "OwnerType"
+      },
+      "POSTProviderModel": {
+        "properties": {
+          "mcp_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MCPConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_tokens": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ProviderToken"
+            },
+            "propertyNames": {
+              "$ref": "#/components/schemas/ProviderType"
+            },
+            "type": "object",
+            "title": "Provider Tokens",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "title": "POSTProviderModel",
+        "description": "Settings for POST requests"
+      },
+      "POSTUploadFilesModel": {
+        "properties": {
+          "file_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "File Urls"
+          },
+          "skipped_files": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_urls",
+          "skipped_files"
+        ],
+        "title": "POSTUploadFilesModel",
+        "description": "Upload files response model"
+      },
+      "ProviderToken": {
+        "properties": {
+          "token": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token"
+          },
+          "user_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Id"
+          },
+          "host": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Host"
+          }
+        },
+        "type": "object",
+        "title": "ProviderToken"
+      },
+      "ProviderType": {
+        "type": "string",
+        "enum": [
+          "github",
+          "gitlab",
+          "bitbucket",
+          "enterprise_sso"
+        ],
+        "title": "ProviderType"
+      },
+      "ProvidersSetModel": {
+        "properties": {
+          "providers_set": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ProviderType"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Providers Set"
+          }
+        },
+        "type": "object",
+        "title": "ProvidersSetModel"
+      },
+      "Repository": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "full_name": {
+            "type": "string",
+            "title": "Full Name"
+          },
+          "git_provider": {
+            "$ref": "#/components/schemas/ProviderType"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public"
+          },
+          "stargazers_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stargazers Count"
+          },
+          "link_header": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link Header"
+          },
+          "pushed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pushed At"
+          },
+          "owner_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OwnerType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "main_branch": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Main Branch"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "full_name",
+          "git_provider",
+          "is_public"
+        ],
+        "title": "Repository"
+      },
+      "RuntimeStatus": {
+        "type": "string",
+        "enum": [
+          "STATUS$STOPPED",
+          "STATUS$BUILDING_RUNTIME",
+          "STATUS$STARTING_RUNTIME",
+          "STATUS$RUNTIME_STARTED",
+          "STATUS$SETTING_UP_WORKSPACE",
+          "STATUS$SETTING_UP_GIT_HOOKS",
+          "STATUS$READY",
+          "STATUS$ERROR",
+          "STATUS$ERROR_RUNTIME_DISCONNECTED",
+          "STATUS$ERROR_LLM_AUTHENTICATION",
+          "STATUS$ERROR_LLM_SERVICE_UNAVAILABLE",
+          "STATUS$ERROR_LLM_INTERNAL_SERVER_ERROR",
+          "STATUS$ERROR_LLM_OUT_OF_CREDITS",
+          "STATUS$ERROR_LLM_CONTENT_POLICY_VIOLATION",
+          "CHAT_INTERFACE$AGENT_RATE_LIMITED_STOPPED_MESSAGE",
+          "STATUS$GIT_PROVIDER_AUTHENTICATION_ERROR",
+          "STATUS$LLM_RETRY",
+          "STATUS$ERROR_MEMORY"
+        ],
+        "title": "RuntimeStatus"
+      },
+      "Settings": {
+        "properties": {
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Agent"
+          },
+          "max_iterations": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Iterations"
+          },
+          "security_analyzer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Security Analyzer"
+          },
+          "confirmation_mode": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmation Mode"
+          },
+          "llm_model": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Model"
+          },
+          "llm_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Api Key"
+          },
+          "llm_base_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Base Url"
+          },
+          "remote_runtime_resource_factor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remote Runtime Resource Factor"
+          },
+          "secrets_store": {
+            "$ref": "#/components/schemas/UserSecrets-Input"
+          },
+          "enable_default_condenser": {
+            "type": "boolean",
+            "title": "Enable Default Condenser",
+            "default": true
+          },
+          "enable_sound_notifications": {
+            "type": "boolean",
+            "title": "Enable Sound Notifications",
+            "default": false
+          },
+          "enable_proactive_conversation_starters": {
+            "type": "boolean",
+            "title": "Enable Proactive Conversation Starters",
+            "default": true
+          },
+          "enable_solvability_analysis": {
+            "type": "boolean",
+            "title": "Enable Solvability Analysis",
+            "default": true
+          },
+          "user_consents_to_analytics": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "User Consents To Analytics"
+          },
+          "sandbox_base_container_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Base Container Image"
+          },
+          "sandbox_runtime_container_image": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Runtime Container Image"
+          },
+          "mcp_config": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MCPConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "search_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Api Key"
+          },
+          "sandbox_api_key": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "password",
+                "writeOnly": true
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sandbox Api Key"
+          },
+          "max_budget_per_task": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Budget Per Task"
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
+          },
+          "email_verified": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email Verified"
+          },
+          "git_user_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git User Name"
+          },
+          "git_user_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git User Email"
+          }
+        },
+        "type": "object",
+        "title": "Settings",
+        "description": "Persisted settings for OpenHands sessions"
+      },
+      "SuggestedTask": {
+        "properties": {
+          "git_provider": {
+            "$ref": "#/components/schemas/ProviderType"
+          },
+          "task_type": {
+            "$ref": "#/components/schemas/TaskType"
+          },
+          "repo": {
+            "type": "string",
+            "title": "Repo"
+          },
+          "issue_number": {
+            "type": "integer",
+            "title": "Issue Number"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "git_provider",
+          "task_type",
+          "repo",
+          "issue_number",
+          "title"
+        ],
+        "title": "SuggestedTask"
+      },
+      "TaskType": {
+        "type": "string",
+        "enum": [
+          "MERGE_CONFLICTS",
+          "FAILING_CHECKS",
+          "UNRESOLVED_COMMENTS",
+          "OPEN_ISSUE",
+          "OPEN_PR",
+          "CREATE_MICROAGENT"
+        ],
+        "title": "TaskType"
+      },
+      "UpdateConversationRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "New conversation title"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "UpdateConversationRequest",
+        "description": "Request model for updating conversation metadata."
+      },
+      "User": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "login": {
+            "type": "string",
+            "title": "Login"
           },
           "avatar_url": {
             "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "SuggestedTask": {
-        "type": "object",
-        "properties": {
-          "title": {
-            "type": "string"
+            "title": "Avatar Url"
           },
-          "url": {
-            "type": "string"
+          "company": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Company"
           },
-          "repository": {
-            "type": "string"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
-          "type": {
-            "type": "string"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
-      "ConversationInfo": {
-        "type": "object",
-        "properties": {
-          "conversation_id": {
-            "type": "string"
-          },
-          "title": {
-            "type": "string"
-          },
-          "last_updated_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "selected_repository": {
-            "type": "string",
-            "nullable": true
-          },
-          "status": {
-            "type": "string",
-            "enum": ["RUNNING", "STOPPED"]
-          },
-          "trigger": {
-            "type": "string",
-            "enum": ["GUI", "API"]
-          }
-        }
-      },
-      "ConversationInfoResultSet": {
-        "type": "object",
-        "properties": {
-          "results": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ConversationInfo"
-            }
-          },
-          "next_page_id": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "FeedbackDataModel": {
-        "type": "object",
-        "properties": {
           "email": {
-            "type": "string",
-            "format": "email"
-          },
-          "version": {
-            "type": "string"
-          },
-          "permissions": {
-            "type": "string",
-            "default": "private"
-          },
-          "polarity": {
-            "type": "string"
-          },
-          "feedback": {
-            "type": "string"
-          },
-          "trajectory": {
-            "type": "array",
-            "items": {
-              "type": "object"
-            }
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Email"
           }
-        }
-      },
-      "Settings": {
+        },
         "type": "object",
-        "properties": {
-          "language": {
-            "type": "string"
-          },
-          "agent": {
-            "type": "string"
-          },
-          "security_analyzer": {
-            "type": "string"
-          },
-          "confirmation_mode": {
-            "type": "boolean"
-          },
-          "llm_model": {
-            "type": "string"
-          },
-          "llm_api_key": {
-            "type": "string"
-          },
-          "llm_base_url": {
-            "type": "string",
-            "nullable": true
-          },
-          "remote_runtime_resource_factor": {
-            "type": "number"
-          },
-          "enable_default_condenser": {
-            "type": "boolean"
-          },
-          "enable_sound_notifications": {
-            "type": "boolean"
-          },
-          "user_consents_to_analytics": {
-            "type": "boolean"
-          }
-        }
+        "required": [
+          "id",
+          "login",
+          "avatar_url"
+        ],
+        "title": "User"
       },
-      "GETSettingsModel": {
-        "type": "object",
+      "UserSecrets-Input": {
         "properties": {
-          "language": {
-            "type": "string"
-          },
-          "agent": {
-            "type": "string"
-          },
-          "security_analyzer": {
-            "type": "string"
-          },
-          "confirmation_mode": {
-            "type": "boolean"
-          },
-          "llm_model": {
-            "type": "string"
-          },
-          "llm_api_key_set": {
-            "type": "boolean"
-          },
-          "llm_base_url": {
-            "type": "string",
-            "nullable": true
-          },
-          "remote_runtime_resource_factor": {
-            "type": "number"
-          },
-          "enable_default_condenser": {
-            "type": "boolean"
-          },
-          "enable_sound_notifications": {
-            "type": "boolean"
-          },
-          "user_consents_to_analytics": {
-            "type": "boolean"
-          },
-          "provider_tokens_set": {
-            "type": "object",
-            "additionalProperties": {
-              "type": "boolean"
-            }
-          }
-        }
-      },
-      "POSTSettingsModel": {
-        "type": "object",
-        "properties": {
-          "language": {
-            "type": "string"
-          },
-          "agent": {
-            "type": "string"
-          },
-          "security_analyzer": {
-            "type": "string"
-          },
-          "confirmation_mode": {
-            "type": "boolean"
-          },
-          "llm_model": {
-            "type": "string"
-          },
-          "llm_api_key": {
-            "type": "string"
-          },
-          "llm_base_url": {
-            "type": "string",
-            "nullable": true
-          },
-          "remote_runtime_resource_factor": {
-            "type": "number"
-          },
-          "enable_default_condenser": {
-            "type": "boolean"
-          },
-          "enable_sound_notifications": {
-            "type": "boolean"
-          },
-          "user_consents_to_analytics": {
-            "type": "boolean"
-          },
           "provider_tokens": {
-            "type": "object",
             "additionalProperties": {
               "type": "string"
-            }
+            },
+            "type": "object",
+            "title": "Provider Tokens"
+          },
+          "custom_secrets": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Custom Secrets"
           }
-        }
+        },
+        "type": "object",
+        "title": "UserSecrets"
+      },
+      "UserSecrets-Output": {
+        "properties": {
+          "provider_tokens": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {}
+                ]
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Provider Tokens"
+          },
+          "custom_secrets": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Custom Secrets"
+          }
+        },
+        "type": "object",
+        "title": "UserSecrets"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     },
     "securitySchemes": {
-      "bearerAuth": {
-        "type": "http",
-        "scheme": "bearer",
-        "bearerFormat": "JWT"
+      "APIKeyHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-Session-API-Key"
       }
     }
   },
-  "security": [
+  "servers": [
     {
-      "bearerAuth": []
+      "url": "https://app.all-hands.dev",
+      "description": "Production server"
+    },
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
     }
   ]
 }
