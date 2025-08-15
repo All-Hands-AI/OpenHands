@@ -31,14 +31,17 @@ class DebugMixin:
         else:
             logger.debug('No completion messages!')
 
-    def log_response(self, resp: ModelResponse) -> None:
+    def log_response(self, resp: ModelResponse | str) -> None:
         if not logger.isEnabledFor(DEBUG):
             # Don't use memory building message string if not logging.
             return
-        message_back: str = resp['choices'][0]['message']['content'] or ''
-        tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
-            'message'
-        ].get('tool_calls', [])
+        message_back: str = ''
+        tool_calls: list[ChatCompletionMessageToolCall] = []
+        if isinstance(resp, str):
+            message_back = resp or ''
+        else:
+            message_back = resp['choices'][0]['message']['content'] or ''
+            tool_calls = resp['choices'][0]['message'].get('tool_calls', [])
         if tool_calls:
             for tool_call in tool_calls:
                 fn_name = tool_call.function.name

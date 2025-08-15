@@ -4,10 +4,10 @@ from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.core.exceptions import FunctionCallValidationError
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
 from .base import Tool
-from openhands.core.exceptions import FunctionCallValidationError
 
 
 class FileEditorTool(Tool):
@@ -157,7 +157,9 @@ class FileEditorTool(Tool):
                 try:
                     validated['view_range'] = [int(view_range[0]), int(view_range[1])]
                 except (ValueError, TypeError):
-                    raise FunctionCallValidationError('view_range must contain valid integers')
+                    raise FunctionCallValidationError(
+                        'view_range must contain valid integers'
+                    )
 
         return validated
 

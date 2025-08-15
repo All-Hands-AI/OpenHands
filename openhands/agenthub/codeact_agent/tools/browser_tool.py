@@ -4,10 +4,10 @@ from typing import Any
 
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.core.exceptions import FunctionCallValidationError
 from openhands.llm.tool_names import BROWSER_TOOL_NAME
 
 from .base import Tool
-from openhands.core.exceptions import FunctionCallValidationError
 
 
 class BrowserTool(Tool):
