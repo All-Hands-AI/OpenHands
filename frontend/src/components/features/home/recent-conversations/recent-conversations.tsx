@@ -54,7 +54,7 @@ export function RecentConversations() {
       className="flex flex-col w-full"
     >
       <div className="flex items-center gap-2">
-        <h3 className="text-xs leading-4 text-white font-bold py-[14px] pl-4">
+        <h3 className="text-xs leading-4 text-white font-semibold py-[14px] pl-4">
           {t(I18nKey.COMMON$RECENT_CONVERSATIONS)}
         </h3>
       </div>
