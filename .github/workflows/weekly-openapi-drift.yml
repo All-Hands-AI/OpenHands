@@ -24,49 +24,23 @@ jobs:
       - name: Check required secrets
         env:
           OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         shell: bash
         run: |
           set -euo pipefail
-          missing=0
           if [ -z "${OPENHANDS_API_KEY:-}" ]; then
             echo "Error: Required secret OPENHANDS_API_KEY is not set." >&2
-            missing=1
-          fi
-          if [ -z "${LLM_API_KEY:-}" ]; then
-            echo "Error: Required secret LLM_API_KEY is not set." >&2
-            missing=1
-          fi
-          if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          if [ -z "${LLM_MODEL:-}" ]; then
-            echo "Warning: LLM_MODEL not set, Cloud will use default model if applicable."
-          fi
-          if [ -z "${LLM_BASE_URL:-}" ]; then
-            echo "Warning: LLM_BASE_URL not set, using provider default endpoint."
-          fi
 
-      - name: Configure LLM settings in OpenHands Cloud
+      - name: Configure OpenHands Cloud settings (minimal)
         env:
           OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY }}
-          LLM_MODEL: ${{ secrets.LLM_MODEL }}
-          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-          LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
         shell: bash
         run: |
           set -euo pipefail
-          payload=$(jq -n \
-            --arg model "${LLM_MODEL:-}" \
-            --arg key   "${LLM_API_KEY}" \
-            --arg base  "${LLM_BASE_URL:-}" \
-            '{ llm_model: ($model|select(. != "")), llm_api_key: $key, llm_base_url: ($base|select(. != "")) }')
-          curl -sS -X POST "$CLOUD_API_URL/api/settings" \
-            -H "Authorization: Bearer $OPENHANDS_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$payload" | jq .
+          # Only ensure auth is valid; do not set provider-specific LLM secrets here.
+          curl -sS -X GET "$CLOUD_API_URL/api/server_info" \
+            -H "Authorization: Bearer $OPENHANDS_API_KEY" | jq .
 
       - name: Start OpenHands Cloud conversation
         id: start
