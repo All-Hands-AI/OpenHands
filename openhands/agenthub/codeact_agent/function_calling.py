@@ -37,6 +37,7 @@ from openhands.events.action import (
     MessageAction,
     TaskTrackingAction,
 )
+from openhands.events.action.action import ActionSecurityRisk
 from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
@@ -52,6 +53,26 @@ def combine_thought(action: Action, thought: str) -> Action:
     elif thought:
         action.thought = thought
     return action
+
+
+def set_security_risk_from_safety_risk(action: Action, arguments: dict) -> None:
+    """Convert safety_risk from tool call arguments to security_risk on the action."""
+    if 'safety_risk' in arguments and hasattr(action, 'security_risk'):
+        safety_risk = arguments['safety_risk']
+        if safety_risk in ['LOW', 'MEDIUM', 'HIGH']:
+            # Convert string to ActionSecurityRisk enum
+            risk_mapping = {
+                'LOW': ActionSecurityRisk.LOW,
+                'MEDIUM': ActionSecurityRisk.MEDIUM,
+                'HIGH': ActionSecurityRisk.HIGH,
+            }
+            action.security_risk = risk_mapping[safety_risk]  # type: ignore
+            logger.debug(
+                f'Set security_risk to {action.security_risk} from safety_risk: {safety_risk}'
+            )
+        else:
+            logger.warning(f'Invalid safety_risk value: {safety_risk}')
+            action.security_risk = ActionSecurityRisk.UNKNOWN  # type: ignore
 
 
 def response_to_actions(
@@ -104,14 +125,8 @@ def response_to_actions(
                             f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
-                        )
+                # Set security_risk from safety_risk if provided
+                set_security_risk_from_safety_risk(action, arguments)
 
             # ================================================
             # IPythonTool (Jupyter)
@@ -123,14 +138,8 @@ def response_to_actions(
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
-                        )
+                # Set security_risk from safety_risk if provided
+                set_security_risk_from_safety_risk(action, arguments)
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -191,14 +200,8 @@ def response_to_actions(
                         view_range=other_kwargs.get('view_range', None),
                     )
 
-                    # Set safety_risk attribute if provided
-                    if 'safety_risk' in arguments:
-                        if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'safety_risk', arguments['safety_risk'])
-                        else:
-                            logger.warning(
-                                f'Invalid safety_risk value: {arguments["safety_risk"]}'
-                            )
+                    # Set security_risk from safety_risk if provided
+                    set_security_risk_from_safety_risk(action, arguments)
                 else:
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
@@ -230,14 +233,8 @@ def response_to_actions(
                         **valid_kwargs,
                     )
 
-                    # Set safety_risk attribute if provided
-                    if 'safety_risk' in arguments:
-                        if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'safety_risk', arguments['safety_risk'])
-                        else:
-                            logger.warning(
-                                f'Invalid safety_risk value: {arguments["safety_risk"]}'
-                            )
+                    # Set security_risk from safety_risk if provided
+                    set_security_risk_from_safety_risk(action, arguments)
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -260,14 +257,8 @@ def response_to_actions(
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
-                        )
+                # Set security_risk from safety_risk if provided
+                set_security_risk_from_safety_risk(action, arguments)
 
             # ================================================
             # TaskTrackingAction

@@ -15,6 +15,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
 )
+from openhands.events.action.action import ActionSecurityRisk
 from openhands.events.event import FileEditSource, FileReadSource
 
 
@@ -267,3 +268,47 @@ def test_unexpected_argument_handling():
     # Verify the error message mentions the unexpected argument
     assert 'old_str_prefix' in str(exc_info.value)
     assert 'Unexpected argument' in str(exc_info.value)
+
+
+def test_safety_risk_conversion():
+    """Test that safety_risk from tool call arguments is properly converted to security_risk."""
+    # Test HIGH risk
+    response = create_mock_response(
+        'execute_bash', {'command': 'rm -rf /tmp/test', 'safety_risk': 'HIGH'}
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], CmdRunAction)
+    assert actions[0].security_risk == ActionSecurityRisk.HIGH
+    assert actions[0].security_risk.value == 2
+
+    # Test MEDIUM risk
+    response = create_mock_response(
+        'execute_ipython_cell',
+        {'code': 'import os; os.system("ls")', 'safety_risk': 'MEDIUM'},
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], IPythonRunCellAction)
+    assert actions[0].security_risk == ActionSecurityRisk.MEDIUM
+    assert actions[0].security_risk.value == 1
+
+    # Test LOW risk
+    response = create_mock_response(
+        'browser', {'code': "click('button')", 'safety_risk': 'LOW'}
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], BrowseInteractiveAction)
+    assert actions[0].security_risk == ActionSecurityRisk.LOW
+    assert actions[0].security_risk.value == 0
+
+    # Test invalid risk (should default to UNKNOWN)
+    response = create_mock_response(
+        'execute_bash', {'command': 'echo hello', 'safety_risk': 'INVALID'}
+    )
+    actions = response_to_actions(response)
+    assert len(actions) == 1
+    assert isinstance(actions[0], CmdRunAction)
+    assert actions[0].security_risk == ActionSecurityRisk.UNKNOWN
+    assert actions[0].security_risk.value == -1
