@@ -9,8 +9,8 @@ from openhands.events.action import MessageAction
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation import ServerConversation
+from openhands.session.agent_session import AgentSession
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore

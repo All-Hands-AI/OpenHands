@@ -17,9 +17,9 @@ from openhands.server.config.server_config import ServerConfig
 from openhands.server.constants import ROOM_KEY
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
-from openhands.server.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.session import Session
+from openhands.session.agent_session import WAIT_TIME_BEFORE_CLOSE, AgentSession
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
