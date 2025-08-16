@@ -11,7 +11,7 @@ import os
 from playwright.sync_api import Page, expect
 
 
-def test_github_token_configuration(page: Page):
+def test_github_token_configuration(page: Page, base_url: str):
     """
     Test the GitHub token configuration flow:
     1. Navigate to OpenHands
@@ -23,9 +23,13 @@ def test_github_token_configuration(page: Page):
     # Create test-results directory if it doesn't exist
     os.makedirs('test-results', exist_ok=True)
 
+    # Use default URL if base_url is not provided
+    if not base_url:
+        base_url = 'http://localhost:12000'
+
     # Navigate to the OpenHands application
-    print('Step 1: Navigating to OpenHands application...')
-    page.goto('http://localhost:12000')
+    print(f'Step 1: Navigating to OpenHands application at {base_url}...')
+    page.goto(base_url)
     page.wait_for_load_state('networkidle', timeout=30000)
 
     # Take initial screenshot
@@ -170,7 +174,7 @@ def test_github_token_configuration(page: Page):
 
                                     # Navigate back to home page after successful save
                                     print('Navigating back to home page...')
-                                    page.goto('http://localhost:12000')
+                                    page.goto(base_url)
                                     page.wait_for_load_state('networkidle')
                                     page.wait_for_timeout(
                                         5000
@@ -245,18 +249,18 @@ def test_github_token_configuration(page: Page):
 
                                 # Navigate back to home page
                                 print('Navigating back to home page...')
-                                page.goto('http://localhost:12000')
+                                page.goto(base_url)
                                 page.wait_for_load_state('networkidle')
                                 page.wait_for_timeout(3000)
                         else:
                             print(
                                 'GitHub token input field not found, going back to home page'
                             )
-                            page.goto('http://localhost:12000')
+                            page.goto(base_url)
                             page.wait_for_load_state('networkidle')
                     else:
                         print('Integrations tab not found, going back to home page')
-                        page.goto('http://localhost:12000')
+                        page.goto(base_url)
                         page.wait_for_load_state('networkidle')
                 else:
                     print('Settings button not found, continuing with existing token')
