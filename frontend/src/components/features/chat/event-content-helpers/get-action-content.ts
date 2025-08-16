@@ -14,6 +14,15 @@ import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 
 const getRiskText = (risk: ActionSecurityRisk) => {
+  // Debug logging to see what risk value we're getting
+  console.log("getRiskText called with risk:", risk, "type:", typeof risk);
+  console.log("ActionSecurityRisk enum values:", {
+    UNKNOWN: ActionSecurityRisk.UNKNOWN,
+    LOW: ActionSecurityRisk.LOW,
+    MEDIUM: ActionSecurityRisk.MEDIUM,
+    HIGH: ActionSecurityRisk.HIGH,
+  });
+  
   switch (risk) {
     case ActionSecurityRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");

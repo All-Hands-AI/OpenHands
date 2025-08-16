@@ -38,6 +38,10 @@ export function ConfirmationButtons() {
         hasRiskAndConfirmation(ev.args)
       ) {
         if (ev.args.confirmation_state === "awaiting_confirmation") {
+          console.log("Found awaiting confirmation event:", ev);
+          console.log("Security risk:", ev.args.security_risk, "type:", typeof ev.args.security_risk);
+          console.log("ActionSecurityRisk.HIGH:", ActionSecurityRisk.HIGH);
+          console.log("Comparison result:", ev.args.security_risk === ActionSecurityRisk.HIGH);
           return ev.args.security_risk === ActionSecurityRisk.HIGH;
         }
       }
