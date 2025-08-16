@@ -101,6 +101,7 @@ export interface BrowseInteractiveAction
   args: {
     browser_actions: string;
     thought: string | null;
+    reasoning_content?: string;
     browsergym_send_msg_to_user: string;
   };
 }

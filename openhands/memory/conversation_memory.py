@@ -240,7 +240,7 @@ class ConversationMemory:
             )
 
             llm_response: ModelResponse = tool_metadata.model_response
-            assistant_msg = getattr(llm_response.choices[0], 'message')
+            assistant_msg = llm_response.choices[0].message
 
             # Add the LLM message (assistant) that initiated the tool calls
             # (overwrites any previous message with the same response_id)
@@ -262,9 +262,7 @@ class ConversationMemory:
             tool_metadata = action.tool_call_metadata
             if tool_metadata is not None:
                 # take the response message from the tool call
-                assistant_msg = getattr(
-                    tool_metadata.model_response.choices[0], 'message'
-                )
+                assistant_msg = tool_metadata.model_response.choices[0].message
                 content = assistant_msg.content or ''
 
                 # save content if any, to thought
@@ -278,33 +276,29 @@ class ConversationMemory:
                     action.thought.text = content
 
                 # Also capture optional provider reasoning content if present
-                if hasattr(action.thought, 'reasoning_content'):
-                    rc: str | None = None
-                    # Try direct attributes from LiteLLM wrapper
-                    for attr in ('reasoning_content', 'reasoning', 'thinking'):
-                        _rc = getattr(assistant_msg, attr, None)
-                        if isinstance(_rc, str) and _rc.strip():
-                            rc = _rc if rc is None else rc + '\n' + _rc
-                    # Try list-style content blocks
-                    try:
-                        if isinstance(assistant_msg.content, list):
-                            for msg in assistant_msg.content:
-                                if (
-                                    msg.get('type') in {'reasoning', 'thinking'}
-                                    and 'text' in msg
-                                ):
-                                    rc = (
-                                        msg['text']
-                                        if rc is None
-                                        else rc + '\n' + msg['text']
-                                    )
-                    except Exception:
-                        pass
-                    if rc:
-                        try:
-                            action.thought.reasoning_content = rc
-                        except Exception:
-                            pass
+                rc: str | None = None
+                # Try direct attributes from LiteLLM wrapper
+                for attr in ('reasoning_content', 'reasoning', 'thinking'):
+                    _rc = getattr(assistant_msg, attr, None)
+                    if isinstance(_rc, str) and _rc.strip():
+                        rc = _rc if rc is None else rc + '\n' + _rc
+                # Try list-style content blocks
+                try:
+                    if isinstance(assistant_msg.content, list):
+                        for msg in assistant_msg.content:
+                            if (
+                                msg.get('type') in {'reasoning', 'thinking'}
+                                and 'text' in msg
+                            ):
+                                rc = (
+                                    msg['text']
+                                    if rc is None
+                                    else rc + '\n' + msg['text']
+                                )
+                except Exception:
+                    pass
+                if rc:
+                    action.thought.reasoning_content = rc
 
                 # remove the tool call metadata
                 action.tool_call_metadata = None
