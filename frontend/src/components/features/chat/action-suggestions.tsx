@@ -5,6 +5,14 @@ import { SuggestionItem } from "#/components/features/suggestions/suggestion-ite
 import { I18nKey } from "#/i18n/declaration";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
+import {
+  getGitPushPrompt,
+  getCreatePRPrompt,
+  getPushToPRPrompt,
+  getPR,
+  getPRShort,
+} from "#/utils/utils";
+import { Provider } from "#/types/settings";
 
 interface ActionSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -21,31 +29,20 @@ export function ActionSuggestions({
   const providersAreSet = providers.length > 0;
 
   // Use the git_provider from the conversation, not the user's authenticated providers
-  const currentGitProvider = conversation?.git_provider;
-  const isGitLab = currentGitProvider === "gitlab";
-  const isBitbucket = currentGitProvider === "bitbucket";
-
-  const pr = isGitLab ? "merge request" : "pull request";
-  const prShort = isGitLab ? "MR" : "PR";
-
-  const getProviderName = () => {
-    if (isGitLab) return "GitLab";
-    if (isBitbucket) return "Bitbucket";
-    return "GitHub";
-  };
+  const currentGitProvider = conversation?.git_provider as Provider;
 
   const terms = {
-    pr,
-    prShort,
-    pushToBranch: `Please push the changes to a remote branch on ${getProviderName()}, but do NOT create a ${pr}. Check your current branch name first - if it's main, master, deploy, or another common default branch name, create a new branch with a descriptive name related to your changes. Otherwise, use the exact SAME branch name as the one you are currently on.`,
-    createPR: `Please push the changes to ${getProviderName()} and open a ${pr}. If you're on a default branch (e.g., main, master, deploy), create a new branch with a descriptive name otherwise use the current branch. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`,
-    pushToPR: `Please push the latest changes to the existing ${pr}.`,
+    pr: getPR(currentGitProvider === "gitlab"),
+    prShort: getPRShort(currentGitProvider === "gitlab"),
+    pushToBranch: getGitPushPrompt(currentGitProvider),
+    createPR: getCreatePRPrompt(currentGitProvider),
+    pushToPR: getPushToPRPrompt(currentGitProvider),
   };
 
   return (
     <div className="flex flex-col gap-2 mb-2">
       {providersAreSet && conversation?.selected_repository && (
-        <div className="flex flex-row gap-2 justify-center w-full">
+        <div className="flex flex-row gap-2 w-full">
           {!hasPullRequest ? (
             <>
               <SuggestionItem

@@ -2,7 +2,6 @@ import React from "react";
 import { NavLink, useParams, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { ConversationCard } from "./conversation-card";
 import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversations";
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
@@ -15,6 +14,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { Provider } from "#/types/settings";
 import { useUpdateConversation } from "#/hooks/mutation/use-update-conversation";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { ConversationCard } from "./conversation-card/conversation-card";
 
 interface ConversationPanelProps {
   onClose: () => void;
@@ -128,7 +128,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           scrollContainerRef.current = node;
       }}
       data-testid="conversation-panel"
-      className="w-[350px] h-full border border-neutral-700 bg-base-secondary rounded-xl overflow-y-auto absolute"
+      className="w-[400px] h-full border border-[#525252] bg-[#25272D] rounded-lg overflow-y-auto absolute"
     >
       {isFetching && conversations.length === 0 && (
         <div className="w-full h-full absolute flex justify-center items-center">

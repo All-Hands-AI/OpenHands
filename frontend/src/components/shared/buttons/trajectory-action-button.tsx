@@ -18,7 +18,7 @@ export function TrajectoryActionButton({
       type="button"
       data-testid={testId}
       onClick={onClick}
-      className="button-base p-1 hover:bg-neutral-500 cursor-pointer"
+      className="flex items-center justify-center w-[26px] h-[26px] rounded-lg cursor-pointer bg-[#25272D] hover:bg-tertiary"
     >
       {icon}
     </button>
@@ -26,7 +26,11 @@ export function TrajectoryActionButton({
 
   if (tooltip) {
     return (
-      <Tooltip content={tooltip} closeDelay={100}>
+      <Tooltip
+        content={tooltip}
+        closeDelay={100}
+        className="bg-white text-black hover:bg-transparent"
+      >
         {button}
       </Tooltip>
     );

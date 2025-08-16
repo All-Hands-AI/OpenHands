@@ -1,7 +1,12 @@
+import { GroupBase, SelectComponentsConfig, StylesConfig } from "react-select";
 import { useCallback, useMemo } from "react";
 import AsyncSelect from "react-select/async";
 import { cn } from "#/utils/utils";
-import { SelectOptionBase, getCustomStyles } from "./react-select-styles";
+import {
+  SelectOption,
+  SelectOptionBase,
+  getCustomStyles,
+} from "./react-select-styles";
 
 export type AsyncSelectOption = SelectOptionBase;
 
@@ -20,6 +25,13 @@ export interface ReactSelectAsyncDropdownProps {
   defaultOptions?: boolean | AsyncSelectOption[];
   onChange?: (option: AsyncSelectOption | null) => void;
   onMenuScrollToBottom?: () => void;
+  styles?: StylesConfig<SelectOption, false>;
+  classNamePrefix?: string;
+  components?: SelectComponentsConfig<
+    SelectOption,
+    false,
+    GroupBase<SelectOption>
+  >;
 }
 
 export function ReactSelectAsyncDropdown({
@@ -37,6 +49,9 @@ export function ReactSelectAsyncDropdown({
   defaultOptions = true,
   onChange,
   onMenuScrollToBottom,
+  styles,
+  classNamePrefix,
+  components,
 }: ReactSelectAsyncDropdownProps) {
   const customStyles = useMemo(() => getCustomStyles<AsyncSelectOption>(), []);
 
@@ -63,8 +78,12 @@ export function ReactSelectAsyncDropdown({
         defaultOptions={defaultOptions}
         onChange={onChange}
         onMenuScrollToBottom={onMenuScrollToBottom}
-        styles={customStyles}
+        styles={styles || customStyles}
         className="w-full"
+        components={{
+          ...components,
+        }}
+        classNamePrefix={classNamePrefix}
       />
       {errorMessage && (
         <p

@@ -1,3 +1,4 @@
+import { StylesConfig } from "react-select";
 import { useCallback, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Provider } from "../../types/settings";
@@ -8,6 +9,9 @@ import {
   ReactSelectAsyncDropdown,
   AsyncSelectOption,
 } from "./react-select-async-dropdown";
+import RepoIcon from "#/icons/repo.svg?react";
+import { SelectOption } from "./react-select-styles";
+import { ReactSelectCustomControl } from "./react-select-custom-control";
 
 export interface GitRepositoryDropdownProps {
   provider: Provider;
@@ -17,12 +21,16 @@ export interface GitRepositoryDropdownProps {
   errorMessage?: string;
   disabled?: boolean;
   onChange?: (repository?: GitRepository) => void;
+  styles?: StylesConfig<SelectOption, false>;
+  classNamePrefix?: string;
 }
 
 interface SearchCache {
   [key: string]: GitRepository[];
 }
 
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/jsx-props-no-spreading */
 export function GitRepositoryDropdown({
   provider,
   value,
@@ -31,6 +39,8 @@ export function GitRepositoryDropdown({
   errorMessage,
   disabled = false,
   onChange,
+  styles,
+  classNamePrefix,
 }: GitRepositoryDropdownProps) {
   const { t } = useTranslation();
   const {
@@ -172,6 +182,17 @@ export function GitRepositoryDropdown({
         defaultOptions={allOptions}
         onChange={handleChange}
         onMenuScrollToBottom={handleMenuScrollToBottom}
+        styles={styles}
+        classNamePrefix={classNamePrefix}
+        components={{
+          IndicatorSeparator: () => null,
+          Control: (props) => (
+            <ReactSelectCustomControl
+              {...props}
+              startIcon={<RepoIcon width={16} height={16} />}
+            />
+          ),
+        }}
       />
       {isError && (
         <div
