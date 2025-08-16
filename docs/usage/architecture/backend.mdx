@@ -8,24 +8,24 @@ This is a high-level overview of the system architecture. The system is divided 
 # Frontend architecture
 
 ```mermaid
-graph LR
-  U[User] --> FE[Frontend (SPA)]
-  FE -->|HTTP/WS| BE[OpenHands Backend]
-  BE --> ES[(EventStream)]
-  BE --> ST[(Storage)]
-  BE --> RT[Runtime Interface]
-  BE --> LLM[LLM Providers]
+graph LR;
+  U[User] --> FE[Frontend (SPA)];
+  FE -->|HTTP/WS| BE[OpenHands Backend];
+  BE --> ES[(EventStream)];
+  BE --> ST[(Storage)];
+  BE --> RT[Runtime Interface];
+  BE --> LLM[LLM Providers];
 
   subgraph Runtime
-    RT --> DRT[Docker Runtime]
-    RT --> LRT[Local Runtime]
-    RT --> RRT[Remote Runtime]
-    DRT --> AES[Action Execution Server]
-    LRT --> AES
-    RRT --> AES
-    AES --> Bash[Bash Session]
-    AES --> Jupyter[Jupyter Plugin]
-    AES --> Browser[BrowserEnv]
+    RT --> DRT[Docker Runtime];
+    RT --> LRT[Local Runtime];
+    RT --> RRT[Remote Runtime];
+    DRT --> AES[Action Execution Server];
+    LRT --> AES;
+    RRT --> AES;
+    AES --> Bash[Bash Session];
+    AES --> Jupyter[Jupyter Plugin];
+    AES --> Browser[BrowserEnv];
   end
 ```
 
