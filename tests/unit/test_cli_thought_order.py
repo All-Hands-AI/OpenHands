@@ -1,5 +1,4 @@
-"""
-Tests for CLI thought display order fix.
+"""Tests for CLI thought display order fix.
 This ensures that agent thoughts are displayed before commands, not after.
 """
 

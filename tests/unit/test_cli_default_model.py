@@ -40,6 +40,7 @@ async def test_anthropic_default_model_is_best_verified(
     # Mock config and settings store
     app_config = MagicMock()
     llm_config = MagicMock()
+    llm_config.model = 'anthropic/claude-sonnet-4-20250514'
     app_config.get_llm_config.return_value = llm_config
     settings_store = AsyncMock()
 
