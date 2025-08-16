@@ -33,7 +33,8 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
-): obj is { thought: string } => "thought" in obj && !!obj.thought;
+): obj is { thought: string; reasoning_content?: string } =>
+  "thought" in obj && !!(obj as { thought: string }).thought;
 
 interface EventMessageProps {
   event: OpenHandsAction | OpenHandsObservation;
@@ -122,7 +123,13 @@ export function EventMessage({
         <div>
           <ChatMessage
             type="agent"
-            message={event.args.thought}
+            message={
+              event.args.reasoning_content
+                ? `${event.args.reasoning_content}
+
+${event.args.thought}`
+                : event.args.thought
+            }
             actions={actions}
           />
           {microagentStatus && actions && (
@@ -244,7 +251,13 @@ export function EventMessage({
   return (
     <div>
       {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={event.args.thought} />
+        <ChatMessage type="agent" message={
+              event.args.reasoning_content
+                ? `${event.args.reasoning_content}
+
+${event.args.thought}`
+                : event.args.thought
+            } />
       )}
 
       <GenericEventMessage

@@ -76,7 +76,11 @@ const getMcpActionContent = (event: MCPAction): string => {
 };
 
 const getThinkActionContent = (event: ThinkAction): string =>
-  event.args.thought;
+  event.args.reasoning_content
+    ? `${event.args.reasoning_content}
+
+${event.args.thought}`
+    : event.args.thought;
 
 const getFinishActionContent = (event: FinishAction): string =>
   event.args.final_thought.trim();
