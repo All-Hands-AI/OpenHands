@@ -234,8 +234,23 @@ class ConversationMemory:
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
+
+            # Allow user actions to skip tool metadata validation
+            if action.source == 'user' and tool_metadata is None:
+                # For user-initiated actions without tool metadata, create a simple message
+                return [
+                    Message(
+                        role='user',
+                        content=[
+                            TextContent(
+                                text=f'User requested to read file: {str(action)}'
+                            )
+                        ],
+                    )
+                ]
+
             assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                'Tool call metadata should NOT be None when function calling is enabled for agent actions. Action: '
                 + str(action)
             )
 
