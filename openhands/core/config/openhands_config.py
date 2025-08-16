@@ -18,7 +18,6 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.config.sandbox_config import SandboxConfig
 from openhands.core.config.security_config import SecurityConfig
-from openhands.storage.data_models.user_secrets import UserSecrets
 
 
 class OpenHandsConfig(BaseModel):
@@ -60,7 +59,6 @@ class OpenHandsConfig(BaseModel):
         mcp: MCP configuration settings.
         git_user_name: Git user name for commits made by the agent.
         git_user_email: Git user email for commits made by the agent.
-        user_secrets: UserSecrets accessible across entry points.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -124,8 +122,6 @@ class OpenHandsConfig(BaseModel):
         default='openhands@all-hands.dev',
         description='Git user email for commits made by the agent',
     )
-    # Unified secrets access across entry points (populated by server auth layer)
-    user_secrets: UserSecrets | None = Field(default=None)
 
     defaults_dict: ClassVar[dict] = {}
 

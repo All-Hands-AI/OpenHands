@@ -48,3 +48,21 @@ def test_write_condenser_llm_attention_as_dict(tmp_path: Path):
     data = toml.load(cfg_path)
     assert data['condenser']['type'] == 'llm_attention'
     assert data['condenser']['max_size'] == 10
+
+
+def test_agent_embeds_noop_condenser_and_persists(tmp_path: Path):
+    cfg_path = tmp_path / 'config.toml'
+
+    from openhands.core.config.agent_config import AgentConfig
+    agent = AgentConfig()
+    agent.condenser = NoOpCondenserConfig()
+
+    writer = TOMLConfigWriter(str(cfg_path))
+    writer.update_agent_base(agent)
+    writer.write()
+
+    data = toml.load(cfg_path)
+    assert 'agent' in data
+    assert 'condenser' in data['agent']
+    assert data['agent']['condenser']['type'] == 'noop'
+

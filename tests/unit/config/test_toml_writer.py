@@ -19,7 +19,7 @@ def test_toml_writer_creates_and_updates_core_and_llm_sections(tmp_path):
     writer = TOMLConfigWriter(toml_file=toml_path)
     writer.update_core({'search_api_key': SecretStr('abc')})
     # Ensure a base llm exists
-    writer.update_llm('llm', LLMConfig(model='m1', api_key=SecretStr('k1')))
+    writer.update_llm_base(LLMConfig(model='m1', api_key=SecretStr('k1')))
     writer.write()
 
     data = read_file(toml_path)
@@ -31,7 +31,7 @@ def test_toml_writer_creates_and_updates_core_and_llm_sections(tmp_path):
 
     # Update named LLM subsection
     writer = TOMLConfigWriter(toml_file=toml_path)
-    writer.update_llm('custom', LLMConfig(model='m2', base_url='https://x'))
+    writer.update_llm_named('custom', LLMConfig(model='m2', base_url='https://x'))
     writer.write()
 
     data = read_file(toml_path)
