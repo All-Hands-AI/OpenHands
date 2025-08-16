@@ -9,7 +9,7 @@ export function SecurityLock() {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate("/llm-settings");
+    navigate("/settings");
   };
 
   return (
