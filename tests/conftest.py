@@ -4,6 +4,7 @@ on sys.path.
 
 This avoids shadowing new subpackages like `openhands.conversation`.
 """
+
 from __future__ import annotations
 
 import sys
