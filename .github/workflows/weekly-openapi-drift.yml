@@ -38,9 +38,23 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Ensure auth is valid
-          curl -sS -X GET "$CLOUD_API_URL/api/server_info" \
-            -H "Authorization: Bearer $OPENHANDS_API_KEY" | jq .
+          # Only ensure auth is valid; do not set provider-specific LLM secrets here.
+          status=$(curl -sS -o resp.txt -w '%{http_code}' \
+            -H "Authorization: Bearer $OPENHANDS_API_KEY" \
+            -H "Accept: application/json" \
+            "$CLOUD_API_URL/api/server_info")
+          echo "HTTP status: $status"
+          if [ "$status" -lt 200 ] || [ "$status" -ge 300 ]; then
+            echo "Auth check failed with HTTP $status" >&2
+            head -c 400 resp.txt >&2 || true
+            exit 1
+          fi
+          # Try to pretty-print JSON; if not JSON, print raw for visibility
+          if jq -e . >/dev/null 2>&1 < resp.txt; then
+            jq . < resp.txt
+          else
+            echo "Non-JSON response:"; sed -n '1,200p' resp.txt
+          fi
 
       - name: Start OpenHands Cloud conversation
         id: start
