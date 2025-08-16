@@ -6,7 +6,7 @@ import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { SettingsSwitchWithTooltip } from "#/components/features/settings/settings-switch-with-tooltip";
+
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
@@ -49,7 +49,6 @@ function AppSettingsScreen() {
     React.useState(false);
   const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
     React.useState(false);
-
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -170,8 +169,6 @@ function AppSettingsScreen() {
     setGitUserEmailHasChanged(value !== currentValue);
   };
 
-
-
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
@@ -216,8 +213,6 @@ function AppSettingsScreen() {
           >
             {t(I18nKey.SETTINGS$SOUND_NOTIFICATIONS)}
           </SettingsSwitch>
-
-
 
           {config?.APP_MODE === "saas" && (
             <SettingsSwitch

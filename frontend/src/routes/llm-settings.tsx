@@ -56,8 +56,14 @@ function LlmSettingsScreen() {
 
   // Track confirmation mode state to control security analyzer visibility
   const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
-    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE
+    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
   );
+
+  // Track selected security analyzer for form submission
+  const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
+    React.useState(
+      settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER,
+    );
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -138,7 +144,8 @@ function LlmSettingsScreen() {
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
         CONFIRMATION_MODE: confirmationMode,
-        SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+        SECURITY_ANALYZER:
+          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -175,7 +182,8 @@ function LlmSettingsScreen() {
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
-        SECURITY_ANALYZER: securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+        SECURITY_ANALYZER:
+          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -375,39 +383,75 @@ function LlmSettingsScreen() {
                 linkText={t(I18nKey.SETTINGS$SEARCH_API_KEY_INSTRUCTIONS)}
                 href="https://tavily.com/"
               />
+            </div>
+          )}
 
-              <SettingsSwitchWithTooltip
-                testId="enable-confirmation-mode-switch"
-                name="enable-confirmation-mode-switch"
-                onToggle={handleConfirmationModeIsDirty}
-                defaultIsToggled={settings.CONFIRMATION_MODE}
-                tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-                isBeta
-              >
-                {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              </SettingsSwitchWithTooltip>
+          {/* Confirmation mode and security analyzer - always visible */}
+          <SettingsSwitchWithTooltip
+            testId="enable-confirmation-mode-switch"
+            name="enable-confirmation-mode-switch"
+            onToggle={handleConfirmationModeIsDirty}
+            defaultIsToggled={settings.CONFIRMATION_MODE}
+            tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+            isBeta
+          >
+            {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+          </SettingsSwitchWithTooltip>
 
-              {confirmationModeEnabled && (
+          {confirmationModeEnabled && (
+            <>
+              <div className="w-full max-w-[680px]">
                 <SettingsDropdownInput
                   testId="security-analyzer-input"
-                  name="security-analyzer-input"
+                  name="security-analyzer-display"
                   label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
                   items={
-                    resources?.securityAnalyzers.map((analyzer) => ({
-                      key: analyzer,
-                      label: analyzer === "llm" ? "LLM Analyzer (Default)" : analyzer === "none" ? "None (Ask for every command)" : analyzer,
-                    })) || []
+                    resources?.securityAnalyzers.map((analyzer) => {
+                      if (analyzer === "llm") {
+                        return {
+                          key: analyzer,
+                          label: "LLM Analyzer (Default)",
+                        };
+                      }
+                      if (analyzer === "none") {
+                        return {
+                          key: analyzer,
+                          label: "None (Ask for every command)",
+                        };
+                      }
+                      return { key: analyzer, label: analyzer };
+                    }) || []
                   }
                   placeholder={t(
                     I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
                   )}
                   defaultSelectedKey={settings.SECURITY_ANALYZER}
-                  isClearable={false}
-                  onInputChange={handleSecurityAnalyzerIsDirty}
-                  wrapperClassName="w-full max-w-[680px]"
+                  isClearable
+                  onSelectionChange={(key) => {
+                    const newValue = key?.toString() || "";
+                    setSelectedSecurityAnalyzer(newValue);
+                    handleSecurityAnalyzerIsDirty(newValue);
+                  }}
+                  onInputChange={(value) => {
+                    // Handle when input is cleared
+                    if (!value) {
+                      setSelectedSecurityAnalyzer("");
+                      handleSecurityAnalyzerIsDirty("");
+                    }
+                  }}
+                  wrapperClassName="w-full"
                 />
-              )}
-            </div>
+                {/* Hidden input to store the actual key value for form submission */}
+                <input
+                  type="hidden"
+                  name="security-analyzer-input"
+                  value={selectedSecurityAnalyzer}
+                />
+              </div>
+              <p className="text-xs text-tertiary-alt max-w-[680px]">
+                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
+              </p>
+            </>
           )}
 
           {view === "advanced" && (

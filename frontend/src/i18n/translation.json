@@ -6159,6 +6159,22 @@
         "ja": "有効にすると、エージェントは高リスクなアクションを実行しようとする際に一時停止し、確認を求めます",
         "uk": "Коли увімкнено, агент зупиниться і попросить підтвердження, коли спробує виконати дії високого ризику"
     },
+    "SETTINGS$SECURITY_ANALYZER_DESCRIPTION": {
+        "en": "The security analyzer will be used in conjunction with confirmation mode. By default, it utilizes LLM-predicted action risk to determine whether to prompt the user for confirmation. If the risk is HIGH, it will prompt the user for confirmation by default.",
+        "de": "Der Sicherheitsanalysator wird in Verbindung mit dem Bestätigungsmodus verwendet. Standardmäßig nutzt er LLM-vorhergesagtes Aktionsrisiko, um zu bestimmen, ob der Benutzer zur Bestätigung aufgefordert werden soll. Wenn das Risiko HOCH ist, wird er standardmäßig zur Bestätigung auffordern.",
+        "zh-CN": "安全分析器将与确认模式结合使用。默认情况下，它利用LLM预测的操作风险来确定是否提示用户确认。如果风险为高，它将默认提示用户确认。",
+        "zh-TW": "安全分析器將與確認模式結合使用。預設情況下，它利用LLM預測的操作風險來確定是否提示用戶確認。如果風險為高，它將預設提示用戶確認。",
+        "ko-KR": "보안 분석기는 확인 모드와 함께 사용됩니다. 기본적으로 LLM이 예측한 작업 위험을 활용하여 사용자에게 확인을 요청할지 결정합니다. 위험이 높으면 기본적으로 사용자에게 확인을 요청합니다.",
+        "no": "Sikkerhetsanalysatoren vil bli brukt i forbindelse med bekreftelsesmodus. Som standard bruker den LLM-forutsagt handlingsrisiko for å bestemme om brukeren skal bli bedt om bekreftelse. Hvis risikoen er HØY, vil den be om bekreftelse som standard.",
+        "it": "L'analizzatore di sicurezza verrà utilizzato insieme alla modalità di conferma. Per impostazione predefinita, utilizza il rischio di azione previsto dall'LLM per determinare se richiedere conferma all'utente. Se il rischio è ALTO, richiederà conferma per impostazione predefinita.",
+        "pt": "O analisador de segurança será usado em conjunto com o modo de confirmação. Por padrão, utiliza o risco de ação previsto pelo LLM para determinar se deve solicitar confirmação ao usuário. Se o risco for ALTO, solicitará confirmação por padrão.",
+        "es": "El analizador de seguridad se utilizará junto con el modo de confirmación. Por defecto, utiliza el riesgo de acción predicho por LLM para determinar si solicitar confirmación al usuario. Si el riesgo es ALTO, solicitará confirmación por defecto.",
+        "ar": "سيتم استخدام محلل الأمان بالتزامن مع وضع التأكيد. افتراضياً، يستخدم مخاطر الإجراء المتوقعة من LLM لتحديد ما إذا كان يجب مطالبة المستخدم بالتأكيد. إذا كان الخطر عالياً، فسيطالب بالتأكيد افتراضياً.",
+        "fr": "L'analyseur de sécurité sera utilisé en conjonction avec le mode de confirmation. Par défaut, il utilise le risque d'action prédit par LLM pour déterminer s'il faut demander confirmation à l'utilisateur. Si le risque est ÉLEVÉ, il demandera confirmation par défaut.",
+        "tr": "Güvenlik analizörü onay modu ile birlikte kullanılacaktır. Varsayılan olarak, kullanıcıdan onay istenip istenmeyeceğini belirlemek için LLM tarafından tahmin edilen eylem riskini kullanır. Risk YÜKSEK ise, varsayılan olarak kullanıcıdan onay isteyecektir.",
+        "ja": "セキュリティアナライザーは確認モードと組み合わせて使用されます。デフォルトでは、LLMが予測したアクションリスクを利用して、ユーザーに確認を求めるかどうかを決定します。リスクが高い場合、デフォルトでユーザーに確認を求めます。",
+        "uk": "Аналізатор безпеки буде використовуватися разом з режимом підтвердження. За замовчуванням він використовує передбачений LLM ризик дії для визначення, чи потрібно запитувати підтвердження у користувача. Якщо ризик ВИСОКИЙ, він запитуватиме підтвердження за замовчуванням."
+    },
     "SETTINGS$DONT_KNOW_API_KEY": {
         "en": "Don't know your API key?",
         "ja": "APIキーがわかりませんか？",

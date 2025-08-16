@@ -19,44 +19,28 @@ You can configure the security system in the **LLM Settings** tab:
 
 ## Security Analyzers
 
-OpenHands supports three types of security analyzers:
+OpenHands supports two types of security analyzers:
 
 ### 1. LLM Analyzer (Default)
 
-The LLM Analyzer uses a language model to intelligently assess the risk level of agent actions.
+The LLM Analyzer uses a language model to intelligently assess the risk level of agent actions. This is the recommended option for most users.
 
 **Pros:**
 - Intelligent risk assessment based on context
 - Can understand complex scenarios and edge cases
 - Adapts to different types of operations
 - Provides detailed explanations for risk assessments
+- Uses the same LLM as your agent, so no additional configuration required
 
 **Cons:**
 - May be susceptible to prompt injection attacks
 - Depends on the quality and capabilities of the underlying LLM
 - May have occasional false positives or negatives
+- Adds a small overhead to action processing
 
 **Best for:** Most users who want intelligent, context-aware security analysis
 
-### 2. Invariant Analyzer
-
-The Invariant Analyzer uses predefined rules and patterns to identify risky operations.
-
-**Pros:**
-- Fast and deterministic
-- No additional LLM calls required
-- Consistent behavior across sessions
-- Lower latency
-
-**Cons:**
-- Limited to predefined rules
-- May miss complex or novel risk scenarios
-- Less context-aware than LLM-based analysis
-- Requires manual rule updates for new risk patterns
-
-**Best for:** Users who prefer rule-based, predictable security analysis
-
-### 3. None (Ask for Every Command)
+### 2. None (Ask for Every Command)
 
 When set to "None", the system treats every agent action as high-risk and asks for confirmation.
 
@@ -108,9 +92,9 @@ When Confirmation Mode is enabled, you'll see a lock icon (🔒) in the interfac
 - Keep confirmation mode enabled at all times
 
 ### For Power Users
-- Use **Invariant Analyzer** if you prefer predictable, rule-based analysis
 - Customize security settings based on your specific use case
 - Monitor agent behavior and adjust settings as needed
+- Consider using "None" analyzer for maximum control in critical environments
 
 ## Troubleshooting
 
@@ -128,9 +112,9 @@ If risky actions aren't being caught:
 
 ### Performance Issues
 If you experience slow response times:
-- Check your LLM configuration and response times (LLM analyzer uses the same LLM call as the agent)
-- Switch to "Invariant Analyzer" if you prefer rule-based analysis
-- Consider adjusting confirmation thresholds
+- Check your LLM configuration and response times (LLM analyzer uses the same LLM as the agent)
+- Consider switching to "None" analyzer if you prefer immediate confirmations without analysis
+- Ensure your LLM provider has good response times
 
 ## Security Considerations
 

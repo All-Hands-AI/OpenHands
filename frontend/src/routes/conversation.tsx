@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
@@ -83,8 +82,6 @@ function AppContent() {
     };
   }, []);
 
-
-
   function renderMain() {
     if (width <= 1024) {
       return (
@@ -118,9 +115,7 @@ function AppContent() {
           <div data-testid="app-route" className="flex flex-col h-full gap-3">
             <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-            <Controls
-              showSecurityLock={!!settings?.CONFIRMATION_MODE}
-            />
+            <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>
