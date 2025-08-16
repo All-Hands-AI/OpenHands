@@ -1,0 +1,42 @@
+
+> openhands-frontend@0.52.1 dev
+> npm run make-i18n && cross-env VITE_MOCK_API=false react-router dev
+
+
+> openhands-frontend@0.52.1 make-i18n
+> node scripts/make-i18n-translations.cjs
+
+  ➜  Local:   http://localhost:3001/
+  ➜  Network: http://10.2.13.140:3001/
+  ➜  press h + enter to show help
+Error: No route matches URL "/llm-settings"
+    at getInternalRouterError (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-ZYFC6VSF.mjs:4678:5)
+    at Object.query (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-ZYFC6VSF.mjs:2755:19)
+    at handleDocumentRequest (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-HZX6U7MI.mjs:1321:38)
+    at requestHandler (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-HZX6U7MI.mjs:1236:24)
+    at nodeHandler (/workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3396:30)
+    at /workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3402:17
+No routes matched location "/llm-settings" 
+ErrorResponseImpl {
+  status: 404,
+  statusText: 'Not Found',
+  internal: true,
+  data: 'Error: No route matches URL "/llm-settings"',
+  error: Error: No route matches URL "/llm-settings"
+      at getInternalRouterError (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-ZYFC6VSF.mjs:4678:5)
+      at Object.query (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-ZYFC6VSF.mjs:2755:19)
+      at handleDocumentRequest (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-HZX6U7MI.mjs:1321:38)
+      at requestHandler (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-HZX6U7MI.mjs:1236:24)
+      at nodeHandler (/workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3396:30)
+      at /workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3402:17
+}
+6:33:46 PM [vite] (client) ✨ new dependencies optimized: react-redux, posthog-js, @tanstack/react-query, @reduxjs/toolkit, i18next, i18next-http-backend, i18next-browser-languagedetector, react-i18next, axios, react-hot-toast
+6:33:46 PM [vite] (client) ✨ optimized dependencies changed. reloading
+6:33:46 PM [vite] http proxy error: /api/options/config
+Error: connect ECONNREFUSED 127.0.0.1:3000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)
+6:33:46 PM [vite] http proxy error: /api/options/config
+Error: connect ECONNREFUSED 127.0.0.1:3000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1637:16)
+    at TCPConnectWrap.callbackTrampoline (node:internal/async_hooks:130:17)

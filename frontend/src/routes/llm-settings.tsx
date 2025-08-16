@@ -103,6 +103,13 @@ function LlmSettingsScreen() {
     }
   }, [settings?.CONFIRMATION_MODE]);
 
+  // Update selected security analyzer state when settings change
+  React.useEffect(() => {
+    if (settings?.SECURITY_ANALYZER !== undefined) {
+      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER);
+    }
+  }, [settings?.SECURITY_ANALYZER]);
+
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
     setDirtyInputs({
@@ -425,7 +432,7 @@ function LlmSettingsScreen() {
                   placeholder={t(
                     I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
                   )}
-                  defaultSelectedKey={settings.SECURITY_ANALYZER}
+                  selectedKey={selectedSecurityAnalyzer}
                   isClearable
                   onSelectionChange={(key) => {
                     const newValue = key?.toString() || "";
