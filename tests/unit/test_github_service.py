@@ -10,6 +10,7 @@ from openhands.integrations.service_types import (
     OwnerType,
     ProviderType,
     Repository,
+    User,
 )
 from openhands.server.types import AppMode
 
@@ -244,3 +245,98 @@ async def test_github_get_repositories_owner_type_fallback():
         # Verify all repositories default to USER owner_type
         for repo in repositories:
             assert repo.owner_type == OwnerType.USER
+
+
+@pytest.mark.asyncio
+async def test_github_search_repositories_with_organizations():
+    """Test that search_repositories includes user organizations in the search scope."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+
+    # Mock user data
+    mock_user = User(
+        id='123', login='testuser', avatar_url='https://example.com/avatar.jpg'
+    )
+
+    # Mock search response
+    mock_search_response = {
+        'items': [
+            {
+                'id': 1,
+                'name': 'OpenHands',
+                'full_name': 'All-Hands-AI/OpenHands',
+                'private': False,
+                'html_url': 'https://github.com/All-Hands-AI/OpenHands',
+                'clone_url': 'https://github.com/All-Hands-AI/OpenHands.git',
+                'pushed_at': '2023-01-01T00:00:00Z',
+                'owner': {'login': 'All-Hands-AI', 'type': 'Organization'},
+            }
+        ]
+    }
+
+    with (
+        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(
+            service,
+            'get_user_organizations',
+            return_value=['All-Hands-AI', 'example-org'],
+        ),
+        patch.object(
+            service, '_make_request', return_value=(mock_search_response, {})
+        ) as mock_request,
+    ):
+        repositories = await service.search_repositories(
+            query='openhands', per_page=10, sort='stars', order='desc', public=False
+        )
+
+        # Verify that separate requests were made for user and each organization
+        assert mock_request.call_count == 3
+
+        # Check the calls made
+        calls = mock_request.call_args_list
+
+        # First call should be for user repositories
+        user_call = calls[0]
+        user_params = user_call[0][1]  # Second argument is params
+        assert user_params['q'] == 'openhands user:testuser'
+
+        # Second call should be for first organization
+        org1_call = calls[1]
+        org1_params = org1_call[0][1]
+        assert org1_params['q'] == 'openhands org:All-Hands-AI'
+
+        # Third call should be for second organization
+        org2_call = calls[2]
+        org2_params = org2_call[0][1]
+        assert org2_params['q'] == 'openhands org:example-org'
+
+        # Verify repositories are returned (3 copies since each call returns the same mock response)
+        assert len(repositories) == 3
+        assert all(repo.full_name == 'All-Hands-AI/OpenHands' for repo in repositories)
+
+
+@pytest.mark.asyncio
+async def test_github_get_user_organizations():
+    """Test that get_user_organizations fetches user's organizations."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+
+    mock_orgs_response = [
+        {'login': 'All-Hands-AI', 'id': 1},
+        {'login': 'example-org', 'id': 2},
+    ]
+
+    with patch.object(service, '_make_request', return_value=(mock_orgs_response, {})):
+        orgs = await service.get_user_organizations()
+
+        assert orgs == ['All-Hands-AI', 'example-org']
+
+
+@pytest.mark.asyncio
+async def test_github_get_user_organizations_error_handling():
+    """Test that get_user_organizations handles errors gracefully."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+
+    with patch.object(service, '_make_request', side_effect=Exception('API Error')):
+        orgs = await service.get_user_organizations()
+
+        # Should return empty list on error
+        assert orgs == []
