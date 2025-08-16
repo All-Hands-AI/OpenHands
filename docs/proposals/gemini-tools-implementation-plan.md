@@ -149,3 +149,26 @@ To minimize churn and keep the model-level tool API clean while reusing proven r
 - For list_directory, glob, search_file_content, read_many_files: introduce lightweight dedicated Actions (e.g., DirectoryListAction, GlobAction, SearchFileContentAction, ReadManyFilesAction) so we can pass tool-specific parameters (ignore, include, respect_git_ignore, etc.) without overloading FileReadAction. These remain internal plumbing; the LLM still sees Gemini-CLI-compatible tool names and schemas.
 
 This approach keeps the external tool surface identical to Gemini CLI while leveraging OpenHands’ existing Action types wherever they naturally fit.
+
+## Clarifications and routing details (pre-implementation)
+
+- No extra HTTP parameters: Editor selection is derived from FileEditAction.command. We will route 'replace' to GeminiEditor and keep legacy commands ('str_replace', 'create', 'insert', 'undo_edit', 'view') on OHEditor.
+- read_file must NOT use impl_source=OH_ACI: The OH_ACI view path adds line numbers. For Gemini read_file we will use the default FileReadAction path (non-OH_ACI) so the model receives raw file contents. Mapping: offset → start, end → offset + limit (or -1 when limit is not provided). Binary handling remains as in current runtime (images/PDFs → data URLs).
+- write_file uses FileWriteAction with full-file overwrite-or-create semantics. We will not expose start/end to Gemini; the tool schema remains exactly as in Gemini-CLI (file_path, content).
+- Replace parameters: Add expected_replacements (optional int) to FileEditAction and wire it through ActionExecutionServer._execute_file_editor to GeminiEditor.replace(). Behavior: replace all occurrences of old_string; enforce expected_replacements when provided; CRLF→LF normalization; create new file when old_string == '' and file does not exist; error when no-op or mismatch.
+- Path policy: Tools require absolute paths within the workspace. We will keep prompts/descriptions aligned with Gemini-CLI (absolute paths) and enforce workspace boundaries in the runtime. Relative paths will still resolve under the current working directory but the model will be instructed to supply absolute paths per CLI guidance.
+
+## Phased execution order
+
+- Phase 1a (initial PR scope):
+  - Implement replace (GeminiEditor.replace + server routing + FileEditAction expected_replacements support).
+  - Implement read_file (tool def + default FileReadAction mapping) and write_file (tool def + FileWriteAction mapping).
+  - Gate tools in CodeActAgent for Gemini and disable str_replace_editor for Gemini.
+- Phase 1b:
+  - Implement list_directory, glob, search_file_content, read_many_files with Gemini-CLI-compatible schemas. Attempt to reuse existing runtime paths; add minimal internal wiring only if necessary.
+- Phase 2 (optional):
+  - Add confirmation/diff previews and content-correction loops similar to Gemini-CLI for write_file/replace if desired.
+
+## Tool schema source of truth
+
+- We will mirror tool names, parameter names, and descriptions from google-gemini/gemini-cli (packages/core/src/tools/*.ts and docs/tools/file-system.md). Any deviations will be documented inline in the tool definitions.
