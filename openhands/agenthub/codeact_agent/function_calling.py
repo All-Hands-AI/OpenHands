@@ -4,21 +4,30 @@ This is similar to the functionality of `CodeActResponseParser`.
 """
 
 import json
+import re
 
 from litellm import (
     ModelResponse,
 )
 
 from openhands.agenthub.codeact_agent.tools import (
-    BrowserTool,
+    BrowserTool as LegacyBrowserTool,
+)
+from openhands.agenthub.codeact_agent.tools import (
     CondensationRequestTool,
-    FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools import (
+    FinishTool as LegacyFinishTool,
+)
+from openhands.agenthub.codeact_agent.tools.bash_tool import BashTool
+from openhands.agenthub.codeact_agent.tools.browser_tool import BrowserTool
+from openhands.agenthub.codeact_agent.tools.file_editor_tool import FileEditorTool
+from openhands.agenthub.codeact_agent.tools.finish_tool import FinishTool
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -40,6 +49,20 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import (
+    BROWSER_TOOL_NAME,
+    EXECUTE_BASH_TOOL_NAME,
+    FINISH_TOOL_NAME,
+    STR_REPLACE_EDITOR_TOOL_NAME,
+)
+
+# Tool instances for validation
+_TOOL_INSTANCES = {
+    EXECUTE_BASH_TOOL_NAME: BashTool(),
+    BROWSER_TOOL_NAME: BrowserTool(),
+    STR_REPLACE_EDITOR_TOOL_NAME: FileEditorTool(),
+    FINISH_TOOL_NAME: FinishTool(),
+}
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -81,10 +104,41 @@ def response_to_actions(
                 ) from e
 
             # ================================================
-            # CmdRunTool (Bash)
+            # BashTool (Unified)
             # ================================================
+            if tool_call.function.name == EXECUTE_BASH_TOOL_NAME:
+                # Use unified tool validation
+                bash_tool = _TOOL_INSTANCES[EXECUTE_BASH_TOOL_NAME]
+                try:
+                    validated_args = bash_tool.validate_parameters(arguments)
+                except FunctionCallValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
 
-            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
+                # convert is_input to boolean
+                is_input = bool(validated_args.get('is_input', False))
+                action = CmdRunAction(
+                    command=validated_args['command'], is_input=is_input
+                )
+
+                # Set hard timeout if provided
+                if 'timeout' in validated_args:
+                    try:
+                        action.set_hard_timeout(float(validated_args['timeout']))
+                    except ValueError as e:
+                        raise FunctionCallValidationError(
+                            f"Invalid float passed to 'timeout' argument: {validated_args['timeout']}"
+                        ) from e
+
+            # ================================================
+            # CmdRunTool (Legacy - fallback)
+            # ================================================
+            elif tool_call.function.name == create_cmd_run_tool()['function']['name']:
                 if 'command' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "command" in tool call {tool_call.function.name}'
@@ -118,9 +172,31 @@ def response_to_actions(
                 )
 
             # ================================================
-            # AgentFinishAction
+            # FinishTool (Unified)
             # ================================================
-            elif tool_call.function.name == FinishTool['function']['name']:
+            elif tool_call.function.name == FINISH_TOOL_NAME:
+                # Use unified tool validation
+                finish_tool = _TOOL_INSTANCES[FINISH_TOOL_NAME]
+                try:
+                    validated_args = finish_tool.validate_parameters(arguments)
+                except FunctionCallValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
+
+                action = AgentFinishAction(
+                    final_thought=validated_args.get('summary', ''),
+                    outputs=validated_args.get('outputs', {}),
+                )
+
+            # ================================================
+            # AgentFinishAction (Legacy - fallback)
+            # ================================================
+            elif tool_call.function.name == LegacyFinishTool['function']['name']:
                 action = AgentFinishAction(
                     final_thought=arguments.get('message', ''),
                 )
@@ -146,6 +222,51 @@ def response_to_actions(
                         'impl_source', FileEditSource.LLM_BASED_EDIT
                     ),
                 )
+
+            # ================================================
+            # FileEditorTool (Unified)
+            # ================================================
+            elif tool_call.function.name == STR_REPLACE_EDITOR_TOOL_NAME:
+                # Use unified tool validation
+                file_editor_tool = _TOOL_INSTANCES[STR_REPLACE_EDITOR_TOOL_NAME]
+                try:
+                    validated_args = file_editor_tool.validate_parameters(arguments)
+                except FunctionCallValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
+
+                path = validated_args['path']
+                command = validated_args['command']
+
+                if command == 'view':
+                    action = FileReadAction(
+                        path=path,
+                        impl_source=FileReadSource.OH_ACI,
+                        view_range=validated_args.get('view_range', None),
+                    )
+                else:
+                    # Remove view_range for edit commands
+                    edit_kwargs = {
+                        k: v
+                        for k, v in validated_args.items()
+                        if k not in ['command', 'path', 'view_range']
+                    }
+
+                    action = FileEditAction(
+                        path=path,
+                        command=command,
+                        impl_source=FileEditSource.OH_ACI,
+                        **edit_kwargs,
+                    )
+
+            # ================================================
+            # str_replace_editor (Legacy - fallback)
+            # ================================================
             elif (
                 tool_call.function.name
                 == create_str_replace_editor_tool()['function']['name']
@@ -211,9 +332,28 @@ def response_to_actions(
                 action = CondensationRequestAction()
 
             # ================================================
-            # BrowserTool
+            # BrowserTool (Unified)
             # ================================================
-            elif tool_call.function.name == BrowserTool['function']['name']:
+            elif tool_call.function.name == BROWSER_TOOL_NAME:
+                # Use unified tool validation
+                browser_tool = _TOOL_INSTANCES[BROWSER_TOOL_NAME]
+                try:
+                    validated_args = browser_tool.validate_parameters(arguments)
+                except FunctionCallValidationError as e:
+                    msg = str(e)
+                    m = re.search(r"Missing required parameter '([^']+)'", msg)
+                    if m:
+                        raise FunctionCallValidationError(
+                            f'Missing required argument "{m.group(1)}"'
+                        ) from e
+                    raise FunctionCallValidationError(msg) from e
+
+                action = BrowseInteractiveAction(browser_actions=validated_args['code'])
+
+            # ================================================
+            # BrowserTool (Legacy - fallback)
+            # ================================================
+            elif tool_call.function.name == LegacyBrowserTool['function']['name']:
                 if 'code' not in arguments:
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
