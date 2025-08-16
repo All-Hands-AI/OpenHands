@@ -36,8 +36,8 @@ export function ConfirmationButtons() {
     return Number(risk) === ActionSafetyRisk.HIGH;
   };
 
-  // Detect if the pending action awaiting confirmation is HIGH risk
-  const isHighRisk = (() => {
+  // Detect if there's a pending action awaiting confirmation and its risk level
+  const confirmationState = (() => {
     for (let i = parsedEvents.length - 1; i >= 0; i -= 1) {
       const ev = parsedEvents[i];
       if (
@@ -45,14 +45,62 @@ export function ConfirmationButtons() {
         ev.source === "agent" &&
         hasRiskAndConfirmation(ev.args)
       ) {
-        if (ev.args.confirmation_state === "awaiting_confirmation") {
-          return isRiskHigh(ev.args.safety_risk);
-        }
+        return {
+          state: ev.args.confirmation_state,
+          isHighRisk: isRiskHigh(ev.args.safety_risk),
+        };
       }
     }
-    return false;
+    return { state: null, isHighRisk: false };
   })();
 
+  const isAwaitingConfirmation = confirmationState.state === "awaiting_confirmation";
+  const isHighRisk = isAwaitingConfirmation && confirmationState.isHighRisk;
+  const wasConfirmed = confirmationState.state === "confirmed";
+  const wasRejected = confirmationState.state === "rejected";
+
+  // Don't render anything if there's no confirmation state
+  if (!confirmationState.state) {
+    return null;
+  }
+
+  // Show confirmation message if action was confirmed
+  if (wasConfirmed) {
+    return (
+      <div className="flex flex-col gap-3 pt-4">
+        <div className="bg-gradient-to-r from-green-500/15 to-emerald-500/15 border-2 border-green-400/60 text-green-400 rounded-lg px-4 py-3 w-full flex items-center gap-3 shadow-lg backdrop-blur-sm">
+          <div className="flex-shrink-0 w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
+            <span role="img" aria-label="confirmed" className="text-lg">
+              ✅
+            </span>
+          </div>
+          <span className="font-medium text-sm leading-relaxed">
+            {t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_CONFIRMED_MESSAGE)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show rejection message if action was rejected
+  if (wasRejected) {
+    return (
+      <div className="flex flex-col gap-3 pt-4">
+        <div className="bg-gradient-to-r from-gray-500/15 to-slate-500/15 border-2 border-gray-400/60 text-gray-400 rounded-lg px-4 py-3 w-full flex items-center gap-3 shadow-lg backdrop-blur-sm">
+          <div className="flex-shrink-0 w-6 h-6 bg-gray-500/20 rounded-full flex items-center justify-center">
+            <span role="img" aria-label="rejected" className="text-lg">
+              ❌
+            </span>
+          </div>
+          <span className="font-medium text-sm leading-relaxed">
+            {t(I18nKey.CHAT_INTERFACE$AGENT_ACTION_USER_REJECTED_MESSAGE)}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show confirmation dialog if awaiting confirmation
   return (
     <div className="flex flex-col gap-3 pt-4">
       {isHighRisk && (
