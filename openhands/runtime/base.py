@@ -33,6 +33,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     IPythonRunCellAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import Event
@@ -43,6 +44,7 @@ from openhands.events.observation import (
     FileReadObservation,
     NullObservation,
     Observation,
+    TaskTrackingObservation,
     UserRejectObservation,
 )
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
@@ -869,6 +871,46 @@ fi
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
+            elif isinstance(action, TaskTrackingAction):
+                # If `command` is `plan`, write the serialized task list to the file TASKS.md under `.openhands/`
+                if action.command == 'plan':
+                    content = '# Task List\n\n'
+                    for i, task in enumerate(action.task_list, 1):
+                        status_icon = {
+                            'todo': '⏳',
+                            'in_progress': '🔄',
+                            'done': '✅',
+                        }.get(task.get('status', 'todo'), '⏳')
+                        content += f'{i}. {status_icon} {task.get("title", "")}\n{task.get("notes", "")}\n'
+                    write_obs = self.write(
+                        FileWriteAction(path='.openhands/TASKS.md', content=content)
+                    )
+                    if isinstance(write_obs, ErrorObservation):
+                        return ErrorObservation(
+                            f'Failed to write task list to .openhands/TASKS.md: {write_obs.content}'
+                        )
+
+                    return TaskTrackingObservation(
+                        content=f'Task list has been updated with {len(action.task_list)} items.',
+                        command=action.command,
+                        task_list=action.task_list,
+                    )
+                elif action.command == 'view':
+                    # If `command` is `view`, read the TASKS.md file and return its content
+                    read_obs = self.read(FileReadAction(path='.openhands/TASKS.md'))
+                    if isinstance(read_obs, FileReadObservation):
+                        return TaskTrackingObservation(
+                            content=read_obs.content,
+                            command=action.command,
+                            task_list=[],  # Empty for view command
+                        )
+                    else:
+                        return TaskTrackingObservation(  # Return observation if error occurs because file might not exist yet
+                            command=action.command,
+                            task_list=[],
+                            content=f'Failed to read the task list. Error: {read_obs.content}',
+                        )
+
             return NullObservation('')
         if (
             hasattr(action, 'confirmation_state')
@@ -1038,7 +1080,9 @@ fi
         self, command: str, cwd: str | None
     ) -> CommandResult:
         """This function is used by the GitHandler to execute shell commands."""
-        obs = self.run(CmdRunAction(command=command, is_static=True, cwd=cwd))
+        obs = self.run(
+            CmdRunAction(command=command, is_static=True, hidden=True, cwd=cwd)
+        )
         exit_code = 0
         content = ''
 
