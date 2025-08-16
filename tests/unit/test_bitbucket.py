@@ -148,8 +148,8 @@ def test_create_pr(mock_post, bitbucket_handler):
 
 
 # Bitbucket Send Pull Request Tests
-@patch('openhands.resolver.send_pull_request.ServiceContextIssue')
-@patch('openhands.resolver.send_pull_request.BitbucketIssueHandler')
+@patch('openhands.resolver.pull_request_sender.ServiceContextIssue')
+@patch('openhands.resolver.pull_request_sender.BitbucketIssueHandler')
 @patch('subprocess.run')
 def test_send_pull_request_bitbucket(
     mock_run, mock_bitbucket_handler, mock_service_context

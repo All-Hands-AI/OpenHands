@@ -54,7 +54,7 @@ def test_commit_message_with_quotes():
 
 
 def test_pr_title_with_quotes(monkeypatch):
-    # Mock requests.post to avoid actual API calls
+    # Mock httpx.post to avoid actual API calls
     class MockResponse:
         def __init__(self, status_code=201):
             self.status_code = status_code
