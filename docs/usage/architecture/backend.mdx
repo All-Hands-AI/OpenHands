@@ -2,16 +2,32 @@
 title: Backend Architecture
 ---
 
-<div style={{ textAlign: 'center' }}>
-  <img src="https://github.com/All-Hands-AI/OpenHands/assets/16201837/97d747e3-29d8-4ccb-8d34-6ad1adb17f38" alt="OpenHands System Architecture Diagram Jul 4 2024" />
-  <p><em>OpenHands System Architecture Diagram (July 4, 2024)</em></p>
-</div>
 
 This is a high-level overview of the system architecture. The system is divided into two main components: the frontend and the backend. The frontend is responsible for handling user interactions and displaying the results. The backend is responsible for handling the business logic and executing the agents.
 
 # Frontend architecture
 
-![system_architecture.svg](/static/img/system_architecture.svg)
+```mermaid
+graph LR
+  U[User] --> FE[Frontend (SPA)]
+  FE -->|HTTP/WS| BE[OpenHands Backend]
+  BE --> ES[(EventStream)]
+  BE --> ST[(Storage)]
+  BE --> RT[Runtime Interface]
+  BE --> LLM[LLM Providers]
+
+  subgraph Runtime
+    RT --> DRT[Docker Runtime]
+    RT --> LRT[Local Runtime]
+    RT --> RRT[Remote Runtime]
+    DRT --> AES[Action Execution Server]
+    LRT --> AES
+    RRT --> AES
+    AES --> Bash[Bash Session]
+    AES --> Jupyter[Jupyter Plugin]
+    AES --> Browser[BrowserEnv]
+  end
+```
 
 This Overview is simplified to show the main components and their interactions. For a more detailed view of the backend architecture, see the Backend Architecture section below.
 
@@ -19,7 +35,52 @@ This Overview is simplified to show the main components and their interactions. 
 
 _**Disclaimer**: The backend architecture is a work in progress and is subject to change. The following diagram shows the current architecture of the backend based on the commit that is shown in the footer of the diagram._
 
-![backend_architecture.svg](/static/img/backend_architecture.svg)
+```mermaid
+classDiagram
+  class Agent {
+    <<abstract>>
+    +sandbox_plugins: list[PluginRequirement]
+  }
+  class CodeActAgent {
+    +tools
+  }
+  Agent <|-- CodeActAgent
+
+  class EventStream
+  class Observation
+  class Action
+  Action --> Observation
+  Agent --> EventStream
+
+  class Runtime {
+    +connect()
+    +send_action_for_execution()
+  }
+  class ActionExecutionClient {
+    +_send_action_server_request()
+  }
+  class DockerRuntime
+  class LocalRuntime
+  class RemoteRuntime
+  Runtime <|-- ActionExecutionClient
+  ActionExecutionClient <|-- DockerRuntime
+  ActionExecutionClient <|-- LocalRuntime
+  ActionExecutionClient <|-- RemoteRuntime
+
+  class ActionExecutionServer {
+    +/execute_action
+    +/alive
+  }
+  class BashSession
+  class JupyterPlugin
+  class BrowserEnv
+  ActionExecutionServer --> BashSession
+  ActionExecutionServer --> JupyterPlugin
+  ActionExecutionServer --> BrowserEnv
+
+  Agent --> Runtime
+  Runtime ..> ActionExecutionServer : REST
+```
 
 <details>
   <summary>Updating this Diagram</summary>
@@ -37,20 +98,11 @@ _**Disclaimer**: The backend architecture is a work in progress and is subject t
 
 ## Steps
 
-1.  Autogenerate the diagram by running the following command from the root of the repository:
-    `py2puml openhands openhands > docs/architecture/backend_architecture.puml`
+1.  We now maintain diagrams inline with Mermaid directly in this MDX. If regeneration is needed, update the Mermaid blocks below instead of PlantUML artifacts.
 
-2.  Open the generated file in a PlantUML editor, e.g. Visual Studio Code with the PlantUML extension or [PlantText](https://www.planttext.com/)
+2.  Update the Mermaid diagrams in this file directly and review the diff to verify correctness. Keep class relationships concise and aligned with stable abstractions (agents, runtime client/server, plugins).
 
-3.  Review the generated PUML and make all necessary adjustments to the diagram (add missing parts, fix mistakes, improve positioning).
-    _py2puml creates the diagram based on the type hints in the code, so missing or incorrect type hints may result in an incomplete or incorrect diagram._
-
-4.  Review the diff between the new and the previous diagram and manually check if the changes are correct.
-    _Make sure not to remove parts that were manually added to the diagram in the past and are still relevant._
-
-5.  Add the commit hash of the commit that was used to generate the diagram to the diagram footer.
-
-6.  Export the diagram as PNG and SVG files and replace the existing diagrams in the `docs/architecture` directory. This can be done with (e.g. [PlantText](https://www.planttext.com/))
+  We are migrating diagrams to Mermaid for easier weekly upkeep. For class-level detail, keep diagrams concise and reflect only stable relationships.
 
   </div>
 </details>
