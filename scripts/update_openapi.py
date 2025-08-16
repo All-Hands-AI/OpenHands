@@ -111,10 +111,8 @@ def generate_openapi_spec():
     """Generate the OpenAPI specification from the FastAPI app."""
     spec = app.openapi()
 
-    # Explicitly exclude certain endpoints that are not useful for typical API users
+    # Explicitly exclude certain endpoints that are operational or UI-only convenience
     excluded_endpoints = [
-        '/api/conversations/{conversation_id}/exp-config',  # Internal experimentation endpoint
-        '/api/user/installations',  # Frontend/account-management specific
         '/server_info',  # Operational/system diagnostics
         '/api/conversations/{conversation_id}/vscode-url',  # UI/runtime convenience
         '/api/conversations/{conversation_id}/web-hosts',  # UI/runtime convenience
