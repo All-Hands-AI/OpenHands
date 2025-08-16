@@ -55,8 +55,14 @@ class ExperimentManager:
         return config
 
 
-experiment_manager_cls = os.environ.get(
-    'OPENHANDS_EXPERIMENT_MANAGER_CLS',
-    'openhands.experiments.experiment_manager.ExperimentManager',
-)
-ExperimentManagerImpl = get_impl(ExperimentManager, experiment_manager_cls)
+def get_experiment_manager_impl():
+    """Get the experiment manager implementation, with lazy loading to avoid circular imports."""
+    experiment_manager_cls = os.environ.get(
+        'OPENHANDS_EXPERIMENT_MANAGER_CLS',
+        'openhands.experiments.experiment_manager.ExperimentManager',
+    )
+    return get_impl(ExperimentManager, experiment_manager_cls)
+
+
+# Lazy initialization to avoid circular import
+ExperimentManagerImpl = None

@@ -5,7 +5,7 @@ from typing import Any
 from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
-from openhands.experiments.experiment_manager import ExperimentManagerImpl
+from openhands.experiments.experiment_manager import get_experiment_manager_impl
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE_WITH_JSON_SCHEMA,
     PROVIDER_TOKEN_TYPE,
@@ -103,7 +103,8 @@ async def create_new_conversation(
             extra={'user_id': user_id, 'session_id': conversation_id},
         )
 
-        conversation_init_data = ExperimentManagerImpl.run_conversation_variant_test(
+        experiment_manager_impl = get_experiment_manager_impl()
+        conversation_init_data = experiment_manager_impl.run_conversation_variant_test(
             user_id, conversation_id, conversation_init_data
         )
         conversation_title = get_default_conversation_title(conversation_id)
@@ -200,6 +201,7 @@ async def setup_init_convo_settings(
 
     convo_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation
-    return ExperimentManagerImpl.run_conversation_variant_test(
+    experiment_manager_impl = get_experiment_manager_impl()
+    return experiment_manager_impl.run_conversation_variant_test(
         user_id, conversation_id, convo_init_data
     )

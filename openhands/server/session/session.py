@@ -74,9 +74,10 @@ class Session:
         # Copying this means that when we update variables they are not applied to the shared global configuration!
         self.config = deepcopy(config)
         # Lazy import to avoid circular dependency
-        from openhands.experiments.experiment_manager import ExperimentManagerImpl
+        from openhands.experiments.experiment_manager import get_experiment_manager_impl
 
-        self.config = ExperimentManagerImpl.run_config_variant_test(
+        experiment_manager_impl = get_experiment_manager_impl()
+        self.config = experiment_manager_impl.run_config_variant_test(
             user_id, sid, self.config
         )
         self.loop = asyncio.get_event_loop()

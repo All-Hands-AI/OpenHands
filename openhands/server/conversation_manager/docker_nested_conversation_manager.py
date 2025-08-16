@@ -19,7 +19,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
-from openhands.experiments.experiment_manager import ExperimentManagerImpl
+from openhands.experiments.experiment_manager import get_experiment_manager_impl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
@@ -472,7 +472,8 @@ class DockerNestedConversationManager(ConversationManager):
         # is the easiest way to create the needed docker container
 
         # Run experiment manager variant test before creating session
-        config: OpenHandsConfig = ExperimentManagerImpl.run_config_variant_test(
+        experiment_manager_impl = get_experiment_manager_impl()
+        config: OpenHandsConfig = experiment_manager_impl.run_config_variant_test(
             user_id, sid, self.config
         )
 
