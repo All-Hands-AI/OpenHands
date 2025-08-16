@@ -382,12 +382,12 @@ async def run_session(
             # Check if it's an authentication error
             if 'ERROR_LLM_AUTHENTICATION' in error_message:
                 # Start with base authentication error message
-                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+                welcome_message = 'Authentication error with the LLM provider. Please check your API key.'
 
                 # Add OpenHands-specific guidance if using an OpenHands model
                 llm_config = config.get_llm_config()
                 if llm_config.model.startswith('openhands/'):
-                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+                    welcome_message += "\nIf you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
             else:
                 # For other errors, use the standard message
                 initial_message = (
