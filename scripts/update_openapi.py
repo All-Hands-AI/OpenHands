@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
 """
-Script to update the OpenAPI documentation for OpenHands.
+Update OpenHands OpenAPI documentation.
 
-This script generates the OpenAPI specification from the FastAPI application
-and updates the documentation file at docs/openapi.json.
+Generates the OpenAPI specification from the FastAPI application and writes it
+to docs/openapi.json.
+
+Usage:
+    python scripts/update_openapi.py
+
+Behavior:
+- Uses openhands.server.app.app.openapi() to build the spec.
+- Preserves existing "servers" from docs/openapi.json if present; otherwise
+  writes sensible defaults.
+- Sets info.version to openhands.__version__.
+- Sanitizes endpoint descriptions to remove code blocks and internal-only sections.
+- Excludes operational/UI-only convenience endpoints:
+  - /server_info
+  - /api/conversations/{conversation_id}/vscode-url
+  - /api/conversations/{conversation_id}/web-hosts
+- Creates a backup docs/openapi.json.backup before overwriting.
+
+Output:
+- Prints OpenAPI and API versions, endpoint count, servers count, and sample endpoints.
 """
 
 import json
