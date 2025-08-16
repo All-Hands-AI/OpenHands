@@ -24,9 +24,10 @@ class Conversation:
     sid: str
     file_store: FileStore
     event_stream: EventStream
-    runtime: Runtime
+    runtime: Runtime | None
     user_id: str | None
     _attach_to_existing: bool = False
+    _headless_mode: bool = False
 
     def __init__(
         self,
@@ -44,6 +45,8 @@ class Conversation:
         self.config = config
         self.file_store = file_store
         self.user_id = user_id
+        self._attach_to_existing = attach_to_existing
+        self._headless_mode = headless_mode
 
         if event_stream is None:
             event_stream = EventStream(sid, file_store, user_id)
@@ -54,20 +57,26 @@ class Conversation:
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
 
+        # Do not eagerly create a runtime. Some runtimes (e.g., Docker) perform
+        # client initialization in __init__, which breaks simple attach/inspect
+        # scenarios and unit tests that don't need a live runtime. Create it on
+        # first connect() only, unless a runtime is provided for attachment.
+        self.runtime = None
         if runtime is not None:
             self._attach_to_existing = True
             self.runtime = runtime
-        else:
-            runtime_cls = get_runtime_cls(self.config.runtime)
-            self.runtime = runtime_cls(
-                config=config,
-                event_stream=self.event_stream,
-                sid=self.sid,
-                attach_to_existing=attach_to_existing,
-                headless_mode=headless_mode,
-            )
 
     async def connect(self) -> None:
+        # Lazily create runtime if needed
+        if self.runtime is None:
+            runtime_cls = get_runtime_cls(self.config.runtime)
+            self.runtime = runtime_cls(
+                config=self.config,
+                event_stream=self.event_stream,
+                sid=self.sid,
+                attach_to_existing=self._attach_to_existing,
+                headless_mode=self._headless_mode,
+            )
         if not self._attach_to_existing:
             await self.runtime.connect()
 
@@ -76,4 +85,5 @@ class Conversation:
             return
         if self.event_stream:
             self.event_stream.close()
-        asyncio.create_task(call_sync_from_async(self.runtime.close))
+        if self.runtime is not None:
+            asyncio.create_task(call_sync_from_async(self.runtime.close))

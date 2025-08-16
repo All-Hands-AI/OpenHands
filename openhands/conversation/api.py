@@ -8,6 +8,7 @@ inspect and attach to conversations.
 import uuid
 from typing import Optional
 
+from openhands.conversation.conversation import Conversation
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.stream import EventStream
 from openhands.storage import get_file_store
@@ -16,8 +17,6 @@ from openhands.storage.conversation.file_conversation_store import (
     FileConversationStore,
 )
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
-from openhands.storage.files import FileStore
-from openhands.conversation.conversation import Conversation
 
 
 async def get_conversation_store(

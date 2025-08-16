@@ -69,7 +69,8 @@ async def list_files(
             status_code=status.HTTP_404_NOT_FOUND,
             content={'error': 'Runtime not yet initialized'},
         )
-
+    # Narrow the optional type for static type checkers
+    assert conversation.runtime is not None
     runtime: Runtime = conversation.runtime
     try:
         file_list = await call_sync_from_async(runtime.list_files, path)
@@ -145,6 +146,12 @@ async def select_file(
     Raises:
         HTTPException: If there's an error opening the file.
     """
+    if not conversation.runtime:
+        return JSONResponse(
+            status_code=status.HTTP_404_NOT_FOUND,
+            content={'error': 'Runtime not yet initialized'},
+        )
+    assert conversation.runtime is not None
     runtime: Runtime = conversation.runtime
 
     file = os.path.join(runtime.config.workspace_mount_path_in_sandbox, file)
@@ -195,6 +202,12 @@ def zip_current_workspace(
 ) -> FileResponse | JSONResponse:
     try:
         logger.debug('Zipping workspace')
+        if not conversation.runtime:
+            return JSONResponse(
+                status_code=404,
+                content={'error': 'Runtime not yet initialized'},
+            )
+        assert conversation.runtime is not None
         runtime: Runtime = conversation.runtime
         path = runtime.config.workspace_mount_path_in_sandbox
         try:
@@ -232,6 +245,12 @@ async def git_changes(
     conversation_store: ConversationStore = Depends(get_conversation_store),
     user_id: str = Depends(get_user_id),
 ) -> list[dict[str, str]] | JSONResponse:
+    if not conversation.runtime:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Runtime not yet initialized'},
+        )
+    assert conversation.runtime is not None
     runtime: Runtime = conversation.runtime
 
     cwd = runtime.config.workspace_mount_path_in_sandbox
@@ -269,6 +288,12 @@ async def git_diff(
     conversation_store: Any = Depends(get_conversation_store),
     conversation: ServerConversation = Depends(get_conversation),
 ) -> dict[str, Any] | JSONResponse:
+    if not conversation.runtime:
+        return JSONResponse(
+            status_code=404,
+            content={'error': 'Runtime not yet initialized'},
+        )
+    assert conversation.runtime is not None
     runtime: Runtime = conversation.runtime
 
     cwd = runtime.config.workspace_mount_path_in_sandbox
@@ -291,6 +316,20 @@ async def upload_files(
 ):
     uploaded_files = []
     skipped_files = []
+    if not conversation.runtime:
+        return JSONResponse(
+            status_code=404,
+            content={
+                'uploaded_files': [],
+                'skipped_files': files
+                and [
+                    {'name': f.filename, 'reason': 'Runtime not yet initialized'}
+                    for f in files
+                ]
+                or [],
+            },
+        )
+    assert conversation.runtime is not None
     runtime: Runtime = conversation.runtime
 
     for file in files:
