@@ -38,7 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Only ensure auth is valid; do not set provider-specific LLM secrets here.
+          # Ensure auth is valid
           curl -sS -X GET "$CLOUD_API_URL/api/server_info" \
             -H "Authorization: Bearer $OPENHANDS_API_KEY" | jq .
 
