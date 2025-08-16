@@ -165,6 +165,29 @@ async def handle_commands(
         )
     elif command == '/mcp':
         await handle_mcp_command(config)
+    elif command == '/plan':
+        # Prompt for planning objective and delegate to ReadOnlyPlanningAgent
+        objective = await collect_input(config, 'Enter planning objective:')
+        if objective is None:
+            return close_repl, reload_microagents, new_session_requested, exit_reason
+        from openhands.events import EventSource as _ES
+        from openhands.events.action import AgentDelegateAction
+
+        event_stream.add_event(
+            AgentDelegateAction(
+                agent='ReadOnlyPlanningAgent', inputs={'task': objective}
+            ),
+            _ES.USER,
+        )
+    elif command == '/execute':
+        # End the planning delegate and return to the parent
+        from openhands.events import EventSource as _ES
+        from openhands.events.action import AgentFinishAction
+
+        event_stream.add_event(
+            AgentFinishAction(final_thought='Switching to execution mode'),
+            _ES.USER,
+        )
     else:
         close_repl = True
         action = MessageAction(content=command)

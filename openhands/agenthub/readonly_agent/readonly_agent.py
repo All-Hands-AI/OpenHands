@@ -1,4 +1,10 @@
-"""ReadOnlyAgent - A specialized version of CodeActAgent that only uses read-only tools."""
+"""ReadOnlyPlanningAgent - A specialized planning agent for read-only research plus maintaining PLAN.md.
+
+This agent is derived from CodeActAgent and constrained to:
+- Use read-only research tools (grep, glob, view) to explore the repository
+- Maintain a single planning document at /workspace/PLAN.md via a dedicated plan editor tool
+- Avoid any other code execution or edits outside PLAN.md
+"""
 
 import os
 from typing import TYPE_CHECKING
@@ -19,20 +25,14 @@ from openhands.llm.llm import LLM
 from openhands.utils.prompt import PromptManager
 
 
-class ReadOnlyAgent(CodeActAgent):
+class ReadOnlyPlanningAgent(CodeActAgent):
     VERSION = '1.0'
     """
-    The ReadOnlyAgent is a specialized version of CodeActAgent that only uses read-only tools.
-
-    This agent is designed for safely exploring codebases without making any changes.
-    It only has access to tools that don't modify the system: grep, glob, view, think, finish, web_read.
-
-    Use this agent when you want to:
-    1. Explore a codebase to understand its structure
-    2. Search for specific patterns or code
-    3. Research without making any changes
-
-    When you're ready to make changes, switch to the regular CodeActAgent.
+    The ReadOnlyPlanningAgent is designed for planning large features safely.
+    It provides:
+    - Read-only repo exploration: grep, glob, view
+    - PLAN.md maintenance via a specialized plan editor tool (create/view/edit only)
+    - No other file modifications or command execution
     """
 
     def __init__(
@@ -50,7 +50,7 @@ class ReadOnlyAgent(CodeActAgent):
         super().__init__(llm, config)
 
         logger.debug(
-            f'TOOLS loaded for ReadOnlyAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
+            f'TOOLS loaded for ReadOnlyPlanningAgent: {", ".join([tool.get("function").get("name") for tool in self.tools])}'
         )
 
     @property
@@ -74,7 +74,7 @@ class ReadOnlyAgent(CodeActAgent):
         - mcp_tools (list[dict]): The list of MCP tools.
         """
         logger.warning(
-            'ReadOnlyAgent does not support MCP tools. MCP tools will be ignored by the agent.'
+            'ReadOnlyPlanningAgent does not support MCP tools. MCP tools will be ignored by the agent.'
         )
 
     def response_to_actions(self, response: 'ModelResponse') -> list['Action']:
