@@ -23,7 +23,7 @@ const getRiskText = (risk: ActionSecurityRisk | string | number) => {
     if (lowerRisk === "high") return i18n.t("SECURITY$HIGH_RISK");
     return i18n.t("SECURITY$UNKNOWN_RISK");
   }
-  
+
   // Handle numeric values
   const numericRisk = Number(risk);
   switch (numericRisk) {

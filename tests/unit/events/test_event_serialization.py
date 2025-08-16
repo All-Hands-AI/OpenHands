@@ -131,8 +131,12 @@ def test_security_risk_serialization():
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' in serialized
-    assert serialized['security_risk'] == ActionSecurityRisk.HIGH.value
+    assert 'security_risk' in serialized['args']
+    assert serialized['args']['security_risk'] == ActionSecurityRisk.HIGH.value
+
+    # Test deserialization
+    deserialized = event_from_dict(serialized)
+    assert deserialized.security_risk == ActionSecurityRisk.HIGH
 
     # Test action with no security risk
     action = CmdRunAction(command='ls')
@@ -140,4 +144,8 @@ def test_security_risk_serialization():
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' not in serialized
+    assert 'security_risk' not in serialized['args']
+
+    # Test deserialization
+    deserialized = event_from_dict(serialized)
+    assert deserialized.security_risk is None

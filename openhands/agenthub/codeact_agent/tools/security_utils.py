@@ -5,14 +5,15 @@ This file contains standardized risk description text for various tools.
 
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
-# Set up Jinja environment
+from openhands.core.logger import openhands_logger as logger
+
+# Set up Jinja environment with autoescape for security
 TEMPLATE_DIR = Path(__file__).parent / 'security_utils_templates'
-env = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=True)
 
 
-# Load templates for each tool type
 def _load_template(template_name: str) -> str:
     """Load and render a template from the templates directory.
 
@@ -21,9 +22,16 @@ def _load_template(template_name: str) -> str:
 
     Returns:
         The rendered template as a string
+
+    Raises:
+        TemplateNotFound: If the template file doesn't exist
     """
-    template = env.get_template(f'{template_name}.j2')
-    return template.render()
+    try:
+        template = env.get_template(f'{template_name}.j2')
+        return template.render()
+    except TemplateNotFound as e:
+        logger.error(f'Security template not found: {template_name}.j2')
+        raise e
 
 
 # Browser tool risk description

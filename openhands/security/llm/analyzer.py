@@ -30,6 +30,14 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         """Handles the incoming API request."""
         return {'status': 'ok'}
 
+    def _get_risk_level_mapping(self) -> dict[str, ActionSecurityRisk]:
+        """Returns the mapping from string risk levels to ActionSecurityRisk enum values."""
+        return {
+            'LOW': ActionSecurityRisk.LOW,
+            'MEDIUM': ActionSecurityRisk.MEDIUM,
+            'HIGH': ActionSecurityRisk.HIGH,
+        }
+
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level.
 
@@ -37,18 +45,18 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         If it does, it uses that value. Otherwise, it returns UNKNOWN.
         """
         # Check if the action has a safety_risk attribute set by the LLM
-        if hasattr(event, 'safety_risk'):
-            risk_mapping = {
-                'LOW': ActionSecurityRisk.LOW,
-                'MEDIUM': ActionSecurityRisk.MEDIUM,
-                'HIGH': ActionSecurityRisk.HIGH,
-            }
-            safety_risk = getattr(event, 'safety_risk')
-            if safety_risk in risk_mapping:
-                logger.info(f'Using LLM-provided risk assessment: {safety_risk}')
-                return risk_mapping[safety_risk]
+        if not hasattr(event, 'safety_risk'):
+            return ActionSecurityRisk.UNKNOWN
 
-        # Default to UNKNOWN if no safety_risk attribute is found
+        safety_risk = getattr(event, 'safety_risk')
+        risk_mapping = self._get_risk_level_mapping()
+
+        if safety_risk in risk_mapping:
+            logger.info(f'Using LLM-provided risk assessment: {safety_risk}')
+            return risk_mapping[safety_risk]
+
+        # Default to UNKNOWN if safety_risk value is not recognized
+        logger.warning(f'Unrecognized safety_risk value: {safety_risk}')
         return ActionSecurityRisk.UNKNOWN
 
     async def act(self, event: Event) -> None:
