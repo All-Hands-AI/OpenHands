@@ -1,6 +1,3 @@
-const getRandomNumber = (from = 3, to = 5) =>
-  Math.floor(Math.random() * (to - from + 1)) + from;
-
 function ConversationSkeleton() {
   return (
     <div className="flex flex-col gap-1 py-[14px]">
@@ -37,12 +34,11 @@ function RecentConversationSkeleton({
           <ConversationSkeleton key={index} />
         ))}
       </ul>
+      <div className="w-20 h-3 skeleton" />
     </div>
   );
 }
 
 export function RecentConversationsSkeleton() {
-  return Array.from({ length: getRandomNumber(2, 3) }).map((_, index) => (
-    <RecentConversationSkeleton key={index} items={getRandomNumber(3, 5)} />
-  ));
+  return <RecentConversationSkeleton />;
 }

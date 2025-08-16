@@ -71,7 +71,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           displayedTaskGroups &&
           displayedTaskGroups.length > 0 && (
             <div className="flex flex-col">
-              <div className="transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar">
+              <div className="transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar">
                 <div className="flex flex-col">
                   {displayedTaskGroups.map((taskGroup, index) => (
                     <TaskGroup

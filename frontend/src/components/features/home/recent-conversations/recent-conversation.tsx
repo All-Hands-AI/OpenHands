@@ -34,37 +34,39 @@ export function RecentConversation({ conversation }: RecentConversationProps) {
           </span>
         </div>
         <div className="flex items-center justify-between text-xs text-[#A3A3A3] leading-4 font-normal">
-          {hasRepository ? (
-            <div className="flex items-center gap-2">
-              <GitProviderIcon
-                gitProvider={conversation.git_provider as Provider}
-              />
-              <span
-                className="max-w-[124px] truncate"
-                title={conversation.selected_repository || ""}
-              >
-                {conversation.selected_repository}
-              </span>
-            </div>
-          ) : (
-            <div className="flex items-center gap-1">
-              <RepoForkedIcon width={12} height={12} color="#A3A3A3" />
-              <span className="max-w-[124px] truncate">
-                {t(I18nKey.COMMON$NO_REPOSITORY)}
-              </span>
-            </div>
-          )}
-          {hasRepository ? (
-            <div className="flex items-center gap-1">
-              <CodeBranchIcon width={12} height={12} color="#A3A3A3" />
-              <span
-                className="max-w-[124px] truncate"
-                title={conversation.selected_branch || ""}
-              >
-                {conversation.selected_branch}
-              </span>
-            </div>
-          ) : null}
+          <div className="flex items-center gap-3">
+            {hasRepository ? (
+              <div className="flex items-center gap-2">
+                <GitProviderIcon
+                  gitProvider={conversation.git_provider as Provider}
+                />
+                <span
+                  className="max-w-[124px] truncate"
+                  title={conversation.selected_repository || ""}
+                >
+                  {conversation.selected_repository}
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-1">
+                <RepoForkedIcon width={12} height={12} color="#A3A3A3" />
+                <span className="max-w-[124px] truncate">
+                  {t(I18nKey.COMMON$NO_REPOSITORY)}
+                </span>
+              </div>
+            )}
+            {hasRepository ? (
+              <div className="flex items-center gap-1">
+                <CodeBranchIcon width={12} height={12} color="#A3A3A3" />
+                <span
+                  className="max-w-[124px] truncate"
+                  title={conversation.selected_branch || ""}
+                >
+                  {conversation.selected_branch}
+                </span>
+              </div>
+            ) : null}
+          </div>
           <span>
             {formatTimeDelta(
               new Date(conversation.created_at || conversation.last_updated_at),
