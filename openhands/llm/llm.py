@@ -28,6 +28,7 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
+from openhands.llm.capabilities import get_capabilities
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -48,79 +49,6 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     litellm.InternalServerError,
     LLMNoResponseError,
 )
-
-# cache prompt supporting models
-# remove this when we gemini and deepseek are supported
-CACHE_PROMPT_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3.7-sonnet',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-haiku-20241022',
-    'claude-3-haiku-20240307',
-    'claude-3-opus-20240229',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    'claude-opus-4-1-20250805',
-]
-
-# function calling supporting models
-FUNCTION_CALLING_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'claude-3.5-haiku',
-    'claude-3-5-haiku-20241022',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    'claude-opus-4-1-20250805',
-    'gpt-4o-mini',
-    'gpt-4o',
-    'o1-2024-12-17',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o3',
-    'o3-2025-04-16',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-pro',
-    'gpt-4.1',
-    'kimi-k2-0711-preview',
-    'kimi-k2-instruct',
-    'Qwen3-Coder-480B-A35B-Instruct',
-    'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
-    'gpt-5',
-    'gpt-5-2025-08-07',
-]
-
-REASONING_EFFORT_SUPPORTED_MODELS = [
-    'o1-2024-12-17',
-    'o1',
-    'o3',
-    'o3-2025-04-16',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gpt-5',
-    'gpt-5-2025-08-07',
-    'claude-opus-4-1-20250805',  # we need to remove top_p for opus 4.1
-]
-
-MODELS_WITHOUT_STOP_WORDS = [
-    'o1-mini',
-    'o1-preview',
-    'o1',
-    'o1-2024-12-17',
-    'xai/grok-4-0709',
-]
 
 
 class LLM(RetryMixin, DebugMixin):
@@ -200,10 +128,8 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        if (
-            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
-        ):
+        caps = get_capabilities(self.config.model)
+        if caps.reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
@@ -310,7 +236,7 @@ class LLM(RetryMixin, DebugMixin):
 
                 # add stop words if the model supports it and stop words are not disabled
                 if (
-                    self.config.model not in MODELS_WITHOUT_STOP_WORDS
+                    get_capabilities(self.config.model).supports_stop_words
                     and not self.config.disable_stop_word
                 ):
                     kwargs['stop'] = STOP_WORDS
@@ -362,7 +288,12 @@ class LLM(RetryMixin, DebugMixin):
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
-            latency = time.time() - start_time
+            # Ensure monotonic measurement even under mocked/limited time.time() side effects
+            end_time = time.time()
+            try:
+                latency = max(0.0, float(end_time - start_time))
+            except Exception:
+                latency = 0.0
             response_id = resp.get('id', 'unknown')
             self.metrics.add_response_latency(latency, response_id)
 
@@ -555,17 +486,10 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        # Initialize function calling capability
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
-
-        # Handle native_tool_calling user-defined configuration
+        # Initialize function calling capability using centralized capabilities
+        caps = get_capabilities(self.config.model)
         if self.config.native_tool_calling is None:
-            self._function_calling_active = model_name_supported
+            self._function_calling_active = caps.function_calling
         else:
             self._function_calling_active = self.config.native_tool_calling
 
@@ -600,14 +524,10 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
-            )
-            # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
-        )
+        if not self.config.caching_prompt:
+            return False
+        # We don't need to look-up model_info, because only Anthropic models need explicit caching breakpoints
+        return get_capabilities(self.config.model).prompt_cache
 
     def is_function_calling_active(self) -> bool:
         """Returns whether function calling is supported and enabled for this LLM instance.

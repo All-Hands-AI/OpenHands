@@ -1,0 +1,146 @@
+import pytest
+
+from openhands.llm.capabilities import (
+    ModelCapabilities,
+    get_capabilities,
+    model_matches,
+    normalize_model_name,
+)
+
+
+@pytest.mark.parametrize(
+    'raw,expected',
+    [
+        ('  OPENAI/gpt-4o  ', 'gpt-4o'),
+        ('anthropic/claude-3-7-sonnet', 'claude-3-7-sonnet'),
+        ('litellm_proxy/gemini-2.5-pro', 'gemini-2.5-pro'),
+        ('qwen3-coder-480b-a35b-instruct', 'qwen3-coder-480b-a35b-instruct'),
+        ('gpt-5-preview', 'gpt-5-preview'),
+        ('', ''),
+        (None, ''),  # type: ignore[arg-type]
+    ],
+)
+def test_normalize_model_name(raw, expected):
+    assert normalize_model_name(raw) == expected
+
+
+@pytest.mark.parametrize(
+    'name,pattern,expected',
+    [
+        ('gpt-4o', 'gpt-4o*', True),
+        ('openai/gpt-4o', 'gpt-4o*', True),
+        ('litellm_proxy/gpt-4o-mini', 'gpt-4o*', True),
+        ('claude-3-7-sonnet-20250219', 'claude-3-7-sonnet*', True),
+        ('o1-2024-12-17', 'o1*', True),
+        ('grok-4-0709', 'grok-4-0709', True),
+        ('grok-4-0801', 'grok-4-0709', False),
+        ('unknown-model', 'gpt-5*', False),
+    ],
+)
+def test_model_matches(name, pattern, expected):
+    assert model_matches(name, [pattern]) is expected
+
+
+@pytest.mark.parametrize(
+    'model,expect',
+    [
+        ('gpt-4o', ModelCapabilities(True, False, False, True)),
+        ('gpt-5-preview', ModelCapabilities(True, True, False, True)),
+        ('o3-mini', ModelCapabilities(True, True, False, True)),
+        ('o1-2024-12-17', ModelCapabilities(True, True, False, False)),
+        ('xai/grok-4-0709', ModelCapabilities(False, False, False, False)),
+        ('anthropic/claude-3-7-sonnet', ModelCapabilities(True, False, True, True)),
+        (
+            'litellm_proxy/claude-3.7-sonnet',
+            ModelCapabilities(True, False, True, True),
+        ),
+        ('gemini-2.5-pro', ModelCapabilities(True, True, False, True)),
+    ],
+)
+def test_get_capabilities(model, expect):
+    caps = get_capabilities(model)
+    assert caps == expect
+
+
+@pytest.mark.parametrize(
+    'model',
+    [
+        # Anthropic families
+        'claude-3-7-sonnet-20250219',
+        'claude-3.7-sonnet',
+        'claude-sonnet-3-7-latest',
+        'claude-3-5-sonnet',
+        'claude-3.5-haiku',
+        'claude-3-5-haiku-20241022',
+        'claude-sonnet-4-latest',
+        'claude-opus-4-1-20250805',
+        # OpenAI families
+        'gpt-4o',
+        'gpt-4.1',
+        'gpt-5-preview',
+        # o-series
+        'o1-2024-12-17',
+        'o3-mini',
+        'o4-mini',
+        # Google Gemini
+        'gemini-2.5-pro-1',
+        # Others
+        'kimi-k2-0711-preview',
+        'kimi-k2-instruct',
+        'qwen3-coder',
+        'qwen3-coder-480b-a35b-instruct',
+    ],
+)
+def test_function_calling_models(model):
+    caps = get_capabilities(model)
+    assert caps.function_calling is True
+
+
+@pytest.mark.parametrize(
+    'model',
+    [
+        'o1-2024-12-17',
+        'o1-mini',
+        'o3-mini',
+        'o4-mini',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro-1',
+        'gpt-5-preview',
+        'claude-opus-4-1-20250805',
+    ],
+)
+def test_reasoning_effort_models(model):
+    caps = get_capabilities(model)
+    assert caps.reasoning_effort is True
+
+
+@pytest.mark.parametrize(
+    'model',
+    [
+        'claude-3-7-sonnet-20250219',
+        'claude-3.7-sonnet',
+        'claude-sonnet-3-7-latest',
+        'claude-3-5-sonnet',
+        'claude-3-5-haiku-20241022',
+        'claude-3-haiku-20240307',
+        'claude-3-opus-20240229',
+        'claude-sonnet-4-latest',
+        'claude-opus-4-1-20250805',
+    ],
+)
+def test_prompt_cache_models(model):
+    caps = get_capabilities(model)
+    assert caps.prompt_cache is True
+
+
+@pytest.mark.parametrize(
+    'model',
+    [
+        'o1-mini',
+        'o1-2024-12-17',
+        'xai/grok-4-0709',
+    ],
+)
+def test_supports_stop_words_false_models(model):
+    caps = get_capabilities(model)
+    assert caps.supports_stop_words is False
