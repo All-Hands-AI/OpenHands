@@ -23,7 +23,7 @@ const getRiskText = (risk: ActionSecurityRisk) => {
     MEDIUM: ActionSecurityRisk.MEDIUM,
     HIGH: ActionSecurityRisk.HIGH,
   });
-  
+
   switch (risk) {
     case ActionSecurityRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");
