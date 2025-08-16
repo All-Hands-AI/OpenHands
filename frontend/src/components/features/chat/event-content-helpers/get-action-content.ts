@@ -74,11 +74,9 @@ const getMcpActionContent = (event: MCPAction): string => {
   return details;
 };
 
-// For ThinkAction, we intentionally do NOT surface the model's internal
-// thought to the user. Only the action title (e.g., "Thinking") should be
-// rendered in the UI without any details.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const getThinkActionContent = (_event: ThinkAction): string => "";
+const getThinkActionContent = (event: ThinkAction): string =>
+  event.args.thought;
+
 const getFinishActionContent = (event: FinishAction): string =>
   event.args.final_thought.trim();
 const getNoContentActionContent = (): string => "";
