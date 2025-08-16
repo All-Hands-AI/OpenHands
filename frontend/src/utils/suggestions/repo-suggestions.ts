@@ -47,3 +47,6 @@ export const REPO_SUGGESTIONS: Record<string, string> = {
   [KEY_5]: VALUE_5,
   [KEY_6]: VALUE_6,
 };
+
+export const RUN_SERVER_SUGGESTION =
+  "Start the server for the repository in the current directory. Detect the language, framework, and entrypoint, and identify where the server configuration is defined, such as in scripts, Docker files, or environment files. Using only the accessible URLs, configure and launch the server so it binds to the specified URL in line with the project's architecture. Install dependencies, set or create required environment variables, run migrations if necessary, and start dependent services only if the architecture expects them. Verify that the server is reachable, and if startup fails, diagnose and fix common issues before retrying.";
