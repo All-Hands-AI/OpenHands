@@ -1,3 +1,4 @@
+import re
 from typing import Generator
 
 from litellm import ModelResponse
@@ -425,9 +426,12 @@ class ConversationMemory:
             text = truncate_content(str(obs), max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
-            message = Message(
-                role='user', content=[TextContent(text=obs.content)]
-            )  # Content is already truncated by openhands-aci
+            content = []
+            if re.match(r'^data:image/[^;]+;base64,', obs.content.strip()):
+                content.append(ImageContent(image_urls=[obs.content.strip()]))
+            else:
+                content.append(TextContent(text=obs.content))
+            message = Message(role='user', content=content)
         elif isinstance(obs, BrowserOutputObservation):
             text = obs.content
             if (
@@ -650,6 +654,21 @@ class ConversationMemory:
                 tool_call_id=tool_call_metadata.tool_call_id,
                 name=tool_call_metadata.function_name,
             )
+            # add Image Content as user message after the tool message
+            # https://community.openai.com/t/allowing-images-in-non-user-messages/804176/13
+            if message.contains_image:
+                return [
+                    Message(
+                        role='user',
+                        content=[
+                            content
+                            for content in message.content
+                            if isinstance(content, ImageContent)
+                        ],
+                        vision_enabled=vision_is_active,
+                    )
+                ]
+
             # No need to return the observation message
             # because it will be added by get_action_message when all the corresponding
             # tool calls in the SAME request are processed
