@@ -9,12 +9,6 @@ from litellm import (
     ModelResponse,
 )
 
-from openhands.llm.tool_names import (
-    GEMINI_REPLACE_TOOL_NAME,
-    GEMINI_READ_FILE_TOOL_NAME,
-    GEMINI_WRITE_FILE_TOOL_NAME,
-)
-
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CondensationRequestTool,
@@ -24,9 +18,6 @@ from openhands.agenthub.codeact_agent.tools import (
     ThinkTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
-    create_gemini_read_file_tool,
-    create_gemini_write_file_tool,
-    create_gemini_replace_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -42,6 +33,7 @@ from openhands.events.action import (
     CmdRunAction,
     FileEditAction,
     FileReadAction,
+    FileWriteAction,
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
@@ -50,7 +42,12 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
+from openhands.llm.tool_names import (
+    TASK_TRACKER_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_REPLACE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -225,8 +222,15 @@ def response_to_actions(
                 start = 0
                 end = -1
                 if offset is not None and limit is not None:
-                    if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or limit <= 0:
-                        raise FunctionCallValidationError('offset must be >= 0 and limit must be > 0')
+                    if (
+                        not isinstance(offset, int)
+                        or not isinstance(limit, int)
+                        or offset < 0
+                        or limit <= 0
+                    ):
+                        raise FunctionCallValidationError(
+                            'offset must be >= 0 and limit must be > 0'
+                        )
                     start = offset
                     end = offset + limit
                 action = FileReadAction(

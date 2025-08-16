@@ -26,7 +26,12 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.gemini_editor import GeminiEditor
+
+try:
+    # Gemini-specific editor. May not exist until openhands-aci publishes it.
+    from openhands_aci.editor.gemini_editor import GeminiEditor  # type: ignore
+except Exception:  # pragma: no cover - fallback when not available
+    GeminiEditor = None  # type: ignore
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
@@ -192,7 +197,9 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
-        self.gemini_editor = GeminiEditor(workspace_root=self._initial_cwd)
+        self.gemini_editor = (
+            GeminiEditor(workspace_root=self._initial_cwd) if GeminiEditor else None
+        )
 
         self.enable_browser = enable_browser
         self.browser: BrowserEnv | None = None
@@ -558,18 +565,35 @@ class ActionExecutor:
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
         if action.command == 'replace':
-            # Route to GeminiEditor replace implementation
-            try:
-                result = self.gemini_editor(
-                    command='replace',
+            # Route to GeminiEditor replace implementation when available.
+            if self.gemini_editor is not None:
+                try:
+                    result = self.gemini_editor(
+                        command='replace',
+                        path=action.path,
+                        old_str=action.old_str or '',
+                        new_str=action.new_str or '',
+                        expected_replacements=action.expected_replacements,
+                    )
+                    result_str, (old_content, new_content) = (
+                        result.output,
+                        (result.old_content, result.new_content),
+                    )
+                except ToolError as e:
+                    result_str, (old_content, new_content) = (
+                        f'ERROR:\n{e.message}',
+                        (None, None),
+                    )
+            else:
+                # Fallback: use standard str_replace editor when GeminiEditor is unavailable.
+                # Note: this enforces single unique replacement; expected_replacements is ignored.
+                result_str, (old_content, new_content) = _execute_file_editor(
+                    self.file_editor,
+                    command='str_replace',
                     path=action.path,
-                    old_str=action.old_str or '',
-                    new_str=action.new_str or '',
-                    expected_replacements=action.expected_replacements,
+                    old_str=action.old_str,
+                    new_str=action.new_str,
                 )
-                result_str, (old_content, new_content) = result.output, (result.old_content, result.new_content)
-            except ToolError as e:
-                result_str, (old_content, new_content) = f'ERROR:\n{e.message}', (None, None)
         else:
             result_str, (old_content, new_content) = _execute_file_editor(
                 self.file_editor,
@@ -583,8 +607,12 @@ class ActionExecutor:
             )
 
         # Prefer actual file contents from editor result for observation fields
-        obs_old_content = old_content if old_content is not None else (action.old_str or '')
-        obs_new_content = new_content if new_content is not None else (action.new_str or '')
+        obs_old_content = (
+            old_content if old_content is not None else (action.old_str or '')
+        )
+        obs_new_content = (
+            new_content if new_content is not None else (action.new_str or '')
+        )
         return FileEditObservation(
             content=result_str,
             path=action.path,

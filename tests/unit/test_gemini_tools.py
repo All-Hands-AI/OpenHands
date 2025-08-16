@@ -1,11 +1,9 @@
 import json
-import os
 
-import pytest
 from litellm import ModelResponse
 
-from openhands.agenthub.codeact_agent.function_calling import response_to_actions
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
+from openhands.agenthub.codeact_agent.function_calling import response_to_actions
 from openhands.core.config import AgentConfig, LLMConfig
 from openhands.events.action import FileEditAction, FileReadAction, FileWriteAction
 from openhands.events.event import FileEditSource, FileReadSource
@@ -66,11 +64,12 @@ def test_gemini_tool_mapping_write_file():
 
 def test_gemini_tool_mapping_replace_defaults_expected_1():
     resp = create_mock_response(
-        'replace', {
+        'replace',
+        {
             'file_path': '/abs/path/file.txt',
             'old_string': 'a',
             'new_string': 'b',
-        }
+        },
     )
     actions = response_to_actions(resp)
     assert len(actions) == 1

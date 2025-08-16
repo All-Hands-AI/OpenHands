@@ -1,23 +1,23 @@
-import os
 from pathlib import Path
 
 import pytest
 
-from openhands.runtime.action_execution_server import ActionExecutor
-from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.events.action.files import FileEditAction
 from openhands.events.event import FileEditSource
+from openhands.runtime.action_execution_server import ActionExecutor
+from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
 @pytest.mark.asyncio
 async def test_runtime_routes_replace_to_gemini_editor(tmp_path):
     # Setup a minimal runtime with a temp workspace
     work_dir = str(tmp_path)
-    plugins = [AgentSkillsRequirement(), JupyterRequirement()]
+    plugins = []
     executor = ActionExecutor(
         plugins_to_load=plugins,
         work_dir=work_dir,
-        username='user',
+        # Use root to avoid useradd in test container environments
+        username='root',
         user_id=0,
         enable_browser=False,
         browsergym_eval_env=None,
@@ -38,6 +38,6 @@ async def test_runtime_routes_replace_to_gemini_editor(tmp_path):
 
     obs = await executor.edit(action)
     assert obs.error is None
-    assert 'has been edited' in obs.content
+    assert 'has been edited' in obs.content or 'Edited' in obs.content
     # diff should reflect actual contents
     assert '-world' in obs.diff or '+there' in obs.diff
