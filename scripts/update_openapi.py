@@ -172,7 +172,7 @@ def update_openapi_spec(spec_path, backup=True):
         # Default servers if none exist
         new_spec['servers'] = [
             {'url': 'https://app.all-hands.dev', 'description': 'Production server'},
-            {'url': 'http://localhost:3000', 'description': 'Local development server'},
+            {'url': 'http://localhost:3000', 'description': 'Local server'},
         ]
 
     # Update version to match the package version
