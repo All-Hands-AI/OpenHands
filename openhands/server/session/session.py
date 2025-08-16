@@ -27,16 +27,14 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
-from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.constants import ROOM_KEY
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-
-ROOM_KEY = 'room:{sid}'
 
 
 class Session:
@@ -80,7 +78,13 @@ class Session:
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
-        self.config = config
+        # Copying this means that when we update variables they are not applied to the shared global configuration!
+        from copy import deepcopy
+
+        self.config = deepcopy(config)
+        # Lazy import to avoid circular dependency
+        from openhands.experiments.experiment_manager import ExperimentManagerImpl
+
         self.config = ExperimentManagerImpl.run_config_variant_test(
             user_id, sid, self.config
         )
