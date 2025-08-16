@@ -8175,6 +8175,7 @@
         "tr": "Konuşma yok",
         "uk": "Розмов не знайдено"
     },
+
     "LANDING$SELECT_GIT_REPO": {
         "en": "Select a Git project",
         "ja": "Gitプロジェクトを選択",
@@ -11023,6 +11024,38 @@
         "de": "Optional",
         "uk": "Необов'язково"
     },
+    "COMMON$RUN": {
+        "en": "Run",
+        "ja": "実行",
+        "zh-CN": "运行",
+        "zh-TW": "運行",
+        "ko-KR": "실행",
+        "fr": "Exécuter",
+        "es": "Ejecutar",
+        "de": "Ausführen",
+        "it": "Esegui",
+        "pt": "Executar",
+        "ar": "تشغيل",
+        "no": "Kjør",
+        "tr": "Çalıştır",
+        "uk": "Запустити"
+    },
+     "COMMON$VIEW": {
+        "en": "View",
+        "ja": "表示",
+        "zh-CN": "查看",
+        "zh-TW": "檢視",
+        "ko-KR": "보기",
+        "fr": "Afficher",
+        "es": "Ver",
+        "de": "Anzeigen",
+        "it": "Visualizza",
+        "pt": "Visualizar",
+        "ar": "عرض",
+        "no": "Vis",
+        "tr": "Görüntüle",
+        "uk": "Переглянути"
+    },
     "BROWSER$SERVER_MESSAGE": {
         "en": "Server Message",
         "ja": "サーバーメッセージ",
@@ -11632,10 +11665,10 @@
         "uk": "Натисніть тут"
     },
     "COMMON$OPEN_REPOSITORY": {
-        "en": "Open repository",
+        "en": "Open Repository",
         "ja": "リポジトリを開く",
         "zh-CN": "打开仓库",
-        "zh-TW": "開啟存儲庫",
+        "zh-TW": "打開存儲庫",
         "ko-KR": "저장소 열기",
         "no": "Åpne repository",
         "it": "Apri repository",
@@ -11643,7 +11676,7 @@
         "es": "Abrir repositorio",
         "ar": "افتح المستودع",
         "fr": "Ouvrir le dépôt",
-        "tr": "Depoyu aç",
+        "tr": "Depoyu Aç",
         "de": "Repository öffnen",
         "uk": "Відкрити репозиторій"
     },

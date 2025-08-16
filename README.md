@@ -79,17 +79,17 @@ You'll find OpenHands running at [http://localhost:3000](http://localhost:3000) 
 You can also run OpenHands directly with Docker:
 
 ```bash
-docker pull docker.all-hands.dev/all-hands-ai/runtime:0.52-nikolaik
+docker pull docker.all-hands.dev/all-hands-ai/runtime:0.53-nikolaik
 
 docker run -it --rm --pull=always \
-    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.52-nikolaik \
+    -e SANDBOX_RUNTIME_CONTAINER_IMAGE=docker.all-hands.dev/all-hands-ai/runtime:0.53-nikolaik \
     -e LOG_ALL_EVENTS=true \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v ~/.openhands:/.openhands \
     -p 3000:3000 \
     --add-host host.docker.internal:host-gateway \
     --name openhands-app \
-    docker.all-hands.dev/all-hands-ai/openhands:0.52
+    docker.all-hands.dev/all-hands-ai/openhands:0.53
 ```
 
 </details>

@@ -17,9 +17,12 @@ import CarretRightFillIcon from "#/icons/carret-right-fill.svg?react";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
 import { GitToolsSubmenu } from "./git-tools-submenu";
 import { MacrosSubmenu } from "./macros-submenu";
+import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
-const contextMenuListItemClassName =
-  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px]";
+const contextMenuListItemClassName = cn(
+  "cursor-pointer p-0 h-auto hover:bg-transparent",
+  CONTEXT_MENU_ICON_TEXT_CLASSNAME,
+);
 
 interface ToolsContextMenuProps {
   onClose: () => void;
@@ -45,10 +48,7 @@ export function ToolsContextMenu({
     <ContextMenu
       ref={ref}
       testId="tools-context-menu"
-      className={cn(
-        "flex flex-col gap-2 left-[-16px] absolute mb-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px]",
-        "bottom-full overflow-visible",
-      )}
+      className="flex flex-col gap-2 left-[-16px] absolute mb-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1 bottom-full overflow-visible"
     >
       {/* Git Tools */}
       {showGitTools && (
@@ -62,6 +62,7 @@ export function ToolsContextMenu({
               icon={<CodeBranchIcon width={16} height={16} />}
               text={t(I18nKey.COMMON$GIT_TOOLS)}
               rightIcon={<CarretRightFillIcon width={10} height={10} />}
+              className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
             />
           </ContextMenuListItem>
           <div className="absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
@@ -81,6 +82,7 @@ export function ToolsContextMenu({
             icon={<SettingsIcon width={16} height={16} />}
             text={t(I18nKey.COMMON$MACROS)}
             rightIcon={<CarretRightFillIcon width={10} height={10} />}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
         <div className="absolute left-full top-[-4px] z-60 opacity-0 invisible pointer-events-none group-hover/macros:opacity-100 group-hover/macros:visible group-hover/macros:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
@@ -88,7 +90,7 @@ export function ToolsContextMenu({
         </div>
       </div>
 
-      <ContextMenuSeparator className="bg-[#959CB2]" />
+      <ContextMenuSeparator className="bg-[#5C5D62]" />
 
       {/* Show Available Microagents */}
       <ContextMenuListItem
@@ -99,6 +101,7 @@ export function ToolsContextMenu({
         <ToolsContextMenuIconText
           icon={<RobotIcon width={16} height={16} />}
           text={t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -111,6 +114,7 @@ export function ToolsContextMenu({
         <ToolsContextMenuIconText
           icon={<ToolsIcon width={16} height={16} />}
           text={t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
     </ContextMenu>

@@ -18,10 +18,10 @@ import ArrowDownIcon from "#/icons/u-arrow-down.svg?react";
 import PrIcon from "#/icons/u-pr.svg?react";
 import CodeBranchIcon from "#/icons/u-code-branch.svg?react";
 import { I18nKey } from "#/i18n/declaration";
+import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
 const contextMenuListItemClassName =
   "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px] !w-auto whitespace-nowrap";
-
 interface GitToolsSubmenuProps {
   onClose: () => void;
 }
@@ -56,7 +56,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
   return (
     <ContextMenu
       testId="git-tools-submenu"
-      className="text-white bg-tertiary rounded-[6px] py-[6px] flex flex-col gap-2 w-max"
+      className="text-white bg-tertiary rounded-[6px] py-[6px] px-1 flex flex-col gap-2 w-max"
     >
       <ContextMenuListItem
         testId="git-pull-button"
@@ -66,6 +66,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<ArrowDownIcon width={16} height={16} />}
           text={t(I18nKey.COMMON$GIT_PULL)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -77,6 +78,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<ArrowUpIcon width={16} height={16} />}
           text={t(I18nKey.COMMON$GIT_PUSH)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -88,6 +90,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<PrIcon width={16} height={16} />}
           text={t(I18nKey.COMMON$CREATE_PR)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
 
@@ -99,6 +102,7 @@ export function GitToolsSubmenu({ onClose }: GitToolsSubmenuProps) {
         <ToolsContextMenuIconText
           icon={<CodeBranchIcon width={16} height={16} />}
           text={t(I18nKey.COMMON$CREATE_NEW_BRANCH)}
+          className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
         />
       </ContextMenuListItem>
     </ContextMenu>

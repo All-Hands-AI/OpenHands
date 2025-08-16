@@ -15,9 +15,12 @@ import CreditCardIcon from "#/icons/u-credit-card.svg?react";
 import CloseIcon from "#/icons/u-close.svg?react";
 import DeleteIcon from "#/icons/u-delete.svg?react";
 import { ConversationNameContextMenuIconText } from "./conversation-name-context-menu-icon-text";
+import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
-const contextMenuListItemClassName =
-  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px]";
+const contextMenuListItemClassName = cn(
+  "cursor-pointer p-0 h-auto hover:bg-transparent",
+  CONTEXT_MENU_ICON_TEXT_CLASSNAME,
+);
 
 interface ConversationNameContextMenuProps {
   onClose: () => void;
@@ -58,7 +61,7 @@ export function ConversationNameContextMenu({
       ref={ref}
       testId="conversation-name-context-menu"
       className={cn(
-        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px]",
+        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1",
         position === "top" && "bottom-full",
         position === "bottom" && "top-full",
       )}
@@ -72,11 +75,12 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<EditIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$RENAME)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
 
-      {hasTools && <ContextMenuSeparator className="bg-[#959CB2]" />}
+      {hasTools && <ContextMenuSeparator className="bg-[#5C5D62]" />}
 
       {onShowMicroagents && (
         <ContextMenuListItem
@@ -87,6 +91,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<RobotIcon width={16} height={16} />}
             text={t(I18nKey.CONVERSATION$SHOW_MICROAGENTS)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
@@ -100,12 +105,13 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<ToolsIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$SHOW_AGENT_TOOLS_AND_METADATA)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
 
       {(hasExport || hasDownload) && (
-        <ContextMenuSeparator className="bg-[#959CB2]" />
+        <ContextMenuSeparator className="bg-[#5C5D62]" />
       )}
 
       {onExportConversation && (
@@ -117,6 +123,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<FileExportIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$EXPORT_CONVERSATION)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
@@ -130,12 +137,13 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<DownloadIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$DOWNLOAD_VIA_VSCODE)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
 
       {(hasInfo || hasControl) && (
-        <ContextMenuSeparator className="bg-[#959CB2]" />
+        <ContextMenuSeparator className="bg-[#5C5D62]" />
       )}
 
       {onDisplayCost && (
@@ -147,6 +155,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<CreditCardIcon width={16} height={16} />}
             text={t(I18nKey.BUTTON$DISPLAY_COST)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
@@ -160,6 +169,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<CloseIcon width={16} height={16} />}
             text={t(I18nKey.COMMON$CLOSE_CONVERSATION_STOP_RUNTIME)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}
@@ -173,6 +183,7 @@ export function ConversationNameContextMenu({
           <ConversationNameContextMenuIconText
             icon={<DeleteIcon width={16} height={16} />}
             text={t(I18nKey.COMMON$DELETE_CONVERSATION)}
+            className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
           />
         </ContextMenuListItem>
       )}

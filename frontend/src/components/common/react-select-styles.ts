@@ -114,7 +114,7 @@ export const providerDropdownStyles: StylesConfig<SelectOption, false> = {
       borderColor: "#727987",
     },
     "& .provider-dropdown__single-value": {
-      color: "#fff",
+      color: "#A3A3A3",
       fontSize: "0.75rem",
       fontWeight: "400",
       lineHeight: "1.25rem",
@@ -180,15 +180,14 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
   control: (provided) => ({
     ...provided,
     maxWidth: "auto",
-    height: "auto",
-    minHeight: "auto",
-    maxHeight: "auto",
-    padding: "0",
+    minHeight: "42px",
+    maxHeight: "42px",
     border: "1px solid #727987",
     backgroundColor: "#454545",
     borderRadius: "0.25rem",
     boxShadow: "none",
-    paddingLeft: "0.375rem",
+    padding: "0 0.75rem",
+    height: "42px",
     "> div:first-child": {
       transform: "translateY(-1px)",
     },
@@ -196,19 +195,19 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       borderColor: "#727987",
     },
     "& .repo-branch-dropdown__single-value": {
-      color: "#fff",
+      color: "#A3A3A3",
       fontSize: "0.875rem",
       fontWeight: "400",
       lineHeight: "1.25rem",
     },
     "& .repo-branch-dropdown__value-container": {
-      height: "auto",
+      height: "42px",
       padding: "0 0.5rem",
       transform: "translateY(-1px)",
-      paddingLeft: "0.125rem",
+      paddingLeft: "0.25rem",
     },
     "& .repo-branch-dropdown__indicators-container": {
-      height: "auto",
+      height: "42px",
       padding: "0 0.5rem",
       "& > div": {
         padding: "0",
@@ -216,7 +215,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     },
     "& .repo-branch-dropdown__indicators": {
       transform: "translateY(-1px)",
-      height: "auto",
+      height: "42px",
       padding: "0 0.5rem",
       "& > div": {
         padding: "0",
