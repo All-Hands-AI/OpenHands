@@ -264,7 +264,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
-                display_thought_if_new(event.thought)
+                display_thought_if_new(str(event.thought))
 
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
@@ -280,7 +280,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
-                display_thought_if_new(event.thought)
+                display_thought_if_new(str(event.thought))
             if hasattr(event, 'final_thought') and event.final_thought:
                 # Display final thoughts with agent styling
                 display_message(event.final_thought, is_agent_message=True)
@@ -531,7 +531,7 @@ def display_task_tracking_action(event: TaskTrackingAction) -> None:
     """Display a TaskTracking action in the CLI."""
     # Display thought first if present
     if hasattr(event, 'thought') and event.thought:
-        display_message(event.thought)
+        display_message(str(event.thought))
 
     # Format the command and task list for display
     display_text = f'Command: {event.command}'

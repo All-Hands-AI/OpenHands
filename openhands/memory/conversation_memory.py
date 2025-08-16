@@ -269,10 +269,42 @@ class ConversationMemory:
 
                 # save content if any, to thought
                 if action.thought:
-                    if action.thought != content:
-                        action.thought += '\n' + content
+                    cur_text = action.thought.text
+                    if cur_text != content:
+                        action.thought.text = (
+                            (cur_text + '\n' + content) if cur_text else content
+                        )
                 else:
-                    action.thought = content
+                    action.thought.text = content
+
+                # Also capture optional provider reasoning content if present
+                if hasattr(action.thought, 'reasoning_content'):
+                    rc: str | None = None
+                    # Try direct attributes from LiteLLM wrapper
+                    for attr in ('reasoning_content', 'reasoning', 'thinking'):
+                        _rc = getattr(assistant_msg, attr, None)
+                        if isinstance(_rc, str) and _rc.strip():
+                            rc = _rc if rc is None else rc + '\n' + _rc
+                    # Try list-style content blocks
+                    try:
+                        if isinstance(assistant_msg.content, list):
+                            for msg in assistant_msg.content:
+                                if (
+                                    msg.get('type') in {'reasoning', 'thinking'}
+                                    and 'text' in msg
+                                ):
+                                    rc = (
+                                        msg['text']
+                                        if rc is None
+                                        else rc + '\n' + msg['text']
+                                    )
+                    except Exception:
+                        pass
+                    if rc:
+                        try:
+                            action.thought.reasoning_content = rc
+                        except Exception:
+                            pass
 
                 # remove the tool call metadata
                 action.tool_call_metadata = None
@@ -281,7 +313,7 @@ class ConversationMemory:
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
-                    content=[TextContent(text=action.thought)],
+                    content=[TextContent(text=str(action.thought))],
                 )
             ]
         elif isinstance(action, MessageAction):

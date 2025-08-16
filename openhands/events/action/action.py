@@ -21,3 +21,22 @@ class ActionSecurityRisk(int, Enum):
 @dataclass
 class Action(Event):
     runnable: ClassVar[bool] = False
+
+
+@dataclass
+class Thought:
+    """Container for agent reasoning.
+
+    Attributes:
+        text: The visible plain thought string used throughout the UI/logs.
+        reasoning_content: Optional provider-native reasoning content (e.g., LiteLLM reasoning).
+    """
+
+    text: str = ''
+    reasoning_content: str | None = None
+
+    def __bool__(self) -> bool:
+        return bool(self.text or self.reasoning_content)
+
+    def __str__(self) -> str:
+        return self.text

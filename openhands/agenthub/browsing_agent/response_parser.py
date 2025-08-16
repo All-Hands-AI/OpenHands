@@ -62,9 +62,11 @@ class BrowsingActionParserMessage(ActionParser):
 
     def parse(self, action_str: str) -> Action:
         msg = f'send_msg_to_user("""{action_str}""")'
+        from openhands.events.action.action import Thought
+
         return BrowseInteractiveAction(
             browser_actions=msg,
-            thought=action_str,
+            thought=Thought(text=action_str),
             browsergym_send_msg_to_user=action_str,
         )
 
@@ -119,8 +121,10 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
                     else:
                         msg_content = ''
 
+        from openhands.events.action.action import Thought
+
         return BrowseInteractiveAction(
             browser_actions=browser_actions,
-            thought=thought,
+            thought=Thought(text=thought),
             browsergym_send_msg_to_user=msg_content,
         )

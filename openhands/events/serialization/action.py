@@ -1,7 +1,7 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
-from openhands.events.action.action import Action
+from openhands.events.action.action import Action, Thought
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -123,6 +123,25 @@ def action_from_dict(action: dict) -> Action:
     # images_urls has been renamed to image_urls
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
+
+    # Convert thought arg from legacy formats and capture optional reasoning_content
+    rc = args.pop('reasoning_content', None)
+    if 'thought' in args:
+        t = args['thought']
+        if isinstance(t, dict):
+            # Accept either {'text': '...', 'reasoning_content': '...'} or legacy {'thought': '...'}
+            text = t.get('text') or t.get('thought') or ''
+            reasoning_content = t.get('reasoning_content', rc)
+            args['thought'] = Thought(text=text, reasoning_content=reasoning_content)
+        elif isinstance(t, str):
+            args['thought'] = Thought(text=t, reasoning_content=rc)
+        elif isinstance(t, Thought):
+            if rc is not None:
+                t.reasoning_content = rc
+        # else assume already a Thought-like instance
+    elif rc is not None:
+        # No text thought provided, but reasoning content exists
+        args['thought'] = Thought(text='', reasoning_content=rc)
 
     # handle deprecated args
     args = handle_action_deprecated_args(args)
