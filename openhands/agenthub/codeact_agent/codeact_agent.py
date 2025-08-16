@@ -26,6 +26,11 @@ from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
 from openhands.agenthub.codeact_agent.tools.task_tracker import (
     create_task_tracker_tool,
 )
+from openhands.agenthub.codeact_agent.tools.gemini import (
+    create_gemini_read_file_tool,
+    create_gemini_write_file_tool,
+    create_gemini_replace_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -141,11 +146,19 @@ class CodeActAgent(Agent):
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
+            # Gemini models: prefer Gemini-CLI compatible tools and disable str_replace_editor
+            if self.llm and 'gemini' in self.llm.config.model.lower():
+                tools.append(create_gemini_read_file_tool())
+                tools.append(create_gemini_write_file_tool())
+                tools.append(create_gemini_replace_tool())
+                return tools
+            # Default editors for non-Gemini models
             tools.append(
                 create_str_replace_editor_tool(
                     use_short_description=use_short_tool_desc
                 )
             )
+
         return tools
 
     def reset(self) -> None:

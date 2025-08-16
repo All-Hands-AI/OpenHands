@@ -26,6 +26,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
+from openhands_aci.editor.gemini_editor import GeminiEditor
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
@@ -191,6 +192,8 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
+        self.gemini_editor = GeminiEditor(workspace_root=self._initial_cwd)
+
         self.enable_browser = enable_browser
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
@@ -554,26 +557,43 @@ class ActionExecutor:
 
     async def edit(self, action: FileEditAction) -> Observation:
         assert action.impl_source == FileEditSource.OH_ACI
-        result_str, (old_content, new_content) = _execute_file_editor(
-            self.file_editor,
-            command=action.command,
-            path=action.path,
-            file_text=action.file_text,
-            old_str=action.old_str,
-            new_str=action.new_str,
-            insert_line=action.insert_line,
-            enable_linting=False,
-        )
+        if action.command == 'replace':
+            # Route to GeminiEditor replace implementation
+            try:
+                result = self.gemini_editor(
+                    command='replace',
+                    path=action.path,
+                    old_str=action.old_str or '',
+                    new_str=action.new_str or '',
+                    expected_replacements=action.expected_replacements,
+                )
+                result_str, (old_content, new_content) = result.output, (result.old_content, result.new_content)
+            except ToolError as e:
+                result_str, (old_content, new_content) = f'ERROR:\n{e.message}', (None, None)
+        else:
+            result_str, (old_content, new_content) = _execute_file_editor(
+                self.file_editor,
+                command=action.command,
+                path=action.path,
+                file_text=action.file_text,
+                old_str=action.old_str,
+                new_str=action.new_str,
+                insert_line=action.insert_line,
+                enable_linting=False,
+            )
 
+        # Prefer actual file contents from editor result for observation fields
+        obs_old_content = old_content if old_content is not None else (action.old_str or '')
+        obs_new_content = new_content if new_content is not None else (action.new_str or '')
         return FileEditObservation(
             content=result_str,
             path=action.path,
-            old_content=action.old_str,
-            new_content=action.new_str,
+            old_content=obs_old_content,
+            new_content=obs_new_content,
             impl_source=FileEditSource.OH_ACI,
             diff=get_diff(
-                old_contents=old_content or '',
-                new_contents=new_content or '',
+                old_contents=obs_old_content,
+                new_contents=obs_new_content,
                 filepath=action.path,
             ),
         )

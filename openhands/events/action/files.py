@@ -60,7 +60,7 @@ class FileWriteAction(Action):
 
 @dataclass
 class FileEditAction(Action):
-    """Edits a file using various commands including view, create, str_replace, insert, and undo_edit.
+    """Edits a file using various commands including view, create, str_replace, replace, insert, and undo_edit.
 
     This class supports two main modes of operation:
     1. LLM-based editing (impl_source = FileEditSource.LLM_BASED_EDIT)
@@ -102,6 +102,8 @@ class FileEditAction(Action):
     new_str: str | None = None
     insert_line: int | None = None
 
+    expected_replacements: int | None = None
+
     # LLM-based editing arguments
     content: str = ''
     start: int = 1
@@ -126,7 +128,7 @@ class FileEditAction(Action):
             ret += f'Command: {self.command}\n'
             if self.command == 'create':
                 ret += f'Created File with Text:\n```\n{self.file_text}\n```\n'
-            elif self.command == 'str_replace':
+            elif self.command in ('str_replace', 'replace'):
                 ret += f'Old String: ```\n{self.old_str}\n```\n'
                 ret += f'New String: ```\n{self.new_str}\n```\n'
             elif self.command == 'insert':

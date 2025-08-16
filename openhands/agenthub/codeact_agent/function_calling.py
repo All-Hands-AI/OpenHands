@@ -9,6 +9,12 @@ from litellm import (
     ModelResponse,
 )
 
+from openhands.llm.tool_names import (
+    GEMINI_REPLACE_TOOL_NAME,
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
+
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CondensationRequestTool,
@@ -18,6 +24,9 @@ from openhands.agenthub.codeact_agent.tools import (
     ThinkTool,
     create_cmd_run_tool,
     create_str_replace_editor_tool,
+    create_gemini_read_file_tool,
+    create_gemini_write_file_tool,
+    create_gemini_replace_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -174,12 +183,9 @@ def response_to_actions(
                     )
                 else:
                     if 'view_range' in other_kwargs:
-                        # Remove view_range from other_kwargs since it is not needed for FileEditAction
                         other_kwargs.pop('view_range')
 
-                    # Filter out unexpected arguments
                     valid_kwargs = {}
-                    # Get valid parameters from the str_replace_editor tool definition
                     str_replace_editor_tool = create_str_replace_editor_tool()
                     valid_params = set(
                         str_replace_editor_tool['function']['parameters'][
@@ -200,6 +206,60 @@ def response_to_actions(
                         impl_source=FileEditSource.OH_ACI,
                         **valid_kwargs,
                     )
+
+            # ================================================
+            # Gemini-CLI compatible tools
+            # ================================================
+            elif tool_call.function.name == GEMINI_READ_FILE_TOOL_NAME:
+                if 'path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "path" in tool call {tool_call.function.name}'
+                    )
+                # Translate offset/limit (0-based) to start/end (line-based)
+                offset = arguments.get('offset')
+                limit = arguments.get('limit')
+                if (offset is None) != (limit is None):
+                    raise FunctionCallValidationError(
+                        'Both offset and limit must be provided together if using line slicing.'
+                    )
+                start = 0
+                end = -1
+                if offset is not None and limit is not None:
+                    if not isinstance(offset, int) or not isinstance(limit, int) or offset < 0 or limit <= 0:
+                        raise FunctionCallValidationError('offset must be >= 0 and limit must be > 0')
+                    start = offset
+                    end = offset + limit
+                action = FileReadAction(
+                    path=arguments['path'],
+                    start=start,
+                    end=end,
+                    impl_source=FileReadSource.DEFAULT,
+                )
+            elif tool_call.function.name == GEMINI_WRITE_FILE_TOOL_NAME:
+                if 'file_path' not in arguments or 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required arguments in tool call {tool_call.function.name}; need file_path and content'
+                    )
+                action = FileWriteAction(
+                    path=arguments['file_path'],
+                    content=arguments['content'],
+                    start=0,
+                    end=-1,
+                )
+            elif tool_call.function.name == GEMINI_REPLACE_TOOL_NAME:
+                if 'file_path' not in arguments or 'new_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required arguments in tool call {tool_call.function.name}; need file_path and new_string'
+                    )
+                expected = arguments.get('expected_replacements')
+                action = FileEditAction(
+                    path=arguments['file_path'],
+                    command='replace',
+                    old_str=arguments.get('old_string', ''),
+                    new_str=arguments['new_string'],
+                    impl_source=FileEditSource.OH_ACI,
+                    expected_replacements=expected,
+                )
             # ================================================
             # AgentThinkAction
             # ================================================
