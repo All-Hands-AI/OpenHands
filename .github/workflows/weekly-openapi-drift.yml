@@ -32,7 +32,7 @@ jobs:
             exit 1
           fi
 
-      - name: Configure OpenHands Cloud settings (minimal)
+      - name: Configure OpenHands Cloud
         env:
           OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY }}
         shell: bash
