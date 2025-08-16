@@ -288,6 +288,24 @@ def response_to_actions(
                 )
 
             # ================================================
+            # TaskTrackingAction
+            # ================================================
+            elif tool_call.function.name == TASK_TRACKER_TOOL_NAME:
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if arguments['command'] == 'plan' and 'task_list' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "task_list" for "plan" command in tool call {tool_call.function.name}'
+                    )
+
+                action = TaskTrackingAction(
+                    command=arguments['command'],
+                    task_list=arguments.get('task_list', []),
+                )
+
+            # ================================================
             # MCPAction (MCP)
             # ================================================
             elif mcp_tool_names and tool_call.function.name in mcp_tool_names:
