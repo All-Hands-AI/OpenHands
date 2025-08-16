@@ -10479,6 +10479,22 @@
         "de": "Der Agent hätte mich vorher fragen sollen!",
         "uk": "Агент повинен був спочатку запитати мене, перш ніж це робити!"
     },
+    "FEEDBACK$REASON_DIDNT_FINISH_JOB": {
+        "en": "The agent didn't finish the job",
+        "ja": "エージェントは作業を完了しませんでした",
+        "zh-CN": "代理没有完成工作",
+        "zh-TW": "代理沒有完成工作",
+        "ko-KR": "에이전트가 작업을 완료하지 않았습니다",
+        "no": "Agenten fullførte ikke jobben",
+        "it": "L'agente non ha completato il lavoro",
+        "pt": "O agente não terminou o trabalho",
+        "es": "El agente no terminó el trabajo",
+        "ar": "لم يكمل الوكيل المهمة",
+        "fr": "L'agent n'a pas terminé le travail",
+        "tr": "Ajan işi bitirmedi",
+        "de": "Der Agent hat die Aufgabe nicht beendet",
+        "uk": "Агент не завершив роботу"
+    },
     "FEEDBACK$REASON_OTHER": {
         "en": "Other",
         "ja": "その他",
