@@ -236,19 +236,15 @@ class StateTracker:
             self.state.budget_flag.increase_limit(headless_mode)
 
     def get_metrics_snapshot(self):
-        """
-        Deep copy of metrics
+        """Deep copy of metrics
         This serves as a snapshot for the parent's metrics at the time a delegate is created
         It will be stored and used to compute local metrics for the delegate
         (since delegates now accumulate metrics from where its parent left off)
         """
-
         return self.state.metrics.copy()
 
     def save_state(self):
-        """
-        Save's current state to persistent store
-        """
+        """Save's current state to persistent store"""
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
@@ -256,16 +252,13 @@ class StateTracker:
             self.state.convo_stats.save_metrics()
 
     def run_control_flags(self):
-        """
-        Performs one step of the control flags
-        """
+        """Performs one step of the control flags"""
         self.state.iteration_flag.step()
         if self.state.budget_flag:
             self.state.budget_flag.step()
 
     def sync_budget_flag_with_metrics(self):
-        """
-        Ensures that budget flag is up to date with accumulated costs from llm completions
+        """Ensures that budget flag is up to date with accumulated costs from llm completions
         Budget flag will monitor for when budget is exceeded
         """
         # Sync cost across all llm services from llm registry

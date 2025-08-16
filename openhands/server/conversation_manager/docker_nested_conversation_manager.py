@@ -25,6 +25,7 @@ from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.constants import ROOM_KEY
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
@@ -32,7 +33,7 @@ from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.session import Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus

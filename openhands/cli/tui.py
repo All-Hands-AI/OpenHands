@@ -41,6 +41,7 @@ from openhands.events.action import (
     CmdRunAction,
     MCPAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -50,6 +51,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     MCPObservation,
+    TaskTrackingObservation,
 )
 from openhands.llm.metrics import Metrics
 from openhands.mcp.error_collector import mcp_error_collector
@@ -239,8 +241,7 @@ def display_mcp_errors() -> None:
 
 # Prompt output display functions
 def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
-    """
-    Display a thought only if it hasn't been displayed recently.
+    """Display a thought only if it hasn't been displayed recently.
 
     Args:
         thought: The thought to display
@@ -274,6 +275,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
                 initialize_streaming_output()
         elif isinstance(event, MCPAction):
             display_mcp_action(event)
+        elif isinstance(event, TaskTrackingAction):
+            display_task_tracking_action(event)
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
@@ -294,6 +297,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_file_read(event)
         elif isinstance(event, MCPObservation):
             display_mcp_observation(event)
+        elif isinstance(event, TaskTrackingObservation):
+            display_task_tracking_observation(event)
         elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
@@ -301,8 +306,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
 
 def display_message(message: str, is_agent_message: bool = False) -> None:
-    """
-    Display a message in the terminal with markdown rendering.
+    """Display a message in the terminal with markdown rendering.
 
     Args:
         message: The message to display
@@ -338,8 +342,7 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
 
 
 def convert_markdown_to_html(text: str) -> str:
-    """
-    Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+    """Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
 
     Args:
         text: Markdown text to convert
@@ -518,6 +521,74 @@ def display_mcp_observation(event: MCPObservation) -> None:
             wrap_lines=True,
         ),
         title='MCP Tool Result',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_action(event: TaskTrackingAction) -> None:
+    """Display a TaskTracking action in the CLI."""
+    # Display thought first if present
+    if hasattr(event, 'thought') and event.thought:
+        display_message(event.thought)
+
+    # Format the command and task list for display
+    display_text = f'Command: {event.command}'
+
+    if event.command == 'plan':
+        if event.task_list:
+            display_text += f'\n\nTask List ({len(event.task_list)} items):'
+            for i, task in enumerate(event.task_list, 1):
+                status = task.get('status', 'unknown')
+                title = task.get('title', 'Untitled task')
+                task_id = task.get('id', f'task-{i}')
+                notes = task.get('notes', '')
+
+                # Add status indicator with color
+                status_indicator = {
+                    'todo': '⏳',
+                    'in_progress': '🔄',
+                    'done': '✅',
+                }.get(status, '❓')
+
+                display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
+                if notes:
+                    display_text += f'\n     Notes: {notes}'
+        else:
+            display_text += '\n\nTask List: Empty'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansigreen',
+            wrap_lines=True,
+        ),
+        title='Task Tracking Action',
+        style='ansigreen',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_observation(event: TaskTrackingObservation) -> None:
+    """Display a TaskTracking observation in the CLI."""
+    # Format the content and task list for display
+    content = (
+        event.content.strip() if event.content else 'Task tracking operation completed'
+    )
+
+    display_text = f'Result: {content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Task Tracking Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -845,6 +916,7 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    initial_selection: int = 0,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -852,7 +924,7 @@ def cli_confirm(
     """
     if choices is None:
         choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
+    selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
         return [
@@ -908,7 +980,6 @@ def cli_confirm(
         layout=layout,
         key_bindings=kb,
         style=style,
-        mouse_support=True,
         full_screen=False,
     )
 

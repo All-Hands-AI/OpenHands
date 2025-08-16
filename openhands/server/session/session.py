@@ -30,13 +30,12 @@ from openhands.events.stream import EventStreamSubscriber
 from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.constants import ROOM_KEY
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-
-ROOM_KEY = 'room:{sid}'
 
 
 class Session:

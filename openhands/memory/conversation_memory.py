@@ -18,6 +18,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
@@ -32,6 +33,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
+    TaskTrackingObservation,
     UserRejectObservation,
 )
 from openhands.events.observation.agent import (
@@ -87,7 +89,6 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
-
         events = condensed_history
 
         # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
@@ -229,6 +230,7 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 MCPAction,
+                TaskTrackingAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
@@ -486,6 +488,9 @@ class ConversationMemory:
             )
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentThinkObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, TaskTrackingObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
