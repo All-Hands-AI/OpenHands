@@ -281,6 +281,15 @@ function LlmSettingsScreen() {
       confirmationMode: confirmationModeIsDirty,
     }));
     setConfirmationModeEnabled(isToggled);
+
+    // When confirmation mode is enabled, set default security analyzer to "llm" if not already set
+    if (isToggled && !selectedSecurityAnalyzer) {
+      setSelectedSecurityAnalyzer(DEFAULT_SETTINGS.SECURITY_ANALYZER);
+      setDirtyInputs((prev) => ({
+        ...prev,
+        securityAnalyzer: true,
+      }));
+    }
   };
 
   const handleEnableDefaultCondenserIsDirty = (isToggled: boolean) => {
