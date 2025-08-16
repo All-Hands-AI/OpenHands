@@ -15,4 +15,4 @@ class NoneAnalyzer(SecurityAnalyzer):
 
     async def handle_api_request(self, request: Request) -> Any:
         """Handle API requests (not used for none analyzer)."""
-        return {"status": "none_analyzer"}
+        return {'status': 'none_analyzer'}

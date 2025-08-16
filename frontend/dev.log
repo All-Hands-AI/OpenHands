@@ -16,7 +16,7 @@ Error: No route matches URL "/llm-settings"
     at requestHandler (file:///workspace/project/OpenHands/frontend/node_modules/react-router/dist/development/chunk-HZX6U7MI.mjs:1236:24)
     at nodeHandler (/workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3396:30)
     at /workspace/project/OpenHands/frontend/node_modules/@react-router/dev/dist/vite.js:3402:17
-No routes matched location "/llm-settings" 
+No routes matched location "/llm-settings"
 ErrorResponseImpl {
   status: 404,
   statusText: 'Not Found',
