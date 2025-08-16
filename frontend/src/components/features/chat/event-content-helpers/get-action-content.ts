@@ -14,7 +14,7 @@ import {
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 
-const getRiskText = (risk: ActionSecurityRisk) => {
+const getRiskText = (risk: ActionSecurityRisk | string | number) => {
   // Debug logging to see what risk value we're getting
   console.log("getRiskText called with risk:", risk, "type:", typeof risk);
   console.log("ActionSecurityRisk enum values:", {
@@ -23,8 +23,19 @@ const getRiskText = (risk: ActionSecurityRisk) => {
     MEDIUM: ActionSecurityRisk.MEDIUM,
     HIGH: ActionSecurityRisk.HIGH,
   });
-
-  switch (risk) {
+  
+  // Handle string values that might come from backend
+  if (typeof risk === "string") {
+    const lowerRisk = risk.toLowerCase();
+    if (lowerRisk === "low") return i18n.t("SECURITY$LOW_RISK");
+    if (lowerRisk === "medium") return i18n.t("SECURITY$MEDIUM_RISK");
+    if (lowerRisk === "high") return i18n.t("SECURITY$HIGH_RISK");
+    return i18n.t("SECURITY$UNKNOWN_RISK");
+  }
+  
+  // Handle numeric values
+  const numericRisk = Number(risk);
+  switch (numericRisk) {
     case ActionSecurityRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");
     case ActionSecurityRisk.MEDIUM:

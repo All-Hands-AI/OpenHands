@@ -28,6 +28,14 @@ export function ConfirmationButtons() {
     "confirmation_state" in (args as Record<string, unknown>) &&
     "security_risk" in (args as Record<string, unknown>);
 
+  // Helper function to check if risk is high, handling different data types
+  const isRiskHigh = (risk: ActionSecurityRisk | string | number): boolean => {
+    if (typeof risk === "string") {
+      return risk.toLowerCase() === "high";
+    }
+    return Number(risk) === ActionSecurityRisk.HIGH;
+  };
+
   // Detect if the pending action awaiting confirmation is HIGH risk
   const isHighRisk = (() => {
     for (let i = parsedEvents.length - 1; i >= 0; i -= 1) {
@@ -41,8 +49,9 @@ export function ConfirmationButtons() {
           console.log("Found awaiting confirmation event:", ev);
           console.log("Security risk:", ev.args.security_risk, "type:", typeof ev.args.security_risk);
           console.log("ActionSecurityRisk.HIGH:", ActionSecurityRisk.HIGH);
-          console.log("Comparison result:", ev.args.security_risk === ActionSecurityRisk.HIGH);
-          return ev.args.security_risk === ActionSecurityRisk.HIGH;
+          const isHigh = isRiskHigh(ev.args.security_risk);
+          console.log("Is high risk:", isHigh);
+          return isHigh;
         }
       }
     }
