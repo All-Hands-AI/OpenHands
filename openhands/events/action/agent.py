@@ -35,6 +35,12 @@ class AgentFinishAction(Action):
     thought: str = ''
     action: str = ActionType.FINISH
 
+    # For backward compatibility with old serialized events
+    # Using metadata={"exclude": True} to exclude from serialization
+    task_completed: str | None = field(
+        default=None, init=False, repr=False, metadata={'exclude': True}
+    )
+
     @property
     def message(self) -> str:
         if self.thought != '':

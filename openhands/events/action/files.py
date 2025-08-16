@@ -27,6 +27,18 @@ class FileReadAction(Action):
     def message(self) -> str:
         return f'Reading file: {self.path}'
 
+    def __repr__(self) -> str:
+        ret = '**FileReadAction**\n'
+        ret += f'Path: {self.path}\n'
+        ret += f'Range: [L{self.start}:L{self.end}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
+        ret += f'Thought: {self.thought}\n'
+        return ret
+
+    def __str__(self) -> str:
+        return self.__repr__()
+
 
 @dataclass
 class FileWriteAction(Action):
@@ -49,13 +61,17 @@ class FileWriteAction(Action):
         return f'Writing file: {self.path}'
 
     def __repr__(self) -> str:
-        return (
-            f'**FileWriteAction**\n'
-            f'Path: {self.path}\n'
-            f'Range: [L{self.start}:L{self.end}]\n'
-            f'Thought: {self.thought}\n'
-            f'Content:\n```\n{self.content}\n```\n'
-        )
+        ret = '**FileWriteAction**\n'
+        ret += f'Path: {self.path}\n'
+        ret += f'Range: [L{self.start}:L{self.end}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
+        ret += f'Thought: {self.thought}\n'
+        ret += f'Content:\n```\n{self.content}\n```\n'
+        return ret
+
+    def __str__(self) -> str:
+        return self.__repr__()
 
 
 @dataclass
@@ -117,6 +133,8 @@ class FileEditAction(Action):
     def __repr__(self) -> str:
         ret = '**FileEditAction**\n'
         ret += f'Path: [{self.path}]\n'
+        if self.reasoning_content:
+            ret += f'Reasoning: {self.reasoning_content}\n'
         ret += f'Thought: {self.thought}\n'
 
         if self.impl_source == FileEditSource.LLM_BASED_EDIT:
@@ -136,3 +154,6 @@ class FileEditAction(Action):
                 ret += 'Undo Edit\n'
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
+
+    def __str__(self) -> str:
+        return self.__repr__()

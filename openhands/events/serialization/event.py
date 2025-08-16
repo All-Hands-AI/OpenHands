@@ -121,9 +121,12 @@ def event_to_dict(event: 'Event') -> dict:
         props.pop(key, None)
     if 'security_risk' in props and props['security_risk'] is None:
         props.pop('security_risk')
-    # Remove task_completed from serialization when it's None (backward compatibility)
-    if 'task_completed' in props and props['task_completed'] is None:
+    if 'reasoning_content' in props and props['reasoning_content'] is None:
+        props.pop('reasoning_content')
+    # Always remove task_completed from serialization (backward compatibility)
+    if 'task_completed' in props:
         props.pop('task_completed')
+
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
