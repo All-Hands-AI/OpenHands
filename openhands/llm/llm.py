@@ -206,26 +206,34 @@ class LLM(RetryMixin, DebugMixin):
         ):
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
+            # RESTORED: Direct kwargs approach - testing direct kwargs only
             if 'gemini-2.5-pro' in self.config.model:
                 logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
+                    f'Applying custom generation config for {self.config.model}'
                 )
-                if self.config.reasoning_effort in {None, 'low', 'none'}:
-                    kwargs['thinking'] = {'budget_tokens': 128}
-                    kwargs['allowed_openai_params'] = ['thinking']
-                    kwargs.pop('reasoning_effort', None)
-                else:
-                    kwargs['reasoning_effort'] = self.config.reasoning_effort
-                logger.debug(
-                    f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
-                )
-
+                kwargs['generationConfig'] = {
+                    'temperature': 0,  # Put temperature in generationConfig instead of top-level
+                    'topP': 1,
+                    'thinkingConfig': {'includeThoughts': True},
+                }
+                # These are now inside generationConfig, so remove them from top-level
+                kwargs.pop(
+                    'temperature', None
+                )  # Remove top-level temperature since it's now in generationConfig
+                kwargs.pop(
+                    'top_p', None
+                )  # Remove top_p since it's in generationConfig as topP
+                # This is now inside thinkingConfig, so remove it from top-level
+                kwargs.pop('reasoning_effort', None)
+                # remove other related params that are no longer needed
+                kwargs.pop('thinking', None)
+                kwargs.pop('allowed_openai_params', None)
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
-            kwargs.pop(
-                'temperature'
-            )  # temperature is not supported for reasoning models
-            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
+                kwargs.pop(
+                    'temperature'
+                )  # temperature is not supported for reasoning models
+                kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
@@ -333,6 +341,7 @@ class LLM(RetryMixin, DebugMixin):
 
             # log the entire LLM prompt
             self.log_prompt(messages)
+            print(self.config.model)
 
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
@@ -359,6 +368,8 @@ class LLM(RetryMixin, DebugMixin):
                     message=r'.*content=.*upload.*',
                     category=DeprecationWarning,
                 )
+                # COMMENTED OUT: Context manager approach - testing direct kwargs only
+                # with self._gemini_thinking_patch_context():
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
@@ -440,6 +451,101 @@ class LLM(RetryMixin, DebugMixin):
             return resp
 
         self._completion = wrapper
+
+    def _should_apply_gemini_thinking_patch(self) -> bool:
+        """Check if we should apply the Gemini thinking patch.
+
+        Returns True for Gemini 2.5 Pro models to enable thinking capabilities.
+        """
+        return 'gemini-2.5-pro' in self.config.model.lower()
+
+    def _gemini_thinking_patch_context(self):
+        """Context manager that temporarily applies Gemini thinking patch.
+
+        This ensures the patch is only active during the specific completion call
+        and is automatically cleaned up afterwards, preventing interference with
+        other models or subsequent calls.
+        """
+        from contextlib import contextmanager
+
+        @contextmanager
+        def patch_context():
+            if not self._should_apply_gemini_thinking_patch():
+                # No patch needed, just yield
+                yield
+                return
+
+            # Store original functions for restoration
+            original_sync_transform = None
+            original_async_transform = None
+            gemini_module = None
+
+            patch_applied = False
+            try:
+                # Import the modules we need to patch
+                import litellm.llms.vertex_ai.gemini.vertex_and_google_ai_studio_gemini as gemini_mod
+
+                gemini_module = gemini_mod
+
+                # Store original functions
+                original_sync_transform = gemini_module.sync_transform_request_body
+                original_async_transform = getattr(
+                    gemini_module, 'async_transform_request_body', None
+                )
+
+                # Create patched sync version
+                def patched_sync_transform_with_thinking(*args, **kwargs):
+                    if 'optional_params' in kwargs:
+                        kwargs['optional_params']['thinkingConfig'] = {
+                            'includeThoughts': True,
+                        }
+                    return original_sync_transform(*args, **kwargs)
+
+                # Create patched async version if it exists
+                async def patched_async_transform_with_thinking(*args, **kwargs):
+                    if 'optional_params' in kwargs:
+                        kwargs['optional_params']['thinkingConfig'] = {
+                            'includeThoughts': True,
+                        }
+                    if original_async_transform is not None:
+                        return await original_async_transform(*args, **kwargs)
+                    return None
+
+                # Apply patches
+                gemini_module.sync_transform_request_body = (
+                    patched_sync_transform_with_thinking
+                )
+                if original_async_transform:
+                    gemini_module.async_transform_request_body = (
+                        patched_async_transform_with_thinking
+                    )
+
+                patch_applied = True
+                logger.debug(
+                    f'Applied temporary Gemini thinking patch for model: {self.config.model}'
+                )
+
+            except ImportError as e:
+                logger.warning(f'Could not apply Gemini thinking patch: {e}')
+            except Exception as e:
+                logger.warning(f'Failed to apply Gemini thinking patch: {e}')
+
+            try:
+                # Yield control to the caller
+                yield
+            finally:
+                # Always restore original functions if patch was applied
+                if patch_applied and gemini_module and original_sync_transform:
+                    gemini_module.sync_transform_request_body = original_sync_transform
+                    logger.debug('Restored original sync_transform_request_body')
+
+                if patch_applied and gemini_module and original_async_transform:
+                    gemini_module.async_transform_request_body = (
+                        original_async_transform
+                    )
+                    logger.debug('Restored original async_transform_request_body')
+
+        return patch_context()
 
     @property
     def completion(self) -> Callable:
