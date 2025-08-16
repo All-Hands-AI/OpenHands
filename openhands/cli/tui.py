@@ -662,6 +662,15 @@ def display_help() -> None:
         commands_html += f'<gold><b>{command}</b></gold> - <grey>{description}</grey>\n'
     print_formatted_text(HTML(commands_html))
 
+    # Keyboard shortcuts section
+    print_formatted_text(HTML('\nKeyboard shortcuts:'))
+    shortcuts_html = (
+        '<gold><b>Ctrl+P</b></gold> - <grey>Pause the agent</grey>\n'
+        '<gold><b>Ctrl+C</b></gold> - <grey>Interrupt running command or pause agent</grey>\n'
+        '<gold><b>Ctrl+D</b></gold> - <grey>Pause the agent</grey>\n'
+    )
+    print_formatted_text(HTML(shortcuts_html))
+
     # Footer
     print_formatted_text(
         HTML(
@@ -886,6 +895,128 @@ async def stop_pause_listener() -> None:
     pause_task = None
 
 
+def is_command_running(event_stream: EventStream) -> bool:
+    """Check if a command is currently running by examining recent events."""
+    try:
+        # Look at the most recent events to see if there's a running command
+        # We'll check the last few events to see if there's a CmdRunAction without a corresponding CmdOutputObservation
+        recent_events = []
+        if hasattr(event_stream, 'get_events'):
+            # Get the last 10 events to analyze
+            all_events = event_stream.get_events()
+            recent_events = all_events[-10:] if len(all_events) >= 10 else all_events
+
+        # Look for the most recent CmdRunAction
+        last_cmd_action = None
+        last_cmd_output = None
+
+        for event in reversed(recent_events):
+            if (
+                isinstance(event, CmdRunAction)
+                and not event.is_input
+                and last_cmd_action is None
+            ):
+                last_cmd_action = event
+            elif isinstance(event, CmdOutputObservation) and last_cmd_output is None:
+                last_cmd_output = event
+
+        # If we found a command action but no corresponding output after it, command might be running
+        if last_cmd_action is not None:
+            if last_cmd_output is None:
+                return True
+            # Check if the command action is more recent than the output
+            cmd_index = (
+                recent_events.index(last_cmd_action)
+                if last_cmd_action in recent_events
+                else -1
+            )
+            output_index = (
+                recent_events.index(last_cmd_output)
+                if last_cmd_output in recent_events
+                else -1
+            )
+            if cmd_index > output_index:
+                return True
+
+    except Exception:
+        # If we can't determine the status, assume no command is running
+        pass
+    return False
+
+
+async def _handle_command_interrupt(event_stream: EventStream) -> bool:
+    """Handle command interruption with user confirmation.
+
+    Returns:
+        bool: True if the interrupt was handled, False if the user wants to pause the agent
+    """
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>Command is currently running.</gold>'))
+    print_formatted_text('')
+
+    # Create a simple selection menu
+    choices = [
+        'Kill the running command (Ctrl+C)',
+        'Continue waiting for command to complete',
+        'Pause the entire agent',
+    ]
+
+    from openhands.core.config import OpenHandsConfig
+
+    config = OpenHandsConfig()  # Use default config for this prompt
+
+    selection = cli_confirm(
+        config, 'What would you like to do?', choices, initial_selection=0
+    )
+
+    if selection == 0:  # Kill the running command
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<gold>Sending interrupt signal to running command...</gold>')
+        )
+        # Send Ctrl+C to the running command
+        event_stream.add_event(
+            CmdRunAction(command='C-c', is_input=True),
+            EventSource.USER,
+        )
+        return True
+    elif selection == 1:  # Continue waiting
+        print_formatted_text('')
+        print_formatted_text(
+            HTML('<gold>Continuing to wait for command completion...</gold>')
+        )
+        return True
+    else:  # Pause the agent (selection == 2)
+        return False
+
+
+async def _handle_interrupt_async(
+    event_stream: EventStream, done: asyncio.Event
+) -> None:
+    """Handle the interrupt asynchronously to avoid blocking the input handler."""
+    try:
+        handled = await _handle_command_interrupt(event_stream)
+        if not handled:
+            # User chose to pause the agent
+            print_formatted_text('')
+            print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+            event_stream.add_event(
+                ChangeAgentStateAction(AgentState.PAUSED),
+                EventSource.USER,
+            )
+            done.set()
+    except Exception as e:
+        # If something goes wrong, fall back to pausing the agent
+        print_formatted_text('')
+        print_formatted_text(HTML(f'<ansired>Error handling interrupt: {e}</ansired>'))
+        print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+        event_stream.add_event(
+            ChangeAgentStateAction(AgentState.PAUSED),
+            EventSource.USER,
+        )
+        done.set()
+
+
 async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) -> None:
     input = create_input()
 
@@ -896,13 +1027,19 @@ async def process_agent_pause(done: asyncio.Event, event_stream: EventStream) ->
                 or key_press.key == Keys.ControlC
                 or key_press.key == Keys.ControlD
             ):
-                print_formatted_text('')
-                print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
-                event_stream.add_event(
-                    ChangeAgentStateAction(AgentState.PAUSED),
-                    EventSource.USER,
-                )
-                done.set()
+                # Check if a command is currently running
+                if key_press.key == Keys.ControlC and is_command_running(event_stream):
+                    # Handle command interruption asynchronously
+                    asyncio.create_task(_handle_interrupt_async(event_stream, done))
+                else:
+                    # Default behavior: pause the agent
+                    print_formatted_text('')
+                    print_formatted_text(HTML('<gold>Pausing the agent...</gold>'))
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.PAUSED),
+                        EventSource.USER,
+                    )
+                    done.set()
 
     try:
         with input.raw_mode():
