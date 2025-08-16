@@ -1,6 +1,6 @@
 from openhands.core.message_utils import (
+    estimate_token_usage_at_event_id,
     get_token_usage_for_event,
-    get_token_usage_for_event_id,
 )
 from openhands.events.event import Event
 from openhands.events.tool import ToolCallMetadata
@@ -103,17 +103,17 @@ def test_get_token_usage_for_event_id():
         events.append(e)
 
     # If we ask for event_id=3, we find usage_2 immediately
-    found_3 = get_token_usage_for_event_id(events, 3, metrics)
+    found_3 = estimate_token_usage_at_event_id(events, metrics, 3)
     assert found_3 is not None
     assert found_3.response_id == 'resp-2'
 
     # If we ask for event_id=2, no usage in event2, so we check event1 -> usage_1 found
-    found_2 = get_token_usage_for_event_id(events, 2, metrics)
+    found_2 = estimate_token_usage_at_event_id(events, metrics, 2)
     assert found_2 is not None
     assert found_2.response_id == 'resp-1'
 
     # If we ask for event_id=0, no usage in event0 or earlier, so return None
-    found_0 = get_token_usage_for_event_id(events, 0, metrics)
+    found_0 = estimate_token_usage_at_event_id(events, metrics, 0)
     assert found_0 is None
 
 
@@ -191,7 +191,7 @@ def test_get_token_usage_for_event_id_fallback():
         events.append(e)
 
     # Searching from event_id=2 goes back to event1, which has fallback response_id
-    found_usage = get_token_usage_for_event_id(events, 2, metrics)
+    found_usage = estimate_token_usage_at_event_id(events, metrics, 2)
     assert found_usage is not None
     assert found_usage.response_id == 'resp-fallback'
     assert found_usage.prompt_tokens == 15
