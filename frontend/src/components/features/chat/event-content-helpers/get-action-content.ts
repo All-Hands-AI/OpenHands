@@ -9,6 +9,7 @@ import {
   ThinkAction,
   OpenHandsAction,
   FinishAction,
+  getDefaultThought,
 } from "#/types/core/actions";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
@@ -75,7 +76,7 @@ const getMcpActionContent = (event: MCPAction): string => {
 };
 
 const getThinkActionContent = (event: ThinkAction): string =>
-  event.args.thought;
+  getDefaultThought(event.args.thought);
 
 const getFinishActionContent = (event: FinishAction): string =>
   event.args.final_thought.trim();

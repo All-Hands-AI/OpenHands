@@ -3,6 +3,7 @@ from typing import Any
 
 from openhands.core.schema import ActionType
 from openhands.events.action.action import Action
+from openhands.events.action.thoughts import ThoughtsDict
 from openhands.events.event import RecallType
 
 
@@ -11,7 +12,7 @@ class ChangeAgentStateAction(Action):
     """Fake action, just to notify the client that a task state has changed."""
 
     agent_state: str
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.CHANGE_AGENT_STATE
 
     @property
@@ -32,13 +33,13 @@ class AgentFinishAction(Action):
 
     final_thought: str = ''
     outputs: dict[str, Any] = field(default_factory=dict)
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.FINISH
 
     @property
     def message(self) -> str:
         if self.thought != '':
-            return self.thought
+            return str(self.thought)
         return "All done! What's next on the agenda?"
 
 
@@ -51,7 +52,7 @@ class AgentThinkAction(Action):
         action (str): The action type, namely ActionType.THINK.
     """
 
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.THINK
 
     @property
@@ -62,7 +63,7 @@ class AgentThinkAction(Action):
 @dataclass
 class AgentRejectAction(Action):
     outputs: dict = field(default_factory=dict)
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.REJECT
 
     @property
@@ -77,7 +78,7 @@ class AgentRejectAction(Action):
 class AgentDelegateAction(Action):
     agent: str
     inputs: dict
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.DELEGATE
 
     @property
@@ -91,7 +92,7 @@ class RecallAction(Action):
 
     recall_type: RecallType
     query: str = ''
-    thought: str = ''
+    thought: ThoughtsDict = field(default_factory=ThoughtsDict)
     action: str = ActionType.RECALL
 
     @property
