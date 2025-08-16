@@ -57,11 +57,15 @@ export function ConfirmationButtons() {
     <div className="flex justify-between items-center pt-4">
       <div className="flex flex-col gap-2">
         {isHighRisk && (
-          <div className="bg-red-500/10 border border-red-500 text-red-500 rounded px-2 py-1 w-fit flex items-center gap-2">
-            <span role="img" aria-label="warning">
-              🚨
+          <div className="bg-gradient-to-r from-red-500/15 to-orange-500/15 border-2 border-red-400/60 text-red-400 rounded-lg px-4 py-3 w-fit flex items-center gap-3 shadow-lg backdrop-blur-sm">
+            <div className="flex-shrink-0 w-6 h-6 bg-red-500/20 rounded-full flex items-center justify-center">
+              <span role="img" aria-label="warning" className="text-lg">
+                ⚠️
+              </span>
+            </div>
+            <span className="font-medium text-sm leading-relaxed">
+              {t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
             </span>
-            <span>{t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}</span>
           </div>
         )}
         <p>{t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}</p>
