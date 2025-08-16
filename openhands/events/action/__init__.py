@@ -14,6 +14,9 @@ from openhands.events.action.files import (
     FileEditAction,
     FileReadAction,
     FileWriteAction,
+    GeminiReadFileAction,
+    GeminiReplaceAction,
+    GeminiWriteFileAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import MessageAction, SystemMessageAction
@@ -27,6 +30,9 @@ __all__ = [
     'FileReadAction',
     'FileWriteAction',
     'FileEditAction',
+    'GeminiReadFileAction',
+    'GeminiWriteFileAction',
+    'GeminiReplaceAction',
     'AgentFinishAction',
     'AgentRejectAction',
     'AgentDelegateAction',

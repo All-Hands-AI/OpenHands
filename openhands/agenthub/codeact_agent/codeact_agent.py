@@ -16,6 +16,7 @@ from openhands.agenthub.codeact_agent.tools.condensation_request import (
     CondensationRequestTool,
 )
 from openhands.agenthub.codeact_agent.tools.finish import FinishTool
+from openhands.agenthub.codeact_agent.tools.gemini_tools import get_gemini_tools
 from openhands.agenthub.codeact_agent.tools.ipython import IPythonTool
 from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEditTool
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
@@ -139,11 +140,24 @@ class CodeActAgent(Agent):
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
-            tools.append(
-                create_str_replace_editor_tool(
-                    use_short_description=use_short_tool_desc
-                )
+            # Check if we should use Gemini-optimized tools
+            use_gemini_tools = (
+                self.llm is not None and 'gemini' in self.llm.config.model.lower()
             )
+
+            if use_gemini_tools:
+                # Use Gemini-optimized tools for better performance
+                tools.extend(get_gemini_tools())
+                logger.info(
+                    f'Using Gemini-optimized tools for model: {self.llm.config.model}'
+                )
+            else:
+                # Use standard str_replace_editor tool
+                tools.append(
+                    create_str_replace_editor_tool(
+                        use_short_description=use_short_tool_desc
+                    )
+                )
         return tools
 
     def reset(self) -> None:

@@ -27,6 +27,11 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
+from openhands_aci.editor.gemini_tools import (
+    execute_gemini_read_file,
+    execute_gemini_replace,
+    execute_gemini_write_file,
+)
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
 from pydantic import BaseModel
@@ -45,6 +50,9 @@ from openhands.events.action import (
     FileEditAction,
     FileReadAction,
     FileWriteAction,
+    GeminiReadFileAction,
+    GeminiReplaceAction,
+    GeminiWriteFileAction,
     IPythonRunCellAction,
 )
 from openhands.events.event import FileEditSource, FileReadSource
@@ -577,6 +585,66 @@ class ActionExecutor:
                 filepath=action.path,
             ),
         )
+
+    async def gemini_read_file(self, action: GeminiReadFileAction) -> Observation:
+        """Handle Gemini-optimized file reading."""
+        try:
+            result_str, (old_content, new_content) = execute_gemini_read_file(
+                absolute_path=action.absolute_path,
+                offset=action.offset,
+                limit=action.limit,
+            )
+
+            return FileReadObservation(
+                content=result_str,
+                path=action.absolute_path,
+                impl_source=FileReadSource.DEFAULT,
+            )
+        except Exception as e:
+            logger.error(f'Error in Gemini read file: {e}')
+            return ErrorObservation(str(e))
+
+    async def gemini_write_file(self, action: GeminiWriteFileAction) -> Observation:
+        """Handle Gemini-optimized file writing."""
+        try:
+            result_str, (old_content, new_content) = execute_gemini_write_file(
+                file_path=action.file_path,
+                content=action.content,
+            )
+
+            return FileWriteObservation(
+                content=result_str,
+                path=action.file_path,
+            )
+        except Exception as e:
+            logger.error(f'Error in Gemini write file: {e}')
+            return ErrorObservation(str(e))
+
+    async def gemini_replace(self, action: GeminiReplaceAction) -> Observation:
+        """Handle Gemini-optimized text replacement."""
+        try:
+            result_str, (old_content, new_content) = execute_gemini_replace(
+                file_path=action.file_path,
+                old_string=action.old_string,
+                new_string=action.new_string,
+                expected_replacements=action.expected_replacements,
+            )
+
+            return FileEditObservation(
+                content=result_str,
+                path=action.file_path,
+                old_content=action.old_string,
+                new_content=action.new_string,
+                impl_source=FileEditSource.OH_ACI,
+                diff=get_diff(
+                    old_contents=old_content or '',
+                    new_contents=new_content or '',
+                    filepath=action.file_path,
+                ),
+            )
+        except Exception as e:
+            logger.error(f'Error in Gemini replace: {e}')
+            return ErrorObservation(str(e))
 
     async def browse(self, action: BrowseURLAction) -> Observation:
         if self.browser is None:

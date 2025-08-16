@@ -33,6 +33,9 @@ from openhands.events.action import (
     CmdRunAction,
     FileEditAction,
     FileReadAction,
+    GeminiReadFileAction,
+    GeminiReplaceAction,
+    GeminiWriteFileAction,
     IPythonRunCellAction,
     MessageAction,
 )
@@ -40,6 +43,11 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import (
+    GEMINI_READ_FILE_TOOL_NAME,
+    GEMINI_REPLACE_TOOL_NAME,
+    GEMINI_WRITE_FILE_TOOL_NAME,
+)
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -219,6 +227,52 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+
+            # ================================================
+            # Gemini-optimized tools
+            # ================================================
+            elif tool_call.function.name == GEMINI_READ_FILE_TOOL_NAME:
+                if 'absolute_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "absolute_path" in tool call {tool_call.function.name}'
+                    )
+                action = GeminiReadFileAction(
+                    absolute_path=arguments['absolute_path'],
+                    offset=arguments.get('offset'),
+                    limit=arguments.get('limit'),
+                )
+            elif tool_call.function.name == GEMINI_WRITE_FILE_TOOL_NAME:
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'content' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "content" in tool call {tool_call.function.name}'
+                    )
+                action = GeminiWriteFileAction(
+                    file_path=arguments['file_path'],
+                    content=arguments['content'],
+                )
+            elif tool_call.function.name == GEMINI_REPLACE_TOOL_NAME:
+                if 'file_path' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "file_path" in tool call {tool_call.function.name}'
+                    )
+                if 'old_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "old_string" in tool call {tool_call.function.name}'
+                    )
+                if 'new_string' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "new_string" in tool call {tool_call.function.name}'
+                    )
+                action = GeminiReplaceAction(
+                    file_path=arguments['file_path'],
+                    old_string=arguments['old_string'],
+                    new_string=arguments['new_string'],
+                    expected_replacements=arguments.get('expected_replacements', 1),
+                )
 
             # ================================================
             # MCPAction (MCP)

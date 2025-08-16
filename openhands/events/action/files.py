@@ -136,3 +136,78 @@ class FileEditAction(Action):
                 ret += 'Undo Edit\n'
             # We ignore "view" command because it will be mapped to a FileReadAction
         return ret
+
+
+@dataclass
+class GeminiReadFileAction(Action):
+    """Gemini-optimized file reading action with enhanced error handling."""
+
+    absolute_path: str
+    offset: int | None = None
+    limit: int | None = None
+    thought: str = ''
+    action: str = 'gemini_read_file'
+    runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk | None = None
+
+    @property
+    def message(self) -> str:
+        range_info = ''
+        if self.offset is not None:
+            range_info = f' (from line {self.offset}'
+            if self.limit is not None:
+                range_info += f', {self.limit} lines'
+            range_info += ')'
+        return f'Reading file with Gemini tools: {self.absolute_path}{range_info}'
+
+
+@dataclass
+class GeminiWriteFileAction(Action):
+    """Gemini-optimized file writing action with content validation."""
+
+    file_path: str
+    content: str
+    thought: str = ''
+    action: str = 'gemini_write_file'
+    runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk | None = None
+
+    @property
+    def message(self) -> str:
+        return f'Writing file with Gemini tools: {self.file_path}'
+
+    def __repr__(self) -> str:
+        return (
+            f'**GeminiWriteFileAction**\n'
+            f'Path: {self.file_path}\n'
+            f'Thought: {self.thought}\n'
+            f'Content:\n```\n{self.content}\n```\n'
+        )
+
+
+@dataclass
+class GeminiReplaceAction(Action):
+    """Gemini-optimized text replacement action with intelligent correction."""
+
+    file_path: str
+    old_string: str
+    new_string: str
+    expected_replacements: int = 1
+    thought: str = ''
+    action: str = 'gemini_replace'
+    runnable: ClassVar[bool] = True
+    security_risk: ActionSecurityRisk | None = None
+
+    @property
+    def message(self) -> str:
+        return f'Replacing text in file with Gemini tools: {self.file_path}'
+
+    def __repr__(self) -> str:
+        return (
+            f'**GeminiReplaceAction**\n'
+            f'Path: {self.file_path}\n'
+            f'Expected Replacements: {self.expected_replacements}\n'
+            f'Thought: {self.thought}\n'
+            f'Old String: ```\n{self.old_string}\n```\n'
+            f'New String: ```\n{self.new_string}\n```\n'
+        )
