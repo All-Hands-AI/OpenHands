@@ -1,7 +1,7 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -124,14 +124,14 @@ def action_from_dict(action: dict) -> Action:
     if 'images_urls' in args:
         args['image_urls'] = args.pop('images_urls')
 
-    # Handle security_risk deserialization
-    if 'security_risk' in args and args['security_risk'] is not None:
+    # Handle safety_risk deserialization
+    if 'safety_risk' in args and args['safety_risk'] is not None:
         try:
             # Convert numeric value back to enum
-            args['security_risk'] = ActionSecurityRisk(args['security_risk'])
+            args['safety_risk'] = ActionSafetyRisk(args['safety_risk'])
         except (ValueError, TypeError):
             # If conversion fails, remove the invalid value
-            args.pop('security_risk')
+            args.pop('safety_risk')
 
     # handle deprecated args
     args = handle_action_deprecated_args(args)

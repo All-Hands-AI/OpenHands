@@ -127,12 +127,12 @@ def event_to_dict(event: 'Event') -> dict:
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
     if 'action' in d:
-        # Handle security_risk for actions - include it in args
-        if 'security_risk' in props:
-            if props['security_risk'] is not None:
-                props['security_risk'] = props['security_risk'].value
+        # Handle safety_risk for actions - include it in args
+        if 'safety_risk' in props:
+            if props['safety_risk'] is not None:
+                props['safety_risk'] = props['safety_risk'].value
             else:
-                props.pop('security_risk')
+                props.pop('safety_risk')
         d['args'] = props
         if event.timeout is not None:
             d['timeout'] = event.timeout

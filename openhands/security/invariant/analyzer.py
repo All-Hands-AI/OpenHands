@@ -13,7 +13,7 @@ from openhands.core.schema import AgentState
 from openhands.events.action.action import (
     Action,
     ActionConfirmationStatus,
-    ActionSecurityRisk,
+    ActionSafetyRisk,
 )
 from openhands.events.action.agent import ChangeAgentStateAction
 from openhands.events.event import Event, EventSource
@@ -119,14 +119,14 @@ class InvariantAnalyzer(SecurityAnalyzer):
         else:
             logger.debug('Invariant skipping element: event')
 
-    def get_risk(self, results: list[str]) -> ActionSecurityRisk:
+    def get_risk(self, results: list[str]) -> ActionSafetyRisk:
         mapping = {
-            'high': ActionSecurityRisk.HIGH,
-            'medium': ActionSecurityRisk.MEDIUM,
-            'low': ActionSecurityRisk.LOW,
+            'high': ActionSafetyRisk.HIGH,
+            'medium': ActionSafetyRisk.MEDIUM,
+            'low': ActionSafetyRisk.LOW,
         }
         regex = r'(?<=risk=)\w+'
-        risks: list[ActionSecurityRisk] = []
+        risks: list[ActionSafetyRisk] = []
         for result in results:
             m = re.search(regex, result)
             if m and m.group() in mapping:
@@ -135,7 +135,7 @@ class InvariantAnalyzer(SecurityAnalyzer):
         if risks:
             return max(risks)
 
-        return ActionSecurityRisk.LOW
+        return ActionSafetyRisk.LOW
 
     async def act(self, event: Event) -> None:
         if await self.should_confirm(event):
@@ -288,10 +288,10 @@ class InvariantAnalyzer(SecurityAnalyzer):
                     break
 
     async def should_confirm(self, event: Event) -> bool:
-        risk = event.security_risk if hasattr(event, 'security_risk') else None  # type: ignore [attr-defined]
+        risk = event.safety_risk if hasattr(event, 'safety_risk') else None  # type: ignore [attr-defined]
         return (
             risk is not None
-            and risk < self.settings.get('RISK_SEVERITY', ActionSecurityRisk.MEDIUM)
+            and risk < self.settings.get('RISK_SEVERITY', ActionSafetyRisk.MEDIUM)
             and hasattr(event, 'confirmation_state')
             and event.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
@@ -305,14 +305,14 @@ class InvariantAnalyzer(SecurityAnalyzer):
         event_source = event.source if event.source else EventSource.AGENT
         self.event_stream.add_event(new_event, event_source)
 
-    async def security_risk(self, event: Action) -> ActionSecurityRisk:
-        logger.debug('Calling security_risk on InvariantAnalyzer')
+    async def safety_risk(self, event: Action) -> ActionSafetyRisk:
+        logger.debug('Calling safety_risk on InvariantAnalyzer')
         new_elements = parse_element(self.trace, event)
         input_data = [e.model_dump(exclude_none=True) for e in new_elements]
         self.trace.extend(new_elements)
         check_result = self.monitor.check(self.input, input_data)
         self.input.extend(input_data)
-        risk = ActionSecurityRisk.UNKNOWN
+        risk = ActionSafetyRisk.UNKNOWN
 
         # Process check_result
         result, err = check_result

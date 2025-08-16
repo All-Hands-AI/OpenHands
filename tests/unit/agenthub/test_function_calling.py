@@ -15,7 +15,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
 )
-from openhands.events.action.action import ActionSecurityRisk
+from openhands.events.action.action import ActionSafetyRisk
 from openhands.events.event import FileEditSource, FileReadSource
 
 
@@ -271,7 +271,7 @@ def test_unexpected_argument_handling():
 
 
 def test_safety_risk_conversion():
-    """Test that safety_risk from tool call arguments is properly converted to security_risk."""
+    """Test that safety_risk from tool call arguments is properly converted to safety_risk."""
     # Test HIGH risk
     response = create_mock_response(
         'execute_bash', {'command': 'rm -rf /tmp/test', 'safety_risk': 'HIGH'}
@@ -279,8 +279,8 @@ def test_safety_risk_conversion():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
-    assert actions[0].security_risk == ActionSecurityRisk.HIGH
-    assert actions[0].security_risk.value == 2
+    assert actions[0].safety_risk == ActionSafetyRisk.HIGH
+    assert actions[0].safety_risk.value == 2
 
     # Test MEDIUM risk
     response = create_mock_response(
@@ -290,8 +290,8 @@ def test_safety_risk_conversion():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], IPythonRunCellAction)
-    assert actions[0].security_risk == ActionSecurityRisk.MEDIUM
-    assert actions[0].security_risk.value == 1
+    assert actions[0].safety_risk == ActionSafetyRisk.MEDIUM
+    assert actions[0].safety_risk.value == 1
 
     # Test LOW risk
     response = create_mock_response(
@@ -300,8 +300,8 @@ def test_safety_risk_conversion():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], BrowseInteractiveAction)
-    assert actions[0].security_risk == ActionSecurityRisk.LOW
-    assert actions[0].security_risk.value == 0
+    assert actions[0].safety_risk == ActionSafetyRisk.LOW
+    assert actions[0].safety_risk.value == 0
 
     # Test invalid risk (should default to UNKNOWN)
     response = create_mock_response(
@@ -310,5 +310,5 @@ def test_safety_risk_conversion():
     actions = response_to_actions(response)
     assert len(actions) == 1
     assert isinstance(actions[0], CmdRunAction)
-    assert actions[0].security_risk == ActionSecurityRisk.UNKNOWN
-    assert actions[0].security_risk.value == -1
+    assert actions[0].safety_risk == ActionSafetyRisk.UNKNOWN
+    assert actions[0].safety_risk.value == -1

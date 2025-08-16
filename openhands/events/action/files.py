@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 from openhands.events.event import FileEditSource, FileReadSource
 
 
@@ -19,7 +19,7 @@ class FileReadAction(Action):
     thought: str = ''
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
     impl_source: FileReadSource = FileReadSource.DEFAULT
     view_range: list[int] | None = None  # ONLY used in OH_ACI mode
 
@@ -42,7 +42,7 @@ class FileWriteAction(Action):
     thought: str = ''
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
 
     @property
     def message(self) -> str:
@@ -81,7 +81,7 @@ class FileEditAction(Action):
             thought (str): The reasoning behind the edit action.
             action (str): The type of action being performed (always ActionType.EDIT).
         runnable (bool): Indicates if the action can be executed (always True).
-        security_risk (ActionSecurityRisk | None): Indicates any security risks associated with the action.
+        safety_risk (ActionSafetyRisk | None): Indicates any safety risks associated with the action.
         impl_source (FileEditSource): The source of the implementation (LLM_BASED_EDIT or OH_ACI).
 
     Usage:
@@ -111,7 +111,7 @@ class FileEditAction(Action):
     thought: str = ''
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
     impl_source: FileEditSource = FileEditSource.OH_ACI
 
     def __repr__(self) -> str:

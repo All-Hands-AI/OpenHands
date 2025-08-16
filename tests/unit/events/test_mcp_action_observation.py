@@ -14,7 +14,7 @@ def test_mcp_action_creation():
     assert action.action == ActionType.MCP
     assert action.thought == ''
     assert action.runnable is True
-    assert action.security_risk is None
+    assert action.safety_risk is None
 
 
 def test_mcp_action_with_thought():

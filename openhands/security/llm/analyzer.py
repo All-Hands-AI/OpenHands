@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import Request
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 from openhands.events.event import Event
 from openhands.events.stream import EventStream
 from openhands.security.analyzer import SecurityAnalyzer
@@ -30,15 +30,15 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         """Handles the incoming API request."""
         return {'status': 'ok'}
 
-    def _get_risk_level_mapping(self) -> dict[str, ActionSecurityRisk]:
-        """Returns the mapping from string risk levels to ActionSecurityRisk enum values."""
+    def _get_risk_level_mapping(self) -> dict[str, ActionSafetyRisk]:
+        """Returns the mapping from string risk levels to ActionSafetyRisk enum values."""
         return {
-            'LOW': ActionSecurityRisk.LOW,
-            'MEDIUM': ActionSecurityRisk.MEDIUM,
-            'HIGH': ActionSecurityRisk.HIGH,
+            'LOW': ActionSafetyRisk.LOW,
+            'MEDIUM': ActionSafetyRisk.MEDIUM,
+            'HIGH': ActionSafetyRisk.HIGH,
         }
 
-    async def security_risk(self, event: Action) -> ActionSecurityRisk:
+    async def safety_risk(self, event: Action) -> ActionSafetyRisk:
         """Evaluates the Action for security risks and returns the risk level.
 
         This analyzer checks if the action has a 'safety_risk' attribute set by the LLM.
@@ -46,7 +46,7 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         """
         # Check if the action has a safety_risk attribute set by the LLM
         if not hasattr(event, 'safety_risk'):
-            return ActionSecurityRisk.UNKNOWN
+            return ActionSafetyRisk.UNKNOWN
 
         safety_risk = getattr(event, 'safety_risk')
         risk_mapping = self._get_risk_level_mapping()
@@ -57,7 +57,7 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
 
         # Default to UNKNOWN if safety_risk value is not recognized
         logger.warning(f'Unrecognized safety_risk value: {safety_risk}')
-        return ActionSecurityRisk.UNKNOWN
+        return ActionSafetyRisk.UNKNOWN
 
     async def act(self, event: Event) -> None:
         """Performs an action based on the analyzed event.

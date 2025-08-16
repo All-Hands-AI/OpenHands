@@ -18,7 +18,7 @@ from openhands.events.action import (
     MessageAction,
     NullAction,
 )
-from openhands.events.action.action import ActionConfirmationStatus, ActionSecurityRisk
+from openhands.events.action.action import ActionConfirmationStatus, ActionSafetyRisk
 from openhands.events.event import Event
 from openhands.events.observation import (
     AgentDelegateObservation,
@@ -97,13 +97,13 @@ async def test_msg(temp_dir: str):
             await analyzer.on_event(event)
 
         for i in range(3):
-            assert data[i][0].security_risk == ActionSecurityRisk.LOW
-        assert data[3][0].security_risk == ActionSecurityRisk.MEDIUM
+            assert data[i][0].safety_risk == ActionSafetyRisk.LOW
+        assert data[3][0].safety_risk == ActionSafetyRisk.MEDIUM
 
 
 @pytest.mark.parametrize(
     'cmd,expected_risk',
-    [('rm -rf root_dir', ActionSecurityRisk.MEDIUM), ['ls', ActionSecurityRisk.LOW]],
+    [('rm -rf root_dir', ActionSafetyRisk.MEDIUM), ['ls', ActionSafetyRisk.LOW]],
 )
 @pytest.mark.asyncio
 async def test_cmd(cmd, expected_risk, temp_dir: str):
@@ -121,7 +121,7 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
         ['PolicyViolation(Disallow rm -rf [risk=medium], ranges=[<2 ranges>])']
-        if expected_risk == ActionSecurityRisk.MEDIUM
+        if expected_risk == ActionSafetyRisk.MEDIUM
         else [],  # Second check
     ]
 
@@ -148,15 +148,15 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].security_risk == ActionSecurityRisk.LOW
-        assert data[1][0].security_risk == expected_risk
+        assert data[0][0].safety_risk == ActionSafetyRisk.LOW
+        assert data[1][0].safety_risk == expected_risk
 
 
 @pytest.mark.parametrize(
     'code,expected_risk',
     [
-        ('my_key=AKIAIOSFODNN7EXAMPLE', ActionSecurityRisk.MEDIUM),
-        ('my_key=123', ActionSecurityRisk.LOW),
+        ('my_key=AKIAIOSFODNN7EXAMPLE', ActionSafetyRisk.MEDIUM),
+        ('my_key=123', ActionSafetyRisk.LOW),
     ],
 )
 @pytest.mark.asyncio
@@ -175,7 +175,7 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
         {'monitor_id': 'mock-monitor-id'},
         [],  # First check
         ['PolicyViolation(Disallow writing secrets [risk=medium], ranges=[<2 ranges>])']
-        if expected_risk == ActionSecurityRisk.MEDIUM
+        if expected_risk == ActionSafetyRisk.MEDIUM
         else [],  # Second check
         [],  # Third check
     ]
@@ -206,9 +206,9 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].security_risk == ActionSecurityRisk.LOW
-        assert data[1][0].security_risk == expected_risk
-        assert data[2][0].security_risk == ActionSecurityRisk.LOW
+        assert data[0][0].safety_risk == ActionSafetyRisk.LOW
+        assert data[1][0].safety_risk == expected_risk
+        assert data[2][0].safety_risk == ActionSafetyRisk.LOW
 
 
 @pytest.mark.asyncio
@@ -252,8 +252,8 @@ async def test_unsafe_python_code(temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].security_risk == ActionSecurityRisk.LOW
-        assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
+        assert data[0][0].safety_risk == ActionSafetyRisk.LOW
+        assert data[1][0].safety_risk == ActionSafetyRisk.MEDIUM
 
 
 @pytest.mark.asyncio
@@ -294,8 +294,8 @@ async def test_unsafe_bash_command(temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].security_risk == ActionSecurityRisk.LOW
-        assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
+        assert data[0][0].safety_risk == ActionSafetyRisk.LOW
+        assert data[1][0].safety_risk == ActionSafetyRisk.MEDIUM
 
 
 @pytest.mark.parametrize(

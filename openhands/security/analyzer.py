@@ -5,7 +5,7 @@ from uuid import uuid4
 from fastapi import Request
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 from openhands.events.event import Event
 from openhands.events.stream import EventStream, EventStreamSubscriber
 
@@ -71,8 +71,8 @@ class SecurityAnalyzer:
             return
 
         try:
-            # Set the security_risk attribute on the event
-            event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
+            # Set the safety_risk attribute on the event
+            event.safety_risk = await self.safety_risk(event)  # type: ignore [attr-defined]
             await self.act(event)
         except Exception as e:
             logger.error(f'Error occurred while analyzing the event: {e}')
@@ -91,10 +91,10 @@ class SecurityAnalyzer:
         """Performs an action based on the analyzed event."""
         pass
 
-    async def security_risk(self, event: Action) -> ActionSecurityRisk:
+    async def safety_risk(self, event: Action) -> ActionSafetyRisk:
         """Evaluates the Action for security risks and returns the risk level."""
         raise NotImplementedError(
-            'Need to implement security_risk method in SecurityAnalyzer subclass'
+            'Need to implement safety_risk method in SecurityAnalyzer subclass'
         )
 
     async def close(self) -> None:

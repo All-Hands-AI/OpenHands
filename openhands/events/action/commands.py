@@ -5,7 +5,7 @@ from openhands.core.schema import ActionType
 from openhands.events.action.action import (
     Action,
     ActionConfirmationStatus,
-    ActionSecurityRisk,
+    ActionSafetyRisk,
 )
 
 
@@ -25,7 +25,7 @@ class CmdRunAction(Action):
     action: str = ActionType.RUN
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
 
     @property
     def message(self) -> str:
@@ -49,7 +49,7 @@ class IPythonRunCellAction(Action):
     action: str = ActionType.RUN_IPYTHON
     runnable: ClassVar[bool] = True
     confirmation_state: ActionConfirmationStatus = ActionConfirmationStatus.CONFIRMED
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
     kernel_init_code: str = ''  # code to run in the kernel (if the kernel is restarted)
 
     def __str__(self) -> str:

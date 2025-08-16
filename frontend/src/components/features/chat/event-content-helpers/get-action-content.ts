@@ -1,4 +1,4 @@
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSafetyRisk } from "#/state/security-analyzer-slice";
 import {
   FileWriteAction,
   CommandAction,
@@ -14,7 +14,7 @@ import {
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 
-const getRiskText = (risk: ActionSecurityRisk | string | number) => {
+const getRiskText = (risk: ActionSafetyRisk | string | number) => {
   // Handle string values that might come from backend
   if (typeof risk === "string") {
     const lowerRisk = risk.toLowerCase();
@@ -27,13 +27,13 @@ const getRiskText = (risk: ActionSecurityRisk | string | number) => {
   // Handle numeric values
   const numericRisk = Number(risk);
   switch (numericRisk) {
-    case ActionSecurityRisk.LOW:
+    case ActionSafetyRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");
-    case ActionSecurityRisk.MEDIUM:
+    case ActionSafetyRisk.MEDIUM:
       return i18n.t("SECURITY$MEDIUM_RISK");
-    case ActionSecurityRisk.HIGH:
+    case ActionSafetyRisk.HIGH:
       return i18n.t("SECURITY$HIGH_RISK");
-    case ActionSecurityRisk.UNKNOWN:
+    case ActionSafetyRisk.UNKNOWN:
     default:
       return i18n.t("SECURITY$UNKNOWN_RISK");
   }
@@ -51,7 +51,7 @@ const getRunActionContent = (event: CommandAction): string => {
   let content = `Command:\n\`${event.args.command}\``;
 
   if (event.args.confirmation_state === "awaiting_confirmation") {
-    content += `\n\n${getRiskText(event.args.security_risk)}`;
+    content += `\n\n${getRiskText(event.args.safety_risk)}`;
   }
 
   return content;
@@ -61,7 +61,7 @@ const getIPythonActionContent = (event: IPythonAction): string => {
   let content = `\`\`\`\n${event.args.code}\n\`\`\``;
 
   if (event.args.confirmation_state === "awaiting_confirmation") {
-    content += `\n\n${getRiskText(event.args.security_risk)}`;
+    content += `\n\n${getRiskText(event.args.safety_risk)}`;
   }
 
   return content;

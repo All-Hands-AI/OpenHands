@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 
 
 @dataclass
@@ -11,7 +11,7 @@ class BrowseURLAction(Action):
     thought: str = ''
     action: str = ActionType.BROWSE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
     return_axtree: bool = False
 
     @property
@@ -33,7 +33,7 @@ class BrowseInteractiveAction(Action):
     browsergym_send_msg_to_user: str = ''
     action: str = ActionType.BROWSE_INTERACTIVE
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
     return_axtree: bool = False
 
     @property

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 
 
 @dataclass
@@ -12,7 +12,7 @@ class MCPAction(Action):
     thought: str = ''
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
 
     @property
     def message(self) -> str:

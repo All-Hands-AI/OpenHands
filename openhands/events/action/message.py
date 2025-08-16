@@ -3,7 +3,7 @@ from typing import Any
 
 import openhands
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSafetyRisk
 
 
 @dataclass
@@ -13,7 +13,7 @@ class MessageAction(Action):
     image_urls: list[str] | None = None
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: ActionSecurityRisk | None = None
+    safety_risk: ActionSafetyRisk | None = None
 
     @property
     def message(self) -> str:

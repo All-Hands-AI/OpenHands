@@ -1,5 +1,5 @@
 from openhands.events.action import CmdRunAction, MessageAction
-from openhands.events.action.action import ActionSecurityRisk
+from openhands.events.action.action import ActionSafetyRisk
 from openhands.events.observation import CmdOutputMetadata, CmdOutputObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.llm.metrics import Cost, Metrics, ResponseLatency, TokenUsage
@@ -124,28 +124,28 @@ def test_metrics_none_serialization():
     assert deserialized.llm_metrics is None
 
 
-def test_security_risk_serialization():
+def test_safety_risk_serialization():
     # Test action with security risk
     action = CmdRunAction(command='rm -rf /tmp/test')
-    action.security_risk = ActionSecurityRisk.HIGH
+    action.safety_risk = ActionSafetyRisk.HIGH
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' in serialized['args']
-    assert serialized['args']['security_risk'] == ActionSecurityRisk.HIGH.value
+    assert 'safety_risk' in serialized['args']
+    assert serialized['args']['safety_risk'] == ActionSafetyRisk.HIGH.value
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
-    assert deserialized.security_risk == ActionSecurityRisk.HIGH
+    assert deserialized.safety_risk == ActionSafetyRisk.HIGH
 
     # Test action with no security risk
     action = CmdRunAction(command='ls')
-    # Don't set security_risk
+    # Don't set safety_risk
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' not in serialized['args']
+    assert 'safety_risk' not in serialized['args']
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
-    assert deserialized.security_risk is None
+    assert deserialized.safety_risk is None
