@@ -69,7 +69,9 @@ const getMcpActionContent = (event: MCPAction): string => {
   let details = `**MCP Tool Call:** ${name}\n\n`;
   if (event.args.thought) {
     const t = event.args.thought;
-    const combined = t.reasoning_content ? `${t.reasoning_content}\n\n${t.text}` : t.text;
+    const combined = t.reasoning_content
+      ? `${t.reasoning_content}\n\n${t.text}`
+      : t.text;
     if (combined && combined.trim().length > 0) {
       details += `\n\n**Thought:**\n${combined}`;
     }

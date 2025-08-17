@@ -41,7 +41,6 @@ export interface AssistantMessageAction
     file_urls: string[];
     wait_for_response: boolean;
   };
-
 }
 
 export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
@@ -53,7 +52,6 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
     kernel_init_code: string;
     thought: Thought;
   };
-
 }
 
 export interface ThinkAction extends OpenHandsActionEvent<"think"> {
@@ -70,7 +68,6 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
     outputs: Record<string, unknown>;
     thought: Thought;
   };
-
 }
 
 export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
@@ -81,7 +78,6 @@ export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
     inputs: Record<string, string>;
     thought: Thought;
   };
-
 }
 
 export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
@@ -90,7 +86,6 @@ export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
     url: string;
     thought: Thought;
   };
-
 }
 
 export interface BrowseInteractiveAction
@@ -102,7 +97,6 @@ export interface BrowseInteractiveAction
     thought: Thought | null;
     browsergym_send_msg_to_user: string;
   };
-
 }
 
 export interface FileReadAction extends OpenHandsActionEvent<"read"> {
@@ -114,7 +108,6 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
     impl_source?: string;
     view_range?: number[] | null;
   };
-
 }
 
 export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
@@ -124,7 +117,6 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
     content: string;
     thought: Thought;
   };
-
 }
 
 export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
@@ -144,7 +136,6 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
     security_risk: ActionSecurityRisk | null;
     impl_source?: string;
   };
-
 }
 
 export interface RejectAction extends OpenHandsActionEvent<"reject"> {
@@ -152,7 +143,6 @@ export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   args: {
     thought: Thought;
   };
-
 }
 
 export interface RecallAction extends OpenHandsActionEvent<"recall"> {
@@ -162,7 +152,6 @@ export interface RecallAction extends OpenHandsActionEvent<"recall"> {
     query: string;
     thought: Thought;
   };
-
 }
 
 export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
@@ -172,7 +161,6 @@ export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
     arguments: Record<string, unknown>;
     thought?: Thought;
   };
-
 }
 
 export interface TaskTrackingAction
@@ -188,7 +176,6 @@ export interface TaskTrackingAction
     }>;
     thought: Thought;
   };
-
 }
 
 export type OpenHandsAction =

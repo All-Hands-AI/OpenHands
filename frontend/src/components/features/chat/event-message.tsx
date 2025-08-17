@@ -33,13 +33,18 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
-): obj is { thought?: { text?: string; reasoning_content?: string | null } } => {
-  const t = (obj as { thought?: { text?: string; reasoning_content?: string | null } }).thought;
-  if (!t) return false;
-  const text = (t as { text?: string }).text;
-  const rc = (t as { reasoning_content?: string | null }).reasoning_content;
-  return (typeof text === "string" && text.length > 0) ||
-    (typeof rc === "string" && rc.length > 0);
+): obj is {
+  thought?: { text?: string; reasoning_content?: string | null };
+} => {
+  const { thought } = obj as {
+    thought?: { text?: string; reasoning_content?: string | null };
+  };
+  if (!thought) return false;
+  const { text = "", reasoning_content: rc } = thought;
+  return (
+    (typeof text === "string" && text.length > 0) ||
+    (typeof rc === "string" && rc.length > 0)
+  );
 };
 
 interface EventMessageProps {
