@@ -752,11 +752,7 @@ class AgentController:
                 f'{self.delegate.agent.name} encountered an error during execution.'
             )
 
-        # Compose a clearer delegate completion message for the parent agent/user
-        content = (
-            "User just had a conversation with the read-only planning agent. "
-            "Here is the finalized result from the delegate:\n\n" + content
-        )
+        content = f'Delegated agent finished with result:\n\n{content}'
 
         # emit the delegate result observation
         obs = AgentDelegateObservation(outputs=delegate_outputs, content=content)
