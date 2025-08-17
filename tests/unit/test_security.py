@@ -94,7 +94,7 @@ async def test_msg(temp_dir: str):
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         for i in range(3):
             assert data[i][0].security_risk == ActionSecurityRisk.LOW
@@ -146,7 +146,7 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == expected_risk
@@ -204,7 +204,7 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == expected_risk
@@ -250,7 +250,7 @@ async def test_unsafe_python_code(temp_dir: str):
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
@@ -292,7 +292,7 @@ async def test_unsafe_bash_command(temp_dir: str):
         # Call on_event directly for each event
         for event, source in data:
             event._source = source  # Set the source on the event directly
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         assert data[0][0].security_risk == ActionSecurityRisk.LOW
         assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
@@ -325,6 +325,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                             'include_extra': True,
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                             'kernel_init_code': '',
+                            'security_risk': ActionSecurityRisk.UNKNOWN,
                         },
                     ),
                 ),
@@ -375,6 +376,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
                             'is_static': False,
                             'cwd': None,
+                            'security_risk': ActionSecurityRisk.UNKNOWN,
                         },
                     ),
                 ),
@@ -431,6 +433,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                             'browser_actions': 'goto("http://localhost:3000")',
                             'browsergym_send_msg_to_user': 'browsergym',
                             'return_axtree': False,
+                            'security_risk': ActionSecurityRisk.UNKNOWN,
                         },
                     ),
                 ),
@@ -458,6 +461,7 @@ async def test_unsafe_bash_command(temp_dir: str):
                         arguments={
                             'url': 'http://localhost:3000',
                             'return_axtree': False,
+                            'security_risk': ActionSecurityRisk.UNKNOWN,
                         },
                     ),
                 ),
@@ -605,7 +609,7 @@ async def test_check_usertask(
         for event, source in data:
             event._source = source  # Set the source on the event directly
             event_stream.add_event(event, source)
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         event_list = list(event_stream.get_events())
 
@@ -667,7 +671,7 @@ async def test_check_fillaction(
         for event, source in data:
             event._source = source  # Set the source on the event directly
             event_stream.add_event(event, source)
-            await analyzer.on_event(event)
+            await analyzer.on_event_async(event)
 
         event_list = list(event_stream.get_events())
 

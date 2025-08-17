@@ -386,14 +386,12 @@ model = "test-model"
 [security]
 confirmation_mode = false
 security_analyzer = "semgrep"
-enable_security_analyzer = false
 """
         )
 
     load_from_toml(default_config, temp_toml_file)
     assert default_config.security.confirmation_mode is False
     assert default_config.security.security_analyzer == 'semgrep'
-    assert default_config.security.enable_security_analyzer is False
 
 
 def test_security_config_from_dict():
@@ -404,7 +402,6 @@ def test_security_config_from_dict():
     config_dict = {
         'confirmation_mode': True,
         'security_analyzer': 'some_analyzer',
-        'enable_security_analyzer': False,
     }
 
     security_config = SecurityConfig(**config_dict)
@@ -412,7 +409,6 @@ def test_security_config_from_dict():
     # Verify all fields are correctly set
     assert security_config.confirmation_mode is True
     assert security_config.security_analyzer == 'some_analyzer'
-    assert security_config.enable_security_analyzer is False
 
 
 def test_defaults_dict_after_updates(default_config):

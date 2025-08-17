@@ -131,8 +131,8 @@ def test_action_risk_serialization():
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'action_risk' in serialized['args']
-    assert serialized['args']['action_risk'] == ActionSecurityRisk.HIGH.value
+    assert 'security_risk' in serialized['args']
+    assert serialized['args']['security_risk'] == ActionSecurityRisk.HIGH.value
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
@@ -144,8 +144,9 @@ def test_action_risk_serialization():
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'action_risk' not in serialized['args']
+    assert 'security_risk' in serialized['args']
+    assert serialized['args']['security_risk'] == ActionSecurityRisk.UNKNOWN.value
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
-    assert deserialized.security_risk is None
+    assert deserialized.security_risk == ActionSecurityRisk.UNKNOWN

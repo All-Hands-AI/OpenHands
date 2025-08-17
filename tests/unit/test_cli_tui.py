@@ -26,6 +26,7 @@ from openhands.events import EventSource
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     CmdRunAction,
     MCPAction,
     MessageAction,
@@ -400,8 +401,10 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, security_risk='LOW')
-        assert result == 'smart'
+        result = await read_confirmation_input(
+            config=cfg, security_risk=ActionSecurityRisk.LOW
+        )
+        assert result == 'auto_highrisk'
 
     @pytest.mark.asyncio
     @patch('openhands.cli.tui.cli_confirm')
@@ -411,7 +414,9 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, security_risk='HIGH')
+        result = await read_confirmation_input(
+            config=cfg, security_risk=ActionSecurityRisk.HIGH
+        )
         assert result == 'always'
 
 

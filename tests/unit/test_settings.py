@@ -18,7 +18,6 @@ def test_settings_from_config():
         security=SecurityConfig(
             security_analyzer='test-analyzer',
             confirmation_mode=True,
-            enable_security_analyzer=False,
         ),
         llms={
             'llm': LLMConfig(
@@ -42,7 +41,6 @@ def test_settings_from_config():
         assert settings.max_iterations == 100
         assert settings.security_analyzer == 'test-analyzer'
         assert settings.confirmation_mode is True
-        assert settings.enable_security_analyzer is False
         assert settings.llm_model == 'test-model'
         assert settings.llm_api_key.get_secret_value() == 'test-key'
         assert settings.llm_base_url == 'https://test.example.com'
@@ -58,7 +56,6 @@ def test_settings_from_config_no_api_key():
         security=SecurityConfig(
             security_analyzer='test-analyzer',
             confirmation_mode=True,
-            enable_security_analyzer=False,
         ),
         llms={
             'llm': LLMConfig(
