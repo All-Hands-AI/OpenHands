@@ -46,6 +46,8 @@ from openhands.core.schema import AgentState
 from openhands.core.schema.exit_reason import ExitReason
 from openhands.events import EventSource
 from openhands.events.action import (
+    AgentDelegateAction,
+    AgentFinishAction,
     ChangeAgentStateAction,
     MessageAction,
 )
@@ -166,34 +168,47 @@ async def handle_commands(
     elif command == '/mcp':
         await handle_mcp_command(config)
     elif command == '/plan':
-        # Prompt for planning objective and delegate to ReadOnlyPlanningAgent
-        objective = await collect_input(config, 'Enter planning objective:')
-        if objective is None:
-            return close_repl, reload_microagents, new_session_requested, exit_reason
-        from openhands.events import EventSource as _ES
-        from openhands.events.action import AgentDelegateAction
-
-        event_stream.add_event(
-            AgentDelegateAction(
-                agent='ReadOnlyPlanningAgent', inputs={'task': objective}
-            ),
-            _ES.USER,
-        )
+        await handle_plan_command(config, event_stream, agent_state)
     elif command == '/execute':
-        # End the planning delegate and return to the parent
-        from openhands.events import EventSource as _ES
-        from openhands.events.action import AgentFinishAction
-
-        event_stream.add_event(
-            AgentFinishAction(final_thought='Switching to execution mode'),
-            _ES.USER,
-        )
+        await handle_execute_command(event_stream)
     else:
         close_repl = True
         action = MessageAction(content=command)
         event_stream.add_event(action, EventSource.USER)
 
     return close_repl, reload_microagents, new_session_requested, exit_reason
+
+
+async def handle_plan_command(
+    config: OpenHandsConfig,
+    event_stream: EventStream,
+    agent_state: str,
+) -> None:
+    # Prompt for planning objective and delegate to ReadOnlyPlanningAgent
+    print_formatted_text(
+        HTML(
+            '<ansigreen>Planning mode activated. Please provide your planning objective:</ansigreen>'
+        )
+    )
+    objective = await read_prompt_input(config, agent_state)
+    if objective == '/exit':
+        return
+    event_stream.add_event(
+        AgentDelegateAction(agent='ReadOnlyPlanningAgent', inputs={'task': objective}),
+        EventSource.USER,
+    )
+
+
+async def handle_execute_command(event_stream):
+    event_stream.add_event(
+        AgentFinishAction(
+            final_thought='Switching to execution mode',
+            outputs={
+                'content': 'Read-Only planning agent finished its discussion with the user. You may find the discussed plan at PLAN.md.'
+            },
+        ),
+        EventSource.USER,
+    )
 
 
 def handle_exit_command(
