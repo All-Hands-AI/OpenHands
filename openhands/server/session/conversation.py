@@ -1,7 +1,7 @@
 import asyncio
 
 from openhands.core.config import OpenHandsConfig
-from openhands.events.stream import EventStream
+from openhands.events.stream import EventStream,EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -39,6 +39,11 @@ class ServerConversation:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
             )(self.event_stream)
+            self.event_stream.subscribe(
+                EventStreamSubscriber.SECURITY_ANALYZER,
+                self.security_analyzer.on_event,
+                f'security_analyzer_{sid}',
+            )
 
         if runtime:
             self._attach_to_existing = True

@@ -1,13 +1,12 @@
 import asyncio
-from typing import Any, Optional
-from uuid import uuid4
+from typing import Any
 
 from fastapi import Request
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.event import Event
-from openhands.events.stream import EventStream, EventStreamSubscriber
+from openhands.events.stream import EventStream
 
 
 class SecurityAnalyzer:
@@ -20,47 +19,11 @@ class SecurityAnalyzer:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
-        self._loop: Optional[asyncio.AbstractEventLoop] = None
 
-        def sync_on_event(event: Event) -> None:
-            # Try to get the current event loop
-            try:
-                asyncio.get_running_loop()
-                # We have a running loop, create task normally
-                asyncio.create_task(self.on_event(event))
-            except RuntimeError:
-                # No running loop in this thread, try to use the stored loop
-                if self._loop is not None:
-                    # Schedule the coroutine in the main event loop
-                    try:
-                        asyncio.run_coroutine_threadsafe(
-                            self.on_event(event), self._loop
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f'Failed to schedule SecurityAnalyzer coroutine: {e}'
-                        )
-                else:
-                    # No event loop available, run synchronously as a fallback
-                    # This is not ideal but prevents crashes
-                    try:
-                        # Create a new event loop just for this operation
-                        new_loop = asyncio.new_event_loop()
-                        asyncio.set_event_loop(new_loop)
-                        self._loop = new_loop
-                        try:
-                            new_loop.run_until_complete(self.on_event(event))
-                        finally:
-                            new_loop.close()
-                            asyncio.set_event_loop(None)
-                    except Exception as e:
-                        logger.error(f'Failed to process SecurityAnalyzer event: {e}')
+    def on_event(self, event: Event) -> None:
+        asyncio.get_event_loop().run_until_complete(self.on_event_async(event))
 
-        self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
-        )
-
-    async def on_event(self, event: Event) -> None:
+    async def on_event_async(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
         logger.debug(f'SecurityAnalyzer received event: {event}')
         await self.log_event(event)

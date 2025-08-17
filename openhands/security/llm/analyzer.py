@@ -14,18 +14,6 @@ from openhands.security.analyzer import SecurityAnalyzer
 class LLMRiskAnalyzer(SecurityAnalyzer):
     """Security analyzer that respects LLM-provided risk assessments."""
 
-    def __init__(
-        self, event_stream: EventStream, settings: dict[str, Any] | None = None
-    ) -> None:
-        """Initializes a new instance of the LLMRiskAnalyzer class.
-
-        Args:
-            event_stream: The event stream to listen for events.
-            settings: Optional settings for the analyzer.
-        """
-        super().__init__(event_stream)
-        self.settings = settings or {}
-
     async def handle_api_request(self, request: Request) -> Any:
         """Handles the incoming API request."""
         return {'status': 'ok'}
