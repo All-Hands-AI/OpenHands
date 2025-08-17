@@ -29,7 +29,7 @@ describe("EventMessage", () => {
       args: {
         final_thought: "Task completed successfully",
         outputs: {},
-        thought: "Task completed successfully",
+        thought: { text: "Task completed successfully" },
       },
       message: "Task completed successfully",
       timestamp: new Date().toISOString(),
@@ -55,7 +55,7 @@ describe("EventMessage", () => {
       source: "agent" as const,
       action: "message" as const,
       args: {
-        thought: "I need more information to proceed.",
+        thought: { text: "I need more information to proceed." },
         image_urls: null,
         file_urls: [],
         wait_for_response: true,
@@ -114,7 +114,7 @@ describe("EventMessage", () => {
       args: {
         final_thought: "Task completed successfully",
         outputs: {},
-        thought: "Task completed successfully",
+        thought: { text: "Task completed successfully" },
       },
       message: "Task completed successfully",
       timestamp: new Date().toISOString(),
