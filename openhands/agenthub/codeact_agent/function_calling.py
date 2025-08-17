@@ -60,7 +60,7 @@ def set_security_risk(action: Action, arguments: dict) -> None:
     # Set security_risk attribute if provided
     if 'security_risk' in arguments:
         if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-            security_risk = ActionSecurityRisk(arguments['security_risk'])
+            security_risk = getattr(ActionSecurityRisk, arguments['security_risk'])
             setattr(action, 'security_risk', security_risk)
         else:
             logger.warning(
