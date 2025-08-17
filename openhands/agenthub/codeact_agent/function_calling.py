@@ -16,9 +16,9 @@ from openhands.agenthub.codeact_agent.tools import (
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
-    create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.bash import CmdRunTool
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -30,7 +30,6 @@ from openhands.events.action import (
     AgentFinishAction,
     AgentThinkAction,
     BrowseInteractiveAction,
-    CmdRunAction,
     FileEditAction,
     FileReadAction,
     IPythonRunCellAction,
@@ -41,7 +40,12 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
+from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME, TASK_TRACKER_TOOL_NAME
+
+# Tool handlers registry for class-based tools
+_TOOL_HANDLERS = {
+    EXECUTE_BASH_TOOL_NAME: CmdRunTool(),
+}
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -86,23 +90,8 @@ def response_to_actions(
             # CmdRunTool (Bash)
             # ================================================
 
-            if tool_call.function.name == create_cmd_run_tool()['function']['name']:
-                if 'command' not in arguments:
-                    raise FunctionCallValidationError(
-                        f'Missing required argument "command" in tool call {tool_call.function.name}'
-                    )
-                # convert is_input to boolean
-                is_input = arguments.get('is_input', 'false') == 'true'
-                action = CmdRunAction(command=arguments['command'], is_input=is_input)
-
-                # Set hard timeout if provided
-                if 'timeout' in arguments:
-                    try:
-                        action.set_hard_timeout(float(arguments['timeout']))
-                    except ValueError as e:
-                        raise FunctionCallValidationError(
-                            f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
-                        ) from e
+            if tool_call.function.name == EXECUTE_BASH_TOOL_NAME:
+                action = _TOOL_HANDLERS[EXECUTE_BASH_TOOL_NAME].to_action(arguments)
 
             # ================================================
             # IPythonTool (Jupyter)

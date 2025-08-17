@@ -1,6 +1,11 @@
+from __future__ import annotations
+
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
+from openhands.agenthub.codeact_agent.tools.base import Tool
 from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+from openhands.core.exceptions import FunctionCallValidationError
+from openhands.events.action import CmdRunAction
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
@@ -27,6 +32,65 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 ### Output Handling
 * Output truncation: If the output exceeds a maximum length, it will be truncated before being returned.
 """
+
+
+class CmdRunTool(Tool):
+    def __init__(self, use_short_description: bool = False) -> None:
+        self.use_short_description = use_short_description
+
+    def to_param(self) -> ChatCompletionToolParam:
+        description = (
+            _SHORT_BASH_DESCRIPTION
+            if self.use_short_description
+            else _DETAILED_BASH_DESCRIPTION
+        )
+        return ChatCompletionToolParam(
+            type='function',
+            function=ChatCompletionToolParamFunctionChunk(
+                name=EXECUTE_BASH_TOOL_NAME,
+                description=refine_prompt(description),
+                parameters={
+                    'type': 'object',
+                    'properties': {
+                        'command': {
+                            'type': 'string',
+                            'description': refine_prompt(
+                                'The bash command to execute. Can be empty string to view additional logs when previous exit code is `-1`. Can be `C-c` (Ctrl+C) to interrupt the currently running process. Note: You can only execute one bash command at a time. If you need to run multiple commands sequentially, you can use `&&` or `;` to chain them together.'
+                            ),
+                        },
+                        'is_input': {
+                            'type': 'string',
+                            'description': refine_prompt(
+                                'If True, the command is an input to the running process. If False, the command is a bash command to be executed in the terminal. Default is False.'
+                            ),
+                            'enum': ['true', 'false'],
+                        },
+                        'timeout': {
+                            'type': 'number',
+                            'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
+                        },
+                    },
+                    'required': ['command'],
+                },
+            ),
+        )
+
+    def to_action(self, arguments: dict[str, str]) -> CmdRunAction:
+        if 'command' not in arguments:
+            raise FunctionCallValidationError(
+                'Missing required argument "command" in tool call execute_bash'
+            )
+        is_input = arguments.get('is_input', 'false') == 'true'
+        action = CmdRunAction(command=arguments['command'], is_input=is_input)
+        if 'timeout' in arguments:
+            try:
+                action.set_hard_timeout(float(arguments['timeout']))
+            except ValueError as e:
+                raise FunctionCallValidationError(
+                    f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
+                ) from e
+        return action
+
 
 _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
 * Long running commands: For commands that may run indefinitely, it should be run in the background and the output should be redirected to a file, e.g. command = `python3 app.py > server.log 2>&1 &`. For commands that need to run for a specific duration, you can set the "timeout" argument to specify a hard timeout in seconds.
