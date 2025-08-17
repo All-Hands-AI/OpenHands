@@ -38,6 +38,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     ChangeAgentStateAction,
     CmdRunAction,
     MCPAction,
@@ -850,16 +851,12 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig, security_risk: str) -> str:
+async def read_confirmation_input(
+    config: OpenHandsConfig, security_risk: ActionSecurityRisk
+) -> str:
     try:
-        # Create risk-aware question (only for HIGH risk now)
-        if security_risk == 'HIGH':
+        if security_risk == ActionSecurityRisk.HIGH:
             question = '🚨 HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
-        else:
-            question = 'Choose an option:'
-
-        # Create risk-aware menu choices
-        if security_risk == 'HIGH':
             choices = [
                 '⚠️ Yes, proceed (HIGH RISK - Use with caution)',
                 '🛑 No (and allow to enter instructions)',
@@ -867,6 +864,7 @@ async def read_confirmation_input(config: OpenHandsConfig, security_risk: str) -
             ]
             choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
         else:
+            question = 'Choose an option:'
             choices = [
                 'Yes, proceed',
                 'No (and allow to enter instructions)',
@@ -939,7 +937,7 @@ def cli_confirm(
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
     initial_selection: int = 0,
-    security_risk: str | None = None,
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -952,7 +950,9 @@ def cli_confirm(
     def get_choice_text() -> list:
         # Use red styling for HIGH risk questions
         question_style = (
-            'class:risk-high' if security_risk == 'HIGH' else 'class:question'
+            'class:risk-high'
+            if security_risk == ActionSecurityRisk.HIGH
+            else 'class:question'
         )
 
         return [
@@ -1008,7 +1008,7 @@ def cli_confirm(
     )
 
     # Add frame for HIGH risk commands
-    if security_risk == 'HIGH':
+    if security_risk == ActionSecurityRisk.HIGH:
         layout = Layout(
             HSplit(
                 [

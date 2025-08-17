@@ -66,6 +66,7 @@ from openhands.core.setup import (
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
+    ActionSecurityRisk,
     ChangeAgentStateAction,
     MessageAction,
 )
@@ -245,12 +246,15 @@ async def run_session(
 
                 # Check if auto_highrisk confirm mode is enabled and action is low/medium risk
                 pending_action = controller._pending_action
-                security_risk = 'LOW'
+                security_risk = ActionSecurityRisk.LOW
                 if pending_action and hasattr(pending_action, 'security_risk'):
                     security_risk = getattr(pending_action, 'security_risk')
                 if auto_highrisk_confirm_mode:
-                    if security_risk in ['LOW', 'MEDIUM']:
-                        # Auto-confirm for low and medium risk actions
+                    if security_risk in [
+                        ActionSecurityRisk.LOW,
+                        ActionSecurityRisk.MEDIUM,
+                        ActionSecurityRisk.UNKNOWN,
+                    ]:
                         event_stream.add_event(
                             ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                             EventSource.USER,
