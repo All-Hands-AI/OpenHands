@@ -86,6 +86,8 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
+    '/plan': 'Delegate to planning agent (ReadOnlyPlanningAgent) to draft/iterate PLAN.md',
+    '/execute': 'End planning delegate and resume execution by parent agent',
 }
 
 print_lock = threading.Lock()
