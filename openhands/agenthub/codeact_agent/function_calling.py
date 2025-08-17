@@ -26,6 +26,7 @@ from openhands.core.exceptions import (
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
+    ActionSecurityRisk,
     AgentDelegateAction,
     AgentFinishAction,
     AgentThinkAction,
@@ -36,7 +37,6 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
-    ActionSecurityRisk
 )
 from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
@@ -54,6 +54,7 @@ def combine_thought(action: Action, thought: str) -> Action:
         action.thought = thought
     return action
 
+
 def set_security_risk(action: Action, arguments: dict) -> None:
     """Set the security risk level for the action."""
 
@@ -63,9 +64,7 @@ def set_security_risk(action: Action, arguments: dict) -> None:
             security_risk = getattr(ActionSecurityRisk, arguments['security_risk'])
             setattr(action, 'security_risk', security_risk)
         else:
-            logger.warning(
-                f'Invalid security_risk value: {arguments["security_risk"]}'
-            )
+            logger.warning(f'Invalid security_risk value: {arguments["security_risk"]}')
 
 
 def response_to_actions(

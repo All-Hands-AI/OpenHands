@@ -291,7 +291,6 @@ class AgentSession:
                 f'Using security analyzer: {self.security_analyzer.__class__.__name__}'
             )
 
-
     def override_provider_tokens_with_custom_secret(
         self,
         git_provider_tokens: PROVIDER_TOKEN_TYPE | None,

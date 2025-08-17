@@ -1,7 +1,7 @@
 import asyncio
 
 from openhands.core.config import OpenHandsConfig
-from openhands.events.stream import EventStream,EventStreamSubscriber
+from openhands.events.stream import EventStream, EventStreamSubscriber
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options

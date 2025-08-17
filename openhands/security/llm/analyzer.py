@@ -7,7 +7,6 @@ from fastapi import Request
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action, ActionSecurityRisk
 from openhands.events.event import Event
-from openhands.events.stream import EventStream
 from openhands.security.analyzer import SecurityAnalyzer
 
 
