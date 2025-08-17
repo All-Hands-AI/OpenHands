@@ -865,17 +865,15 @@ async def read_confirmation_input(config: OpenHandsConfig, security_risk: str) -
                 '🛑 No (and allow to enter instructions)',
                 "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
             ]
-            # For HIGH risk, map indices differently since we removed smart mode
             choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
         else:
             choices = [
                 'Yes, proceed',
                 'No (and allow to enter instructions)',
-                'Smart mode: Auto-confirm LOW/MEDIUM, ask for HIGH risk',
+                'Auto-confirm action with LOW/MEDIUM risk, ask for HIGH risk',
                 "Always proceed (don't ask again)",
             ]
-            # For non-HIGH risk, keep original mapping
-            choice_mapping = {0: 'yes', 1: 'no', 2: 'smart', 3: 'always'}
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'auto_highrisk', 3: 'always'}
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(

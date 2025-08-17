@@ -138,8 +138,8 @@ async def run_session(
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
-    smart_confirm_mode = (
-        False  # Flag to enable smart confirm mode (only ask for HIGH risk)
+    auto_highrisk_confirm_mode = (
+        False  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
     )
 
     # Show runtime initialization message
@@ -200,7 +200,11 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents, is_paused, always_confirm_mode, smart_confirm_mode
+        nonlocal \
+            reload_microagents, \
+            is_paused, \
+            always_confirm_mode, \
+            auto_highrisk_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -239,12 +243,12 @@ async def run_session(
                     )
                     return
 
-                # Check if smart confirm mode is enabled and action is low/medium risk
+                # Check if auto_highrisk confirm mode is enabled and action is low/medium risk
                 pending_action = controller._pending_action
                 security_risk = 'LOW'
                 if pending_action and hasattr(pending_action, 'security_risk'):
                     security_risk = getattr(pending_action, 'security_risk')
-                if smart_confirm_mode:
+                if auto_highrisk_confirm_mode:
                     if security_risk in ['LOW', 'MEDIUM']:
                         # Auto-confirm for low and medium risk actions
                         event_stream.add_event(
@@ -257,7 +261,7 @@ async def run_session(
                 confirmation_status = await read_confirmation_input(
                     config, security_risk=security_risk
                 )
-                if confirmation_status in ('yes', 'always', 'smart'):
+                if confirmation_status in ('yes', 'always', 'auto_highrisk'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -278,8 +282,8 @@ async def run_session(
                 # Set the confirmation mode flags based on user choice
                 if confirmation_status == 'always':
                     always_confirm_mode = True
-                elif confirmation_status == 'smart':
-                    smart_confirm_mode = True
+                elif confirmation_status == 'auto_highrisk':
+                    auto_highrisk_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
                 is_paused.clear()  # Revert the event state before prompting for user input
