@@ -97,8 +97,8 @@ async def test_msg(temp_dir: str):
             await analyzer.on_event(event)
 
         for i in range(3):
-            assert data[i][0].action_risk == ActionSecurityRisk.LOW
-        assert data[3][0].action_risk == ActionSecurityRisk.MEDIUM
+            assert data[i][0].security_risk == ActionSecurityRisk.LOW
+        assert data[3][0].security_risk == ActionSecurityRisk.MEDIUM
 
 
 @pytest.mark.parametrize(
@@ -148,8 +148,8 @@ async def test_cmd(cmd, expected_risk, temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].action_risk == ActionSecurityRisk.LOW
-        assert data[1][0].action_risk == expected_risk
+        assert data[0][0].security_risk == ActionSecurityRisk.LOW
+        assert data[1][0].security_risk == expected_risk
 
 
 @pytest.mark.parametrize(
@@ -206,9 +206,9 @@ async def test_leak_secrets(code, expected_risk, temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].action_risk == ActionSecurityRisk.LOW
-        assert data[1][0].action_risk == expected_risk
-        assert data[2][0].action_risk == ActionSecurityRisk.LOW
+        assert data[0][0].security_risk == ActionSecurityRisk.LOW
+        assert data[1][0].security_risk == expected_risk
+        assert data[2][0].security_risk == ActionSecurityRisk.LOW
 
 
 @pytest.mark.asyncio
@@ -252,8 +252,8 @@ async def test_unsafe_python_code(temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].action_risk == ActionSecurityRisk.LOW
-        assert data[1][0].action_risk == ActionSecurityRisk.MEDIUM
+        assert data[0][0].security_risk == ActionSecurityRisk.LOW
+        assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
 
 @pytest.mark.asyncio
@@ -294,8 +294,8 @@ async def test_unsafe_bash_command(temp_dir: str):
             event._source = source  # Set the source on the event directly
             await analyzer.on_event(event)
 
-        assert data[0][0].action_risk == ActionSecurityRisk.LOW
-        assert data[1][0].action_risk == ActionSecurityRisk.MEDIUM
+        assert data[0][0].security_risk == ActionSecurityRisk.LOW
+        assert data[1][0].security_risk == ActionSecurityRisk.MEDIUM
 
 
 @pytest.mark.parametrize(
