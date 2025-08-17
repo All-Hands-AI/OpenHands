@@ -203,24 +203,24 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-  A[Session or CLI start] --> B[create_registry_and_convo_stats]
-  B -->|LLMRegistry| C[LLMRegistry]
-  B -->|ConversationStats| D[ConversationStats]
+  A[Session or CLI start] --> B[create registry and convo stats]
+  B -->|LLMRegistry| C[LLM Registry]
+  B -->|ConversationStats| D[Conversation Stats]
   C --> E[Agent constructed]
   C --> G[Runtime constructed]
   D --> H[AgentController constructed with convo stats]
-  I[Session] --> J[Set retry listener on LLMRegistry]
+  I[Session] --> J[Set retry listener on LLM Registry]
 
-  subgraph "During Conversation"
+  subgraph During_Conversation
     K[Any component requests LLM] --> C
-    C --> L[LLM instance (service id scoped)]
+    C --> L[LLM instance service id scoped]
     L --> M[completion]
-    M -->|success| N[ConversationStats add tokens cost]
+    M -->|success| N[Conversation Stats add tokens cost]
     M -->|retry| I
-    I --> D[ConversationStats record retry and notify UI]
+    I --> D[Conversation Stats record retry and notify UI]
   end
 
-  O[End teardown] --> P[ConversationStats finalize persist via FileStore]
+  O[End and teardown] --> P[Conversation Stats finalize persist via FileStore]
   D --> P
 ```
 
