@@ -19,42 +19,18 @@ You can configure the security system in the **LLM Settings** tab:
 
 ## Security Analyzers
 
-OpenHands supports two types of security analyzers:
+OpenHands includes multiple analyzers. Review their exact behavior in the source code:
 
-### 1. LLM Analyzer (Default)
+- LLM Risk Analyzer: Respects the security_risk provided on actions. Code: https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/llm/analyzer.py
+- Invariant Analyzer: Builds a trace of events and evaluates it against an Invariant policy to determine risk. Code: https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/invariant/analyzer.py
+- Analyzer registry (options exposed to the UI): https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/options.py
 
-The LLM Analyzer uses a language model to intelligently assess the risk level of agent actions. This is the recommended option for most users.
+### Invariant Analyzer (overview)
 
-**Pros:**
-- Intelligent risk assessment based on context
-- Can understand complex scenarios and edge cases
-- Adapts to different types of operations
-- Provides detailed explanations for risk assessments
-- Uses the same LLM as your agent, so no additional configuration required
-
-**Cons:**
-- May be susceptible to prompt injection attacks
-- Depends on the quality and capabilities of the underlying LLM
-- May have occasional false positives or negatives
-- Adds a small overhead to action processing
-
-**Best for:** Most users who want intelligent, context-aware security analysis
-
-### 2. None (Ask for Every Command)
-
-When set to "None", the system treats every agent action as high-risk and asks for confirmation.
-
-**Pros:**
-- Maximum user control
-- No risk of missing dangerous operations
-- Simple and transparent behavior
-
-**Cons:**
-- Frequent interruptions to workflow
-- Can be tedious for routine operations
-- May reduce productivity
-
-**Best for:** Users who want maximum control and don't mind frequent confirmations
+- Collects conversation events and parses them into a trace, then checks the trace against an Invariant policy to classify risk (low, medium, high).
+- Manages an Invariant server container automatically if one is not already running (image: ghcr.io/invariantlabs-ai/server:openhands).
+- Exposes endpoints for policy and settings, and exporting the current trace (see handle_api_request in the analyzer file).
+- Supports optional browsing-alignment and harmful-content checks when configured programmatically.
 
 ## How It Works
 
@@ -75,9 +51,6 @@ When set to "None", the system treats every agent action as high-risk and asks f
    - **Deny**: Action is cancelled
    - **Modify**: User can edit the action before execution
 
-## Visual Indicators
-
-When Confirmation Mode is enabled, you'll see a lock icon (🔒) in the interface. Hovering over this icon shows a tooltip explaining that the agent is in confirmation mode.
 
 ## Best Practices
 
