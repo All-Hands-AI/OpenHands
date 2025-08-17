@@ -59,6 +59,6 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         For now, this just logs the risk level.
         """
         if isinstance(event, Action) and hasattr(event, 'security_risk'):
-            logger.info(
+            logger.debug(
                 f'Action {event.__class__.__name__} has LLM-provided risk: {event.security_risk}'
             )
