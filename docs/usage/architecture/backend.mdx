@@ -102,3 +102,149 @@ classDiagram
 
   </div>
 </details>
+
+## LLM architecture: LLMRegistry and ConversationStats
+
+The LLMRegistry centralizes creation, caching, and configuration of all LLM instances across the backend. Components request LLMs by service_id (e.g., "agent", "condenser", "guardrail") rather than directly constructing them. This enables per-service configuration, unified retries, and consistent accounting via ConversationStats.
+
+Key points:
+- Single source of truth for LLMs per conversation/session
+- Instances keyed by service_id; components do not new-up LLMs directly
+- Registry attaches a retry listener so UI/Session can surface transient issues
+- One-off utility completions go through the registry (extraneous requests)
+- Conversation-wide usage and status reporting flows through ConversationStats
+
+### Core classes and relationships
+
+```mermaid
+classDiagram
+  direction LR
+
+  class OpenHandsConfig {
+    +get_llm_config(): LLMConfig
+    +get_llm_config_from_agent(agentId): LLMConfig
+  }
+
+  class LLMConfig {
+    model
+    api_key
+    base_url
+    ...
+  }
+
+  class LLMRegistry {
+    -config: OpenHandsConfig
+    -retry_listener: Callable
+    -cache: Dict[str, LLM]
+    +get_llm(service_id, config?): LLM
+    +get_llm_from_agent_config(service_id, AgentConfig): LLM
+    +request_extraneous_completion(service_id, ...): string
+  }
+
+  class LLM {
+    -service_id: string
+    -config: LLMConfig
+    -retry_listener: Callable
+    +completion(messages, stream)
+  }
+
+  class Agent {
+    -config: AgentConfig
+    -llm_registry: LLMRegistry
+    -llm: LLM
+  }
+
+  class LLMSummarizingCondenser { -llm: LLM }
+  class Runtime { -llm_registry: LLMRegistry }
+  class AgentController { -convo_stats: ConversationStats }
+  class ConversationStats { +record(tokens, cost, retries) }
+  class Session { +_notify_on_llm_retry(...) }
+
+  LLMRegistry --> LLM : creates/caches
+  Agent --> LLMRegistry : uses
+  Agent --> LLM : resolves ("agent")
+  LLMSummarizingCondenser --> LLMRegistry : uses
+  Runtime --> LLMRegistry : holds
+  AgentController --> ConversationStats : uses
+  LLM --> Session : retry_listener()
+  Session ..> LLMRegistry : sets registry.retry_listener
+  Session --> ConversationStats : update on retries/tokens
+```
+
+### When a component requests an LLM and performs a completion
+
+```mermaid
+sequenceDiagram
+  participant Service as Component/Service (service_id)
+  participant Registry as LLMRegistry
+  participant Config as OpenHandsConfig
+  participant LLM as LLM
+  participant Session as Session
+  participant Stats as ConversationStats
+
+  Service->>Registry: get_llm(service_id, [config])
+  alt config omitted
+    Registry->>Config: resolve LLMConfig (agent/global)
+  end
+  Registry->>LLM: construct if needed (attach retry_listener)
+  Registry-->>Service: return LLM instance
+
+  Service->>LLM: completion(messages, stream?)
+  loop on transient errors
+    LLM-->>Session: retry_listener(retry_ctx)
+    Session->>Stats: record retry event
+    Session->>UI: queue_status_message(type="llm-retry", details)
+  end
+  LLM-->>Service: response
+  Note over Registry,Stats: Centralized accounting (tokens/cost) per service_id
+```
+
+### ConversationStats lifecycle
+
+```mermaid
+flowchart TD
+  A[Session/CLI start] --> B[create_registry_and_convo_stats(config, sid, user)]
+  B -->|LLMRegistry| C[LLMRegistry]
+  B -->|ConversationStats| D[ConversationStats]
+  C --> E[Agent constructed]
+  C --> G[Runtime constructed]
+  D --> H[AgentController constructed with convo_stats]
+  I[Session] --> J[Set LLMRegistry.retry_listener = Session._notify_on_llm_retry]
+
+  subgraph DuringConversation
+    K[Any component requests LLM] --> C
+    C --> L[LLM instance (service_id-scoped)]
+    L --> M[completion(...)]
+    M -->|success| N[ConversationStats: add tokens/cost]
+    M -->|retry| I
+    I --> D[ConversationStats: record retry + notify UI]
+  end
+
+  O[End/teardown] --> P[ConversationStats: finalize/persist via FileStore]
+  D --> P
+```
+
+### Practical usage examples
+
+- Agent resolution (base Agent resolves the LLM via the registry):
+
+```python
+agent = CodeActAgent(config=agent_config, llm_registry=llm_registry)
+# self.llm is automatically resolved from config via the registry
+```
+
+- LLM-backed condenser from config:
+
+```python
+condenser = Condenser.from_config(config.condenser, llm_registry)
+```
+
+- One-off utility call (e.g., conversation title generation):
+
+```python
+title = llm_registry.request_extraneous_completion(
+    'conversation_title',
+    messages=[{'role': 'user', 'content': first_user_message}],
+)
+```
+
