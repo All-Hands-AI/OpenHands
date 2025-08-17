@@ -33,10 +33,12 @@ import { useFeedbackExists } from "#/hooks/query/use-feedback-exists";
 
 const hasThoughtProperty = (
   obj: Record<string, unknown>,
-): obj is { thought?: string; reasoning_content?: string } => {
-  const t = (obj as { thought?: string }).thought;
-  const rc = (obj as { reasoning_content?: string }).reasoning_content;
-  return (typeof t === "string" && t.length > 0) ||
+): obj is { thought?: { text?: string; reasoning_content?: string | null } } => {
+  const t = (obj as { thought?: { text?: string; reasoning_content?: string | null } }).thought;
+  if (!t) return false;
+  const text = (t as { text?: string }).text;
+  const rc = (t as { reasoning_content?: string | null }).reasoning_content;
+  return (typeof text === "string" && text.length > 0) ||
     (typeof rc === "string" && rc.length > 0);
 };
 
@@ -128,11 +130,9 @@ export function EventMessage({
           <ChatMessage
             type="agent"
             message={
-              event.args.reasoning_content
-                ? `${event.args.reasoning_content}
-
-${event.args.thought}`
-                : event.args.thought
+              event.args.thought?.reasoning_content
+                ? `${event.args.thought.reasoning_content}\n\n${event.args.thought.text}`
+                : event.args.thought?.text || ""
             }
             actions={actions}
           />
@@ -256,11 +256,9 @@ ${event.args.thought}`
     <div>
       {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
         <ChatMessage type="agent" message={
-              event.args.reasoning_content
-                ? `${event.args.reasoning_content}
-
-${event.args.thought}`
-                : event.args.thought
+              event.args.thought?.reasoning_content
+                ? `${event.args.thought.reasoning_content}\n\n${event.args.thought.text}`
+                : event.args.thought?.text || ""
             } />
       )}
 

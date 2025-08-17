@@ -125,17 +125,9 @@ def event_to_dict(event: 'Event') -> dict:
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
     if 'action' in d:
+        # NOTE: Thought is kept as a structured object in args; no flattening of reasoning_content
+
         d['args'] = props
-        # Normalize Thought dataclass to wire format: thought (str) + optional reasoning_content (str)
-        if isinstance(d.get('args'), dict) and 'thought' in d['args']:
-            t = d['args'].get('thought')
-            if isinstance(t, dict):
-                # Extract reasoning_content to top-level args and collapse thought to string
-                rc = t.get('reasoning_content')
-                text = t.get('text', '')
-                d['args']['thought'] = text
-                if rc is not None:
-                    d['args']['reasoning_content'] = rc
         if event.timeout is not None:
             d['timeout'] = event.timeout
     elif 'observation' in d:

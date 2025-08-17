@@ -307,7 +307,7 @@ class ConversationMemory:
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
-                    content=[TextContent(text=str(action.thought))],
+                    content=[TextContent(text=action.thought.text)],
                 )
             ]
         elif isinstance(action, MessageAction):

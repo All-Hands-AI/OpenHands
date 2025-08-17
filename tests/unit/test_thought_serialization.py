@@ -8,8 +8,9 @@ def test_thought_serialization_flatten_with_reasoning():
     d = event_to_dict(a)
     assert d['action'] == a.action
     assert 'args' in d
-    assert d['args']['thought'] == 't'
-    assert d['args']['reasoning_content'] == 'r'
+    assert isinstance(d['args']['thought'], dict)
+    assert d['args']['thought']['text'] == 't'
+    assert d['args']['thought']['reasoning_content'] == 'r'
 
     # Round-trip back
     a2 = event_from_dict(d)

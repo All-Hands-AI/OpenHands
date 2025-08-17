@@ -1,5 +1,6 @@
 import { OpenHandsActionEvent } from "./base";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { Thought } from "./thought";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
@@ -26,8 +27,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
     command: string;
     security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
     hidden?: boolean;
   };
 }
@@ -36,12 +36,12 @@ export interface AssistantMessageAction
   extends OpenHandsActionEvent<"message"> {
   source: "agent";
   args: {
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
     image_urls: string[] | null;
     file_urls: string[];
     wait_for_response: boolean;
   };
+
 }
 
 export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
@@ -51,16 +51,15 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
     security_risk: ActionSecurityRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface ThinkAction extends OpenHandsActionEvent<"think"> {
   source: "agent";
   args: {
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
 }
 
@@ -68,10 +67,10 @@ export interface FinishAction extends OpenHandsActionEvent<"finish"> {
   source: "agent";
   args: {
     final_thought: string;
-    reasoning_content?: string;
     outputs: Record<string, unknown>;
-    thought: string;
+    thought: Thought;
   };
+
 }
 
 export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
@@ -80,18 +79,18 @@ export interface DelegateAction extends OpenHandsActionEvent<"delegate"> {
   args: {
     agent: "BrowsingAgent";
     inputs: Record<string, string>;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface BrowseAction extends OpenHandsActionEvent<"browse"> {
   source: "agent";
   args: {
     url: string;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface BrowseInteractiveAction
@@ -100,22 +99,22 @@ export interface BrowseInteractiveAction
   timeout: number;
   args: {
     browser_actions: string;
-    thought: string | null;
-    reasoning_content?: string;
+    thought: Thought | null;
     browsergym_send_msg_to_user: string;
   };
+
 }
 
 export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   source: "agent";
   args: {
     path: string;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
     security_risk: ActionSecurityRisk | null;
     impl_source?: string;
     view_range?: number[] | null;
   };
+
 }
 
 export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
@@ -123,9 +122,9 @@ export interface FileWriteAction extends OpenHandsActionEvent<"write"> {
   args: {
     path: string;
     content: string;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
@@ -141,19 +140,19 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
     content?: string;
     start?: number;
     end?: number;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
     security_risk: ActionSecurityRisk | null;
     impl_source?: string;
   };
+
 }
 
 export interface RejectAction extends OpenHandsActionEvent<"reject"> {
   source: "agent";
   args: {
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface RecallAction extends OpenHandsActionEvent<"recall"> {
@@ -161,9 +160,9 @@ export interface RecallAction extends OpenHandsActionEvent<"recall"> {
   args: {
     recall_type: "workspace_context" | "knowledge";
     query: string;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
@@ -171,8 +170,9 @@ export interface MCPAction extends OpenHandsActionEvent<"call_tool_mcp"> {
   args: {
     name: string;
     arguments: Record<string, unknown>;
-    thought?: string;
+    thought?: Thought;
   };
+
 }
 
 export interface TaskTrackingAction
@@ -186,9 +186,9 @@ export interface TaskTrackingAction
       status: "todo" | "in_progress" | "done";
       notes?: string;
     }>;
-    thought: string;
-    reasoning_content?: string;
+    thought: Thought;
   };
+
 }
 
 export type OpenHandsAction =
