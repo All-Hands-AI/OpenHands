@@ -37,7 +37,7 @@ export function handleActionMessage(message: ActionMessage) {
     store.dispatch(appendJupyterInput(message.args.code));
   }
 
-  if ("args" in message && "security_risk" in message.args) {
+  if ("args" in message && "safety_risk" in message.args) {
     store.dispatch(appendSecurityAnalyzerInput(message));
   }
 }

@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-export enum ActionSecurityRisk {
+export enum ActionSafetyRisk {
   UNKNOWN = -1,
   LOW = 0,
   MEDIUM = 1,
@@ -10,7 +10,7 @@ export enum ActionSecurityRisk {
 export type SecurityAnalyzerLog = {
   id: number;
   content: string;
-  security_risk: ActionSecurityRisk;
+  safety_risk: ActionSafetyRisk;
   confirmation_state?: "awaiting_confirmation" | "confirmed" | "rejected";
   confirmed_changed: boolean;
 };
@@ -31,7 +31,7 @@ export const securityAnalyzerSlice = createSlice({
           action.payload.args.code ||
           action.payload.args.content ||
           action.payload.message,
-        security_risk: action.payload.args.security_risk as ActionSecurityRisk,
+        safety_risk: action.payload.args.safety_risk as ActionSafetyRisk,
         confirmation_state: action.payload.args.confirmation_state,
         confirmed_changed: false,
       };
