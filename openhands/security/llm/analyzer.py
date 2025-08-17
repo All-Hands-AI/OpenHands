@@ -30,14 +30,6 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         """Handles the incoming API request."""
         return {'status': 'ok'}
 
-    def _get_risk_level_mapping(self) -> dict[str, ActionSecurityRisk]:
-        """Returns the mapping from string risk levels to ActionSecurityRisk enum values."""
-        return {
-            'LOW': ActionSecurityRisk.LOW,
-            'MEDIUM': ActionSecurityRisk.MEDIUM,
-            'HIGH': ActionSecurityRisk.HIGH,
-        }
-
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level.
 
@@ -49,11 +41,13 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
             return ActionSecurityRisk.UNKNOWN
 
         security_risk = getattr(event, 'security_risk')
-        risk_mapping = self._get_risk_level_mapping()
 
-        if security_risk in risk_mapping:
-            logger.info(f'Using LLM-provided risk assessment: {security_risk}')
-            return risk_mapping[security_risk]
+        if security_risk in {
+            ActionSecurityRisk.LOW,
+            ActionSecurityRisk.MEDIUM,
+            ActionSecurityRisk.HIGH,
+        }:
+            return security_risk
 
         # Default to UNKNOWN if security_risk value is not recognized
         logger.warning(f'Unrecognized security_risk value: {security_risk}')
