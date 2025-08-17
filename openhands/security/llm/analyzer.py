@@ -37,6 +37,9 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
         }:
             return security_risk
 
+        if security_risk == ActionSecurityRisk.UNKNOWN:
+            return ActionSecurityRisk.UNKNOWN
+
         # Default to UNKNOWN if security_risk value is not recognized
         logger.warning(f'Unrecognized security_risk value: {security_risk}')
         return ActionSecurityRisk.UNKNOWN
