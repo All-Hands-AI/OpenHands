@@ -41,22 +41,22 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Evaluates the Action for security risks and returns the risk level.
 
-        This analyzer checks if the action has a 'safety_risk' attribute set by the LLM.
+        This analyzer checks if the action has a 'security_risk' attribute set by the LLM.
         If it does, it uses that value. Otherwise, it returns UNKNOWN.
         """
-        # Check if the action has a safety_risk attribute set by the LLM
-        if not hasattr(event, 'safety_risk'):
+        # Check if the action has a security_risk attribute set by the LLM
+        if not hasattr(event, 'security_risk'):
             return ActionSecurityRisk.UNKNOWN
 
-        safety_risk = getattr(event, 'safety_risk')
+        security_risk = getattr(event, 'security_risk')
         risk_mapping = self._get_risk_level_mapping()
 
-        if safety_risk in risk_mapping:
-            logger.info(f'Using LLM-provided risk assessment: {safety_risk}')
-            return risk_mapping[safety_risk]
+        if security_risk in risk_mapping:
+            logger.info(f'Using LLM-provided risk assessment: {security_risk}')
+            return risk_mapping[security_risk]
 
-        # Default to UNKNOWN if safety_risk value is not recognized
-        logger.warning(f'Unrecognized safety_risk value: {safety_risk}')
+        # Default to UNKNOWN if security_risk value is not recognized
+        logger.warning(f'Unrecognized security_risk value: {security_risk}')
         return ActionSecurityRisk.UNKNOWN
 
     async def act(self, event: Event) -> None:
@@ -64,7 +64,7 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
 
         For now, this just logs the risk level.
         """
-        if isinstance(event, Action) and hasattr(event, 'safety_risk'):
+        if isinstance(event, Action) and hasattr(event, 'security_risk'):
             logger.info(
-                f'Action {event.__class__.__name__} has LLM-provided risk: {event.safety_risk}'
+                f'Action {event.__class__.__name__} has LLM-provided risk: {event.security_risk}'
             )

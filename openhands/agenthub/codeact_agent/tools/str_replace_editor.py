@@ -104,13 +104,13 @@ def create_str_replace_editor_tool(
                         'items': {'type': 'integer'},
                         'type': 'array',
                     },
-                    'safety_risk': {
+                    'security_risk': {
                         'type': 'string',
                         'description': STR_REPLACE_EDITOR_RISK_DESC,
                         'enum': RISK_LEVELS,
                     },
                 },
-                'required': ['command', 'path', 'safety_risk'],
+                'required': ['command', 'path', 'security_risk'],
             },
         ),
     )

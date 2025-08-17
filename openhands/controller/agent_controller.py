@@ -881,13 +881,13 @@ class AgentController:
                 or type(action) is FileEditAction
                 or type(action) is FileReadAction
             ):
-                # Check if the action has a safety_risk attribute set by the LLM
-                safety_risk = getattr(action, 'safety_risk', None)
+                # Check if the action has a security_risk attribute set by the LLM
+                security_risk = getattr(action, 'security_risk', None)
 
-                # If safety_risk is HIGH, always require confirmation
-                # If safety_risk is MEDIUM or LOW, follow the confirmation_mode setting
-                # If safety_risk is not set, follow the confirmation_mode setting
-                if safety_risk == 'HIGH' or self.state.confirmation_mode:
+                # If security_risk is HIGH, always require confirmation
+                # If security_risk is MEDIUM or LOW, follow the confirmation_mode setting
+                # If security_risk is not set, follow the confirmation_mode setting
+                if security_risk == 'HIGH' or self.state.confirmation_mode:
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )

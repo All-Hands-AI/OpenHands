@@ -143,13 +143,13 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                     'type': 'integer',
                     'description': 'The ending line number for the edit (1-indexed, inclusive). Default is -1 (end of file).',
                 },
-                'safety_risk': {
+                'security_risk': {
                     'type': 'string',
                     'description': LLM_BASED_EDIT_RISK_DESC,
                     'enum': RISK_LEVELS,
                 },
             },
-            'required': ['path', 'content', 'safety_risk'],
+            'required': ['path', 'content', 'security_risk'],
         },
     ),
 )

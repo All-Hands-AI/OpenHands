@@ -48,7 +48,7 @@ def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
 def test_execute_bash_valid():
     """Test execute_bash with valid arguments."""
     response = create_mock_response(
-        'execute_bash', {'command': 'ls', 'is_input': 'false', 'safety_risk': 'LOW'}
+        'execute_bash', {'command': 'ls', 'is_input': 'false', 'security_risk': 'LOW'}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
@@ -60,7 +60,12 @@ def test_execute_bash_valid():
     with patch.object(CmdRunAction, 'set_hard_timeout') as mock_set_hard_timeout:
         response_with_timeout = create_mock_response(
             'execute_bash',
-            {'command': 'ls', 'is_input': 'false', 'timeout': 30, 'safety_risk': 'LOW'},
+            {
+                'command': 'ls',
+                'is_input': 'false',
+                'timeout': 30,
+                'security_risk': 'LOW',
+            },
         )
         actions_with_timeout = response_to_actions(response_with_timeout)
 
@@ -76,7 +81,7 @@ def test_execute_bash_valid():
 def test_execute_bash_missing_command():
     """Test execute_bash with missing command argument."""
     response = create_mock_response(
-        'execute_bash', {'is_input': 'false', 'safety_risk': 'LOW'}
+        'execute_bash', {'is_input': 'false', 'security_risk': 'LOW'}
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
@@ -86,7 +91,7 @@ def test_execute_bash_missing_command():
 def test_execute_ipython_cell_valid():
     """Test execute_ipython_cell with valid arguments."""
     response = create_mock_response(
-        'execute_ipython_cell', {'code': "print('hello')", 'safety_risk': 'LOW'}
+        'execute_ipython_cell', {'code': "print('hello')", 'security_risk': 'LOW'}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
@@ -96,7 +101,7 @@ def test_execute_ipython_cell_valid():
 
 def test_execute_ipython_cell_missing_code():
     """Test execute_ipython_cell with missing code argument."""
-    response = create_mock_response('execute_ipython_cell', {'safety_risk': 'LOW'})
+    response = create_mock_response('execute_ipython_cell', {'security_risk': 'LOW'})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -111,7 +116,7 @@ def test_edit_file_valid():
             'content': 'file content',
             'start': 1,
             'end': 10,
-            'safety_risk': 'LOW',
+            'security_risk': 'LOW',
         },
     )
     actions = response_to_actions(response)
@@ -127,7 +132,7 @@ def test_edit_file_missing_required():
     """Test edit_file with missing required arguments."""
     # Missing path
     response = create_mock_response(
-        'edit_file', {'content': 'content', 'safety_risk': 'LOW'}
+        'edit_file', {'content': 'content', 'security_risk': 'LOW'}
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
@@ -135,7 +140,7 @@ def test_edit_file_missing_required():
 
     # Missing content
     response = create_mock_response(
-        'edit_file', {'path': '/path/to/file', 'safety_risk': 'LOW'}
+        'edit_file', {'path': '/path/to/file', 'security_risk': 'LOW'}
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
@@ -147,7 +152,7 @@ def test_str_replace_editor_valid():
     # Test view command
     response = create_mock_response(
         'str_replace_editor',
-        {'command': 'view', 'path': '/path/to/file', 'safety_risk': 'LOW'},
+        {'command': 'view', 'path': '/path/to/file', 'security_risk': 'LOW'},
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
@@ -163,7 +168,7 @@ def test_str_replace_editor_valid():
             'path': '/path/to/file',
             'old_str': 'old',
             'new_str': 'new',
-            'safety_risk': 'LOW',
+            'security_risk': 'LOW',
         },
     )
     actions = response_to_actions(response)
@@ -177,7 +182,7 @@ def test_str_replace_editor_missing_required():
     """Test str_replace_editor with missing required arguments."""
     # Missing command
     response = create_mock_response(
-        'str_replace_editor', {'path': '/path/to/file', 'safety_risk': 'LOW'}
+        'str_replace_editor', {'path': '/path/to/file', 'security_risk': 'LOW'}
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
@@ -185,7 +190,7 @@ def test_str_replace_editor_missing_required():
 
     # Missing path
     response = create_mock_response(
-        'str_replace_editor', {'command': 'view', 'safety_risk': 'LOW'}
+        'str_replace_editor', {'command': 'view', 'security_risk': 'LOW'}
     )
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
@@ -195,7 +200,7 @@ def test_str_replace_editor_missing_required():
 def test_browser_valid():
     """Test browser with valid arguments."""
     response = create_mock_response(
-        'browser', {'code': "click('button-1')", 'safety_risk': 'LOW'}
+        'browser', {'code': "click('button-1')", 'security_risk': 'LOW'}
     )
     actions = response_to_actions(response)
     assert len(actions) == 1
@@ -206,7 +211,7 @@ def test_browser_valid():
 
 def test_browser_missing_code():
     """Test browser with missing code argument."""
-    response = create_mock_response('browser', {'safety_risk': 'LOW'})
+    response = create_mock_response('browser', {'security_risk': 'LOW'})
     with pytest.raises(FunctionCallValidationError) as exc_info:
         response_to_actions(response)
     assert 'Missing required argument "code"' in str(exc_info.value)
@@ -256,7 +261,7 @@ def test_unexpected_argument_handling():
             'old_str': 'def test():\n    pass',
             'new_str': 'def test():\n    return True',
             'old_str_prefix': 'some prefix',  # Unexpected argument
-            'safety_risk': 'LOW',
+            'security_risk': 'LOW',
         },
     )
 

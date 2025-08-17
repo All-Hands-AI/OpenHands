@@ -241,11 +241,11 @@ async def run_session(
 
                 # Check if smart confirm mode is enabled and action is low/medium risk
                 pending_action = controller._pending_action
-                safety_risk = 'LOW'
-                if pending_action and hasattr(pending_action, 'safety_risk'):
-                    safety_risk = getattr(pending_action, 'safety_risk')
+                security_risk = 'LOW'
+                if pending_action and hasattr(pending_action, 'security_risk'):
+                    security_risk = getattr(pending_action, 'security_risk')
                 if smart_confirm_mode:
-                    if safety_risk in ['LOW', 'MEDIUM']:
+                    if security_risk in ['LOW', 'MEDIUM']:
                         # Auto-confirm for low and medium risk actions
                         event_stream.add_event(
                             ChangeAgentStateAction(AgentState.USER_CONFIRMED),
@@ -255,7 +255,7 @@ async def run_session(
 
                 # Get the pending action to show risk information
                 confirmation_status = await read_confirmation_input(
-                    config, safety_risk=safety_risk
+                    config, security_risk=security_risk
                 )
                 if confirmation_status in ('yes', 'always', 'smart'):
                     event_stream.add_event(

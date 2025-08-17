@@ -124,28 +124,28 @@ def test_metrics_none_serialization():
     assert deserialized.llm_metrics is None
 
 
-def test_security_risk_serialization():
+def test_action_risk_serialization():
     # Test action with security risk
     action = CmdRunAction(command='rm -rf /tmp/test')
-    action.security_risk = ActionSecurityRisk.HIGH
+    action.action_risk = ActionSecurityRisk.HIGH
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' in serialized['args']
-    assert serialized['args']['security_risk'] == ActionSecurityRisk.HIGH.value
+    assert 'action_risk' in serialized['args']
+    assert serialized['args']['action_risk'] == ActionSecurityRisk.HIGH.value
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
-    assert deserialized.security_risk == ActionSecurityRisk.HIGH
+    assert deserialized.action_risk == ActionSecurityRisk.HIGH
 
     # Test action with no security risk
     action = CmdRunAction(command='ls')
-    # Don't set security_risk
+    # Don't set action_risk
 
     # Test serialization
     serialized = event_to_dict(action)
-    assert 'security_risk' not in serialized['args']
+    assert 'action_risk' not in serialized['args']
 
     # Test deserialization
     deserialized = event_from_dict(serialized)
-    assert deserialized.security_risk is None
+    assert deserialized.action_risk is None

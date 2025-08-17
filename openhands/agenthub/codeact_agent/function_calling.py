@@ -104,13 +104,13 @@ def response_to_actions(
                             f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
+                # Set security_risk attribute if provided
+                if 'security_risk' in arguments:
+                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+                        setattr(action, 'security_risk', arguments['security_risk'])
                     else:
                         logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
+                            f'Invalid security_risk value: {arguments["security_risk"]}'
                         )
 
             # ================================================
@@ -123,13 +123,13 @@ def response_to_actions(
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
+                # Set security_risk attribute if provided
+                if 'security_risk' in arguments:
+                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+                        setattr(action, 'security_risk', arguments['security_risk'])
                     else:
                         logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
+                            f'Invalid security_risk value: {arguments["security_risk"]}'
                         )
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
@@ -191,13 +191,13 @@ def response_to_actions(
                         view_range=other_kwargs.get('view_range', None),
                     )
 
-                    # Set safety_risk attribute if provided
-                    if 'safety_risk' in arguments:
-                        if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'safety_risk', arguments['safety_risk'])
+                    # Set security_risk attribute if provided
+                    if 'security_risk' in arguments:
+                        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+                            setattr(action, 'security_risk', arguments['security_risk'])
                         else:
                             logger.warning(
-                                f'Invalid safety_risk value: {arguments["safety_risk"]}'
+                                f'Invalid security_risk value: {arguments["security_risk"]}'
                             )
                 else:
                     if 'view_range' in other_kwargs:
@@ -215,8 +215,8 @@ def response_to_actions(
                     )
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            # Skip safety_risk as it's handled separately
-                            if key != 'safety_risk':
+                            # Skip security_risk as it's handled separately
+                            if key != 'security_risk':
                                 valid_kwargs[key] = value
                         else:
                             raise FunctionCallValidationError(
@@ -230,13 +230,13 @@ def response_to_actions(
                         **valid_kwargs,
                     )
 
-                    # Set safety_risk attribute if provided
-                    if 'safety_risk' in arguments:
-                        if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'safety_risk', arguments['safety_risk'])
+                    # Set security_risk attribute if provided
+                    if 'security_risk' in arguments:
+                        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+                            setattr(action, 'security_risk', arguments['security_risk'])
                         else:
                             logger.warning(
-                                f'Invalid safety_risk value: {arguments["safety_risk"]}'
+                                f'Invalid security_risk value: {arguments["security_risk"]}'
                             )
             # ================================================
             # AgentThinkAction
@@ -260,13 +260,13 @@ def response_to_actions(
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
 
-                # Set safety_risk attribute if provided
-                if 'safety_risk' in arguments:
-                    if arguments['safety_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'safety_risk', arguments['safety_risk'])
+                # Set security_risk attribute if provided
+                if 'security_risk' in arguments:
+                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+                        setattr(action, 'security_risk', arguments['security_risk'])
                     else:
                         logger.warning(
-                            f'Invalid safety_risk value: {arguments["safety_risk"]}'
+                            f'Invalid security_risk value: {arguments["security_risk"]}'
                         )
 
             # ================================================

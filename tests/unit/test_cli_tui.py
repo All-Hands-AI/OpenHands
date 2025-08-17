@@ -378,7 +378,7 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, safety_risk='LOW')
+        result = await read_confirmation_input(config=cfg, security_risk='LOW')
         assert result == 'yes'
 
     @pytest.mark.asyncio
@@ -389,7 +389,7 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, safety_risk='MEDIUM')
+        result = await read_confirmation_input(config=cfg, security_risk='MEDIUM')
         assert result == 'no'
 
     @pytest.mark.asyncio
@@ -400,7 +400,7 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, safety_risk='LOW')
+        result = await read_confirmation_input(config=cfg, security_risk='LOW')
         assert result == 'smart'
 
     @pytest.mark.asyncio
@@ -411,7 +411,7 @@ class TestReadConfirmationInput:
         cfg = MagicMock()  # <- no spec for simplicity
         cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(config=cfg, safety_risk='HIGH')
+        result = await read_confirmation_input(config=cfg, security_risk='HIGH')
         assert result == 'always'
 
 

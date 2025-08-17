@@ -850,16 +850,16 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig, safety_risk: str) -> str:
+async def read_confirmation_input(config: OpenHandsConfig, security_risk: str) -> str:
     try:
         # Create risk-aware question (only for HIGH risk now)
-        if safety_risk == 'HIGH':
+        if security_risk == 'HIGH':
             question = '🚨 HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
         else:
             question = 'Choose an option:'
 
         # Create risk-aware menu choices
-        if safety_risk == 'HIGH':
+        if security_risk == 'HIGH':
             choices = [
                 '⚠️  Yes, proceed (HIGH RISK - Use with caution)',
                 '🛑 No (and allow to enter instructions)',
@@ -879,7 +879,7 @@ async def read_confirmation_input(config: OpenHandsConfig, safety_risk: str) -> 
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(
-            cli_confirm, config, question, choices, 0, safety_risk
+            cli_confirm, config, question, choices, 0, security_risk
         )
 
         return choice_mapping.get(index, 'no')
@@ -941,7 +941,7 @@ def cli_confirm(
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
     initial_selection: int = 0,
-    safety_risk: str | None = None,
+    security_risk: str | None = None,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -954,7 +954,7 @@ def cli_confirm(
     def get_choice_text() -> list:
         # Use red styling for HIGH risk questions
         question_style = (
-            'class:risk-high' if safety_risk == 'HIGH' else 'class:question'
+            'class:risk-high' if security_risk == 'HIGH' else 'class:question'
         )
 
         return [
@@ -1010,7 +1010,7 @@ def cli_confirm(
     )
 
     # Add frame for HIGH risk commands
-    if safety_risk == 'HIGH':
+    if security_risk == 'HIGH':
         layout = Layout(
             HSplit(
                 [
