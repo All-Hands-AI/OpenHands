@@ -8,6 +8,15 @@ from openhands.core.exceptions import FunctionCallValidationError
 from openhands.events.action import CmdRunAction
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
+
+class _ToolRef:
+    def __init__(self, name: str) -> None:
+        self.name = name
+
+
+# Lightweight reference so callers can compare against execute_bash.name
+execute_bash = _ToolRef(EXECUTE_BASH_TOOL_NAME)
+
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
 
 

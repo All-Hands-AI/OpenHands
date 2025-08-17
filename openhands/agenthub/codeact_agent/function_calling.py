@@ -17,6 +17,7 @@ from openhands.agenthub.codeact_agent.tools import (
     LLMBasedFileEditTool,
     ThinkTool,
     create_str_replace_editor_tool,
+    execute_bash,
 )
 from openhands.agenthub.codeact_agent.tools.bash import CmdRunTool
 from openhands.core.exceptions import (
@@ -40,11 +41,11 @@ from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME, TASK_TRACKER_TOOL_NAME
+from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
 
 # Tool handlers registry for class-based tools
 _TOOL_HANDLERS = {
-    EXECUTE_BASH_TOOL_NAME: CmdRunTool(),
+    execute_bash.name: CmdRunTool(),
 }
 
 
@@ -90,8 +91,8 @@ def response_to_actions(
             # CmdRunTool (Bash)
             # ================================================
 
-            if tool_call.function.name == EXECUTE_BASH_TOOL_NAME:
-                action = _TOOL_HANDLERS[EXECUTE_BASH_TOOL_NAME].to_action(arguments)
+            if tool_call.function.name == execute_bash.name:
+                action = _TOOL_HANDLERS[execute_bash.name].to_action(arguments)
 
             # ================================================
             # IPythonTool (Jupyter)
