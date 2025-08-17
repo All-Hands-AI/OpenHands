@@ -861,7 +861,7 @@ async def read_confirmation_input(config: OpenHandsConfig, security_risk: str) -
         # Create risk-aware menu choices
         if security_risk == 'HIGH':
             choices = [
-                '⚠️  Yes, proceed (HIGH RISK - Use with caution)',
+                '⚠️ Yes, proceed (HIGH RISK - Use with caution)',
                 '🛑 No (and allow to enter instructions)',
                 "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
             ]
