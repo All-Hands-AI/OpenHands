@@ -47,6 +47,7 @@ class SecurityAnalyzer:
                         # Create a new event loop just for this operation
                         new_loop = asyncio.new_event_loop()
                         asyncio.set_event_loop(new_loop)
+                        self._loop = new_loop
                         try:
                             new_loop.run_until_complete(self.on_event(event))
                         finally:
@@ -58,10 +59,6 @@ class SecurityAnalyzer:
         self.event_stream.subscribe(
             EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())
         )
-
-    def set_event_loop(self, loop: asyncio.AbstractEventLoop) -> None:
-        """Set the event loop to use for scheduling coroutines from other threads."""
-        self._loop = loop
 
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
