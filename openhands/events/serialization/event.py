@@ -120,9 +120,6 @@ def event_to_dict(event: 'Event') -> dict:
             d['llm_metrics'] = d['llm_metrics'].get()
         props.pop(key, None)
 
-    if 'confirmation_state' in props and props['confirmation_state'] is None:
-        props.pop('confirmation_state')
-
     # Remove task_completed from serialization when it's None (backward compatibility)
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
