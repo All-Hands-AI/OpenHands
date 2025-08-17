@@ -46,8 +46,6 @@ describe("Content", () => {
     });
   });
 
-
-
   it("should render the language options", async () => {
     renderAppSettingsScreen();
 
@@ -106,8 +104,6 @@ describe("Form submission", () => {
       }),
     );
   });
-
-
 
   it("should only enable the submit button when there are changes", async () => {
     const getSettingsSpy = vi.spyOn(OpenHands, "getSettings");
