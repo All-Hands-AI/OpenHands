@@ -1,5 +1,4 @@
-"""
-Unit tests for the NestedEventStore class.
+"""Unit tests for the NestedEventStore class.
 
 These tests focus on the search_events method, which retrieves events from a remote API
 and applies filtering based on various criteria.
@@ -373,3 +372,66 @@ class TestNestedEventStore:
             'http://test-api.example.com/events?start_id=0&reverse=False',
             headers={'X-Session-API-Key': 'test-api-key'},
         )
+
+    @patch('httpx.get')
+    def test_search_events_reverse_pagination_multiple_pages(
+        self, mock_get, event_store
+    ):
+        """Ensure reverse pagination works across multiple server pages.
+
+        We emulate the remote /events endpoint by using an in-memory EventStream as the
+        backing store and having httpx.get return paginated JSON responses derived from it.
+        """
+        from urllib.parse import parse_qs, urlparse
+
+        from openhands.events.event import EventSource
+        from openhands.events.observation import NullObservation
+        from openhands.events.serialization.event import event_to_dict
+        from openhands.events.stream import EventStream
+        from openhands.storage.memory import InMemoryFileStore
+
+        # Build a fake server-side store with many events so that server pagination kicks in
+        fs = InMemoryFileStore()
+        server_stream = EventStream('test-session', fs, user_id='test-user')
+        total_events = 50
+        for i in range(total_events):
+            server_stream.add_event(NullObservation(f'e{i}'), EventSource.AGENT)
+
+        def server_side_get(url: str, headers: dict | None = None):
+            # Parse query params like the FastAPI layer would receive
+            parsed = urlparse(url)
+            qs = parse_qs(parsed.query)
+            start_id = int(qs.get('start_id', ['0'])[0])
+            reverse = qs.get('reverse', ['False'])[0] == 'True'
+            end_id = int(qs['end_id'][0]) if 'end_id' in qs else None
+            limit = int(qs.get('limit', ['20'])[0])  # server default = 20
+
+            # Emulate server route logic: request limit+1 to compute has_more
+            events = list(
+                server_stream.search_events(
+                    start_id=start_id, end_id=end_id, reverse=reverse, limit=limit + 1
+                )
+            )
+            has_more = len(events) > limit
+            if has_more:
+                events = events[:limit]
+
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {
+                'events': [event_to_dict(e) for e in events],
+                'has_more': has_more,
+            }
+            return mock_response
+
+        mock_get.side_effect = server_side_get
+
+        # Execute the nested search in reverse without a client-side limit
+        results = list(event_store.search_events(reverse=True))
+
+        # Verify we received all events in descending order
+        assert len(results) == total_events
+        assert [e.id for e in results] == list(range(total_events - 1, -1, -1))
+
+        # Ensure multiple HTTP calls were made due to pagination
+        assert mock_get.call_count >= 2

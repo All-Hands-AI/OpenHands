@@ -231,8 +231,7 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1(
 def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_obs(
     conversation_memory, initial_user_action
 ):
-    """
-    Test process_events when an incorrect user message is at index 1 AND
+    """Test process_events when an incorrect user message is at index 1 AND
     an orphaned observation (with tool_call_metadata but no matching action) exists.
     Expect: System msg, CORRECT initial user msg, the incorrect user msg (shifted).
             The orphaned observation should be filtered out.
@@ -1397,8 +1396,7 @@ def _create_mock_tool_call_metadata(
 
 
 def test_process_events_partial_history(conversation_memory):
-    """
-    Tests process_events with full and partial histories to verify
+    """Tests process_events with full and partial histories to verify
     _ensure_system_message, _ensure_initial_user_message, and tool call matching logic.
     """
     # --- Define Common Events ---

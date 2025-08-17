@@ -324,8 +324,7 @@ async def test_delegate_step_different_states(
     mock_delegate.close = AsyncMock()
 
     async def call_on_event_with_new_loop():
-        """
-        In this thread, create and set a fresh event loop, so that the run_until_complete()
+        """In this thread, create and set a fresh event loop, so that the run_until_complete()
         calls inside controller.on_event(...) find a valid loop.
         """
         loop_in_thread = asyncio.new_event_loop()

@@ -431,7 +431,6 @@ async def test_process_issue(
     test_case,
 ):
     """Test the process_issue method with different scenarios."""
-
     # Set up test data
     issue = Issue(
         owner='test_owner',

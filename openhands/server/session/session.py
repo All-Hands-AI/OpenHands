@@ -31,12 +31,13 @@ from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
+from openhands.llm.llm import LLM
+from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.constants import ROOM_KEY
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-
-ROOM_KEY = 'room:{sid}'
 
 
 class Session:
@@ -81,6 +82,9 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
+
+        # Lazy import to avoid circular dependency
+        from openhands.experiments.experiment_manager import ExperimentManagerImpl
         self.config = ExperimentManagerImpl.run_config_variant_test(
             user_id, sid, self.config
         )
