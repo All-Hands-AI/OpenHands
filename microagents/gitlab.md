@@ -26,6 +26,7 @@ Here are some instructions for pushing, but ONLY do this if the user asks you to
 * Use the `create_mr` tool to create a merge request, if you haven't already
 * Once you've created your own branch or a merge request, continue to update it. Do NOT create a new one unless you are explicitly asked to. Update the PR title and description as necessary, but don't change the branch name.
 * Use the main branch as the base branch, unless the user requests otherwise
+* When opening a MR, check the existing labels defined on that repository and select from existing ones. Do not invent your own labels.
 * After opening or updating a merge request, send the user a short message with a link to the merge request.
 * Do all of the above in as few steps as possible. E.g. you could push changes with one step by running the following bash commands:
 ```bash

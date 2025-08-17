@@ -87,6 +87,8 @@ VSCode Extension:
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
 
+When opening a PR, you should check the existing labels defined on that repository and select from existing ones. Do not invent your own labels.
+
 ## Implementation Details
 
 These details may or may not be useful for your current task.
