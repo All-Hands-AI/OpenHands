@@ -53,6 +53,18 @@ def combine_thought(action: Action, thought: str) -> Action:
         action.thought = thought
     return action
 
+def set_security_risk(action: Action, arguments: dict) -> None:
+    """Set the security risk level for the action."""
+
+    # Set security_risk attribute if provided
+    if 'security_risk' in arguments:
+        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
+            setattr(action, 'security_risk', arguments['security_risk'])
+        else:
+            logger.warning(
+                f'Invalid security_risk value: {arguments["security_risk"]}'
+            )
+
 
 def response_to_actions(
     response: ModelResponse, mcp_tool_names: list[str] | None = None
@@ -103,15 +115,7 @@ def response_to_actions(
                         raise FunctionCallValidationError(
                             f"Invalid float passed to 'timeout' argument: {arguments['timeout']}"
                         ) from e
-
-                # Set security_risk attribute if provided
-                if 'security_risk' in arguments:
-                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'security_risk', arguments['security_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid security_risk value: {arguments["security_risk"]}'
-                        )
+                set_security_risk(action, arguments)
 
             # ================================================
             # IPythonTool (Jupyter)
@@ -122,15 +126,11 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = IPythonRunCellAction(code=arguments['code'])
+                set_security_risk(action, arguments)
 
-                # Set security_risk attribute if provided
-                if 'security_risk' in arguments:
-                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'security_risk', arguments['security_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid security_risk value: {arguments["security_risk"]}'
-                        )
+            # ================================================
+            # AgentDelegateAction (Delegation to another agent)
+            # ================================================
             elif tool_call.function.name == 'delegate_to_browsing_agent':
                 action = AgentDelegateAction(
                     agent='BrowsingAgent',
@@ -190,15 +190,6 @@ def response_to_actions(
                         impl_source=FileReadSource.OH_ACI,
                         view_range=other_kwargs.get('view_range', None),
                     )
-
-                    # Set security_risk attribute if provided
-                    if 'security_risk' in arguments:
-                        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'security_risk', arguments['security_risk'])
-                        else:
-                            logger.warning(
-                                f'Invalid security_risk value: {arguments["security_risk"]}'
-                            )
                 else:
                     if 'view_range' in other_kwargs:
                         # Remove view_range from other_kwargs since it is not needed for FileEditAction
@@ -230,14 +221,7 @@ def response_to_actions(
                         **valid_kwargs,
                     )
 
-                    # Set security_risk attribute if provided
-                    if 'security_risk' in arguments:
-                        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                            setattr(action, 'security_risk', arguments['security_risk'])
-                        else:
-                            logger.warning(
-                                f'Invalid security_risk value: {arguments["security_risk"]}'
-                            )
+                set_security_risk(action, arguments)
             # ================================================
             # AgentThinkAction
             # ================================================
@@ -259,16 +243,7 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
-
-                # Set security_risk attribute if provided
-                if 'security_risk' in arguments:
-                    if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-                        setattr(action, 'security_risk', arguments['security_risk'])
-                    else:
-                        logger.warning(
-                            f'Invalid security_risk value: {arguments["security_risk"]}'
-                        )
-
+                set_security_risk(action, arguments)
             # ================================================
             # TaskTrackingAction
             # ================================================
