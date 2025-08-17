@@ -135,7 +135,7 @@ classDiagram
   class LLMRegistry {
     -config: OpenHandsConfig
     -retry_listener: Callable
-    -cache: Dict[str, LLM]
+    -cache: Map<string, LLM>
     +get_llm(service_id, config?): LLM
     +get_llm_from_agent_config(service_id, AgentConfig): LLM
     +request_extraneous_completion(service_id, ...): string
@@ -196,7 +196,7 @@ sequenceDiagram
     Session->>UI: queue_status_message(type="llm-retry", details)
   end
   LLM-->>Service: response
-  Note over Registry,Stats: Centralized accounting (tokens/cost) per service_id
+  Note over Registry,Stats: "Centralized accounting (tokens/cost) per service_id"
 ```
 
 ### ConversationStats lifecycle
