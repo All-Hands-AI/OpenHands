@@ -5712,7 +5712,7 @@
         "uk": "Ви хочете продовжити цю дію?"
     },
   "CHAT_INTERFACE$HIGH_RISK_WARNING": {
-    "en": "High-risk action detected. Review carefully before proceeding.",
+    "en": "Risk: High - Review carefully before proceeding.",
     "de": "Hochrisikohandlung erkannt. Bitte vor dem Fortfahren sorgfältig prüfen.",
     "zh-CN": "检测到高风险操作。继续之前请仔细检查。",
     "zh-TW": "檢測到高風險操作。繼續之前請仔細檢查。",

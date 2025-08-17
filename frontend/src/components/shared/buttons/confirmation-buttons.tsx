@@ -37,20 +37,59 @@ export function ConfirmationButtons() {
   };
 
   // Detect if there's a pending action awaiting confirmation and its risk level
+  // Show confirmation messages until a new action starts or completes
   const confirmationState = (() => {
+    let awaitingConfirmation = null;
+    let mostRecentConfirmed = null;
+    let mostRecentRejected = null;
+    let hasSubsequentAction = false;
+    
     for (let i = parsedEvents.length - 1; i >= 0; i -= 1) {
       const ev = parsedEvents[i];
+      
       if (
         isOpenHandsAction(ev) &&
         ev.source === "agent" &&
         hasRiskAndConfirmation(ev.args)
       ) {
-        return {
-          state: ev.args.confirmation_state,
-          isHighRisk: isRiskHigh(ev.args.safety_risk),
-        };
+        const state = ev.args.confirmation_state;
+        const isHighRisk = isRiskHigh(ev.args.safety_risk);
+        
+        // If we find an awaiting confirmation, return it immediately
+        if (state === "awaiting_confirmation") {
+          awaitingConfirmation = { state, isHighRisk };
+          break;
+        }
+        
+        // Store the most recent confirmed/rejected states
+        if (state === "confirmed" && !mostRecentConfirmed) {
+          mostRecentConfirmed = { state, isHighRisk };
+        }
+        if (state === "rejected" && !mostRecentRejected) {
+          mostRecentRejected = { state, isHighRisk };
+        }
+      }
+      
+      // Check if there's a subsequent action after a confirmed/rejected action
+      if (
+        (mostRecentConfirmed || mostRecentRejected) &&
+        isOpenHandsAction(ev) &&
+        ev.source === "agent" &&
+        !hasRiskAndConfirmation(ev.args)
+      ) {
+        hasSubsequentAction = true;
       }
     }
+    
+    // Priority: awaiting confirmation > recent confirmed/rejected (if no subsequent action)
+    if (awaitingConfirmation) {
+      return awaitingConfirmation;
+    }
+    
+    if (!hasSubsequentAction && (mostRecentConfirmed || mostRecentRejected)) {
+      return mostRecentConfirmed || mostRecentRejected;
+    }
+    
     return { state: null, isHighRisk: false };
   })();
 
