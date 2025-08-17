@@ -124,7 +124,7 @@ export function EventMessage({
   }
 
   if (hasObservationPair && isOpenHandsAction(event)) {
-    if (hasThoughtProperty(event.args)) {
+    if (hasThoughtProperty(event.args) && event.action !== "think") {
       return (
         <div>
           <ChatMessage
@@ -254,13 +254,18 @@ export function EventMessage({
 
   return (
     <div>
-      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={
+      {isOpenHandsAction(event) &&
+        hasThoughtProperty(event.args) &&
+        event.action !== "think" && (
+          <ChatMessage
+            type="agent"
+            message={
               event.args.thought?.reasoning_content
                 ? `${event.args.thought.reasoning_content}\n\n${event.args.thought.text}`
                 : event.args.thought?.text || ""
-            } />
-      )}
+            }
+          />
+        )}
 
       <GenericEventMessage
         title={getEventContent(event).title}
