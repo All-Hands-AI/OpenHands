@@ -32,7 +32,7 @@ def model_matches(model: str, patterns: list[str]) -> bool:
 
 
 @dataclass(frozen=True)
-class ModelCapabilities:
+class ModelFeatures:
     function_calling: bool
     reasoning_effort: bool
     prompt_cache: bool
@@ -97,12 +97,12 @@ SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
 ]
 
 
-def get_capabilities(model: str) -> ModelCapabilities:
+def get_features(model: str) -> ModelFeatures:
     function_calling = model_matches(model, FUNCTION_CALLING_PATTERNS)
     reasoning_effort = model_matches(model, REASONING_EFFORT_PATTERNS)
     prompt_cache = model_matches(model, PROMPT_CACHE_PATTERNS)
     supports_stop_words = not model_matches(model, SUPPORTS_STOP_WORDS_FALSE_PATTERNS)
-    return ModelCapabilities(
+    return ModelFeatures(
         function_calling=function_calling,
         reasoning_effort=reasoning_effort,
         prompt_cache=prompt_cache,

@@ -1,8 +1,8 @@
 import pytest
 
-from openhands.llm.capabilities import (
-    ModelCapabilities,
-    get_capabilities,
+from openhands.llm.model_features import (
+    ModelFeatures,
+    get_features,
     model_matches,
     normalize_model_name,
 )
@@ -44,21 +44,21 @@ def test_model_matches(name, pattern, expected):
 @pytest.mark.parametrize(
     'model,expect',
     [
-        ('gpt-4o', ModelCapabilities(True, False, False, True)),
-        ('gpt-5-preview', ModelCapabilities(True, True, False, True)),
-        ('o3-mini', ModelCapabilities(True, True, False, True)),
-        ('o1-2024-12-17', ModelCapabilities(True, True, False, False)),
-        ('xai/grok-4-0709', ModelCapabilities(False, False, False, False)),
-        ('anthropic/claude-3-7-sonnet', ModelCapabilities(True, False, True, True)),
+        ('gpt-4o', ModelFeatures(True, False, False, True)),
+        ('gpt-5-preview', ModelFeatures(True, True, False, True)),
+        ('o3-mini', ModelFeatures(True, True, False, True)),
+        ('o1-2024-12-17', ModelFeatures(True, True, False, False)),
+        ('xai/grok-4-0709', ModelFeatures(False, False, False, False)),
+        ('anthropic/claude-3-7-sonnet', ModelFeatures(True, False, True, True)),
         (
             'litellm_proxy/claude-3.7-sonnet',
-            ModelCapabilities(True, False, True, True),
+            ModelFeatures(True, False, True, True),
         ),
-        ('gemini-2.5-pro', ModelCapabilities(True, True, False, True)),
+        ('gemini-2.5-pro', ModelFeatures(True, True, False, True)),
     ],
 )
 def test_get_capabilities(model, expect):
-    caps = get_capabilities(model)
+    caps = get_features(model)
     assert caps == expect
 
 
@@ -92,7 +92,7 @@ def test_get_capabilities(model, expect):
     ],
 )
 def test_function_calling_models(model):
-    caps = get_capabilities(model)
+    caps = get_features(model)
     assert caps.function_calling is True
 
 
@@ -110,7 +110,7 @@ def test_function_calling_models(model):
     ],
 )
 def test_reasoning_effort_models(model):
-    caps = get_capabilities(model)
+    caps = get_features(model)
     assert caps.reasoning_effort is True
 
 
@@ -129,7 +129,7 @@ def test_reasoning_effort_models(model):
     ],
 )
 def test_prompt_cache_models(model):
-    caps = get_capabilities(model)
+    caps = get_features(model)
     assert caps.prompt_cache is True
 
 
@@ -142,5 +142,5 @@ def test_prompt_cache_models(model):
     ],
 )
 def test_supports_stop_words_false_models(model):
-    caps = get_capabilities(model)
+    caps = get_features(model)
     assert caps.supports_stop_words is False

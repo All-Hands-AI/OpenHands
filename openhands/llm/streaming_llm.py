@@ -5,7 +5,7 @@ from typing import Any, Callable
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
-from openhands.llm.capabilities import get_capabilities
+from openhands.llm.model_features import get_features
 
 
 class StreamingLLM(AsyncLLM):
@@ -65,7 +65,7 @@ class StreamingLLM(AsyncLLM):
                 )
 
             # Set reasoning effort for models that support it
-            if get_capabilities(self.config.model).reasoning_effort:
+            if get_features(self.config.model).reasoning_effort:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             self.log_prompt(messages)

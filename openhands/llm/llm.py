@@ -28,7 +28,6 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.llm.capabilities import get_capabilities
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,
@@ -36,6 +35,7 @@ from openhands.llm.fn_call_converter import (
     convert_non_fncall_messages_to_fncall_messages,
 )
 from openhands.llm.metrics import Metrics
+from openhands.llm.model_features import get_features
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -128,7 +128,7 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        caps = get_capabilities(self.config.model)
+        caps = get_features(self.config.model)
         if caps.reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
@@ -236,7 +236,7 @@ class LLM(RetryMixin, DebugMixin):
 
                 # add stop words if the model supports it and stop words are not disabled
                 if (
-                    get_capabilities(self.config.model).supports_stop_words
+                    get_features(self.config.model).supports_stop_words
                     and not self.config.disable_stop_word
                 ):
                     kwargs['stop'] = STOP_WORDS
@@ -487,7 +487,7 @@ class LLM(RetryMixin, DebugMixin):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
         # Initialize function calling capability using centralized capabilities
-        caps = get_capabilities(self.config.model)
+        caps = get_features(self.config.model)
         if self.config.native_tool_calling is None:
             self._function_calling_active = caps.function_calling
         else:
@@ -527,7 +527,7 @@ class LLM(RetryMixin, DebugMixin):
         if not self.config.caching_prompt:
             return False
         # We don't need to look-up model_info, because only Anthropic models need explicit caching breakpoints
-        return get_capabilities(self.config.model).prompt_cache
+        return get_features(self.config.model).prompt_cache
 
     def is_function_calling_active(self) -> bool:
         """Returns whether function calling is supported and enabled for this LLM instance.
