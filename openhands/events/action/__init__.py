@@ -1,4 +1,4 @@
-from openhands.events.action.action import Action, ActionConfirmationStatus
+from openhands.events.action.action import Action, ActionConfirmationStatus, ActionSecurityRisk
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,
@@ -40,4 +40,5 @@ __all__ = [
     'RecallAction',
     'MCPAction',
     'TaskTrackingAction',
+    'ActionSecurityRisk',
 ]

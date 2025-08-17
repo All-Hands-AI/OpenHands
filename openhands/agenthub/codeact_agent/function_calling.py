@@ -36,6 +36,7 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
+    ActionSecurityRisk
 )
 from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
@@ -59,7 +60,8 @@ def set_security_risk(action: Action, arguments: dict) -> None:
     # Set security_risk attribute if provided
     if 'security_risk' in arguments:
         if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-            setattr(action, 'security_risk', arguments['security_risk'])
+            security_risk = ActionSecurityRisk(arguments['security_risk'])
+            setattr(action, 'security_risk', security_risk)
         else:
             logger.warning(
                 f'Invalid security_risk value: {arguments["security_risk"]}'

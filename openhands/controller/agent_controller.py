@@ -49,6 +49,7 @@ from openhands.events import (
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
@@ -882,12 +883,12 @@ class AgentController:
                 or type(action) is FileReadAction
             ):
                 # Check if the action has a security_risk attribute set by the LLM
-                security_risk = getattr(action, 'security_risk', None)
+                security_risk = getattr(
+                    action, 'security_risk', ActionSecurityRisk.UNKNOWN
+                )
 
-                # If security_risk is HIGH, always require confirmation
-                # If security_risk is MEDIUM or LOW, follow the confirmation_mode setting
-                # If security_risk is not set, follow the confirmation_mode setting
-                if security_risk == 'HIGH' or self.state.confirmation_mode:
+                # If security_risk is HIGH, requires confirmation
+                if security_risk == ActionSecurityRisk.HIGH:
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )
