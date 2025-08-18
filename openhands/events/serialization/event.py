@@ -125,7 +125,6 @@ def event_to_dict(event: 'Event') -> dict:
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
     if 'action' in d:
-        # NOTE: Thought is kept as a structured object in args; no flattening of reasoning_content
 
         d['args'] = props
         if event.timeout is not None:
