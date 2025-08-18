@@ -288,12 +288,7 @@ class LLM(RetryMixin, DebugMixin):
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
-            # Ensure monotonic measurement even under mocked/limited time.time() side effects
-            end_time = time.time()
-            try:
-                latency = max(0.0, float(end_time - start_time))
-            except Exception:
-                latency = 0.0
+            latency = time.time() - start_time
             response_id = resp.get('id', 'unknown')
             self.metrics.add_response_latency(latency, response_id)
 
