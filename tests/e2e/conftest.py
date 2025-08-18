@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 
@@ -44,3 +46,9 @@ def browser_type_launch_args(request):
         args['slow_mo'] = slow_mo
 
     return args
+
+
+@pytest.fixture(scope='session')
+def base_url():
+    """Return the base URL for the OpenHands application."""
+    return os.getenv('OPENHANDS_BASE_URL', 'http://localhost:12000')
