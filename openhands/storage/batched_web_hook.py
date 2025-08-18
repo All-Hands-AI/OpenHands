@@ -90,7 +90,6 @@ class BatchedWebHookFileStore(FileStore):
             contents: The contents to write
         """
         self.file_store.write(path, contents)
-        print('saving to path', path)
         self._queue_update(path, 'write', contents)
 
     def read(self, path: str) -> str:
