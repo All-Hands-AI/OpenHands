@@ -94,3 +94,6 @@ class ActionType(str, Enum):
 
     CONDENSATION_REQUEST = 'condensation_request'
     """Request for condensation of a list of events."""
+
+    TASK_TRACKING = 'task_tracking'
+    """Views or updates the task list for task management."""

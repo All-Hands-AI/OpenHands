@@ -20,7 +20,7 @@ def test_gitlab_repository_cloning(page: Page):
     3. Launch the repository and wait for agent initialization
     4. Ask the agent to count lines in README.md to verify repository access
     5. Verify the agent can successfully work with the cloned GitLab repository
-    
+
     This test verifies that OpenHands can properly clone and work with GitLab repositories.
     """
     # Create test-results directory if it doesn't exist
@@ -74,7 +74,9 @@ def test_gitlab_repository_cloning(page: Page):
     # Check if we need to configure GitLab token
     try:
         # Look for settings navigation button
-        navigate_to_settings_button = page.locator('[data-testid="navigate-to-settings-button"]')
+        navigate_to_settings_button = page.locator(
+            '[data-testid="navigate-to-settings-button"]'
+        )
         settings_button = page.locator('button:has-text("Settings")')
 
         if navigate_to_settings_button.is_visible(timeout=3000):
@@ -107,7 +109,10 @@ def test_gitlab_repository_cloning(page: Page):
 
                 # Save the configuration
                 save_button = page.locator('[data-testid="submit-button"]')
-                if save_button.is_visible(timeout=3000) and not save_button.is_disabled():
+                if (
+                    save_button.is_visible(timeout=3000)
+                    and not save_button.is_disabled()
+                ):
                     save_button.click()
                     page.wait_for_timeout(3000)
                     print('GitLab token saved')
@@ -142,27 +147,29 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Step 4: Check if provider selection is needed (GitLab)
     print('Step 4: Checking provider selection after returning from settings...')
-    
+
     # After returning from settings, the provider selection might have been reset
     # Check if provider dropdown exists and select GitLab if needed
     provider_dropdown_exists = page.evaluate("""
         () => {
             // Look for "Select Provider" text which indicates the dropdown exists
-            const selectProviderElements = Array.from(document.querySelectorAll('*')).filter(el => 
+            const selectProviderElements = Array.from(document.querySelectorAll('*')).filter(el =>
                 el.textContent && el.textContent.includes('Select Provider')
             );
             return selectProviderElements.length > 0;
         }
     """)
-    
+
     print(f'Provider dropdown exists: {provider_dropdown_exists}')
-    
+
     if provider_dropdown_exists:
-        print('Provider dropdown detected (likely reset after settings navigation), selecting GitLab...')
-        
+        print(
+            'Provider dropdown detected (likely reset after settings navigation), selecting GitLab...'
+        )
+
         # Try to click the provider dropdown
         provider_clicked = False
-        
+
         # Try multiple approaches to find and click the provider dropdown
         provider_selectors = [
             'div:has-text("Select Provider")',
@@ -172,7 +179,7 @@ def test_gitlab_repository_cloning(page: Page):
             '.react-select__control:has-text("Select Provider")',
             '[class*="select"][class*="control"]',
         ]
-        
+
         for selector in provider_selectors:
             try:
                 element = page.locator(selector).first
@@ -184,15 +191,15 @@ def test_gitlab_repository_cloning(page: Page):
             except Exception as e:
                 print(f'Failed with selector {selector}: {e}')
                 continue
-        
+
         if not provider_clicked:
             # Try JavaScript-based clicking as fallback
             js_result = page.evaluate("""
                 () => {
-                    const elements = Array.from(document.querySelectorAll('*')).filter(el => 
+                    const elements = Array.from(document.querySelectorAll('*')).filter(el =>
                         el.textContent && el.textContent.includes('Select Provider')
                     );
-                    
+
                     for (const el of elements) {
                         // Try clicking the element or its parent
                         let target = el;
@@ -207,13 +214,13 @@ def test_gitlab_repository_cloning(page: Page):
                     return null;
                 }
             """)
-            
+
             if js_result:
                 print(f'Clicked provider dropdown with JavaScript: {js_result}')
                 provider_clicked = True
             else:
                 raise Exception('Could not click provider dropdown with any method')
-        
+
         page.wait_for_timeout(2000)
 
         # Select GitLab from provider options
@@ -223,7 +230,7 @@ def test_gitlab_repository_cloning(page: Page):
             '.react-select__option:has-text("GitLab")',
             '[class*="option"]:has-text("GitLab")',
         ]
-        
+
         gitlab_selected = False
         for selector in gitlab_selectors:
             try:
@@ -235,7 +242,7 @@ def test_gitlab_repository_cloning(page: Page):
                     break
             except Exception:
                 continue
-        
+
         if not gitlab_selected:
             print('GitLab provider option not found, trying keyboard navigation')
             page.keyboard.press('ArrowDown')
@@ -250,7 +257,7 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Step 5: Search for repository
     print('Step 5: Searching for GitLab repository...')
-    
+
     # Try multiple selectors for the repository search dropdown
     repo_selectors = [
         'text=Search repositories...',
@@ -259,7 +266,7 @@ def test_gitlab_repository_cloning(page: Page):
         '.react-select__placeholder:has-text("Search repositories...")',
         '[data-testid*="repo"] >> text=Search repositories...',
     ]
-    
+
     repo_search = None
     for selector in repo_selectors:
         try:
@@ -270,16 +277,18 @@ def test_gitlab_repository_cloning(page: Page):
                 break
         except Exception:
             continue
-    
+
     if repo_search is None:
-        print('Could not find repository search, trying second dropdown in Connect section')
+        print(
+            'Could not find repository search, trying second dropdown in Connect section'
+        )
         # Try to find the second dropdown in the Connect to a Repository section
         connect_section = page.locator('div:has-text("Connect to a Repository")').first
         dropdowns = connect_section.locator('div[class*="select"]')
         if dropdowns.count() >= 2:
             repo_search = dropdowns.nth(1)
             print('Using second dropdown in Connect section')
-    
+
     expect(repo_search).to_be_visible(timeout=10000)
     repo_search.click()
     page.wait_for_timeout(1000)
@@ -288,21 +297,21 @@ def test_gitlab_repository_cloning(page: Page):
     # Try multiple GitLab repositories in order of preference
     gitlab_repos = [
         'gitlab-org/gitlab-foss',  # Well-known public GitLab repository
-        'gitlab-org/gitlab',       # Main GitLab repository
+        'gitlab-org/gitlab',  # Main GitLab repository
         'gitlab-com/www-gitlab-com',  # GitLab website repository
     ]
-    
+
     option_found = False
     selected_repo = None
-    
+
     for gitlab_repo in gitlab_repos:
         print(f'Trying repository: {gitlab_repo}')
-        
+
         # Clear the search field first
         page.keyboard.press('Control+a')
         page.keyboard.press('Delete')
         page.wait_for_timeout(500)
-        
+
         try:
             page.keyboard.type(gitlab_repo)
             print(f'Typed repository name: {gitlab_repo}')
@@ -328,7 +337,9 @@ def test_gitlab_repository_cloning(page: Page):
                     print(f'Found repository option with selector: {selector}')
                     try:
                         option.click(force=True)
-                        print(f'Successfully clicked repository option for {gitlab_repo}')
+                        print(
+                            f'Successfully clicked repository option for {gitlab_repo}'
+                        )
                         option_found = True
                         selected_repo = gitlab_repo
                         page.wait_for_timeout(2000)
@@ -337,25 +348,29 @@ def test_gitlab_repository_cloning(page: Page):
                         continue
             except Exception:
                 continue
-        
+
         if option_found:
             break
-    
+
     if not option_found:
-        print('Could not find any GitLab repository options, checking if any repositories are available')
-        
+        print(
+            'Could not find any GitLab repository options, checking if any repositories are available'
+        )
+
         # Check if there are any options at all
         all_options = page.locator('[role="option"]')
         option_count = all_options.count()
         print(f'Found {option_count} repository options total')
-        
+
         if option_count > 0:
             print('Selecting first available repository as fallback')
             all_options.first.click()
             selected_repo = 'first-available'
             option_found = True
         else:
-            print('No repository options found - this may indicate GitLab API access issues')
+            print(
+                'No repository options found - this may indicate GitLab API access issues'
+            )
             # Try keyboard navigation as last resort
             page.keyboard.press('ArrowDown')
             page.wait_for_timeout(500)
@@ -368,7 +383,7 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Step 6: Select branch (main)
     print('Step 6: Selecting branch...')
-    
+
     # Try multiple selectors for the branch dropdown
     branch_selectors = [
         'text=Select branch...',
@@ -377,7 +392,7 @@ def test_gitlab_repository_cloning(page: Page):
         '.react-select__placeholder:has-text("Select branch...")',
         '[data-testid*="branch"] >> text=Select branch...',
     ]
-    
+
     branch_dropdown = None
     for selector in branch_selectors:
         try:
@@ -388,27 +403,29 @@ def test_gitlab_repository_cloning(page: Page):
                 break
         except Exception:
             continue
-    
+
     if branch_dropdown is None:
-        print('Could not find branch dropdown, trying third dropdown in Connect section')
+        print(
+            'Could not find branch dropdown, trying third dropdown in Connect section'
+        )
         # Try to find the third dropdown in the Connect to a Repository section
         connect_section = page.locator('div:has-text("Connect to a Repository")').first
         dropdowns = connect_section.locator('div[class*="select"]')
         if dropdowns.count() >= 3:
             branch_dropdown = dropdowns.nth(2)
             print('Using third dropdown in Connect section')
-    
+
     if branch_dropdown and branch_dropdown.is_visible(timeout=5000):
         branch_dropdown.click()
         page.wait_for_timeout(1000)
-        
+
         # Select main branch
         main_selectors = [
             '[role="option"]:has-text("main")',
             'div:has-text("main")',
             '.react-select__option:has-text("main")',
         ]
-        
+
         main_selected = False
         for selector in main_selectors:
             try:
@@ -420,7 +437,7 @@ def test_gitlab_repository_cloning(page: Page):
                     break
             except Exception:
                 continue
-        
+
         if not main_selected:
             # Try keyboard navigation
             page.keyboard.press('ArrowDown')
@@ -449,7 +466,9 @@ def test_gitlab_repository_cloning(page: Page):
                 button_enabled = True
                 break
             else:
-                print(f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
+                print(
+                    f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})'
+                )
                 page.wait_for_timeout(2000)
         except Exception as e:
             print(f'Error checking button state (attempt {attempt + 1}): {e}')
@@ -533,7 +552,9 @@ def test_gitlab_repository_cloning(page: Page):
                 try:
                     element = page.locator(selector)
                     if element.is_visible(timeout=2000):
-                        print(f'Found conversation interface element with selector: {selector}')
+                        print(
+                            f'Found conversation interface element with selector: {selector}'
+                        )
                         conversation_loaded = True
                         break
                 except Exception:
@@ -570,7 +591,9 @@ def test_gitlab_repository_cloning(page: Page):
         elapsed = int(time.time() - start_time)
         if elapsed % 30 == 0 and elapsed > 0:
             page.screenshot(path=f'test-results/gitlab_waiting_{elapsed}s.png')
-            print(f'Screenshot saved: gitlab_waiting_{elapsed}s.png (waiting {elapsed}s)')
+            print(
+                f'Screenshot saved: gitlab_waiting_{elapsed}s.png (waiting {elapsed}s)'
+            )
 
         try:
             # Check if input field and submit button are ready
@@ -578,14 +601,18 @@ def test_gitlab_repository_cloning(page: Page):
             submit_ready = False
             try:
                 input_field = page.locator('[data-testid="chat-input"] textarea')
-                submit_button = page.locator('[data-testid="chat-input"] button[type="submit"]')
+                submit_button = page.locator(
+                    '[data-testid="chat-input"] button[type="submit"]'
+                )
                 if (
                     input_field.is_visible(timeout=2000)
                     and input_field.is_enabled(timeout=2000)
                     and submit_button.is_visible(timeout=2000)
                     and submit_button.is_enabled(timeout=2000)
                 ):
-                    print('Chat input field and submit button are both visible and enabled')
+                    print(
+                        'Chat input field and submit button are both visible and enabled'
+                    )
                     input_ready = True
                     submit_ready = True
             except Exception:
@@ -600,19 +627,19 @@ def test_gitlab_repository_cloning(page: Page):
                 'div:has-text("Agent has finished")',
             ]
 
-            has_ready_indicator = False
             for indicator in ready_indicators:
                 try:
                     element = page.locator(indicator)
                     if element.is_visible(timeout=2000):
                         print(f'Agent appears ready (found: {indicator})')
-                        has_ready_indicator = True
                         break
                 except Exception:
                     continue
 
             if input_ready and submit_ready:
-                print('✅ Agent is ready for user input - input field and submit button are enabled')
+                print(
+                    '✅ Agent is ready for user input - input field and submit button are enabled'
+                )
                 agent_ready = True
                 break
 
@@ -623,7 +650,9 @@ def test_gitlab_repository_cloning(page: Page):
 
     if not agent_ready:
         page.screenshot(path='test-results/gitlab_timeout_waiting_for_agent.png')
-        raise AssertionError(f'Agent did not become ready for input within {max_wait_time} seconds')
+        raise AssertionError(
+            f'Agent did not become ready for input within {max_wait_time} seconds'
+        )
 
     page.screenshot(path='test-results/gitlab_08_agent_ready.png')
     print('Screenshot saved: gitlab_08_agent_ready.png')
@@ -637,12 +666,12 @@ def test_gitlab_repository_cloning(page: Page):
 
     # Type the question - adapt based on which repository was selected
     if selected_repo and selected_repo.startswith('gitlab-org/'):
-        question = "Please count how many lines are in the README.md file and tell me the exact number."
+        question = 'Please count how many lines are in the README.md file and tell me the exact number.'
         print(f'Using GitLab-specific question for repository: {selected_repo}')
     else:
-        question = "Please list the files in the current directory and tell me what repository this is."
+        question = 'Please list the files in the current directory and tell me what repository this is.'
         print(f'Using generic question for repository: {selected_repo}')
-    
+
     message_input.fill(question)
     print(f'Typed question: {question}')
 
@@ -666,7 +695,9 @@ def test_gitlab_repository_cloning(page: Page):
         elapsed = int(time.time() - start_time)
         if elapsed % 30 == 0 and elapsed > 0:
             page.screenshot(path=f'test-results/gitlab_response_waiting_{elapsed}s.png')
-            print(f'Screenshot saved: gitlab_response_waiting_{elapsed}s.png (waiting {elapsed}s)')
+            print(
+                f'Screenshot saved: gitlab_response_waiting_{elapsed}s.png (waiting {elapsed}s)'
+            )
 
         try:
             # Look for agent response - adapt based on question asked
@@ -696,7 +727,9 @@ def test_gitlab_repository_cloning(page: Page):
                     response_element = page.locator(selector)
                     if response_element.is_visible(timeout=2000):
                         response_text = response_element.text_content()
-                        if response_text and any(word in response_text.lower() for word in expected_words):
+                        if response_text and any(
+                            word in response_text.lower() for word in expected_words
+                        ):
                             print(f'Found agent response: {response_text[:200]}...')
                             response_received = True
                             break
@@ -727,7 +760,9 @@ def test_gitlab_repository_cloning(page: Page):
             if not still_working and elapsed > 60:
                 # Check if there's any new content in the conversation
                 try:
-                    conversation_content = page.locator('[data-testid="conversation-screen"]').text_content()
+                    conversation_content = page.locator(
+                        '[data-testid="conversation-screen"]'
+                    ).text_content()
                     if conversation_content and len(conversation_content) > 100:
                         print('Agent appears to have responded, checking content...')
                         response_received = True
@@ -751,7 +786,13 @@ def test_gitlab_repository_cloning(page: Page):
 
     print('✅ GitLab repository integration test completed successfully!')
     if selected_repo and selected_repo.startswith('gitlab-org/'):
-        print(f'The agent was able to access and work with the GitLab repository: {selected_repo}')
+        print(
+            f'The agent was able to access and work with the GitLab repository: {selected_repo}'
+        )
     else:
-        print(f'The agent was able to access and work with the repository: {selected_repo}')
-        print('Note: GitLab provider was selected but a different repository was used due to access limitations.')
+        print(
+            f'The agent was able to access and work with the repository: {selected_repo}'
+        )
+        print(
+            'Note: GitLab provider was selected but a different repository was used due to access limitations.'
+        )
