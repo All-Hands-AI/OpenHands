@@ -98,9 +98,7 @@ def mock_agent():
 
 
 @pytest.mark.asyncio
-async def test_memory_on_event_exception_handling(
-    memory, event_stream, mock_agent, mock_llm_registry
-):
+async def test_memory_on_event_exception_handling(memory, event_stream, mock_agent):
     """Test that exceptions in Memory.on_event are properly handled via status callback."""
     # Create a mock runtime
     runtime = MagicMock(spec=ActionExecutionClient)
@@ -120,7 +118,6 @@ async def test_memory_on_event_exception_handling(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
-            llm_registry=mock_llm_registry,
         )
 
         # Verify that the controller's last error was set
@@ -131,7 +128,7 @@ async def test_memory_on_event_exception_handling(
 
 @pytest.mark.asyncio
 async def test_memory_on_workspace_context_recall_exception_handling(
-    memory, event_stream, mock_agent, mock_llm_registry
+    memory, event_stream, mock_agent
 ):
     """Test that exceptions in Memory._on_workspace_context_recall are properly handled via status callback."""
     # Create a mock runtime
@@ -154,7 +151,6 @@ async def test_memory_on_workspace_context_recall_exception_handling(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=memory,
-            llm_registry=mock_llm_registry,
         )
 
         # Verify that the controller's last error was set
