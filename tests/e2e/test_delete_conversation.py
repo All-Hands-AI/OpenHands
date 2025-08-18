@@ -93,7 +93,11 @@ def test_delete_conversation(page: Page, base_url: str):
     for _ in range(60):  # 60 seconds max
         current_url = page.url
         # Check URL for conversation or chat path
-        if '/conversation/' in current_url or '/chat/' in current_url:
+        if (
+            '/conversations/' in current_url
+            or '/conversation/' in current_url
+            or '/chat/' in current_url
+        ):
             conversation_created = True
             print(f'Conversation created, URL: {current_url}')
             break
