@@ -733,9 +733,10 @@ def test_multi_conversation_resume(page: Page):
     # Step 12: Wait for agent response to follow-up question
     print('Step 12: Waiting for agent response to follow-up question...')
 
-    response_wait_time = 180
+    response_wait_time = 300  # Increased to 5 minutes for complete response
     response_start_time = time.time()
     followup_response_found = False
+    agent_completed = False
 
     while time.time() - response_start_time < response_wait_time:
         elapsed = int(time.time() - response_start_time)
@@ -749,51 +750,120 @@ def test_multi_conversation_resume(page: Page):
             )
 
         try:
-            agent_messages = page.locator('[data-testid="agent-message"]').all()
-            if elapsed % 30 == 0:
-                print(f'Found {len(agent_messages)} agent messages')
+            # First check if agent has completed its response
+            agent_status_indicators = [
+                'text="Agent is awaiting user input"',
+                'text="Agent is ready"',
+                '[data-testid="agent-status"]:has-text("awaiting")',
+                '[data-testid="agent-status"]:has-text("ready")',
+            ]
 
-            # Look at the most recent agent messages for the follow-up response
-            for i, msg in enumerate(agent_messages[-3:]):  # Check last 3 messages
+            # Also check if the agent is no longer showing "running task"
+            running_indicators = [
+                'text="Agent is running task"',
+                'text="Agent is working"',
+                '[data-testid="agent-status"]:has-text("running")',
+                '[data-testid="agent-status"]:has-text("working")',
+            ]
+
+            # Check if agent is still running
+            agent_still_running = False
+            for indicator in running_indicators:
                 try:
-                    content = msg.text_content()
-                    if content and len(content.strip()) > 10:
-                        content_lower = content.lower()
-                        # Look for response that shows context awareness
-                        context_indicators = [
-                            'based on',
-                            'as i mentioned',
-                            'from what i told you',
-                            'the project name',
-                            'python',
-                            'package',
-                            'application',
-                            'software',
-                            'ai',
-                            'openhands',
-                        ]
-
-                        if any(
-                            indicator in content_lower
-                            for indicator in context_indicators
-                        ):
-                            print(
-                                '✅ Found agent response to follow-up question with context awareness!'
-                            )
-                            followup_response_found = True
-                            page.screenshot(
-                                path='test-results/multi_conv_18_followup_response.png'
-                            )
-                            print(
-                                'Screenshot saved: multi_conv_18_followup_response.png'
-                            )
-                            break
-                except Exception as e:
-                    print(f'Error processing agent message {i}: {e}')
+                    if page.locator(indicator).is_visible(timeout=1000):
+                        agent_still_running = True
+                        break
+                except Exception:
                     continue
 
-            if followup_response_found:
-                break
+            # If agent is not running, check for completion status
+            if not agent_still_running:
+                for indicator in agent_status_indicators:
+                    try:
+                        if page.locator(indicator).is_visible(timeout=1000):
+                            agent_completed = True
+                            print('✅ Agent has completed its response')
+                            break
+                    except Exception:
+                        continue
+
+                # If we can't find explicit completion status, check if input is enabled
+                if not agent_completed:
+                    try:
+                        input_field = page.locator(
+                            '[data-testid="chat-input"] textarea'
+                        )
+                        submit_button = page.locator(
+                            '[data-testid="chat-input"] button[type="submit"]'
+                        )
+                        if (
+                            input_field.is_enabled(timeout=1000)
+                            and submit_button.is_enabled(timeout=1000)
+                            and not submit_button.is_disabled()
+                        ):
+                            agent_completed = True
+                            print(
+                                '✅ Agent appears to have completed (input field is enabled)'
+                            )
+                    except Exception:
+                        pass
+
+            # Only check for response content if agent has completed or we're getting close to timeout
+            if (
+                agent_completed or elapsed > 240
+            ):  # Check content after 4 minutes or when completed
+                agent_messages = page.locator('[data-testid="agent-message"]').all()
+                if elapsed % 30 == 0:
+                    print(f'Found {len(agent_messages)} agent messages')
+
+                # Look at the most recent agent messages for the follow-up response
+                for i, msg in enumerate(agent_messages[-3:]):  # Check last 3 messages
+                    try:
+                        content = msg.text_content()
+                        if content and len(content.strip()) > 10:
+                            content_lower = content.lower()
+                            # Look for response that shows context awareness
+                            context_indicators = [
+                                'based on',
+                                'as i mentioned',
+                                'from what i told you',
+                                'the project name',
+                                'python',
+                                'package',
+                                'application',
+                                'software',
+                                'ai',
+                                'openhands',
+                            ]
+
+                            if any(
+                                indicator in content_lower
+                                for indicator in context_indicators
+                            ):
+                                print(
+                                    '✅ Found agent response to follow-up question with context awareness!'
+                                )
+                                followup_response_found = True
+
+                                # Only break if agent has completed, otherwise keep waiting
+                                if agent_completed:
+                                    page.screenshot(
+                                        path='test-results/multi_conv_18_followup_response.png'
+                                    )
+                                    print(
+                                        'Screenshot saved: multi_conv_18_followup_response.png'
+                                    )
+                                    break
+                                else:
+                                    print(
+                                        'Found response content but agent still processing, continuing to wait...'
+                                    )
+                    except Exception as e:
+                        print(f'Error processing agent message {i}: {e}')
+                        continue
+
+                if followup_response_found and agent_completed:
+                    break
         except Exception as e:
             print(f'Error checking for agent messages: {e}')
 
@@ -810,6 +880,10 @@ def test_multi_conversation_resume(page: Page):
         raise AssertionError(
             'Agent response to follow-up question not found within time limit'
         )
+
+    if not agent_completed:
+        print('⚠️  Found response content but agent may not have completed processing')
+        print('This could indicate the agent is still working on the response')
 
     print(
         '✅ Test completed successfully - agent resumed conversation and maintained context!'
