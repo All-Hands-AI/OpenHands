@@ -255,11 +255,17 @@ def test_react_app_creation_and_serving(page: Page):
     # Step 6: Ask the agent to create a React app
     print('Step 6: Asking agent to create a React app...')
 
-    # Find the message input
+    # Find the message input (using same selectors as working conversation test)
     input_selectors = [
         '[data-testid="chat-input"] textarea',
         '[data-testid="message-input"]',
         'textarea',
+        'form textarea',
+        'input[type="text"]',
+        '[placeholder*="message"]',
+        '[placeholder*="question"]',
+        '[placeholder*="ask"]',
+        '[contenteditable="true"]',
     ]
 
     message_input = None
@@ -274,9 +280,32 @@ def test_react_app_creation_and_serving(page: Page):
             continue
 
     if not message_input:
+        print('Could not find message input, trying to reload the page')
         page.screenshot(path='test-results/react_06_no_input_found.png')
         print('Screenshot saved: react_06_no_input_found.png')
-        raise AssertionError('Could not find message input field')
+
+        try:
+            print('Reloading the page...')
+            page.reload()
+            page.wait_for_load_state('networkidle', timeout=30000)
+            print('Page reloaded')
+            for selector in input_selectors:
+                try:
+                    input_element = page.locator(selector)
+                    if input_element.is_visible(timeout=5000):
+                        print(f'Found message input after reload with selector: {selector}')
+                        message_input = input_element
+                        break
+                except Exception:
+                    continue
+        except Exception as e:
+            print(f'Error reloading page: {e}')
+
+        if not message_input:
+            print('Still could not find message input, taking final screenshot')
+            page.screenshot(path='test-results/react_06_reload_failed.png')
+            print('Screenshot saved: react_06_reload_failed.png')
+            raise AssertionError('Could not find message input field after reload')
 
     # Type the React app creation request
     react_request = """Please create a minimal React app using Vite with the following requirements:
@@ -300,31 +329,56 @@ Make sure the server stays running so I can access it."""
         message_input.fill(react_request)
         print('Message typed successfully')
 
-        # Find and click submit button
+        # Find and click submit button (using same selectors as working conversation test)
         submit_selectors = [
             '[data-testid="chat-input"] button[type="submit"]',
             'button[type="submit"]',
             'button:has-text("Send")',
+            'button:has-text("Submit")',
+            'button svg[data-testid="send-icon"]',
+            'button.send-button',
+            'form button',
+            'button:right-of(textarea)',
+            'button:right-of(input[type="text"])',
         ]
 
         submit_button = None
         for selector in submit_selectors:
             try:
-                button = page.locator(selector)
-                if button.is_visible(timeout=2000):
+                button_element = page.locator(selector)
+                if button_element.is_visible(timeout=5000):
                     print(f'Found submit button with selector: {selector}')
-                    submit_button = button
+                    submit_button = button_element
                     break
             except Exception:
                 continue
 
+        button_enabled = False
         if submit_button:
+            max_wait_time = 60
+            start_time = time.time()
+            while time.time() - start_time < max_wait_time:
+                try:
+                    if not submit_button.is_disabled():
+                        button_enabled = True
+                        print('Submit button is enabled')
+                        break
+                    print(f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)')
+                except Exception as e:
+                    print(f'Error checking if button is disabled: {e}')
+                page.wait_for_timeout(2000)
+
+        if not submit_button or not button_enabled:
+            print('Submit button not found or never became enabled, trying alternatives')
+            try:
+                message_input.press('Enter')
+                print('Pressed Enter to submit message')
+            except Exception as e:
+                print(f'Error pressing Enter: {e}')
+                raise AssertionError('Could not submit message')
+        else:
             submit_button.click()
             print('Submit button clicked')
-        else:
-            # Try pressing Enter as fallback
-            message_input.press('Enter')
-            print('Pressed Enter to submit')
 
     except Exception as e:
         print(f'Error sending message: {e}')

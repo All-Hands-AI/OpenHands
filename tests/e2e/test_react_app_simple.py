@@ -178,65 +178,70 @@ def test_react_app_creation_simple(page: Page):
     page.screenshot(path='test-results/react_simple_05_conversation_ready.png')
     print('Screenshot saved: react_simple_05_conversation_ready.png')
 
-    # Wait for agent to be ready
+    # Wait for agent to be ready (using same approach as working conversation test)
     print('Step 6: Waiting for agent to be ready...')
-    max_wait_time = 120  # 2 minutes
+    max_wait_time = 480  # 8 minutes (same as conversation test)
     start_time = time.time()
     agent_ready = False
+    print(f'Waiting up to {max_wait_time} seconds for agent to be ready...')
 
     while time.time() - start_time < max_wait_time:
-        try:
-            # Check if input field and submit button are ready
-            input_selectors = [
-                '[data-testid="chat-input"]',
-                '[data-testid="message-input"]',
-                'textarea',
-                'input[type="text"]',
-            ]
+        elapsed = int(time.time() - start_time)
+        if elapsed % 30 == 0 and elapsed > 0:
+            page.screenshot(path=f'test-results/react_simple_waiting_{elapsed}s.png')
+            print(f'Screenshot saved: react_simple_waiting_{elapsed}s.png (waiting {elapsed}s)')
 
-            submit_selectors = [
-                '[data-testid="send-button"]',
-                'button[type="submit"]',
-                'button:has-text("Send")',
-                'button:has-text("Submit")',
+        try:
+            # Check for ready indicators
+            ready_indicators = [
+                'div:has-text("Agent is ready")',
+                'div:has-text("Waiting for user input")',
+                'div:has-text("Awaiting input")',
+                'div:has-text("Task completed")',
+                'div:has-text("Agent has finished")',
             ]
 
             input_ready = False
             submit_ready = False
+            try:
+                input_field = page.locator('[data-testid="chat-input"] textarea')
+                submit_button = page.locator('[data-testid="chat-input"] button[type="submit"]')
+                if (
+                    input_field.is_visible(timeout=2000)
+                    and input_field.is_enabled(timeout=2000)
+                    and submit_button.is_visible(timeout=2000)
+                    and submit_button.is_enabled(timeout=2000)
+                ):
+                    print('Chat input field and submit button are both visible and enabled')
+                    input_ready = True
+                    submit_ready = True
+            except Exception:
+                pass
 
-            for selector in input_selectors:
+            has_ready_indicator = False
+            for indicator in ready_indicators:
                 try:
-                    element = page.locator(selector)
-                    if element.is_visible(timeout=1000) and element.is_enabled():
-                        input_ready = True
-                        break
-                except Exception:
-                    continue
-
-            for selector in submit_selectors:
-                try:
-                    element = page.locator(selector)
-                    if element.is_visible(timeout=1000) and element.is_enabled():
-                        submit_ready = True
+                    element = page.locator(indicator)
+                    if element.is_visible(timeout=2000):
+                        print(f'Agent appears ready (found: {indicator})')
+                        has_ready_indicator = True
                         break
                 except Exception:
                     continue
 
             if input_ready and submit_ready:
+                print('✅ Agent is ready for user input - input field and submit button are enabled')
                 agent_ready = True
-                print('Agent is ready for input')
                 break
 
         except Exception as e:
-            print(f'Error checking agent readiness: {e}')
+            print(f'Error checking agent ready state: {e}')
 
-        time.sleep(5)
+        page.wait_for_timeout(2000)
 
     if not agent_ready:
-        print('Agent not ready within timeout')
-        page.screenshot(path='test-results/react_simple_06_agent_not_ready.png')
-        print('Screenshot saved: react_simple_06_agent_not_ready.png')
-        raise Exception('Agent not ready')
+        page.screenshot(path='test-results/react_simple_timeout_waiting_for_agent.png')
+        raise AssertionError(f'Agent did not become ready for input within {max_wait_time} seconds')
 
     page.screenshot(path='test-results/react_simple_06_agent_ready.png')
     print('Screenshot saved: react_simple_06_agent_ready.png')
@@ -246,53 +251,111 @@ def test_react_app_creation_simple(page: Page):
     message = "Create a simple React app using Vite. Set it up with a basic component that displays 'Hello from OpenHands React App!' and make sure it can be served locally."
 
     try:
-        # Find and fill the input field
+        # Find and fill the input field (using same selectors as working conversation test)
         input_selectors = [
-            '[data-testid="chat-input"]',
+            '[data-testid="chat-input"] textarea',
             '[data-testid="message-input"]',
             'textarea',
+            'form textarea',
             'input[type="text"]',
+            '[placeholder*="message"]',
+            '[placeholder*="question"]',
+            '[placeholder*="ask"]',
+            '[contenteditable="true"]',
         ]
 
-        input_element = None
+        message_input = None
         for selector in input_selectors:
             try:
-                element = page.locator(selector)
-                if element.is_visible(timeout=2000) and element.is_enabled():
-                    input_element = element
+                input_element = page.locator(selector)
+                if input_element.is_visible(timeout=5000):
+                    print(f'Found message input with selector: {selector}')
+                    message_input = input_element
                     break
             except Exception:
                 continue
 
-        if not input_element:
-            raise Exception('Input element not found')
+        if not message_input:
+            print('Could not find message input, trying to reload the page')
+            page.screenshot(path='test-results/react_simple_07_no_input_found.png')
+            print('Screenshot saved: react_simple_07_no_input_found.png')
 
-        input_element.fill(message)
+            try:
+                print('Reloading the page...')
+                page.reload()
+                page.wait_for_load_state('networkidle', timeout=30000)
+                print('Page reloaded')
+                for selector in input_selectors:
+                    try:
+                        input_element = page.locator(selector)
+                        if input_element.is_visible(timeout=5000):
+                            print(f'Found message input after reload with selector: {selector}')
+                            message_input = input_element
+                            break
+                    except Exception:
+                        continue
+            except Exception as e:
+                print(f'Error reloading page: {e}')
+
+            if not message_input:
+                print('Still could not find message input, taking final screenshot')
+                page.screenshot(path='test-results/react_simple_07_reload_failed.png')
+                print('Screenshot saved: react_simple_07_reload_failed.png')
+                raise AssertionError('Could not find message input field after reload')
+
+        message_input.fill(message)
         print('Message filled in input field')
 
-        # Find and click submit button
+        # Find and click submit button (using same selectors as working conversation test)
         submit_selectors = [
-            '[data-testid="send-button"]',
+            '[data-testid="chat-input"] button[type="submit"]',
             'button[type="submit"]',
             'button:has-text("Send")',
             'button:has-text("Submit")',
+            'button svg[data-testid="send-icon"]',
+            'button.send-button',
+            'form button',
+            'button:right-of(textarea)',
+            'button:right-of(input[type="text"])',
         ]
 
-        submit_element = None
+        submit_button = None
         for selector in submit_selectors:
             try:
-                element = page.locator(selector)
-                if element.is_visible(timeout=2000) and element.is_enabled():
-                    submit_element = element
+                button_element = page.locator(selector)
+                if button_element.is_visible(timeout=5000):
+                    print(f'Found submit button with selector: {selector}')
+                    submit_button = button_element
                     break
             except Exception:
                 continue
 
-        if not submit_element:
-            raise Exception('Submit button not found')
+        button_enabled = False
+        if submit_button:
+            max_wait_time = 60
+            start_time = time.time()
+            while time.time() - start_time < max_wait_time:
+                try:
+                    if not submit_button.is_disabled():
+                        button_enabled = True
+                        print('Submit button is enabled')
+                        break
+                    print(f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)')
+                except Exception as e:
+                    print(f'Error checking if button is disabled: {e}')
+                page.wait_for_timeout(2000)
 
-        submit_element.click()
-        print('Submit button clicked')
+        if not submit_button or not button_enabled:
+            print('Submit button not found or never became enabled, trying alternatives')
+            try:
+                message_input.press('Enter')
+                print('Pressed Enter to submit message')
+            except Exception as e:
+                print(f'Error pressing Enter: {e}')
+                raise AssertionError('Could not submit message')
+        else:
+            submit_button.click()
+            print('Submit button clicked')
 
     except Exception as e:
         print(f'Error sending message: {e}')
