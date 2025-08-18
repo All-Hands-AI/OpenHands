@@ -13,10 +13,10 @@ The security system consists of two main components:
 ## Configuration
 
 ### CLI
-In CLI mode, confirmation is enabled by default. The system uses the LLM Analyzer and will automatically confirm LOW and MEDIUM risk actions, only prompting for HIGH risk actions. You can choose different confirmation modes when prompted.
+In CLI mode, confirmation is enabled by default. You will have an option to uses the LLM Analyzer and will automatically confirm LOW and MEDIUM risk actions, only prompting for HIGH risk actions.
 
 ### GUI
-You can configure the security system in the **LLM Settings (Advanced)** tab:
+You can configure the security system in the **LLM Settings** tab:
 
 - **Enable Confirmation Mode**: Toggle this to enable/disable the confirmation system
 - **Security Analyzer**: Choose which analyzer to use for risk assessment
@@ -25,6 +25,7 @@ You can configure the security system in the **LLM Settings (Advanced)** tab:
 
 OpenHands includes multiple analyzers:
 
+- **No Analyzer**: Do not use any security analyzer. The agent will prompt you to confirm *EVERY* action.
 - **LLM Risk Analyzer** (default): Uses the same LLM as the agent to assess action risk levels
 - **Invariant Analyzer**: Uses Invariant Labs' policy engine to evaluate action traces against security policies
 
@@ -50,55 +51,8 @@ An advanced analyzer that:
 3. **User Confirmation**: For high-risk actions, a confirmation dialog appears with:
    - Description of the action
    - Risk assessment explanation
-   - Options to approve, deny, or modify the action
+   - Options to approve or deny action
 
 4. **Action Execution**: Based on user response:
    - **Approve**: Action proceeds as planned
    - **Deny**: Action is cancelled
-   - **Modify**: User can edit the action before execution
-
-
-## Best Practices
-
-### For Most Users
-- Use the **LLM Analyzer** (default) for intelligent risk assessment
-- Enable **Confirmation Mode** when working with sensitive data or systems
-- Review confirmation prompts carefully before approving actions
-
-### For Security-Conscious Users
-- Use the **Invariant Analyzer** for advanced policy-based security controls
-- Regularly review and understand the actions being performed
-- Keep confirmation mode enabled at all times
-
-### For Power Users
-- Customize security settings based on your specific use case
-- Monitor agent behavior and adjust settings as needed
-- Consider using the Invariant Analyzer for advanced security policies in critical environments
-
-## Troubleshooting
-
-### Too Many Confirmations
-If you're getting too many confirmation prompts:
-- The LLM Analyzer (default) provides intelligent filtering of risk levels
-- Consider adjusting your confirmation preferences in CLI mode
-- Review your security analyzer settings
-
-### Missing Risk Detection
-If risky actions aren't being caught:
-- Ensure confirmation mode is enabled
-- Consider switching to the Invariant Analyzer for more comprehensive coverage
-- Check that your security analyzer is properly configured
-
-### Performance Issues
-If you experience slow response times:
-- Check your LLM configuration and response times (LLM analyzer uses the same LLM as the agent)
-- The Invariant Analyzer may have different performance characteristics
-- Ensure your LLM provider has good response times
-
-## Security Considerations
-
-- **Trust but Verify**: Even with security analyzers, always review agent actions carefully
-- **Context Matters**: Security analyzers may not understand your specific environment or constraints
-- **Backup Strategy**: Always maintain backups when allowing agents to modify important data
-
-For the latest updates and features, check the OpenHands documentation and release notes.
