@@ -171,7 +171,7 @@ async def test_set_agent_state(mock_agent_with_stats, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -192,7 +192,7 @@ async def test_on_event_message_action(mock_agent_with_stats, mock_event_stream)
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -214,7 +214,7 @@ async def test_on_event_change_agent_state_action(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -238,7 +238,7 @@ async def test_react_to_exception(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         status_callback=mock_status_callback,
         iteration_delta=10,
         sid='test',
@@ -263,7 +263,7 @@ async def test_react_to_content_policy_violation(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         status_callback=mock_status_callback,
         iteration_delta=10,
         sid='test',
@@ -345,7 +345,6 @@ async def test_run_controller_with_fatal_error(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
     print(f'state: {state}')
     events = list(test_event_stream.get_events())
@@ -413,7 +412,6 @@ async def test_run_controller_stop_with_stuck(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
     events = list(test_event_stream.get_events())
     print(f'state: {state}')
@@ -452,7 +450,7 @@ async def test_max_iterations_extension(mock_agent_with_stats, mock_event_stream
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -483,7 +481,7 @@ async def test_max_iterations_extension(mock_agent_with_stats, mock_event_stream
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -524,7 +522,7 @@ async def test_step_max_budget(mock_agent_with_stats, mock_event_stream):
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=10,
         sid='test',
@@ -555,7 +553,7 @@ async def test_step_max_budget_headless(mock_agent_with_stats, mock_event_stream
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=10,
         sid='test',
@@ -600,7 +598,7 @@ async def test_budget_reset_on_continue(mock_agent_with_stats, mock_event_stream
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=initial_budget,
         sid='test',
@@ -656,7 +654,7 @@ async def test_reset_with_pending_action_no_observation(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -709,7 +707,7 @@ async def test_reset_with_pending_action_stopped_state(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -762,7 +760,7 @@ async def test_reset_with_pending_action_existing_observation(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -808,7 +806,7 @@ async def test_reset_without_pending_action(mock_agent_with_stats, mock_event_st
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -842,7 +840,7 @@ async def test_reset_with_pending_action_no_metadata(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -938,7 +936,6 @@ async def test_run_controller_max_iterations_has_metrics(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
 
     state.metrics = mock_agent.llm.metrics
@@ -975,7 +972,7 @@ async def test_notify_on_llm_retry(
     controller = AgentController(
         agent=mock_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         status_callback=mock_status_callback,
         iteration_delta=10,
         sid='test',
@@ -1094,7 +1091,6 @@ async def test_context_window_exceeded_error_handling(
                 sid='test',
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=mock_memory,
-                llm_registry=llm_registry,
             ),
             timeout=10,
         )
@@ -1248,7 +1244,6 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
                     sid='test',
                     fake_user_response_fn=lambda _: 'repeat',
                     memory=mock_memory,
-                    llm_registry=llm_registry,
                 ),
                 timeout=10,
             )
@@ -1332,7 +1327,6 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
                     sid='test',
                     fake_user_response_fn=lambda _: 'repeat',
                     memory=mock_memory,
-                    llm_registry=llm_registry,
                 ),
                 timeout=10,
             )
@@ -1411,7 +1405,6 @@ async def test_run_controller_with_memory_error(
                 sid='test',
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=memory,
-                llm_registry=llm_registry,
             )
 
     assert state.iteration_flag.current_value == 0
@@ -1491,7 +1484,7 @@ async def test_action_metrics_copy(mock_agent_with_stats):
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -1606,7 +1599,7 @@ async def test_condenser_metrics_included(mock_agent_with_stats, test_event_stre
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -1665,7 +1658,7 @@ async def test_first_user_message_with_identical_content(
     controller = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test',
         confirmation_mode=False,
@@ -1733,7 +1726,7 @@ async def test_agent_controller_processes_null_observation_with_cause(
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test-session',
     )
@@ -1809,7 +1802,7 @@ def test_agent_controller_should_step_with_null_observation_cause_zero(
     controller = AgentController(
         agent=mock_agent,
         event_stream=event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         sid='test-session',
     )
@@ -1835,7 +1828,7 @@ def test_system_message_in_event_stream(mock_agent_with_stats, test_event_stream
     _ = AgentController(
         agent=mock_agent,
         event_stream=test_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
     )
 

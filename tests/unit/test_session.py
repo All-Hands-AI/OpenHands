@@ -65,7 +65,7 @@ async def test_notify_on_llm_retry(
         file_store=InMemoryFileStore({}),
         config=config,
         llm_registry=llm_registry,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         sio=mock_sio,
         user_id='..uid..',
     )

@@ -6,7 +6,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm_registry import RegistryEvent
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_stats_filename
+from openhands.storage.locations import (
+    get_conversation_stats_filename,
+)
 
 
 class ConversationStats:
@@ -37,6 +39,10 @@ class ConversationStats:
             pickled = pickle.dumps(self.service_to_metrics)
             serialized_metrics = base64.b64encode(pickled).decode('utf-8')
             self.file_store.write(self.metrics_path, serialized_metrics)
+            logger.info(
+                'Saved converation stats',
+                extra={'conversation_id': self.conversation_id},
+            )
 
     def maybe_restore_metrics(self):
         if not self.file_store or not self.conversation_id:
@@ -54,9 +60,6 @@ class ConversationStats:
         total_metrics = Metrics()
         for metrics in self.service_to_metrics.values():
             total_metrics.merge(metrics)
-
-        logger.info(f'metrics by all services: {self.service_to_metrics}')
-        logger.info(f'combined metrics\n\n{total_metrics}')
         return total_metrics
 
     def get_metrics_for_service(self, service_id: str) -> Metrics:

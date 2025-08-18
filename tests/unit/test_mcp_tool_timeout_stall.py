@@ -38,7 +38,7 @@ class MockLLM:
 
 
 @pytest.fixture
-def convo_stats():
+def conversation_stats():
     return ConversationStats(None, 'convo-id', None)
 
 
@@ -61,7 +61,7 @@ class MockAgent(Agent):
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_error_handling(convo_stats):
+async def test_mcp_tool_timeout_error_handling(conversation_stats):
     """Test that verifies MCP tool timeout errors are properly handled and returned as observations."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -100,7 +100,7 @@ async def test_mcp_tool_timeout_error_handling(convo_stats):
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
-        convo_stats=convo_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
         sid='test-session',
@@ -150,7 +150,7 @@ async def test_mcp_tool_timeout_error_handling(convo_stats):
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_agent_continuation(convo_stats):
+async def test_mcp_tool_timeout_agent_continuation(conversation_stats):
     """Test that verifies the agent can continue processing after an MCP tool timeout."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -189,7 +189,7 @@ async def test_mcp_tool_timeout_agent_continuation(convo_stats):
     controller = AgentController(
         agent=agent,
         event_stream=event_stream,
-        convo_stats=convo_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
         sid='test-session',

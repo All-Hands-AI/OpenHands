@@ -109,7 +109,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -149,7 +149,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
-        self.convo_stats = convo_stats
+        self.conversation_stats = conversation_stats
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -165,7 +165,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
-            convo_stats=convo_stats,
+            conversation_stats=conversation_stats,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -691,7 +691,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
-            convo_stats=self.convo_stats,
+            conversation_stats=self.conversation_stats,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -955,7 +955,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -963,7 +963,7 @@ class AgentController:
         self.state_tracker.set_initial_state(
             self.id,
             state,
-            convo_stats,
+            conversation_stats,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,
@@ -1004,7 +1004,7 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        metrics = self.convo_stats.get_combined_metrics()
+        metrics = self.conversation_stats.get_combined_metrics()
 
         # Create a clean copy with only the fields we want to keep
         clean_metrics = Metrics()
