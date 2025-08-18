@@ -2,6 +2,7 @@ import asyncio
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.stream import EventStream, EventStreamSubscriber
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -50,6 +51,7 @@ class ServerConversation:
         else:
             runtime_cls = get_runtime_cls(self.config.runtime)
             runtime = runtime_cls(
+                llm_registry=LLMRegistry(self.config),
                 config=config,
                 event_stream=self.event_stream,
                 sid=self.sid,
