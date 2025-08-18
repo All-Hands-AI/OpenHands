@@ -442,21 +442,58 @@ def test_gitlab_repository_cloning(page: Page):
             print('Using third dropdown in Connect section')
 
     if branch_dropdown and branch_dropdown.is_visible(timeout=5000):
-        branch_dropdown.click()
-        page.wait_for_timeout(1000)
+        # Try to open the branch dropdown robustly
+        try:
+            # Prefer clicking the react-select control rather than the placeholder
+            branch_scope = page.locator('div:has-text("Select branch...")').first
+            control = branch_scope.locator(
+                '.select__control, .react-select__control'
+            ).first
+            if control.is_visible(timeout=2000):
+                control.click(force=True)
+            else:
+                # Fallback to clicking the placeholder text with force to avoid overlay interception
+                placeholder = branch_scope.locator('text=Select branch...').first
+                if placeholder.is_visible(timeout=1000):
+                    placeholder.click(force=True)
+                else:
+                    branch_scope.click(force=True)
+            page.wait_for_timeout(500)
+        except Exception as e:
+            print(f'Primary click on branch dropdown failed: {e}')
+            try:
+                # Fallback to previous approach
+                branch_dropdown.click(force=True)
+                page.wait_for_timeout(500)
+            except Exception:
+                pass
 
-        # Select main branch
+        # Type/select main branch
+        main_selected = False
+        try:
+            input_el = (
+                page.locator('div:has-text("Select branch...")').locator('input').first
+            )
+            if input_el.is_visible(timeout=2000):
+                input_el.click()
+                input_el.press('Control+a')
+                input_el.press('Delete')
+                input_el.type('main')
+                page.wait_for_timeout(500)
+        except Exception:
+            pass
+
+        # Prefer clicking an explicit "main" option
         main_selectors = [
             '[role="option"]:has-text("main")',
-            'div:has-text("main")',
             '.react-select__option:has-text("main")',
+            'div[role="option"]:has-text("main")',
         ]
 
-        main_selected = False
         for selector in main_selectors:
             try:
                 main_branch = page.locator(selector).first
-                if main_branch.is_visible(timeout=3000):
+                if main_branch.is_visible(timeout=2000):
                     main_branch.click()
                     print(f'Selected main branch with selector: {selector}')
                     main_selected = True
@@ -466,9 +503,14 @@ def test_gitlab_repository_cloning(page: Page):
 
         if not main_selected:
             # Try keyboard navigation
-            page.keyboard.press('ArrowDown')
-            page.keyboard.press('Enter')
-            print('Used keyboard navigation to select branch')
+            try:
+                page.keyboard.press('ArrowDown')
+                page.wait_for_timeout(300)
+                page.keyboard.press('Enter')
+                print('Used keyboard navigation to select branch')
+                main_selected = True
+            except Exception:
+                pass
     else:
         print('Branch dropdown not visible, may have been auto-selected')
 
