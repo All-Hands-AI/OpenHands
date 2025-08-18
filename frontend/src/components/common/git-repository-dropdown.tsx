@@ -88,30 +88,45 @@ export function GitRepositoryDropdown({
         return allOptions;
       }
 
-      // If it looks like a URL, extract the repo name and search
+      // If it looks like a URL, pass the full URL to the API along with the provider
       if (inputValue.startsWith("https://")) {
-        const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
-        if (match) {
-          const repoName = match[1];
+        try {
           const searchResults = await OpenHands.searchGitRepositories(
-            repoName,
+            inputValue,
             3,
+            provider,
           );
-          // Cache the search results
-          searchCache.current[repoName] = searchResults;
+          // Cache by URL to preserve mapping
+          searchCache.current[inputValue] = searchResults;
           return searchResults.map((repo) => ({
             value: repo.id,
             label: repo.full_name,
           }));
+        } catch (_) {
+          // Fallback: attempt with extracted path if server doesn't support URL search
+          const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
+          if (match) {
+            const repoName = match[1];
+            const searchResults = await OpenHands.searchGitRepositories(
+              repoName,
+              3,
+              provider,
+            );
+            searchCache.current[repoName] = searchResults;
+            return searchResults.map((repo) => ({
+              value: repo.id,
+              label: repo.full_name,
+            }));
+          }
         }
       }
 
-      // For any other input, search via API
+      // For any other input, search via API for the selected provider
       if (inputValue.length >= 2) {
-        // Only search if at least 2 characters
         const searchResults = await OpenHands.searchGitRepositories(
           inputValue,
           10,
+          provider,
         );
         // Cache the search results
         searchCache.current[inputValue] = searchResults;
@@ -126,7 +141,7 @@ export function GitRepositoryDropdown({
         option.label.toLowerCase().includes(inputValue.toLowerCase()),
       );
     },
-    [allOptions],
+    [allOptions, provider],
   );
 
   const handleChange = (option: AsyncSelectOption | null) => {
