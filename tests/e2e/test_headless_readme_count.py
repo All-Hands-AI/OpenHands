@@ -150,12 +150,15 @@ base_url = "{llm_base_url}"
                         'quota exceeded',
                         'rate limit',
                         'invalid model',
+                        'model name passed',
                         'authentication failed',
                         'api key',
                         'unauthorized',
                         'billing',
                         'payment',
                         'credits',
+                        'badrequesterror',
+                        'openaiexception',
                     ]
                 ):
                     pytest.skip(
