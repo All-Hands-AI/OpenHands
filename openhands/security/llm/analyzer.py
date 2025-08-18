@@ -35,13 +35,12 @@ class LLMRiskAnalyzer(SecurityAnalyzer):
             ActionSecurityRisk.HIGH,
         }:
             return security_risk
-
-        if security_risk == ActionSecurityRisk.UNKNOWN:
+        elif security_risk == ActionSecurityRisk.UNKNOWN:
             return ActionSecurityRisk.UNKNOWN
-
-        # Default to UNKNOWN if security_risk value is not recognized
-        logger.warning(f'Unrecognized security_risk value: {security_risk}')
-        return ActionSecurityRisk.UNKNOWN
+        else:
+            # Default to UNKNOWN if security_risk value is not recognized
+            logger.warning(f'Unrecognized security_risk value: {security_risk}')
+            return ActionSecurityRisk.UNKNOWN
 
     async def act(self, event: Event) -> None:
         """Performs an action based on the analyzed event.
