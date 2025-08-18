@@ -31,7 +31,7 @@ def patch_db_pool_instance():
     """Mock database connection to avoid connection errors in tests."""
     with patch('openhands.server.mem0._db_pool_instance', MagicMock()), patch(
         'openhands.core.database.db_pool', MagicMock()
-    ):
+    ), patch('openhands.shared.config.file_store', 'memory'):
         yield
 
 
@@ -77,6 +77,8 @@ async def test_memory_on_event_exception_handling(memory, event_stream):
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
+    agent.streaming_llm = False  # Add missing attribute
+
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
@@ -113,7 +115,7 @@ async def test_memory_on_workspace_context_recall_exception_handling(
     agent.llm.metrics = Metrics()
     agent.llm.config = AppConfig().get_llm_config()
     agent.a2a_manager = MagicMock(spec=A2AManager)
-
+    agent.streaming_llm = False
     # Create a mock runtime
     runtime = MagicMock(spec=Runtime)
     runtime.event_stream = event_stream
