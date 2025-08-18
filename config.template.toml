@@ -198,9 +198,6 @@ model = "gpt-4o"
 # safety_settings = [
 #   { "category" = "hate", "threshold" = "low" },
 #   { "category" = "harassment", "threshold" = "low" },
-# Path to a file whose contents will be appended to the system prompt at runtime
-#system_prompt_extension_file = ""
-
 #   { "category" = "sexual", "threshold" = "low" },
 #   { "category" = "dangerous", "threshold" = "low" }
 # ]
