@@ -1,10 +1,13 @@
+from __future__ import annotations
+
 import os
 from pathlib import Path
+from typing import Final
 
-__package_name__ = 'openhands_ai'
+__package_name__: Final[str] = 'openhands_ai'
 
 
-def get_version():
+def get_version() -> str:
     # Try getting the version from pyproject.toml
     try:
         root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
