@@ -258,27 +258,35 @@ def test_gitlab_repository_cloning(page: Page):
     # Step 5: Search for repository
     print('Step 5: Searching for GitLab repository...')
 
-    # Try multiple selectors for the repository search dropdown
-    repo_selectors = [
-        'text=Search repositories...',
-        '[placeholder="Search repositories..."]',
-        'div:has-text("Search repositories...")',
-        '.react-select__placeholder:has-text("Search repositories...")',
-        '[data-testid*="repo"] >> text=Search repositories...',
-    ]
+    # Prefer robust selection by test id for repo dropdown
+    dropdown = None
+    try:
+        repo_dropdown = page.locator('[data-testid="repo-dropdown"]').first
+        if repo_dropdown.is_visible(timeout=5000):
+            dropdown = repo_dropdown
+            print('Found repository dropdown via [data-testid="repo-dropdown"]')
+    except Exception:
+        pass
 
-    repo_search = None
-    for selector in repo_selectors:
-        try:
-            element = page.locator(selector).first
-            if element.is_visible(timeout=3000):
-                repo_search = element
-                print(f'Found repository search with selector: {selector}')
-                break
-        except Exception:
-            continue
+    if dropdown is None:
+        # Fallback: try multiple selectors for the repository search dropdown
+        repo_selectors = [
+            'text=Search repositories...',
+            '[placeholder="Search repositories..."]',
+            'div:has-text("Search repositories...")',
+            '.react-select__placeholder:has-text("Search repositories...")',
+        ]
+        for selector in repo_selectors:
+            try:
+                element = page.locator(selector).first
+                if element.is_visible(timeout=3000):
+                    dropdown = element
+                    print(f'Found repository search with selector: {selector}')
+                    break
+            except Exception:
+                continue
 
-    if repo_search is None:
+    if dropdown is None:
         print(
             'Could not find repository search, trying second dropdown in Connect section'
         )
@@ -286,14 +294,27 @@ def test_gitlab_repository_cloning(page: Page):
         connect_section = page.locator('div:has-text("Connect to a Repository")').first
         dropdowns = connect_section.locator('div[class*="select"]')
         if dropdowns.count() >= 2:
-            repo_search = dropdowns.nth(1)
+            dropdown = dropdowns.nth(1)
             print('Using second dropdown in Connect section')
 
-    expect(repo_search).to_be_visible(timeout=10000)
-    repo_search.click()
-    page.wait_for_timeout(1000)
+    expect(dropdown).to_be_visible(timeout=10000)
+    # Ensure the menu opens (react-select requires focusing the control)
+    try:
+        control = dropdown.locator('.select__control, .react-select__control').first
+        if control and control.is_visible(timeout=1000):
+            control.click()
+        else:
+            dropdown.click()
+    except Exception:
+        dropdown.click()
+    page.wait_for_timeout(300)
+    # Focus the input for typing
+    try:
+        input_el = dropdown.locator('input').first
+        input_el.click()
+    except Exception:
+        pass
 
-    # Clear any existing text and type a GitLab repository name
     # Try multiple GitLab repositories in order of preference
     gitlab_repos = [
         'gitlab-org/gitlab-foss',  # Well-known public GitLab repository
@@ -307,16 +328,21 @@ def test_gitlab_repository_cloning(page: Page):
     for gitlab_repo in gitlab_repos:
         print(f'Trying repository: {gitlab_repo}')
 
-        # Clear the search field first
-        page.keyboard.press('Control+a')
-        page.keyboard.press('Delete')
-        page.wait_for_timeout(500)
-
+        # Clear the search field and type into the dropdown input
         try:
-            page.keyboard.type(gitlab_repo)
+            input_el = dropdown.locator('input').first
+            if input_el.is_visible(timeout=1000):
+                input_el.press('Control+a')
+                input_el.press('Delete')
+                input_el.type(gitlab_repo)
+            else:
+                # Fallback to page-level keyboard events
+                page.keyboard.press('Control+a')
+                page.keyboard.press('Delete')
+                page.keyboard.type(gitlab_repo)
             print(f'Typed repository name: {gitlab_repo}')
         except Exception as e:
-            print(f'Keyboard input failed: {e}')
+            print(f'Keyboard/input failed: {e}')
             continue
 
         page.wait_for_timeout(3000)  # Wait for search results
