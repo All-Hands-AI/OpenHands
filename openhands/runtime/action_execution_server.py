@@ -27,11 +27,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 
-try:
-    # Gemini-specific editor. May not exist until openhands-aci publishes it.
-    from openhands_aci.editor.gemini_editor import GeminiEditor  # type: ignore
-except Exception:  # pragma: no cover - fallback when not available
-    GeminiEditor = None  # type: ignore
+from openhands_aci.editor.gemini_editor import GeminiEditor  # type: ignore
 from openhands_aci.editor.exceptions import ToolError
 from openhands_aci.editor.results import ToolResult
 from openhands_aci.utils.diff import get_diff
