@@ -123,7 +123,7 @@ class State:
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
         conversation_stats = self.conversation_stats
-        self.conversation_stats = None  # Don't save convo stats, handles itself
+        self.conversation_stats = None  # Don't save conversation stats, handles itself
 
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
