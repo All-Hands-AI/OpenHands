@@ -50,31 +50,18 @@ def combine_thought(
 ) -> Action:
     if not hasattr(action, 'thought'):
         return action
-    # TODO NOW: this block below doesn't need try/except, it has ifs and getattr, come on. Also, look at the diff of this file with main branch, and prefer that way of writing the code, a bit more compact and readable. When done, remove this TODO comment.
-    # TODO NOW: this block below doesn't need try/except, it has ifs and getattr, come on. Also, look at the diff of this file with main branch, and prefer that way of writing the code, a bit more compact and readable. When done, remove this TODO comment.
-    try:
-        current = getattr(action, 'thought', None)
-        if isinstance(current, Thought):
-            cur_text = current.text
-            new_text = (
-                f'{thought}\n{cur_text}'
-                if (thought and cur_text)
-                else (thought or cur_text)
-            )
-            current.text = new_text or ''
-            if reasoning_content is not None:
-                current.reasoning_content = reasoning_content
-        else:
-            # Legacy string thought or None
-            cur_text = current or ''
-            new_text = (
-                f'{thought}\n{cur_text}'
-                if (thought and cur_text)
-                else (thought or cur_text)
-            )
+    current = getattr(action, 'thought', None)
+    if isinstance(current, Thought):
+        cur_text = current.text or ''
+        if thought:
+            current.text = f'{thought}\n{cur_text}' if cur_text else thought
+        if reasoning_content is not None:
+            current.reasoning_content = reasoning_content
+    else:
+        cur_text = current or ''
+        if thought:
+            new_text = f'{thought}\n{cur_text}' if cur_text else thought
             setattr(action, 'thought', new_text)
-    except Exception:
-        setattr(action, 'thought', thought)
     return action
 
 
