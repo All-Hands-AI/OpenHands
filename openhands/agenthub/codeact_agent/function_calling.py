@@ -19,6 +19,7 @@ from openhands.agenthub.codeact_agent.tools import (
     create_cmd_run_tool,
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.security_utils import RISK_LEVELS
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
     FunctionCallValidationError,
@@ -60,9 +61,11 @@ def set_security_risk(action: Action, arguments: dict) -> None:
 
     # Set security_risk attribute if provided
     if 'security_risk' in arguments:
-        if arguments['security_risk'] in ['LOW', 'MEDIUM', 'HIGH']:
-            security_risk = getattr(ActionSecurityRisk, arguments['security_risk'])
-            setattr(action, 'security_risk', security_risk)
+        if arguments['security_risk'] in RISK_LEVELS:
+            if hasattr(action, 'security_risk'):
+                action.security_risk = getattr(
+                    ActionSecurityRisk, arguments['security_risk']
+                )
         else:
             logger.warning(f'Invalid security_risk value: {arguments["security_risk"]}')
 
@@ -205,12 +208,15 @@ def response_to_actions(
                             'properties'
                         ].keys()
                     )
+                    # Remove security_risk from valid_params as it's handled separately
+                    valid_params.discard('security_risk')
+
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            # Skip security_risk as it's handled separately
-                            if key != 'security_risk':
-                                valid_kwargs[key] = value
-                        else:
+                            valid_kwargs[key] = value
+                        elif (
+                            key != 'security_risk'
+                        ):  # security_risk is handled separately
                             raise FunctionCallValidationError(
                                 f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
                             )

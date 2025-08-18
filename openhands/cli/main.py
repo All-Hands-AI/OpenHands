@@ -141,7 +141,7 @@ async def run_session(
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
     auto_highrisk_confirm_mode = (
-        False  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
+        True  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
     )
 
     # Show runtime initialization message
@@ -256,14 +256,16 @@ async def run_session(
                 pending_action = controller._pending_action
                 security_risk = ActionSecurityRisk.LOW
                 if pending_action and hasattr(pending_action, 'security_risk'):
-                    security_risk = getattr(pending_action, 'security_risk')
-                if auto_highrisk_confirm_mode:
-                    if security_risk != ActionSecurityRisk.HIGH:
-                        event_stream.add_event(
-                            ChangeAgentStateAction(AgentState.USER_CONFIRMED),
-                            EventSource.USER,
-                        )
-                        return
+                    security_risk = pending_action.security_risk
+                if (
+                    auto_highrisk_confirm_mode
+                    and security_risk != ActionSecurityRisk.HIGH
+                ):
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                    return
 
                 # Get the pending action to show risk information
                 confirmation_status = await read_confirmation_input(

@@ -852,11 +852,11 @@ async def read_confirmation_input(
 ) -> str:
     try:
         if security_risk == ActionSecurityRisk.HIGH:
-            question = '🚨 HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
+            question = 'HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
             choices = [
-                '⚠️  Yes, proceed (HIGH RISK - Use with caution)',
-                '🛑 No (and allow to enter instructions)',
-                "🚀 Always proceed (don't ask again - NOT RECOMMENDED)",
+                'Yes, proceed (HIGH RISK - Use with caution)',
+                'No (and allow to enter instructions)',
+                "Always proceed (don't ask again - NOT RECOMMENDED)",
             ]
             choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
         else:

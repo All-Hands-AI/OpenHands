@@ -882,6 +882,7 @@ class AgentController:
                 if self.agent.config.cli_mode:
                     # TODO(refactor): this is not ideal to have CLI been an exception
                     # We should refactor agent controller to consider this in the future
+                    # See issue: https://github.com/All-Hands-AI/OpenHands/issues/10464
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )

@@ -12,27 +12,31 @@ The security system consists of two main components:
 
 ## Configuration
 
-Both of these features are enabled by default in the CLI. You can select "Auto-confirm" when it asks you to confirm proposed actions.
+### CLI
+In CLI mode, confirmation is enabled by default. The system uses the LLM Analyzer and will automatically confirm LOW and MEDIUM risk actions, only prompting for HIGH risk actions. You can choose different confirmation modes when prompted.
 
-For GUI, You can configure the security system in the **LLM Settings (Advanced)** tab:
+### GUI
+You can configure the security system in the **LLM Settings (Advanced)** tab:
 
 - **Enable Confirmation Mode**: Toggle this to enable/disable the confirmation system
 - **Security Analyzer**: Choose which analyzer to use for risk assessment
 
 ## Security Analyzers
 
-OpenHands includes multiple analyzers. Review their exact behavior in the source code:
+OpenHands includes multiple analyzers:
 
-- LLM Risk Analyzer: Respects the security_risk provided on actions. Code: https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/llm/analyzer.py
-- Invariant Analyzer: Builds a trace of events and evaluates it against an Invariant policy to determine risk. Code: https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/invariant/analyzer.py
-- Analyzer registry (options exposed to the UI): https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/security/options.py
+- **LLM Risk Analyzer** (default): Uses the same LLM as the agent to assess action risk levels
+- **Invariant Analyzer**: Uses Invariant Labs' policy engine to evaluate action traces against security policies
 
-### Invariant Analyzer (overview)
+### LLM Risk Analyzer
+The default analyzer that leverages the agent's LLM to evaluate the security risk of each action. It considers the action type, parameters, and context to assign risk levels.
 
-- Collects conversation events and parses them into a trace, then checks the trace against an Invariant policy to classify risk (low, medium, high).
-- Manages an Invariant server container automatically if one is not already running (image: ghcr.io/invariantlabs-ai/server:openhands).
-- Exposes endpoints for policy and settings, and exporting the current trace (see handle_api_request in the analyzer file).
-- Supports optional browsing-alignment and harmful-content checks when configured programmatically.
+### Invariant Analyzer
+An advanced analyzer that:
+- Collects conversation events and parses them into a trace
+- Checks the trace against an Invariant policy to classify risk (low, medium, high)
+- Manages an Invariant server container automatically if needed
+- Supports optional browsing-alignment and harmful-content checks
 
 ## How It Works
 
@@ -62,49 +66,39 @@ OpenHands includes multiple analyzers. Review their exact behavior in the source
 - Review confirmation prompts carefully before approving actions
 
 ### For Security-Conscious Users
-- Consider using **None** analyzer for maximum control in high-security environments
+- Use the **Invariant Analyzer** for advanced policy-based security controls
 - Regularly review and understand the actions being performed
 - Keep confirmation mode enabled at all times
 
 ### For Power Users
 - Customize security settings based on your specific use case
 - Monitor agent behavior and adjust settings as needed
-- Consider using "None" analyzer for maximum control in critical environments
+- Consider using the Invariant Analyzer for advanced security policies in critical environments
 
 ## Troubleshooting
 
 ### Too Many Confirmations
 If you're getting too many confirmation prompts:
-- Switch from "None" to "LLM Analyzer" for more intelligent filtering
-- Consider disabling confirmation mode for routine tasks
+- The LLM Analyzer (default) provides intelligent filtering of risk levels
+- Consider adjusting your confirmation preferences in CLI mode
 - Review your security analyzer settings
 
 ### Missing Risk Detection
 If risky actions aren't being caught:
 - Ensure confirmation mode is enabled
-- Switch to "None" analyzer for maximum coverage
+- Consider switching to the Invariant Analyzer for more comprehensive coverage
 - Check that your security analyzer is properly configured
 
 ### Performance Issues
 If you experience slow response times:
 - Check your LLM configuration and response times (LLM analyzer uses the same LLM as the agent)
-- Consider switching to "None" analyzer if you prefer immediate confirmations without analysis
+- The Invariant Analyzer may have different performance characteristics
 - Ensure your LLM provider has good response times
 
 ## Security Considerations
 
 - **Trust but Verify**: Even with security analyzers, always review agent actions carefully
 - **Context Matters**: Security analyzers may not understand your specific environment or constraints
-- **Regular Updates**: Keep OpenHands updated to benefit from improved security analysis
 - **Backup Strategy**: Always maintain backups when allowing agents to modify important data
-
-## Future Enhancements
-
-The security system is continuously being improved. Future versions may include:
-- Customizable risk thresholds
-- User-defined security rules
-- Integration with external security tools
-- Enhanced risk assessment algorithms
-- Audit logging and reporting features
 
 For the latest updates and features, check the OpenHands documentation and release notes.

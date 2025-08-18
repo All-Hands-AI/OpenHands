@@ -127,7 +127,7 @@ def action_from_dict(action: dict) -> Action:
     # Handle security_risk deserialization
     if 'security_risk' in args and args['security_risk'] is not None:
         try:
-            # Convert numeric value back to enum
+            # Convert numeric value (int) back to enum
             args['security_risk'] = ActionSecurityRisk(args['security_risk'])
         except (ValueError, TypeError):
             # If conversion fails, remove the invalid value
