@@ -162,19 +162,15 @@ export function MCPServerForm({
     envString: string,
   ): Record<string, string> => {
     const env: Record<string, string> = {};
-    if (!envString.trim()) return env;
+    const input = envString.trim();
+    if (!input) return env;
 
-    for (const line of envString.split("\n")) {
-      const trimmedLine = line.trim();
-      if (trimmedLine) {
-        const equalIndex = trimmedLine.indexOf("=");
-        if (equalIndex !== -1) {
-          const key = trimmedLine.substring(0, equalIndex).trim();
-          if (key) {
-            const value = trimmedLine.substring(equalIndex + 1).trim();
-            env[key] = value;
-          }
-        }
+    for (const line of input.split("\n")) {
+      const trimmed = line.trim();
+      const eq = trimmed.indexOf("=");
+      const key = eq >= 0 ? trimmed.substring(0, eq).trim() : "";
+      if (trimmed && eq !== -1 && key) {
+        env[key] = trimmed.substring(eq + 1).trim();
       }
     }
     return env;
