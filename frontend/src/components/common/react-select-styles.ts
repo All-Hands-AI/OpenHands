@@ -269,6 +269,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       padding: "0.5rem",
       display: "flex",
       alignItems: "center",
+      overflowWrap: "anywhere",
       "&:hover": {
         cursor: "pointer",
         backgroundColor: "#5C5D62",
