@@ -1,5 +1,4 @@
-"""
-E2E: React App Creation Test
+"""E2E: React App Creation Test.
 
 This test verifies that the OpenHands agent can:
 1. Scaffold a minimal React app using vite
@@ -15,8 +14,8 @@ from playwright.sync_api import Page, expect
 
 
 def test_react_app_creation_and_serving(page: Page):
-    """
-    Test that the agent can create, build, and serve a React app:
+    """Test that the agent can create, build, and serve a React app.
+
     1. Navigate to OpenHands and start a conversation
     2. Ask the agent to create a React app with vite
     3. Ask the agent to build and serve the app on port 3000

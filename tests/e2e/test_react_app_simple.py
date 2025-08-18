@@ -1,5 +1,4 @@
-"""
-E2E: React app creation test (simplified version)
+"""E2E: React app creation test (simplified version).
 
 This test verifies that the OpenHands agent can create and serve a React app.
 It's a simplified version focused on core functionality.
@@ -12,8 +11,8 @@ from playwright.sync_api import Page, expect
 
 
 def test_react_app_creation_simple(page: Page):
-    """
-    Simplified test for React app creation:
+    """Simplified test for React app creation.
+
     1. Navigate to OpenHands (assumes GitHub token is already configured)
     2. Select the OpenHands repository
     3. Click Launch
