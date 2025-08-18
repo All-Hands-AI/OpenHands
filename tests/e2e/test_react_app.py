@@ -339,7 +339,9 @@ Make sure the server stays running so I can access it."""
     print('Step 7: Waiting for agent to complete React app creation and serving...')
 
     # Wait for agent to process and complete the task
-    max_completion_time = 300  # 5 minutes for React app creation and serving (reduced for CI)
+    max_completion_time = (
+        300  # 5 minutes for React app creation and serving (reduced for CI)
+    )
     start_time = time.time()
     task_completed = False
 

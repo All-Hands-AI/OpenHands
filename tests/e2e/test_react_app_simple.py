@@ -30,17 +30,17 @@ def test_react_app_creation_simple(page: Page):
     print('Step 1: Navigating to OpenHands...')
     page.goto('http://localhost:12000')
     page.wait_for_load_state('networkidle', timeout=30000)
-    
+
     # Debug: Print page title and URL
     print(f'Page title: {page.title()}')
     print(f'Page URL: {page.url}')
-    
+
     # Debug: Check if page has any content
     body_text = page.locator('body').text_content()
     print(f'Page body text length: {len(body_text) if body_text else 0}')
     if body_text and len(body_text) > 0:
         print(f'First 200 chars of body: {body_text[:200]}...')
-    
+
     page.screenshot(path='test-results/react_simple_01_home.png')
     print('Screenshot saved: react_simple_01_home.png')
 
@@ -68,7 +68,9 @@ def test_react_app_creation_simple(page: Page):
                 button_enabled = True
                 break
             else:
-                print(f'Header Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
+                print(
+                    f'Header Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})'
+                )
                 page.wait_for_timeout(2000)
         except Exception as e:
             print(f'Error checking header button state: {e}')
@@ -151,7 +153,9 @@ def test_react_app_creation_simple(page: Page):
                 try:
                     element = page.locator(selector)
                     if element.is_visible(timeout=2000):
-                        print(f'Found conversation interface element with selector: {selector}')
+                        print(
+                            f'Found conversation interface element with selector: {selector}'
+                        )
                         conversation_loaded = True
                         break
                 except Exception:
@@ -189,17 +193,17 @@ def test_react_app_creation_simple(page: Page):
                 'textarea',
                 'input[type="text"]',
             ]
-            
+
             submit_selectors = [
                 '[data-testid="send-button"]',
                 'button[type="submit"]',
                 'button:has-text("Send")',
                 'button:has-text("Submit")',
             ]
-            
+
             input_ready = False
             submit_ready = False
-            
+
             for selector in input_selectors:
                 try:
                     element = page.locator(selector)
@@ -208,7 +212,7 @@ def test_react_app_creation_simple(page: Page):
                         break
                 except Exception:
                     continue
-            
+
             for selector in submit_selectors:
                 try:
                     element = page.locator(selector)
@@ -217,15 +221,15 @@ def test_react_app_creation_simple(page: Page):
                         break
                 except Exception:
                     continue
-            
+
             if input_ready and submit_ready:
                 agent_ready = True
                 print('Agent is ready for input')
                 break
-                
+
         except Exception as e:
             print(f'Error checking agent readiness: {e}')
-        
+
         time.sleep(5)
 
     if not agent_ready:
@@ -240,7 +244,7 @@ def test_react_app_creation_simple(page: Page):
     # Send message to create React app
     print('Step 7: Sending React app creation request...')
     message = "Create a simple React app using Vite. Set it up with a basic component that displays 'Hello from OpenHands React App!' and make sure it can be served locally."
-    
+
     try:
         # Find and fill the input field
         input_selectors = [
@@ -249,7 +253,7 @@ def test_react_app_creation_simple(page: Page):
             'textarea',
             'input[type="text"]',
         ]
-        
+
         input_element = None
         for selector in input_selectors:
             try:
@@ -259,13 +263,13 @@ def test_react_app_creation_simple(page: Page):
                     break
             except Exception:
                 continue
-        
+
         if not input_element:
             raise Exception('Input element not found')
-        
+
         input_element.fill(message)
         print('Message filled in input field')
-        
+
         # Find and click submit button
         submit_selectors = [
             '[data-testid="send-button"]',
@@ -273,7 +277,7 @@ def test_react_app_creation_simple(page: Page):
             'button:has-text("Send")',
             'button:has-text("Submit")',
         ]
-        
+
         submit_element = None
         for selector in submit_selectors:
             try:
@@ -283,13 +287,13 @@ def test_react_app_creation_simple(page: Page):
                     break
             except Exception:
                 continue
-        
+
         if not submit_element:
             raise Exception('Submit button not found')
-        
+
         submit_element.click()
         print('Submit button clicked')
-        
+
     except Exception as e:
         print(f'Error sending message: {e}')
         page.screenshot(path='test-results/react_simple_07_send_error.png')
@@ -324,19 +328,19 @@ def test_react_app_creation_simple(page: Page):
         try:
             # Check the page content for agent response
             page_content = page.content().lower()
-            
+
             for indicator in response_indicators:
                 if indicator in page_content:
                     print(f'Found response indicator: {indicator}')
                     response_received = True
                     break
-            
+
             if response_received:
                 break
-                
+
         except Exception as e:
             print(f'Error checking response: {e}')
-        
+
         time.sleep(10)
 
     if not response_received:
@@ -350,5 +354,5 @@ def test_react_app_creation_simple(page: Page):
 
     page.screenshot(path='test-results/react_simple_08_final.png')
     print('Screenshot saved: react_simple_08_final.png')
-    
+
     print('Simplified React app creation test completed successfully!')
