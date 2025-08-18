@@ -5,7 +5,8 @@ from openhands.core.message import Message, TextContent
 from openhands.events.action.agent import CondensationAction
 from openhands.events.observation.agent import AgentCondensationObservation
 from openhands.events.serialization.event import truncate_content
-from openhands.llm import LLM
+from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -154,16 +155,17 @@ CURRENT_STATE: Last flip: Heads, Haiku count: 15/20"""
 
     @classmethod
     def from_config(
-        cls, config: LLMSummarizingCondenserConfig
+        cls, config: LLMSummarizingCondenserConfig, llm_registry: LLMRegistry
     ) -> LLMSummarizingCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
+        llm = llm_registry.get_llm('condenser', llm_config)
 
         return LLMSummarizingCondenser(
-            llm=LLM(config=llm_config),
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
             max_event_length=config.max_event_length,
