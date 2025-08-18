@@ -888,7 +888,15 @@ class AgentController:
                 )
 
                 # If security_risk is HIGH, requires confirmation
-                if security_risk == ActionSecurityRisk.HIGH:
+                # UNLESS it is CLI which will handle action risks it itself
+                if self.agent.config.cli_mode:
+                    # TODO(refactor): this is not ideal to have CLI been an exception
+                    # We should refactor agent controller to consider this in the future
+                    action.confirmation_state = (  # type: ignore[union-attr]
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
+                # In GUI, only HIGH security risk actions require confirmation
+                elif security_risk == ActionSecurityRisk.HIGH:
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )

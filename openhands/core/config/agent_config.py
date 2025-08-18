@@ -12,6 +12,8 @@ from openhands.utils.import_utils import get_impl
 
 
 class AgentConfig(BaseModel):
+    cli_mode: bool = Field(default=False)
+    """Whether the agent is running in CLI mode. This can be used to disable certain tools that are not supported in CLI mode."""
     llm_config: str | None = Field(default=None)
     """The name of the llm config to use. If specified, this will override global llm config."""
     classpath: str | None = Field(default=None)
