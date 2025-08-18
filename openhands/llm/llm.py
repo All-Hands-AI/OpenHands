@@ -9,6 +9,7 @@ import httpx
 
 from openhands.core.config import LLMConfig
 from openhands.llm.metrics import Metrics
+from openhands.llm.model_features import get_features
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -81,6 +82,7 @@ class LLM(RetryMixin, DebugMixin):
         )
 
         self.model_info: ModelInfo | None = None
+        self._function_calling_active: bool = False
         self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
