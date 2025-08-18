@@ -850,6 +850,8 @@ class LLM(RetryMixin, DebugMixin):
                 message.force_string_serializer = True
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
                 message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
+                message.force_string_serializer = True
 
         # let pydantic handle the serialization
         return [message.model_dump() for message in messages]

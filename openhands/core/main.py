@@ -32,7 +32,6 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
@@ -59,7 +58,6 @@ async def run_controller(
     headless_mode: bool = True,
     memory: Memory | None = None,
     conversation_instructions: str | None = None,
-    llm_registry: LLMRegistry | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
