@@ -9,6 +9,7 @@ import {
   ThinkAction,
   OpenHandsAction,
   FinishAction,
+  TaskTrackingAction,
 } from "#/types/core/actions";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
@@ -77,23 +78,38 @@ const getMcpActionContent = (event: MCPAction): string => {
 const getThinkActionContent = (event: ThinkAction): string =>
   event.args.thought;
 
-const getFinishActionContent = (event: FinishAction): string => {
-  let content = event.args.final_thought;
+const getFinishActionContent = (event: FinishAction): string =>
+  event.args.final_thought.trim();
 
-  switch (event.args.task_completed) {
-    case "success":
-      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_SUCCESSFULLY")}`;
-      break;
-    case "failure":
-      content += `\n\n\n${i18n.t("FINISH$TASK_NOT_COMPLETED")}`;
-      break;
-    case "partial":
-    default:
-      content += `\n\n\n${i18n.t("FINISH$TASK_COMPLETED_PARTIALLY")}`;
-      break;
+const getTaskTrackingActionContent = (event: TaskTrackingAction): string => {
+  let content = `**Command:** \`${event.args.command}\``;
+
+  if (
+    event.args.command === "plan" &&
+    event.args.task_list &&
+    event.args.task_list.length > 0
+  ) {
+    content += `\n\n**Task List (${event.args.task_list.length} ${event.args.task_list.length === 1 ? "item" : "items"}):**\n`;
+
+    event.args.task_list.forEach((task, index) => {
+      const statusIcon =
+        {
+          todo: "⏳",
+          in_progress: "🔄",
+          done: "✅",
+        }[task.status] || "❓";
+
+      content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase().replace("_", " ")}]** ${task.title}`;
+      content += `\n   *ID: ${task.id}*`;
+      if (task.notes) {
+        content += `\n   *Notes: ${task.notes}*`;
+      }
+    });
+  } else if (event.args.command === "plan") {
+    content += "\n\n**Task List:** Empty";
   }
 
-  return content.trim();
+  return content;
 };
 
 const getNoContentActionContent = (): string => "";
@@ -119,6 +135,8 @@ export const getActionContent = (event: OpenHandsAction): string => {
       return getThinkActionContent(event);
     case "finish":
       return getFinishActionContent(event);
+    case "task_tracking":
+      return getTaskTrackingActionContent(event);
     default:
       return getDefaultEventContent(event);
   }

@@ -12,14 +12,26 @@ from openhands.events.observation import NullObservation, Observation
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import ProviderHandler, ProviderToken, ProviderType
 from openhands.integrations.service_types import AuthenticationError, Repository
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.storage import get_file_store
 
 
-class TestRuntime(Runtime):
+class MockRuntime(Runtime):
     """A concrete implementation of Runtime for testing"""
 
     def __init__(self, *args, **kwargs):
+        # Ensure llm_registry is provided if not already in kwargs
+        if 'llm_registry' not in kwargs and len(args) < 3:
+            # Create a mock LLMRegistry if not provided
+            config = (
+                kwargs.get('config')
+                if 'config' in kwargs
+                else args[0]
+                if args
+                else OpenHandsConfig()
+            )
+            kwargs['llm_registry'] = LLMRegistry(config=config)
         super().__init__(*args, **kwargs)
         self.run_action_calls = []
         self._execute_shell_fn_git_handler = MagicMock(
@@ -89,9 +101,11 @@ def runtime(temp_dir):
     )
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    llm_registry = LLMRegistry(config=config)
+    runtime = MockRuntime(
         config=config,
         event_stream=event_stream,
+        llm_registry=llm_registry,
         sid='test',
         user_id='test_user',
         git_provider_tokens=git_provider_tokens,
@@ -119,7 +133,7 @@ async def test_export_latest_git_provider_tokens_no_user_id(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(config=config, event_stream=event_stream, sid='test')
+    runtime = MockRuntime(config=config, event_stream=event_stream, sid='test')
 
     # Create a command that would normally trigger token export
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
@@ -137,7 +151,7 @@ async def test_export_latest_git_provider_tokens_no_token_ref(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 
@@ -177,7 +191,7 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
     )
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config,
         event_stream=event_stream,
         sid='test',
@@ -225,7 +239,7 @@ async def test_clone_or_init_repo_no_repo_init_git_in_empty_workspace(temp_dir):
     config.init_git_in_empty_workspace = True
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id=None
     )
 
@@ -249,7 +263,7 @@ async def test_clone_or_init_repo_no_repo_no_user_id_with_workspace_base(temp_di
     config.workspace_base = '/some/path'  # Set workspace_base
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id=None
     )
 
@@ -267,7 +281,7 @@ async def test_clone_or_init_repo_auth_error(temp_dir):
     config = OpenHandsConfig()
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 
@@ -298,7 +312,7 @@ async def test_clone_or_init_repo_github_with_token(temp_dir, monkeypatch):
         {ProviderType.GITHUB: ProviderToken(token=SecretStr(github_token))}
     )
 
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config,
         event_stream=event_stream,
         sid='test',
@@ -336,7 +350,7 @@ async def test_clone_or_init_repo_github_no_token(temp_dir, monkeypatch):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 
@@ -371,7 +385,7 @@ async def test_clone_or_init_repo_gitlab_with_token(temp_dir, monkeypatch):
         {ProviderType.GITLAB: ProviderToken(token=SecretStr(gitlab_token))}
     )
 
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config,
         event_stream=event_stream,
         sid='test',
@@ -410,7 +424,7 @@ async def test_clone_or_init_repo_with_branch(temp_dir, monkeypatch):
     file_store = get_file_store('local', temp_dir)
     event_stream = EventStream('abc', file_store)
 
-    runtime = TestRuntime(
+    runtime = MockRuntime(
         config=config, event_stream=event_stream, sid='test', user_id='test_user'
     )
 

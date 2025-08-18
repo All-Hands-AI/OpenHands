@@ -104,6 +104,24 @@ export const formatTimestamp = (timestamp: string) =>
     second: "2-digit",
   });
 
+export const shouldUseInstallationRepos = (
+  provider: Provider,
+  app_mode: "saas" | "oss" | undefined,
+) => {
+  if (!provider) return false;
+
+  switch (provider) {
+    case "bitbucket":
+      return true;
+    case "gitlab":
+      return false;
+    case "github":
+      return app_mode === "saas";
+    default:
+      return false;
+  }
+};
+
 export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
   switch (gitProvider) {
     case "github":
@@ -206,4 +224,23 @@ export const constructMicroagentUrl = (
     default:
       return "";
   }
+};
+
+/**
+ * Extract repository owner, repo name, and file path from repository and microagent data
+ * @param selectedRepository The selected repository object with full_name property
+ * @param microagent The microagent object with path property
+ * @returns Object containing owner, repo, and filePath
+ *
+ * @example
+ * const { owner, repo, filePath } = extractRepositoryInfo(selectedRepository, microagent);
+ */
+export const extractRepositoryInfo = (
+  selectedRepository: { full_name?: string } | null | undefined,
+  microagent: { path?: string } | null | undefined,
+) => {
+  const [owner, repo] = selectedRepository?.full_name?.split("/") || [];
+  const filePath = microagent?.path || "";
+
+  return { owner, repo, filePath };
 };

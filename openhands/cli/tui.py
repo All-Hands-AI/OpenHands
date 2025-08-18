@@ -11,6 +11,7 @@ import threading
 import time
 from typing import Generator
 
+import markdown  # type: ignore
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -40,6 +41,7 @@ from openhands.events.action import (
     CmdRunAction,
     MCPAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -49,6 +51,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     MCPObservation,
+    TaskTrackingObservation,
 )
 from openhands.llm.metrics import Metrics
 from openhands.mcp.error_collector import mcp_error_collector
@@ -65,6 +68,7 @@ MAX_RECENT_THOUGHTS = 5
 # Color and styling constants
 COLOR_GOLD = '#FFD700'
 COLOR_GREY = '#808080'
+COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
 DEFAULT_STYLE = Style.from_dict(
     {
         'gold': COLOR_GOLD,
@@ -236,13 +240,18 @@ def display_mcp_errors() -> None:
 
 
 # Prompt output display functions
-def display_thought_if_new(thought: str) -> None:
-    """Display a thought only if it hasn't been displayed recently."""
+def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
+    """Display a thought only if it hasn't been displayed recently.
+
+    Args:
+        thought: The thought to display
+        is_agent_message: If True, apply agent styling and markdown rendering
+    """
     global recent_thoughts
     if thought and thought.strip():
         # Check if this thought was recently displayed
         if thought not in recent_thoughts:
-            display_message(thought)
+            display_message(thought, is_agent_message=is_agent_message)
             recent_thoughts.append(thought)
             # Keep only the most recent thoughts
             if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
@@ -255,7 +264,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
 
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
@@ -266,17 +275,20 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
                 initialize_streaming_output()
         elif isinstance(event, MCPAction):
             display_mcp_action(event)
+        elif isinstance(event, TaskTrackingAction):
+            display_task_tracking_action(event)
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
             if hasattr(event, 'final_thought') and event.final_thought:
-                display_message(event.final_thought)
+                # Display final thoughts with agent styling
+                display_message(event.final_thought, is_agent_message=True)
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Check if this message content is a duplicate thought
-                display_thought_if_new(event.content)
+                # Display agent messages with styling and markdown rendering
+                display_thought_if_new(event.content, is_agent_message=True)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
@@ -285,17 +297,82 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_file_read(event)
         elif isinstance(event, MCPObservation):
             display_mcp_observation(event)
+        elif isinstance(event, TaskTrackingObservation):
+            display_task_tracking_observation(event)
         elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
-def display_message(message: str) -> None:
+def display_message(message: str, is_agent_message: bool = False) -> None:
+    """Display a message in the terminal with markdown rendering.
+
+    Args:
+        message: The message to display
+        is_agent_message: If True, apply agent styling (blue color)
+    """
     message = message.strip()
 
     if message:
-        print_formatted_text(f'\n{message}')
+        # Add spacing before the message
+        print_formatted_text('')
+
+        try:
+            # Convert markdown to HTML for all messages
+            html_content = convert_markdown_to_html(message)
+
+            if is_agent_message:
+                # Use prompt_toolkit's HTML renderer with the agent color
+                print_formatted_text(
+                    HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>')
+                )
+            else:
+                # Regular message display with HTML rendering but default color
+                print_formatted_text(HTML(html_content))
+        except Exception as e:
+            # If HTML rendering fails, fall back to plain text
+            print(f'Warning: HTML rendering failed: {str(e)}', file=sys.stderr)
+            if is_agent_message:
+                print_formatted_text(
+                    FormattedText([('fg:' + COLOR_AGENT_BLUE, message)])
+                )
+            else:
+                print_formatted_text(message)
+
+
+def convert_markdown_to_html(text: str) -> str:
+    """Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+
+    Args:
+        text: Markdown text to convert
+
+    Returns:
+        HTML formatted text with custom styling for headers and bullet points
+    """
+    if not text:
+        return text
+
+    # Use the markdown library to convert markdown to HTML
+    # Enable the 'extra' extension for tables, fenced code, etc.
+    html = markdown.markdown(text, extensions=['extra'])
+
+    # Customize headers
+    for i in range(1, 7):
+        # Get the appropriate number of # characters for this heading level
+        prefix = '#' * i + ' '
+
+        # Replace <h1> with the prefix and bold text
+        html = html.replace(f'<h{i}>', f'<b>{prefix}')
+        html = html.replace(f'</h{i}>', '</b>\n')
+
+    # Customize bullet points to use dashes instead of dots with compact spacing
+    html = html.replace('<ul>', '')
+    html = html.replace('</ul>', '')
+    html = html.replace('<li>', '- ')
+    html = html.replace('</li>', '')
+
+    return html
 
 
 def display_error(error: str) -> None:
@@ -444,6 +521,74 @@ def display_mcp_observation(event: MCPObservation) -> None:
             wrap_lines=True,
         ),
         title='MCP Tool Result',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_action(event: TaskTrackingAction) -> None:
+    """Display a TaskTracking action in the CLI."""
+    # Display thought first if present
+    if hasattr(event, 'thought') and event.thought:
+        display_message(event.thought)
+
+    # Format the command and task list for display
+    display_text = f'Command: {event.command}'
+
+    if event.command == 'plan':
+        if event.task_list:
+            display_text += f'\n\nTask List ({len(event.task_list)} items):'
+            for i, task in enumerate(event.task_list, 1):
+                status = task.get('status', 'unknown')
+                title = task.get('title', 'Untitled task')
+                task_id = task.get('id', f'task-{i}')
+                notes = task.get('notes', '')
+
+                # Add status indicator with color
+                status_indicator = {
+                    'todo': '⏳',
+                    'in_progress': '🔄',
+                    'done': '✅',
+                }.get(status, '❓')
+
+                display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
+                if notes:
+                    display_text += f'\n     Notes: {notes}'
+        else:
+            display_text += '\n\nTask List: Empty'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansigreen',
+            wrap_lines=True,
+        ),
+        title='Task Tracking Action',
+        style='ansigreen',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_observation(event: TaskTrackingObservation) -> None:
+    """Display a TaskTracking observation in the CLI."""
+    # Format the content and task list for display
+    content = (
+        event.content.strip() if event.content else 'Task tracking operation completed'
+    )
+
+    display_text = f'Result: {content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Task Tracking Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -771,6 +916,7 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    initial_selection: int = 0,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -778,7 +924,7 @@ def cli_confirm(
     """
     if choices is None:
         choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
+    selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
         return [
@@ -834,7 +980,6 @@ def cli_confirm(
         layout=layout,
         key_bindings=kb,
         style=style,
-        mouse_support=True,
         full_screen=False,
     )
 

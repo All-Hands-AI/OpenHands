@@ -349,7 +349,6 @@ async def test_unsafe_bash_command(temp_dir: str):
                         name=ActionType.FINISH,
                         arguments={
                             'outputs': {'content': 'outputs content'},
-                            'task_completed': None,
                             'final_thought': '',
                         },
                     ),
@@ -596,7 +595,7 @@ async def test_check_usertask(
         analyzer = InvariantAnalyzer(event_stream)
         mock_response = {'choices': [{'message': {'content': is_appropriate}}]}
         mock_litellm_completion.return_value = mock_response
-        analyzer.guardrail_llm = LLM(config=default_config)
+        analyzer.guardrail_llm = LLM(config=default_config, service_id='test')
         analyzer.check_browsing_alignment = True
         data = [
             (MessageAction(usertask), EventSource.USER),
@@ -658,7 +657,7 @@ async def test_check_fillaction(
         analyzer = InvariantAnalyzer(event_stream)
         mock_response = {'choices': [{'message': {'content': is_harmful}}]}
         mock_litellm_completion.return_value = mock_response
-        analyzer.guardrail_llm = LLM(config=default_config)
+        analyzer.guardrail_llm = LLM(config=default_config, service_id='test')
         analyzer.check_browsing_alignment = True
         data = [
             (BrowseInteractiveAction(browser_actions=fillaction), EventSource.AGENT),

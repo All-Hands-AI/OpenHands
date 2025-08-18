@@ -26,6 +26,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -135,6 +136,7 @@ class LocalRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -186,6 +188,7 @@ class LocalRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -575,25 +578,30 @@ class LocalRuntime(ActionExecutionClient):
         # Fallback to localhost
         return self.config.sandbox.local_runtime_url
 
+    def _create_url(self, prefix: str, port: int) -> str:
+        runtime_url = self.runtime_url
+        if 'localhost' in runtime_url:
+            url = f'{self.runtime_url}:{self._vscode_port}'
+        else:
+            # Similar to remote runtime...
+            parsed_url = urlparse(runtime_url)
+            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+        return url
+
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         if not token:
             return None
-        runtime_url = self.runtime_url
-        if 'localhost' in runtime_url:
-            vscode_url = f'{self.runtime_url}:{self._vscode_port}'
-        else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}'
+        vscode_url = self._create_url('vscode', self._vscode_port)
         return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
-        for port in self._app_ports:
-            hosts[f'{self.runtime_url}:{port}'] = port
+        for index, port in enumerate(self._app_ports):
+            url = self._create_url(f'work-{index + 1}', port)
+            hosts[url] = port
         return hosts
 
 
@@ -796,12 +804,6 @@ def _create_warm_server_in_background(
 
 def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     from openhands.controller.agent import Agent
-    from openhands.llm.llm import LLM
 
-    agent_config = config.get_agent_config(config.default_agent)
-    llm = LLM(
-        config=config.get_llm_config_from_agent(config.default_agent),
-    )
-    agent = Agent.get_cls(config.default_agent)(llm, agent_config)
-    plugins = agent.sandbox_plugins
+    plugins = Agent.get_cls(config.default_agent).sandbox_plugins
     return plugins

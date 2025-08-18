@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
-from openhands.core.config.condenser_config import CondenserConfig, NoOpCondenserConfig
+from openhands.core.config.condenser_config import (
+    CondenserConfig,
+    ConversationWindowCondenserConfig,
+)
 from openhands.core.config.extended_config import ExtendedConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.utils.import_utils import get_impl
@@ -43,13 +46,30 @@ class AgentConfig(BaseModel):
     """Whether history should be truncated to continue the session when hitting LLM context length limit."""
     enable_som_visual_browsing: bool = Field(default=True)
     """Whether to enable SoM (Set of Marks) visual browsing."""
+    enable_plan_mode: bool = Field(default=True)
+    """Whether to enable plan mode, which uses the long horizon system message and add the new tool - task_tracker - for planning, tracking and executing complex tasks."""
     condenser: CondenserConfig = Field(
-        default_factory=lambda: NoOpCondenserConfig(type='noop')
+        # The default condenser is set to the conversation window condenser -- if
+        # we use NoOp and the conversation hits the LLM context length limit,
+        # the agent will generate a condensation request which will never be
+        # handled.
+        default_factory=lambda: ConversationWindowCondenserConfig()
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
     model_config = ConfigDict(extra='forbid')
+
+    @property
+    def resolved_system_prompt_filename(self) -> str:
+        """
+        Returns the appropriate system prompt filename based on the agent configuration.
+        When enable_plan_mode is True, automatically uses the long horizon system prompt
+        unless a custom system_prompt_filename was explicitly set (not the default).
+        """
+        if self.enable_plan_mode and self.system_prompt_filename == 'system_prompt.j2':
+            return 'system_prompt_long_horizon.j2'
+        return self.system_prompt_filename
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, AgentConfig]:

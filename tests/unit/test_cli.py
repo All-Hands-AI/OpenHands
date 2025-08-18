@@ -6,6 +6,7 @@ import pytest_asyncio
 
 from openhands.cli import main as cli
 from openhands.controller.state.state import State
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 
@@ -124,12 +125,14 @@ def mock_config():
         ''  # Empty string, not starting with 'tvly-'
     )
     config.search_api_key = search_api_key_mock
+    config.get_llm_config_from_agent.return_value = LLMConfig(model='model')
 
     # Mock sandbox with volumes attribute to prevent finalize_config issues
     config.sandbox = MagicMock()
     config.sandbox.volumes = (
         None  # This prevents finalize_config from overriding workspace_base
     )
+    config.model_name = 'model'
 
     return config
 
@@ -213,7 +216,11 @@ async def test_run_session_without_initial_action(
     # Assertions for initialization flow
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
-    mock_create_agent.assert_called_once_with(mock_config)
+    # Check that mock_config is the first parameter to create_agent
+    mock_create_agent.assert_called_once()
+    assert mock_create_agent.call_args[0][0] == mock_config, (
+        'First parameter to create_agent should be mock_config'
+    )
     mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()
@@ -325,7 +332,6 @@ async def test_run_session_with_initial_action(
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -345,7 +351,6 @@ async def test_main_without_task(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test main function without a task."""
     loop = asyncio.get_running_loop()
@@ -359,7 +364,10 @@ async def test_main_without_task(
     mock_args.llm_config = None
     mock_args.name = None
     mock_args.file = None
-    mock_parse_args.return_value = mock_args
+    mock_args.conversation = None
+    mock_args.log_level = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock config
     mock_config = MagicMock()
@@ -393,10 +401,9 @@ async def test_main_without_task(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
@@ -412,11 +419,11 @@ async def test_main_without_task(
         None,
         session_name=None,
         skip_banner=False,
+        conversation_id=None,
     )
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -436,7 +443,6 @@ async def test_main_with_task(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test main function with a task."""
     loop = asyncio.get_running_loop()
@@ -449,7 +455,11 @@ async def test_main_with_task(
     mock_args.agent_cls = 'custom-agent'
     mock_args.llm_config = 'custom-config'
     mock_args.file = None
-    mock_parse_args.return_value = mock_args
+    mock_args.name = None
+    mock_args.conversation = None
+    mock_args.log_level = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock config
     mock_config = MagicMock()
@@ -484,10 +494,9 @@ async def test_main_with_task(
     mock_run_session.side_effect = [True, False]
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
@@ -518,7 +527,6 @@ async def test_main_with_task(
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -538,7 +546,6 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test main function with a session name passes it to run_session."""
     loop = asyncio.get_running_loop()
@@ -553,7 +560,10 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_args.llm_config = None
     mock_args.name = test_session_name  # Set the session name
     mock_args.file = None
-    mock_parse_args.return_value = mock_args
+    mock_args.conversation = None
+    mock_args.log_level = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock config
     mock_config = MagicMock()
@@ -587,10 +597,9 @@ async def test_main_with_session_name_passes_name_to_run_session(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
@@ -606,6 +615,7 @@ async def test_main_with_session_name_passes_name_to_run_session(
         None,
         session_name=test_session_name,
         skip_banner=False,
+        conversation_id=None,
     )
 
 
@@ -709,7 +719,6 @@ async def test_run_session_with_name_attempts_state_restore(
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -729,7 +738,6 @@ async def test_main_security_check_fails(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test main function when security check fails."""
     loop = asyncio.get_running_loop()
@@ -739,7 +747,14 @@ async def test_main_security_check_fails(
 
     # Mock arguments
     mock_args = MagicMock()
-    mock_parse_args.return_value = mock_args
+    mock_args.agent_cls = None
+    mock_args.llm_config = None
+    mock_args.name = None
+    mock_args.file = None
+    mock_args.conversation = None
+    mock_args.log_level = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock config
     mock_config = MagicMock()
@@ -761,10 +776,9 @@ async def test_main_security_check_fails(
     mock_check_security.return_value = False
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
@@ -775,7 +789,6 @@ async def test_main_security_check_fails(
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -795,7 +808,6 @@ async def test_config_loading_order(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test the order of configuration loading in the main function.
 
@@ -816,7 +828,10 @@ async def test_config_loading_order(
     # Add a file property to avoid file I/O errors
     mock_args.file = None
     mock_args.log_level = 'INFO'
-    mock_parse_args.return_value = mock_args
+    mock_args.name = None
+    mock_args.conversation = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock read_task to return a dummy task
     mock_read_task.return_value = 'Test task'
@@ -859,10 +874,9 @@ async def test_config_loading_order(
     mock_run_session.return_value = False  # No new session requested
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions for argument parsing and config setup
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()
@@ -892,7 +906,6 @@ async def test_config_loading_order(
 
 
 @pytest.mark.asyncio
-@patch('openhands.cli.main.parse_arguments')
 @patch('openhands.cli.main.setup_config_from_args')
 @patch('openhands.cli.main.FileSettingsStore.get_instance')
 @patch('openhands.cli.main.check_folder_security_agreement')
@@ -914,7 +927,6 @@ async def test_main_with_file_option(
     mock_check_security,
     mock_get_settings_store,
     mock_setup_config,
-    mock_parse_args,
 ):
     """Test main function with a file option."""
     loop = asyncio.get_running_loop()
@@ -929,7 +941,10 @@ async def test_main_with_file_option(
     mock_args.name = None
     mock_args.file = '/path/to/test/file.txt'
     mock_args.task = None
-    mock_parse_args.return_value = mock_args
+    mock_args.conversation = None
+    mock_args.log_level = None
+    mock_args.config_file = 'config.toml'
+    mock_args.override_cli_mode = None
 
     # Mock config
     mock_config = MagicMock()
@@ -965,10 +980,9 @@ async def test_main_with_file_option(
     mock_run_session.return_value = False
 
     # Run the function
-    await cli.main_with_loop(loop)
+    await cli.main_with_loop(loop, mock_args)
 
     # Assertions
-    mock_parse_args.assert_called_once()
     mock_setup_config.assert_called_once_with(mock_args)
     mock_get_settings_store.assert_called_once()
     mock_settings_store.load.assert_called_once()

@@ -61,8 +61,11 @@ The `WebHookFileStore` wraps another `FileStore` implementation and sends HTTP r
 **Configuration Options:**
 - `file_store_web_hook_url`: The base URL for webhook requests
 - `file_store_web_hook_headers`: HTTP headers to include in webhook requests
+- `file_store_web_hook_batch`: Whether to use batched webhook requests (default: false)
 
 ### Protocol Details
+
+#### Standard Webhook Protocol (Non-Batched)
 
 1. **File Write Operation**:
    - When a file is written, a POST request is sent to `{base_url}{path}`
@@ -72,6 +75,27 @@ The `WebHookFileStore` wraps another `FileStore` implementation and sends HTTP r
 2. **File Delete Operation**:
    - When a file is deleted, a DELETE request is sent to `{base_url}{path}`
    - The operation is retried up to 3 times with a 1-second delay between attempts
+
+#### Batched Webhook Protocol
+
+The `BatchedWebHookFileStore` extends the webhook functionality by batching multiple file operations into a single request, which can significantly improve performance when many files are being modified in a short period of time.
+
+1. **Batch Request**:
+   - A single POST request is sent to `{base_url}` with a JSON array in the body
+   - Each item in the array contains:
+     - `method`: "POST" for write operations, "DELETE" for delete operations
+     - `path`: The file path
+     - `content`: The file contents (for write operations only)
+     - `encoding`: "base64" if binary content was base64-encoded (optional)
+
+2. **Batch Triggering**:
+   - Batches are sent when one of the following conditions is met:
+     - A timeout period has elapsed (defaults to 5 seconds, configurable via constructor parameter)
+     - The total size of batched content exceeds a size limit (defaults to 1MB, configurable via constructor parameter)
+     - The `flush()` method is explicitly called
+
+3. **Error Handling**:
+   - The batch request is retried up to 3 times with a 1-second delay between attempts
 
 ## Configuration
 
@@ -90,4 +114,14 @@ file_store_web_hook_url = "https://example.com/api/files"
 
 # Optional webhook headers (JSON string)
 file_store_web_hook_headers = '{"Authorization": "Bearer token"}'
+
+# Optional batched webhook mode (default: false)
+file_store_web_hook_batch = true
 ```
+
+**Batched Webhook Configuration:**
+The batched webhook behavior uses predefined constants with the following default values:
+- Batch timeout: 5 seconds
+- Batch size limit: 1MB (1048576 bytes)
+
+These values can be customized by passing `batch_timeout_seconds` and `batch_size_limit_bytes` parameters to the `BatchedWebHookFileStore` constructor.

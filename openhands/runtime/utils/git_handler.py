@@ -14,8 +14,7 @@ GIT_DIFF_CMD = (
 
 @dataclass
 class CommandResult:
-    """
-    Represents the result of a shell command execution.
+    """Represents the result of a shell command execution.
 
     Attributes:
         content (str): The output content of the command.
@@ -27,9 +26,7 @@ class CommandResult:
 
 
 class GitHandler:
-    """
-    A handler for executing Git-related operations via shell commands.
-    """
+    """A handler for executing Git-related operations via shell commands."""
 
     def __init__(
         self,
@@ -43,8 +40,7 @@ class GitHandler:
         self.git_diff_cmd = GIT_DIFF_CMD
 
     def set_cwd(self, cwd: str) -> None:
-        """
-        Sets the current working directory for Git operations.
+        """Sets the current working directory for Git operations.
 
         Args:
             cwd (str): The directory path.
@@ -60,8 +56,7 @@ class GitHandler:
         return script_file
 
     def get_git_changes(self) -> list[dict[str, str]] | None:
-        """
-        Retrieves the list of changed files in Git repositories.
+        """Retrieves the list of changed files in Git repositories.
         Examines each direct subdirectory of the workspace directory looking for git repositories
         and returns the changes for each of these directories.
         Optimized to use a single git command per repository for maximum performance.
@@ -100,8 +95,7 @@ class GitHandler:
         return self.get_git_changes()
 
     def get_git_diff(self, file_path: str) -> dict[str, str]:
-        """
-        Retrieves the original and modified content of a file in the repository.
+        """Retrieves the original and modified content of a file in the repository.
 
         Args:
             file_path (str): Path to the file.
@@ -115,7 +109,7 @@ class GitHandler:
 
         result = self.execute(self.git_diff_cmd.format(file_path=file_path), self.cwd)
         if result.exit_code == 0:
-            diff = json.loads(result.content)
+            diff = json.loads(result.content, strict=False)
             return diff
 
         if self.git_diff_cmd != GIT_DIFF_CMD:

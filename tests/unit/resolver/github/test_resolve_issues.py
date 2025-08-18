@@ -431,7 +431,6 @@ async def test_process_issue(
     test_case,
 ):
     """Test the process_issue method with different scenarios."""
-
     # Set up test data
     issue = Issue(
         owner='test_owner',
@@ -464,7 +463,7 @@ async def test_process_issue(
         [],
     )
     handler_instance.issue_type = 'pr' if test_case.get('is_pr', False) else 'issue'
-    handler_instance.llm = LLM(llm_config)
+    handler_instance.llm = LLM(llm_config, service_id='test-service')
 
     # Mock the runtime and its methods
     mock_runtime = MagicMock()
