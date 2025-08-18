@@ -24,18 +24,43 @@ Optional environment variables:
 - `LLM_BASE_URL`: The base URL for the LLM API (if using a custom endpoint)
 - `BITBUCKET_TOKEN`: A Bitbucket app password in format `username:app_password` for testing Bitbucket integration
 
+### Configuration Options
+
+The E2E tests support several command-line options:
+
+- `--base-url`: Specify the base URL of the OpenHands instance under test (default: `http://localhost:12000`)
+- `--headless`: Run browser in headless mode (default: `true`)
+- `--no-headless`: Run browser in non-headless mode to watch the browser interactions
+- `--slow-mo`: Add delay between actions in milliseconds (default: `0`)
+
 ### Running Locally
 
 To run the full end-to-end test suite locally:
 
 ```bash
 cd tests/e2e
-poetry run pytest test_e2e_workflow.py -v
+poetry run pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v
 ```
 
 This runs all tests in sequence:
 1. GitHub token configuration
 2. Conversation start
+
+#### Specifying a Custom Base URL
+
+By default, the tests run against `http://localhost:12000`. You can specify a different OpenHands instance URL using the `--base-url` option:
+
+```bash
+cd tests/e2e
+# Run against a remote instance
+poetry run pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --base-url=https://my-openhands-instance.com
+
+# Run against a CI instance
+poetry run pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --base-url=http://ci-instance:8080
+
+# Run against localhost with a different port
+poetry run pytest test_settings.py::test_github_token_configuration test_conversation.py::test_conversation_start -v --base-url=http://localhost:3000
+```
 
 ### Running Individual Tests
 
@@ -48,6 +73,9 @@ poetry run pytest test_settings.py::test_github_token_configuration -v
 
 # Run the conversation start test
 poetry run pytest test_conversation.py::test_conversation_start -v
+
+# Run individual tests with custom base URL
+poetry run pytest test_settings.py::test_github_token_configuration -v --base-url=https://my-instance.com
 
 # Run the Bitbucket integration tests
 poetry run pytest test_bitbucket_integration.py::test_bitbucket_token_configuration -v
@@ -63,6 +91,9 @@ cd tests/e2e
 poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50
 poetry run pytest test_conversation.py::test_conversation_start -v --no-headless --slow-mo=50
 poetry run pytest test_bitbucket_integration.py::test_bitbucket_repository_cloning -v --no-headless --slow-mo=50
+
+# Combine with custom base URL
+poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50 --base-url=https://my-instance.com
 ```
 
 ### GitHub Workflow

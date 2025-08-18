@@ -33,7 +33,6 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -44,9 +43,10 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
@@ -364,7 +364,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -380,8 +380,9 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
+) -> str:
     messages = [
         {
             'role': 'system',
@@ -393,8 +394,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:
@@ -466,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 
