@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 
@@ -22,6 +24,22 @@ def pytest_addoption(parser):
         type=int,
         help='Add delay between actions in milliseconds (default: 0)',
     )
+
+
+@pytest.fixture(scope='session')
+def base_url(request):
+    """Base URL for the app under test. Accepts --base-url option or env BASE_URL.
+
+    Falls back to http://localhost:12000 to match CI setup.
+    """
+    url = (
+        request.config.getoption('--base-url')
+        if hasattr(request.config, 'getoption')
+        else None
+    )
+    if not url:
+        url = os.getenv('BASE_URL')
+    return url or 'http://localhost:12000'
 
 
 @pytest.fixture(scope='session')

@@ -27,7 +27,7 @@ Optional environment variables:
 
 The E2E tests support several command-line options:
 
-- `--base-url`: Specify the base URL of the OpenHands instance under test (default: `http://localhost:12000`)
+- `--base-url`: Specify the base URL of the OpenHands instance under test (default: `http://localhost:12000`). Alternatively set BASE_URL env var.
 - `--headless`: Run browser in headless mode (default: `true`)
 - `--no-headless`: Run browser in non-headless mode to watch the browser interactions
 - `--slow-mo`: Add delay between actions in milliseconds (default: `0`)

@@ -18,7 +18,7 @@ import pytest
 from playwright.sync_api import Page, expect
 
 
-def test_delete_conversation(page: Page):
+def test_delete_conversation(page: Page, base_url: str):
     """Test deleting a conversation from the conversation list.
 
     This test creates a conversation and then deletes it to verify the functionality.
@@ -30,7 +30,10 @@ def test_delete_conversation(page: Page):
 
     # Step 1: Navigate to OpenHands application
     print('Step 1: Navigating to OpenHands...')
-    page.goto('http://localhost:12000')
+    # Use default URL if base_url is not provided
+    if not base_url:
+        base_url = 'http://localhost:12000'
+    page.goto(base_url)
     page.wait_for_load_state('networkidle', timeout=30000)
     page.screenshot(path='test-results/delete_01_app_loaded.png')
 
@@ -94,7 +97,7 @@ def test_delete_conversation(page: Page):
             conversation_created = True
             print(f'Conversation created, URL: {current_url}')
             break
-        
+
         # Also check for conversation interface elements
         conversation_selectors = [
             '[data-testid="chat-input"]',
@@ -103,7 +106,7 @@ def test_delete_conversation(page: Page):
             '.conversation-container',
             '.chat-container',
         ]
-        
+
         for selector in conversation_selectors:
             try:
                 element = page.locator(selector)
@@ -113,10 +116,10 @@ def test_delete_conversation(page: Page):
                     break
             except Exception:
                 continue
-        
+
         if conversation_created:
             break
-            
+
         page.wait_for_timeout(1000)
 
     if not conversation_created:
@@ -127,7 +130,7 @@ def test_delete_conversation(page: Page):
 
     # Step 3: Open conversation panel to see conversation list
     print('Step 3: Opening conversation panel to see conversation list...')
-    
+
     # Look for the conversation panel toggle button
     panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
     if panel_button.is_visible(timeout=5000):
@@ -136,10 +139,10 @@ def test_delete_conversation(page: Page):
         page.wait_for_timeout(2000)
     else:
         print('Conversation panel button not found, trying to navigate to home first')
-        page.goto('http://localhost:12000')
+        page.goto(base_url)
         page.wait_for_load_state('networkidle', timeout=15000)
         page.wait_for_timeout(3000)
-        
+
         panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
         if panel_button.is_visible(timeout=5000):
             panel_button.click()
@@ -214,7 +217,9 @@ def test_delete_conversation(page: Page):
     page.wait_for_timeout(2000)
 
     # Check conversation count decreased within the conversation panel
-    updated_conversation_cards = conversation_panel.locator('[data-testid="conversation-card"]')
+    updated_conversation_cards = conversation_panel.locator(
+        '[data-testid="conversation-card"]'
+    )
     updated_count = updated_conversation_cards.count()
     print(f'Updated conversation count: {updated_count}')
 
