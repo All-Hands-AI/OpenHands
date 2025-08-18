@@ -381,11 +381,20 @@ def test_react_app_creation_simple(page: Page):
     print('Screenshot saved: react_simple_07_message_sent.png')
 
     # Wait for agent to complete the React app creation task
-    print('Step 8: Waiting for agent to complete React app creation...')
+    print('Step 8: Waiting for agent to demonstrate React app creation...')
     max_completion_time = 600  # 10 minutes for full task completion
     start_time = time.time()
 
-    # Look for specific agent response that indicates completion
+    # Track evidence of actual work completed
+    evidence_found = {
+        'file_structure': False,
+        'package_json': False,
+        'app_component': False,
+        'server_running': False,
+        'app_accessible': False,
+    }
+
+    # Look for actual demonstrations of work, not just claims
     while time.time() - start_time < max_completion_time:
         elapsed = int(time.time() - start_time)
         if elapsed % 60 == 0 and elapsed > 0:  # Every minute
@@ -393,55 +402,94 @@ def test_react_app_creation_simple(page: Page):
             print(f'Progress screenshot saved at {elapsed}s')
 
         try:
-            # Look for agent messages that indicate task completion
+            # Look for agent messages that show actual evidence
             messages = page.locator('[data-testid="agent-message"]').all()
             for i, msg in enumerate(messages):
                 try:
                     content = msg.text_content() or ''
                     content_lower = content.lower()
 
-                    # Check for specific completion indicators in agent messages
-                    # These patterns indicate the agent has successfully created and served the React app
-                    completion_patterns = [
-                        'hello from openhands react app',
-                        'react app.*created.*successfully',
-                        'app.*running.*localhost',
-                        'server.*running.*port',
-                        'development server.*started',
-                        'vite.*ready',
-                        'local:.*http://localhost',
-                        'successfully created.*react',
-                        'app is now accessible',
-                        'you can view.*localhost',
-                        'created.*vite.*react.*app',
-                        'app.*served.*locally',
-                        'component.*displays.*hello from openhands',
-                    ]
+                    # Look for evidence of file structure being shown
+                    if not evidence_found['file_structure']:
+                        file_structure_patterns = [
+                            r'src/.*app\.(jsx|tsx)',
+                            r'public/.*index\.html',
+                            r'package\.json',
+                            r'vite\.config\.(js|ts)',
+                            r'node_modules',
+                            r'├──.*src',
+                            r'└──.*public',
+                        ]
+                        for pattern in file_structure_patterns:
+                            if re.search(pattern, content, re.IGNORECASE):
+                                print(f'✅ Found file structure evidence: {pattern}')
+                                evidence_found['file_structure'] = True
+                                break
 
-                    for pattern in completion_patterns:
-                        if re.search(pattern, content_lower):
-                            print(f'✅ Found completion pattern: {pattern}')
-                            print(f'Agent message content: {content[:300]}...')
-                            page.screenshot(
-                                path='test-results/react_simple_08_completion_found.png'
-                            )
-                            print(
-                                'Screenshot saved: react_simple_08_completion_found.png'
-                            )
+                    # Look for evidence of package.json contents being shown
+                    if not evidence_found['package_json']:
+                        package_patterns = [
+                            r'"react":\s*"[^"]*"',
+                            r'"vite":\s*"[^"]*"',
+                            r'"@vitejs/plugin-react"',
+                            r'"scripts":\s*{[^}]*"dev"',
+                            r'"dependencies":\s*{[^}]*"react"',
+                        ]
+                        for pattern in package_patterns:
+                            if re.search(pattern, content, re.IGNORECASE):
+                                print(f'✅ Found package.json evidence: {pattern}')
+                                evidence_found['package_json'] = True
+                                break
 
-                            # Final success screenshot
-                            page.screenshot(
-                                path='test-results/react_simple_08_final_state.png'
-                            )
-                            print('Screenshot saved: react_simple_08_final_state.png')
+                    # Look for evidence of App component source code being shown
+                    if not evidence_found['app_component']:
+                        app_component_patterns = [
+                            r'hello from openhands react app',
+                            r'function App\(\)',
+                            r'const App = \(\)',
+                            r'export default App',
+                            r'<div.*>.*hello.*openhands.*</div>',
+                            r'return \([^)]*hello from openhands',
+                        ]
+                        for pattern in app_component_patterns:
+                            if re.search(pattern, content, re.IGNORECASE):
+                                print(f'✅ Found App component evidence: {pattern}')
+                                evidence_found['app_component'] = True
+                                break
 
-                            print(
-                                '✅ SUCCESS: React app creation completed successfully!'
-                            )
-                            print('- Agent created the React app ✓')
-                            print('- Agent confirmed the app is running ✓')
-                            print('- Task completed with proper validation ✓')
-                            return
+                    # Look for evidence of development server running
+                    if not evidence_found['server_running']:
+                        server_patterns = [
+                            r'local:\s*http://localhost:\d+',
+                            r'network:\s*http://[^:]+:\d+',
+                            r'ready in \d+ms',
+                            r'vite.*ready',
+                            r'dev server running',
+                            r'server started.*port \d+',
+                            r'npm run dev',
+                            r'yarn dev',
+                        ]
+                        for pattern in server_patterns:
+                            if re.search(pattern, content, re.IGNORECASE):
+                                print(f'✅ Found server running evidence: {pattern}')
+                                evidence_found['server_running'] = True
+                                break
+
+                    # Look for evidence of app being accessible (curl/browser output)
+                    if not evidence_found['app_accessible']:
+                        accessible_patterns = [
+                            r'<title>.*vite.*react.*</title>',
+                            r'<div id="root">.*hello from openhands.*</div>',
+                            r'curl.*localhost:\d+',
+                            r'http status.*200',
+                            r'<!doctype html>.*hello from openhands',
+                            r'response.*hello from openhands react app',
+                        ]
+                        for pattern in accessible_patterns:
+                            if re.search(pattern, content, re.IGNORECASE):
+                                print(f'✅ Found app accessibility evidence: {pattern}')
+                                evidence_found['app_accessible'] = True
+                                break
 
                 except Exception as e:
                     print(f'Error processing agent message {i}: {e}')
@@ -450,13 +498,48 @@ def test_react_app_creation_simple(page: Page):
         except Exception as e:
             print(f'Error checking for agent messages: {e}')
 
+        # Check if we have sufficient evidence
+        evidence_count = sum(evidence_found.values())
+        print(f'Evidence found: {evidence_count}/5 - {evidence_found}')
+
+        # We need at least 3 pieces of evidence to consider it successful
+        # (file structure + package.json + app component) OR (app component + server + accessible)
+        if evidence_count >= 3 and evidence_found['app_component']:
+            print('✅ Sufficient evidence found for React app creation!')
+            
+            # Take final screenshots
+            page.screenshot(path='test-results/react_simple_08_evidence_found.png')
+            print('Screenshot saved: react_simple_08_evidence_found.png')
+            
+            page.screenshot(path='test-results/react_simple_08_final_state.png')
+            print('Screenshot saved: react_simple_08_final_state.png')
+
+            print('✅ SUCCESS: React app creation demonstrated successfully!')
+            print(f'- File structure shown: {evidence_found["file_structure"]} ✓')
+            print(f'- Package.json contents shown: {evidence_found["package_json"]} ✓')
+            print(f'- App component source shown: {evidence_found["app_component"]} ✓')
+            print(f'- Development server running: {evidence_found["server_running"]} ✓')
+            print(f'- App accessible via HTTP: {evidence_found["app_accessible"]} ✓')
+            print('- Agent demonstrated actual work completion ✓')
+            return
+
         time.sleep(15)  # Check every 15 seconds
 
-    # If we get here, the task did not complete successfully
+    # If we get here, insufficient evidence was provided
     page.screenshot(path='test-results/react_simple_08_final_state.png')
     print('Screenshot saved: react_simple_08_final_state.png')
 
-    print('❌ FAILURE: React app creation did not complete within time limit')
+    evidence_count = sum(evidence_found.values())
+    print(f'❌ FAILURE: Insufficient evidence of React app creation ({evidence_count}/5)')
+    print(f'Evidence found: {evidence_found}')
+    print('Agent must DEMONSTRATE the work by showing:')
+    print('- File structure (ls, tree commands)')
+    print('- Package.json contents (cat package.json)')
+    print('- App component source code (cat src/App.jsx)')
+    print('- Development server running (npm run dev output)')
+    print('- App accessible via HTTP (curl localhost:port)')
+    
     raise AssertionError(
-        'Agent did not complete React app creation task with proper confirmation within timeout'
+        f'Agent did not demonstrate React app creation with sufficient evidence. '
+        f'Found {evidence_count}/5 pieces of evidence: {evidence_found}'
     )
