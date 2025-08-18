@@ -584,6 +584,17 @@ def test_gitlab_repository_cloning(page: Page):
     page.screenshot(path='test-results/gitlab_06_after_launch.png')
     print('Screenshot saved: gitlab_06_after_launch.png')
 
+    # Prefer URL-based navigation check first
+    try:
+        page.wait_for_url('**/conversations/*', timeout=180000)
+        print(f'Navigated to conversations page: {page.url}')
+    except Exception as e:
+        try:
+            current_url = page.url
+            print(f'Current URL after launch: {current_url} (error: {e})')
+        except Exception:
+            pass
+
     # Wait for loading to complete
     loading_selectors = [
         '[data-testid="loading-indicator"]',
@@ -622,6 +633,8 @@ def test_gitlab_repository_cloning(page: Page):
                 '.chat-container',
                 'textarea',
                 'form textarea',
+                'div[role="main"]',
+                'main',
             ]
 
             for selector in selectors:
