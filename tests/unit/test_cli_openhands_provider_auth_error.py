@@ -4,8 +4,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import pytest_asyncio
 from litellm.exceptions import AuthenticationError
+from pydantic import SecretStr
 
 from openhands.cli import main as cli
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 
@@ -45,11 +47,10 @@ def mock_config():
     config.workspace_base = '/test/dir'
 
     # Set up LLM config to use OpenHands provider
-    llm_config = MagicMock()
+    llm_config = LLMConfig(model='openhands/o3', api_key=SecretStr('invalid-api-key'))
     llm_config.model = 'openhands/o3'  # Use OpenHands provider with o3 model
-    llm_config.api_key = MagicMock()
-    llm_config.api_key.get_secret_value.return_value = 'invalid-api-key'
-    config.llm = llm_config
+    config.get_llm_config.return_value = llm_config
+    config.get_llm_config_from_agent.return_value = llm_config
 
     # Mock search_api_key with get_secret_value method
     search_api_key_mock = MagicMock()
