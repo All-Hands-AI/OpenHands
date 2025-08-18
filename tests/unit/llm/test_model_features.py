@@ -57,9 +57,9 @@ def test_model_matches(name, pattern, expected):
         ('gemini-2.5-pro', ModelFeatures(True, True, False, True)),
     ],
 )
-def test_get_capabilities(model, expect):
-    caps = get_features(model)
-    assert caps == expect
+def test_get_features(model, expect):
+    features = get_features(model)
+    assert features == expect
 
 
 @pytest.mark.parametrize(
@@ -92,8 +92,8 @@ def test_get_capabilities(model, expect):
     ],
 )
 def test_function_calling_models(model):
-    caps = get_features(model)
-    assert caps.function_calling is True
+    features = get_features(model)
+    assert features.function_calling is True
 
 
 @pytest.mark.parametrize(
@@ -110,8 +110,8 @@ def test_function_calling_models(model):
     ],
 )
 def test_reasoning_effort_models(model):
-    caps = get_features(model)
-    assert caps.reasoning_effort is True
+    features = get_features(model)
+    assert features.reasoning_effort is True
 
 
 @pytest.mark.parametrize(
@@ -129,8 +129,8 @@ def test_reasoning_effort_models(model):
     ],
 )
 def test_prompt_cache_models(model):
-    caps = get_features(model)
-    assert caps.prompt_cache is True
+    features = get_features(model)
+    assert features.prompt_cache is True
 
 
 @pytest.mark.parametrize(
@@ -142,5 +142,5 @@ def test_prompt_cache_models(model):
     ],
 )
 def test_supports_stop_words_false_models(model):
-    caps = get_features(model)
-    assert caps.supports_stop_words is False
+    features = get_features(model)
+    assert features.supports_stop_words is False

@@ -129,8 +129,8 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        caps = get_features(self.config.model)
-        if caps.reasoning_effort:
+        features = get_features(self.config.model)
+        if features.reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
@@ -481,10 +481,10 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        # Initialize function calling capability using centralized capabilities
-        caps = get_features(self.config.model)
+        # Initialize function calling using centralized model features
+        features = get_features(self.config.model)
         if self.config.native_tool_calling is None:
-            self._function_calling_active = caps.function_calling
+            self._function_calling_active = features.function_calling
         else:
             self._function_calling_active = self.config.native_tool_calling
 
