@@ -6,7 +6,9 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm_registry import RegistryEvent
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_stats_filename
+from openhands.storage.locations import (
+    get_conversation_stats_filename,
+)
 
 
 class ConversationStats:
