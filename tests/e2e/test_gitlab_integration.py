@@ -167,44 +167,53 @@ def test_gitlab_repository_cloning(page: Page):
             'Provider dropdown detected (likely reset after settings navigation), selecting GitLab...'
         )
 
-        # Try to click the provider dropdown
+        # Try to click the provider dropdown robustly by targeting the react-select control
         provider_clicked = False
+        try:
+            provider_scope = page.locator('div:has-text("Select Provider")').first
+            control = provider_scope.locator(
+                '.select__control, .react-select__control'
+            ).first
+            if control.is_visible(timeout=2000):
+                control.click(force=True)
+                provider_clicked = True
+                print('Clicked provider dropdown via react-select control')
+        except Exception as e:
+            print(f'Primary provider control click failed: {e}')
 
-        # Try multiple approaches to find and click the provider dropdown
-        provider_selectors = [
-            'div:has-text("Select Provider")',
-            '[placeholder="Select Provider"]',
-            'div[class*="select"]:has-text("Select Provider")',
-            # Try more specific selectors for react-select
-            '.react-select__control:has-text("Select Provider")',
-            '[class*="select"][class*="control"]',
-        ]
-
-        for selector in provider_selectors:
-            try:
-                element = page.locator(selector).first
-                if element.is_visible(timeout=3000):
-                    element.click()
-                    print(f'Clicked provider dropdown with selector: {selector}')
-                    provider_clicked = True
-                    break
-            except Exception as e:
-                print(f'Failed with selector {selector}: {e}')
-                continue
+        if not provider_clicked:
+            # Fallback approaches to find and click the provider dropdown
+            provider_selectors = [
+                'div:has-text("Select Provider")',
+                '[placeholder="Select Provider"]',
+                'div[class*="select"]:has-text("Select Provider")',
+                '.react-select__control:has-text("Select Provider")',
+                '[class*="select"][class*="control"]',
+            ]
+            for selector in provider_selectors:
+                try:
+                    element = page.locator(selector).first
+                    if element.is_visible(timeout=3000):
+                        element.click(force=True)
+                        print(f'Clicked provider dropdown with selector: {selector}')
+                        provider_clicked = True
+                        break
+                except Exception as e:
+                    print(f'Failed with selector {selector}: {e}')
+                    continue
 
         if not provider_clicked:
             # Try JavaScript-based clicking as fallback
             js_result = page.evaluate("""
                 () => {
-                    const elements = Array.from(document.querySelectorAll('*')).filter(el =>
+                    const els = Array.from(document.querySelectorAll('*')).filter(el =>
                         el.textContent && el.textContent.includes('Select Provider')
                     );
-
-                    for (const el of elements) {
-                        // Try clicking the element or its parent
+                    for (const el of els) {
                         let target = el;
                         while (target && target !== document.body) {
-                            if (target.click && (target.className.includes('select') || target.getAttribute('role') === 'combobox')) {
+                            const cls = (target.className || '').toString();
+                            if (target.click && (cls.includes('select') || target.getAttribute('role') === 'combobox')) {
                                 target.click();
                                 return 'clicked_' + target.tagName;
                             }
@@ -214,16 +223,15 @@ def test_gitlab_repository_cloning(page: Page):
                     return null;
                 }
             """)
-
             if js_result:
                 print(f'Clicked provider dropdown with JavaScript: {js_result}')
                 provider_clicked = True
             else:
                 raise Exception('Could not click provider dropdown with any method')
 
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
 
-        # Select GitLab from provider options
+        # Select GitLab from provider options (account for label capitalization: Gitlab vs GitLab)
         gitlab_selectors = [
             '[role="option"]:has-text("GitLab")',
             'div:has-text("GitLab")',
