@@ -1,4 +1,4 @@
-import { ActionSafetyRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import {
   FileWriteAction,
   CommandAction,
@@ -14,7 +14,7 @@ import {
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 
-const getRiskText = (risk: ActionSafetyRisk | string | number) => {
+const getRiskText = (risk: ActionSecurityRisk | string | number) => {
   // Handle string values that might come from backend
   if (typeof risk === "string") {
     const lowerRisk = risk.toLowerCase();
@@ -27,13 +27,13 @@ const getRiskText = (risk: ActionSafetyRisk | string | number) => {
   // Handle numeric values
   const numericRisk = Number(risk);
   switch (numericRisk) {
-    case ActionSafetyRisk.LOW:
+    case ActionSecurityRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");
-    case ActionSafetyRisk.MEDIUM:
+    case ActionSecurityRisk.MEDIUM:
       return i18n.t("SECURITY$MEDIUM_RISK");
-    case ActionSafetyRisk.HIGH:
+    case ActionSecurityRisk.HIGH:
       return i18n.t("SECURITY$HIGH_RISK");
-    case ActionSafetyRisk.UNKNOWN:
+    case ActionSecurityRisk.UNKNOWN:
     default:
       return i18n.t("SECURITY$UNKNOWN_RISK");
   }

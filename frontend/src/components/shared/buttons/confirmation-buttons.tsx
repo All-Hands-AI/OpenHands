@@ -5,7 +5,7 @@ import { generateAgentStateChangeEvent } from "#/services/agent-state-service";
 import { useWsClient } from "#/context/ws-client-provider";
 import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
-import { ActionSafetyRisk } from "#/state/security-analyzer-slice";
+import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 
 type ConfirmationState = {
   state: "awaiting_confirmation" | "confirmed" | "rejected" | null;
@@ -26,7 +26,7 @@ export function ConfirmationButtons() {
     args: unknown,
   ): args is {
     confirmation_state: "awaiting_confirmation" | "confirmed" | "rejected";
-    security_risk: ActionSafetyRisk;
+    security_risk: ActionSecurityRisk;
   } =>
     typeof args === "object" &&
     args !== null &&
@@ -34,11 +34,11 @@ export function ConfirmationButtons() {
     "security_risk" in (args as Record<string, unknown>);
 
   // Helper function to check if risk is high, handling different data types
-  const isRiskHigh = (risk: ActionSafetyRisk | string | number): boolean => {
+  const isRiskHigh = (risk: ActionSecurityRisk | string | number): boolean => {
     if (typeof risk === "string") {
       return risk.toLowerCase() === "high";
     }
-    return Number(risk) === ActionSafetyRisk.HIGH;
+    return Number(risk) === ActionSecurityRisk.HIGH;
   };
 
   // Detect if there's a pending action awaiting confirmation and its risk level

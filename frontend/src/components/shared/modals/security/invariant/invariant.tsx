@@ -8,7 +8,7 @@ import { Button, Select, SelectItem } from "@heroui/react";
 import { useMutation } from "@tanstack/react-query";
 import { RootState } from "#/store";
 import {
-  ActionSafetyRisk,
+  ActionSecurityRisk,
   SecurityAnalyzerLog,
 } from "#/state/security-analyzer-slice";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
@@ -31,7 +31,7 @@ function SecurityInvariant() {
   const [activeSection, setActiveSection] = React.useState("logs");
   const [policy, setPolicy] = React.useState("");
   const [selectedRisk, setSelectedRisk] = React.useState(
-    ActionSafetyRisk.MEDIUM,
+    ActionSecurityRisk.MEDIUM,
   );
 
   const logsRef = React.useRef<HTMLDivElement>(null);
@@ -42,8 +42,8 @@ function SecurityInvariant() {
     onSuccess: (riskSeverity) => {
       setSelectedRisk(
         riskSeverity === 0
-          ? ActionSafetyRisk.LOW
-          : riskSeverity || ActionSafetyRisk.MEDIUM,
+          ? ActionSecurityRisk.LOW
+          : riskSeverity || ActionSecurityRisk.MEDIUM,
       );
     },
   });
@@ -75,30 +75,30 @@ function SecurityInvariant() {
 
   useScrollToBottom(logsRef);
 
-  const getRiskColor = React.useCallback((risk: ActionSafetyRisk) => {
+  const getRiskColor = React.useCallback((risk: ActionSecurityRisk) => {
     switch (risk) {
-      case ActionSafetyRisk.LOW:
+      case ActionSecurityRisk.LOW:
         return "text-green-500";
-      case ActionSafetyRisk.MEDIUM:
+      case ActionSecurityRisk.MEDIUM:
         return "text-yellow-500";
-      case ActionSafetyRisk.HIGH:
+      case ActionSecurityRisk.HIGH:
         return "text-red-500";
-      case ActionSafetyRisk.UNKNOWN:
+      case ActionSecurityRisk.UNKNOWN:
       default:
         return "text-gray-500";
     }
   }, []);
 
   const getRiskText = React.useCallback(
-    (risk: ActionSafetyRisk) => {
+    (risk: ActionSecurityRisk) => {
       switch (risk) {
-        case ActionSafetyRisk.LOW:
+        case ActionSecurityRisk.LOW:
           return t(I18nKey.SECURITY_ANALYZER$LOW_RISK);
-        case ActionSafetyRisk.MEDIUM:
+        case ActionSecurityRisk.MEDIUM:
           return t(I18nKey.SECURITY_ANALYZER$MEDIUM_RISK);
-        case ActionSafetyRisk.HIGH:
+        case ActionSecurityRisk.HIGH:
           return t(I18nKey.SECURITY_ANALYZER$HIGH_RISK);
-        case ActionSafetyRisk.UNKNOWN:
+        case ActionSecurityRisk.UNKNOWN:
         default:
           return t(I18nKey.SECURITY_ANALYZER$UNKNOWN_RISK);
       }
@@ -201,42 +201,42 @@ function SecurityInvariant() {
               placeholder={t(I18nKey.SECURITY$SELECT_RISK_SEVERITY)}
               value={selectedRisk}
               onChange={(e) =>
-                setSelectedRisk(Number(e.target.value) as ActionSafetyRisk)
+                setSelectedRisk(Number(e.target.value) as ActionSecurityRisk)
               }
               className={getRiskColor(selectedRisk)}
               selectedKeys={new Set([selectedRisk.toString()])}
               aria-label={t(I18nKey.SECURITY$SELECT_RISK_SEVERITY)}
             >
               <SelectItem
-                key={ActionSafetyRisk.UNKNOWN}
+                key={ActionSecurityRisk.UNKNOWN}
                 aria-label={t(I18nKey.SECURITY$UNKNOWN_RISK)}
-                className={getRiskColor(ActionSafetyRisk.UNKNOWN)}
+                className={getRiskColor(ActionSecurityRisk.UNKNOWN)}
               >
-                {getRiskText(ActionSafetyRisk.UNKNOWN)}
+                {getRiskText(ActionSecurityRisk.UNKNOWN)}
               </SelectItem>
               <SelectItem
-                key={ActionSafetyRisk.LOW}
+                key={ActionSecurityRisk.LOW}
                 aria-label={t(I18nKey.SECURITY$LOW_RISK)}
-                className={getRiskColor(ActionSafetyRisk.LOW)}
+                className={getRiskColor(ActionSecurityRisk.LOW)}
               >
-                {getRiskText(ActionSafetyRisk.LOW)}
+                {getRiskText(ActionSecurityRisk.LOW)}
               </SelectItem>
               <SelectItem
-                key={ActionSafetyRisk.MEDIUM}
+                key={ActionSecurityRisk.MEDIUM}
                 aria-label={t(I18nKey.SECURITY$MEDIUM_RISK)}
-                className={getRiskColor(ActionSafetyRisk.MEDIUM)}
+                className={getRiskColor(ActionSecurityRisk.MEDIUM)}
               >
-                {getRiskText(ActionSafetyRisk.MEDIUM)}
+                {getRiskText(ActionSecurityRisk.MEDIUM)}
               </SelectItem>
               <SelectItem
-                key={ActionSafetyRisk.HIGH}
+                key={ActionSecurityRisk.HIGH}
                 aria-label={t(I18nKey.SECURITY$HIGH_RISK)}
-                className={getRiskColor(ActionSafetyRisk.HIGH)}
+                className={getRiskColor(ActionSecurityRisk.HIGH)}
               >
-                {getRiskText(ActionSafetyRisk.HIGH)}
+                {getRiskText(ActionSecurityRisk.HIGH)}
               </SelectItem>
               <SelectItem
-                key={ActionSafetyRisk.HIGH + 1}
+                key={ActionSecurityRisk.HIGH + 1}
                 aria-label={t(I18nKey.SECURITY$DONT_ASK_CONFIRMATION)}
               >
                 {t(I18nKey.INVARIANT$DONT_ASK_FOR_CONFIRMATION_LABEL)}
