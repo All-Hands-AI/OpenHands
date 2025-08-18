@@ -172,6 +172,7 @@ jobs:
           LLM_MODEL: ${{ secrets.LLM_MODEL || 'gpt-4o' }}
           LLM_API_KEY: ${{ secrets.LLM_API_KEY || 'test-key' }}
           LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+          OPENHANDS_E2E_REPO: ${{ github.repository }}
         run: |
           # Check if the application is running
           if ! nc -z localhost 12000; then
