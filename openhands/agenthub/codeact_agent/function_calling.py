@@ -200,7 +200,7 @@ def response_to_actions(
                         other_kwargs.pop('view_range')
 
                     # Filter out unexpected arguments
-                    valid_kwargs = {}
+                    valid_kwargs_for_editor = {}
                     # Get valid parameters from the str_replace_editor tool definition
                     str_replace_editor_tool = create_str_replace_editor_tool()
                     valid_params = set(
@@ -213,7 +213,8 @@ def response_to_actions(
 
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            valid_kwargs[key] = value
+                            if key != 'security_risk':  # we handle security_risk separately
+                                valid_kwargs_for_editor[key] = value
                         else:
                             raise FunctionCallValidationError(
                                 f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
@@ -223,7 +224,7 @@ def response_to_actions(
                         path=path,
                         command=command,
                         impl_source=FileEditSource.OH_ACI,
-                        **valid_kwargs,
+                        **valid_kwargs_for_editor,
                     )
 
                 set_security_risk(action, arguments)
