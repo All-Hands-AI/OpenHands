@@ -809,7 +809,9 @@ class ConversationMemory:
                 '[ConversationMemory] No SystemMessageAction found in events. '
                 'Adding one for backward compatibility. '
             )
-            system_prompt = self.prompt_manager.get_system_message(cli_mode=self.agent_config.cli_mode)
+            system_prompt = self.prompt_manager.get_system_message(
+                cli_mode=self.agent_config.cli_mode
+            )
             if system_prompt:
                 system_message = SystemMessageAction(content=system_prompt)
                 # Insert the system message directly at the beginning of the events list

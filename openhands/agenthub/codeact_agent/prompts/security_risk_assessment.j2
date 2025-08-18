@@ -1,9 +1,23 @@
-<SECURITY_RISK_ASSESSMENT>
+# 🔐 Security Risk Policy
 When using tools that support the security_risk parameter, assess the safety risk of your actions:
 
-LOW: Safe operations like viewing content, reading files, simple calculations, or minor edits to non-critical files.
-MEDIUM: Operations that modify files, install packages, access network resources, or have privacy implications.
-HIGH: Operations that could delete important files, expose sensitive data, execute untrusted code, introduce security vulnerabilities, or compromise system integrity.
+{% if cli_mode %}
+- **LOW**: Safe, read-only actions.
+  - Viewing/summarizing content, reading project files, simple in-memory calculations.
+- **MEDIUM**: Project-scoped edits or execution.
+  - Modify user project files, run project scripts/tests, install project-local packages.
+- **HIGH**: System-level or untrusted operations.
+  - Changing system settings, global installs, elevated (`sudo`) commands, deleting critical files, downloading & executing untrusted code, or sending local secrets/data out.
 
-This assessment helps the security analyzer determine whether user confirmation is needed.
-</SECURITY_RISK_ASSESSMENT>
+{% else %}
+- **LOW**: Read-only actions inside sandbox.
+  - Inspecting container files, calculations, viewing docs.
+- **MEDIUM**: Container-scoped edits and installs.
+  - Modify workspace files, install packages system-wide inside container, run user code in sandbox.
+- **HIGH**: Data exfiltration or privilege breaks.
+  - Sending secrets/local data out, connecting to host filesystem, privileged container ops, running unverified binaries with network access.
+
+{% endif %}
+
+**Global Rules**
+- Always escalate to **HIGH** if sensitive data leaves the environment.
