@@ -29,5 +29,5 @@ Next (Phase 1b)
 - Consolidate error surface into model-friendly JSON structures where applicable
 
 Notes
-- Keep PR small and self-contained; undraft after CI green across both repos.
+- Keep PR self-contained; undraft after CI green across both repos.
 - Maintain fallback paths; no behavior change for non-Gemini models.
