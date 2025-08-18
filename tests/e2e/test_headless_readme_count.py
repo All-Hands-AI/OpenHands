@@ -87,9 +87,9 @@ base_url = "{llm_base_url}"
             'RUN_AS_OPENHANDS': 'false',
             'SKIP_DEPENDENCY_CHECK': '1',
             'PYTHONUNBUFFERED': '1',
-            # Use a different port to avoid conflicts with running E2E tests
+            # Use a different backend port to avoid conflicts with running E2E tests
             'BACKEND_PORT': '3001',
-            'FRONTEND_PORT': '12001',
+            # No frontend port needed for headless mode
         })
 
         # Task to count lines in README.md
@@ -107,7 +107,8 @@ base_url = "{llm_base_url}"
         print(f'Running headless OpenHands: {" ".join(cmd)}')
         print(f'Working directory: {repo_root}')
         print(f'Workspace directory: {workspace_dir}')
-        print(f'Environment: ENABLE_BROWSER={env.get("ENABLE_BROWSER")}, AGENT_ENABLE_BROWSING={env.get("AGENT_ENABLE_BROWSING")}')
+        print(f'Environment: ENABLE_BROWSER={env.get("ENABLE_BROWSER")}, AGENT_ENABLE_BROWSING={env.get("AGENT_ENABLE_BROWSING")}, BACKEND_PORT={env.get("BACKEND_PORT")}')
+        print('Note: No frontend port needed - this is truly headless mode')
 
         # Run the command in headless mode
         try:
