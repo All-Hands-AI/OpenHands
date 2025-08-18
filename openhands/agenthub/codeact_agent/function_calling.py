@@ -208,12 +208,11 @@ def response_to_actions(
                             'properties'
                         ].keys()
                     )
-                    # Remove security_risk from valid_params as it's handled separately
-                    valid_params.discard('security_risk')
 
                     for key, value in other_kwargs.items():
                         if key in valid_params:
-                            if key != 'security_risk':  # we handle security_risk separately
+                            # security_risk is valid but should NOT be part of editor kwargs
+                            if key != 'security_risk':
                                 valid_kwargs_for_editor[key] = value
                         else:
                             raise FunctionCallValidationError(

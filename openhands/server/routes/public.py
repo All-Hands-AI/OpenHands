@@ -56,9 +56,7 @@ async def get_security_analyzers() -> list[str]:
     Returns:
         list[str]: A sorted list of security analyzer names.
     """
-    # Include 'none' as an option to disable security analysis
-    analyzers = list(SecurityAnalyzers.keys()) + ['none']
-    return sorted(analyzers)
+    return sorted(SecurityAnalyzers.keys())
 
 
 @app.get('/config', response_model=dict[str, Any])
