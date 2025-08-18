@@ -258,11 +258,7 @@ async def run_session(
                 if pending_action and hasattr(pending_action, 'security_risk'):
                     security_risk = getattr(pending_action, 'security_risk')
                 if auto_highrisk_confirm_mode:
-                    if security_risk in [
-                        ActionSecurityRisk.LOW,
-                        ActionSecurityRisk.MEDIUM,
-                        ActionSecurityRisk.UNKNOWN,
-                    ]:
+                    if security_risk != ActionSecurityRisk.HIGH:
                         event_stream.add_event(
                             ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                             EventSource.USER,
