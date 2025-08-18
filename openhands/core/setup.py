@@ -218,7 +218,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
-    convo_stats: ConversationStats,
+    conversation_stats: ConversationStats,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -236,7 +236,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        convo_stats=convo_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),

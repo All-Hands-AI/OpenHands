@@ -86,7 +86,7 @@ async def test_agent_session_start_with_no_state(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=mock_conversation_stats,
+        conversation_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -178,7 +178,7 @@ async def test_agent_session_start_with_restored_state(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=mock_conversation_stats,
+        conversation_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -276,7 +276,7 @@ async def test_metrics_centralization_via_conversation_stats(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=mock_conversation_stats,
+        conversation_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -324,14 +324,16 @@ async def test_metrics_centralization_via_conversation_stats(
         )
 
         # Verify that the ConversationStats is properly set up
-        assert session.controller.state.convo_stats is mock_conversation_stats
+        assert session.controller.state.conversation_stats is mock_conversation_stats
 
         # Add some metrics to the agent's LLM (simulating LLM usage)
         test_cost = 0.05
         session.controller.agent.llm.metrics.add_cost(test_cost)
 
         # Verify that the cost is reflected in the combined metrics from the conversation stats
-        combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
+        combined_metrics = (
+            session.controller.state.conversation_stats.get_combined_metrics()
+        )
         assert combined_metrics.accumulated_cost == test_cost
 
         # Add more cost to simulate additional LLM usage
@@ -339,7 +341,9 @@ async def test_metrics_centralization_via_conversation_stats(
         session.controller.agent.llm.metrics.add_cost(additional_cost)
 
         # Verify the combined metrics reflect the total cost
-        combined_metrics = session.controller.state.convo_stats.get_combined_metrics()
+        combined_metrics = (
+            session.controller.state.conversation_stats.get_combined_metrics()
+        )
         assert combined_metrics.accumulated_cost == test_cost + additional_cost
 
         # Reset the agent and verify that combined metrics are preserved
@@ -347,7 +351,7 @@ async def test_metrics_centralization_via_conversation_stats(
 
         # Combined metrics should still be preserved after agent reset
         assert (
-            session.controller.state.convo_stats.get_combined_metrics().accumulated_cost
+            session.controller.state.conversation_stats.get_combined_metrics().accumulated_cost
             == test_cost + additional_cost
         )
 
@@ -366,7 +370,7 @@ async def test_budget_control_flag_syncs_with_metrics(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=mock_conversation_stats,
+        conversation_stats=mock_conversation_stats,
     )
 
     # Create a mock runtime and set it up
@@ -466,7 +470,7 @@ def test_override_provider_tokens_with_custom_secret(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=mock_conversation_stats,
+        conversation_stats=mock_conversation_stats,
     )
 
     # Create test data

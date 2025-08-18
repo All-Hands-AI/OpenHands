@@ -612,7 +612,7 @@ async def test_conversation_instructions_plumbed_to_memory(
         sid='test-session',
         file_store=file_store,
         llm_registry=mock_llm_registry,
-        convo_stats=ConversationStats(file_store, 'test-session', None),
+        conversation_stats=ConversationStats(file_store, 'test-session', None),
     )
 
     # Create a mock runtime and set it up
