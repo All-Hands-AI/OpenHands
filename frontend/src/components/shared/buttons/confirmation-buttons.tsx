@@ -16,16 +16,8 @@ export function ConfirmationButtons() {
     send(event);
   };
 
-  // Check if there's a pending action awaiting confirmation
-  const hasAwaitingConfirmation = parsedEvents.some((ev) => {
-    if (!isOpenHandsAction(ev) || ev.source !== "agent") return false;
-
-    const args = ev.args as Record<string, unknown>;
-    return args?.confirmation_state === "awaiting_confirmation";
-  });
-
-  // Check if the most recent awaiting confirmation is high risk
-  const isHighRisk = (() => {
+  // Find the most recent action awaiting confirmation and check if it's high risk
+  const confirmationInfo = (() => {
     for (let i = parsedEvents.length - 1; i >= 0; i -= 1) {
       const ev = parsedEvents[i];
       if (!isOpenHandsAction(ev) || ev.source !== "agent") {
@@ -36,22 +28,24 @@ export function ConfirmationButtons() {
       const args = ev.args as Record<string, unknown>;
       if (args?.confirmation_state === "awaiting_confirmation") {
         const risk = args?.security_risk;
-        if (typeof risk === "string") {
-          return risk.toLowerCase() === "high";
-        }
-        return Number(risk) === ActionSecurityRisk.HIGH;
+        const isHighRisk =
+          typeof risk === "string"
+            ? risk.toLowerCase() === "high"
+            : Number(risk) === ActionSecurityRisk.HIGH;
+
+        return { hasConfirmation: true, isHighRisk };
       }
     }
-    return false;
+    return { hasConfirmation: false, isHighRisk: false };
   })();
 
-  if (!hasAwaitingConfirmation) {
+  if (!confirmationInfo.hasConfirmation) {
     return null;
   }
 
   return (
     <div className="flex flex-col gap-3 pt-4">
-      {isHighRisk && (
+      {confirmationInfo.isHighRisk && (
         <div className="bg-red-500/10 border border-red-400/50 text-red-400 rounded-lg px-3 py-2 text-sm">
           {/* eslint-disable-next-line i18next/no-literal-string */}
           <span role="img" aria-label="warning">
