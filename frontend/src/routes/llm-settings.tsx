@@ -436,7 +436,13 @@ function LlmSettingsScreen() {
                       if (analyzer === "none") {
                         return {
                           key: analyzer,
-                          label: "None (Ask for every command)",
+                          label: "None (always confirm)",
+                        };
+                      }
+                      if (analyzer === "invariant") {
+                        return {
+                          key: analyzer,
+                          label: "Invariant Rule-based Analyzer",
                         };
                       }
                       return { key: analyzer, label: analyzer };
