@@ -258,10 +258,7 @@ export function MCPServerForm({
           isClearable={false}
           allowsCustomValue={false}
           required
-          wrapperClassName={cn(
-            "w-full",
-            serverType === "stdio" ? "max-w-[350px]" : "max-w-[680px]",
-          )}
+          wrapperClassName={cn("w-full", "max-w-[680px]")}
         />
       )}
 
@@ -300,7 +297,7 @@ export function MCPServerForm({
             name="name"
             type="text"
             label={t(I18nKey.SETTINGS$MCP_NAME)}
-            className="w-full max-w-[350px]"
+            className="w-full max-w-[680px]"
             required
             defaultValue={server?.name || ""}
             placeholder="my-mcp-server"
