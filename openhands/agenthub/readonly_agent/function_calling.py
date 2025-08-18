@@ -37,7 +37,7 @@ from openhands.events.action import (
     MCPAction,
     MessageAction,
 )
-from openhands.events.action.action import Thought
+from openhands.events.action import Thought
 from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
