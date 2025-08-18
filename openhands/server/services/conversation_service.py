@@ -42,7 +42,7 @@ async def create_new_conversation(
     replay_json: str | None,
     conversation_instructions: str | None = None,
     conversation_trigger: ConversationTrigger = ConversationTrigger.GUI,
-    attach_convo_id: bool = False,
+    attach_conversation_id: bool = False,
     git_provider: ProviderType | None = None,
     conversation_id: str | None = None,
     mcp_config: MCPConfig | None = None,
@@ -133,8 +133,8 @@ async def create_new_conversation(
             image_urls=image_urls or [],
         )
 
-    if attach_convo_id:
-        logger.warning('Attaching convo ID is deprecated, skipping process')
+    if attach_conversation_id:
+        logger.warning('Attaching conversation ID is deprecated, skipping process')
 
     agent_loop_info = await conversation_manager.maybe_start_agent_loop(
         conversation_id,
@@ -159,7 +159,7 @@ def create_provider_tokens_object(
     return MappingProxyType(provider_information)
 
 
-async def setup_init_convo_settings(
+async def setup_init_conversation_settings(
     user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
 ) -> ConversationInitData:
     """Set up conversation initialization data with provider tokens.
@@ -198,8 +198,8 @@ async def setup_init_convo_settings(
     if user_secrets:
         session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
-    convo_init_data = ConversationInitData(**session_init_args)
+    conversation_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation
     return ExperimentManagerImpl.run_conversation_variant_test(
-        user_id, conversation_id, convo_init_data
+        user_id, conversation_id, conversation_init_data
     )
