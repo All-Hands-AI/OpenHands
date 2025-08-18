@@ -277,7 +277,9 @@ class ConversationMemory:
             tool_metadata = action.tool_call_metadata
             if tool_metadata is not None:
                 # take the response message from the tool call
-                assistant_msg = getattr(tool_metadata.model_response.choices[0], 'message')
+                assistant_msg = getattr(
+                    tool_metadata.model_response.choices[0], 'message'
+                )
                 content = assistant_msg.content or ''
 
                 # save content if any, to thought
@@ -290,7 +292,6 @@ class ConversationMemory:
                 else:
                     action.thought.text = content
 
-                
                 # remove the tool call metadata
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
