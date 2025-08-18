@@ -93,8 +93,7 @@ class AsyncLLM(LLM):
                 # Directly call and await litellm_acompletion
                 resp = await async_completion_unwrapped(*args, **kwargs)
 
-                message_back = resp['choices'][0]['message']['content']
-                self.log_response(message_back)
+                self.log_response(resp)
 
                 # log costs and tokens used
                 self._post_completion(resp)

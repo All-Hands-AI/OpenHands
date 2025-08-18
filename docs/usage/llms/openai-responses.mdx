@@ -1,0 +1,28 @@
+# OpenAI Responses API (Reasoning)
+
+OpenHands can capture provider-native reasoning from OpenAI's reasoning-capable models by using the OpenAI Responses API via LiteLLM. This is disabled by default and guarded behind a configuration flag.
+
+- Backend-only change. Streaming behavior is unchanged and still uses Chat Completions.
+- The captured reasoning is surfaced in the event stream/UI as `reasoning_content`. It is never sent back to the model.
+
+## Enable
+
+Set the following in your config or environment:
+
+- `LLM_USE_OPENAI_RESPONSES=true`
+
+Or via the config file under the `[llm]` section:
+
+```
+[llm]
+use_openai_responses = true
+```
+
+This is only applied for OpenAI (and Azure OpenAI) reasoning-capable models, such as `o3`, `o3-mini`, `o4-mini`, `gpt-5`. For other models or when the flag is false, behavior is unchanged.
+
+## How it works
+
+- When enabled and a supported model is used, OpenHands calls LiteLLM's Responses API for non-streaming requests.
+- The response is adapted back into a Chat Completions-shaped object so existing tool-calling, cost tracking, and serialization continue to work.
+- On any error from the Responses path, OpenHands safely falls back to Chat Completions.
+
