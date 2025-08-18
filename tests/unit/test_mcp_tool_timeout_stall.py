@@ -8,7 +8,8 @@ import pytest
 from mcp import McpError
 
 from openhands.controller.agent import Agent
-from openhands.controller.agent_controller import AgentController, AgentState
+from openhands.controller.agent_controller import AgentController
+from openhands.core.schema import AgentState
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
 from openhands.events.event import EventSource
@@ -17,6 +18,8 @@ from openhands.events.stream import EventStream
 from openhands.mcp.client import MCPClient
 from openhands.mcp.tool import MCPClientTool
 from openhands.mcp.utils import call_tool_mcp
+from openhands.server.services.conversation_stats import ConversationStats
+from openhands.storage.memory import InMemoryFileStore
 
 
 class MockConfig:
@@ -32,6 +35,11 @@ class MockLLM:
     def __init__(self):
         self.metrics = None
         self.config = MockConfig()
+
+
+@pytest.fixture
+def conversation_stats():
+    return ConversationStats(None, 'convo-id', None)
 
 
 class MockAgent(Agent):
@@ -53,7 +61,7 @@ class MockAgent(Agent):
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_error_handling():
+async def test_mcp_tool_timeout_error_handling(conversation_stats):
     """Test that verifies MCP tool timeout errors are properly handled and returned as observations."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -80,7 +88,7 @@ async def test_mcp_tool_timeout_error_handling():
     mock_client.tool_map = {'test_tool': mock_tool}
 
     # Create a mock file store
-    mock_file_store = mock.MagicMock()
+    mock_file_store = InMemoryFileStore({})
 
     # Create a mock event stream
     event_stream = EventStream(sid='test-session', file_store=mock_file_store)
@@ -90,13 +98,12 @@ async def test_mcp_tool_timeout_error_handling():
 
     # Create a mock agent controller
     controller = AgentController(
-        sid='test-session',
-        file_store=mock_file_store,
-        user_id='test-user',
         agent=agent,
         event_stream=event_stream,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
+        sid='test-session',
     )
 
     # Set up the agent state
@@ -143,7 +150,7 @@ async def test_mcp_tool_timeout_error_handling():
 
 
 @pytest.mark.asyncio
-async def test_mcp_tool_timeout_agent_continuation():
+async def test_mcp_tool_timeout_agent_continuation(conversation_stats):
     """Test that verifies the agent can continue processing after an MCP tool timeout."""
     # Create a mock MCPClient
     mock_client = mock.MagicMock(spec=MCPClient)
@@ -170,7 +177,7 @@ async def test_mcp_tool_timeout_agent_continuation():
     mock_client.tool_map = {'test_tool': mock_tool}
 
     # Create a mock file store
-    mock_file_store = mock.MagicMock()
+    mock_file_store = InMemoryFileStore({})
 
     # Create a mock event stream
     event_stream = EventStream(sid='test-session', file_store=mock_file_store)
@@ -180,13 +187,12 @@ async def test_mcp_tool_timeout_agent_continuation():
 
     # Create a mock agent controller
     controller = AgentController(
-        sid='test-session',
-        file_store=mock_file_store,
-        user_id='test-user',
         agent=agent,
         event_stream=event_stream,
+        conversation_stats=conversation_stats,
         iteration_delta=10,
         budget_per_task_delta=None,
+        sid='test-session',
     )
 
     # Set up the agent state

@@ -12,6 +12,8 @@ from openhands.core.config.mcp_config import (
     MCPSSEServerConfig,
     MCPStdioServerConfig,
 )
+from openhands.llm.llm_registry import LLMRegistry
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
@@ -428,6 +430,8 @@ async def test_session_preserves_env_mcp_config(monkeypatch):
         file_store=InMemoryFileStore({}),
         config=config,
         sio=AsyncMock(),
+        llm_registry=LLMRegistry(config=OpenHandsConfig()),
+        conversation_stats=ConversationStats(None, 'test-sid', None),
     )
 
     # Create empty settings
