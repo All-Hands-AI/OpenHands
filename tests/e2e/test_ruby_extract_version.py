@@ -1,4 +1,4 @@
-"""E2E test: Ruby - write and run extract_version.rb to parse name + SemVer
+"""E2E test: Ruby - write and run extract_version.rb to parse name + SemVer.
 
 This test verifies that the agent can write a Ruby file that parses strings
 of the form "name-version" and extracts the name and SemVer components,
@@ -8,7 +8,6 @@ Based on issue #10373: https://github.com/All-Hands-AI/OpenHands/issues/10373
 """
 
 import os
-import re
 import time
 
 from playwright.sync_api import Page, expect
