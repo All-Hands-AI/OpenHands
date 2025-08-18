@@ -345,7 +345,6 @@ async def test_run_controller_with_fatal_error(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
     print(f'state: {state}')
     events = list(test_event_stream.get_events())
@@ -413,7 +412,6 @@ async def test_run_controller_stop_with_stuck(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
     events = list(test_event_stream.get_events())
     print(f'state: {state}')
@@ -938,7 +936,6 @@ async def test_run_controller_max_iterations_has_metrics(
             sid='test',
             fake_user_response_fn=lambda _: 'repeat',
             memory=mock_memory,
-            llm_registry=llm_registry,
         )
 
     state.metrics = mock_agent.llm.metrics
@@ -1094,7 +1091,6 @@ async def test_context_window_exceeded_error_handling(
                 sid='test',
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=mock_memory,
-                llm_registry=llm_registry,
             ),
             timeout=10,
         )
@@ -1248,7 +1244,6 @@ async def test_run_controller_with_context_window_exceeded_with_truncation(
                     sid='test',
                     fake_user_response_fn=lambda _: 'repeat',
                     memory=mock_memory,
-                    llm_registry=llm_registry,
                 ),
                 timeout=10,
             )
@@ -1332,7 +1327,6 @@ async def test_run_controller_with_context_window_exceeded_without_truncation(
                     sid='test',
                     fake_user_response_fn=lambda _: 'repeat',
                     memory=mock_memory,
-                    llm_registry=llm_registry,
                 ),
                 timeout=10,
             )
@@ -1411,7 +1405,6 @@ async def test_run_controller_with_memory_error(
                 sid='test',
                 fake_user_response_fn=lambda _: 'repeat',
                 memory=memory,
-                llm_registry=llm_registry,
             )
 
     assert state.iteration_flag.current_value == 0
