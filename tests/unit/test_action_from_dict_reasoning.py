@@ -49,7 +49,8 @@ def test_action_from_dict_without_thought_but_with_top_level_rc():
     assert a.thought.reasoning_content == 'abc'
 
 
-message = "legacy"
+message = 'legacy'
+
 
 def test_action_from_dict_with_legacy_thought_key_and_rc():
     d = {
