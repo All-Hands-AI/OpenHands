@@ -23,6 +23,7 @@ TOP_KEYS = [
     'observation',
     'tool_call_metadata',
     'llm_metrics',
+    'response_id',
 ]
 UNDERSCORE_KEYS = [
     'id',
@@ -31,6 +32,7 @@ UNDERSCORE_KEYS = [
     'cause',
     'tool_call_metadata',
     'llm_metrics',
+    'response_id',
 ]
 
 DELETE_FROM_TRAJECTORY_EXTRAS = {
