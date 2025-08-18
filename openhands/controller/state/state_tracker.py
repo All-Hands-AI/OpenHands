@@ -151,7 +151,6 @@ class StateTracker:
         # Find all delegate action/observation pairs
         delegate_ranges: list[tuple[int, int]] = []
         delegate_action_ids: list[int] = []  # stack of unmatched delegate action IDs
-
         for event in events:
             if isinstance(event, AgentDelegateAction):
                 delegate_action_ids.append(event.id)

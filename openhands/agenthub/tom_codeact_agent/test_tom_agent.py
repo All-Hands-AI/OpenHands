@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Simple test script for TomCodeActAgent
+Test script for TomCodeActAgent and sleeptime processing
 Usage: python test_tom_agent.py "Your custom instruction here"
 """
 
@@ -8,7 +8,9 @@ import asyncio
 import sys
 import tempfile
 import os
+import shutil
 from pathlib import Path
+from typing import List
 
 # Add the project root to the Python path
 project_root = Path(__file__).parents[3]
@@ -24,10 +26,11 @@ from openhands.events import EventSource
 from openhands.runtime.impl.local import LocalRuntime
 from openhands.controller.state.state import State
 from openhands.llm.metrics import Metrics
-
+# Removed sleeptime import since it's now integrated into TomCodeActAgent
 
 async def test_tom_agent(instruction: str, workspace_dir: str = None):
     """Test TomCodeActAgent with a custom instruction."""
+    print("\n=== Testing TomCodeActAgent ===")
 
     # Create a workspace in .cache folder if none provided
     if workspace_dir is None:
@@ -106,12 +109,13 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
             print(f"Agent action: {action.__class__.__name__}")
             if hasattr(action, 'content'):
                 print(f"Content: {action.content[:200]}...")
-
             # Add the action to the event stream
             runtime.event_stream.add_event(action, EventSource.AGENT)
 
             # Execute the action in the runtime
+            breakpoint()
             observation = runtime.run_action(action)
+            breakpoint()
 
             if observation:
                 print(f"Observation: {observation.__class__.__name__}")
@@ -121,7 +125,7 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
 
                 # Add observation to event stream
                 runtime.event_stream.add_event(observation, EventSource.ENVIRONMENT)
-                
+
             # Handle MessageActions by asking for user input
             if action.__class__.__name__ == "MessageAction":
                 print(f"\n🤖 Agent: {action.content}")
@@ -154,21 +158,19 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
 
 
 def main():
-    """Main function to run the test."""
-    if len(sys.argv) < 2:
-        instruction = "Create a simple Python script that prints 'Hello, Tom!' and save it as hello.py"
-        print("No instruction provided. Using default:")
-        print(f"'{instruction}'")
-    else:
+    """Main function to run the tests."""
+    # Then run agent test if arguments provided
+    if len(sys.argv) > 1:
         instruction = " ".join(sys.argv[1:])
-
-    # You can optionally specify a workspace directory
-    workspace_dir = None
-    if len(sys.argv) > 2 and os.path.isdir(sys.argv[-1]):
-        workspace_dir = sys.argv[-1]
-
-    # Run the async function
-    asyncio.run(test_tom_agent(instruction, workspace_dir))
+        # You can optionally specify a workspace directory
+        workspace_dir = None
+        if os.path.isdir(sys.argv[-1]):
+            workspace_dir = sys.argv[-1]
+            instruction = " ".join(sys.argv[1:-1])
+        asyncio.run(test_tom_agent(instruction, workspace_dir))
+    else:
+        print("\nSkipping agent test (no instruction provided)")
+        print("To test agent, run: python test_tom_agent.py \"Your instruction here\"")
 
 
 if __name__ == "__main__":

@@ -9994,7 +9994,7 @@ optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = []
-develop = false
+develop = true
 
 [package.dependencies]
 aiofiles = ">=23.0.0"
@@ -10015,10 +10015,8 @@ uvicorn = ">=0.24.0"
 dev = ["black (>=22.0.0)", "isort (>=5.0.0)", "mypy (>=1.0.0)", "pre-commit (>=3.6.0)", "pytest (>=7.0.0)", "pytest-cov (>=6.2.1)", "ruff (>=0.3.0)"]
 
 [package.source]
-type = "git"
-url = "https://github.com/All-Hands-AI/ToM-SWE.git"
-reference = "feat/update_example_and_data_ui"
-resolved_reference = "ff1d09bf1f73ba8f0254751bb20679d16401b7cc"
+type = "directory"
+url = "../ToM-SWE"
 
 [[package]]
 name = "toml"
@@ -11786,4 +11784,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "5b803b46859b9288d3f5e9bc8e9c70d2744d9551d95019d989814c0691eb193d"
+content-hash = "d66355f0ca2f91691851fec423ac6250b047dcd8db422192d20fcc3af50e6afe"

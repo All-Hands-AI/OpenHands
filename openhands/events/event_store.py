@@ -139,13 +139,16 @@ class EventStore(EventStoreABC):
                     if limit and limit <= num_results:
                         return
 
-    def get_event(self, id: int) -> Event:
+    def get_event(self, id: int) -> Event | None:
         filename = self._get_filename_for_id(id, self.user_id)
         content = self.file_store.read(filename)
-        data = json.loads(content)
-        return event_from_dict(data)
+        try:
+            data = json.loads(content)
+            return event_from_dict(data)
+        except Exception as e:
+            return None
 
-    def get_latest_event(self) -> Event:
+    def get_latest_event(self) -> Event | None:
         return self.get_event(self.cur_id - 1)
 
     def get_latest_event_id(self) -> int:
