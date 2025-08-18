@@ -665,8 +665,8 @@ fi
         loaded_microagents: list[BaseMicroagent] = []
 
         self.log(
-            'debug',
-            f'Starting org-level microagent loading for repository: {selected_repository}',
+            'error',
+            f'DEBUG: get_microagents_from_org_or_user called with repository: {selected_repository}',
         )
 
         repo_parts = selected_repository.split('/')
