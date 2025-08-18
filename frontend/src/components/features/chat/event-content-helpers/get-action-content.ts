@@ -14,19 +14,8 @@ import {
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
 import i18n from "#/i18n";
 
-const getRiskText = (risk: ActionSecurityRisk | string | number) => {
-  // Handle string values that might come from backend
-  if (typeof risk === "string") {
-    const lowerRisk = risk.toLowerCase();
-    if (lowerRisk === "low") return i18n.t("SECURITY$LOW_RISK");
-    if (lowerRisk === "medium") return i18n.t("SECURITY$MEDIUM_RISK");
-    if (lowerRisk === "high") return i18n.t("SECURITY$HIGH_RISK");
-    return i18n.t("SECURITY$UNKNOWN_RISK");
-  }
-
-  // Handle numeric values
-  const numericRisk = Number(risk);
-  switch (numericRisk) {
+const getRiskText = (risk: ActionSecurityRisk) => {
+  switch (risk) {
     case ActionSecurityRisk.LOW:
       return i18n.t("SECURITY$LOW_RISK");
     case ActionSecurityRisk.MEDIUM:

@@ -8,7 +8,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { SettingsSwitchWithTooltip } from "#/components/features/settings/settings-switch-with-tooltip";
+import { InfoTooltip } from "#/components/shared/info-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -403,16 +403,20 @@ function LlmSettingsScreen() {
           )}
 
           {/* Confirmation mode and security analyzer - always visible */}
-          <SettingsSwitchWithTooltip
-            testId="enable-confirmation-mode-switch"
-            name="enable-confirmation-mode-switch"
-            onToggle={handleConfirmationModeIsDirty}
-            defaultIsToggled={settings.CONFIRMATION_MODE}
-            tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-            isBeta
-          >
-            {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-          </SettingsSwitchWithTooltip>
+          <div className="flex items-center gap-2">
+            <SettingsSwitch
+              testId="enable-confirmation-mode-switch"
+              name="enable-confirmation-mode-switch"
+              onToggle={handleConfirmationModeIsDirty}
+              defaultIsToggled={settings.CONFIRMATION_MODE}
+              isBeta
+            >
+              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+            </SettingsSwitch>
+            <InfoTooltip
+              content={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+            />
+          </div>
 
           {confirmationModeEnabled && (
             <>
