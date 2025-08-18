@@ -53,6 +53,7 @@ class PromptManager:
         self,
         prompt_dir: str,
         system_prompt_filename: str = 'system_prompt.j2',
+        system_prompt_extension_file: str | None = None,
     ):
         if prompt_dir is None:
             raise ValueError('Prompt directory is not set')
@@ -67,6 +68,7 @@ class PromptManager:
         self.microagent_info_template: Template = self._load_template(
             'microagent_info.j2'
         )
+        self.system_prompt_extension_file: str | None = system_prompt_extension_file
 
     def _load_template(self, template_name: str) -> Template:
         """Load a template from the prompt directory.
@@ -90,6 +92,22 @@ class PromptManager:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 
         system_message = self.system_template.render().strip()
+        # If an extension file is configured, append its contents
+        if self.system_prompt_extension_file:
+            try:
+                with open(
+                    self.system_prompt_extension_file, 'r', encoding='utf-8'
+                ) as f:
+                    extension = f.read().strip()
+                if extension:
+                    system_message = f'{system_message}\n\n{extension}'
+            except Exception as e:
+                # Do not fail the agent; just log and continue
+                from openhands.core.logger import openhands_logger as logger
+
+                logger.warning(
+                    f"Failed to read system_prompt_extension_file '{self.system_prompt_extension_file}': {e}"
+                )
         return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
