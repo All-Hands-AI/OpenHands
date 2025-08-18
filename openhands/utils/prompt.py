@@ -7,6 +7,7 @@ from jinja2 import Environment, FileSystemLoader, Template
 from openhands.controller.state.state import State
 from openhands.core.message import Message, TextContent
 from openhands.events.observation.agent import MicroagentKnowledge
+from openhands.utils.string_utils import refine_prompt
 
 
 @dataclass
@@ -89,25 +90,13 @@ class PromptManager:
             raise FileNotFoundError(f'Prompt file {template_path} not found')
 
     def get_system_message(self) -> str:
-        from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
-
         system_message = self.system_template.render().strip()
         # If an extension file is configured, append its contents
         if self.system_prompt_extension_file:
-            try:
-                with open(
-                    self.system_prompt_extension_file, 'r', encoding='utf-8'
-                ) as f:
-                    extension = f.read().strip()
-                if extension:
-                    system_message = f'{system_message}\n\n{extension}'
-            except Exception as e:
-                # Do not fail the agent; just log and continue
-                from openhands.core.logger import openhands_logger as logger
-
-                logger.warning(
-                    f"Failed to read system_prompt_extension_file '{self.system_prompt_extension_file}': {e}"
-                )
+            with open(self.system_prompt_extension_file, 'r', encoding='utf-8') as f:
+                extension = f.read().strip()
+            if extension:
+                system_message = f'{system_message}\n\n{extension}'
         return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
