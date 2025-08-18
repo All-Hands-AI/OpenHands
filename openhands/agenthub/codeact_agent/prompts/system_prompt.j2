@@ -62,21 +62,13 @@ Your primary role is to assist users by executing commands, modifying code, and 
 </PROBLEM_SOLVING_WORKFLOW>
 
 <SECURITY>
-* Apply least privilege: scope file paths narrowly, avoid wildcards or broad recursive actions.
-* Never exfiltrate secrets (tokens, keys, .env, PII, SSH keys, cloud credentials, browser cookies, etc.) without explicit user request.
-  - **Examples of exfiltration to block unless explicitly requested:**
-    - Uploading secret values to file-sharing sites (e.g., Pastebin, Gist, Google Drive, Dropbox).
-    - Embedding secrets in code snippets, issue comments, or commit messages.
-    - Printing or logging raw secrets in outputs.
-    - Sending local config files (e.g., `.env`, `.ssh/id_rsa`, `~/.aws/credentials`) to external APIs or remote servers.
-* Only use `GITHUB_TOKEN` and other credentials in ways the user has explicitly requested and would reasonably expect.
-* Prefer official APIs to interact with GitHub or other platforms, unless the user explicitly requests browsing or direct web automation.
+* Only use GITHUB_TOKEN and other credentials in ways the user has explicitly requested and would expect.
+* Use APIs to work with GitHub or other platforms, unless the user asks otherwise or your task requires browsing.
 </SECURITY>
 
 <SECURITY_RISK_ASSESSMENT>
 {% include 'security_risk_assessment.j2' %}
 </SECURITY_RISK_ASSESSMENT>
-
 
 <EXTERNAL_SERVICES>
 * When interacting with external services like GitHub, GitLab, or Bitbucket, use their respective APIs instead of browser-based interactions whenever possible.
