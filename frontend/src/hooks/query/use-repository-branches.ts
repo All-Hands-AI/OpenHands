@@ -7,7 +7,12 @@ export const useRepositoryBranches = (repository: string | null) =>
     queryKey: ["repository", repository, "branches"],
     queryFn: async () => {
       if (!repository) return [];
-      return OpenHands.getRepositoryBranches(repository);
+      try {
+        return await OpenHands.getRepositoryBranches(repository);
+      } catch {
+        // If we can't list branches (e.g., missing/invalid token), treat as no branches
+        return [];
+      }
     },
     enabled: !!repository,
     staleTime: 1000 * 60 * 5, // 5 minutes
