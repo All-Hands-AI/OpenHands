@@ -141,7 +141,7 @@ async def run_session(
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
     auto_highrisk_confirm_mode = (
-        True  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
+        False  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
     )
 
     # Show runtime initialization message
