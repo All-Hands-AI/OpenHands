@@ -45,14 +45,14 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 
 class CmdRunTool(Tool):
     def __init__(self, use_short_description: bool = False) -> None:
-        self.use_short_description = use_short_description
-
-    def to_param(self) -> ChatCompletionToolParam:
-        description = (
+        self.description: str = (
             _SHORT_BASH_DESCRIPTION
-            if self.use_short_description
+            if use_short_description
             else _DETAILED_BASH_DESCRIPTION
         )
+
+    def to_param(self) -> ChatCompletionToolParam:
+        description = self.description
         return ChatCompletionToolParam(
             type='function',
             function=ChatCompletionToolParamFunctionChunk(
