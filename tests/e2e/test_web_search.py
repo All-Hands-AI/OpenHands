@@ -40,6 +40,15 @@ def test_web_search_current_us_president(page: Page):
     repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
     expect(repo_dropdown).to_be_visible(timeout=30000)
     repo_dropdown.click()
+
+    # Type exact repository name for deterministic selection (React Select input)
+    try:
+        page.keyboard.press('Control+a')
+        page.keyboard.type('openhands-agent/OpenHands')
+        print('Typed repository filter: openhands-agent/OpenHands')
+    except Exception as e:
+        print(f'Keyboard typing failed (will fallback to scanning options): {e}')
+
     page.wait_for_timeout(2000)
 
     # Look for OpenHands repository option
