@@ -51,7 +51,7 @@ async def generate_conversation_title(
         ]
 
         title = llm_registry.request_extraneous_completion(
-            'convo_title_creator', llm_config, messages
+            'conversation_title_creator', llm_config, messages
         )
 
         # Ensure the title isn't too long

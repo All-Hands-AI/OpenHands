@@ -39,7 +39,7 @@ from openhands.utils.conversation_summary import (
 )
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
-from openhands.utils.utils import create_registry_and_convo_stats
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 from .conversation_manager import ConversationManager
 
@@ -335,15 +335,15 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-        llm_registry, convo_stats, config = create_registry_and_convo_stats(
-            self.config, sid, user_id, settings
+        llm_registry, conversation_stats, config = (
+            create_registry_and_conversation_stats(self.config, sid, user_id, settings)
         )
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=config,
             llm_registry=llm_registry,
-            convo_stats=convo_stats,
+            conversation_stats=conversation_stats,
             sio=self.sio,
             user_id=user_id,
         )

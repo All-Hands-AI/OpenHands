@@ -53,7 +53,7 @@ async def initialize_conversation(
         conversation_title = get_default_conversation_title(conversation_id)
 
         logger.info(f'Saving metadata for conversation {conversation_id}')
-        convo_metadata = ConversationMetadata(
+        conversation_metadata = ConversationMetadata(
             trigger=conversation_trigger,
             conversation_id=conversation_id,
             title=conversation_title,
@@ -63,12 +63,12 @@ async def initialize_conversation(
             git_provider=git_provider,
         )
 
-        await conversation_store.save_metadata(convo_metadata)
-        return convo_metadata
+        await conversation_store.save_metadata(conversation_metadata)
+        return conversation_metadata
 
     try:
-        convo_metadata = await conversation_store.get_metadata(conversation_id)
-        return convo_metadata
+        conversation_metadata = await conversation_store.get_metadata(conversation_id)
+        return conversation_metadata
     except Exception:
         pass
 
@@ -83,7 +83,7 @@ async def start_conversation(
     image_urls: list[str] | None,
     replay_json: str | None,
     conversation_id: str,
-    convo_metadata: ConversationMetadata,
+    conversation_metadata: ConversationMetadata,
     conversation_instructions: str | None,
     mcp_config: MCPConfig | None = None,
 ) -> AgentLoopInfo:
@@ -92,7 +92,7 @@ async def start_conversation(
         extra={
             'signal': 'create_conversation',
             'user_id': user_id,
-            'trigger': convo_metadata.trigger,
+            'trigger': conversation_metadata.trigger,
         },
     )
     logger.info('Loading settings')
@@ -119,10 +119,10 @@ async def start_conversation(
         raise MissingSettingsError('Settings not found')
 
     session_init_args['git_provider_tokens'] = git_provider_tokens
-    session_init_args['selected_repository'] = convo_metadata.selected_repository
+    session_init_args['selected_repository'] = conversation_metadata.selected_repository
     session_init_args['custom_secrets'] = custom_secrets
-    session_init_args['selected_branch'] = convo_metadata.selected_branch
-    session_init_args['git_provider'] = convo_metadata.git_provider
+    session_init_args['selected_branch'] = conversation_metadata.selected_branch
+    session_init_args['git_provider'] = conversation_metadata.git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
     if mcp_config:
         session_init_args['mcp_config'] = mcp_config

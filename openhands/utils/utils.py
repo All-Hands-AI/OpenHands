@@ -19,7 +19,7 @@ def setup_llm_config(config: OpenHandsConfig, settings: Settings) -> OpenHandsCo
     return config
 
 
-def create_registry_and_convo_stats(
+def create_registry_and_conversation_stats(
     config: OpenHandsConfig,
     sid: str,
     user_id: str | None,
@@ -31,7 +31,13 @@ def create_registry_and_convo_stats(
 
     agent_cls = user_settings.agent if user_settings else None
     llm_registry = LLMRegistry(user_config, agent_cls)
-    file_store = get_file_store(user_config.file_store, user_config.file_store_path)
-    convo_stats = ConversationStats(file_store, sid, user_id)
-    llm_registry.subscribe(convo_stats.register_llm)
-    return llm_registry, convo_stats, user_config
+    file_store = get_file_store(
+        file_store_type=config.file_store,
+        file_store_path=config.file_store_path,
+        file_store_web_hook_url=config.file_store_web_hook_url,
+        file_store_web_hook_headers=config.file_store_web_hook_headers,
+        file_store_web_hook_batch=config.file_store_web_hook_batch,
+    )
+    conversation_stats = ConversationStats(file_store, sid, user_id)
+    llm_registry.subscribe(conversation_stats.register_llm)
+    return llm_registry, conversation_stats, user_config
