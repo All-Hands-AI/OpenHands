@@ -24,6 +24,9 @@ async def validate_provider_token(
         'bitbucket' if it's a Bitbucket token
         None if the token is invalid for all services
     """
+    logger.info(f'BEGIN token {token}')
+    logger.info(f'BEGIN base_domain {base_domain}')
+
     # Skip validation for empty tokens
     if token is None:
         return None  # type: ignore[unreachable]

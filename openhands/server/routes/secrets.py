@@ -59,6 +59,7 @@ async def invalidate_legacy_secrets_store(
 def process_token_validation_result(
     confirmed_token_type: ProviderType | None, token_type: ProviderType
 ) -> str:
+
     if not confirmed_token_type or confirmed_token_type != token_type:
         return (
             f'Invalid token. Please make sure it is a valid {token_type.value} token.'
@@ -73,12 +74,17 @@ async def check_provider_tokens(
 ) -> str:
     msg = ''
     if incoming_provider_tokens.provider_tokens:
-        # Determine whether tokens are valid
+        # Determine whether tokens are validв
         for token_type, token_value in incoming_provider_tokens.provider_tokens.items():
             if token_value.token:
                 confirmed_token_type = await validate_provider_token(
                     token_value.token, token_value.host
                 )  # FE always sends latest host
+                logger.info(f'BEGIN confirmed_token_type! {confirmed_token_type}')
+                logger.info(f'BEGIN token_type! {token_type}')
+                logger.info(f'BEGIN token_value.token! {token_value.token}')
+                logger.info(f'BEGIN token_value.host! {token_value.host}')
+
                 msg = process_token_validation_result(confirmed_token_type, token_type)
 
             existing_token = (
@@ -108,6 +114,9 @@ async def store_provider_tokens(
     secrets_store: SecretsStore = Depends(get_secrets_store),
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
 ) -> JSONResponse:
+    logger.info(f'BEGIN token provider_info {provider_info}')
+    logger.info(f'BEGIN token provider_tokens {provider_tokens}')
+
     provider_err_msg = await check_provider_tokens(provider_info, provider_tokens)
     if provider_err_msg:
         # We don't have direct access to user_id here, but we can log the provider info

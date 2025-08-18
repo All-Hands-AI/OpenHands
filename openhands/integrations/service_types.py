@@ -229,6 +229,7 @@ class BaseGitService(ABC):
         params: dict | None,
         method: RequestMethod = RequestMethod.GET,
     ):
+        logger.info(f'BEGIN url {url}, method {method}, params {params}')
         if method == RequestMethod.POST:
             return await client.post(url, headers=headers, json=params)
         return await client.get(url, headers=headers, params=params)

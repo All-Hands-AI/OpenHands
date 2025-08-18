@@ -18,7 +18,7 @@ class GithubIssueHandler(IssueHandlerInterface):
         repo: str,
         token: str,
         username: str | None = None,
-        base_domain: str = 'github.com',
+        base_domain: str = 'localhost',
     ):
         """Initialize a GitHub issue handler.
 
