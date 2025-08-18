@@ -12,6 +12,15 @@ def test_commit_message_with_quotes():
     with tempfile.TemporaryDirectory() as temp_dir:
         subprocess.run(['git', 'init', temp_dir], check=True)
 
+        # Set git configuration locally for this repository
+        subprocess.run(
+            ['git', '-C', temp_dir, 'config', 'user.email', 'test@example.com'],
+            check=True,
+        )
+        subprocess.run(
+            ['git', '-C', temp_dir, 'config', 'user.name', 'Test User'], check=True
+        )
+
         # Create a test file and add it to git
         test_file = os.path.join(temp_dir, 'test.txt')
         with open(test_file, 'w') as f:
@@ -36,8 +45,20 @@ def test_commit_message_with_quotes():
             thread_ids=None,
         )
 
-        # Make the commit
-        make_commit(temp_dir, issue, 'issue')
+        # Make the commit with author information
+        # First, modify the environment to include GIT_AUTHOR_NAME and GIT_AUTHOR_EMAIL
+        old_environ = os.environ.copy()
+        os.environ['GIT_AUTHOR_NAME'] = 'Test User'
+        os.environ['GIT_AUTHOR_EMAIL'] = 'test@example.com'
+        os.environ['GIT_COMMITTER_NAME'] = 'Test User'
+        os.environ['GIT_COMMITTER_EMAIL'] = 'test@example.com'
+
+        try:
+            make_commit(temp_dir, issue, 'issue')
+        finally:
+            # Restore the original environment
+            os.environ.clear()
+            os.environ.update(old_environ)
 
         # Get the commit message
         result = subprocess.run(
@@ -100,6 +121,14 @@ def test_pr_title_with_quotes(monkeypatch):
     def mock_run(*args, **kwargs):
         print(f'Running command: {args[0] if args else kwargs.get("args", [])}')
         if isinstance(args[0], list) and args[0][0] == 'git':
+            # Set git environment variables for all git commands
+            env = kwargs.get('env', os.environ.copy())
+            env['GIT_AUTHOR_NAME'] = 'Test User'
+            env['GIT_AUTHOR_EMAIL'] = 'test@example.com'
+            env['GIT_COMMITTER_NAME'] = 'Test User'
+            env['GIT_COMMITTER_EMAIL'] = 'test@example.com'
+            kwargs['env'] = env
+
             if 'push' in args[0]:
                 return subprocess.CompletedProcess(
                     args[0], returncode=0, stdout='', stderr=''
@@ -156,11 +185,23 @@ def test_pr_title_with_quotes(monkeypatch):
         print('Sending PR...')
         from openhands.resolver.send_pull_request import send_pull_request
 
-        send_pull_request(
-            issue=issue,
-            token='dummy-token',
-            username='test-user',
-            platform=ProviderType.GITHUB,
-            patch_dir=temp_dir,
-            pr_type='ready',
-        )
+        # Set git environment variables
+        old_environ = os.environ.copy()
+        os.environ['GIT_AUTHOR_NAME'] = 'Test User'
+        os.environ['GIT_AUTHOR_EMAIL'] = 'test@example.com'
+        os.environ['GIT_COMMITTER_NAME'] = 'Test User'
+        os.environ['GIT_COMMITTER_EMAIL'] = 'test@example.com'
+
+        try:
+            send_pull_request(
+                issue=issue,
+                token='dummy-token',
+                username='test-user',
+                platform=ProviderType.GITHUB,
+                patch_dir=temp_dir,
+                pr_type='ready',
+            )
+        finally:
+            # Restore the original environment
+            os.environ.clear()
+            os.environ.update(old_environ)
