@@ -7,7 +7,9 @@ from litellm.exceptions import (
 
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.session import Session
 from openhands.storage.memory import InMemoryFileStore
 
@@ -33,10 +35,28 @@ def default_llm_config():
     )
 
 
+@pytest.fixture
+def llm_registry():
+    config = OpenHandsConfig()
+    return LLMRegistry(config=config)
+
+
+@pytest.fixture
+def conversation_stats():
+    file_store = InMemoryFileStore({})
+    return ConversationStats(
+        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+    )
+
+
 @pytest.mark.asyncio
 @patch('openhands.llm.llm.litellm_completion')
 async def test_notify_on_llm_retry(
-    mock_litellm_completion, mock_sio, default_llm_config
+    mock_litellm_completion,
+    mock_sio,
+    default_llm_config,
+    llm_registry,
+    conversation_stats,
 ):
     config = OpenHandsConfig()
     config.set_llm_config(default_llm_config)
@@ -44,6 +64,8 @@ async def test_notify_on_llm_retry(
         sid='..sid..',
         file_store=InMemoryFileStore({}),
         config=config,
+        llm_registry=llm_registry,
+        conversation_stats=conversation_stats,
         sio=mock_sio,
         user_id='..uid..',
     )
@@ -56,12 +78,20 @@ async def test_notify_on_llm_retry(
             ),
             {'choices': [{'message': {'content': 'Retry successful'}}]},
         ]
-    llm = session._create_llm('..cls..')
 
-    llm.completion(
-        messages=[{'role': 'user', 'content': 'Hello!'}],
-        stream=False,
-    )
+        # Set the retry listener on the registry
+        llm_registry.retry_listner = session._notify_on_llm_retry
+
+        # Create an LLM through the registry
+        llm = llm_registry.get_llm(
+            service_id='test_service',
+            config=default_llm_config,
+        )
+
+        llm.completion(
+            messages=[{'role': 'user', 'content': 'Hello!'}],
+            stream=False,
+        )
 
     assert mock_litellm_completion.call_count == 2
     session.queue_status_message.assert_called_once_with(
