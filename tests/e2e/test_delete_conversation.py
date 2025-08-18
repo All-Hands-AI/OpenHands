@@ -159,9 +159,19 @@ def test_delete_conversation(page: Page, base_url: str):
         page.screenshot(path='test-results/delete_04_no_conversation_panel.png')
         pytest.skip('Conversation panel not visible')
 
-    # Look for conversation cards within the panel
+    # Look for conversation cards within the panel; wait for at least one to appear
     conversation_cards = conversation_panel.locator('[data-testid="conversation-card"]')
-    conversation_count = conversation_cards.count()
+
+    conversation_count = 0
+    for _ in range(30):  # wait up to ~30s for conversations to load
+        try:
+            conversation_count = conversation_cards.count()
+            if conversation_count > 0:
+                break
+        except Exception:
+            pass
+        page.wait_for_timeout(1000)
+
     print(f'Found {conversation_count} conversation(s) in panel')
 
     if conversation_count == 0:
