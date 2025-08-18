@@ -323,18 +323,35 @@ def test_gitlab_repository_cloning(page: Page):
     except Exception:
         pass
 
-    # Try multiple GitLab repositories in order of preference
-    gitlab_repos = [
-        'gitlab-org/gitlab-foss',  # Well-known public GitLab repository
-        'gitlab-org/gitlab',  # Main GitLab repository
-        'gitlab-com/www-gitlab-com',  # GitLab website repository
+    # Try multiple GitLab repositories (prefer small public examples)
+    gitlab_repo_candidates = [
+        'https://gitlab.com/gitlab-examples/ci-hello-world',
+        'https://gitlab.com/gitlab-examples/hello-world',
+        'gitlab-examples/ci-hello-world',  # fallback to plain label
+        'gitlab-examples/hello-world',
     ]
 
     option_found = False
     selected_repo = None
 
-    for gitlab_repo in gitlab_repos:
+    for gitlab_repo in gitlab_repo_candidates:
         print(f'Trying repository: {gitlab_repo}')
+
+        # Determine the label we expect in the dropdown options (owner/repo)
+        if gitlab_repo.startswith('http'):
+            # Extract path after domain, e.g., gitlab-examples/ci-hello-world
+            try:
+                search_label = (
+                    gitlab_repo.split('://', 1)[1].split('/', 1)[1].strip('/')
+                )
+            except Exception:
+                search_label = (
+                    gitlab_repo.rsplit('/', 2)[-2]
+                    + '/'
+                    + gitlab_repo.rsplit('/', 1)[-1]
+                )
+        else:
+            search_label = gitlab_repo
 
         # Clear the search field and type into the dropdown input
         try:
@@ -348,19 +365,20 @@ def test_gitlab_repository_cloning(page: Page):
                 page.keyboard.press('Control+a')
                 page.keyboard.press('Delete')
                 page.keyboard.type(gitlab_repo)
-            print(f'Typed repository name: {gitlab_repo}')
+            print(
+                f'Typed repository query: {gitlab_repo} (expect option label: {search_label})'
+            )
         except Exception as e:
             print(f'Keyboard/input failed: {e}')
             continue
 
         page.wait_for_timeout(3000)  # Wait for search results
 
-        # Try to find and click the repository option
+        # Try to find and click the repository option matching the expected label
         option_selectors = [
-            f'[role="option"]:has-text("{gitlab_repo}")',
-            f'[role="option"]:has-text("{gitlab_repo.split("/")[1]}")',  # Just the repo name
-            f'div:has-text("{gitlab_repo}"):not([id="aria-results"])',
-            f'div:has-text("{gitlab_repo.split("/")[1]}"):not([id="aria-results"])',
+            f'[data-testid="repo-dropdown"] [role="option"]:has-text("{search_label}")',
+            f'[role="option"]:has-text("{search_label}")',
+            f'div:has-text("{search_label}"):not([id="aria-results"])',
             '[role="option"]',  # Any option as fallback
         ]
 
@@ -370,12 +388,12 @@ def test_gitlab_repository_cloning(page: Page):
                 if option.is_visible(timeout=3000):
                     print(f'Found repository option with selector: {selector}')
                     try:
-                        option.click(force=True)
+                        option.click()
                         print(
-                            f'Successfully clicked repository option for {gitlab_repo}'
+                            f'Successfully clicked repository option for {search_label}'
                         )
                         option_found = True
-                        selected_repo = gitlab_repo
+                        selected_repo = search_label
                         page.wait_for_timeout(2000)
                         break
                     except Exception:
@@ -415,7 +433,7 @@ def test_gitlab_repository_cloning(page: Page):
 
     page.wait_for_timeout(2000)
 
-    # Step 6: Select branch (main)
+    # Step 6: Select branch (prefer main/master, otherwise first)
     print('Step 6: Selecting branch...')
 
     # Try multiple selectors for the branch dropdown
@@ -439,17 +457,8 @@ def test_gitlab_repository_cloning(page: Page):
             continue
 
     if branch_dropdown is None:
-        print(
-            'Could not find branch dropdown, trying third dropdown in Connect section'
-        )
-        # Try to find the third dropdown in the Connect to a Repository section
-        connect_section = page.locator('div:has-text("Connect to a Repository")').first
-        dropdowns = connect_section.locator('div[class*="select"]')
-        if dropdowns.count() >= 3:
-            branch_dropdown = dropdowns.nth(2)
-            print('Using third dropdown in Connect section')
-
-    if branch_dropdown and branch_dropdown.is_visible(timeout=5000):
+        print('Could not find branch dropdown; branch may auto-select. Proceeding...')
+    else:
         # Try to open the branch dropdown robustly
         try:
             # Prefer clicking the react-select control rather than the placeholder
@@ -476,51 +485,29 @@ def test_gitlab_repository_cloning(page: Page):
             except Exception:
                 pass
 
-        # Type/select main branch
-        main_selected = False
+        # First try main/master explicitly; if not found, pick the first option
+        selected_branch = None
         try:
-            input_el = (
-                page.locator('div:has-text("Select branch...")').locator('input').first
-            )
-            if input_el.is_visible(timeout=2000):
-                input_el.click()
-                input_el.press('Control+a')
-                input_el.press('Delete')
-                input_el.type('main')
-                page.wait_for_timeout(500)
+            for text in ['main', 'master']:
+                try:
+                    opt = page.locator(f'[role="option"]:has-text("{text}")').first
+                    if opt.is_visible(timeout=1000):
+                        opt.click()
+                        selected_branch = text
+                        print(f'Selected {text} branch explicitly')
+                        break
+                except Exception:
+                    continue
+            if not selected_branch:
+                first_opt = page.locator('[role="option"]').first
+                if first_opt.is_visible(timeout=1000):
+                    first_opt.click()
+                    selected_branch = 'first-available'
+                    print('Selected first available branch')
         except Exception:
-            pass
-
-        # Prefer clicking an explicit "main" option
-        main_selectors = [
-            '[role="option"]:has-text("main")',
-            '.react-select__option:has-text("main")',
-            'div[role="option"]:has-text("main")',
-        ]
-
-        for selector in main_selectors:
-            try:
-                main_branch = page.locator(selector).first
-                if main_branch.is_visible(timeout=2000):
-                    main_branch.click()
-                    print(f'Selected main branch with selector: {selector}')
-                    main_selected = True
-                    break
-            except Exception:
-                continue
-
-        if not main_selected:
-            # Try keyboard navigation
-            try:
-                page.keyboard.press('ArrowDown')
-                page.wait_for_timeout(300)
-                page.keyboard.press('Enter')
-                print('Used keyboard navigation to select branch')
-                main_selected = True
-            except Exception:
-                pass
-    else:
-        print('Branch dropdown not visible, may have been auto-selected')
+            print(
+                'Could not select branch explicitly; proceeding with auto-selected branch'
+            )
 
     page.screenshot(path='test-results/gitlab_04_repo_selected.png')
     print('Screenshot saved: gitlab_04_repo_selected.png')
