@@ -725,13 +725,13 @@ fi
                     'debug',
                     f'org-level microagent directory {org_openhands_repo} not found: {str(e)}',
                 )
-                raise
+                return loaded_microagents  # Return empty list instead of raising
             except Exception as e:
                 self.log(
                     'debug',
                     f'Failed to get authenticated URL for {org_openhands_repo}: {str(e)}',
                 )
-                raise
+                return loaded_microagents  # Return empty list instead of raising
 
             clone_cmd = (
                 f'GIT_TERMINAL_PROMPT=0 git clone --depth 1 {remote_url} {org_repo_dir}'
