@@ -32,12 +32,11 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
-from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
-from openhands.utils.utils import create_registry_and_convo_stats
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 class FakeUserResponseFunc(Protocol):
@@ -59,7 +58,6 @@ async def run_controller(
     headless_mode: bool = True,
     memory: Memory | None = None,
     conversation_instructions: str | None = None,
-    llm_registry: LLMRegistry | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -98,7 +96,7 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
-    llm_registry, convo_stats, config = create_registry_and_convo_stats(
+    llm_registry, conversation_stats, config = create_registry_and_conversation_stats(
         config,
         sid,
         None,
@@ -165,7 +163,7 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, convo_stats, replay_events=replay_events
+        agent, runtime, config, conversation_stats, replay_events=replay_events
     )
 
     assert isinstance(initial_user_action, Action), (

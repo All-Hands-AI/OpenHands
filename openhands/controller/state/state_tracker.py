@@ -51,7 +51,7 @@ class StateTracker:
         self,
         id: str,
         state: State | None,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -74,7 +74,7 @@ class StateTracker:
                 session_id=id.removesuffix('-delegate'),
                 user_id=self.user_id,
                 inputs={},
-                convo_stats=convo_stats,
+                conversation_stats=conversation_stats,
                 iteration_flag=IterationControlFlag(
                     limit_increase_amount=max_iterations,
                     current_value=0,
@@ -99,7 +99,7 @@ class StateTracker:
             if self.state.start_id <= -1:
                 self.state.start_id = 0
 
-            state.convo_stats = convo_stats
+            state.conversation_stats = conversation_stats
 
     def _init_history(self, event_stream: EventStream) -> None:
         """Initializes the agent's history from the event stream.
@@ -248,8 +248,8 @@ class StateTracker:
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
-        if self.state.convo_stats:
-            self.state.convo_stats.save_metrics()
+        if self.state.conversation_stats:
+            self.state.conversation_stats.save_metrics()
 
     def run_control_flags(self):
         """Performs one step of the control flags"""
@@ -262,7 +262,7 @@ class StateTracker:
         Budget flag will monitor for when budget is exceeded
         """
         # Sync cost across all llm services from llm registry
-        if self.state.budget_flag and self.state.convo_stats:
+        if self.state.budget_flag and self.state.conversation_stats:
             self.state.budget_flag.current_value = (
-                self.state.convo_stats.get_combined_metrics().accumulated_cost
+                self.state.conversation_stats.get_combined_metrics().accumulated_cost
             )

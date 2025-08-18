@@ -42,7 +42,7 @@ from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
-from openhands.utils.utils import create_registry_and_convo_stats
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 @dataclass
@@ -486,14 +486,14 @@ class DockerNestedConversationManager(ConversationManager):
             user_id, sid, self.config
         )
 
-        llm_registry, convo_stats, config = create_registry_and_convo_stats(
-            config, sid, user_id, settings
+        llm_registry, conversation_stats, config = (
+            create_registry_and_conversation_stats(config, sid, user_id, settings)
         )
 
         session = Session(
             sid=sid,
             llm_registry=llm_registry,
-            convo_stats=convo_stats,
+            conversation_stats=conversation_stats,
             file_store=self.file_store,
             config=config,
             sio=self.sio,

@@ -67,7 +67,7 @@ class AgentSession:
         sid: str,
         file_store: FileStore,
         llm_registry: LLMRegistry,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -86,7 +86,7 @@ class AgentSession:
             extra={'session_id': sid, 'user_id': user_id}
         )
         self.llm_registry = llm_registry
-        self.convo_stats = convo_stats
+        self.conversation_stats = conversation_stats
 
     async def start(
         self,
@@ -458,7 +458,7 @@ class AgentSession:
             user_id=self.user_id,
             file_store=self.file_store,
             event_stream=self.event_stream,
-            convo_stats=self.convo_stats,
+            conversation_stats=self.conversation_stats,
             agent=agent,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,

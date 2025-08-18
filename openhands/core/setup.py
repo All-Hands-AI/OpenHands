@@ -35,7 +35,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 def create_runtime(
     config: OpenHandsConfig,
-    llm_registry: LLMRegistry,
+    llm_registry: LLMRegistry | None = None,
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -93,7 +93,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
-        llm_registry=llm_registry,
+        llm_registry=llm_registry or LLMRegistry(config),
         git_provider_tokens=git_provider_tokens,
     )
 
@@ -227,7 +227,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
-    convo_stats: ConversationStats,
+    conversation_stats: ConversationStats,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -245,7 +245,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        convo_stats=convo_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
