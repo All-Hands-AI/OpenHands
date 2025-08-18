@@ -411,7 +411,7 @@ class BashSession:
         )
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
-            f'\n[The command timed out after {timeout} seconds. '
+            f'\n[The command timed out after {float(timeout):.1f} seconds. '
             f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
