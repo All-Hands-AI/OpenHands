@@ -391,3 +391,66 @@ Your primary role is to assist users by executing commands, modifying code, and 
     os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))
     os.remove(os.path.join(prompt_dir, 'system_prompt_interactive.j2'))
     os.remove(os.path.join(prompt_dir, 'system_prompt_long_horizon.j2'))
+
+
+def test_prompt_manager_cli_mode_context(prompt_dir):
+    """Test that PromptManager.get_system_message() supports cli_mode context parameter."""
+    # Create a system prompt template that uses cli_mode conditional
+    with open(os.path.join(prompt_dir, 'system_prompt.j2'), 'w') as f:
+        f.write("""You are OpenHands agent.
+
+{% if cli_mode %}
+<CLI_MODE>
+You are running in CLI mode. Direct file system access is available.
+</CLI_MODE>
+{% else %}
+<SANDBOX_MODE>
+You are running inside sandbox. Container-scoped operations are available.
+</SANDBOX_MODE>
+{% endif %}
+
+<COMMON_INSTRUCTIONS>
+Always be helpful and follow user instructions.
+</COMMON_INSTRUCTIONS>""")
+
+    manager = PromptManager(prompt_dir)
+
+    # Test with cli_mode=True
+    cli_message = manager.get_system_message(cli_mode=True)
+    assert 'You are OpenHands agent' in cli_message
+    assert '<CLI_MODE>' in cli_message
+    assert 'CLI mode' in cli_message
+    assert 'Direct file system access' in cli_message
+    assert '<SANDBOX_MODE>' not in cli_message
+    assert 'inside sandbox' not in cli_message
+    assert '<COMMON_INSTRUCTIONS>' in cli_message
+
+    # Test with cli_mode=False
+    sandbox_message = manager.get_system_message(cli_mode=False)
+    assert 'You are OpenHands agent' in sandbox_message
+    assert '<SANDBOX_MODE>' in sandbox_message
+    assert 'inside sandbox' in sandbox_message
+    assert 'Container-scoped operations' in sandbox_message
+    assert '<CLI_MODE>' not in sandbox_message
+    assert 'CLI mode' not in sandbox_message
+    assert '<COMMON_INSTRUCTIONS>' in sandbox_message
+
+    # Test without cli_mode parameter (backward compatibility)
+    default_message = manager.get_system_message()
+    assert 'You are OpenHands agent' in default_message
+    assert '<COMMON_INSTRUCTIONS>' in default_message
+    # Without cli_mode, the conditional should evaluate to False
+    assert '<SANDBOX_MODE>' in default_message
+    assert '<CLI_MODE>' not in default_message
+
+    # Test with additional context parameters
+    mixed_message = manager.get_system_message(cli_mode=True, custom_var='test_value')
+    assert '<CLI_MODE>' in mixed_message
+    assert '<COMMON_INSTRUCTIONS>' in mixed_message
+
+    # Verify messages are different based on cli_mode
+    assert cli_message != sandbox_message
+    assert len(cli_message) != len(sandbox_message)
+
+    # Clean up
+    os.remove(os.path.join(prompt_dir, 'system_prompt.j2'))

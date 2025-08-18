@@ -86,10 +86,10 @@ class PromptManager:
             template_path = os.path.join(self.prompt_dir, template_name)
             raise FileNotFoundError(f'Prompt file {template_path} not found')
 
-    def get_system_message(self) -> str:
+    def get_system_message(self, **context) -> str:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 
-        system_message = self.system_template.render().strip()
+        system_message = self.system_template.render(**context).strip()
         return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:

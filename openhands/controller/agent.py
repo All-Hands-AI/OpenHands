@@ -74,7 +74,7 @@ class Agent(ABC):
                 )
                 return None
 
-            system_message = self.prompt_manager.get_system_message()
+            system_message = self.prompt_manager.get_system_message(cli_mode=self.config.cli_mode)
 
             # Get tools if available
             tools = getattr(self, 'tools', None)
