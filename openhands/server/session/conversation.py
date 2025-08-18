@@ -32,23 +32,18 @@ class ServerConversation:
         self.file_store = file_store
         self.user_id = user_id
 
-        # Track whether we created a new event stream or reused an existing one
-        created_new_event_stream = event_stream is None
         if event_stream is None:
             event_stream = EventStream(sid, file_store, user_id)
+            if config.security.security_analyzer:
+                self.security_analyzer = options.SecurityAnalyzers.get(
+                    config.security.security_analyzer, SecurityAnalyzer
+                )(event_stream)
+                event_stream.subscribe(
+                    EventStreamSubscriber.SECURITY_ANALYZER,
+                    self.security_analyzer.on_event,
+                    f'security_analyzer_{sid}',
+                )
         self.event_stream = event_stream
-
-        # Only subscribe security analyzer if we created a new event stream
-        # If we're reusing an existing event stream, it should already have a security analyzer subscribed
-        if config.security.security_analyzer and created_new_event_stream:
-            self.security_analyzer = options.SecurityAnalyzers.get(
-                config.security.security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
-            self.event_stream.subscribe(
-                EventStreamSubscriber.SECURITY_ANALYZER,
-                self.security_analyzer.on_event,
-                f'security_analyzer_{sid}',
-            )
 
         if runtime:
             self._attach_to_existing = True
