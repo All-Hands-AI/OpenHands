@@ -220,10 +220,14 @@ def test_bitbucket_repository_cloning(page: Page):
     page.goto('http://localhost:12000')
     page.wait_for_load_state('networkidle', timeout=30000)
     
-    # Clear any previous session state by refreshing the page
+    # Clear any previous session state by clearing storage and refreshing
     print('Clearing any previous session state...')
+    page.evaluate('() => { localStorage.clear(); sessionStorage.clear(); }')
     page.reload()
     page.wait_for_load_state('networkidle', timeout=30000)
+    
+    # Additional wait to ensure clean state
+    page.wait_for_timeout(3000)
 
     # Take initial screenshot
     page.screenshot(path='test-results/bitbucket_clone_01_initial_load.png')
@@ -241,6 +245,16 @@ def test_bitbucket_repository_cloning(page: Page):
     repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
     expect(repo_dropdown).to_be_visible(timeout=15000)
     print('Repository dropdown is visible')
+    
+    # Verify the dropdown is in a clean state (no previous selection)
+    repo_input = page.locator('[data-testid="repo-dropdown"] input')
+    if repo_input.is_visible():
+        current_value = repo_input.input_value()
+        print(f'Current repository input value: "{current_value}"')
+        if current_value and current_value.strip():
+            print('⚠ Repository input has a previous value, clearing it...')
+            repo_input.clear()
+            page.wait_for_timeout(1000)
 
     # Click on the repository input to open dropdown
     repo_dropdown.click()
@@ -301,7 +315,7 @@ def test_bitbucket_repository_cloning(page: Page):
     
     # Verify the repository selection was successful
     print('Verifying repository selection...')
-    page.wait_for_timeout(2000)  # Wait for UI to update
+    page.wait_for_timeout(3000)  # Wait for UI to update
     
     # Try to verify the selected repository is displayed
     try:
@@ -314,6 +328,14 @@ def test_bitbucket_repository_cloning(page: Page):
                 print(f'✓ Repository selection verified: {input_value}')
             else:
                 print(f'⚠ Repository selection may not be correct: {input_value}')
+                # Try to re-select the repository if it's not correct
+                print('Attempting to re-select the repository...')
+                repo_dropdown.click()
+                page.wait_for_timeout(1000)
+                page.keyboard.type(test_repo)
+                page.wait_for_timeout(1000)
+                page.keyboard.press('Enter')
+                page.wait_for_timeout(2000)
     except Exception as e:
         print(f'Could not verify repository selection: {e}')
 
