@@ -156,6 +156,9 @@ class CLIRuntime(Runtime):
         self._is_windows = sys.platform == 'win32'
         self._powershell_session: WindowsPowershellSession | None = None
 
+        # Track git wrapper bin dir for use in subprocess env
+        self._git_wrapper_bin_dir = os.path.expanduser('~/.openhands/bin')
+
         logger.warning(
             'Initializing CLIRuntime. WARNING: NO SANDBOX IS USED. '
             'This runtime executes commands directly on the local system. '
@@ -220,6 +223,38 @@ class CLIRuntime(Runtime):
 
         # Always enable git co-authorship in CLI runtime
         self._setup_git_wrapper()
+        # As a fallback for commit invocations that don't use -m/--message
+        # ensure a global prepare-commit-msg hook is configured so co-authorship
+        # is still added (parity with Docker runtime behavior in tests).
+        try:
+            hooks_root = os.path.expanduser('~/.openhands/git-hooks')
+            hooks_dir = os.path.join(hooks_root, 'hooks')
+            os.makedirs(hooks_dir, exist_ok=True)
+
+            hook_src = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                'utils',
+                'git_hooks',
+                'prepare-commit-msg',
+            )
+            hook_dest = os.path.join(hooks_dir, 'prepare-commit-msg')
+            if os.path.exists(hook_src):
+                shutil.copyfile(hook_src, hook_dest)
+                os.chmod(hook_dest, 0o755)
+                # Configure global hooks path and template dir so newly inited repos pick it up
+                subprocess.run(
+                    ['git', 'config', '--global', 'core.hooksPath', hooks_dir],
+                    check=False,
+                )
+                subprocess.run(
+                    ['git', 'config', '--global', 'init.templateDir', hooks_root],
+                    check=False,
+                )
+                logger.info(
+                    f"[CLIRuntime] Configured global git hooks at {hooks_dir} for co-authorship"
+                )
+        except Exception as e:
+            logger.warning(f'[CLIRuntime] Failed to configure global git hook: {e}')
 
     def _setup_git_wrapper(self) -> None:
         """Set up git wrapper to automatically add co-authorship."""
@@ -402,6 +437,11 @@ class CLIRuntime(Runtime):
         timed_out = False
         start_time = time.monotonic()
 
+        # Ensure our git wrapper bin dir is first in PATH for the subprocess
+        env = os.environ.copy()
+        bin_dir = getattr(self, '_git_wrapper_bin_dir', os.path.expanduser('~/.openhands/bin'))
+        env['PATH'] = f"{bin_dir}:{env.get('PATH','')}"
+
         # Use shell=True to run complex bash commands
         process = subprocess.Popen(
             ['bash', '-c', command],
@@ -411,9 +451,10 @@ class CLIRuntime(Runtime):
             bufsize=1,  # Explicitly line-buffered for text mode
             universal_newlines=True,
             start_new_session=True,
+            env=env,
         )
         logger.debug(
-            f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}"'
+            f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}" with PATH={env.get('PATH')}'
         )
 
         exit_code = None
