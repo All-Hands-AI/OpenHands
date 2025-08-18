@@ -603,8 +603,8 @@ class ProviderHandler:
         # Try to use token if available, otherwise use public URL
         if self.provider_tokens and provider in self.provider_tokens:
             git_token = self.provider_tokens[provider].token
-            if git_token:
-                token_value = git_token.get_secret_value()
+            token_value = git_token.get_secret_value() if git_token else ''
+            if token_value:
                 if provider == ProviderType.GITLAB:
                     remote_url = (
                         f'https://oauth2:{token_value}@{domain}/{repo_name}.git'
@@ -621,6 +621,7 @@ class ProviderHandler:
                     # GitHub
                     remote_url = f'https://{token_value}@{domain}/{repo_name}.git'
             else:
+                # No token available or empty: use public HTTPS URL
                 remote_url = f'https://{domain}/{repo_name}.git'
         else:
             remote_url = f'https://{domain}/{repo_name}.git'
