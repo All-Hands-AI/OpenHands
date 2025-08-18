@@ -99,7 +99,7 @@ base_url = "{llm_base_url}"
         cmd = [
             'python', '-m', 'openhands.core.main',
             '--config-file', config_path,
-            '--agent', 'CodeActAgent',
+            '--agent-cls', 'CodeActAgent',
             '--task', task,
             '--max-iterations', '10'
         ]
