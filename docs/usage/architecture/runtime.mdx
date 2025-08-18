@@ -52,7 +52,7 @@ graph TD
 2. Image Building: OpenHands builds a new Docker image (the "OH runtime image") based on the user-provided image. This new image includes OpenHands-specific code, primarily the "runtime client"
 3. Container Launch: When OpenHands starts, it launches a Docker container using the OH runtime image
 4. Action Execution Server Initialization: The action execution server initializes an `ActionExecutor` inside the container, setting up necessary components like a bash shell and loading any specified plugins
-5. Communication: The OpenHands backend (`openhands/runtime/impl/eventstream/eventstream_runtime.py`) communicates with the action execution server over RESTful API, sending actions and receiving observations
+5. Communication: The OpenHands backend (client: `openhands/runtime/impl/action_execution/action_execution_client.py`; runtimes: `openhands/runtime/impl/docker/docker_runtime.py`, `openhands/runtime/impl/local/local_runtime.py`) communicates with the action execution server over RESTful API, sending actions and receiving observations
 6. Action Execution: The runtime client receives actions from the backend, executes them in the sandboxed environment, and sends back observations
 7. Observation Return: The action execution server sends execution results back to the OpenHands backend as observations
 
@@ -72,7 +72,7 @@ Check out the [relevant code](https://github.com/All-Hands-AI/OpenHands/blob/mai
 ### Image Tagging System
 
 OpenHands uses a three-tag system for its runtime images to balance reproducibility with flexibility.
-Tags may be in one of 2 formats:
+The tags are:
 
 - **Versioned Tag**: `oh_v{openhands_version}_{base_image}` (e.g.: `oh_v0.9.9_nikolaik_s_python-nodejs_t_python3.12-nodejs22`)
 - **Lock Tag**: `oh_v{openhands_version}_{16_digit_lock_hash}` (e.g.: `oh_v0.9.9_1234567890abcdef`)
@@ -119,18 +119,52 @@ This tagging approach allows OpenHands to efficiently manage both development an
 2. The system can quickly rebuild images when minor changes occur (by leveraging recent compatible images)
 3. The **lock** tag (e.g., `runtime:oh_v0.9.3_1234567890abcdef`) always points to the latest build for a particular base image, dependency, and OpenHands version combination
 
+## Volume mounts: named volumes and overlay
+
+OpenHands supports both bind mounts and Docker named volumes in SandboxConfig.volumes:
+
+- Bind mount: "/abs/host/path:/container/path[:mode]"
+- Named volume: "volume:<name>:/container/path[:mode]" or any non-absolute host spec treated as a named volume
+
+Overlay mode (copy-on-write layer) is supported for bind mounts by appending ":overlay" to the mode (e.g., ":ro,overlay").
+To enable overlay COW, set SANDBOX_VOLUME_OVERLAYS to a writable host directory; per-container upper/work dirs are created under it. If SANDBOX_VOLUME_OVERLAYS is unset, overlay mounts are skipped.
+
+Implementation references:
+- openhands/runtime/impl/docker/docker_runtime.py (named volumes in _build_docker_run_args; overlay mounts in _process_overlay_mounts)
+- openhands/core/config/sandbox_config.py (volumes field)
+
+
 ## Runtime Plugin System
 
-The OpenHands Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the runtime client starts up.
+The OpenHands Runtime supports a plugin system that allows for extending functionality and customizing the runtime environment. Plugins are initialized when the action execution server starts up inside the runtime.
 
-Check [an example of Jupyter plugin here](https://github.com/All-Hands-AI/OpenHands/blob/ecf4aed28b0cf7c18d4d8ff554883ba182fc6bdd/openhands/runtime/plugins/jupyter/__init__.py#L21-L55) if you want to implement your own plugin.
+## Ports and URLs
 
-*More details about the Plugin system are still under construction - contributions are welcomed!*
+- Host port allocation uses file-locked ranges for stability and concurrency:
+  - Main runtime port: find_available_port_with_lock on configured range
+  - VSCode port: SandboxConfig.sandbox.vscode_port if provided, else find_available_port_with_lock in VSCODE_PORT_RANGE
+  - App ports: two additional ranges for plugin/web apps
+- DOCKER_HOST_ADDR (if set) adjusts how URLs are formed for LocalRuntime/Docker environments.
+- VSCode URL is exposed with a connection token from the action execution server endpoint /vscode/connection_token and rendered as:
+  - Docker/Local: http://localhost:{port}/?tkn={token}&folder={workspace_mount_path_in_sandbox}
+  - RemoteRuntime: scheme://vscode-{host}/?tkn={token}&folder={workspace_mount_path_in_sandbox}
+
+References:
+- openhands/runtime/impl/docker/docker_runtime.py (port ranges, locking, DOCKER_HOST_ADDR, vscode_url)
+- openhands/runtime/impl/local/local_runtime.py (vscode_url factory)
+- openhands/runtime/impl/remote/remote_runtime.py (vscode_url mapping)
+- openhands/runtime/action_execution_server.py (/vscode/connection_token)
+
+
+Examples:
+- Jupyter: openhands/runtime/plugins/jupyter/__init__.py (JupyterPlugin, Kernel Gateway)
+- VS Code: openhands/runtime/plugins/vscode/* (VSCodePlugin, exposes tokenized URL)
+- Agent Skills: openhands/runtime/plugins/agent_skills/*
 
 Key aspects of the plugin system:
 
 1. Plugin Definition: Plugins are defined as Python classes that inherit from a base `Plugin` class
-2. Plugin Registration: Available plugins are registered in an `ALL_PLUGINS` dictionary
+2. Plugin Registration: Available plugins are registered in `openhands/runtime/plugins/__init__.py` via `ALL_PLUGINS`
 3. Plugin Specification: Plugins are associated with `Agent.sandbox_plugins: list[PluginRequirement]`. Users can specify which plugins to load when initializing the runtime
-4. Initialization: Plugins are initialized asynchronously when the runtime client starts
-5. Usage: The runtime client can use initialized plugins to extend its capabilities (e.g., the JupyterPlugin for running IPython cells)
+4. Initialization: Plugins are initialized asynchronously when the runtime starts and are accessible to actions
+5. Usage: Plugins extend capabilities (e.g., Jupyter for IPython cells); the server exposes any web endpoints (ports) via host port mapping
