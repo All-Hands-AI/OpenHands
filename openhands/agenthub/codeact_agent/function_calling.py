@@ -51,6 +51,7 @@ def combine_thought(
     if not hasattr(action, 'thought'):
         return action
     # TODO NOW: this block below doesn't need try/except, it has ifs and getattr, come on. Also, look at the diff of this file with main branch, and prefer that way of writing the code, a bit more compact and readable. When done, remove this TODO comment.
+    # TODO NOW: this block below doesn't need try/except, it has ifs and getattr, come on. Also, look at the diff of this file with main branch, and prefer that way of writing the code, a bit more compact and readable. When done, remove this TODO comment.
     try:
         current = getattr(action, 'thought', None)
         if isinstance(current, Thought):
