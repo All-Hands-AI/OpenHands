@@ -379,14 +379,15 @@ def test_react_app_creation_simple(page: Page):
     page.screenshot(path='test-results/react_simple_07_message_sent.png')
     print('Screenshot saved: react_simple_07_message_sent.png')
 
-    # Wait for agent to start responding
-    print('Step 8: Waiting for agent response...')
-    max_response_time = 180  # 3 minutes
+    # Wait for agent to complete the React app creation task
+    print('Step 8: Waiting for agent to complete React app creation...')
+    max_completion_time = 600  # 10 minutes for full task completion
     start_time = time.time()
-    response_received = False
+    task_completed = False
+    app_running = False
 
     # Keywords that indicate the agent is working on the task
-    response_indicators = [
+    working_indicators = [
         'react',
         'vite',
         'npm',
@@ -400,35 +401,122 @@ def test_react_app_creation_simple(page: Page):
         'port',
     ]
 
-    while time.time() - start_time < max_response_time:
+    # Keywords that indicate task completion
+    completion_indicators = [
+        'task completed',
+        'successfully created',
+        'app is running',
+        'server is running',
+        'development server',
+        'local server',
+        'http://localhost',
+        'ready in',
+        'local:',
+        'network:',
+        'vite v',
+        'ready',
+        'compiled successfully',
+    ]
+
+    # Keywords that indicate the app is accessible
+    success_indicators = [
+        'hello from openhands react app',
+        'app is now running',
+        'you can view it',
+        'open your browser',
+        'visit http://localhost',
+        'development server started',
+    ]
+
+    working_detected = False
+    completion_detected = False
+    
+    while time.time() - start_time < max_completion_time:
         try:
             # Check the page content for agent response
             page_content = page.content().lower()
 
-            for indicator in response_indicators:
-                if indicator in page_content:
-                    print(f'Found response indicator: {indicator}')
-                    response_received = True
-                    break
+            # First check if agent is working on the task
+            if not working_detected:
+                for indicator in working_indicators:
+                    if indicator in page_content:
+                        print(f'Found working indicator: {indicator}')
+                        working_detected = True
+                        break
 
-            if response_received:
+            # Then check for completion indicators
+            if working_detected and not completion_detected:
+                for indicator in completion_indicators:
+                    if indicator in page_content:
+                        print(f'Found completion indicator: {indicator}')
+                        completion_detected = True
+                        break
+
+            # Finally check for success indicators
+            if completion_detected:
+                for indicator in success_indicators:
+                    if indicator in page_content:
+                        print(f'Found success indicator: {indicator}')
+                        task_completed = True
+                        app_running = True
+                        break
+
+            # Also check if we can see the agent has finished (no more "thinking" or "working" indicators)
+            if completion_detected and not task_completed:
+                # Look for signs that the agent has finished
+                finished_indicators = [
+                    'task is complete',
+                    'finished',
+                    'done',
+                    'successfully',
+                    'ready to use',
+                    'you can now',
+                ]
+                
+                for indicator in finished_indicators:
+                    if indicator in page_content:
+                        print(f'Found finished indicator: {indicator}')
+                        task_completed = True
+                        break
+
+            if task_completed and app_running:
+                print('React app creation task completed successfully!')
                 break
+
+            # Take periodic screenshots to track progress
+            elapsed = int(time.time() - start_time)
+            if elapsed % 60 == 0:  # Every minute
+                page.screenshot(path=f'test-results/react_simple_08_progress_{elapsed}s.png')
+                print(f'Progress screenshot saved at {elapsed}s')
 
         except Exception as e:
             print(f'Error checking response: {e}')
 
-        time.sleep(10)
+        time.sleep(15)  # Check every 15 seconds
 
-    if not response_received:
-        print('No agent response received within timeout')
-        page.screenshot(path='test-results/react_simple_08_no_response.png')
-        print('Screenshot saved: react_simple_08_no_response.png')
-        # Don't fail the test here, just log it
-        print('Warning: Agent response not detected, but test will continue')
-    else:
-        print('Agent response detected - test successful!')
+    # Final verification
+    page.screenshot(path='test-results/react_simple_08_final_state.png')
+    print('Screenshot saved: react_simple_08_final_state.png')
 
-    page.screenshot(path='test-results/react_simple_08_final.png')
-    print('Screenshot saved: react_simple_08_final.png')
+    if not working_detected:
+        print('ERROR: Agent never started working on the React app creation task')
+        page.screenshot(path='test-results/react_simple_08_no_work_detected.png')
+        print('Screenshot saved: react_simple_08_no_work_detected.png')
+        raise AssertionError('Agent did not start working on React app creation task')
 
-    print('Simplified React app creation test completed successfully!')
+    if not completion_detected:
+        print('ERROR: Agent did not complete the React app creation task')
+        page.screenshot(path='test-results/react_simple_08_no_completion.png')
+        print('Screenshot saved: react_simple_08_no_completion.png')
+        raise AssertionError('Agent did not complete React app creation task within timeout')
+
+    if not task_completed:
+        print('ERROR: React app creation task was not fully completed')
+        page.screenshot(path='test-results/react_simple_08_incomplete.png')
+        print('Screenshot saved: react_simple_08_incomplete.png')
+        raise AssertionError('React app creation task was not fully completed')
+
+    print('SUCCESS: React app creation test completed successfully!')
+    print('- Agent started working on the task ✓')
+    print('- Agent completed the React app creation ✓')
+    print('- Task finished successfully ✓')
