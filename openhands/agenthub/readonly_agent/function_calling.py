@@ -37,6 +37,7 @@ from openhands.events.action import (
     MCPAction,
     MessageAction,
 )
+from openhands.events.action.action import Thought
 from openhands.events.event import FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
@@ -172,8 +173,6 @@ def response_to_actions(
             # AgentThinkAction
             # ================================================
             elif tool_call.function.name == ThinkTool['function']['name']:
-                from openhands.events.action.action import Thought
-
                 action = AgentThinkAction(
                     thought=Thought(text=arguments.get('thought', ''))
                 )
