@@ -175,7 +175,7 @@ async def test_delegation_flow(
     parent_controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='parent',
         confirmation_mode=False,
@@ -250,7 +250,9 @@ async def test_delegation_flow(
     )  # verify local metrics are accessible via snapshot
 
     # Check that the conversation stats has the combined metrics (parent + delegate)
-    combined_metrics = delegate_controller.state.convo_stats.get_combined_metrics()
+    combined_metrics = (
+        delegate_controller.state.conversation_stats.get_combined_metrics()
+    )
     assert (
         combined_metrics.accumulated_cost
         == 6  # Make sure delegate tracks global cost (2 from parent + 4 from delegate)
@@ -303,7 +305,7 @@ async def test_delegate_step_different_states(
     controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='test',
         confirmation_mode=False,
@@ -394,7 +396,7 @@ async def test_delegate_hits_global_limits(
     parent_controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
-        convo_stats=conversation_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='parent',
         confirmation_mode=False,
