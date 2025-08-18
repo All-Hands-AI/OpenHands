@@ -418,7 +418,7 @@ Please show the actual output of these commands so I can verify the React app wa
             for i, msg in enumerate(messages):
                 try:
                     content = msg.text_content() or ''
-                    content_lower = content.lower()
+                    content.lower()
 
                     # Look for evidence of file structure being shown
                     if not evidence_found['file_structure']:
@@ -530,11 +530,11 @@ Please show the actual output of these commands so I can verify the React app wa
         # (file structure + package.json + app component) OR (app component + server + accessible)
         if evidence_count >= 3 and evidence_found['app_component']:
             print('✅ Sufficient evidence found for React app creation!')
-            
+
             # Take final screenshots
             page.screenshot(path='test-results/react_simple_08_evidence_found.png')
             print('Screenshot saved: react_simple_08_evidence_found.png')
-            
+
             page.screenshot(path='test-results/react_simple_08_final_state.png')
             print('Screenshot saved: react_simple_08_final_state.png')
 
@@ -554,7 +554,9 @@ Please show the actual output of these commands so I can verify the React app wa
     print('Screenshot saved: react_simple_08_final_state.png')
 
     evidence_count = sum(evidence_found.values())
-    print(f'❌ FAILURE: Insufficient evidence of React app creation ({evidence_count}/5)')
+    print(
+        f'❌ FAILURE: Insufficient evidence of React app creation ({evidence_count}/5)'
+    )
     print(f'Evidence found: {evidence_found}')
     print('Agent must DEMONSTRATE the work by showing:')
     print('- File structure (ls, tree commands)')
@@ -562,7 +564,7 @@ Please show the actual output of these commands so I can verify the React app wa
     print('- App component source code (cat src/App.jsx)')
     print('- Development server running (npm run dev output)')
     print('- App accessible via HTTP (curl localhost:port)')
-    
+
     raise AssertionError(
         f'Agent did not demonstrate React app creation with sufficient evidence. '
         f'Found {evidence_count}/5 pieces of evidence: {evidence_found}'
