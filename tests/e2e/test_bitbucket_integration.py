@@ -219,6 +219,11 @@ def test_bitbucket_repository_cloning(page: Page):
     print('Step 1: Navigating to OpenHands application...')
     page.goto('http://localhost:12000')
     page.wait_for_load_state('networkidle', timeout=30000)
+    
+    # Clear any previous session state by refreshing the page
+    print('Clearing any previous session state...')
+    page.reload()
+    page.wait_for_load_state('networkidle', timeout=30000)
 
     # Take initial screenshot
     page.screenshot(path='test-results/bitbucket_clone_01_initial_load.png')
@@ -293,6 +298,24 @@ def test_bitbucket_repository_cloning(page: Page):
 
     page.screenshot(path='test-results/bitbucket_clone_02_repo_selected.png')
     print('Screenshot saved: bitbucket_clone_02_repo_selected.png')
+    
+    # Verify the repository selection was successful
+    print('Verifying repository selection...')
+    page.wait_for_timeout(2000)  # Wait for UI to update
+    
+    # Try to verify the selected repository is displayed
+    try:
+        # Check if the repository name is visible in the input field
+        repo_input = page.locator('[data-testid="repo-dropdown"] input')
+        if repo_input.is_visible():
+            input_value = repo_input.input_value()
+            print(f'Repository input field value: {input_value}')
+            if test_repo in input_value:
+                print(f'✓ Repository selection verified: {input_value}')
+            else:
+                print(f'⚠ Repository selection may not be correct: {input_value}')
+    except Exception as e:
+        print(f'Could not verify repository selection: {e}')
 
     # Step 3: Click Launch button
     print('Step 3: Clicking Launch button...')
