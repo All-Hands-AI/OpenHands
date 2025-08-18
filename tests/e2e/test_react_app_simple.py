@@ -5,6 +5,7 @@ It's a simplified version focused on core functionality.
 """
 
 import os
+import re
 import time
 
 from playwright.sync_api import Page, expect
@@ -383,14 +384,12 @@ def test_react_app_creation_simple(page: Page):
     print('Step 8: Waiting for agent to complete React app creation...')
     max_completion_time = 600  # 10 minutes for full task completion
     start_time = time.time()
-    
+
     # Look for specific agent response that indicates completion
     while time.time() - start_time < max_completion_time:
         elapsed = int(time.time() - start_time)
         if elapsed % 60 == 0 and elapsed > 0:  # Every minute
-            page.screenshot(
-                path=f'test-results/react_simple_waiting_{elapsed}s.png'
-            )
+            page.screenshot(path=f'test-results/react_simple_waiting_{elapsed}s.png')
             print(f'Progress screenshot saved at {elapsed}s')
 
         try:
@@ -400,7 +399,7 @@ def test_react_app_creation_simple(page: Page):
                 try:
                     content = msg.text_content() or ''
                     content_lower = content.lower()
-                    
+
                     # Check for specific completion indicators in agent messages
                     # These patterns indicate the agent has successfully created and served the React app
                     completion_patterns = [
@@ -418,29 +417,36 @@ def test_react_app_creation_simple(page: Page):
                         'app.*served.*locally',
                         'component.*displays.*hello from openhands',
                     ]
-                    
-                    import re
+
                     for pattern in completion_patterns:
                         if re.search(pattern, content_lower):
                             print(f'✅ Found completion pattern: {pattern}')
                             print(f'Agent message content: {content[:300]}...')
-                            page.screenshot(path='test-results/react_simple_08_completion_found.png')
-                            print('Screenshot saved: react_simple_08_completion_found.png')
-                            
+                            page.screenshot(
+                                path='test-results/react_simple_08_completion_found.png'
+                            )
+                            print(
+                                'Screenshot saved: react_simple_08_completion_found.png'
+                            )
+
                             # Final success screenshot
-                            page.screenshot(path='test-results/react_simple_08_final_state.png')
+                            page.screenshot(
+                                path='test-results/react_simple_08_final_state.png'
+                            )
                             print('Screenshot saved: react_simple_08_final_state.png')
-                            
-                            print('✅ SUCCESS: React app creation completed successfully!')
+
+                            print(
+                                '✅ SUCCESS: React app creation completed successfully!'
+                            )
                             print('- Agent created the React app ✓')
                             print('- Agent confirmed the app is running ✓')
                             print('- Task completed with proper validation ✓')
                             return
-                            
+
                 except Exception as e:
                     print(f'Error processing agent message {i}: {e}')
                     continue
-                    
+
         except Exception as e:
             print(f'Error checking for agent messages: {e}')
 
@@ -449,7 +455,7 @@ def test_react_app_creation_simple(page: Page):
     # If we get here, the task did not complete successfully
     page.screenshot(path='test-results/react_simple_08_final_state.png')
     print('Screenshot saved: react_simple_08_final_state.png')
-    
+
     print('❌ FAILURE: React app creation did not complete within time limit')
     raise AssertionError(
         'Agent did not complete React app creation task with proper confirmation within timeout'
