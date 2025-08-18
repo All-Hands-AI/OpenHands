@@ -1,8 +1,8 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.agenthub.codeact_agent.tools.security_utils import (
-    IPYTHON_RISK_DESC,
     RISK_LEVELS,
+    SECURITY_RISK_DESC,
 )
 
 _IPYTHON_DESCRIPTION = """Run a cell of Python code in an IPython environment.
@@ -24,7 +24,7 @@ IPythonTool = ChatCompletionToolParam(
                 },
                 'security_risk': {
                     'type': 'string',
-                    'description': IPYTHON_RISK_DESC,
+                    'description': SECURITY_RISK_DESC,
                     'enum': RISK_LEVELS,
                 },
             },

@@ -1,8 +1,8 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.agenthub.codeact_agent.tools.security_utils import (
-    LLM_BASED_EDIT_RISK_DESC,
     RISK_LEVELS,
+    SECURITY_RISK_DESC,
 )
 
 _FILE_EDIT_DESCRIPTION = """Edit a file in plain-text format.
@@ -145,7 +145,7 @@ LLMBasedFileEditTool = ChatCompletionToolParam(
                 },
                 'security_risk': {
                     'type': 'string',
-                    'description': LLM_BASED_EDIT_RISK_DESC,
+                    'description': SECURITY_RISK_DESC,
                     'enum': RISK_LEVELS,
                 },
             },

@@ -2,8 +2,8 @@ from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChun
 
 from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 from openhands.agenthub.codeact_agent.tools.security_utils import (
-    BASH_RISK_DESC,
     RISK_LEVELS,
+    SECURITY_RISK_DESC,
 )
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
@@ -71,7 +71,7 @@ def create_cmd_run_tool(
                     },
                     'security_risk': {
                         'type': 'string',
-                        'description': BASH_RISK_DESC,
+                        'description': SECURITY_RISK_DESC,
                         'enum': RISK_LEVELS,
                     },
                 },
