@@ -28,7 +28,6 @@ from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
@@ -987,15 +986,6 @@ def cli_confirm(
     def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
-    style = Style.from_dict(
-        {
-            'selected': COLOR_GOLD,
-            'unselected': '',
-            'question': '',
-            'risk-high': '#FF0000 bold',  # Red bold for HIGH risk
-        }
-    )
-
     # Create layout with risk-based styling - full width but limited height
     content_window = Window(
         FormattedTextControl(get_choice_text),
@@ -1022,7 +1012,7 @@ def cli_confirm(
     app = Application(
         layout=layout,
         key_bindings=kb,
-        style=style,
+        style=DEFAULT_STYLE,
         full_screen=False,
     )
 
