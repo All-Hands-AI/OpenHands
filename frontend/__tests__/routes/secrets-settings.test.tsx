@@ -101,7 +101,8 @@ describe("Content", () => {
 
     renderSecretsSettings();
 
-    expect(getSecretsSpy).not.toHaveBeenCalled();
+    // In SAAS mode, getSecrets is still called because the user is authenticated
+    await waitFor(() => expect(getSecretsSpy).toHaveBeenCalled());
     await waitFor(() =>
       expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
     );
@@ -111,12 +112,21 @@ describe("Content", () => {
     screen.getByTestId("git-settings-screen");
   });
 
-  it("should render a message if there are no existing secrets", async () => {
+  it("should render an empty table when there are no existing secrets", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     getSecretsSpy.mockResolvedValue([]);
     renderSecretsSettings();
 
-    await screen.findByTestId("no-secrets-message");
+    // Should show the add secret button
+    await screen.findByTestId("add-secret-button");
+
+    // Should show an empty table with headers but no secret items
+    expect(screen.queryAllByTestId("secret-item")).toHaveLength(0);
+
+    // Should still show the table headers
+    expect(screen.getByText("SETTINGS$NAME")).toBeInTheDocument();
+    expect(screen.getByText("SECRETS$DESCRIPTION")).toBeInTheDocument();
+    expect(screen.getByText("SETTINGS$ACTIONS")).toBeInTheDocument();
   });
 
   it("should render existing secrets", async () => {
@@ -126,7 +136,6 @@ describe("Content", () => {
 
     const secrets = await screen.findAllByTestId("secret-item");
     expect(secrets).toHaveLength(2);
-    expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
   });
 });
 
@@ -398,19 +407,22 @@ describe("Secret actions", () => {
     expect(screen.queryByText("My_Secret_2")).toBeInTheDocument();
   });
 
-  it("should hide the no items message when in form view", async () => {
+  it("should hide the table and add button when in form view", async () => {
     const getSecretsSpy = vi.spyOn(SecretsService, "getSecrets");
     getSecretsSpy.mockResolvedValue([]);
     renderSecretsSettings();
 
-    // render form & hide items
-    expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
+    // Initially should show the add button and table
     const button = await screen.findByTestId("add-secret-button");
+    expect(screen.getByText("SETTINGS$NAME")).toBeInTheDocument(); // table header
+
     await userEvent.click(button);
 
+    // When in form view, should hide the add button and table
     const secretForm = screen.getByTestId("add-secret-form");
     expect(secretForm).toBeInTheDocument();
-    expect(screen.queryByTestId("no-secrets-message")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument();
+    expect(screen.queryByText("SETTINGS$NAME")).not.toBeInTheDocument(); // table header should be hidden
   });
 
   it("should not allow spaces in secret names", async () => {

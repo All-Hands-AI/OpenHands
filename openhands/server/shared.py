@@ -28,10 +28,11 @@ assert isinstance(server_config_interface, ServerConfig), (
 )
 server_config: ServerConfig = server_config_interface
 file_store: FileStore = get_file_store(
-    config.file_store,
-    config.file_store_path,
-    config.file_store_web_hook_url,
-    config.file_store_web_hook_headers,
+    file_store_type=config.file_store,
+    file_store_path=config.file_store_path,
+    file_store_web_hook_url=config.file_store_web_hook_url,
+    file_store_web_hook_headers=config.file_store_web_hook_headers,
+    file_store_web_hook_batch=config.file_store_web_hook_batch,
 )
 
 client_manager = None

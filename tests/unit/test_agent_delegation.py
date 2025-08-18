@@ -80,11 +80,10 @@ def mock_child_agent():
 
 @pytest.mark.asyncio
 async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_stream):
-    """
-    Test that when the parent agent delegates to a child
-     1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
-     2. metrics are accumulated globally (delegate is adding to the parents metrics)
-     3. local metrics for the delegate are still accessible
+    """Test that when the parent agent delegates to a child
+    1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
+    2. metrics are accumulated globally (delegate is adding to the parents metrics)
+    3. local metrics for the delegate are still accessible
     """
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
     Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
@@ -258,8 +257,7 @@ async def test_delegate_step_different_states(
     mock_delegate.close = AsyncMock()
 
     async def call_on_event_with_new_loop():
-        """
-        In this thread, create and set a fresh event loop, so that the run_until_complete()
+        """In this thread, create and set a fresh event loop, so that the run_until_complete()
         calls inside controller.on_event(...) find a valid loop.
         """
         loop_in_thread = asyncio.new_event_loop()
@@ -296,9 +294,7 @@ async def test_delegate_step_different_states(
 async def test_delegate_hits_global_limits(
     mock_child_agent, mock_event_stream, mock_parent_agent
 ):
-    """
-    Global limits from control flags should apply to delegates
-    """
+    """Global limits from control flags should apply to delegates"""
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
     Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
 

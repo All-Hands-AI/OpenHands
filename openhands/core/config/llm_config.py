@@ -80,6 +80,7 @@ class LLMConfig(BaseModel):
     # Note: this setting is actually global, unlike drop_params
     modify_params: bool = Field(default=True)
     disable_vision: bool | None = Field(default=None)
+    disable_stop_word: bool | None = Field(default=False)
     caching_prompt: bool = Field(default=True)
     log_completions: bool = Field(default=False)
     log_completions_folder: str = Field(default=os.path.join(LOG_DIR, 'completions'))
@@ -96,8 +97,7 @@ class LLMConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, LLMConfig]:
-        """
-        Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
+        """Create a mapping of LLMConfig instances from a toml dictionary representing the [llm] section.
 
         The default configuration is built from all non-dict keys in data.
         Then, each key with a dict value (e.g. [llm.random_name]) is treated as a custom LLM configuration,
@@ -116,7 +116,6 @@ class LLMConfig(BaseModel):
             dict[str, LLMConfig]: A mapping where the key "llm" corresponds to the default configuration
             and additional keys represent custom configurations.
         """
-
         # Initialize the result mapping
         llm_mapping: dict[str, LLMConfig] = {}
 
@@ -184,3 +183,13 @@ class LLMConfig(BaseModel):
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
             self.api_version = '2024-12-01-preview'
+
+        # Set AWS credentials as environment variables for LiteLLM Bedrock
+        if self.aws_access_key_id:
+            os.environ['AWS_ACCESS_KEY_ID'] = self.aws_access_key_id.get_secret_value()
+        if self.aws_secret_access_key:
+            os.environ['AWS_SECRET_ACCESS_KEY'] = (
+                self.aws_secret_access_key.get_secret_value()
+            )
+        if self.aws_region_name:
+            os.environ['AWS_REGION_NAME'] = self.aws_region_name

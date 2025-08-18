@@ -13,14 +13,16 @@ interface GenericEventMessageProps {
   title: React.ReactNode;
   details: string | React.ReactNode;
   success?: ObservationResultStatus;
+  initiallyExpanded?: boolean;
 }
 
 export function GenericEventMessage({
   title,
   details,
   success,
+  initiallyExpanded = false,
 }: GenericEventMessageProps) {
-  const [showDetails, setShowDetails] = React.useState(false);
+  const [showDetails, setShowDetails] = React.useState(initiallyExpanded);
 
   return (
     <div className="flex flex-col gap-2 border-l-2 pl-2 my-2 py-2 border-neutral-300 text-sm w-full">

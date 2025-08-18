@@ -47,7 +47,8 @@ export function getIndicatorColor(
     webSocketStatus === "DISCONNECTED" ||
     conversationStatus === "STOPPED" ||
     runtimeStatus === "STATUS$STOPPED" ||
-    agentState === AgentState.STOPPED
+    agentState === AgentState.STOPPED ||
+    agentState === AgentState.ERROR
   ) {
     return IndicatorColor.RED;
   }
@@ -121,5 +122,5 @@ export function getStatusCode(
     return runtimeStatus;
   }
 
-  return "STATUS$ERROR"; // illegal state
+  return I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE;
 }

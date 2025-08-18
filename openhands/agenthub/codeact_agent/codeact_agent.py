@@ -21,6 +21,9 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.task_tracker import (
+    create_task_tracker_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -98,7 +101,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                system_prompt_filename=self.config.system_prompt_filename,
+                system_prompt_filename=self.config.resolved_system_prompt_filename,
             )
 
         return self._prompt_manager
@@ -106,10 +109,15 @@ class CodeActAgent(Agent):
     def _get_tools(self) -> list['ChatCompletionToolParam']:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
-        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-4', 'o3', 'o1', 'o4']
 
         use_short_tool_desc = False
         if self.llm is not None:
+            # For historical reasons, previously OpenAI enforces max function description length of 1k characters
+            # https://community.openai.com/t/function-call-description-max-length/529902
+            # But it no longer seems to be an issue recently
+            # https://community.openai.com/t/was-the-character-limit-for-schema-descriptions-upgraded/1225975
+            # Tested on GPT-5 and longer description still works. But we still keep the logic to be safe for older models.
             use_short_tool_desc = any(
                 model_substr in self.llm.config.model
                 for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
@@ -131,6 +139,9 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
+        if self.config.enable_plan_mode:
+            # In plan mode, we use the task_tracker tool for task management
+            tools.append(create_task_tracker_tool(use_short_tool_desc))
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
@@ -161,6 +172,13 @@ class CodeActAgent(Agent):
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
+        - CondensationAction(...) - condense conversation history by forgetting specified events and optionally providing a summary
+        - FileReadAction(path, ...) - read file content from specified path
+        - FileEditAction(path, ...) - edit file using LLM-based (deprecated) or ACI-based editing
+        - AgentThinkAction(thought) - log agent's thought/reasoning process
+        - CondensationRequestAction() - request condensation of conversation history
+        - BrowseInteractiveAction(browser_actions) - interact with browser using specified actions
+        - MCPAction(name, arguments) - interact with MCP server tools
         """
         # Continue with pending actions if any
         if self.pending_actions:

@@ -18,6 +18,7 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.mcp import MCPAction
 from openhands.events.action.message import SystemMessageAction
@@ -32,6 +33,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     IPythonRunCellObservation,
+    TaskTrackingObservation,
     UserRejectObservation,
 )
 from openhands.events.observation.agent import (
@@ -87,7 +89,6 @@ class ConversationMemory:
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
-
         events = condensed_history
 
         # Ensure the event list starts with SystemMessageAction, then MessageAction(source='user')
@@ -229,11 +230,27 @@ class ConversationMemory:
                 BrowseInteractiveAction,
                 BrowseURLAction,
                 MCPAction,
+                TaskTrackingAction,
             ),
         ) or (isinstance(action, CmdRunAction) and action.source == 'agent'):
             tool_metadata = action.tool_call_metadata
+
+            # Allow user actions to skip tool metadata validation
+            if action.source == 'user' and tool_metadata is None:
+                # For user-initiated actions without tool metadata, create a simple message
+                return [
+                    Message(
+                        role='user',
+                        content=[
+                            TextContent(
+                                text=f'User requested to read file: {str(action)}'
+                            )
+                        ],
+                    )
+                ]
+
             assert tool_metadata is not None, (
-                'Tool call metadata should NOT be None when function calling is enabled. Action: '
+                'Tool call metadata should NOT be None when function calling is enabled for agent actions. Action: '
                 + str(action)
             )
 
@@ -488,6 +505,9 @@ class ConversationMemory:
         elif isinstance(obs, AgentThinkObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
+        elif isinstance(obs, TaskTrackingObservation):
+            text = truncate_content(obs.content, max_message_chars)
+            message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
             text = truncate_content(obs.content, max_message_chars)
             text += '\n[Error occurred in processing last action]'
@@ -512,6 +532,7 @@ class ConversationMemory:
                     repo_info = RepositoryInfo(
                         repo_name=obs.repo_name or '',
                         repo_directory=obs.repo_directory or '',
+                        branch_name=obs.repo_branch or None,
                     )
                 else:
                     repo_info = None

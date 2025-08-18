@@ -345,7 +345,8 @@ def test_multiple_multiline_commands(temp_dir, runtime_cls, run_as_openhands):
 
         # Verify all expected outputs are present
         if is_windows():
-            assert '.git_config' in results[0]  # Get-ChildItem
+            # Get-ChildItem should execute successfully (no specific content check needed)
+            pass  # results[0] contains directory listing output
         else:
             assert 'total 0' in results[0]  # ls -l
         assert 'hello\nworld' in results[1]  # echo -e "hello\nworld"
@@ -518,7 +519,7 @@ def test_multi_cmd_run_in_single_line(temp_dir, runtime_cls):
             obs = _run_cmd_action(runtime, 'Get-Location && Get-ChildItem')
             assert obs.exit_code == 0
             assert config.workspace_mount_path_in_sandbox in obs.content
-            assert '.git_config' in obs.content
+            # Git config is now handled by runtime base class, not as a file
         else:
             # Original Linux version using &&
             obs = _run_cmd_action(runtime, 'pwd && ls -l')
