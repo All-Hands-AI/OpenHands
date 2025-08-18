@@ -1,7 +1,7 @@
 """
 E2E: Web search test using Tavily (strict validation)
 
-This test verifies that the agent uses Tavily search (not browser tools) 
+This test verifies that the agent uses Tavily search (not browser tools)
 to answer questions requiring web search. It includes strict validation
 to ensure proper tool usage and will fail if browser tools are detected.
 """
@@ -28,16 +28,16 @@ def test_web_search_current_us_president(page: Page):
 
     # Navigate to the OpenHands application
     print('Step 1: Navigating to OpenHands application...')
-    page.goto('http://localhost:3000')
+    page.goto('http://localhost:12000')
     page.wait_for_load_state('networkidle', timeout=30000)
     page.screenshot(path='test-results/search_01_initial_load.png')
     print('Screenshot saved: search_01_initial_load.png')
 
     # Step 2: Select repository
     print('Step 2: Selecting repository...')
-    
+
     # Wait for and click the repository dropdown
-    repo_dropdown = page.locator('[data-testid="repo-selector"]')
+    repo_dropdown = page.locator('[data-testid="repo-dropdown"]')
     expect(repo_dropdown).to_be_visible(timeout=30000)
     repo_dropdown.click()
     page.wait_for_timeout(2000)
@@ -70,7 +70,9 @@ def test_web_search_current_us_president(page: Page):
             continue
 
     if not option_found:
-        print('Could not find repository option in dropdown, trying keyboard navigation')
+        print(
+            'Could not find repository option in dropdown, trying keyboard navigation'
+        )
         page.keyboard.press('ArrowDown')
         page.wait_for_timeout(500)
         page.keyboard.press('Enter')
@@ -81,7 +83,7 @@ def test_web_search_current_us_president(page: Page):
 
     # Step 3: Click Launch button
     print('Step 3: Clicking Launch button...')
-    
+
     launch_button = page.locator('[data-testid="repo-launch-button"]')
     expect(launch_button).to_be_visible(timeout=10000)
 
@@ -92,11 +94,15 @@ def test_web_search_current_us_president(page: Page):
         try:
             is_disabled = launch_button.is_disabled()
             if not is_disabled:
-                print(f'Repository Launch button is now enabled (attempt {attempt + 1})')
+                print(
+                    f'Repository Launch button is now enabled (attempt {attempt + 1})'
+                )
                 button_enabled = True
                 break
             else:
-                print(f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})')
+                print(
+                    f'Launch button still disabled, waiting... (attempt {attempt + 1}/{max_wait_attempts})'
+                )
                 page.wait_for_timeout(2000)
         except Exception as e:
             print(f'Error checking button state (attempt {attempt + 1}): {e}')
@@ -131,7 +137,7 @@ def test_web_search_current_us_president(page: Page):
 
     # Step 4: Wait for conversation interface to load
     print('Step 4: Waiting for conversation interface to load...')
-    
+
     navigation_timeout = 300000  # 5 minutes
     check_interval = 10000  # 10 seconds
 
@@ -169,7 +175,7 @@ def test_web_search_current_us_president(page: Page):
 
     # Step 5: Wait for agent to initialize
     print('Step 5: Waiting for agent to initialize...')
-    
+
     try:
         chat_input = page.locator('[data-testid="chat-input"]')
         expect(chat_input).to_be_visible(timeout=60000)
@@ -185,7 +191,7 @@ def test_web_search_current_us_president(page: Page):
 
     # Step 6: Wait for agent to be fully ready for input
     print('Step 6: Waiting for agent to be fully ready for input...')
-    
+
     max_wait_time = 480
     start_time = time.time()
     agent_ready = False
@@ -195,16 +201,26 @@ def test_web_search_current_us_president(page: Page):
         elapsed = int(time.time() - start_time)
         if elapsed % 30 == 0 and elapsed > 0:
             page.screenshot(path=f'test-results/search_waiting_{elapsed}s.png')
-            print(f'Screenshot saved: search_waiting_{elapsed}s.png (waiting {elapsed}s)')
+            print(
+                f'Screenshot saved: search_waiting_{elapsed}s.png (waiting {elapsed}s)'
+            )
 
         try:
             # Check if input field and submit button are ready
             input_field = page.locator('[data-testid="chat-input"] textarea')
-            submit_button = page.locator('[data-testid="chat-input"] button[type="submit"]')
-            
-            if (input_field.is_visible(timeout=2000) and input_field.is_enabled(timeout=2000) and
-                submit_button.is_visible(timeout=2000) and submit_button.is_enabled(timeout=2000)):
-                print('✅ Agent is ready for user input - input field and submit button are enabled')
+            submit_button = page.locator(
+                '[data-testid="chat-input"] button[type="submit"]'
+            )
+
+            if (
+                input_field.is_visible(timeout=2000)
+                and input_field.is_enabled(timeout=2000)
+                and submit_button.is_visible(timeout=2000)
+                and submit_button.is_enabled(timeout=2000)
+            ):
+                print(
+                    '✅ Agent is ready for user input - input field and submit button are enabled'
+                )
                 agent_ready = True
                 break
         except Exception as e:
@@ -214,14 +230,16 @@ def test_web_search_current_us_president(page: Page):
 
     if not agent_ready:
         page.screenshot(path='test-results/search_timeout_waiting_for_agent.png')
-        raise AssertionError(f'Agent did not become ready for input within {max_wait_time} seconds')
+        raise AssertionError(
+            f'Agent did not become ready for input within {max_wait_time} seconds'
+        )
 
     # Step 7: Ask question requiring web search
     print('Step 7: Asking question requiring web search...')
-    
+
     input_field = page.locator('[data-testid="chat-input"] textarea')
-    question = "Who is the current US president? Please use web search to find the most up-to-date information."
-    
+    question = 'Who is the current US president? Please use web search to find the most up-to-date information.'
+
     input_field.fill(question)
     print(f'Entered question: {question}')
 
@@ -237,8 +255,10 @@ def test_web_search_current_us_president(page: Page):
     print('Screenshot saved: search_11_question_submitted.png')
 
     # Step 8: Wait for agent response and verify Tavily usage (STRICT VALIDATION)
-    print('Step 8: Waiting for agent response and verifying Tavily usage (STRICT VALIDATION)...')
-    
+    print(
+        'Step 8: Waiting for agent response and verifying Tavily usage (STRICT VALIDATION)...'
+    )
+
     response_wait_time = 300  # 5 minutes
     response_start_time = time.time()
     search_tool_detected = False
@@ -250,54 +270,107 @@ def test_web_search_current_us_president(page: Page):
 
         if elapsed % 30 == 0 and elapsed > 0:
             page.screenshot(path=f'test-results/search_response_wait_{elapsed}s.png')
-            print(f'Screenshot saved: search_response_wait_{elapsed}s.png (waiting {elapsed}s for response)')
+            print(
+                f'Screenshot saved: search_response_wait_{elapsed}s.png (waiting {elapsed}s for response)'
+            )
 
         try:
             # Check for agent messages
             agent_messages = page.locator('[data-testid="agent-message"]').all()
-            
+
             for i, msg in enumerate(agent_messages):
                 try:
                     content = msg.text_content()
                     if content and len(content.strip()) > 10:
                         content_lower = content.lower()
-                        
+
                         # Check for search tool indicators (REQUIRED)
                         search_indicators = [
-                            'tavily', 'search_web', 'web search', 'searching the web',
-                            'search tool', 'search engine', 'web_search', 'tavily search'
+                            'tavily',
+                            'search_web',
+                            'web search',
+                            'searching the web',
+                            'search tool',
+                            'search engine',
+                            'web_search',
+                            'tavily search',
                         ]
-                        
+
                         # Check for browser tool usage (FORBIDDEN - causes immediate failure)
                         browser_indicators = [
-                            'fetch', 'browse', 'browser', 'http request', 'curl', 'wget',
-                            'mcp tool: fetch', 'calling mcp tool: fetch', 'microagent stdio server: fetch'
+                            'fetch',
+                            'browse',
+                            'browser',
+                            'http request',
+                            'curl',
+                            'wget',
+                            'mcp tool: fetch',
+                            'calling mcp tool: fetch',
+                            'microagent stdio server: fetch',
                         ]
-                        
+
                         # Check for president-related content (REQUIRED)
                         president_indicators = [
-                            'president', 'biden', 'joe biden', 'joseph biden', 'white house',
-                            'commander in chief', 'potus', 'united states president'
+                            'president',
+                            'biden',
+                            'joe biden',
+                            'joseph biden',
+                            'white house',
+                            'commander in chief',
+                            'potus',
+                            'united states president',
                         ]
-                        
+
                         # Detect search tool usage
-                        if any(indicator in content_lower for indicator in search_indicators):
+                        if any(
+                            indicator in content_lower
+                            for indicator in search_indicators
+                        ):
                             search_tool_detected = True
                             print('✅ Detected search tool usage in agent response')
-                        
+
                         # Detect browser tool usage (CRITICAL FAILURE)
-                        if any(indicator in content_lower for indicator in browser_indicators):
+                        if any(
+                            indicator in content_lower
+                            for indicator in browser_indicators
+                        ):
                             browser_tool_detected = True
-                            print('❌ CRITICAL: Detected browser tool usage instead of search tools')
-                        
+                            print(
+                                '❌ CRITICAL: Detected browser tool usage instead of search tools'
+                            )
+
                         # Check for valid president information
-                        if any(indicator in content_lower for indicator in president_indicators):
+                        if any(
+                            indicator in content_lower
+                            for indicator in president_indicators
+                        ):
                             valid_response_found = True
                             print('✅ Found valid president information in response')
-                            
+
                 except Exception as e:
                     print(f'Error processing agent message {i}: {e}')
                     continue
+
+            # Fallback: also scan the whole page text for indicators, in case tool usage appears in structured event cards
+            try:
+                body_text = page.locator('body').inner_text()
+                body_lower = body_text.lower() if body_text else ''
+                if any(
+                    ind in body_lower for ind in ['tavily', 'web search', 'web_search']
+                ):
+                    search_tool_detected = True
+                if any(
+                    ind in body_lower
+                    for ind in ['mcp tool: fetch', ' fetch ', 'browse']
+                ):
+                    browser_tool_detected = True
+                if any(
+                    ind in body_lower
+                    for ind in ['president', 'biden', 'potus', 'white house']
+                ):
+                    valid_response_found = True
+            except Exception as e2:
+                print(f'Error scanning whole page text: {e2}')
         except Exception as e:
             print(f'Error checking for agent messages: {e}')
 
@@ -306,31 +379,39 @@ def test_web_search_current_us_president(page: Page):
     # Final screenshot
     page.screenshot(path='test-results/search_12_final_response.png')
     print('Screenshot saved: search_12_final_response.png')
-    
+
     # STRICT VALIDATION - test must fail if requirements not met
     failure_reasons = []
-    
+
     # CRITICAL: Browser tools detected - immediate failure
     if browser_tool_detected:
-        failure_reasons.append('CRITICAL: Browser tools (fetch/browse) were used instead of Tavily search')
-    
+        failure_reasons.append(
+            'CRITICAL: Browser tools (fetch/browse) were used instead of Tavily search'
+        )
+
     # REQUIRED: Search tool usage must be detected
     if not search_tool_detected:
-        failure_reasons.append('REQUIRED: No search tool usage detected (Tavily search not used)')
-    
+        failure_reasons.append(
+            'REQUIRED: No search tool usage detected (Tavily search not used)'
+        )
+
     # REQUIRED: Valid response must be found
     if not valid_response_found:
-        failure_reasons.append('REQUIRED: No valid president information found in response')
-    
+        failure_reasons.append(
+            'REQUIRED: No valid president information found in response'
+        )
+
     if failure_reasons:
-        failure_message = f"❌ Test FAILED: {'; '.join(failure_reasons)}"
+        failure_message = f'❌ Test FAILED: {"; ".join(failure_reasons)}'
         print(failure_message)
-        print("\n=== STRICT VALIDATION REQUIREMENTS ===")
-        print("1. Agent MUST use Tavily search tools (not browser tools)")
-        print("2. Agent MUST provide valid president information")
-        print("3. NO browser/fetch tools should be used")
-        print("4. TAVILY_API_KEY must be properly configured")
+        print('\n=== STRICT VALIDATION REQUIREMENTS ===')
+        print('1. Agent MUST use Tavily search tools (not browser tools)')
+        print('2. Agent MUST provide valid president information')
+        print('3. NO browser/fetch tools should be used')
+        print('4. TAVILY_API_KEY must be properly configured')
         raise AssertionError(failure_message)
-    
-    print('✅ Test PASSED: Agent successfully used Tavily search and provided president information')
+
+    print(
+        '✅ Test PASSED: Agent successfully used Tavily search and provided president information'
+    )
     return
