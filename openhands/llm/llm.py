@@ -342,6 +342,9 @@ class LLM(RetryMixin, DebugMixin):
             if 'litellm_proxy' not in self.config.model:
                 kwargs.pop('extra_body', None)
 
+            # Log prompt before measuring latency to avoid interfering with timing
+            self.log_prompt(messages)
+
             # Record start time for latency measurement
             start_time = time.time()
 
