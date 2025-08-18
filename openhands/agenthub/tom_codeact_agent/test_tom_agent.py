@@ -83,12 +83,16 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
         print("-" * 60)
 
         # Simple interaction loop
-        max_steps = 3  # Reduced for testing
+        max_steps = 5  # Reduced for testing
         for step in range(max_steps):
             print(f"\n--- Step {step + 1} ---")
 
             # Create a proper state object with event history
-            events = list(runtime.event_stream.get_events())  # Convert to list
+            all_events = list(runtime.event_stream.get_events())  # Convert to list
+            # Filter out NullObservation to avoid conversation memory errors
+            from openhands.events.observation.empty import NullObservation
+            events = [event for event in all_events if not isinstance(event, NullObservation)]
+            print(f"Filtered out {len(all_events) - len(events)} null observations from {len(all_events)} total events")
             state = State(
                 budget_flag=False,
                 metrics=Metrics(),
@@ -113,9 +117,7 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
             runtime.event_stream.add_event(action, EventSource.AGENT)
 
             # Execute the action in the runtime
-            breakpoint()
             observation = runtime.run_action(action)
-            breakpoint()
 
             if observation:
                 print(f"Observation: {observation.__class__.__name__}")
