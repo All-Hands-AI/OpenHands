@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from openhands.integrations.service_types import GitService
-from openhands.server.routes.mcp import get_convo_link
+from openhands.server.routes.mcp import get_conversation_link
 from openhands.server.types import AppMode
 
 
 @pytest.mark.asyncio
-async def test_get_convo_link_non_saas_mode():
-    """Test get_convo_link in non-SAAS mode."""
+async def test_get_conversation_link_non_saas_mode():
+    """Test get_conversation_link in non-SAAS mode."""
     # Mock GitService
     mock_service = AsyncMock(spec=GitService)
 
@@ -18,7 +18,7 @@ async def test_get_convo_link_non_saas_mode():
         mock_config.app_mode = AppMode.OSS
 
         # Call the function
-        result = await get_convo_link(
+        result = await get_conversation_link(
             service=mock_service, conversation_id='test-convo-id', body='Original body'
         )
 
@@ -29,8 +29,8 @@ async def test_get_convo_link_non_saas_mode():
 
 
 @pytest.mark.asyncio
-async def test_get_convo_link_saas_mode():
-    """Test get_convo_link in SAAS mode."""
+async def test_get_conversation_link_saas_mode():
+    """Test get_conversation_link in SAAS mode."""
     # Mock GitService and user
     mock_service = AsyncMock(spec=GitService)
     mock_user = AsyncMock()
@@ -41,14 +41,14 @@ async def test_get_convo_link_saas_mode():
     with (
         patch('openhands.server.routes.mcp.server_config') as mock_config,
         patch(
-            'openhands.server.routes.mcp.CONVO_URL',
+            'openhands.server.routes.mcp.CONVERSATION_URL',
             'https://test.example.com/conversations/{}',
         ),
     ):
         mock_config.app_mode = AppMode.SAAS
 
         # Call the function
-        result = await get_convo_link(
+        result = await get_conversation_link(
             service=mock_service, conversation_id='test-convo-id', body='Original body'
         )
 
@@ -61,8 +61,8 @@ async def test_get_convo_link_saas_mode():
 
 
 @pytest.mark.asyncio
-async def test_get_convo_link_empty_body():
-    """Test get_convo_link with an empty body."""
+async def test_get_conversation_link_empty_body():
+    """Test get_conversation_link with an empty body."""
     # Mock GitService and user
     mock_service = AsyncMock(spec=GitService)
     mock_user = AsyncMock()
@@ -73,14 +73,14 @@ async def test_get_convo_link_empty_body():
     with (
         patch('openhands.server.routes.mcp.server_config') as mock_config,
         patch(
-            'openhands.server.routes.mcp.CONVO_URL',
+            'openhands.server.routes.mcp.CONVERSATION_URL',
             'https://test.example.com/conversations/{}',
         ),
     ):
         mock_config.app_mode = AppMode.SAAS
 
         # Call the function
-        result = await get_convo_link(
+        result = await get_conversation_link(
             service=mock_service, conversation_id='test-convo-id', body=''
         )
 

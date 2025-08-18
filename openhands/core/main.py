@@ -6,7 +6,6 @@ from typing import Callable, Protocol
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
 import openhands.cli.suppress_warnings  # noqa: F401
-from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -33,10 +32,12 @@ from openhands.events.action.action import Action
 from openhands.events.event import Event
 from openhands.events.observation import AgentStateChangedObservation
 from openhands.io import read_input, read_task
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.utils.async_utils import call_async_from_sync
+from openhands.utils.utils import create_registry_and_convo_stats
 
 
 class FakeUserResponseFunc(Protocol):
@@ -53,12 +54,12 @@ async def run_controller(
     initial_user_action: Action,
     sid: str | None = None,
     runtime: Runtime | None = None,
-    agent: Agent | None = None,
     exit_on_message: bool = False,
     fake_user_response_fn: FakeUserResponseFunc | None = None,
     headless_mode: bool = True,
     memory: Memory | None = None,
     conversation_instructions: str | None = None,
+    llm_registry: LLMRegistry | None = None,
 ) -> State | None:
     """Main coroutine to run the agent controller with task input flexibility.
 
@@ -70,7 +71,6 @@ async def run_controller(
         sid: (optional) The session id. IMPORTANT: please don't set this unless you know what you're doing.
             Set it to incompatible value will cause unexpected behavior on RemoteRuntime.
         runtime: (optional) A runtime for the agent to run on.
-        agent: (optional) A agent to run.
         exit_on_message: quit if agent asks for a message from user (optional)
         fake_user_response_fn: An optional function that receives the current state
             (could be None) and returns a fake user response.
@@ -98,8 +98,13 @@ async def run_controller(
     """
     sid = sid or generate_sid(config)
 
-    if agent is None:
-        agent = create_agent(config)
+    llm_registry, convo_stats, config = create_registry_and_convo_stats(
+        config,
+        sid,
+        None,
+    )
+
+    agent = create_agent(config, llm_registry)
 
     # when the runtime is created, it will be connected and clone the selected repository
     repo_directory = None
@@ -108,6 +113,7 @@ async def run_controller(
         repo_tokens = get_provider_tokens()
         runtime = create_runtime(
             config,
+            llm_registry,
             sid=sid,
             headless_mode=headless_mode,
             agent=agent,
@@ -159,7 +165,7 @@ async def run_controller(
         )
 
     controller, initial_state = create_controller(
-        agent, runtime, config, replay_events=replay_events
+        agent, runtime, config, convo_stats, replay_events=replay_events
     )
 
     assert isinstance(initial_user_action, Action), (
