@@ -3,7 +3,7 @@ from copy import deepcopy
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.storage import get_file_store
+from openhands.server.shared import file_store
 from openhands.storage.data_models.settings import Settings
 
 
@@ -31,7 +31,6 @@ def create_registry_and_convo_stats(
 
     agent_cls = user_settings.agent if user_settings else None
     llm_registry = LLMRegistry(user_config, agent_cls)
-    file_store = get_file_store(user_config.file_store, user_config.file_store_path)
     convo_stats = ConversationStats(file_store, sid, user_id)
     llm_registry.subscribe(convo_stats.register_llm)
     return llm_registry, convo_stats, user_config

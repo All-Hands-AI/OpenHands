@@ -58,8 +58,6 @@ class ConversationStats:
         total_metrics = Metrics()
         for metrics in self.service_to_metrics.values():
             total_metrics.merge(metrics)
-
-        logger.info(f'combined metrics\n\n{total_metrics}')
         return total_metrics
 
     def get_metrics_for_service(self, service_id: str) -> Metrics:
