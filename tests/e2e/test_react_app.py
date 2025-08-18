@@ -292,7 +292,9 @@ def test_react_app_creation_and_serving(page: Page):
                 try:
                     input_element = page.locator(selector)
                     if input_element.is_visible(timeout=5000):
-                        print(f'Found message input after reload with selector: {selector}')
+                        print(
+                            f'Found message input after reload with selector: {selector}'
+                        )
                         message_input = input_element
                         break
                 except Exception:
@@ -362,13 +364,17 @@ Make sure the server stays running so I can access it."""
                         button_enabled = True
                         print('Submit button is enabled')
                         break
-                    print(f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)')
+                    print(
+                        f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)'
+                    )
                 except Exception as e:
                     print(f'Error checking if button is disabled: {e}')
                 page.wait_for_timeout(2000)
 
         if not submit_button or not button_enabled:
-            print('Submit button not found or never became enabled, trying alternatives')
+            print(
+                'Submit button not found or never became enabled, trying alternatives'
+            )
             try:
                 message_input.press('Enter')
                 print('Pressed Enter to submit message')

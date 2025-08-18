@@ -188,7 +188,9 @@ def test_react_app_creation_simple(page: Page):
         elapsed = int(time.time() - start_time)
         if elapsed % 30 == 0 and elapsed > 0:
             page.screenshot(path=f'test-results/react_simple_waiting_{elapsed}s.png')
-            print(f'Screenshot saved: react_simple_waiting_{elapsed}s.png (waiting {elapsed}s)')
+            print(
+                f'Screenshot saved: react_simple_waiting_{elapsed}s.png (waiting {elapsed}s)'
+            )
 
         try:
             # Check for ready indicators
@@ -204,32 +206,36 @@ def test_react_app_creation_simple(page: Page):
             submit_ready = False
             try:
                 input_field = page.locator('[data-testid="chat-input"] textarea')
-                submit_button = page.locator('[data-testid="chat-input"] button[type="submit"]')
+                submit_button = page.locator(
+                    '[data-testid="chat-input"] button[type="submit"]'
+                )
                 if (
                     input_field.is_visible(timeout=2000)
                     and input_field.is_enabled(timeout=2000)
                     and submit_button.is_visible(timeout=2000)
                     and submit_button.is_enabled(timeout=2000)
                 ):
-                    print('Chat input field and submit button are both visible and enabled')
+                    print(
+                        'Chat input field and submit button are both visible and enabled'
+                    )
                     input_ready = True
                     submit_ready = True
             except Exception:
                 pass
 
-            has_ready_indicator = False
             for indicator in ready_indicators:
                 try:
                     element = page.locator(indicator)
                     if element.is_visible(timeout=2000):
                         print(f'Agent appears ready (found: {indicator})')
-                        has_ready_indicator = True
                         break
                 except Exception:
                     continue
 
             if input_ready and submit_ready:
-                print('✅ Agent is ready for user input - input field and submit button are enabled')
+                print(
+                    '✅ Agent is ready for user input - input field and submit button are enabled'
+                )
                 agent_ready = True
                 break
 
@@ -240,7 +246,9 @@ def test_react_app_creation_simple(page: Page):
 
     if not agent_ready:
         page.screenshot(path='test-results/react_simple_timeout_waiting_for_agent.png')
-        raise AssertionError(f'Agent did not become ready for input within {max_wait_time} seconds')
+        raise AssertionError(
+            f'Agent did not become ready for input within {max_wait_time} seconds'
+        )
 
     page.screenshot(path='test-results/react_simple_06_agent_ready.png')
     print('Screenshot saved: react_simple_06_agent_ready.png')
@@ -288,7 +296,9 @@ def test_react_app_creation_simple(page: Page):
                     try:
                         input_element = page.locator(selector)
                         if input_element.is_visible(timeout=5000):
-                            print(f'Found message input after reload with selector: {selector}')
+                            print(
+                                f'Found message input after reload with selector: {selector}'
+                            )
                             message_input = input_element
                             break
                     except Exception:
@@ -339,13 +349,17 @@ def test_react_app_creation_simple(page: Page):
                         button_enabled = True
                         print('Submit button is enabled')
                         break
-                    print(f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)')
+                    print(
+                        f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)'
+                    )
                 except Exception as e:
                     print(f'Error checking if button is disabled: {e}')
                 page.wait_for_timeout(2000)
 
         if not submit_button or not button_enabled:
-            print('Submit button not found or never became enabled, trying alternatives')
+            print(
+                'Submit button not found or never became enabled, trying alternatives'
+            )
             try:
                 message_input.press('Enter')
                 print('Pressed Enter to submit message')
