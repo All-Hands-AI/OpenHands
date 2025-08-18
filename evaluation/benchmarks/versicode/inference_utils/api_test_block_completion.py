@@ -1,6 +1,4 @@
-"""
-GPT performs line level generation prediction and truncates overly long tokens
-"""
+"""GPT performs line level generation prediction and truncates overly long tokens"""
 
 import json
 import os
@@ -56,8 +54,7 @@ def predict(content, model_name):
 
 
 def bulid_prompt(version, description) -> str:
-    """
-    build prompt
+    """Build prompt
     :param version:
     :param description:
     :param masked_code:

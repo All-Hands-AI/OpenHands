@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from openhands.controller.agent import Agent
+    from openhands.memory.memory import Memory
 
 
 from mcp import McpError
@@ -20,14 +21,12 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.mcp.client import MCPClient
 from openhands.mcp.error_collector import mcp_error_collector
-from openhands.memory.memory import Memory
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
-    """
-    Converts a list of MCPClient instances to ChatCompletionToolParam format
+    """Converts a list of MCPClient instances to ChatCompletionToolParam format
     that can be used by CodeActAgent.
 
     Args:
@@ -104,6 +103,17 @@ async def create_mcp_clients(
             client = MCPClient()
             try:
                 await client.connect_stdio(server)
+
+                # Log which tools this specific server provides
+                tool_names = [tool.name for tool in client.tools]
+                server_name = getattr(
+                    server, 'name', f'{server.command} {" ".join(server.args or [])}'
+                )
+                logger.debug(
+                    f'Successfully connected to MCP stdio server {server_name} - '
+                    f'provides {len(tool_names)} tools: {tool_names}'
+                )
+
                 mcp_clients.append(client)
             except Exception as e:
                 # Error is already logged and collected in client.connect_stdio()
@@ -111,6 +121,7 @@ async def create_mcp_clients(
             continue
 
         is_shttp = isinstance(server, MCPSHTTPServerConfig)
+
         connection_type = 'SHTTP' if is_shttp else 'SSE'
         logger.info(
             f'Initializing MCP agent for {server} with {connection_type} connection...'
@@ -119,6 +130,13 @@ async def create_mcp_clients(
 
         try:
             await client.connect_http(server, conversation_id=conversation_id)
+
+            # Log which tools this specific server provides
+            tool_names = [tool.name for tool in client.tools]
+            logger.debug(
+                f'Successfully connected to MCP STTP server {server.url} - '
+                f'provides {len(tool_names)} tools: {tool_names}'
+            )
 
             # Only add the client to the list after a successful connection
             mcp_clients.append(client)
@@ -133,8 +151,7 @@ async def create_mcp_clients(
 async def fetch_mcp_tools_from_config(
     mcp_config: MCPConfig, conversation_id: str | None = None, use_stdio: bool = False
 ) -> list[dict]:
-    """
-    Retrieves the list of MCP tools from the MCP clients.
+    """Retrieves the list of MCP tools from the MCP clients.
 
     Args:
         mcp_config: The MCP configuration
@@ -155,6 +172,7 @@ async def fetch_mcp_tools_from_config(
     mcp_tools = []
     try:
         logger.debug(f'Creating MCP clients with config: {mcp_config}')
+
         # Create clients - this will fetch tools but not maintain active connections
         mcp_clients = await create_mcp_clients(
             mcp_config.sse_servers,
@@ -186,8 +204,7 @@ async def fetch_mcp_tools_from_config(
 
 
 async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Observation:
-    """
-    Call a tool on an MCP server and return the observation.
+    """Call a tool on an MCP server and return the observation.
 
     Args:
         mcp_clients: The list of MCP clients to execute the action on
@@ -250,9 +267,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 async def add_mcp_tools_to_agent(
     agent: 'Agent', runtime: Runtime, memory: 'Memory'
 ) -> MCPConfig:
-    """
-    Add MCP tools to an agent.
-    """
+    """Add MCP tools to an agent."""
     import sys
 
     # Skip MCP tools on Windows
@@ -293,9 +308,8 @@ async def add_mcp_tools_to_agent(
         updated_mcp_config, use_stdio=isinstance(runtime, CLIRuntime)
     )
 
-    logger.info(
-        f'Loaded {len(mcp_tools)} MCP tools: {[tool["function"]["name"] for tool in mcp_tools]}'
-    )
+    tool_names = [tool['function']['name'] for tool in mcp_tools]
+    logger.info(f'Loaded {len(mcp_tools)} MCP tools: {tool_names}')
 
     # Set the MCP tools on the agent
     agent.set_mcp_tools(mcp_tools)

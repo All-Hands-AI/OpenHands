@@ -13,6 +13,7 @@ from openhands.integrations.service_types import (
     Repository,
 )
 from openhands.microagent.types import MicroagentContentResponse
+from openhands.server.dependencies import check_session_api_key
 from openhands.server.routes.git import app as git_app
 from openhands.server.user_auth import (
     get_access_token,
@@ -49,10 +50,15 @@ def test_client():
     def mock_get_user_id():
         return 'test_user'
 
+    def mock_check_session_api_key():
+        # Mock session API key check to always pass for tests
+        return None
+
     # Override the dependencies in the app
     app.dependency_overrides[get_provider_tokens] = mock_get_provider_tokens
     app.dependency_overrides[get_access_token] = mock_get_access_token
     app.dependency_overrides[get_user_id] = mock_get_user_id
+    app.dependency_overrides[check_session_api_key] = mock_check_session_api_key
 
     yield TestClient(app)
 

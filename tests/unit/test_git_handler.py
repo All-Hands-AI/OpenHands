@@ -182,9 +182,7 @@ class TestGitHandler(unittest.TestCase):
         self.write_file(nested_2, 'unstaged_add.txt')
 
     def test_get_git_changes(self):
-        """
-        Test with unpushed commits, staged commits, and unstaged commits
-        """
+        """Test with unpushed commits, staged commits, and unstaged commits"""
         changes = self.git_handler.get_git_changes()
 
         expected_changes = [
@@ -202,9 +200,7 @@ class TestGitHandler(unittest.TestCase):
         assert changes == expected_changes
 
     def test_get_git_changes_after_push(self):
-        """
-        Test with staged commits, and unstaged commits
-        """
+        """Test with staged commits, and unstaged commits"""
         self.run_command('git push -u origin feature-branch', self.local_dir)
         changes = self.git_handler.get_git_changes()
 
@@ -220,9 +216,7 @@ class TestGitHandler(unittest.TestCase):
         assert changes == expected_changes
 
     def test_get_git_changes_nested_repos(self):
-        """
-        Test with staged commits, and unstaged commits
-        """
+        """Test with staged commits, and unstaged commits"""
         self.setup_nested()
 
         changes = self.git_handler.get_git_changes()
@@ -283,7 +277,6 @@ class TestGitHandler(unittest.TestCase):
 
     def test_get_git_changes_fallback(self):
         """Test that get_git_changes falls back to creating a script file when needed."""
-
         # Break the git changes command
         with patch(
             'openhands.runtime.utils.git_handler.GIT_CHANGES_CMD',
@@ -309,7 +302,6 @@ class TestGitHandler(unittest.TestCase):
 
     def test_get_git_diff_fallback(self):
         """Test that get_git_diff delegates to the git_diff module."""
-
         # Break the git diff command
         with patch(
             'openhands.runtime.utils.git_handler.GIT_DIFF_CMD', 'non-existant-command'

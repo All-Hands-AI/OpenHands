@@ -10,17 +10,19 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     ChangeAgentStateAction,
     NullAction,
 )
 from openhands.events.event_filter import EventFilter
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
 )
-from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentConfig
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -31,7 +33,6 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -42,13 +43,14 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
-from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -60,7 +62,7 @@ from openhands.server.user_auth import (
     get_user_settings_store,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation as get_conversation_object
+from openhands.server.utils import get_conversation as get_conversation_metadata
 from openhands.server.utils import get_conversation_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
@@ -70,6 +72,7 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
@@ -87,6 +90,7 @@ class InitSessionRequest(BaseModel):
     suggested_task: SuggestedTask | None = None
     create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
+    mcp_config: MCPConfig | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -178,6 +182,7 @@ async def new_conversation(
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
+            mcp_config=data.mcp_config,
         )
 
         return ConversationResponse(
@@ -331,23 +336,20 @@ async def delete_conversation(
     return True
 
 
-@app.get('/conversations/{conversation_id}/remember_prompt')
+@app.get('/conversations/{conversation_id}/remember-prompt')
 async def get_prompt(
+    conversation_id: str,
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: ServerConversation | None = Depends(get_conversation_object),
+    metadata: ConversationMetadata = Depends(get_conversation_metadata),
 ):
-    if conversation is None:
-        return JSONResponse(
-            status_code=404,
-            content={'error': 'Conversation not found.'},
-        )
-
-    # get event stream for the conversation
-    event_stream = conversation.event_stream
+    # get event store for the conversation
+    event_store = EventStore(
+        sid=conversation_id, file_store=file_store, user_id=metadata.user_id
+    )
 
     # retrieve the relevant events
-    stringified_events = _get_contextual_events(event_stream, event_id)
+    stringified_events = _get_contextual_events(event_store, event_id)
 
     # generate a prompt
     settings = await user_settings.load()
@@ -362,7 +364,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -378,8 +380,9 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
+) -> str:
     messages = [
         {
             'role': 'system',
@@ -391,8 +394,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:
@@ -464,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 
@@ -551,7 +555,7 @@ async def stop_conversation(
         )
 
 
-def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
+def _get_contextual_events(event_store: EventStore, event_id: int) -> str:
     # find the specified events to learn from
     # Get X events around the target event
     context_size = 4
@@ -567,7 +571,7 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     )  # the types of events that can be in an agent's history
 
     # from event_id - context_size to event_id..
-    context_before = event_stream.search_events(
+    context_before = event_store.search_events(
         start_id=event_id,
         filter=agent_event_filter,
         reverse=True,
@@ -575,7 +579,7 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     )
 
     # from event_id to event_id + context_size + 1
-    context_after = event_stream.search_events(
+    context_after = event_store.search_events(
         start_id=event_id + 1,
         filter=agent_event_filter,
         limit=context_size + 1,
@@ -624,7 +628,6 @@ async def update_conversation(
     Raises:
         HTTPException: If conversation is not found or user lacks permission
     """
-
     logger.info(
         f'Updating conversation {conversation_id} with title: {data.title}',
         extra={'session_id': conversation_id, 'user_id': user_id},
@@ -707,3 +710,28 @@ async def update_conversation(
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.post('/conversations/{conversation_id}/exp-config')
+def add_experiment_config_for_conversation(
+    conversation_id: str, exp_config: ExperimentConfig
+) -> bool:
+    exp_config_filepath = get_experiment_config_filename(conversation_id)
+    exists = False
+    try:
+        file_store.read(exp_config_filepath)
+        exists = True
+    except FileNotFoundError:
+        pass
+
+    # Don't modify again if it already exists
+    if exists:
+        return False
+
+    try:
+        file_store.write(exp_config_filepath, exp_config.model_dump_json())
+    except Exception as e:
+        logger.info(f'Failed to write experiment config for {conversation_id}: {e}')
+        return True
+
+    return False

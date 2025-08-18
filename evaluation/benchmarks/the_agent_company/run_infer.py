@@ -18,8 +18,8 @@ from openhands.core.config import (
     LLMConfig,
     OpenHandsConfig,
     get_agent_config_arg,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
@@ -68,8 +68,7 @@ def get_config(
 
 
 def load_dependencies(runtime: Runtime) -> list[str]:
-    """
-    Every task has a dependencies.yml file, which lists all the services that the
+    """Every task has a dependencies.yml file, which lists all the services that the
     task depends on. This function loads the file and returns all dependent service names.
     """
     command = 'cat /utils/dependencies.yml'
@@ -197,7 +196,7 @@ def run_evaluator(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--task-image-name',
         type=str,

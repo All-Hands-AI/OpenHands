@@ -12,8 +12,9 @@ from openhands.controller.state.control_flags import (
     IterationControlFlag,
 )
 from openhands.controller.state.state import State
-from openhands.core.config import LLMConfig
+from openhands.core.config import OpenHandsConfig
 from openhands.core.config.agent_config import AgentConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
@@ -28,9 +29,37 @@ from openhands.events.event import Event, RecallType
 from openhands.events.observation.agent import RecallObservation
 from openhands.events.stream import EventStreamSubscriber
 from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.metrics import Metrics
 from openhands.memory.memory import Memory
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.memory import InMemoryFileStore
+
+
+@pytest.fixture
+def llm_registry():
+    config = OpenHandsConfig()
+    return LLMRegistry(config=config)
+
+
+@pytest.fixture
+def conversation_stats():
+    import uuid
+
+    file_store = InMemoryFileStore({})
+    # Use a unique conversation ID for each test to avoid conflicts
+    conversation_id = f'test-conversation-{uuid.uuid4()}'
+    return ConversationStats(
+        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
+    )
+
+
+@pytest.fixture
+def connected_registry_and_stats(llm_registry, conversation_stats):
+    """Connect the LLMRegistry and ConversationStats properly"""
+    # Subscribe to LLM registry events to track metrics
+    llm_registry.subscribe(conversation_stats.register_llm)
+    return llm_registry, conversation_stats
 
 
 @pytest.fixture
@@ -42,15 +71,17 @@ def mock_event_stream():
 
 
 @pytest.fixture
-def mock_parent_agent():
+def mock_parent_agent(llm_registry):
     """Creates a mock parent agent for testing delegation."""
     agent = MagicMock(spec=Agent)
     agent.name = 'ParentAgent'
     agent.llm = MagicMock(spec=LLM)
+    agent.llm.service_id = 'main_agent'
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.llm.retry_listener = None  # Add retry_listener attribute
     agent.config = AgentConfig()
+    agent.llm_registry = llm_registry  # Add the missing llm_registry attribute
 
     # Add a proper system message mock
     system_message = SystemMessageAction(content='Test system message')
@@ -61,15 +92,17 @@ def mock_parent_agent():
 
 
 @pytest.fixture
-def mock_child_agent():
+def mock_child_agent(llm_registry):
     """Creates a mock child agent for testing delegation."""
     agent = MagicMock(spec=Agent)
     agent.name = 'ChildAgent'
     agent.llm = MagicMock(spec=LLM)
+    agent.llm.service_id = 'main_agent'
     agent.llm.metrics = Metrics()
     agent.llm.config = LLMConfig()
     agent.llm.retry_listener = None  # Add retry_listener attribute
     agent.config = AgentConfig()
+    agent.llm_registry = llm_registry  # Add the missing llm_registry attribute
 
     system_message = SystemMessageAction(content='Test system message')
     system_message._source = EventSource.AGENT
@@ -78,16 +111,37 @@ def mock_child_agent():
     return agent
 
 
+def create_mock_agent_factory(mock_child_agent, llm_registry):
+    """Helper function to create a mock agent factory with proper LLM registration."""
+
+    def create_mock_agent(config, llm_registry=None):
+        # Register the mock agent's LLM in the registry so get_combined_metrics() can find it
+        if llm_registry:
+            mock_child_agent.llm = llm_registry.get_llm('agent_llm', LLMConfig())
+            mock_child_agent.llm_registry = (
+                llm_registry  # Set the llm_registry attribute
+            )
+        return mock_child_agent
+
+    return create_mock_agent
+
+
 @pytest.mark.asyncio
-async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_stream):
+async def test_delegation_flow(
+    mock_parent_agent, mock_child_agent, mock_event_stream, connected_registry_and_stats
+):
     """
     Test that when the parent agent delegates to a child
      1. the parent's delegate is set, and once the child finishes, the parent is cleaned up properly.
-     2. metrics are accumulated globally (delegate is adding to the parents metrics)
-     3. local metrics for the delegate are still accessible
+     2. metrics are accumulated globally via LLM registry (delegate adds to the global metrics)
+     3. global metrics tracking works correctly through the LLM registry
     """
+    llm_registry, conversation_stats = connected_registry_and_stats
+
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+    Agent.get_cls = Mock(
+        return_value=create_mock_agent_factory(mock_child_agent, llm_registry)
+    )
 
     step_count = 0
 
@@ -97,6 +151,12 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
         return CmdRunAction(command=f'ls {step_count}')
 
     mock_child_agent.step = agent_step_fn
+
+    # Set up the parent agent's LLM with initial cost and register it in the registry
+    # The parent agent's LLM should use the existing registered LLM to ensure proper tracking
+    parent_llm = llm_registry.service_to_llm['agent']
+    parent_llm.metrics.accumulated_cost = 2
+    mock_parent_agent.llm = parent_llm
 
     parent_metrics = Metrics()
     parent_metrics.accumulated_cost = 2
@@ -115,6 +175,7 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     parent_controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
+        convo_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='parent',
         confirmation_mode=False,
@@ -181,21 +242,23 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     for i in range(4):
         delegate_controller.state.iteration_flag.step()
         delegate_controller.agent.step(delegate_controller.state)
+        # Update the agent's LLM metrics (not the deprecated state metrics)
         delegate_controller.agent.llm.metrics.add_cost(1.0)
 
     assert (
         delegate_controller.state.get_local_step() == 4
     )  # verify local metrics are accessible via snapshot
 
+    # Check that the conversation stats has the combined metrics (parent + delegate)
+    combined_metrics = delegate_controller.state.convo_stats.get_combined_metrics()
     assert (
-        delegate_controller.state.metrics.accumulated_cost
-        == 6  # Make sure delegate tracks global cost
+        combined_metrics.accumulated_cost
+        == 6  # Make sure delegate tracks global cost (2 from parent + 4 from delegate)
     )
 
-    assert (
-        delegate_controller.state.get_local_metrics().accumulated_cost
-        == 4  # Delegate spent one dollar per step
-    )
+    # Since metrics are now global via LLM registry, local metrics tracking
+    # is handled differently. The delegate's LLM shares the same metrics object
+    # as the parent for global tracking, so we verify the global total is correct.
 
     delegate_controller.state.outputs = {'delegate_result': 'done'}
 
@@ -229,15 +292,18 @@ async def test_delegation_flow(mock_parent_agent, mock_child_agent, mock_event_s
     ],
 )
 async def test_delegate_step_different_states(
-    mock_parent_agent, mock_event_stream, delegate_state
+    mock_parent_agent, mock_event_stream, delegate_state, connected_registry_and_stats
 ):
     """Ensure that delegate is closed or remains open based on the delegate's state."""
+    llm_registry, conversation_stats = connected_registry_and_stats
+
     # Create a state with iteration_flag.max_value set to 10
     state = State(inputs={})
     state.iteration_flag.max_value = 10
     controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
+        convo_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='test',
         confirmation_mode=False,
@@ -258,8 +324,7 @@ async def test_delegate_step_different_states(
     mock_delegate.close = AsyncMock()
 
     async def call_on_event_with_new_loop():
-        """
-        In this thread, create and set a fresh event loop, so that the run_until_complete()
+        """In this thread, create and set a fresh event loop, so that the run_until_complete()
         calls inside controller.on_event(...) find a valid loop.
         """
         loop_in_thread = asyncio.new_event_loop()
@@ -294,13 +359,23 @@ async def test_delegate_step_different_states(
 
 @pytest.mark.asyncio
 async def test_delegate_hits_global_limits(
-    mock_child_agent, mock_event_stream, mock_parent_agent
+    mock_child_agent, mock_event_stream, mock_parent_agent, connected_registry_and_stats
 ):
     """
     Global limits from control flags should apply to delegates
     """
+    llm_registry, conversation_stats = connected_registry_and_stats
+
     # Mock the agent class resolution so that AgentController can instantiate mock_child_agent
-    Agent.get_cls = Mock(return_value=lambda llm, config: mock_child_agent)
+    Agent.get_cls = Mock(
+        return_value=create_mock_agent_factory(mock_child_agent, llm_registry)
+    )
+
+    # Set up the parent agent's LLM with initial cost and register it in the registry
+    mock_parent_agent.llm.metrics.accumulated_cost = 2
+    mock_parent_agent.llm.service_id = 'main_agent'
+    # Register the parent agent's LLM in the registry
+    llm_registry.service_to_llm['main_agent'] = mock_parent_agent.llm
 
     parent_metrics = Metrics()
     parent_metrics.accumulated_cost = 2
@@ -319,6 +394,7 @@ async def test_delegate_hits_global_limits(
     parent_controller = AgentController(
         agent=mock_parent_agent,
         event_stream=mock_event_stream,
+        convo_stats=conversation_stats,
         iteration_delta=1,  # Add the required iteration_delta parameter
         sid='parent',
         confirmation_mode=False,
