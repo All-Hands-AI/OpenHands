@@ -431,7 +431,7 @@ async def test_session_preserves_env_mcp_config(monkeypatch):
         config=config,
         sio=AsyncMock(),
         llm_registry=LLMRegistry(config=OpenHandsConfig()),
-        convo_stats=ConversationStats(None, 'test-sid', None),
+        conversation_stats=ConversationStats(None, 'test-sid', None),
     )
 
     # Create empty settings

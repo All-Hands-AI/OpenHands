@@ -85,7 +85,7 @@ class State:
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
-    convo_stats: ConversationStats | None = None
+    conversation_stats: ConversationStats | None = None
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -122,8 +122,8 @@ class State:
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
-        convo_stats = self.convo_stats
-        self.convo_stats = None  # Don't save convo stats, handles itself
+        conversation_stats = self.conversation_stats
+        self.conversation_stats = None  # Don't save convo stats, handles itself
 
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
@@ -144,7 +144,7 @@ class State:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
-        self.convo_stats = convo_stats  # restore reference
+        self.conversation_stats = conversation_stats  # restore reference
 
     @staticmethod
     def restore_from_session(
