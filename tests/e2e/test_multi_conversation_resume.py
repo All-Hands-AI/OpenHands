@@ -517,12 +517,16 @@ def test_multi_conversation_resume(page: Page):
     print('Step 9: Resuming the previous conversation via conversation panel...')
 
     # Click the conversation panel button (the "sandwich button")
-    conversation_panel_button = page.locator('[data-testid="toggle-conversation-panel"]')
-    
+    conversation_panel_button = page.locator(
+        '[data-testid="toggle-conversation-panel"]'
+    )
+
     conversations_found = False
     try:
         if conversation_panel_button.is_visible(timeout=10000):
-            print('Found conversation panel button, clicking to open conversations list')
+            print(
+                'Found conversation panel button, clicking to open conversations list'
+            )
             conversation_panel_button.click()
             conversations_found = True
             page.wait_for_timeout(3000)  # Wait for panel to open
@@ -546,9 +550,9 @@ def test_multi_conversation_resume(page: Page):
     # Try different selectors to find the conversation in the panel
     conversation_selectors = [
         '[data-testid="conversation-card"]',  # Main conversation card selector
-        f'a[href*="{conversation_id}"]',      # Link containing conversation ID
-        f'div:has-text("{conversation_id}")', # Any div containing the ID
-        'a[href*="/conversations/"]',         # Any conversation link (note: plural)
+        f'a[href*="{conversation_id}"]',  # Link containing conversation ID
+        f'div:has-text("{conversation_id}")',  # Any div containing the ID
+        'a[href*="/conversations/"]',  # Any conversation link (note: plural)
     ]
 
     conversation_link_found = False

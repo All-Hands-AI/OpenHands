@@ -16,6 +16,8 @@ const COMMON_NO_RENDER_LIST: OpenHandsEventType[] = [
 
 const ACTION_NO_RENDER_LIST: OpenHandsEventType[] = ["recall"];
 
+const OBSERVATION_NO_RENDER_LIST: OpenHandsEventType[] = ["think"];
+
 export const shouldRenderEvent = (
   event: OpenHandsAction | OpenHandsObservation,
 ) => {
@@ -35,7 +37,10 @@ export const shouldRenderEvent = (
       return false;
     }
 
-    return !COMMON_NO_RENDER_LIST.includes(event.observation);
+    const noRenderList = COMMON_NO_RENDER_LIST.concat(
+      OBSERVATION_NO_RENDER_LIST,
+    );
+    return !noRenderList.includes(event.observation);
   }
 
   return true;

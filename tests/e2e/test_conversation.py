@@ -31,7 +31,7 @@ def get_readme_line_count():
         return 0
 
 
-def test_conversation_start(page: Page):
+def test_conversation_start(page: Page, base_url: str):
     """
     Test starting a conversation with the OpenHands agent:
     1. Navigate to OpenHands (assumes GitHub token is already configured)
@@ -44,12 +44,16 @@ def test_conversation_start(page: Page):
     # Create test-results directory if it doesn't exist
     os.makedirs('test-results', exist_ok=True)
 
+    # Use default URL if base_url is not provided
+    if not base_url:
+        base_url = 'http://localhost:12000'
+
     expected_line_count = get_readme_line_count()
     print(f'Expected README.md line count: {expected_line_count}')
 
     # Navigate to the OpenHands application
-    print('Step 1: Navigating to OpenHands application...')
-    page.goto('http://localhost:12000')
+    print(f'Step 1: Navigating to OpenHands application at {base_url}...')
+    page.goto(base_url)
     page.wait_for_load_state('networkidle', timeout=30000)
 
     # Take initial screenshot
