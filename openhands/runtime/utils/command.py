@@ -39,9 +39,13 @@ def get_action_execution_server_startup_command(
     username = override_username or (
         'openhands' if app_config.run_as_openhands else 'root'
     )
-    user_id = override_user_id or (
-        sandbox_config.user_id if app_config.run_as_openhands else 0
-    )
+    if app_config.run_as_openhands:
+        resolved_uid = override_user_id if override_user_id is not None else sandbox_config.user_id
+        # Avoid passing UID 0 for the non-root 'openhands' user inside containers
+        # Fall back to 1000 when resolved UID is 0 or None
+        user_id = resolved_uid if resolved_uid not in (None, 0) else 1000
+    else:
+        user_id = 0
 
     base_cmd = [
         *python_prefix,
