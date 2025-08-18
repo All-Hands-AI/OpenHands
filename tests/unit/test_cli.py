@@ -6,6 +6,7 @@ import pytest_asyncio
 
 from openhands.cli import main as cli
 from openhands.controller.state.state import State
+from openhands.core.config.llm_config import LLMConfig
 from openhands.events import EventSource
 from openhands.events.action import MessageAction
 
@@ -124,12 +125,14 @@ def mock_config():
         ''  # Empty string, not starting with 'tvly-'
     )
     config.search_api_key = search_api_key_mock
+    config.get_llm_config_from_agent.return_value = LLMConfig(model='model')
 
     # Mock sandbox with volumes attribute to prevent finalize_config issues
     config.sandbox = MagicMock()
     config.sandbox.volumes = (
         None  # This prevents finalize_config from overriding workspace_base
     )
+    config.model_name = 'model'
 
     return config
 
@@ -213,7 +216,11 @@ async def test_run_session_without_initial_action(
     # Assertions for initialization flow
     mock_display_runtime_init.assert_called_once_with('local')
     mock_display_animation.assert_called_once()
-    mock_create_agent.assert_called_once_with(mock_config)
+    # Check that mock_config is the first parameter to create_agent
+    mock_create_agent.assert_called_once()
+    assert mock_create_agent.call_args[0][0] == mock_config, (
+        'First parameter to create_agent should be mock_config'
+    )
     mock_add_mcp_tools.assert_called_once_with(mock_agent, mock_runtime, mock_memory)
     mock_create_runtime.assert_called_once()
     mock_create_controller.assert_called_once()

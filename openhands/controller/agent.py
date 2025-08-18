@@ -3,6 +3,8 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from openhands.llm.llm_registry import LLMRegistry
+
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
     from openhands.events.action import Action
@@ -17,7 +19,6 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import EventSource
-from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
 
 
@@ -38,10 +39,11 @@ class Agent(ABC):
 
     def __init__(
         self,
-        llm: LLM,
         config: AgentConfig,
+        llm_registry: LLMRegistry,
     ):
-        self.llm = llm
+        self.llm = llm_registry.get_llm_from_agent_config('agent', config)
+        self.llm_registry = llm_registry
         self.config = config
         self._complete = False
         self._prompt_manager: 'PromptManager' | None = None

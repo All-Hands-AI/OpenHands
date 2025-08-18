@@ -93,6 +93,9 @@ export USE_HINT_TEXT=true # Ignore this if you are not sure.
 
 # Specify a condenser configuration for memory management (default: NoOpCondenser)
 export EVAL_CONDENSER=summarizer_for_eval # Name of the condenser config group in config.toml
+
+# Specify the instruction prompt template file name
+export INSTRUCTION_TEMPLATE_NAME=swe_custom.j2 # Name of the file in the swe_bench/prompts folder.
 ```
 
 Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and CodeActAgent,
