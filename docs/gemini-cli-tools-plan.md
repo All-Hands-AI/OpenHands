@@ -1,4 +1,4 @@
-# Gemini-CLI-aligned tools for Gemini models (Phase 1a)
+# Gemini-CLI-aligned tools for Gemini models
 
 Goal: For Gemini models in OpenHands, expose only: read_file, write_file, replace. Replace is routed to ACI GeminiEditor (with exact Gemini CLI semantics); fallback to OHEditor.str_replace when ACI is missing.
 
