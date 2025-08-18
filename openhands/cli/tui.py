@@ -6,9 +6,11 @@ import asyncio
 import contextlib
 import datetime
 import json
+import logging
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from typing import Generator
 
 import markdown  # type: ignore
@@ -776,7 +778,6 @@ def display_agent_state_change_message(agent_state: str) -> None:
         print_formatted_text('')
         print_formatted_text(HTML('<gold>Agent is waiting for your input...</gold>'))
 
-
 # Common input functions
 class CommandCompleter(Completer):
     """Custom completer for commands."""
@@ -1001,3 +1002,86 @@ class UserCancelledError(Exception):
     """Raised when the user cancels an operation via key binding."""
 
     pass
+
+
+# Tom-SWE thinking process display functionality
+CLI_DISPLAY_LEVEL = 25  # Between INFO (20) and WARNING (30)
+
+# Add the custom logging level
+logging.addLevelName(CLI_DISPLAY_LEVEL, 'CLI_DISPLAY')
+
+
+def display_tom_thinking_step(message: str) -> None:
+    """Display tom agent thinking step with proper CLI formatting."""
+    if not message or not message.strip():
+        return
+
+    message = message.strip()
+
+    # Determine color and styling based on emoji/content
+    if message.startswith('🎯'):
+        color = COLOR_GOLD
+        prefix = "Tom Analysis"
+    elif message.startswith('⏱️') or 'time' in message.lower():
+        color = COLOR_GREY  
+        prefix = "Tom Performance"
+    elif message.startswith('🔍'):
+        color = '#32CD32'  # Lime green for search results
+        prefix = "Tom Search"
+    elif message.startswith('🧠'):
+        color = '#9370DB'  # Medium purple for reasoning 
+        prefix = "Tom Reasoning"
+    elif message.startswith('⚡'):
+        color = '#FF6347'  # Tomato red for actions
+        prefix = "Tom Action"
+    elif message.startswith('✅'):
+        color = '#00FF7F'  # Spring green for completion
+        prefix = "Tom Complete"
+    elif message.startswith('🔄'):
+        color = COLOR_AGENT_BLUE
+        prefix = "Tom Progress"
+    elif message.startswith('📁') or message.startswith('📊'):
+        color = COLOR_GREY
+        prefix = "Tom Data"
+    else:
+        color = COLOR_AGENT_BLUE
+        prefix = "Tom"
+
+    # Display with consistent formatting using FormattedText for better color support
+    print_formatted_text(
+        FormattedText([
+            ('fg:' + color, f'[{prefix}] '),
+            ('', message)
+        ])
+    )
+
+
+class TomCliLogHandler(logging.Handler):
+    """Simple handler for tom CLI_DISPLAY level messages only."""
+
+    def emit(self, record):
+        """Emit a log record for CLI display."""
+        # Only handle our custom CLI_DISPLAY messages, ignore everything else
+        if record.levelno == CLI_DISPLAY_LEVEL:
+            try:
+                display_tom_thinking_step(record.getMessage())
+            except Exception:
+                # Don't let display errors break tom functionality
+                pass
+
+
+@contextmanager
+def capture_tom_thinking():
+    """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
+    display_tom_thinking_step("🎯 Analyzing your instruction...")
+    
+    # Minimal setup: just add our handler to tom-swe loggers to catch CLI_DISPLAY_LEVEL
+    handler = TomCliLogHandler()
+    tom_logger = logging.getLogger('tom_swe')
+    
+    try:
+        tom_logger.addHandler(handler)
+        yield
+    finally:
+        tom_logger.removeHandler(handler)
+        display_tom_thinking_step("✅ Analysis complete")

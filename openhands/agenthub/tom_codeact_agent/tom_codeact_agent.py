@@ -30,6 +30,14 @@ from openhands.utils.prompt import PromptManager
 from tom_swe.tom_agent import create_tom_agent
 from tom_swe.memory.locations import get_cleaned_sessions_dir
 
+# Import CLI capture function for tom thinking process
+try:
+    from openhands.cli.tui import capture_tom_thinking
+    CLI_AVAILABLE = True
+except ImportError:
+    # CLI not available (e.g., in headless mode)
+    CLI_AVAILABLE = False
+
 
 class TomCodeActAgent(CodeActAgent):
     """CodeAct Agent enhanced with Tom agent integration.
@@ -254,14 +262,24 @@ class TomCodeActAgent(CodeActAgent):
             logger.info(f"📋 Tom: Context length: {len(context)} characters")
 
             # Single synchronous call that includes user context analysis
-            improved_instruction = self.tom_agent.propose_instructions(
-                user_id=user_id,
-                original_instruction=user_message.content,
-                user_msg_context=context,
-            )
+            # Capture tom thinking process in CLI if available
+            if CLI_AVAILABLE:
+                with capture_tom_thinking():
+                    improved_instruction = self.tom_agent.propose_instructions(
+                        user_id=user_id,
+                        original_instruction=user_message.content,
+                        user_msg_context=context,
+                    )
+            else:
+                improved_instruction = self.tom_agent.propose_instructions(
+                    user_id=user_id,
+                    original_instruction=user_message.content,
+                    user_msg_context=context,
+                )
             if improved_instruction:
                 logger.info(f"✅ Tom: Received improved instruction")
                 logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
+                
                 return improved_instruction.improved_instruction
             else:
                 logger.warning(f"⚠️ Tom: No instruction improvements provided")
@@ -359,8 +377,16 @@ class TomCodeActAgent(CodeActAgent):
 
         # Call tom_agent.sleeptime_compute in a thread pool to avoid event loop conflict
         import concurrent.futures
+        
+        def run_sleeptime_compute():
+            if CLI_AVAILABLE:
+                with capture_tom_thinking():
+                    self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
+            else:
+                self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
+        
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.submit(self.tom_agent.sleeptime_compute, sessions_data=sessions_data, user_id=user_id)
+            executor.submit(run_sleeptime_compute)
 
         logger.info("✅ Tom: Sleeptime compute completed successfully")
 
