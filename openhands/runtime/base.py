@@ -280,7 +280,7 @@ class Runtime(FileEditRuntimeMixin):
                 # Note: json.dumps gives us nice escaping for free
                 cmd += f'export {key}={json.dumps(value)}; '
                 # Add to .bashrc if not already present
-                bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
+                bashrc_cmd += f'touch ~/.bashrc; grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
 
             if not cmd:
                 return
