@@ -69,5 +69,3 @@ export function MCPServerList({
     </div>
   );
 }
-
-// Note: Skeleton was previously exported; keeping component local if needed in future.
