@@ -121,6 +121,8 @@ async def start_conversation(
     session_init_args['git_provider_tokens'] = git_provider_tokens
     session_init_args['selected_repository'] = convo_metadata.selected_repository
     session_init_args['custom_secrets'] = custom_secrets
+    
+    logger.info(f'Creating conversation with repository: {convo_metadata.selected_repository}')
     session_init_args['selected_branch'] = convo_metadata.selected_branch
     session_init_args['git_provider'] = convo_metadata.git_provider
     session_init_args['conversation_instructions'] = conversation_instructions
