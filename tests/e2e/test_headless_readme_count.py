@@ -138,36 +138,36 @@ base_url = "{llm_base_url}"
             print(f'Return code: {result.returncode}')
 
             # Handle different types of failures
-            if result.returncode != 0:
-                error_output = result.stdout + result.stderr
+            error_output = result.stdout + result.stderr
 
-                # Check for specific LLM-related errors that we can handle gracefully
-                if any(
-                    error in error_output.lower()
-                    for error in [
-                        'exceeded budget',
-                        'over budget',
-                        'quota exceeded',
-                        'rate limit',
-                        'invalid model',
-                        'model name passed',
-                        'authentication failed',
-                        'api key',
-                        'unauthorized',
-                        'billing',
-                        'payment',
-                        'credits',
-                        'badrequesterror',
-                        'openaiexception',
-                    ]
-                ):
-                    pytest.skip(
-                        f'LLM service unavailable or over budget: {error_output}'
-                    )
-                else:
-                    pytest.fail(
-                        f'Headless OpenHands failed with return code {result.returncode}: {error_output}'
-                    )
+            # Check for specific LLM-related errors that we can handle gracefully
+            # (regardless of return code, since LLM errors can still result in exit code 0)
+            if any(
+                error in error_output.lower()
+                for error in [
+                    'exceeded budget',
+                    'over budget',
+                    'quota exceeded',
+                    'rate limit',
+                    'invalid model',
+                    'model name passed',
+                    'authentication failed',
+                    'api key',
+                    'unauthorized',
+                    'billing',
+                    'payment',
+                    'credits',
+                    'badrequesterror',
+                    'openaiexception',
+                ]
+            ):
+                pytest.skip(f'LLM service unavailable or over budget: {error_output}')
+
+            # If return code is non-zero and it's not an LLM error, fail the test
+            if result.returncode != 0:
+                pytest.fail(
+                    f'Headless OpenHands failed with return code {result.returncode}: {error_output}'
+                )
 
             # Check that the output contains the expected line count
             output_text = result.stdout + result.stderr
