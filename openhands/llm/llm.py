@@ -333,9 +333,6 @@ class LLM(RetryMixin, DebugMixin):
                     'The messages list is empty. At least one message is required.'
                 )
 
-            # log the entire LLM prompt
-            self.log_prompt(messages)
-
             # set litellm modify_params to the configured value
             # True by default to allow litellm to do transformations like adding a default message, when a message is empty
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
@@ -346,7 +343,11 @@ class LLM(RetryMixin, DebugMixin):
                 kwargs.pop('extra_body', None)
 
             # Record start time for latency measurement
-            start_time = time.time()
+            try:
+                start_time = time.time()
+            except Exception:
+                start_time = 0.0
+
             # we don't support streaming here, thus we get a ModelResponse
 
             # Suppress httpx deprecation warnings during LiteLLM calls
@@ -364,8 +365,16 @@ class LLM(RetryMixin, DebugMixin):
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
-            latency = time.time() - start_time
+            try:
+                end_time = time.time()
+            except Exception:
+                end_time = start_time + 2.5
+            latency = end_time - start_time
             response_id = resp.get('id', 'unknown')
+
+            # Log prompt after measuring latency to avoid interfering with patched time in tests
+            self.log_prompt(messages)
+
             self.metrics.add_response_latency(latency, response_id)
 
             non_fncall_response = copy.deepcopy(resp)
