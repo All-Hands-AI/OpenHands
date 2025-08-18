@@ -5,7 +5,6 @@ import pytest
 from openhands.events.action.files import FileEditAction
 from openhands.events.event import FileEditSource
 from openhands.runtime.action_execution_server import ActionExecutor
-from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 
 
 @pytest.mark.asyncio
