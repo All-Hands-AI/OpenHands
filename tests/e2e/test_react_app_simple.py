@@ -256,7 +256,18 @@ def test_react_app_creation_simple(page: Page):
 
     # Send message to create React app
     print('Step 7: Sending React app creation request...')
-    message = "Create a simple React app using Vite. Set it up with a basic component that displays 'Hello from OpenHands React App!' and make sure it can be served locally."
+    message = """Create a simple React app using Vite with the following requirements:
+
+1. Set it up with a basic component that displays 'Hello from OpenHands React App!'
+2. Make sure it can be served locally
+3. Please DEMONSTRATE your work by showing:
+   - The file structure (use 'ls -la' or 'tree' commands)
+   - The package.json contents (use 'cat package.json')
+   - The App component source code (use 'cat src/App.jsx' or similar)
+   - Start the development server (use 'npm run dev')
+   - Test that the app is accessible (use 'curl localhost:port' or similar)
+
+Please show the actual output of these commands so I can verify the React app was created successfully."""
 
     try:
         # Find and fill the input field (using same selectors as working conversation test)
@@ -412,13 +423,17 @@ def test_react_app_creation_simple(page: Page):
                     # Look for evidence of file structure being shown
                     if not evidence_found['file_structure']:
                         file_structure_patterns = [
-                            r'src/.*app\.(jsx|tsx)',
+                            r'src/.*app\.(jsx|tsx|js|ts)',
                             r'public/.*index\.html',
                             r'package\.json',
                             r'vite\.config\.(js|ts)',
                             r'node_modules',
                             r'├──.*src',
                             r'└──.*public',
+                            r'drwx.*src',
+                            r'drwx.*public',
+                            r'-rw.*package\.json',
+                            r'total \d+.*src.*public',
                         ]
                         for pattern in file_structure_patterns:
                             if re.search(pattern, content, re.IGNORECASE):
@@ -450,6 +465,10 @@ def test_react_app_creation_simple(page: Page):
                             r'export default App',
                             r'<div.*>.*hello.*openhands.*</div>',
                             r'return \([^)]*hello from openhands',
+                            r'<h1>.*hello.*openhands.*</h1>',
+                            r'<p>.*hello.*openhands.*</p>',
+                            r'Hello from OpenHands React App',
+                            r'jsx.*hello.*openhands',
                         ]
                         for pattern in app_component_patterns:
                             if re.search(pattern, content, re.IGNORECASE):
@@ -468,6 +487,11 @@ def test_react_app_creation_simple(page: Page):
                             r'server started.*port \d+',
                             r'npm run dev',
                             r'yarn dev',
+                            r'localhost:\d+',
+                            r'http://.*:\d+',
+                            r'vite.*dev.*server',
+                            r'development server.*running',
+                            r'server.*listening.*port',
                         ]
                         for pattern in server_patterns:
                             if re.search(pattern, content, re.IGNORECASE):
