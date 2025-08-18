@@ -238,6 +238,27 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       background: "#454545",
       borderRadius: "0.375rem",
       padding: "0.375rem 0.25rem",
+      /* WebKit browsers (Chrome, Safari, Edge) */
+      "&::-webkit-scrollbar": {
+        width: "6px",
+        height: "6px",
+      },
+
+      "&::-webkit-scrollbar-track": {
+        background: "transparent",
+      },
+
+      "&::-webkit-scrollbar-thumb": {
+        background: "rgba(208, 217, 250, 0.3)",
+        borderRadius: "3px",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+
+      /* Firefox */
+      "&": {
+        scrollbarWidth: "thin",
+        scrollbarColor: "rgba(208, 217, 250, 0.3) transparent",
+      },
     },
     "& .repo-branch-dropdown__option": {
       color: "#fff",
