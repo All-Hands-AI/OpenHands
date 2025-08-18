@@ -738,7 +738,7 @@ class KubernetesRuntime(ActionExecutionClient):
     @classmethod
     async def delete(cls, conversation_id: str):
         """Delete resources associated with a conversation."""
-        # This is triggered when you actually do the delete in the UI on the convo.
+        # This is triggered when you actually do the delete in the UI on the conversation.
         try:
             cls._cleanup_k8s_resources(
                 namespace=cls._namespace,

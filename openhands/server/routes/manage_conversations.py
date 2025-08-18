@@ -43,7 +43,7 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
 from openhands.server.shared import (
     ConversationManagerImpl,
@@ -468,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 

@@ -209,7 +209,7 @@ def create_provider_tokens_object(
     return MappingProxyType(provider_information)
 
 
-async def setup_init_convo_settings(
+async def setup_init_conversation_settings(
     user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
 ) -> ConversationInitData:
     """Set up conversation initialization data with provider tokens.
@@ -248,8 +248,8 @@ async def setup_init_convo_settings(
     if user_secrets:
         session_init_args['custom_secrets'] = user_secrets.custom_secrets
 
-    convo_init_data = ConversationInitData(**session_init_args)
+    conversation_init_data = ConversationInitData(**session_init_args)
     # We should recreate the same experiment conditions when restarting a conversation
     return ExperimentManagerImpl.run_conversation_variant_test(
-        user_id, conversation_id, convo_init_data
+        user_id, conversation_id, conversation_init_data
     )
