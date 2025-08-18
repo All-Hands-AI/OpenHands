@@ -51,6 +51,7 @@ def test_event_props_serialization_deserialization():
             'image_urls': None,
             'file_urls': None,
             'wait_for_response': False,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
@@ -64,6 +65,7 @@ def test_message_action_serialization_deserialization():
             'image_urls': None,
             'file_urls': None,
             'wait_for_response': False,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, MessageAction)
@@ -125,6 +127,7 @@ def test_cmd_run_action_serialization_deserialization():
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
             'is_static': False,
             'cwd': None,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, CmdRunAction)
@@ -137,6 +140,7 @@ def test_browse_url_action_serialization_deserialization():
             'thought': '',
             'url': 'https://www.example.com',
             'return_axtree': False,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, BrowseURLAction)
@@ -150,6 +154,7 @@ def test_browse_interactive_action_serialization_deserialization():
             'browser_actions': 'goto("https://www.example.com")',
             'browsergym_send_msg_to_user': '',
             'return_axtree': False,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, BrowseInteractiveAction)
@@ -165,6 +170,7 @@ def test_file_read_action_serialization_deserialization():
             'thought': 'None',
             'impl_source': 'default',
             'view_range': None,
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, FileReadAction)
@@ -179,6 +185,7 @@ def test_file_write_action_serialization_deserialization():
             'start': 0,
             'end': 1,
             'thought': 'None',
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, FileWriteAction)
@@ -199,6 +206,7 @@ def test_file_edit_action_aci_serialization_deserialization():
             'end': -1,
             'thought': 'Replacing text',
             'impl_source': 'oh_aci',
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, FileEditAction)
@@ -219,6 +227,7 @@ def test_file_edit_action_llm_serialization_deserialization():
             'end': 10,
             'thought': 'Updating file content',
             'impl_source': 'llm_based_edit',
+            'security_risk': -1,
         },
     }
     serialization_deserialization(original_action_dict, FileEditAction)
