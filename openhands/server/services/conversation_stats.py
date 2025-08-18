@@ -45,7 +45,6 @@ class ConversationStats:
             return
 
         try:
-            # Try new filename first
             encoded = self.file_store.read(self.metrics_path)
             pickled = base64.b64decode(encoded)
             self.restored_metrics = pickle.loads(pickled)
