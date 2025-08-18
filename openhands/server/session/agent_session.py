@@ -188,6 +188,7 @@ class AgentSession:
                     max_budget_per_task=max_budget_per_task,
                     agent_to_llm_config=agent_to_llm_config,
                     agent_configs=agent_configs,
+                    security_analyzer=config.security.security_analyzer,
                 )
 
             if not self._closed:
@@ -273,6 +274,7 @@ class AgentSession:
             max_budget_per_task=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
+            security_analyzer=config.security.security_analyzer,
             replay_events=replay_events[1:],
         )
         assert isinstance(replay_events[0], MessageAction)
@@ -420,6 +422,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
+        security_analyzer: str | None = None,
         replay_events: list[Event] | None = None,
     ) -> tuple[AgentController, bool]:
         """Creates an AgentController instance
@@ -465,6 +468,7 @@ class AgentSession:
             agent_to_llm_config=agent_to_llm_config,
             agent_configs=agent_configs,
             confirmation_mode=confirmation_mode,
+            security_analyzer=security_analyzer,
             headless_mode=False,
             status_callback=self._status_callback,
             initial_state=initial_state,
