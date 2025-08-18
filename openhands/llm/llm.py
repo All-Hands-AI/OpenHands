@@ -63,6 +63,7 @@ CACHE_PROMPT_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
 ]
 
 # function calling supporting models
@@ -77,6 +78,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'claude-sonnet-4-20250514',
     'claude-sonnet-4',
     'claude-opus-4-20250514',
+    'claude-opus-4-1-20250805',
     'gpt-4o-mini',
     'gpt-4o',
     'o1-2024-12-17',
@@ -92,6 +94,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'kimi-k2-instruct',
     'Qwen3-Coder-480B-A35B-Instruct',
     'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
+    'gpt-5-2025-08-07',
 ]
 
 REASONING_EFFORT_SUPPORTED_MODELS = [
@@ -105,6 +108,7 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
+    'gpt-5-2025-08-07',
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
