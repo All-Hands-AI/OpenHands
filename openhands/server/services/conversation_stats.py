@@ -6,7 +6,10 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.llm.llm_registry import RegistryEvent
 from openhands.llm.metrics import Metrics
 from openhands.storage.files import FileStore
-from openhands.storage.locations import get_conversation_stats_filename
+from openhands.storage.locations import (
+    get_conversation_dir,
+    get_conversation_stats_filename,
+)
 
 
 class ConversationStats:
@@ -43,12 +46,25 @@ class ConversationStats:
             return
 
         try:
+            # Try new filename first
             encoded = self.file_store.read(self.metrics_path)
             pickled = base64.b64decode(encoded)
             self.restored_metrics = pickle.loads(pickled)
             logger.info(f'restored metrics: {self.conversation_id}')
         except FileNotFoundError:
-            pass
+            # Backwards-compat: try old filename (convo_stats.json)
+            try:
+                old_path = f'{get_conversation_dir(self.conversation_id, self.user_id)}convo_stats.json'
+                encoded = self.file_store.read(old_path)
+                pickled = base64.b64decode(encoded)
+                self.restored_metrics = pickle.loads(pickled)
+                logger.info(f'restored metrics (legacy file): {self.conversation_id}')
+                # Migrate to new path on next save
+                self.metrics_path = get_conversation_stats_filename(
+                    self.conversation_id, self.user_id
+                )
+            except FileNotFoundError:
+                pass
 
     def get_combined_metrics(self) -> Metrics:
         total_metrics = Metrics()
