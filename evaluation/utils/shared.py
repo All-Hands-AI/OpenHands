@@ -622,8 +622,7 @@ def compatibility_for_eval_history_pairs(
 
 
 def is_fatal_evaluation_error(error: str | None) -> bool:
-    """
-    The AgentController class overrides last error for certain exceptions
+    """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here
     This is because we do a comparisino against the stringified error
     """

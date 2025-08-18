@@ -3,6 +3,8 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
+from openhands.llm.llm_registry import LLMRegistry
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -21,6 +23,9 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.task_tracker import (
+    create_task_tracker_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -29,7 +34,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
@@ -72,18 +76,13 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
@@ -91,7 +90,7 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
+        self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
         # Initialize the router
@@ -105,7 +104,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                system_prompt_filename=self.config.system_prompt_filename,
+                system_prompt_filename=self.config.resolved_system_prompt_filename,
             )
 
         return self._prompt_manager
@@ -143,6 +142,9 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
+        if self.config.enable_plan_mode:
+            # In plan mode, we use the task_tracker tool for task management
+            tools.append(create_task_tracker_tool(use_short_tool_desc))
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:

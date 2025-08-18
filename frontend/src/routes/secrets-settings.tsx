@@ -89,6 +89,7 @@ function SecretsSettingsScreen() {
           to="/settings/integrations"
           data-testid="connect-git-button"
           type="button"
+          className="self-start"
         >
           <BrandButton type="button" variant="secondary">
             {t(I18nKey.SECRETS$CONNECT_GIT_PROVIDER)}
