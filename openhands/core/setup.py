@@ -35,7 +35,7 @@ from openhands.utils.async_utils import GENERAL_TIMEOUT, call_async_from_sync
 
 def create_runtime(
     config: OpenHandsConfig,
-    llm_registry: LLMRegistry,
+    llm_registry: LLMRegistry | None = None,
     sid: str | None = None,
     headless_mode: bool = True,
     agent: Agent | None = None,
@@ -84,7 +84,7 @@ def create_runtime(
         sid=session_id,
         plugins=agent_cls.sandbox_plugins,
         headless_mode=headless_mode,
-        llm_registry=llm_registry,
+        llm_registry=llm_registry or LLMRegistry(config),
         git_provider_tokens=git_provider_tokens,
     )
 
