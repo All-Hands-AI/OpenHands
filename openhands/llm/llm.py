@@ -343,10 +343,7 @@ class LLM(RetryMixin, DebugMixin):
                 kwargs.pop('extra_body', None)
 
             # Record start time for latency measurement
-            try:
-                start_time = time.time()
-            except Exception:
-                start_time = 0.0
+            start_time = time.time()
 
             # we don't support streaming here, thus we get a ModelResponse
 
@@ -365,10 +362,7 @@ class LLM(RetryMixin, DebugMixin):
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
 
             # Calculate and record latency
-            try:
-                end_time = time.time()
-            except Exception:
-                end_time = start_time + 2.5
+            end_time = time.time()
             latency = end_time - start_time
             response_id = resp.get('id', 'unknown')
 
