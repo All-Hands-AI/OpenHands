@@ -313,8 +313,22 @@ class GitLabService(BaseGitService, GitService):
             if not repo_path:
                 return []  # Invalid URL format
 
-            repository = await self.get_repository_details_from_repo_name(repo_path)
-            return [repository]
+            # First try authenticated request (if token present)
+            try:
+                repository = await self.get_repository_details_from_repo_name(repo_path)
+                return [repository]
+            except Exception:
+                # Fall back to unauthenticated request for public repositories
+                try:
+                    encoded_name = repo_path.replace('/', '%2F')
+                    url = f'{self.BASE_URL}/projects/{encoded_name}'
+                    async with httpx.AsyncClient() as client:
+                        response = await client.get(url)
+                        response.raise_for_status()
+                        data = response.json()
+                        return [self._parse_repository(data)]
+                except Exception:
+                    return []
 
         return await self.get_paginated_repos(1, per_page, sort, None, query)
 
@@ -532,11 +546,17 @@ class GitLabService(BaseGitService, GitService):
         self, repository: str
     ) -> Repository:
         encoded_name = repository.replace('/', '%2F')
-
         url = f'{self.BASE_URL}/projects/{encoded_name}'
-        repo, _ = await self._make_request(url)
-
-        return self._parse_repository(repo)
+        try:
+            repo, _ = await self._make_request(url)
+            return self._parse_repository(repo)
+        except Exception:
+            # Fall back to unauthenticated request for public repositories
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url)
+                response.raise_for_status()
+                data = response.json()
+                return self._parse_repository(data)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
