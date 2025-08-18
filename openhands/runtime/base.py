@@ -54,6 +54,7 @@ from openhands.integrations.provider import (
     ProviderType,
 )
 from openhands.integrations.service_types import AuthenticationError
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent import (
     BaseMicroagent,
     load_microagents_from_dir,
@@ -125,6 +126,7 @@ class Runtime(FileEditRuntimeMixin):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -178,7 +180,9 @@ class Runtime(FileEditRuntimeMixin):
 
         # Load mixins
         FileEditRuntimeMixin.__init__(
-            self, enable_llm_editor=config.get_agent_config().enable_llm_editor
+            self,
+            enable_llm_editor=config.get_agent_config().enable_llm_editor,
+            llm_registry=llm_registry,
         )
 
         self.user_id = user_id
@@ -276,7 +280,7 @@ class Runtime(FileEditRuntimeMixin):
                 # Note: json.dumps gives us nice escaping for free
                 cmd += f'export {key}={json.dumps(value)}; '
                 # Add to .bashrc if not already present
-                bashrc_cmd += f'grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
+                bashrc_cmd += f'touch ~/.bashrc; grep -q "^export {key}=" ~/.bashrc || echo "export {key}={json.dumps(value)}" >> ~/.bashrc; '
 
             if not cmd:
                 return
