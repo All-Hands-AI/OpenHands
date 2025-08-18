@@ -125,7 +125,6 @@ def event_to_dict(event: 'Event') -> dict:
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
     if 'action' in d:
-
         d['args'] = props
         if event.timeout is not None:
             d['timeout'] = event.timeout
