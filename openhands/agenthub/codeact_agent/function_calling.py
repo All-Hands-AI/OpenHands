@@ -214,9 +214,7 @@ def response_to_actions(
                     for key, value in other_kwargs.items():
                         if key in valid_params:
                             valid_kwargs[key] = value
-                        elif (
-                            key != 'security_risk'
-                        ):  # security_risk is handled separately
+                        else:
                             raise FunctionCallValidationError(
                                 f'Unexpected argument {key} in tool call {tool_call.function.name}. Allowed arguments are: {valid_params}'
                             )
