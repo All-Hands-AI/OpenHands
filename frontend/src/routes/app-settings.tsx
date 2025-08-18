@@ -6,6 +6,7 @@ import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
@@ -105,6 +106,7 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
+          setSolvabilityAnalysisSwitchHasChanged(false);
           setMaxBudgetPerTaskHasChanged(false);
           setGitUserNameHasChanged(false);
           setGitUserEmailHasChanged(false);

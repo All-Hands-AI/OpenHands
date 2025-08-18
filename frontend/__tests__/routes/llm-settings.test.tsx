@@ -79,6 +79,35 @@ describe("Content", () => {
         expect(screen.getByTestId("set-indicator")).toBeInTheDocument();
       });
     });
+
+    it("should conditionally show security analyzer based on confirmation mode", async () => {
+      renderLlmSettingsScreen();
+      await screen.findByTestId("llm-settings-screen");
+
+      const confirmation = screen.getByTestId("enable-confirmation-mode-switch");
+
+      // Initially confirmation mode is false, so security analyzer should not be visible
+      expect(confirmation).not.toBeChecked();
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+
+      // Enable confirmation mode
+      await userEvent.click(confirmation);
+      expect(confirmation).toBeChecked();
+
+      // Security analyzer should now be visible
+      screen.getByTestId("security-analyzer-input");
+
+      // Disable confirmation mode again
+      await userEvent.click(confirmation);
+      expect(confirmation).not.toBeChecked();
+
+      // Security analyzer should be hidden again
+      expect(
+        screen.queryByTestId("security-analyzer-input"),
+      ).not.toBeInTheDocument();
+    });
   });
 
   describe("Advanced form", () => {
@@ -107,7 +136,6 @@ describe("Content", () => {
       within(advancedForm).getByTestId("llm-api-key-input");
       within(advancedForm).getByTestId("llm-api-key-help-anchor-advanced");
       within(advancedForm).getByTestId("agent-input");
-      within(advancedForm).getByTestId("enable-confirmation-mode-switch");
       within(advancedForm).getByTestId("enable-memory-condenser-switch");
 
       await userEvent.click(advancedSwitch);
@@ -130,9 +158,6 @@ describe("Content", () => {
       const baseUrl = screen.getByTestId("base-url-input");
       const apiKey = screen.getByTestId("llm-api-key-input");
       const agent = screen.getByTestId("agent-input");
-      const confirmation = screen.getByTestId(
-        "enable-confirmation-mode-switch",
-      );
       const condensor = screen.getByTestId("enable-memory-condenser-switch");
 
       expect(model).toHaveValue("openhands/claude-sonnet-4-20250514");
@@ -140,15 +165,7 @@ describe("Content", () => {
       expect(apiKey).toHaveValue("");
       expect(apiKey).toHaveProperty("placeholder", "");
       expect(agent).toHaveValue("CodeActAgent");
-      expect(confirmation).not.toBeChecked();
       expect(condensor).toBeChecked();
-
-      // check that security analyzer is present
-      expect(
-        screen.queryByTestId("security-analyzer-input"),
-      ).not.toBeInTheDocument();
-      await userEvent.click(confirmation);
-      screen.getByTestId("security-analyzer-input");
     });
 
     it("should render the advanced form if existings settings are advanced", async () => {
@@ -177,7 +194,7 @@ describe("Content", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
-        security_analyzer: "mock-invariant",
+        security_analyzer: "none",
       });
 
       renderLlmSettingsScreen();
@@ -203,7 +220,7 @@ describe("Content", () => {
         expect(agent).toHaveValue("CoActAgent");
         expect(confirmation).toBeChecked();
         expect(condensor).not.toBeChecked();
-        expect(securityAnalyzer).toHaveValue("mock-invariant");
+        expect(securityAnalyzer).toHaveValue("None (Ask for every command)");
       });
     });
   });
@@ -293,7 +310,7 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = screen.getByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    const securityAnalyzerOption = screen.getByText("None (Ask for every command)");
     await userEvent.click(securityAnalyzerOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -306,7 +323,7 @@ describe("Form submission", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
-        security_analyzer: "mock-invariant",
+        security_analyzer: "none",
       }),
     );
   });
@@ -375,8 +392,10 @@ describe("Form submission", () => {
     const baseUrl = await screen.findByTestId("base-url-input");
     const apiKey = await screen.findByTestId("llm-api-key-input");
     const agent = await screen.findByTestId("agent-input");
-    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
     const condensor = await screen.findByTestId("enable-memory-condenser-switch");
+
+    // Confirmation mode switch is now in basic settings, always visible
+    const confirmation = await screen.findByTestId("enable-confirmation-mode-switch");
 
     // enter custom model
     await userEvent.type(model, "-mini");
@@ -451,14 +470,17 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("mock-invariant");
+    const securityAnalyzerOption = screen.getByText("None (Ask for every command)");
     await userEvent.click(securityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("mock-invariant");
+    expect(securityAnalyzer).toHaveValue("None (Ask for every command)");
 
     expect(submitButton).not.toBeDisabled();
 
-    await userEvent.clear(securityAnalyzer);
-    expect(securityAnalyzer).toHaveValue("");
+    // revert back to original value
+    await userEvent.click(securityAnalyzer);
+    const originalSecurityAnalyzerOption = screen.getByText("LLM Analyzer (Default)");
+    await userEvent.click(originalSecurityAnalyzerOption);
+    expect(securityAnalyzer).toHaveValue("LLM Analyzer (Default)");
     expect(submitButton).toBeDisabled();
   });
 
@@ -552,7 +574,7 @@ describe("Form submission", () => {
       expect.objectContaining({
         llm_model: "openhands/claude-sonnet-4-20250514",
         llm_base_url: "",
-        confirmation_mode: false,
+        confirmation_mode: true, // Confirmation mode is now a basic setting, should be preserved
       }),
     );
   });

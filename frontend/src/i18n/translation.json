@@ -5711,6 +5711,22 @@
         "ja": "このアクションを実行してもよろしいですか？",
         "uk": "Ви хочете продовжити цю дію?"
     },
+  "CHAT_INTERFACE$HIGH_RISK_WARNING": {
+    "en": "Risk: High - Review carefully before proceeding.",
+    "de": "Hochrisikohandlung erkannt. Bitte vor dem Fortfahren sorgfältig prüfen.",
+    "zh-CN": "检测到高风险操作。继续之前请仔细检查。",
+    "zh-TW": "檢測到高風險操作。繼續之前請仔細檢查。",
+    "ko-KR": "고위험 작업이 감지되었습니다. 진행하기 전에 주의 깊게 검토하세요.",
+    "no": "Høyrisiko-handling oppdaget. Gå nøye gjennom før du fortsetter.",
+    "it": "Azione ad alto rischio rilevata. Esaminare attentamente prima di procedere.",
+    "pt": "Ação de alto risco detectada. Revise com cuidado antes de prosseguir.",
+    "es": "Se detectó una acción de alto riesgo. Revise cuidadosamente antes de continuar.",
+    "ar": "تم اكتشاف إجراء عالي المخاطر. يرجى المراجعة بعناية قبل المتابعة.",
+    "fr": "Action à haut risque détectée. Veuillez examiner attentivement avant de continuer.",
+    "tr": "Yüksek riskli bir eylem tespit edildi. Devam etmeden önce dikkatlice inceleyin.",
+    "ja": "高リスクの操作が検出されました。続行する前によく確認してください。",
+    "uk": "Виявлено дію з високим ризиком. Уважно перевірте перед продовженням."
+  },
     "CHAT_INTERFACE$USER_CONFIRMED": {
         "en": "Confirm the requested action",
         "de": "Bestätigen Sie die angeforderte Aktion",
@@ -6159,6 +6175,22 @@
         "ja": "エージェントのアクションを実行前に確認",
         "uk": "Очікує підтвердження користувача перед виконанням коду."
     },
+    "SETTINGS$CONFIRMATION_MODE_LOCK_TOOLTIP": {
+        "en": "The agent is in confirmation mode. It will prompt the user to confirm certain actions when security analyzer policy detected a high-risk action. Click this icon to go to settings tab for more information.",
+        "de": "Der Agent befindet sich im Bestätigungsmodus. Er wird den Benutzer auffordern, bestimmte Aktionen zu bestätigen, wenn die Sicherheitsanalysator-Richtlinie eine risikoreiche Aktion erkannt hat. Weitere Informationen finden Sie auf der Registerkarte Einstellungen.",
+        "zh-CN": "代理处于确认模式。当安全分析器策略检测到高风险操作时，它会提示用户确认某些操作。查看设置选项卡了解更多信息。",
+        "zh-TW": "代理處於確認模式。當安全分析器策略檢測到高風險操作時，它會提示使用者確認某些操作。查看設定選項卡了解更多資訊。",
+        "ko-KR": "에이전트가 확인 모드에 있습니다. 보안 분석기 정책이 고위험 작업을 감지하면 사용자에게 특정 작업을 확인하도록 요청합니다. 자세한 내용은 설정 탭을 확인하세요.",
+        "no": "Agenten er i bekreftelsesmodus. Den vil be brukeren om å bekrefte visse handlinger når sikkerhetsanalysatorpolitikken oppdager en høyrisiko-handling. Sjekk innstillingsfanen for mer informasjon.",
+        "it": "L'agente è in modalità di conferma. Chiederà all'utente di confermare certe azioni quando la politica dell'analizzatore di sicurezza rileva un'azione ad alto rischio. Controlla la scheda impostazioni per maggiori informazioni.",
+        "pt": "O agente está no modo de confirmação. Ele solicitará ao usuário que confirme certas ações quando a política do analisador de segurança detectar uma ação de alto risco. Verifique a aba de configurações para mais informações.",
+        "es": "El agente está en modo de confirmación. Solicitará al usuario que confirme ciertas acciones cuando la política del analizador de seguridad detecte una acción de alto riesgo. Consulte la pestaña de configuración para obtener más información.",
+        "ar": "الوكيل في وضع التأكيد. سيطلب من المستخدم تأكيد إجراءات معينة عندما تكتشف سياسة محلل الأمان إجراءً عالي المخاطر. تحقق من علامة تبويب الإعدادات للحصول على مزيد من المعلومات.",
+        "fr": "L'agent est en mode de confirmation. Il demandera à l'utilisateur de confirmer certaines actions lorsque la politique de l'analyseur de sécurité détecte une action à haut risque. Consultez l'onglet paramètres pour plus d'informations.",
+        "tr": "Ajan onay modunda. Güvenlik analizörü politikası yüksek riskli bir eylem tespit ettiğinde kullanıcıdan belirli eylemleri onaylamasını isteyecek. Daha fazla bilgi için ayarlar sekmesini kontrol edin.",
+        "ja": "エージェントは確認モードです。セキュリティアナライザーポリシーが高リスクアクションを検出した場合、特定のアクションの確認をユーザーに求めます。詳細については設定タブを確認してください。",
+        "uk": "Агент знаходиться в режимі підтвердження. Він попросить користувача підтвердити певні дії, коли політика аналізатора безпеки виявить дію високого ризику. Перевірте вкладку налаштувань для отримання додаткової інформації."
+    },
     "SETTINGS$AGENT_SELECT_ENABLED": {
         "en": "Enable Agent Selection - Advanced Users",
         "zh-CN": "启用智能体选择 - 高级用户",
@@ -6206,6 +6238,38 @@
         "tr": "Bir güvenlik analizörü seçin…",
         "ja": "セキュリティアナライザーを選択…",
         "uk": "Виберіть аналізатор безпеки…"
+    },
+    "SETTINGS$SECURITY_ANALYZER_TOOLTIP": {
+        "en": "When enabled, the agent will pause and ask for confirmation when it tries to execute high-risk actions",
+        "de": "Wenn aktiviert, pausiert der Agent und fragt nach Bestätigung, wenn er versucht, risikoreiche Aktionen auszuführen",
+        "zh-CN": "启用后，代理在尝试执行高风险操作时会暂停并要求确认",
+        "zh-TW": "啟用後，代理在嘗試執行高風險操作時會暫停並要求確認",
+        "ko-KR": "활성화되면 에이전트가 고위험 작업을 실행하려고 할 때 일시 중지하고 확인을 요청합니다",
+        "no": "Når aktivert, vil agenten pause og be om bekreftelse når den prøver å utføre høyrisiko-handlinger",
+        "it": "Quando abilitato, l'agente si fermerà e chiederà conferma quando tenta di eseguire azioni ad alto rischio",
+        "pt": "Quando ativado, o agente pausará e pedirá confirmação quando tentar executar ações de alto risco",
+        "es": "Cuando está habilitado, el agente se pausará y pedirá confirmación cuando trate de ejecutar acciones de alto riesgo",
+        "ar": "عند التمكين، سيتوقف الوكيل ويطلب التأكيد عندما يحاول تنفيذ إجراءات عالية المخاطر",
+        "fr": "Lorsqu'il est activé, l'agent se mettra en pause et demandera confirmation lorsqu'il tentera d'exécuter des actions à haut risque",
+        "tr": "Etkinleştirildiğinde, ajan yüksek riskli eylemleri gerçekleştirmeye çalıştığında duraklar ve onay ister",
+        "ja": "有効にすると、エージェントは高リスクなアクションを実行しようとする際に一時停止し、確認を求めます",
+        "uk": "Коли увімкнено, агент зупиниться і попросить підтвердження, коли спробує виконати дії високого ризику"
+    },
+    "SETTINGS$SECURITY_ANALYZER_DESCRIPTION": {
+        "en": "The security analyzer will be used in conjunction with confirmation mode. By default, it utilizes LLM-predicted action risk to determine whether to prompt the user for confirmation. If the risk is HIGH, it will prompt the user for confirmation by default.",
+        "de": "Der Sicherheitsanalysator wird in Verbindung mit dem Bestätigungsmodus verwendet. Standardmäßig nutzt er LLM-vorhergesagtes Aktionsrisiko, um zu bestimmen, ob der Benutzer zur Bestätigung aufgefordert werden soll. Wenn das Risiko HOCH ist, wird er standardmäßig zur Bestätigung auffordern.",
+        "zh-CN": "安全分析器将与确认模式结合使用。默认情况下，它利用LLM预测的操作风险来确定是否提示用户确认。如果风险为高，它将默认提示用户确认。",
+        "zh-TW": "安全分析器將與確認模式結合使用。預設情況下，它利用LLM預測的操作風險來確定是否提示用戶確認。如果風險為高，它將預設提示用戶確認。",
+        "ko-KR": "보안 분석기는 확인 모드와 함께 사용됩니다. 기본적으로 LLM이 예측한 작업 위험을 활용하여 사용자에게 확인을 요청할지 결정합니다. 위험이 높으면 기본적으로 사용자에게 확인을 요청합니다.",
+        "no": "Sikkerhetsanalysatoren vil bli brukt i forbindelse med bekreftelsesmodus. Som standard bruker den LLM-forutsagt handlingsrisiko for å bestemme om brukeren skal bli bedt om bekreftelse. Hvis risikoen er HØY, vil den be om bekreftelse som standard.",
+        "it": "L'analizzatore di sicurezza verrà utilizzato insieme alla modalità di conferma. Per impostazione predefinita, utilizza il rischio di azione previsto dall'LLM per determinare se richiedere conferma all'utente. Se il rischio è ALTO, richiederà conferma per impostazione predefinita.",
+        "pt": "O analisador de segurança será usado em conjunto com o modo de confirmação. Por padrão, utiliza o risco de ação previsto pelo LLM para determinar se deve solicitar confirmação ao usuário. Se o risco for ALTO, solicitará confirmação por padrão.",
+        "es": "El analizador de seguridad se utilizará junto con el modo de confirmación. Por defecto, utiliza el riesgo de acción predicho por LLM para determinar si solicitar confirmación al usuario. Si el riesgo es ALTO, solicitará confirmación por defecto.",
+        "ar": "سيتم استخدام محلل الأمان بالتزامن مع وضع التأكيد. افتراضياً، يستخدم مخاطر الإجراء المتوقعة من LLM لتحديد ما إذا كان يجب مطالبة المستخدم بالتأكيد. إذا كان الخطر عالياً، فسيطالب بالتأكيد افتراضياً.",
+        "fr": "L'analyseur de sécurité sera utilisé en conjonction avec le mode de confirmation. Par défaut, il utilise le risque d'action prédit par LLM pour déterminer s'il faut demander confirmation à l'utilisateur. Si le risque est ÉLEVÉ, il demandera confirmation par défaut.",
+        "tr": "Güvenlik analizörü onay modu ile birlikte kullanılacaktır. Varsayılan olarak, kullanıcıdan onay istenip istenmeyeceğini belirlemek için LLM tarafından tahmin edilen eylem riskini kullanır. Risk YÜKSEK ise, varsayılan olarak kullanıcıdan onay isteyecektir.",
+        "ja": "セキュリティアナライザーは確認モードと組み合わせて使用されます。デフォルトでは、LLMが予測したアクションリスクを利用して、ユーザーに確認を求めるかどうかを決定します。リスクが高い場合、デフォルトでユーザーに確認を求めます。",
+        "uk": "Аналізатор безпеки буде використовуватися разом з режимом підтвердження. За замовчуванням він використовує передбачений LLM ризик дії для визначення, чи потрібно запитувати підтвердження у користувача. Якщо ризик ВИСОКИЙ, він запитуватиме підтвердження за замовчуванням."
     },
     "SETTINGS$DONT_KNOW_API_KEY": {
         "en": "Don't know your API key?",

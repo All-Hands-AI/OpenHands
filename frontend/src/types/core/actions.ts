@@ -1,5 +1,5 @@
 import { OpenHandsActionEvent } from "./base";
-import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { ActionSafetyRisk } from "#/state/security-analyzer-slice";
 
 export interface UserMessageAction extends OpenHandsActionEvent<"message"> {
   source: "user";
@@ -24,7 +24,7 @@ export interface CommandAction extends OpenHandsActionEvent<"run"> {
   source: "agent" | "user";
   args: {
     command: string;
-    security_risk: ActionSecurityRisk;
+    security_risk: ActionSafetyRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     thought: string;
     hidden?: boolean;
@@ -46,7 +46,7 @@ export interface IPythonAction extends OpenHandsActionEvent<"run_ipython"> {
   source: "agent";
   args: {
     code: string;
-    security_risk: ActionSecurityRisk;
+    security_risk: ActionSafetyRisk;
     confirmation_state: "confirmed" | "rejected" | "awaiting_confirmation";
     kernel_init_code: string;
     thought: string;
@@ -103,7 +103,7 @@ export interface FileReadAction extends OpenHandsActionEvent<"read"> {
   args: {
     path: string;
     thought: string;
-    security_risk: ActionSecurityRisk | null;
+    security_risk: ActionSafetyRisk | null;
     impl_source?: string;
     view_range?: number[] | null;
   };
@@ -132,7 +132,7 @@ export interface FileEditAction extends OpenHandsActionEvent<"edit"> {
     start?: number;
     end?: number;
     thought: string;
-    security_risk: ActionSecurityRisk | null;
+    security_risk: ActionSafetyRisk | null;
     impl_source?: string;
   };
 }
