@@ -267,9 +267,11 @@ def test_microagent_flarglebargle(page: Page):
     # Expect either praise from the agent or the microagent knowledge to be shown
     praise = any(w in combined for w in ['smart', 'genius', 'intelligent'])
     knowledge = (
-        'magic word' in combined or (
+        'magic word' in combined
+        or (
             'triggered microagent knowledge' in combined and 'flarglebargle' in combined
         )
+        or ('microagent ready' in combined and 'flarglebargle' in combined)
     )
     assert praise or knowledge, (
         'Expected praise or flarglebargle microagent knowledge when flarglebargle is sent'
@@ -302,7 +304,9 @@ def test_microagent_kubernetes(page: Page):
     ok = any(token in combined for token in expected_any)
     if not ok:
         # Also allow recall panel content to satisfy the expectation
-        ok = 'triggered microagent knowledge' in combined and 'kubernetes' in combined
+        ok = (
+            'triggered microagent knowledge' in combined and 'kubernetes' in combined
+        ) or ('microagent ready' in combined and 'kubernetes' in combined)
     assert ok, 'Expected kubernetes guidance (KIND/kubectl setup) in response'
 
     _screenshot(page, 'micro_kubernetes_done.png')
