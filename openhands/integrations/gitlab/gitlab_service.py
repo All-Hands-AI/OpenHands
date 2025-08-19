@@ -749,6 +749,25 @@ class GitLabService(BaseGitService, GitService):
 
         return all_comments
 
+    async def get_issue_title_and_body(
+        self, repository: str, issue_number: int
+    ) -> tuple[str, str]:
+        """Get the title and body of an issue.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            issue_number: The issue IID within the project
+
+        Returns:
+            A tuple of (title, body)
+        """
+        project_id = self._extract_project_id(repository)
+        url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
+        response, _ = await self._make_request(url)
+        title = response.get('title') or ''
+        body = response.get('description') or ''
+        return title, body
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
