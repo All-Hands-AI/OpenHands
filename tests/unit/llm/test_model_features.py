@@ -95,17 +95,59 @@ def test_model_matches_provider_qualified(name, pattern, expected):
                 supports_stop_words=True,
             ),
         ),
-        ('o1-2024-12-17', ModelFeatures(True, True, False, False)),
-        ('xai/grok-4-0709', ModelFeatures(False, False, False, False)),
-        ('anthropic/claude-3-7-sonnet', ModelFeatures(True, False, True, True)),
+        (
+            'o1-2024-12-17',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=True,
+                supports_prompt_cache=False,
+                supports_stop_words=False,
+            ),
+        ),
+        (
+            'xai/grok-4-0709',
+            ModelFeatures(
+                supports_function_calling=False,
+                supports_reasoning_effort=False,
+                supports_prompt_cache=False,
+                supports_stop_words=False,
+            ),
+        ),
+        (
+            'anthropic/claude-3-7-sonnet',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=False,
+                supports_prompt_cache=True,
+                supports_stop_words=True,
+            ),
+        ),
         (
             'litellm_proxy/claude-3.7-sonnet',
-            ModelFeatures(True, False, True, True),
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=False,
+                supports_prompt_cache=True,
+                supports_stop_words=True,
+            ),
         ),
-        ('gemini-2.5-pro', ModelFeatures(True, True, False, True)),
+        (
+            'gemini-2.5-pro',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=True,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
+        ),
         (
             'openai/gpt-4o',
-            ModelFeatures(True, False, False, True),
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=False,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
         ),  # provider-qualified still matches basename patterns
     ],
 )
