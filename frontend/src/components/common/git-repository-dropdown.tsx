@@ -27,6 +27,8 @@ export interface GitRepositoryDropdownProps {
   classNamePrefix?: string;
 }
 
+/* eslint-disable react/no-unstable-nested-components */
+/* eslint-disable react/jsx-props-no-spreading */
 export function GitRepositoryDropdown({
   provider,
   value,
