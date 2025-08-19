@@ -466,7 +466,7 @@ function LlmSettingsScreen() {
 
                     // Add any other analyzers that might exist
                     analyzers.forEach((analyzer) => {
-                      if (!["llm", "invariant"].includes(analyzer)) {
+                      if (!["llm", "invariant", "none"].includes(analyzer)) {
                         orderedItems.push({ key: analyzer, label: analyzer });
                       }
                     });
