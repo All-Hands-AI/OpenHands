@@ -8,6 +8,54 @@ import { I18nKey } from "#/i18n/declaration";
 import { GitRepository } from "#/types/git";
 import { SuggestedTaskGroup } from "./task.types";
 
+// Helper functions
+function getTotalTaskCount(
+  suggestedTasks: SuggestedTaskGroup[] | undefined,
+): number {
+  if (!suggestedTasks) return 0;
+  return suggestedTasks.flatMap((group) => group.tasks).length;
+}
+
+function getLimitedTaskGroups(
+  suggestedTasks: SuggestedTaskGroup[],
+  maxTasks: number,
+): SuggestedTaskGroup[] {
+  const limitedGroups: SuggestedTaskGroup[] = [];
+  let taskCount = 0;
+
+  for (const group of suggestedTasks) {
+    if (taskCount >= maxTasks) break;
+
+    const remainingTasksNeeded = maxTasks - taskCount;
+    const tasksToShow = group.tasks.slice(0, remainingTasksNeeded);
+
+    if (tasksToShow.length > 0) {
+      limitedGroups.push({
+        ...group,
+        tasks: tasksToShow,
+      });
+      taskCount += tasksToShow.length;
+    }
+  }
+
+  return limitedGroups;
+}
+
+function getDisplayedTaskGroups(
+  suggestedTasks: SuggestedTaskGroup[] | undefined,
+  isExpanded: boolean,
+): SuggestedTaskGroup[] {
+  if (!suggestedTasks || suggestedTasks.length === 0) {
+    return [];
+  }
+
+  if (isExpanded) {
+    return suggestedTasks;
+  }
+
+  return getLimitedTaskGroups(suggestedTasks, 3);
+}
+
 interface TaskSuggestionsProps {
   filterFor?: GitRepository | null;
 }
@@ -30,17 +78,13 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
 
   // Get the task groups to display based on expanded state
-  let displayedTaskGroups: SuggestedTaskGroup[] = [];
-  if (suggestedTasks && suggestedTasks.length > 0) {
-    if (isExpanded) {
-      displayedTaskGroups = suggestedTasks;
-    } else {
-      displayedTaskGroups = suggestedTasks.slice(0, 3);
-    }
-  }
+  const displayedTaskGroups = getDisplayedTaskGroups(
+    suggestedTasks,
+    isExpanded,
+  );
 
-  // Check if there are more task groups to show
-  const hasMoreTaskGroups = suggestedTasks && suggestedTasks.length > 3;
+  // Check if there are more individual tasks to show
+  const hasMoreTasks = getTotalTaskCount(suggestedTasks) > 3;
 
   const handleToggle = () => {
     setIsExpanded((prev) => !prev);
@@ -71,12 +115,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           displayedTaskGroups &&
           displayedTaskGroups.length > 0 && (
             <div className="flex flex-col">
-              <div
-                className={cn(
-                  "transition-all duration-300 ease-in-out max-h-[420px] overflow-y-auto custom-scrollbar",
-                  isExpanded && "max-h-[640px]",
-                )}
-              >
+              <div className="transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar">
                 <div className="flex flex-col">
                   {displayedTaskGroups.map((taskGroup, index) => (
                     <TaskGroup
@@ -91,7 +130,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           )}
       </div>
 
-      {!isLoading && hasMoreTaskGroups && (
+      {!isLoading && hasMoreTasks && (
         <div className="flex justify-start mt-6 mb-8 ml-4">
           <button
             type="button"
