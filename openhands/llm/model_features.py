@@ -13,8 +13,7 @@ def normalize_model_name(model: str) -> str:
     - If there is a '/', keep only the basename after the last '/'
       (handles prefixes like openrouter/, litellm_proxy/, anthropic/, etc.)
       and treat ':' inside that basename as an Ollama-style variant tag to be removed
-    - If there is no '/', but there is a ':', treat it as provider:model and keep the
-      segment AFTER ':' (e.g., "openrouter:gpt-4o-mini" -> "gpt-4o-mini")
+    - There is no provider:model form; providers, when present, use 'provider/model'
     - Drop a trailing "-gguf" suffix if present
     """
     raw = (model or '').strip().lower()
@@ -24,8 +23,8 @@ def normalize_model_name(model: str) -> str:
             # Drop Ollama-style variant tag in basename
             name = name.split(':', 1)[0]
     else:
-        # No '/', may be provider:model — keep the model segment after ':' if present
-        name = raw.split(':', 1)[1] if ':' in raw else raw
+        # No '/', keep the whole raw name (we do not support provider:model)
+        name = raw
     if name.endswith('-gguf'):
         name = name[: -len('-gguf')]
     return name

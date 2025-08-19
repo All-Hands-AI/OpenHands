@@ -254,7 +254,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
-    default_config.model = 'openrouter:gpt-4o-mini'
+    default_config.model = 'openrouter/gpt-4o-mini'
     mock_get_model_info.return_value = {
         'max_input_tokens': 7000,
         'max_output_tokens': 1500,
@@ -263,7 +263,7 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
-    mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
+    mock_get_model_info.assert_called_once_with('openrouter/gpt-4o-mini')
 
 
 @patch('openhands.llm.llm.litellm_completion')

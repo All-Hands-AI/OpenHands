@@ -18,7 +18,7 @@ from openhands.llm.model_features import (
         ('gpt-5-preview', 'gpt-5-preview'),
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', 'deepseek-r1-0528'),
         ('openai/GLM-4.5-GGUF', 'glm-4.5'),
-        ('openrouter:gpt-4o-mini', 'gpt-4o-mini'),
+        ('openrouter/gpt-4o-mini', 'gpt-4o-mini'),
         (
             'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
             'anthropic.claude-3-5-sonnet-20241022-v2',
@@ -68,9 +68,33 @@ def test_model_matches_provider_qualified(name, pattern, expected):
 @pytest.mark.parametrize(
     'model,expect',
     [
-        ('gpt-4o', ModelFeatures(True, False, False, True)),
-        ('gpt-5-preview', ModelFeatures(True, True, False, True)),
-        ('o3-mini', ModelFeatures(True, True, False, True)),
+        (
+            'gpt-4o',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=False,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
+        ),
+        (
+            'gpt-5-preview',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=True,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
+        ),
+        (
+            'o3-mini',
+            ModelFeatures(
+                supports_function_calling=True,
+                supports_reasoning_effort=True,
+                supports_prompt_cache=False,
+                supports_stop_words=True,
+            ),
+        ),
         ('o1-2024-12-17', ModelFeatures(True, True, False, False)),
         ('xai/grok-4-0709', ModelFeatures(False, False, False, False)),
         ('anthropic/claude-3-7-sonnet', ModelFeatures(True, False, True, True)),
