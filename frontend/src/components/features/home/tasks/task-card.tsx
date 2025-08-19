@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { SuggestedTask } from "./task.types";
+import { SuggestedTask } from "#/utils/types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { TaskIssueNumber } from "./task-issue-number";
@@ -61,7 +61,7 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 border-b border-[#717888] flex items-center gap-3 last:border-b-0">
+    <li className="py-3 flex items-center gap-3 last:border-b-0">
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full flex flex-col gap-1">

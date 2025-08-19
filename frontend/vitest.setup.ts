@@ -13,8 +13,6 @@ class MockResizeObserver {
   disconnect = vi.fn();
 }
 
-global.ResizeObserver = MockResizeObserver;
-
 // Mock the i18n provider
 vi.mock("react-i18next", async (importOriginal) => ({
   ...(await importOriginal<typeof import("react-i18next")>()),
@@ -32,10 +30,16 @@ vi.mock("#/hooks/use-is-on-tos-page", () => ({
 }));
 
 // Mock requests during tests
-beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
+beforeAll(() => {
+  server.listen({ onUnhandledRequest: "bypass" });
+  vi.stubGlobal("ResizeObserver", MockResizeObserver);
+});
 afterEach(() => {
   server.resetHandlers();
   // Cleanup the document body after each test
   cleanup();
 });
-afterAll(() => server.close());
+afterAll(() => {
+  server.close();
+  vi.unstubAllGlobals();
+});
