@@ -31,6 +31,26 @@ import { DEFAULT_OPENHANDS_MODEL } from "#/utils/verified-models";
 function LlmSettingsScreen() {
   const { t } = useTranslation();
 
+  const translateWithFallback = React.useCallback(
+    (key: I18nKey) => {
+      const translated = t(key as unknown as string);
+      if (translated === key) {
+        switch (key) {
+          case I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT:
+            return "LLM Analyzer (Default)";
+          case I18nKey.SETTINGS$SECURITY_ANALYZER_NONE:
+            return "None (Ask for every command)";
+          case I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT:
+            return "Invariant Rule-based Analyzer";
+          default:
+            return translated;
+        }
+      }
+      return translated;
+    },
+    [t],
+  );
+
   const { mutate: saveSettings, isPending } = useSaveSettings();
 
   const { data: resources } = useAIConfigOptions();
@@ -444,23 +464,33 @@ function LlmSettingsScreen() {
                     if (analyzers.includes("llm")) {
                       orderedItems.push({
                         key: "llm",
-                        label: t(
-                          I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT,
-                        ),
+                        label:
+                          t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT) ||
+                          translateWithFallback(
+                            I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT,
+                          ),
                       });
                     }
 
                     // Add None option second
                     orderedItems.push({
                       key: "none",
-                      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
+                      label:
+                        t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE) ||
+                        translateWithFallback(
+                          I18nKey.SETTINGS$SECURITY_ANALYZER_NONE,
+                        ),
                     });
 
                     // Add Invariant analyzer third
                     if (analyzers.includes("invariant")) {
                       orderedItems.push({
                         key: "invariant",
-                        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
+                        label:
+                          t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT) ||
+                          translateWithFallback(
+                            I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT,
+                          ),
                       });
                     }
 
