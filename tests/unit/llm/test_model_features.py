@@ -15,7 +15,7 @@ from openhands.llm.model_features import (
         ('anthropic/claude-3-7-sonnet', 'claude-3-7-sonnet'),
         ('litellm_proxy/gemini-2.5-pro', 'gemini-2.5-pro'),
         ('qwen3-coder-480b-a35b-instruct', 'qwen3-coder-480b-a35b-instruct'),
-        ('gpt-5-preview', 'gpt-5-preview'),
+        ('gpt-5', 'gpt-5-preview'),
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', 'deepseek-r1-0528'),
         ('openai/GLM-4.5-GGUF', 'glm-4.5'),
         ('openrouter/gpt-4o-mini', 'gpt-4o-mini'),
@@ -78,7 +78,7 @@ def test_model_matches_provider_qualified(name, pattern, expected):
             ),
         ),
         (
-            'gpt-5-preview',
+            'gpt-5',
             ModelFeatures(
                 supports_function_calling=True,
                 supports_reasoning_effort=True,
@@ -171,13 +171,13 @@ def test_get_features(model, expect):
         # OpenAI families
         'gpt-4o',
         'gpt-4.1',
-        'gpt-5-preview',
+        'gpt-5',
         # o-series
         'o1-2024-12-17',
         'o3-mini',
         'o4-mini',
         # Google Gemini
-        'gemini-2.5-pro-1',
+        'gemini-2.5-pro',
         # Others
         'kimi-k2-0711-preview',
         'kimi-k2-instruct',
@@ -194,12 +194,11 @@ def test_function_calling_models(model):
     'model',
     [
         'o1-2024-12-17',
-        'o1-mini',
         'o3-mini',
         'o4-mini',
         'gemini-2.5-flash',
-        'gemini-2.5-pro-1',
-        'gpt-5-preview',
+        'gemini-2.5-pro',
+        'gpt-5',
         'claude-opus-4-1-20250805',
     ],
 )
