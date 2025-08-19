@@ -3,58 +3,9 @@ import { useTranslation } from "react-i18next";
 import { TaskGroup } from "./task-group";
 import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
 import { TaskSuggestionsSkeleton } from "./task-suggestions-skeleton";
-import { cn } from "#/utils/utils";
+import { cn, getDisplayedTaskGroups, getTotalTaskCount } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
 import { GitRepository } from "#/types/git";
-import { SuggestedTaskGroup } from "./task.types";
-
-// Helper functions
-function getTotalTaskCount(
-  suggestedTasks: SuggestedTaskGroup[] | undefined,
-): number {
-  if (!suggestedTasks) return 0;
-  return suggestedTasks.flatMap((group) => group.tasks).length;
-}
-
-function getLimitedTaskGroups(
-  suggestedTasks: SuggestedTaskGroup[],
-  maxTasks: number,
-): SuggestedTaskGroup[] {
-  const limitedGroups: SuggestedTaskGroup[] = [];
-  let taskCount = 0;
-
-  for (const group of suggestedTasks) {
-    if (taskCount >= maxTasks) break;
-
-    const remainingTasksNeeded = maxTasks - taskCount;
-    const tasksToShow = group.tasks.slice(0, remainingTasksNeeded);
-
-    if (tasksToShow.length > 0) {
-      limitedGroups.push({
-        ...group,
-        tasks: tasksToShow,
-      });
-      taskCount += tasksToShow.length;
-    }
-  }
-
-  return limitedGroups;
-}
-
-function getDisplayedTaskGroups(
-  suggestedTasks: SuggestedTaskGroup[] | undefined,
-  isExpanded: boolean,
-): SuggestedTaskGroup[] {
-  if (!suggestedTasks || suggestedTasks.length === 0) {
-    return [];
-  }
-
-  if (isExpanded) {
-    return suggestedTasks;
-  }
-
-  return getLimitedTaskGroups(suggestedTasks, 3);
-}
 
 interface TaskSuggestionsProps {
   filterFor?: GitRepository | null;
