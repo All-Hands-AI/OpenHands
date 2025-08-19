@@ -444,7 +444,9 @@ function LlmSettingsScreen() {
                     if (analyzers.includes("llm")) {
                       orderedItems.push({
                         key: "llm",
-                        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT),
+                        label: t(
+                          I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT,
+                        ),
                       });
                     }
 

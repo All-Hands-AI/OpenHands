@@ -6272,16 +6272,6 @@
     "uk": "Аналізатор безпеки буде використовуватися разом з режимом підтвердження. За замовчуванням він використовує передбачений LLM ризик дії для визначення, чи потрібно запитувати підтвердження у користувача. Якщо ризик ВИСОКИЙ, він запитуватиме підтвердження за замовчуванням."
   },
   "SETTINGS$DONT_KNOW_API_KEY": {
-  "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT": {
-    "en": "LLM Analyzer (Default)"
-  },
-  "SETTINGS$SECURITY_ANALYZER_NONE": {
-    "en": "None (Ask for every command)"
-  },
-  "SETTINGS$SECURITY_ANALYZER_INVARIANT": {
-    "en": "Invariant Rule-based Analyzer"
-  },
-
     "en": "Don't know your API key?",
     "ja": "APIキーがわかりませんか？",
     "zh-CN": "不知道您的API密钥？",
@@ -13096,5 +13086,53 @@
     "tr": "Bir şeyler ters gitti. Mikro ajanı tekrar başlatmayı deneyin.",
     "de": "Etwas ist schiefgelaufen. Versuchen Sie, den Microagenten erneut zu starten.",
     "uk": "Щось пішло не так. Спробуйте ініціювати мікроагента ще раз."
+  },
+  "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT": {
+    "en": "LLM Analyzer (Default)",
+    "ja": "LLMアナライザー（デフォルト）",
+    "zh-CN": "LLM 分析器（默认）",
+    "zh-TW": "LLM 分析器（預設）",
+    "ko-KR": "LLM 분석기(기본)",
+    "no": "LLM-analysator (standard)",
+    "it": "Analizzatore LLM (Predefinito)",
+    "pt": "Analisador LLM (Padrão)",
+    "es": "Analizador LLM (Predeterminado)",
+    "ar": "محلل LLM (افتراضي)",
+    "fr": "Analyseur LLM (Par défaut)",
+    "tr": "LLM Analizörü (Varsayılan)",
+    "de": "LLM-Analysator (Standard)",
+    "uk": "Аналізатор LLM (За замовчуванням)"
+  },
+  "SETTINGS$SECURITY_ANALYZER_NONE": {
+    "en": "None (Ask for every command)",
+    "ja": "なし（すべてのコマンドで確認）",
+    "zh-CN": "无（每条命令都询问）",
+    "zh-TW": "無（每個指令都詢問）",
+    "ko-KR": "없음(모든 명령마다 확인)",
+    "no": "Ingen (Spør for hver kommando)",
+    "it": "Nessuno (Chiedi per ogni comando)",
+    "pt": "Nenhum (Perguntar para cada comando)",
+    "es": "Ninguno (Preguntar para cada comando)",
+    "ar": "لا شيء (اسأل عن كل أمر)",
+    "fr": "Aucun (Demander pour chaque commande)",
+    "tr": "Yok (Her komutta sor)",
+    "de": "Keine (Bei jedem Befehl nachfragen)",
+    "uk": "Немає (Запитувати для кожної команди)"
+  },
+  "SETTINGS$SECURITY_ANALYZER_INVARIANT": {
+    "en": "Invariant Rule-based Analyzer",
+    "ja": "不変ルールベース分析器",
+    "zh-CN": "Invariant 规则分析器",
+    "zh-TW": "Invariant 規則式分析器",
+    "ko-KR": "Invariant 규칙 기반 분석기",
+    "no": "Invariant regelbasert analysator",
+    "it": "Analizzatore basato su regole Invariant",
+    "pt": "Analisador baseado em regras Invariant",
+    "es": "Analizador basado en reglas Invariant",
+    "ar": "محلل قائم على القواعد Invariant",
+    "fr": "Analyseur à base de règles Invariant",
+    "tr": "Invariant Kural Tabanlı Analizör",
+    "de": "Invariant regelbasierter Analysator",
+    "uk": "Аналізатор на основі правил Invariant"
   }
 }
