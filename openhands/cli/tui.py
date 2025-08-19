@@ -1000,7 +1000,7 @@ def cli_confirm(
                 [
                     Frame(
                         content_window,
-                        title='🚨 HIGH RISK',
+                        title='HIGH RISK',
                         style='fg:#FF0000 bold',  # Red color for HIGH risk
                     )
                 ]
