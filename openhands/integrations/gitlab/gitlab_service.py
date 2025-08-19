@@ -768,6 +768,68 @@ class GitLabService(BaseGitService, GitService):
         body = response.get('description') or ''
         return title, body
 
+    async def get_review_thread_comments(
+        self, thread_id: str, limit: int = 100
+    ) -> list[Comment]:
+        """Get comments from a review thread (discussion) by its ID.
+
+        Args:
+            thread_id: The global GraphQL ID or REST discussion ID of the review thread
+            limit: Maximum number of comments to retrieve (default: 100)
+
+        Returns:
+            List of Comment objects ordered as returned by the API
+        """
+        # Prefer GraphQL so we only need the thread/discussion ID
+        query = """
+        query($id: ID!, $first: Int!) {
+          node(id: $id) {
+            ... on Discussion {
+              notes(first: $first) {
+                nodes {
+                  id
+                  body
+                  system
+                  author { username }
+                  createdAt
+                  updatedAt
+                }
+              }
+            }
+          }
+        }
+        """
+        data = await self.execute_graphql_query(
+            query, {'id': thread_id, 'first': min(limit, 100)}
+        )
+        discussion = data.get('node') if data else None
+        if not discussion or not discussion.get('notes'):
+            return []
+
+        comments: list[Comment] = []
+        for note in discussion['notes'].get('nodes', []):
+            comments.append(
+                Comment(
+                    id=int(note.get('id').split('/')[-1])
+                    if isinstance(note.get('id'), str) and note.get('id')
+                    else 0,
+                    body=note.get('body', ''),
+                    author=note.get('author', {}).get('username', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        note.get('createdAt', '').replace('Z', '+00:00')
+                    )
+                    if note.get('createdAt')
+                    else datetime.fromtimestamp(0),
+                    updated_at=datetime.fromisoformat(
+                        note.get('updatedAt', '').replace('Z', '+00:00')
+                    )
+                    if note.get('updatedAt')
+                    else datetime.fromtimestamp(0),
+                    system=bool(note.get('system', False)),
+                )
+            )
+        return comments
+
 
 gitlab_service_cls = os.environ.get(
     'OPENHANDS_GITLAB_SERVICE_CLS',
