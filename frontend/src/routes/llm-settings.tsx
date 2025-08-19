@@ -152,7 +152,9 @@ function LlmSettingsScreen() {
         SEARCH_API_KEY: searchApiKey || "",
         CONFIRMATION_MODE: confirmationMode,
         SECURITY_ANALYZER:
-          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+          securityAnalyzer === "none"
+            ? null
+            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -190,7 +192,9 @@ function LlmSettingsScreen() {
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         SECURITY_ANALYZER:
-          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+          securityAnalyzer === "none"
+            ? null
+            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -425,29 +429,41 @@ function LlmSettingsScreen() {
                   testId="security-analyzer-input"
                   name="security-analyzer-display"
                   label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={
-                    resources?.securityAnalyzers.map((analyzer) => {
-                      if (analyzer === "llm") {
-                        return {
-                          key: analyzer,
-                          label: "LLM Analyzer (Default)",
-                        };
+                  items={(() => {
+                    const analyzers = resources?.securityAnalyzers || [];
+                    const orderedItems = [];
+
+                    // Add LLM analyzer first
+                    if (analyzers.includes("llm")) {
+                      orderedItems.push({
+                        key: "llm",
+                        label: "LLM Analyzer (Default)",
+                      });
+                    }
+
+                    // Add None option second
+                    orderedItems.push({
+                      key: "none",
+                      label: "None (always confirm)",
+                    });
+
+                    // Add Invariant analyzer third
+                    if (analyzers.includes("invariant")) {
+                      orderedItems.push({
+                        key: "invariant",
+                        label: "Invariant Rule-based Analyzer",
+                      });
+                    }
+
+                    // Add any other analyzers that might exist
+                    analyzers.forEach((analyzer) => {
+                      if (!["llm", "invariant"].includes(analyzer)) {
+                        orderedItems.push({ key: analyzer, label: analyzer });
                       }
-                      if (analyzer === "invariant") {
-                        return {
-                          key: analyzer,
-                          label: "Invariant Rule-based Analyzer",
-                        };
-                      }
-                      if (analyzer === "none") {
-                        return {
-                          key: analyzer,
-                          label: "None (always confirm)",
-                        };
-                      }
-                      return { key: analyzer, label: analyzer };
-                    }) || []
-                  }
+                    });
+
+                    return orderedItems;
+                  })()}
                   placeholder={t(
                     I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
                   )}

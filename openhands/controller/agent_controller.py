@@ -199,6 +199,40 @@ class AgentController:
         # Add the system message to the event stream
         self._add_system_message()
 
+    async def _handle_security_analyzer(self, action: Action) -> None:
+        """Handle security risk analysis for an action.
+
+        If a security analyzer is configured, use it to analyze the action.
+        If no security analyzer is configured, set the risk to HIGH (fail-safe approach).
+
+        Args:
+            action: The action to analyze for security risks.
+        """
+        if self.security_analyzer:
+            try:
+                if action.security_risk is not None:
+                    logger.debug(
+                        f'Original security risk for {action}: {action.security_risk})'
+                    )
+                action.security_risk = await self.security_analyzer.security_risk(
+                    action
+                )
+                logger.debug(
+                    f'Override security risk for action {action}: {action.security_risk}'
+                )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to analyze security risk for action {action}: {e}'
+                )
+                action.security_risk = ActionSecurityRisk.UNKNOWN
+        else:
+            # When no security analyzer is configured, treat all actions as HIGH risk
+            # This is a fail-safe approach that ensures confirmation is required
+            logger.debug(
+                f'No security analyzer configured, setting HIGH risk for action: {action}'
+            )
+            action.security_risk = ActionSecurityRisk.HIGH
+
     def _add_system_message(self):
         for event in self.event_stream.search_events(start_id=self.state.start_id):
             if isinstance(event, MessageAction) and event.source == EventSource.USER:
@@ -880,23 +914,8 @@ class AgentController:
                 or type(action) is FileEditAction
                 or type(action) is FileReadAction
             ):
-                if self.security_analyzer:
-                    try:
-                        if action.security_risk is not None:
-                            logger.debug(
-                                f'Original security risk for {action}: {action.security_risk})'
-                            )
-                        action.security_risk = (
-                            await self.security_analyzer.security_risk(action)
-                        )
-                        logger.debug(
-                            f'Override security risk for action {action}: {action.security_risk}'
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f'Failed to analyze security risk for action {action}: {e}'
-                        )
-                        action.security_risk = ActionSecurityRisk.UNKNOWN
+                # Handle security risk analysis using the dedicated method
+                await self._handle_security_analyzer(action)
 
                 # Check if the action has a security_risk attribute set by the LLM or security analyzer
                 security_risk = getattr(
