@@ -1,11 +1,27 @@
-Your tasking is to fix an issue in your repository. Do the following
 
-1. Read the issue body and comments using the $GITLAB_TOKEN and GitLab API
-2. For all changes to actual application code (e.g. in Python or Javascript), add an appropriate test to the testing directory to make sure that the issue has been fixed
-3. Run the tests, and if they pass you are done!
-4. You do NOT need to write new tests if there are only changes to documentation or configuration files.
 
-When you're done, make sure to
+Your task is to fix an issue in your repository.
+
+Issue Body:
+{{ issue_body }}
+
+{% if previous_comments %}
+For reference, here are the comments on this issue:
+
+{% for comment in previous_comments %}
+{{ comment }}
+{% if not loop.last %}\n\n{% endif %}
+{% endfor %}
+{% endif %}
+
+# Steps to Resolve Issue
+
+1. For all changes to actual application code (e.g. in Python or Javascript), add an appropriate test to the testing directory to make sure that the issue has been fixed
+2. Run the tests, and if they pass you are done!
+3. You do NOT need to write new tests if there are only changes to documentation or configuration files.
+
+# Final Checklist
+When you're done, use the $GITLAB_TOKEN and GitLab APIs to
 
 1. Create a new branch with a descriptive name (e.g., `openhands/fix-issue-123`)
 2. Commit your changes with a clear commit message

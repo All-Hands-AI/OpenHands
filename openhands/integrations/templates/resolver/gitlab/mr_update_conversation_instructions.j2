@@ -1,7 +1,18 @@
 You are checked out to branch {{ branch_name }}, which has an open MR #{{ mr_number }}.
-A comment on the MR has been addressed to you. Do NOT respond to this comment via the GitLab API.
+A comment on the MR has been addressed to you.
 
-{% if file_location %} The comment is in the file `{{ file_location }}` on line #{{ line_number }}{% endif %}.
+{% if previous_comments %}
+You may find other comments in this review thread relevant:
+{% for comment in review_thread %}
+{{ comment }}
+{% if not loop.last %}\n\n{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if file_location %}
+# Comment location
+The comment is in the file `{{ file_location }}` on line #{{ line_number }}
+{% endif %}.
 
 # Steps to Handle the Comment
 
