@@ -206,14 +206,25 @@ class LLM(RetryMixin, DebugMixin):
             self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
             or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
         ):
-            # For Gemini models, only map 'low' to optimized thinking budget
-            # Let other reasoning_effort values pass through to API as-is
-            if 'gemini-2.5-pro' in self.config.model:
+            # Special handling for Gemini 2.5 Pro vs other reasoning models
+            is_gemini_25 = 'gemini-2.5-pro' in self.config.model
+            cli_compat = os.getenv('OPENHANDS_GEMINI_CLI_COMPAT', '0').lower() in (
+                '1',
+                'true',
+                'yes',
+            )
+
+            if is_gemini_25:
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort}'
                 )
                 if self.config.reasoning_effort in {None, 'low', 'none'}:
-                    kwargs['thinking'] = {'budget_tokens': 128}
+                    # Align with Gemini CLI by default when OPENHANDS_GEMINI_CLI_COMPAT is enabled:
+                    # send "thinking" enabled without explicit budget; otherwise use a small budget.
+                    if cli_compat:
+                        kwargs['thinking'] = {'type': 'enabled'}
+                    else:
+                        kwargs['thinking'] = {'budget_tokens': 128}
                     kwargs['allowed_openai_params'] = ['thinking']
                     kwargs.pop('reasoning_effort', None)
                 else:
@@ -222,12 +233,16 @@ class LLM(RetryMixin, DebugMixin):
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
 
+                # Only remove sampling params for Gemini if CLI compatibility is NOT enabled
+                if not cli_compat:
+                    kwargs.pop('temperature')
+                    kwargs.pop('top_p')
             else:
+                # Non-Gemini reasoning models
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
-            kwargs.pop(
-                'temperature'
-            )  # temperature is not supported for reasoning models
-            kwargs.pop('top_p')  # reasoning model like o3 doesn't support top_p
+                # temperature/top_p are not supported for OpenAI-style reasoning models, drop them
+                kwargs.pop('temperature')
+                kwargs.pop('top_p')
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
         if self.config.model.startswith('azure'):
             kwargs['max_tokens'] = self.config.max_output_tokens
@@ -341,6 +356,24 @@ class LLM(RetryMixin, DebugMixin):
             # NOTE: this setting is global; unlike drop_params, it cannot be overridden in the litellm completion partial
             litellm.modify_params = self.config.modify_params
 
+            # If logging is enabled, capture LiteLLM model_call_details including raw request
+            litellm_log_ctx: dict[str, Any] = {}
+            if self.config.log_completions:
+                try:
+                    # Enable raw request logging at LiteLLM (includes masked headers and body)
+                    litellm.log_raw_request_response = True
+                except Exception:
+                    pass
+
+                def _litellm_logger_fn(details: dict[str, Any]) -> None:
+                    # Keep the last seen details for this call
+                    litellm_log_ctx.clear()
+                    for k, v in details.items():
+                        litellm_log_ctx[k] = v
+
+                # Pass logger_fn per-call so we can read the context after the request
+                kwargs['logger_fn'] = _litellm_logger_fn
+
             # if we're not using litellm proxy, remove the extra_body
             if 'litellm_proxy' not in self.config.model:
                 kwargs.pop('extra_body', None)
@@ -362,6 +395,15 @@ class LLM(RetryMixin, DebugMixin):
                     category=DeprecationWarning,
                 )
                 resp: ModelResponse = self._completion_unwrapped(*args, **kwargs)
+
+            # Attach captured LiteLLM request context to kwargs for downstream logging if needed
+            if self.config.log_completions and litellm_log_ctx:
+                kwargs['__litellm_model_call_details__'] = {
+                    'raw_request': litellm_log_ctx.get('raw_request_typed_dict'),
+                    'optional_params': litellm_log_ctx.get('optional_params'),
+                    'custom_llm_provider': litellm_log_ctx.get('custom_llm_provider'),
+                    'model': litellm_log_ctx.get('model'),
+                }
 
             # Calculate and record latency
             latency = time.time() - start_time
@@ -426,6 +468,11 @@ class LLM(RetryMixin, DebugMixin):
                     'timestamp': time.time(),
                     'cost': cost,
                 }
+
+                # Include LiteLLM raw request typing if available
+                litellm_ctx = kwargs.get('__litellm_model_call_details__')
+                if isinstance(litellm_ctx, dict):
+                    _d['litellm_model_call_details'] = litellm_ctx
 
                 # if non-native function calling, save messages/response separately
                 if mock_function_calling:
