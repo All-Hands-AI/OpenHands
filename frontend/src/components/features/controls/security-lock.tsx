@@ -18,8 +18,7 @@ export function SecurityLock() {
     >
       <Link
         to="/settings"
-        className="cursor-pointer hover:opacity-80 transition-all"
-        style={{ marginRight: "8px" }}
+        className="mr-2 cursor-pointer hover:opacity-80 transition-all"
         aria-label={t(I18nKey.SETTINGS$TITLE)}
       >
         <IoLockClosed size={20} />
