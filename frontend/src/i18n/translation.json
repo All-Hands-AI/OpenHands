@@ -6272,6 +6272,16 @@
     "uk": "Аналізатор безпеки буде використовуватися разом з режимом підтвердження. За замовчуванням він використовує передбачений LLM ризик дії для визначення, чи потрібно запитувати підтвердження у користувача. Якщо ризик ВИСОКИЙ, він запитуватиме підтвердження за замовчуванням."
   },
   "SETTINGS$DONT_KNOW_API_KEY": {
+  "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT": {
+    "en": "LLM Analyzer (Default)"
+  },
+  "SETTINGS$SECURITY_ANALYZER_NONE": {
+    "en": "None (Ask for every command)"
+  },
+  "SETTINGS$SECURITY_ANALYZER_INVARIANT": {
+    "en": "Invariant Rule-based Analyzer"
+  },
+
     "en": "Don't know your API key?",
     "ja": "APIキーがわかりませんか？",
     "zh-CN": "不知道您的API密钥？",
