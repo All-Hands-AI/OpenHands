@@ -880,14 +880,17 @@ class AgentController:
                 or type(action) is FileEditAction
                 or type(action) is FileReadAction
             ):
-                # Ensure security_risk is set by calling security analyzer directly
-                if (
-                    self.security_analyzer
-                    and action.security_risk == ActionSecurityRisk.UNKNOWN
-                ):
+                if self.security_analyzer:
                     try:
+                        if action.security_risk is not None:
+                            logger.debug(
+                                f'Original security risk for {action}: {action.security_risk})'
+                            )
                         action.security_risk = (
                             await self.security_analyzer.security_risk(action)
+                        )
+                        logger.debug(
+                            f'Override security risk for action {action}: {action.security_risk}'
                         )
                     except Exception as e:
                         logger.warning(

@@ -17,7 +17,7 @@ class NoneSecurityAnalyzer(SecurityAnalyzer):
 
     async def security_risk(self, event: Action) -> ActionSecurityRisk:
         """Always returns HIGH risk to ensure all actions require confirmation.
-        
+
         This analyzer implements the "None (always confirm)" behavior by treating
         all actions as high risk, which triggers the confirmation dialog.
         """
