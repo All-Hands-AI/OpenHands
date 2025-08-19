@@ -573,15 +573,15 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         """Get branches for a repository"""
         url = f'{self.BASE_URL}/repos/{repository}/branches'
 
-        # Set maximum branches to fetch (10 pages with 100 per page)
-        MAX_BRANCHES = 1000
+        # Set maximum branches to fetch (100 per page)
+        MAX_BRANCHES = 5_000
         PER_PAGE = 100
 
         all_branches: list[Branch] = []
         page = 1
 
         # Fetch up to 10 pages of branches
-        while page <= 10 and len(all_branches) < MAX_BRANCHES:
+        while len(all_branches) < MAX_BRANCHES:
             params = {'per_page': str(PER_PAGE), 'page': str(page)}
             response, headers = await self._make_request(url, params)
 

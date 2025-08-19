@@ -23,6 +23,7 @@ const SAAS_NAV_ITEMS = [
   { to: "/settings/billing", text: "SETTINGS$NAV_CREDITS" },
   { to: "/settings/secrets", text: "SETTINGS$NAV_SECRETS" },
   { to: "/settings/api-keys", text: "SETTINGS$NAV_API_KEYS" },
+  { to: "/settings/mcp", text: "SETTINGS$NAV_MCP" },
 ];
 
 const OSS_NAV_ITEMS = [
