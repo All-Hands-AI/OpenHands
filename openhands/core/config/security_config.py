@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from typing import Optional
 
 
 class SecurityConfig(BaseModel):
@@ -10,7 +11,7 @@ class SecurityConfig(BaseModel):
     """
 
     confirmation_mode: bool = Field(default=False)
-    security_analyzer: str = Field(default='llm')
+    security_analyzer: Optional[str] = Field(default=None)
 
     model_config = ConfigDict(extra='forbid')
 

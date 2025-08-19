@@ -210,28 +210,34 @@ class AgentController:
         """
         if self.security_analyzer:
             try:
-                if action.security_risk is not None:
+                if (
+                    hasattr(action, 'security_risk')
+                    and action.security_risk is not None
+                ):
                     logger.debug(
                         f'Original security risk for {action}: {action.security_risk})'
                     )
-                action.security_risk = await self.security_analyzer.security_risk(
-                    action
-                )
-                logger.debug(
-                    f'Override security risk for action {action}: {action.security_risk}'
-                )
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = await self.security_analyzer.security_risk(
+                        action
+                    )
+                    logger.debug(
+                        f'[Security Analyzer: {self.security_analyzer.__class__}] Override security risk for action {action}: {action.security_risk}'
+                    )
             except Exception as e:
                 logger.warning(
                     f'Failed to analyze security risk for action {action}: {e}'
                 )
-                action.security_risk = ActionSecurityRisk.UNKNOWN
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = ActionSecurityRisk.UNKNOWN
         else:
             # When no security analyzer is configured, treat all actions as HIGH risk
             # This is a fail-safe approach that ensures confirmation is required
             logger.debug(
                 f'No security analyzer configured, setting HIGH risk for action: {action}'
             )
-            action.security_risk = ActionSecurityRisk.HIGH
+            if hasattr(action, 'security_risk'):
+                action.security_risk = ActionSecurityRisk.HIGH
 
     def _add_system_message(self):
         for event in self.event_stream.search_events(start_id=self.state.start_id):

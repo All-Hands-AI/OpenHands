@@ -62,7 +62,9 @@ function LlmSettingsScreen() {
   // Track selected security analyzer for form submission
   const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
     React.useState(
-      settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER,
+      settings?.SECURITY_ANALYZER === null
+        ? "none"
+        : (settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER),
     );
 
   const modelsAndProviders = organizeModelsAndProviders(
