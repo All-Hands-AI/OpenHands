@@ -39,7 +39,7 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
         workspace_dir = str(cache_dir)
         print(f"Using cache workspace: {workspace_dir}")
 
-    # Configure the agent with browser disabled
+    # Configure the agent with browser disabled and Tom settings
     config = OpenHandsConfig(
         default_agent="TomCodeActAgent",
         workspace_base=workspace_dir,
@@ -49,7 +49,7 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
         enable_browser=False,  # Disable browser to avoid browser setup issues
     )
 
-    # Disable browser functionality
+    # Configure Tom settings via agent config
     config.sandbox.browsergym_eval_env = None
 
     # Load LLM configuration from config.toml

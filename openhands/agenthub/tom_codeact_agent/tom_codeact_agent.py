@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from openhands.events.action import Action
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.tom_codeact_agent.tom_config import TomCodeActAgentConfig
 from openhands.controller.state.state import State
 from openhands.controller.state.state_tracker import StateTracker
 from openhands.core.config import AgentConfig
@@ -49,56 +48,37 @@ class TomCodeActAgent(CodeActAgent):
     """
 
     VERSION = '1.0'
-    config_model = TomCodeActAgentConfig
 
     def __init__(self, llm: LLM, config: AgentConfig) -> None:
         """Initialize TomCodeActAgent.
 
         Args:
             llm: Language model to use
-            config: Agent configuration (will be converted to TomCodeActAgentConfig if needed)
+            config: Agent configuration with Tom settings
         """
         super().__init__(llm, config)
         self.file_store = get_file_store(
             'local',
             "~/.openhands"
         ) # temporary way to get file store
-        # Convert config to TomCodeActAgentConfig if it's not already
-        if not isinstance(config, TomCodeActAgentConfig):
-            # Get base config dict and add Tom-specific defaults only if not present
-            base_config = config.model_dump()
-            tom_defaults = {
-                'enable_tom_integration': True,
-                'tom_enable_rag': False,
-                'tom_user_id': None,
-                'tom_fallback_on_error': True,
-                'tom_min_instruction_length': 5
-            }
-            # Only add Tom config if not already present
-            for key, value in tom_defaults.items():
-                if key not in base_config:
-                    base_config[key] = value
 
-            tom_config = TomCodeActAgentConfig(**base_config)
-        else:
-            tom_config = config
-
+        # Store Tom configuration parameters from config
+        self.tom_enabled = config.enable_tom_integration
+        self.tom_enable_rag = config.tom_enable_rag
+        self.tom_min_instruction_length = config.tom_min_instruction_length
+        self.skip_memory_collection = config.skip_memory_collection
         # Tom integration components
-        self.tom_config = tom_config
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
-            enable_rag=self.tom_config.tom_enable_rag,
+            enable_rag=config.tom_enable_rag,
             llm_model=llm.config.model,
             api_key=llm.config.api_key.get_secret_value() if llm.config.api_key else None,
             api_base=llm.config.base_url,
+            skip_memory_collection=config.skip_memory_collection,
         )
-        self.tom_enabled = tom_config.enable_tom_integration
         self._last_processed_user_message_id: Optional[int] = None
 
         logger.info(f"TomCodeActAgent initialized with Tom integration: {self.tom_enabled}")
-        if self.tom_enabled:
-            logger.info(f"Tom processed data dir: {tom_config.tom_processed_data_dir}")
-            logger.info(f"Tom user model dir: {tom_config.tom_user_model_dir}")
 
     @property
     def prompt_manager(self) -> PromptManager:
@@ -181,7 +161,7 @@ class TomCodeActAgent(CodeActAgent):
         # INTEGRATION POINT 2: Run sleeptime compute when agent finishes
         finish_actions = [action for action in actions if isinstance(action, AgentFinishAction)]
         logger.debug(f"🔍 Tom: Integration Point 2 check - tom_enabled: {self.tom_enabled}, finish_actions: {len(finish_actions)}")
-        if self.tom_enabled and finish_actions:
+        if self.tom_enabled and finish_actions and not self.skip_memory_collection:
             logger.info("🚀 Tom: Integration Point 2 triggered - running sleeptime compute")
             self.sleeptime_compute(user_id=state.user_id)
 
@@ -202,9 +182,9 @@ class TomCodeActAgent(CodeActAgent):
         """
         source_check = user_message.source == 'user'
         id_check = id(user_message) != self._last_processed_user_message_id
-        length_check = len(user_message.content.strip()) >= self.tom_config.tom_min_instruction_length
+        length_check = len(user_message.content.strip()) >= self.tom_min_instruction_length
 
-        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={id(user_message)} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.tom_config.tom_min_instruction_length}: {length_check})")
+        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={id(user_message)} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.tom_min_instruction_length}: {length_check})")
 
         return source_check and id_check and length_check
 
@@ -279,17 +259,13 @@ class TomCodeActAgent(CodeActAgent):
             if improved_instruction:
                 logger.info(f"✅ Tom: Received improved instruction")
                 logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
-                
+
                 return improved_instruction.improved_instruction
             else:
                 logger.warning(f"⚠️ Tom: No instruction improvements provided")
 
         except Exception as e:
-            logger.error(f"❌ Tom: Instruction improvement failed with exception: {e}")
-            if not self.tom_config.tom_fallback_on_error:
-                raise
-            else:
-                logger.warning(f"🔄 Tom: Falling back to original instruction due to error")
+            logger.warning(f"🔄 Tom: Falling back to original instruction due to error")
 
         return None
 
@@ -377,14 +353,14 @@ class TomCodeActAgent(CodeActAgent):
 
         # Call tom_agent.sleeptime_compute in a thread pool to avoid event loop conflict
         import concurrent.futures
-        
+
         def run_sleeptime_compute():
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
                     self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
             else:
                 self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
-        
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             executor.submit(run_sleeptime_compute)
 

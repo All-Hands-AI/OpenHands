@@ -57,14 +57,16 @@ class AgentConfig(BaseModel):
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
-
-    # TOM-specific configuration
-    tom_min_instruction_length: int = Field(default=10)
-    """Minimum instruction length to trigger TOM instruction improvement."""
-    tom_fallback_on_error: bool = Field(default=True)
-    """Whether to fall back to normal operation when TOM encounters errors."""
-    tom_user_id: str | None = Field(default=None)
-    """Specific user ID to use for TOM API calls. If None, will use session ID."""
+    
+    # Tom agent integration settings (only used by TomCodeActAgent)
+    enable_tom_integration: bool = Field(default=True)
+    """Whether to enable Tom agent integration for personalized guidance"""
+    tom_enable_rag: bool = Field(default=False) 
+    """Whether to enable RAG (Retrieval Augmented Generation) in Tom agent"""
+    tom_min_instruction_length: int = Field(default=5)
+    """Minimum instruction length to trigger Tom improvement"""
+    skip_memory_collection: bool = Field(default=False)
+    """If True, skip workflow and directly predict user mental states for faster responses"""
 
     model_config = ConfigDict(extra='forbid')
 
