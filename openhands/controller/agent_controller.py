@@ -888,6 +888,9 @@ class AgentController:
                     )
                 # Only HIGH security risk actions require confirmation
                 elif security_risk == ActionSecurityRisk.HIGH:
+                    logger.debug(
+                        f'[non-CLI mode] Detected HIGH security risk in action: {action}. Ask for confirmation'
+                    )
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )

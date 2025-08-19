@@ -25,7 +25,7 @@ class SecurityAnalyzer:
 
     async def on_event_async(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
-        logger.debug(f'SecurityAnalyzer received event: {event}')
+        logger.debug(f'SecurityAnalyzer {self.__class__} received event: {event}')
         await self.log_event(event)
         if not isinstance(event, Action):
             return
