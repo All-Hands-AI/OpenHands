@@ -75,7 +75,8 @@ RUN mkdir -p /openhands && \
 # https://docs.docker.com/engine/install/debian/
 RUN \
     # Determine OS type and install accordingly
-    if [[ "{{ base_image }}" == *"ubuntu"* ]]; then \
+    if [[ "{{ base_image }}" == *"ubuntu"* || "{{ base_image }}" == *"betty1202"* ]]; then \
+    # 'betty1202' for sweperf
         # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
         # Add Docker's official GPG key
         apt-get update && \
