@@ -672,6 +672,7 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
+        config.security.security_analyzer = 'llm'
         agent_config = config.get_agent_config(config.default_agent)
         agent_config.cli_mode = True
         config.set_agent_config(agent_config)
