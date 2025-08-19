@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import JupyterIcon from "#/icons/jupyter.svg?react";
 import TerminalIcon from "#/icons/terminal.svg?react";
@@ -6,30 +8,84 @@ import ServerIcon from "#/icons/server.svg?react";
 import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
 import { cn } from "#/utils/utils";
-import { useConversationTabs } from "./use-conversation-tabs";
+import { ConversationTab, useConversationTabs } from "./use-conversation-tabs";
 import { ConversationTabNav } from "./conversation-tab-nav";
 import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { VSCodeTooltipContent } from "./vscode-tooltip-content";
+import { setIsRightPanelShown } from "#/state/conversation-slice";
+import { RootState } from "#/store";
 
 export function ConversationTabs() {
   const [{ selectedTab, terminalOpen }, { onTabChange, onTerminalChange }] =
     useConversationTabs();
 
+  const isTabClicked = useRef<boolean>(false);
+
+  const { isRightPanelShown } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
+  useEffect(() => {
+    const handlePanelVisibilityChange = () => {
+      if (isRightPanelShown) {
+        // Only change to editor tab if no tab was explicitly clicked
+        if (!isTabClicked.current) {
+          onTabChange("editor");
+        }
+      } else {
+        // Reset state when panel is hidden
+        onTabChange(null);
+        onTerminalChange(false);
+      }
+
+      // Reset the click flag after handling the change
+      isTabClicked.current = false;
+    };
+
+    handlePanelVisibilityChange();
+  }, [isRightPanelShown]);
+
+  const dispatch = useDispatch();
+
   const { t } = useTranslation();
+
+  const showActionPanel = () => {
+    dispatch(setIsRightPanelShown(true));
+  };
+
+  const onTerminalSelected = () => {
+    onTerminalChange((prev) => !prev);
+    if (!selectedTab) {
+      onTabChange("editor");
+    }
+  };
+
+  const onTabSelected = (
+    tab: ConversationTab | null,
+    isTerminal: boolean = false,
+  ) => {
+    if (isTerminal) {
+      onTerminalSelected();
+    } else if (tab) {
+      onTabChange(tab);
+    }
+    showActionPanel();
+    isTabClicked.current = true;
+  };
 
   const tabs = [
     {
       isActive: selectedTab === "editor",
       icon: GitChanges,
-      onClick: () => onTabChange("editor"),
+      onClick: () => onTabSelected("editor"),
       tooltipContent: t(I18nKey.COMMON$CHANGES),
       tooltipAriaLabel: t(I18nKey.COMMON$CHANGES),
     },
     {
       isActive: selectedTab === "vscode",
       icon: VSCodeIcon,
-      onClick: () => onTabChange("vscode"),
+      onClick: () => onTabSelected("vscode"),
       tooltipContent: <VSCodeTooltipContent />,
       tooltipAriaLabel: t(I18nKey.COMMON$CODE),
     },
@@ -37,28 +93,28 @@ export function ConversationTabs() {
     {
       isActive: terminalOpen,
       icon: TerminalIcon,
-      onClick: () => onTerminalChange((prev) => !prev),
+      onClick: () => onTabSelected(null, true),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
     },
     {
       isActive: selectedTab === "jupyter",
       icon: JupyterIcon,
-      onClick: () => onTabChange("jupyter"),
+      onClick: () => onTabSelected("jupyter"),
       tooltipContent: t(I18nKey.COMMON$JUPYTER),
       tooltipAriaLabel: t(I18nKey.COMMON$JUPYTER),
     },
     {
       isActive: selectedTab === "served",
       icon: ServerIcon,
-      onClick: () => onTabChange("served"),
+      onClick: () => onTabSelected("served"),
       tooltipContent: t(I18nKey.COMMON$APP),
       tooltipAriaLabel: t(I18nKey.COMMON$APP),
     },
     {
       isActive: selectedTab === "browser",
       icon: GlobeIcon,
-      onClick: () => onTabChange("browser"),
+      onClick: () => onTabSelected("browser"),
       tooltipContent: t(I18nKey.COMMON$BROWSER),
       tooltipAriaLabel: t(I18nKey.COMMON$BROWSER),
     },

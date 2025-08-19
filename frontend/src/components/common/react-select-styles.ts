@@ -186,7 +186,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     backgroundColor: "#454545",
     borderRadius: "0.25rem",
     boxShadow: "none",
-    padding: "0 0.75rem",
+    padding: "0 0.5rem 0 0.75rem",
     height: "42px",
     "> div:first-child": {
       transform: "translateY(-1px)",
@@ -216,7 +216,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     "& .repo-branch-dropdown__indicators": {
       transform: "translateY(-1px)",
       height: "42px",
-      padding: "0 0.5rem",
+      padding: "0",
       "& > div": {
         padding: "0",
       },
@@ -238,6 +238,27 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       background: "#454545",
       borderRadius: "0.375rem",
       padding: "0.375rem 0.25rem",
+      /* WebKit browsers (Chrome, Safari, Edge) */
+      "&::-webkit-scrollbar": {
+        width: "6px",
+        height: "6px",
+      },
+
+      "&::-webkit-scrollbar-track": {
+        background: "transparent",
+      },
+
+      "&::-webkit-scrollbar-thumb": {
+        background: "rgba(208, 217, 250, 0.3)",
+        borderRadius: "3px",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+
+      /* Firefox */
+      "&": {
+        scrollbarWidth: "thin",
+        scrollbarColor: "rgba(208, 217, 250, 0.3) transparent",
+      },
     },
     "& .repo-branch-dropdown__option": {
       color: "#fff",
@@ -248,6 +269,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       padding: "0.5rem",
       display: "flex",
       alignItems: "center",
+      overflowWrap: "anywhere",
       "&:hover": {
         cursor: "pointer",
         backgroundColor: "#5C5D62",

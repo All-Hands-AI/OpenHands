@@ -19,11 +19,11 @@ export type TerminalTab = "terminal";
 
 type ConversationTabsContext = [
   {
-    selectedTab: ConversationTab;
+    selectedTab: ConversationTab | null;
     terminalOpen: boolean;
   },
   {
-    onTabChange(value: ConversationTab): void;
+    onTabChange(value: ConversationTab | null): void;
     onTerminalChange: Dispatch<SetStateAction<boolean>>;
   },
 ];
@@ -32,7 +32,7 @@ export const ConversationTabContext = createContext<
 >(undefined);
 
 export function ConversationTabProvider({ children }: PropsWithChildren) {
-  const [selectedTab, onTabChange] = useState<ConversationTab>("editor");
+  const [selectedTab, onTabChange] = useState<ConversationTab | null>("editor");
   const [terminalOpen, onTerminalChange] = useState<boolean>(false);
 
   const state = useMemo<ConversationTabsContext>(
