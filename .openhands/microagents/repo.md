@@ -87,6 +87,8 @@ VSCode Extension:
 
 If you are starting a pull request (PR), please follow the template in `.github/pull_request_template.md`.
 
+If you need to add labels when opening a PR, check the existing labels defined on that repository and select from existing ones. Do not invent your own labels.
+
 ## Implementation Details
 
 These details may or may not be useful for your current task.
@@ -141,6 +143,35 @@ Your specialized knowledge and instructions here...
   2. Add the setting to the backend:
      - Add the setting to the `Settings` model in `openhands/storage/data_models/settings.py`
      - Update any relevant backend code to apply the setting (e.g., in session creation)
+
+#### Settings UI Patterns:
+
+There are two main patterns for saving settings in the OpenHands frontend:
+
+**Pattern 1: Entity-based Resources (Immediate Save)**
+- Used for: API Keys, Secrets, MCP Servers
+- Behavior: Changes are saved immediately when user performs actions (add/edit/delete)
+- Implementation:
+  - No "Save Changes" button
+  - No local state management or `isDirty` tracking
+  - Uses dedicated mutation hooks for each operation (e.g., `use-add-mcp-server.ts`, `use-delete-mcp-server.ts`)
+  - Each mutation triggers immediate API call with query invalidation for UI updates
+  - Example: MCP settings, API Keys & Secrets tabs
+- Benefits: Simpler UX, no risk of losing changes, consistent with modern web app patterns
+
+**Pattern 2: Form-based Settings (Manual Save)**
+- Used for: Application settings, LLM configuration
+- Behavior: Changes are accumulated locally and saved when user clicks "Save Changes"
+- Implementation:
+  - Has "Save Changes" button that becomes enabled when changes are detected
+  - Uses local state management with `isDirty` tracking
+  - Uses `useSaveSettings` hook to save all changes at once
+  - Example: LLM tab, Application tab
+- Benefits: Allows bulk changes, explicit save action, can validate all fields before saving
+
+**When to use each pattern:**
+- Use Pattern 1 (Immediate Save) for entity management where each item is independent
+- Use Pattern 2 (Manual Save) for configuration forms where settings are interdependent or need validation
 
 ### Adding New LLM Models
 

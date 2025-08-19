@@ -6,12 +6,14 @@ from typing import Callable, Iterable
 
 import socketio
 
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import MessageAction
 from openhands.events.stream import EventStreamSubscriber, session_exists
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.constants import ROOM_KEY
@@ -37,6 +39,7 @@ from openhands.utils.conversation_summary import (
 )
 from openhands.utils.import_utils import get_impl
 from openhands.utils.shutdown_listener import should_continue
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 from .conversation_manager import ConversationManager
 
@@ -332,12 +335,15 @@ class StandaloneConversationManager(ConversationManager):
                 )
                 await self.close_session(oldest_conversation_id)
 
-        config = self.config.model_copy(deep=True)
-
+        llm_registry, conversation_stats, config = (
+            create_registry_and_conversation_stats(self.config, sid, user_id, settings)
+        )
         session = Session(
             sid=sid,
             file_store=self.file_store,
             config=config,
+            llm_registry=llm_registry,
+            conversation_stats=conversation_stats,
             sio=self.sio,
             user_id=user_id,
         )
@@ -349,7 +355,9 @@ class StandaloneConversationManager(ConversationManager):
         try:
             session.agent_session.event_stream.subscribe(
                 EventStreamSubscriber.SERVER,
-                self._create_conversation_update_callback(user_id, sid, settings),
+                self._create_conversation_update_callback(
+                    user_id, sid, settings, session.llm_registry
+                ),
                 UPDATED_AT_CALLBACK_ID,
             )
         except ValueError:
@@ -368,6 +376,21 @@ class StandaloneConversationManager(ConversationManager):
         if not session:
             raise RuntimeError(f'no_conversation:{sid}')
         await session.dispatch(data)
+
+    async def request_llm_completion(
+        self,
+        sid: str,
+        service_id: str,
+        llm_config: LLMConfig,
+        messages: list[dict[str, str]],
+    ):
+        session = self._local_agent_loops_by_sid.get(sid)
+        if not session:
+            raise RuntimeError(f'no_conversation:{sid}')
+        llm_registry = session.llm_registry
+        return llm_registry.request_extraneous_completion(
+            service_id, llm_config, messages
+        )
 
     async def disconnect_from_session(self, connection_id: str):
         sid = self._local_connection_id_to_session_id.pop(connection_id, None)
@@ -450,6 +473,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str | None,
         conversation_id: str,
         settings: Settings,
+        llm_registry: LLMRegistry,
     ) -> Callable:
         def callback(event, *args, **kwargs):
             call_async_from_sync(
@@ -458,6 +482,7 @@ class StandaloneConversationManager(ConversationManager):
                 user_id,
                 conversation_id,
                 settings,
+                llm_registry,
                 event,
             )
 
@@ -468,6 +493,7 @@ class StandaloneConversationManager(ConversationManager):
         user_id: str,
         conversation_id: str,
         settings: Settings,
+        llm_registry: LLMRegistry,
         event=None,
     ):
         conversation_store = await self._get_conversation_store(user_id)
@@ -495,7 +521,7 @@ class StandaloneConversationManager(ConversationManager):
             conversation.title == default_title
         ):  # attempt to autogenerate if default title is in use
             title = await auto_generate_title(
-                conversation_id, user_id, self.file_store, settings
+                conversation_id, user_id, self.file_store, settings, llm_registry
             )
             if title and not title.isspace():
                 conversation.title = title

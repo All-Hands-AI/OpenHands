@@ -136,7 +136,7 @@ describe("Settings Screen", () => {
       "secrets",
       "api keys",
     ];
-    const sectionsToExclude = ["llm", "mcp"];
+    const sectionsToExclude = ["llm"];
 
     renderSettingsScreen();
 
