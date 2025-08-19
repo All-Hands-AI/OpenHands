@@ -10,6 +10,8 @@ interface InfoTooltipProps {
   iconSize?: number;
 }
 
+// Deprecated: use TooltipButton with QuestionCircleIcon instead
+
 export function InfoTooltip({
   content,
   placement = "right",
