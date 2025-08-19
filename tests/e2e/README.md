@@ -22,6 +22,7 @@ The following environment variables are required:
 Optional environment variables:
 
 - `LLM_BASE_URL`: The base URL for the LLM API (if using a custom endpoint)
+- `GITLAB_TOKEN`: A GitLab token for testing GitLab integration (required for GitLab tests)
 
 ### Configuration Options
 
@@ -73,9 +74,11 @@ poetry run pytest test_settings.py::test_github_token_configuration -v
 # Run the conversation start test
 poetry run pytest test_conversation.py::test_conversation_start -v
 
+# Run the GitLab integration test
+poetry run pytest test_gitlab_integration.py::test_gitlab_repository_cloning -v
+
 # Run individual tests with custom base URL
 poetry run pytest test_settings.py::test_github_token_configuration -v --base-url=https://my-instance.com
-
 ```
 
 ### Running with Visible Browser
@@ -86,6 +89,7 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 cd tests/e2e
 poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50
 poetry run pytest test_conversation.py::test_conversation_start -v --no-headless --slow-mo=50
+poetry run pytest test_gitlab_integration.py::test_gitlab_repository_cloning -v --no-headless --slow-mo=50
 
 # Combine with custom base URL
 poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50 --base-url=https://my-instance.com
@@ -121,6 +125,20 @@ The conversation start test (`test_conversation_start`) performs the following s
 5. Waits for the agent to initialize
 6. Asks "How many lines are there in the main README.md file?"
 7. Waits for and verifies the agent's response
+
+### GitLab Integration Test
+
+The GitLab integration test (`test_gitlab_repository_cloning`) performs the following steps:
+
+1. Navigates to the OpenHands application
+2. Configures GitLab token if needed (from `GITLAB_TOKEN` environment variable)
+3. Selects GitLab as the provider
+4. Selects a public GitLab repository (gitlab-org/gitlab-foss)
+5. Clicks the "Launch" button
+6. Waits for the conversation interface to load
+7. Waits for the agent to initialize
+8. Asks the agent to list workspace contents to verify repository cloning
+9. Verifies that the GitLab repository was successfully cloned into the workspace
 
 
 
