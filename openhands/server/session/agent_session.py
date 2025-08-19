@@ -280,25 +280,24 @@ class AgentSession:
         assert isinstance(replay_events[0], MessageAction)
         return replay_events[0]
 
-    def _create_security_analyzer(self, security_analyzer: str | None) -> None:
+    def _create_security_analyzer(self, security_analyzer: str) -> None:
         """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
 
         Parameters:
         - security_analyzer: The name of the security analyzer to use
         """
-        if security_analyzer:
-            self.logger.debug(f'Using security analyzer: {security_analyzer}')
-            self.security_analyzer = options.SecurityAnalyzers.get(
-                security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
-            self.event_stream.subscribe(
-                EventStreamSubscriber.SECURITY_ANALYZER,
-                self.security_analyzer.on_event,
-                f'security_analyzer_{self.sid}',
-            )
-            self.logger.debug(
-                f'Using security analyzer: {self.security_analyzer.__class__.__name__}'
-            )
+        self.logger.debug(f'Using security analyzer: {security_analyzer}')
+        self.security_analyzer = options.SecurityAnalyzers.get(
+            security_analyzer, SecurityAnalyzer
+        )(self.event_stream)
+        self.event_stream.subscribe(
+            EventStreamSubscriber.SECURITY_ANALYZER,
+            self.security_analyzer.on_event,
+            f'security_analyzer_{self.sid}',
+        )
+        self.logger.debug(
+            f'Using security analyzer: {self.security_analyzer.__class__.__name__}'
+        )
 
     def override_provider_tokens_with_custom_secret(
         self,
@@ -422,7 +421,7 @@ class AgentSession:
         max_budget_per_task: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
-        security_analyzer: str | None = None,
+        security_analyzer: str = "invariant",
         replay_events: list[Event] | None = None,
     ) -> tuple[AgentController, bool]:
         """Creates an AgentController instance

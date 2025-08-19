@@ -62,9 +62,7 @@ function LlmSettingsScreen() {
   // Track selected security analyzer for form submission
   const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
     React.useState(
-      settings?.SECURITY_ANALYZER === null
-        ? "none"
-        : (settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER),
+      settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER,
     );
 
   const modelsAndProviders = organizeModelsAndProviders(
@@ -108,11 +106,7 @@ function LlmSettingsScreen() {
   // Update selected security analyzer state when settings change
   React.useEffect(() => {
     if (settings?.SECURITY_ANALYZER !== undefined) {
-      setSelectedSecurityAnalyzer(
-        settings.SECURITY_ANALYZER === null
-          ? "none"
-          : settings.SECURITY_ANALYZER,
-      );
+      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER);
     }
   }, [settings?.SECURITY_ANALYZER]);
 
@@ -158,9 +152,7 @@ function LlmSettingsScreen() {
         SEARCH_API_KEY: searchApiKey || "",
         CONFIRMATION_MODE: confirmationMode,
         SECURITY_ANALYZER:
-          securityAnalyzer === "none"
-            ? null
-            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
@@ -198,9 +190,7 @@ function LlmSettingsScreen() {
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
         SECURITY_ANALYZER:
-          securityAnalyzer === "none"
-            ? null
-            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
+          securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -435,14 +425,8 @@ function LlmSettingsScreen() {
                   testId="security-analyzer-input"
                   name="security-analyzer-display"
                   label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={[
-                    // Add "None (always confirm)" option first
-                    {
-                      key: "none",
-                      label: "None (always confirm)",
-                    },
-                    // Then add the actual security analyzers from the API
-                    ...(resources?.securityAnalyzers.map((analyzer) => {
+                  items={
+                    resources?.securityAnalyzers.map((analyzer) => {
                       if (analyzer === "llm") {
                         return {
                           key: analyzer,
@@ -455,9 +439,15 @@ function LlmSettingsScreen() {
                           label: "Invariant Rule-based Analyzer",
                         };
                       }
+                      if (analyzer === "none") {
+                        return {
+                          key: analyzer,
+                          label: "None (always confirm)",
+                        };
+                      }
                       return { key: analyzer, label: analyzer };
-                    }) || []),
-                  ]}
+                    }) || []
+                  }
                   placeholder={t(
                     I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
                   )}

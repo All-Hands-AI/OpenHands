@@ -122,7 +122,7 @@ class AgentController:
         file_store: FileStore | None = None,
         user_id: str | None = None,
         confirmation_mode: bool = False,
-        security_analyzer: str | None = None,
+        security_analyzer: str = "invariant",
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
@@ -888,12 +888,8 @@ class AgentController:
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )
-                # In GUI, if no security analyzer is configured (None), always confirm
-                # Otherwise, only HIGH security risk actions require confirmation
-                elif (
-                    self.security_analyzer is None
-                    or security_risk == ActionSecurityRisk.HIGH
-                ):
+                # Only HIGH security risk actions require confirmation
+                elif security_risk == ActionSecurityRisk.HIGH:
                     action.confirmation_state = (  # type: ignore[union-attr]
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )

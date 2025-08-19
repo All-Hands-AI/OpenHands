@@ -6,11 +6,11 @@ class SecurityConfig(BaseModel):
 
     Attributes:
         confirmation_mode: Whether to enable confirmation mode.
-        security_analyzer: The security analyzer to use. Set to None to disable.
+        security_analyzer: The security analyzer to use.
     """
 
     confirmation_mode: bool = Field(default=False)
-    security_analyzer: str | None = Field(default='llm')
+    security_analyzer: str = Field(default='llm')
 
     model_config = ConfigDict(extra='forbid')
 
