@@ -868,17 +868,6 @@ fi
 
         return loaded_microagents
 
-    def _get_task_file_path(self) -> str:
-        """Get the path for the TASKS.md file in the session directory.
-
-        Returns:
-            str: The path to the TASKS.md file in the session storage directory
-        """
-        conversation_dir = get_conversation_dir(
-            self.sid, getattr(self.event_stream, 'user_id', None)
-        )
-        return f'{conversation_dir}TASKS.md'
-
     def run_action(self, action: Action) -> Observation:
         """Run an action and return the resulting observation.
         If the action is not runnable in any runtime, a NullObservation is returned.
@@ -889,7 +878,10 @@ fi
                 return AgentThinkObservation('Your thought has been logged.')
             elif isinstance(action, TaskTrackingAction):
                 # Get the session-specific task file path
-                task_file_path = self._get_task_file_path()
+                conversation_dir = get_conversation_dir(
+                    self.sid, self.event_stream.user_id
+                )
+                task_file_path = f'{conversation_dir}TASKS.md'
 
                 if action.command == 'plan':
                     # Write the serialized task list to the session directory
