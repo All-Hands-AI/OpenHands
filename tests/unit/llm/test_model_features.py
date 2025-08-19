@@ -18,6 +18,11 @@ from openhands.llm.model_features import (
         ('gpt-5-preview', 'gpt-5-preview'),
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', 'deepseek-r1-0528'),
         ('openai/GLM-4.5-GGUF', 'glm-4.5'),
+        ('openrouter:gpt-4o-mini', 'gpt-4o-mini'),
+        (
+            'bedrock/anthropic.claude-3-5-sonnet-20241022-v2:0',
+            'anthropic.claude-3-5-sonnet-20241022-v2',
+        ),
         ('', ''),
         (None, ''),  # type: ignore[arg-type]
     ],
@@ -176,6 +181,46 @@ def test_prompt_cache_models(model):
         'xai/grok-4-0709',
     ],
 )
+@pytest.mark.parametrize(
+    'model,expected',
+    [
+        # Positive cases: exactly those supported on main
+        ('o1', True),
+        ('o1-2024-12-17', True),
+        ('o3', True),
+        ('o3-2025-04-16', True),
+        ('o3-mini', True),
+        ('o3-mini-2025-01-31', True),
+        ('o4-mini', True),
+        ('o4-mini-2025-04-16', True),
+        ('gemini-2.5-flash', True),
+        ('gemini-2.5-pro', True),
+        ('gpt-5', True),
+        ('gpt-5-2025-08-07', True),
+        ('claude-opus-4-1-20250805', True),
+        # DeepSeek
+        ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', True),
+        ('DeepSeek-R1-0528', True),
+        # Negative cases: ensure we didn't unintentionally expand
+        ('o1-mini', False),
+        ('o1-preview', False),
+        ('gemini-1.0-pro', False),
+    ],
+)
+def test_reasoning_effort_parity_with_main(model, expected):
+    assert get_features(model).supports_reasoning_effort is expected
+
+
+def test_prompt_cache_haiku_variants():
+    assert get_features('claude-3-5-haiku-20241022').supports_prompt_cache is True
+    assert get_features('claude-3.5-haiku-20241022').supports_prompt_cache is True
+
+
+def test_stop_words_grok_provider_prefixed():
+    assert get_features('xai/grok-4-0709').supports_stop_words is False
+    assert get_features('grok-4-0709').supports_stop_words is False
+
+
 def test_supports_stop_words_false_models(model):
     features = get_features(model)
     assert features.supports_stop_words is False

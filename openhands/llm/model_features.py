@@ -10,18 +10,22 @@ def normalize_model_name(model: str) -> str:
     Strategy:
     - Trim whitespace
     - Lowercase
-    - Keep only the basename after the last '/'
+    - If there is a '/', keep only the basename after the last '/'
       (handles prefixes like openrouter/, litellm_proxy/, anthropic/, etc.)
-    - Remove any variant suffix after ':' (e.g., ":671b-q4_k_xl")
+      and treat ':' inside that basename as an Ollama-style variant tag to be removed
+    - If there is no '/', but there is a ':', treat it as provider:model and keep the
+      segment AFTER ':' (e.g., "openrouter:gpt-4o-mini" -> "gpt-4o-mini")
     - Drop a trailing "-gguf" suffix if present
     """
     raw = (model or '').strip().lower()
-    # Keep only the basename after the last '/'
-    name = raw.split('/')[-1] if '/' in raw else raw
-    # Remove anything after the first ':' (ollama-style variants)
-    if ':' in name:
-        name = name.split(':', 1)[0]
-    # Remove trailing -gguf suffix
+    if '/' in raw:
+        name = raw.split('/')[-1]
+        if ':' in name:
+            # Drop Ollama-style variant tag in basename
+            name = name.split(':', 1)[0]
+    else:
+        # No '/', may be provider:model — keep the model segment after ':' if present
+        name = raw.split(':', 1)[1] if ':' in raw else raw
     if name.endswith('-gguf'):
         name = name[: -len('-gguf')]
     return name
@@ -84,12 +88,19 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
 ]
 
 REASONING_EFFORT_PATTERNS: list[str] = [
-    'o1*',
-    'o3*',
-    'o4-mini*',
+    # Mirror main behavior exactly (no unintended expansion), plus DeepSeek support
+    'o1-2024-12-17',
+    'o1',
+    'o3',
+    'o3-2025-04-16',
+    'o3-mini-2025-01-31',
+    'o3-mini',
+    'o4-mini',
+    'o4-mini-2025-04-16',
     'gemini-2.5-flash',
-    'gemini-2.5-pro*',
-    'gpt-5*',
+    'gemini-2.5-pro',
+    'gpt-5',
+    'gpt-5-2025-08-07',
     'claude-opus-4-1-20250805',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
@@ -101,6 +112,7 @@ PROMPT_CACHE_PATTERNS: list[str] = [
     'claude-sonnet-3-7-latest',
     'claude-3-5-sonnet*',
     'claude-3-5-haiku*',
+    'claude-3.5-haiku*',
     'claude-3-haiku-20240307',
     'claude-3-opus-20240229',
     'claude-sonnet-4*',
