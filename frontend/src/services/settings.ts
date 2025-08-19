@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS: Settings = {
   ENABLE_SOUND_NOTIFICATIONS: false,
   USER_CONSENTS_TO_ANALYTICS: false,
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: false,
+  ENABLE_SOLVABILITY_ANALYSIS: false,
   SEARCH_API_KEY: "",
   IS_NEW_USER: true,
   MAX_BUDGET_PER_TASK: null,
@@ -25,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   MCP_CONFIG: {
     sse_servers: [],
     stdio_servers: [],
+    shttp_servers: [],
   },
   GIT_USER_NAME: "openhands",
   GIT_USER_EMAIL: "openhands@all-hands.dev",

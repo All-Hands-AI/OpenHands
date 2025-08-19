@@ -25,11 +25,12 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
   security_analyzer: DEFAULT_SETTINGS.SECURITY_ANALYZER,
   remote_runtime_resource_factor:
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
-  provider_tokens_set: { github: null, gitlab: null, bitbucket: null },
+  provider_tokens_set: {},
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
+  enable_solvability_analysis: DEFAULT_SETTINGS.ENABLE_SOLVABILITY_ANALYSIS,
   user_consents_to_analytics: DEFAULT_SETTINGS.USER_CONSENTS_TO_ANALYTICS,
   max_budget_per_task: DEFAULT_SETTINGS.MAX_BUDGET_PER_TASK,
 };

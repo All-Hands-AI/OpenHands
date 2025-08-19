@@ -23,17 +23,17 @@ export function MicroagentManagementAddMicroagentButton({
 
   const dispatch = useDispatch();
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     dispatch(setAddMicroagentModalVisible(!addMicroagentModalVisible));
     dispatch(setSelectedRepository(repository));
   };
 
   return (
-    <div onClick={handleClick} className="translate-y-[-1px]">
+    <button type="button" onClick={handleClick} className="translate-y-[-1px]">
       <span className="text-sm font-normal leading-5 text-[#8480FF] cursor-pointer hover:text-[#6C63FF] transition-colors duration-200">
         {t(I18nKey.COMMON$ADD_MICROAGENT)}
       </span>
-    </div>
+    </button>
   );
 }

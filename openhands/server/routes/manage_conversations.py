@@ -22,6 +22,7 @@ from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
 )
+from openhands.experiments.experiment_manager import ExperimentConfig
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
@@ -32,7 +33,6 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -43,9 +43,10 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
@@ -71,6 +72,7 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
@@ -362,7 +364,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -378,8 +380,9 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
+) -> str:
     messages = [
         {
             'role': 'system',
@@ -391,8 +394,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:
@@ -464,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 
@@ -624,7 +628,6 @@ async def update_conversation(
     Raises:
         HTTPException: If conversation is not found or user lacks permission
     """
-
     logger.info(
         f'Updating conversation {conversation_id} with title: {data.title}',
         extra={'session_id': conversation_id, 'user_id': user_id},
@@ -707,3 +710,28 @@ async def update_conversation(
             },
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
+
+
+@app.post('/conversations/{conversation_id}/exp-config')
+def add_experiment_config_for_conversation(
+    conversation_id: str, exp_config: ExperimentConfig
+) -> bool:
+    exp_config_filepath = get_experiment_config_filename(conversation_id)
+    exists = False
+    try:
+        file_store.read(exp_config_filepath)
+        exists = True
+    except FileNotFoundError:
+        pass
+
+    # Don't modify again if it already exists
+    if exists:
+        return False
+
+    try:
+        file_store.write(exp_config_filepath, exp_config.model_dump_json())
+    except Exception as e:
+        logger.info(f'Failed to write experiment config for {conversation_id}: {e}')
+        return True
+
+    return False
