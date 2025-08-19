@@ -58,10 +58,21 @@ def combine_thought(
         if reasoning_content is not None:
             current.reasoning_content = reasoning_content
     else:
+        # Legacy string thought - convert to Thought object
         cur_text = current or ''
         if thought:
             new_text = f'{thought}\n{cur_text}' if cur_text else thought
-            setattr(action, 'thought', new_text)
+            setattr(
+                action,
+                'thought',
+                Thought(text=new_text, reasoning_content=reasoning_content),
+            )
+        elif reasoning_content is not None:
+            setattr(
+                action,
+                'thought',
+                Thought(text=cur_text, reasoning_content=reasoning_content),
+            )
     return action
 
 
