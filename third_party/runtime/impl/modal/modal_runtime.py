@@ -150,7 +150,7 @@ class ModalRuntime(ActionExecutionClient):
             raise Exception("Sandbox not initialized")
         tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
-        print("Waiting 20 secs for the container to be ready... (avoiding RemoteProtocolError)")
+       self.log("info", "Waiting 20 secs for the container to be ready... (avoiding RemoteProtocolError)")
         sleep(20)
         self.log("debug", f"Container started. Server url: {self.api_url}")
 
