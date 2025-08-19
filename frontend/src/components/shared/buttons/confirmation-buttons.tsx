@@ -6,6 +6,7 @@ import { useWsClient } from "#/context/ws-client-provider";
 import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
+import { RiskAlert } from "#/components/shared/risk-alert";
 
 export function ConfirmationButtons() {
   const { t } = useTranslation();
@@ -40,13 +41,15 @@ export function ConfirmationButtons() {
   return (
     <div className="flex flex-col gap-3 pt-4">
       {isHighRisk && (
-        <div className="bg-red-500/10 border border-red-400/50 text-red-400 rounded-lg px-3 py-2 text-sm">
-          {/* eslint-disable-next-line i18next/no-literal-string */}
-          <span role="img" aria-label="warning">
-            ⚠️
-          </span>{" "}
-          {t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
-        </div>
+        <RiskAlert
+          icon={
+            // eslint-disable-next-line i18next/no-literal-string
+            <span role="img" aria-label="warning">
+              ⚠️
+            </span>
+          }
+          content={t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
+        />
       )}
       <div className="flex justify-between items-center">
         <p>{t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}</p>
