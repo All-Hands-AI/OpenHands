@@ -468,6 +468,7 @@ class AgentSession:
             status_callback=self._status_callback,
             initial_state=initial_state,
             replay_events=replay_events,
+            security_analyzer=self.security_analyzer,
         )
 
         return (controller, initial_state is not None)

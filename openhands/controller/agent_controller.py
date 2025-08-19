@@ -5,7 +5,10 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from openhands.security.analyzer import SecurityAnalyzer
 
 from litellm.exceptions import (  # noqa
     APIConnectionError,
@@ -127,6 +130,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        security_analyzer: 'SecurityAnalyzer | None' = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -188,6 +192,9 @@ class AgentController:
 
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
+
+        # security analyzer for direct access
+        self.security_analyzer = security_analyzer
 
         # Add the system message to the event stream
         self._add_system_message()
@@ -699,6 +706,7 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+            security_analyzer=self.security_analyzer,
         )
 
     def end_delegate(self) -> None:
@@ -872,7 +880,22 @@ class AgentController:
                 or type(action) is FileEditAction
                 or type(action) is FileReadAction
             ):
-                # Check if the action has a security_risk attribute set by the LLM
+                # Ensure security_risk is set by calling security analyzer directly
+                if (
+                    self.security_analyzer
+                    and action.security_risk == ActionSecurityRisk.UNKNOWN
+                ):
+                    try:
+                        action.security_risk = (
+                            await self.security_analyzer.security_risk(action)
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Failed to analyze security risk for action {action}: {e}'
+                        )
+                        action.security_risk = ActionSecurityRisk.UNKNOWN
+
+                # Check if the action has a security_risk attribute set by the LLM or security analyzer
                 security_risk = getattr(
                     action, 'security_risk', ActionSecurityRisk.UNKNOWN
                 )

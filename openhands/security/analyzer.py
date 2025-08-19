@@ -32,7 +32,10 @@ class SecurityAnalyzer:
 
         try:
             # Set the security_risk attribute on the event
-            event.security_risk = await self.security_risk(event)  # type: ignore [attr-defined]
+            setattr(event, 'security_risk', await self.security_risk(event))
+            logger.debug(
+                f'Security Analyzer {self.__class__} set security risk [{getattr(event, "security_risk", "UNKNOWN")}] for action: {event}'
+            )
             await self.act(event)
         except Exception as e:
             logger.error(f'Error occurred while analyzing the event: {e}')

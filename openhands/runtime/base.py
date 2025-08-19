@@ -10,7 +10,10 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Callable, cast
+
+if TYPE_CHECKING:
+    from openhands.security.analyzer import SecurityAnalyzer
 from zipfile import ZipFile
 
 import httpx
@@ -121,6 +124,7 @@ class Runtime(FileEditRuntimeMixin):
     status_callback: Callable[[str, RuntimeStatus, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
+    security_analyzer: 'SecurityAnalyzer | None' = None
 
     def __init__(
         self,

@@ -64,14 +64,15 @@ def create_runtime(
     event_stream = EventStream(session_id, file_store)
 
     # set up the security analyzer
+    security_analyzer = None
     if config.security.security_analyzer:
         analyzer_cls = options.SecurityAnalyzers.get(
             config.security.security_analyzer, SecurityAnalyzer
         )
-        analyzer = analyzer_cls(event_stream)
+        security_analyzer = analyzer_cls(event_stream)
         event_stream.subscribe(
             EventStreamSubscriber.SECURITY_ANALYZER,
-            analyzer.on_event,
+            security_analyzer.on_event,
             f'security_analyzer_{session_id}',
         )
         logger.debug(
@@ -96,6 +97,9 @@ def create_runtime(
         llm_registry=llm_registry or LLMRegistry(config),
         git_provider_tokens=git_provider_tokens,
     )
+
+    # Set the security analyzer on the runtime so AgentController can access it
+    runtime.security_analyzer = security_analyzer
 
     # Log the plugins that have been registered with the runtime for debugging purposes
     logger.debug(
@@ -254,6 +258,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        security_analyzer=runtime.security_analyzer,
     )
     return (controller, initial_state)
 
