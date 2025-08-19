@@ -10,10 +10,7 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import TYPE_CHECKING, Callable, cast
-
-if TYPE_CHECKING:
-    from openhands.security.analyzer import SecurityAnalyzer
+from typing import Callable, cast
 from zipfile import ZipFile
 
 import httpx
@@ -70,6 +67,7 @@ from openhands.runtime.plugins import (
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
+from openhands.security import SecurityAnalyzer, options
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -196,8 +194,6 @@ class Runtime(FileEditRuntimeMixin):
         # Initialize security analyzer
         self.security_analyzer = None
         if self.config.security.security_analyzer:
-            from openhands.security import SecurityAnalyzer, options
-
             analyzer_cls = options.SecurityAnalyzers.get(
                 self.config.security.security_analyzer, SecurityAnalyzer
             )
