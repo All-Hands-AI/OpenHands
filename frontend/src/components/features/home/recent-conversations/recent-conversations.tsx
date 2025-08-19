@@ -9,7 +9,7 @@ import { cn } from "#/utils/utils";
 
 export function RecentConversations() {
   const { t } = useTranslation();
-  const [displayCount, setDisplayCount] = useState(3);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const {
     data: conversationsList,
@@ -18,7 +18,7 @@ export function RecentConversations() {
     error,
     hasNextPage,
     fetchNextPage,
-  } = usePaginatedConversations();
+  } = usePaginatedConversations(10);
 
   // Set up infinite scroll
   const scrollContainerRef = useInfiniteScroll({
@@ -31,37 +31,21 @@ export function RecentConversations() {
   const conversations =
     conversationsList?.pages.flatMap((page) => page.results) ?? [];
 
-  // Get the conversations to display based on current display count
-  const displayedConversations = conversations.slice(0, displayCount);
+  // Get the conversations to display based on expansion state
+  const displayLimit = isExpanded ? 10 : 3;
+  const displayedConversations = conversations.slice(0, displayLimit);
 
   const hasConversations = conversations && conversations.length > 0;
 
   // Check if there are more conversations to show
   const hasMoreConversations =
-    conversations && conversations.length > displayCount;
-
-  // Check if we've reached the maximum display limit
-  const isAtMaxDisplay = displayCount >= 10;
-
-  // Check if we can show more conversations (not at max and have more available)
-  const canShowMore = !isAtMaxDisplay && hasMoreConversations;
-
-  // Check if we should show the "View Less" button (showing all conversations or at max)
-  const shouldShowViewLess =
-    displayCount > 3 && (!hasMoreConversations || isAtMaxDisplay);
+    conversations && conversations.length > displayLimit;
 
   // Check if this is the initial load (no data yet)
   const isInitialLoading = isFetching && !conversationsList;
 
-  const handleViewMore = () => {
-    // Calculate the next display count (increment by 3, but don't exceed 10)
-    const nextCount = Math.min(displayCount + 3, 10);
-    setDisplayCount(nextCount);
-  };
-
-  const handleViewLess = () => {
-    // Reset to showing only 3 conversations
-    setDisplayCount(3);
+  const handleToggleExpansion = () => {
+    setIsExpanded(!isExpanded);
   };
 
   return (
@@ -117,14 +101,14 @@ export function RecentConversations() {
           </div>
         )}
 
-      {!isInitialLoading && (canShowMore || shouldShowViewLess) && (
+      {!isInitialLoading && (hasMoreConversations || isExpanded) && (
         <div className="flex justify-start mt-6 mb-8 ml-4">
           <button
             type="button"
-            onClick={shouldShowViewLess ? handleViewLess : handleViewMore}
+            onClick={handleToggleExpansion}
             className="text-xs leading-4 text-[#FAFAFA] font-normal cursor-pointer hover:underline"
           >
-            {shouldShowViewLess
+            {isExpanded
               ? t(I18nKey.COMMON$VIEW_LESS)
               : t(I18nKey.COMMON$VIEW_MORE)}
           </button>
