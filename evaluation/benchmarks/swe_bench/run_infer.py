@@ -80,6 +80,8 @@ def set_dataset_type(dataset_name: str) -> str:
         DATASET_TYPE = 'SWE-Gym'
     elif 'swe-bench-live' in name_lower:
         DATASET_TYPE = 'SWE-bench-Live'
+    elif 'swe-rebench' in name_lower:
+        DATASET_TYPE = 'SWE-rebench'
     elif 'multimodal' in name_lower:
         DATASET_TYPE = 'Multimodal'
     else:
@@ -106,12 +108,12 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     llm_model = metadata.llm_config.model
 
     # Determine the template file based on mode and LLM
-    if mode.startswith('swt'):
+    if metadata.instruction_template_name:
+        template_name = metadata.instruction_template_name
+    elif mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
-        if 'claude' in llm_model:
-            template_name = 'swe_default.j2'
-        elif 'gpt-4.1' in llm_model:
+        if 'gpt-4.1' in llm_model:
             template_name = 'swe_gpt4.j2'
         else:
             template_name = (
@@ -122,6 +124,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
+    logger.debug(f'Using instruction template file: {template_name}')
     # Set up Jinja2 environment
     # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
     prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
@@ -180,6 +183,8 @@ def get_instance_docker_image(
             docker_image_prefix = 'docker.io/starryzhang/'
         elif DATASET_TYPE == 'SWE-bench':
             docker_image_prefix = 'docker.io/swebench/'
+        elif DATASET_TYPE == 'SWE-rebench':
+            docker_image_prefix = 'docker.io/swerebench/'
         repo, name = instance_id.split('__')
         image_name = f'{docker_image_prefix.rstrip("/")}/sweb.eval.x86_64.{repo}_1776_{name}:latest'.lower()
         logger.debug(f'Using official SWE-Bench image: {image_name}')
@@ -320,6 +325,8 @@ def initialize_runtime(
         # inject the instance swe entry
         if DATASET_TYPE == 'SWE-bench-Live':
             entry_script_path = 'instance_swe_entry_live.sh'
+        elif DATASET_TYPE == 'SWE-rebench':
+            entry_script_path = 'instance_swe_entry_rebench.sh'
         else:
             entry_script_path = 'instance_swe_entry.sh'
         runtime.copy_to(

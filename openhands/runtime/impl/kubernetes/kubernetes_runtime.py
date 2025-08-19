@@ -43,6 +43,7 @@ from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -58,8 +59,7 @@ POD_LABEL = 'openhands-runtime'
 
 
 class KubernetesRuntime(ActionExecutionClient):
-    """
-    A Kubernetes runtime for OpenHands that works with Kind.
+    """A Kubernetes runtime for OpenHands that works with Kind.
 
     This runtime creates pods in a Kubernetes cluster to run the agent code.
     It uses the Kubernetes Python client to create and manage the pods.
@@ -82,6 +82,7 @@ class KubernetesRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -138,6 +139,7 @@ class KubernetesRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -411,7 +413,6 @@ class KubernetesRuntime(ActionExecutionClient):
 
     def _get_vscode_service_manifest(self):
         """Create a service manifest for the VSCode server."""
-
         vscode_service_spec = V1ServiceSpec(
             selector={'app': POD_LABEL, 'session': self.sid},
             type='ClusterIP',
@@ -567,7 +568,6 @@ class KubernetesRuntime(ActionExecutionClient):
 
     def _get_vscode_ingress_manifest(self):
         """Create an ingress manifest for the VSCode server."""
-
         tls = []
         if self._k8s_config.ingress_tls_secret:
             runtime_tls = V1IngressTLS(
@@ -738,7 +738,7 @@ class KubernetesRuntime(ActionExecutionClient):
     @classmethod
     async def delete(cls, conversation_id: str):
         """Delete resources associated with a conversation."""
-        # This is triggered when you actually do the delete in the UI on the convo.
+        # This is triggered when you actually do the delete in the UI on the conversation.
         try:
             cls._cleanup_k8s_resources(
                 namespace=cls._namespace,

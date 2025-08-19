@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -7,6 +8,7 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
+    Comment,
     GitService,
     OwnerType,
     ProviderType,
@@ -71,9 +73,7 @@ class GitLabService(BaseGitService, GitService):
         return ProviderType.GITLAB.value
 
     async def _get_gitlab_headers(self) -> dict[str, Any]:
-        """
-        Retrieve the GitLab Token to construct the headers
-        """
+        """Retrieve the GitLab Token to construct the headers"""
         if not self.token:
             latest_token = await self.get_latest_token()
             if latest_token:
@@ -173,8 +173,7 @@ class GitLabService(BaseGitService, GitService):
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any] | None = None
     ) -> Any:
-        """
-        Execute a GraphQL query against the GitLab GraphQL API
+        """Execute a GraphQL query against the GitLab GraphQL API
 
         Args:
             query: The GraphQL query string
@@ -244,8 +243,7 @@ class GitLabService(BaseGitService, GitService):
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        """
-        Parse a GitLab API project response into a Repository object.
+        """Parse a GitLab API project response into a Repository object.
 
         Args:
             repo: Project data from GitLab API
@@ -269,8 +267,7 @@ class GitLabService(BaseGitService, GitService):
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:
-        """
-        Parse a GitLab URL to extract the repository path.
+        """Parse a GitLab URL to extract the repository path.
 
         Expected format: https://{domain}/{group}/{possibly_subgroup}/{repo}
         Returns the full path from group onwards (e.g., 'group/subgroup/repo' or 'group/repo')
@@ -611,8 +608,7 @@ class GitLabService(BaseGitService, GitService):
         description: str | None = None,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a merge request in GitLab
+        """Creates a merge request in GitLab
 
         Args:
             id: The ID or URL-encoded path of the project
@@ -626,7 +622,6 @@ class GitLabService(BaseGitService, GitService):
             - MR URL when successful
             - Error message when unsuccessful
         """
-
         # Convert string ID to URL-encoded path if needed
         project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
         url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
@@ -702,6 +697,80 @@ class GitLabService(BaseGitService, GitService):
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
+
+    async def get_issue_comments(
+        self, project_id: str, issue_iid: int, limit: int = 100
+    ) -> list[Comment]:
+        """Get the last n comments for a specific issue.
+
+        Args:
+            project_id: The GitLab project ID (can be numeric ID or URL-encoded path)
+            issue_iid: The issue internal ID (iid) in GitLab
+            limit: Maximum number of comments to retrieve (default: 100)
+
+        Returns:
+            List of Comment objects, ordered by creation date (newest first)
+
+        Raises:
+            UnknownException: If the request fails or the issue is not found
+        """
+        # URL-encode the project_id if it contains special characters
+        if '/' in str(project_id):
+            encoded_project_id = str(project_id).replace('/', '%2F')
+        else:
+            encoded_project_id = str(project_id)
+
+        url = f'{self.BASE_URL}/projects/{encoded_project_id}/issues/{issue_iid}/notes'
+
+        all_comments: list[Comment] = []
+        page = 1
+        per_page = min(limit, 100)  # GitLab API max per_page is 100
+
+        while len(all_comments) < limit:
+            # Get comments with pagination, ordered by creation date descending
+            params = {
+                'per_page': per_page,
+                'page': page,
+                'order_by': 'created_at',
+                'sort': 'desc',  # Get newest comments first
+            }
+
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more comments
+                break
+
+            # Filter out system comments and convert to Comment objects
+            for comment_data in response:
+                if len(all_comments) >= limit:
+                    break
+
+                # Skip system-generated comments unless explicitly requested
+                if comment_data.get('system', False):
+                    continue
+
+                comment = Comment(
+                    id=comment_data['id'],
+                    body=comment_data['body'],
+                    author=comment_data.get('author', {}).get('username', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment_data['created_at'].replace('Z', '+00:00')
+                    ),
+                    updated_at=datetime.fromisoformat(
+                        comment_data['updated_at'].replace('Z', '+00:00')
+                    ),
+                    system=comment_data.get('system', False),
+                )
+                all_comments.append(comment)
+
+            # Check if we have more pages
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header or len(all_comments) >= limit:
+                break
+
+            page += 1
+
+        return all_comments
 
 
 gitlab_service_cls = os.environ.get(

@@ -2,6 +2,8 @@
 
 This folder contains the evaluation harness that we built on top of the original [SWE-Bench benchmark](https://www.swebench.com/) ([paper](https://arxiv.org/abs/2310.06770)).
 
+**UPDATE (8/12/2025): We now support running SWE-rebench evaluation (see the paper [here](https://arxiv.org/abs/2505.20411))! For how to run it, checkout [this README](./SWE-rebench.md).**
+
 **UPDATE (6/15/2025): We now support running SWE-bench-Live evaluation (see the paper [here](https://arxiv.org/abs/2505.23419))! For how to run it, checkout [this README](./SWE-bench-Live.md).**
 
 **UPDATE (5/26/2025): We now support running interactive SWE-Bench evaluation (see the paper [here](https://arxiv.org/abs/2502.13069))! For how to run it, checkout [this README](./SWE-Interact.md).**
@@ -91,6 +93,9 @@ export USE_HINT_TEXT=true # Ignore this if you are not sure.
 
 # Specify a condenser configuration for memory management (default: NoOpCondenser)
 export EVAL_CONDENSER=summarizer_for_eval # Name of the condenser config group in config.toml
+
+# Specify the instruction prompt template file name
+export INSTRUCTION_TEMPLATE_NAME=swe_custom.j2 # Name of the file in the swe_bench/prompts folder.
 ```
 
 Let's say you'd like to run 10 instances using `llm.eval_gpt4_1106_preview` and CodeActAgent,
