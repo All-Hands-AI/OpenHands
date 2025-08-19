@@ -1289,6 +1289,7 @@ def test_openhands_provider_rewrite_and_caching_prompt(
     assert llm.is_caching_prompt_active() is True
 
 
+@patch('openhands.llm.llm.litellm_completion')
 def test_gemini_high_reasoning_effort_passes_through(mock_completion):
     """Test that Gemini with reasoning_effort='high' passes through to litellm."""
     config = LLMConfig(

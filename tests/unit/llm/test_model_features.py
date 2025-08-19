@@ -240,14 +240,6 @@ def test_prompt_cache_models(model):
 
 
 @pytest.mark.parametrize(
-    'model',
-    [
-        'o1-mini',
-        'o1-2024-12-17',
-        'xai/grok-4-0709',
-    ],
-)
-@pytest.mark.parametrize(
     'model,expected',
     [
         # Positive cases: exactly those supported on main
@@ -287,6 +279,16 @@ def test_stop_words_grok_provider_prefixed():
     assert get_features('grok-4-0709').supports_stop_words is False
 
 
+@pytest.mark.parametrize(
+    'model',
+    [
+        'o1-mini',
+        'o1-2024-12-17',
+        'xai/grok-4-0709',
+        'deepseek/DeepSeek-R1-0528:671b-Q4_K_XL',
+        'DeepSeek-R1-0528',
+    ],
+)
 def test_supports_stop_words_false_models(model):
     features = get_features(model)
     assert features.supports_stop_words is False
