@@ -122,7 +122,6 @@ class AgentController:
         file_store: FileStore | None = None,
         user_id: str | None = None,
         confirmation_mode: bool = False,
-        security_analyzer: str = "invariant",
         initial_state: State | None = None,
         is_delegate: bool = False,
         headless_mode: bool = True,
@@ -180,7 +179,6 @@ class AgentController:
 
         self.agent_to_llm_config = agent_to_llm_config if agent_to_llm_config else {}
         self.agent_configs = agent_configs if agent_configs else {}
-        self.security_analyzer = security_analyzer
         self._initial_max_iterations = iteration_delta
         self._initial_max_budget_per_task = budget_per_task_delta
 
