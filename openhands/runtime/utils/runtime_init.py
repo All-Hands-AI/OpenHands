@@ -6,6 +6,69 @@ import sys
 from openhands.core.logger import openhands_logger as logger
 
 
+def _configure_git_for_user(username: str, initial_cwd: str) -> None:
+    """Configure git for the target user: safe.directory and global hooks/template."""
+    try:
+        # Ensure hooks directory exists and has our prepare-commit-msg
+        hooks_root = '/openhands/git-hooks'
+        hooks_dir = os.path.join(hooks_root, 'hooks')
+        os.makedirs(hooks_dir, exist_ok=True)
+        hook_src = (
+            '/openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg'
+        )
+        hook_dest = os.path.join(hooks_dir, 'prepare-commit-msg')
+        if os.path.exists(hook_src):
+            shutil.copyfile(hook_src, hook_dest)
+            os.chmod(hook_dest, 0o755)
+        else:
+            # Fallback: write a minimal prepare-commit-msg hook that adds co-authorship
+            with open(hook_dest, 'w') as f:
+                f.write('#!/bin/sh\n')
+                f.write('FILE="$1"\n')
+                f.write(
+                    'if ! grep -qi "co-authored-by.*openhands.*<openhands@all-hands.dev>" "$FILE" 2>/dev/null; then\n'
+                )
+                f.write('  echo "" >> "$FILE"\n')
+                f.write('  echo "" >> "$FILE"\n')
+                f.write(
+                    '  echo "Co-authored-by: openhands <openhands@all-hands.dev>" >> "$FILE"\n'
+                )
+                f.write('fi\n')
+            os.chmod(hook_dest, 0o755)
+
+        env = dict(os.environ)
+        if username == 'root':
+            env['HOME'] = '/root'
+        else:
+            env['HOME'] = f'/home/{username}'
+
+        # Avoid dubious ownership errors
+        subprocess.run(
+            ['git', 'config', '--global', '--add', 'safe.directory', initial_cwd],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        # Ensure co-authorship hook is enabled for all repos/actions
+        subprocess.run(
+            ['git', 'config', '--global', 'core.hooksPath', hooks_dir],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+        subprocess.run(
+            ['git', 'config', '--global', 'init.templateDir', hooks_root],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+    except Exception:
+        pass
+
+
 def init_user_and_working_directory(
     username: str, user_id: int, initial_cwd: str
 ) -> int | None:
@@ -73,6 +136,8 @@ def init_user_and_working_directory(
     if username == 'root':
         # Make sure directory is group-writable
         subprocess.run(f'chmod g+rw {initial_cwd}', shell=True, capture_output=True)
+        # Still need to configure git for root user
+        _configure_git_for_user(username, initial_cwd)
         return None
 
     # Ensure the user exists before attempting chown
@@ -122,60 +187,6 @@ def init_user_and_working_directory(
     subprocess.run(f'chmod g+rw {initial_cwd}', shell=True, capture_output=True)
 
     # Configure git for the target user: safe.directory and global hooks/template
-    try:
-        # Ensure hooks directory exists and has our prepare-commit-msg
-        hooks_root = '/openhands/git-hooks'
-        hooks_dir = os.path.join(hooks_root, 'hooks')
-        os.makedirs(hooks_dir, exist_ok=True)
-        hook_src = (
-            '/openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg'
-        )
-        hook_dest = os.path.join(hooks_dir, 'prepare-commit-msg')
-        if os.path.exists(hook_src):
-            shutil.copyfile(hook_src, hook_dest)
-            os.chmod(hook_dest, 0o755)
-        else:
-            # Fallback: write a minimal prepare-commit-msg hook that adds co-authorship
-            with open(hook_dest, 'w') as f:
-                f.write('#!/bin/sh\n')
-                f.write('FILE="$1"\n')
-                f.write(
-                    'if ! grep -qi "co-authored-by.*openhands.*<openhands@all-hands.dev>" "$FILE" 2>/dev/null; then\n'
-                )
-                f.write('  echo "" >> "$FILE"\n')
-                f.write('  echo "" >> "$FILE"\n')
-                f.write(
-                    '  echo "Co-authored-by: openhands <openhands@all-hands.dev>" >> "$FILE"\n'
-                )
-                f.write('fi\n')
-            os.chmod(hook_dest, 0o755)
-
-        env = dict(os.environ)
-        env['HOME'] = f'/home/{username}'
-        # Avoid dubious ownership errors
-        subprocess.run(
-            ['git', 'config', '--global', '--add', 'safe.directory', initial_cwd],
-            check=False,
-            capture_output=True,
-            text=True,
-            env=env,
-        )
-        # Ensure co-authorship hook is enabled for all repos/actions
-        subprocess.run(
-            ['git', 'config', '--global', 'core.hooksPath', hooks_dir],
-            check=False,
-            capture_output=True,
-            text=True,
-            env=env,
-        )
-        subprocess.run(
-            ['git', 'config', '--global', 'init.templateDir', hooks_root],
-            check=False,
-            capture_output=True,
-            text=True,
-            env=env,
-        )
-    except Exception:
-        pass
+    _configure_git_for_user(username, initial_cwd)
 
     return None
