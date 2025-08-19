@@ -44,7 +44,8 @@ async def validate_provider_token(
     gitlab_error = None
     try:
         gitlab_service = GitLabService(token=token, base_domain=base_domain)
-        await gitlab_service.get_user()
+        us = await gitlab_service.get_user()
+        logger.info(f'BEGIN gitlab_service user {us}')
         return ProviderType.GITLAB
     except Exception as e:
         gitlab_error = e

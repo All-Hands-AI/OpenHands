@@ -4,6 +4,8 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
+
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -35,7 +37,7 @@ class GitLabService(BaseGitService, GitService):
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'http://localhost/api/v4'
+    BASE_URL = 'http://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
     token: SecretStr = SecretStr('')
     refresh = False
@@ -142,6 +144,8 @@ class GitLabService(BaseGitService, GitService):
                     method=method,
                 )
 
+                logger.info(f'BEGIN _make_request response {response}')
+
                 # Handle token refresh if needed
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
@@ -166,8 +170,12 @@ class GitLabService(BaseGitService, GitService):
                     return response.text, headers
 
         except httpx.HTTPStatusError as e:
+            logger.error(f'BEGIN HTTPStatusError error {e}')
+
             raise self.handle_http_status_error(e)
         except httpx.HTTPError as e:
+            logger.error(f'BEGIN HTTPError error {e}')
+
             raise self.handle_http_error(e)
 
     async def execute_graphql_query(
@@ -227,10 +235,11 @@ class GitLabService(BaseGitService, GitService):
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
-
+        logger.info(f'BEGIN gitlab_service get_user {response}')
         # Use a default avatar URL if not provided
         # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
         avatar_url = response.get('avatar_url') or ''
+        logger.info(f'BEGIN gitlab_service avatar_url {avatar_url}')
 
         return User(
             id=str(response.get('id', '')),
