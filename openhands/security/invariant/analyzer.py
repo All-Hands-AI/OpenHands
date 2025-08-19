@@ -49,7 +49,8 @@ class InvariantAnalyzer(SecurityAnalyzer):
         sid: str | None = None,
     ) -> None:
         """Initializes a new instance of the InvariantAnalzyer class."""
-        super().__init__(event_stream)
+        super().__init__()
+        self.event_stream = event_stream
         self.trace = []
         self.input = []
         self.settings = {}

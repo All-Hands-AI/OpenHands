@@ -14,7 +14,7 @@ from openhands.core.config import (
 )
 from openhands.core.config.config_utils import DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
 from openhands.core.logger import openhands_logger as logger
-from openhands.events import EventStream, EventStreamSubscriber
+from openhands.events import EventStream
 from openhands.events.event import Event
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
@@ -69,12 +69,7 @@ def create_runtime(
         analyzer_cls = options.SecurityAnalyzers.get(
             config.security.security_analyzer, SecurityAnalyzer
         )
-        security_analyzer = analyzer_cls(event_stream)
-        event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER,
-            security_analyzer.on_event,
-            f'security_analyzer_{session_id}',
-        )
+        security_analyzer = analyzer_cls()
         logger.debug(
             f'Security analyzer {analyzer_cls.__name__} initialized for event stream {session_id}'
         )

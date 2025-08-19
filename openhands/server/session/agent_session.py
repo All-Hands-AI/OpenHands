@@ -15,7 +15,7 @@ from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.stream import EventStream, EventStreamSubscriber
+from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     PROVIDER_TOKEN_TYPE,
@@ -287,12 +287,7 @@ class AgentSession:
         self.logger.debug(f'Using security analyzer: {security_analyzer}')
         self.security_analyzer = options.SecurityAnalyzers.get(
             security_analyzer, SecurityAnalyzer
-        )(self.event_stream)
-        self.event_stream.subscribe(
-            EventStreamSubscriber.SECURITY_ANALYZER,
-            self.security_analyzer.on_event,
-            f'security_analyzer_{self.sid}',
-        )
+        )()
         self.logger.debug(
             f'Using security analyzer: {self.security_analyzer.__class__.__name__}'
         )
