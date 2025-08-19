@@ -107,120 +107,163 @@ classDiagram
 The LLMRegistry centralizes creation, caching, and configuration of all LLM instances across the backend. Components request LLMs by service_id (e.g., "agent", "condenser", "guardrail") rather than directly constructing them. This enables per-service configuration, unified retries, and consistent accounting via ConversationStats.
 
 Key points:
-- Single source of truth for LLMs per conversation/session
-- Instances keyed by service_id; components do not new-up LLMs directly
-- Registry attaches a retry listener so UI/Session can surface transient issues
-- One-off utility completions go through the registry (extraneous requests)
-- Conversation-wide usage and status reporting flows through ConversationStats
+- **Single source of truth**: LLMRegistry manages all LLM instances per conversation/session
+- **Service-scoped instances**: Components request LLMs by service_id, no direct construction
+- **Unified retry handling**: Registry attaches retry listeners for consistent error handling
+- **Usage tracking**: ConversationStats subscribes to registry events for accounting
+- **Extraneous completions**: One-off utility calls (e.g., title generation) go through registry
 
-### Core classes and relationships
+### 1. System initialization and wiring
+
+```mermaid
+flowchart TD
+  A["1. Session/CLI start"] --> B["2. create_registry_and_convo_stats()"]
+  B --> C["3. LLMRegistry created"]
+  B --> D["4. ConversationStats created"]
+  
+  C -->|"5. subscribe()"| D
+  D -.->|"6. register_llm callback"| C
+  
+  C --> E["7. Agent constructed with registry"]
+  C --> F["8. Runtime constructed with registry"]
+  D --> G["9. AgentController constructed with stats"]
+  
+  H["10. Session sets retry listener"] -.->|"config"| C
+  
+  style A fill:#e1f5fe
+  style B fill:#e8f5e8
+  style C fill:#fff3e0
+  style D fill:#fce4ec
+  style E fill:#f3e5f5
+  style F fill:#f3e5f5
+  style G fill:#fce4ec
+  style H fill:#e1f5fe
+  
+  classDef initPhase fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+  classDef registryPhase fill:#fff3e0,stroke:#e65100,stroke-width:2px
+  classDef statsPhase fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+  classDef componentPhase fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+```
+
+### 2. Core classes and relationships
 
 ```mermaid
 classDiagram
-  direction LR
-
-  class OpenHandsConfig {
-    +get_llm_config(): LLMConfig
-    +get_llm_config_from_agent(agentId): LLMConfig
-  }
-
-  class LLMConfig {
-    model
-    api_key
-    base_url
-    ...
-  }
+  direction TB
 
   class LLMRegistry {
     -config: OpenHandsConfig
     -retry_listener: Callable
-    -cache: Map<string, LLM>
-    +get_llm(service_id, config?): LLM
-    +get_llm_from_agent_config(service_id, AgentConfig): LLM
-    +request_extraneous_completion(service_id, ...): string
+    -service_to_llm: Map~string,LLM~
+    +get_llm(service_id, config?) LLM
+    +subscribe(callback) void
+    +notify(event) void
   }
 
   class LLM {
     -service_id: string
     -config: LLMConfig
     -retry_listener: Callable
-    +completion(messages, stream)
+    +completion(messages, stream) Response
+  }
+
+  class ConversationStats {
+    -service_to_metrics: Map~string,Metrics~
+    +register_llm(event) void
+    +get_combined_metrics() Metrics
   }
 
   class Agent {
-    -config: AgentConfig
     -llm_registry: LLMRegistry
     -llm: LLM
   }
 
-  class LLMSummarizingCondenser { -llm: LLM }
-  class Runtime { -llm_registry: LLMRegistry }
-  class AgentController { -convo_stats: ConversationStats }
-  class ConversationStats { +record(tokens, cost, retries) }
-  class Session { +_notify_on_llm_retry(...) }
+  class Session {
+    -llm_registry: LLMRegistry
+    -convo_stats: ConversationStats
+    +_notify_on_llm_retry(retries, max) void
+  }
 
-  LLMRegistry --> LLM : creates/caches
-  Agent --> LLMRegistry : uses
-  Agent --> LLM : resolves ("agent")
-  LLMSummarizingCondenser --> LLMRegistry : uses
-  Runtime --> LLMRegistry : holds
-  AgentController --> ConversationStats : uses
-  LLM --> Session : retry_listener()
-  Session ..> LLMRegistry : sets registry.retry_listener
-  Session --> ConversationStats : update on retries/tokens
+  %% Creation relationships
+  LLMRegistry -->|"creates & caches"| LLM
+  
+  %% Usage relationships  
+  Agent -->|"requests LLM by service_id"| LLMRegistry
+  Agent -->|"uses for completions"| LLM
+  
+  %% Configuration relationships
+  Session -.->|"sets retry_listener"| LLMRegistry
+  
+  %% Event flow relationships
+  LLM -->|"calls on retry"| Session
+  LLMRegistry -->|"notifies on LLM creation"| ConversationStats
+  Session -->|"updates on retry/tokens"| ConversationStats
 ```
 
-### When a component requests an LLM and performs a completion
+### 3. Runtime flow: LLM request and completion
 
 ```mermaid
 sequenceDiagram
-  participant Service as Component/Service (service_id)
+  participant Service as Component<br/>(Agent/Condenser/etc)
   participant Registry as LLMRegistry
-  participant Config as OpenHandsConfig
-  participant LLM as LLM
+  participant LLM as LLM Instance
   participant Session as Session
   participant Stats as ConversationStats
+  participant UI as UI
 
-  Service->>Registry: get_llm(service_id, [config])
-  alt config omitted
-    Registry->>Config: resolve LLMConfig (agent/global)
+  Note over Service,UI: Normal LLM Request Flow
+  
+  Service->>+Registry: 1. get_llm(service_id, config?)
+  
+  alt LLM exists in cache
+    Registry-->>Service: return cached LLM
+  else LLM needs creation
+    Registry->>+LLM: 2. create LLM with retry_listener
+    Registry->>Stats: 3. notify(RegistryEvent)
+    Stats->>Stats: 4. register_llm() - track metrics
+    Registry-->>-Service: 5. return new LLM
   end
-  Registry->>LLM: construct if needed (attach retry_listener)
-  Registry-->>Service: return LLM instance
-
-  Service->>LLM: completion(messages, stream?)
-  loop on transient errors
-    LLM-->>Session: retry_listener(retry_ctx)
-    Session->>Stats: record retry event
-    Session->>UI: queue_status_message(type="llm-retry", details)
+  
+  Service->>+LLM: 6. completion(messages, stream?)
+  
+  loop on transient errors (rate limits, timeouts, etc)
+    LLM->>Session: 7. retry_listener(retries, max)
+    Session->>Stats: 8. record retry event  
+    Session->>UI: 9. queue_status_message("llm-retry")
+    Note over LLM: Wait and retry with backoff
   end
-  LLM-->>Service: response
-  Note over Registry,Stats: "Centralized accounting (tokens/cost) per service_id"
+  
+  LLM-->>-Service: 10. completion response
+  Note over Stats: Metrics automatically updated<br/>via LLM.metrics reference
 ```
 
-### ConversationStats lifecycle
+### 4. ConversationStats lifecycle
 
 ```mermaid
 flowchart TD
-  A[Session or CLI start] --> B[create registry and convo stats]
-  B -->|LLMRegistry| C[LLM Registry]
-  B -->|ConversationStats| D[Conversation Stats]
-  C --> E[Agent constructed]
-  C --> G[Runtime constructed]
-  D --> H[AgentController constructed with convo stats]
-  I[Session] --> J[Set retry listener on LLM Registry]
-
-  subgraph During_Conversation
-    K[Any component requests LLM] --> C
-    C --> L[LLM instance service id scoped]
-    L --> M[completion]
-    M -->|success| N[Conversation Stats add tokens cost]
-    M -->|retry| I
-    I --> D[Conversation Stats record retry and notify UI]
+  A["Session start"] --> B["ConversationStats created"]
+  B --> C["Subscribe to LLMRegistry events"]
+  
+  subgraph "Runtime Operations"
+    D["Component requests LLM"] --> E["LLMRegistry creates/returns LLM"]
+    E --> F["ConversationStats.register_llm() called"]
+    F --> G["Track LLM metrics reference"]
+    
+    H["LLM completion occurs"] --> I["Metrics updated automatically"]
+    I --> J["Retry events recorded via Session"]
   end
-
-  O[End and teardown] --> P[Conversation Stats finalize persist via FileStore]
-  D --> P
+  
+  C --> D
+  
+  K["Session end"] --> L["ConversationStats.save_metrics()"]
+  L --> M["Persist to FileStore"]
+  
+  style A fill:#e1f5fe
+  style B fill:#fce4ec
+  style C fill:#fce4ec
+  style K fill:#e1f5fe
+  style L fill:#fce4ec
+  style M fill:#e8f5e8
 ```
 
 ### Practical usage examples
