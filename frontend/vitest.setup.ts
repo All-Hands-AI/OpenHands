@@ -7,11 +7,13 @@ HTMLCanvasElement.prototype.getContext = vi.fn();
 HTMLElement.prototype.scrollTo = vi.fn();
 
 // Mock ResizeObserver for test environment
-global.ResizeObserver = vi.fn().mockImplementation(() => ({
-  observe: vi.fn(),
-  unobserve: vi.fn(),
-  disconnect: vi.fn(),
-}));
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+global.ResizeObserver = MockResizeObserver;
 
 // Mock the i18n provider
 vi.mock("react-i18next", async (importOriginal) => ({
