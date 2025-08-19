@@ -1204,7 +1204,6 @@ def test_gemini_medium_reasoning_effort_passes_through(mock_completion):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-@patch('openhands.llm.llm.litellm_completion')
 def test_opus_41_reasoning_pops_temperature_top_p(mock_completion):
     mock_completion.return_value = {
         'choices': [{'message': {'content': 'ok'}}],
