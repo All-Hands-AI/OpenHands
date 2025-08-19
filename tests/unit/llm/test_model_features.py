@@ -16,6 +16,8 @@ from openhands.llm.model_features import (
         ('litellm_proxy/gemini-2.5-pro', 'gemini-2.5-pro'),
         ('qwen3-coder-480b-a35b-instruct', 'qwen3-coder-480b-a35b-instruct'),
         ('gpt-5-preview', 'gpt-5-preview'),
+        ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', 'deepseek-r1-0528'),
+        ('openai/GLM-4.5-GGUF', 'glm-4.5'),
         ('', ''),
         (None, ''),  # type: ignore[arg-type]
     ],
@@ -34,10 +36,27 @@ def test_normalize_model_name(raw, expected):
         ('o1-2024-12-17', 'o1*', True),
         ('grok-4-0709', 'grok-4-0709', True),
         ('grok-4-0801', 'grok-4-0709', False),
-        ('unknown-model', 'gpt-5*', False),
     ],
 )
 def test_model_matches(name, pattern, expected):
+    assert model_matches(name, [pattern]) is expected
+
+
+@pytest.mark.parametrize(
+    'name,pattern,expected',
+    [
+        ('openai/gpt-4o', 'openai/gpt-4o*', True),
+        ('openrouter/gpt-4o', 'openai/gpt-4o*', False),
+        ('litellm_proxy/gpt-4o-mini', 'litellm_proxy/gpt-4o*', True),
+        (
+            'gpt-4o',
+            'openai/gpt-4o*',
+            False,
+        ),  # basename alone should not match provider-qualified
+        ('unknown-model', 'gpt-5*', False),
+    ],
+)
+def test_model_matches_provider_qualified(name, pattern, expected):
     assert model_matches(name, [pattern]) is expected
 
 
@@ -55,6 +74,10 @@ def test_model_matches(name, pattern, expected):
             ModelFeatures(True, False, True, True),
         ),
         ('gemini-2.5-pro', ModelFeatures(True, True, False, True)),
+        (
+            'openai/gpt-4o',
+            ModelFeatures(True, False, False, True),
+        ),  # provider-qualified still matches basename patterns
     ],
 )
 def test_get_features(model, expect):
@@ -93,7 +116,7 @@ def test_get_features(model, expect):
 )
 def test_function_calling_models(model):
     features = get_features(model)
-    assert features.function_calling is True
+    assert features.supports_function_calling is True
 
 
 @pytest.mark.parametrize(
@@ -111,7 +134,19 @@ def test_function_calling_models(model):
 )
 def test_reasoning_effort_models(model):
     features = get_features(model)
-    assert features.reasoning_effort is True
+    assert features.supports_reasoning_effort is True
+
+
+@pytest.mark.parametrize(
+    'model',
+    [
+        'deepseek/DeepSeek-R1-0528:671b-Q4_K_XL',
+        'DeepSeek-R1-0528',
+    ],
+)
+def test_deepseek_reasoning_effort_models(model):
+    features = get_features(model)
+    assert features.supports_reasoning_effort is True
 
 
 @pytest.mark.parametrize(
@@ -130,7 +165,7 @@ def test_reasoning_effort_models(model):
 )
 def test_prompt_cache_models(model):
     features = get_features(model)
-    assert features.prompt_cache is True
+    assert features.supports_prompt_cache is True
 
 
 @pytest.mark.parametrize(

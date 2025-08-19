@@ -12,30 +12,46 @@ def normalize_model_name(model: str) -> str:
     - Lowercase
     - Keep only the basename after the last '/'
       (handles prefixes like openrouter/, litellm_proxy/, anthropic/, etc.)
+    - Remove any variant suffix after ':' (e.g., ":671b-q4_k_xl")
+    - Drop a trailing "-gguf" suffix if present
     """
-    name = (model or '').strip().lower()
-    if '/' in name:
-        name = name.split('/')[-1]
+    raw = (model or '').strip().lower()
+    # Keep only the basename after the last '/'
+    name = raw.split('/')[-1] if '/' in raw else raw
+    # Remove anything after the first ':' (ollama-style variants)
+    if ':' in name:
+        name = name.split(':', 1)[0]
+    # Remove trailing -gguf suffix
+    if name.endswith('-gguf'):
+        name = name[: -len('-gguf')]
     return name
 
 
 def model_matches(model: str, patterns: list[str]) -> bool:
-    """Return True if the normalized model matches any of the glob patterns.
+    """Return True if the model matches any of the glob patterns.
 
-    Uses fnmatch for simple glob-style matching.
+    If a pattern contains a '/', it is treated as provider-qualified and matched
+    against the full, lowercased model string (including provider prefix).
+    Otherwise, it is matched against the normalized basename.
     """
+    raw = (model or '').strip().lower()
     name = normalize_model_name(model)
     for pat in patterns:
-        if fnmatch(name, pat):
-            return True
+        pat_l = pat.lower()
+        if '/' in pat_l:
+            if fnmatch(raw, pat_l):
+                return True
+        else:
+            if fnmatch(name, pat_l):
+                return True
     return False
 
 
 @dataclass(frozen=True)
 class ModelFeatures:
-    function_calling: bool
-    reasoning_effort: bool
-    prompt_cache: bool
+    supports_function_calling: bool
+    supports_reasoning_effort: bool
+    supports_prompt_cache: bool
     supports_stop_words: bool
 
 
@@ -75,6 +91,8 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'gemini-2.5-pro*',
     'gpt-5*',
     'claude-opus-4-1-20250805',
+    # DeepSeek reasoning family
+    'deepseek-r1-0528*',
 ]
 
 PROMPT_CACHE_PATTERNS: list[str] = [
@@ -98,13 +116,13 @@ SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
 
 
 def get_features(model: str) -> ModelFeatures:
-    function_calling = model_matches(model, FUNCTION_CALLING_PATTERNS)
-    reasoning_effort = model_matches(model, REASONING_EFFORT_PATTERNS)
-    prompt_cache = model_matches(model, PROMPT_CACHE_PATTERNS)
+    supports_function_calling = model_matches(model, FUNCTION_CALLING_PATTERNS)
+    supports_reasoning_effort = model_matches(model, REASONING_EFFORT_PATTERNS)
+    supports_prompt_cache = model_matches(model, PROMPT_CACHE_PATTERNS)
     supports_stop_words = not model_matches(model, SUPPORTS_STOP_WORDS_FALSE_PATTERNS)
     return ModelFeatures(
-        function_calling=function_calling,
-        reasoning_effort=reasoning_effort,
-        prompt_cache=prompt_cache,
+        supports_function_calling=supports_function_calling,
+        supports_reasoning_effort=supports_reasoning_effort,
+        supports_prompt_cache=supports_prompt_cache,
         supports_stop_words=supports_stop_words,
     )

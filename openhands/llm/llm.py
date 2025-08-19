@@ -132,7 +132,7 @@ class LLM(RetryMixin, DebugMixin):
             )
 
         features = get_features(self.config.model)
-        if features.reasoning_effort:
+        if features.supports_reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
@@ -486,7 +486,7 @@ class LLM(RetryMixin, DebugMixin):
         # Initialize function calling using centralized model features
         features = get_features(self.config.model)
         if self.config.native_tool_calling is None:
-            self._function_calling_active = features.function_calling
+            self._function_calling_active = features.supports_function_calling
         else:
             self._function_calling_active = self.config.native_tool_calling
 
@@ -524,7 +524,7 @@ class LLM(RetryMixin, DebugMixin):
         if not self.config.caching_prompt:
             return False
         # We don't need to look-up model_info, because only Anthropic models need explicit caching breakpoints
-        return get_features(self.config.model).prompt_cache
+        return get_features(self.config.model).supports_prompt_cache
 
     def is_function_calling_active(self) -> bool:
         """Returns whether function calling is supported and enabled for this LLM instance.

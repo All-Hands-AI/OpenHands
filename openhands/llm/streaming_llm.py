@@ -65,7 +65,7 @@ class StreamingLLM(AsyncLLM):
                 )
 
             # Set reasoning effort for models that support it
-            if get_features(self.config.model).reasoning_effort:
+            if get_features(self.config.model).supports_reasoning_effort:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
 
             self.log_prompt(messages)
