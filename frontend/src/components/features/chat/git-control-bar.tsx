@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { GitControlBarRepoButton } from "./git-control-bar-repo-button";
 import { GitControlBarBranchButton } from "./git-control-bar-branch-button";
@@ -45,40 +44,6 @@ export function GitControlBar({
 
   const hasRepository = !!selectedRepository;
 
-  const tooltipMessage = useMemo(() => {
-    if (!hasRepository) {
-      return t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT);
-    }
-
-    if (!isWaitingForUserInput) {
-      return t(
-        I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT_WAITING_FOR_USER_INPUT,
-      );
-    }
-
-    if (!hasSubstantiveAgentActions) {
-      return t(
-        I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT_HAS_SUBSTANTIVE_AGENT_ACTIONS,
-      );
-    }
-
-    if (optimisticUserMessage) {
-      return t(
-        I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT_OPTIMISTIC_USER_MESSAGE,
-      );
-    }
-
-    return "";
-  }, [
-    hasRepository,
-    t,
-    isWaitingForUserInput,
-    hasSubstantiveAgentActions,
-    optimisticUserMessage,
-  ]);
-
-  const shouldShowTooltipForGitActions = !!tooltipMessage;
-
   return (
     <div className="flex flex-row items-center">
       {/* Left Arrow */}
@@ -121,9 +86,9 @@ export function GitControlBar({
         </GitControlBarTooltipWrapper>
 
         <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
+          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
           testId="git-control-bar-pull-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
+          shouldShowTooltip={!hasRepository}
         >
           <GitControlBarPullButton
             onSuggestionsClick={onSuggestionsClick}
@@ -132,9 +97,9 @@ export function GitControlBar({
         </GitControlBarTooltipWrapper>
 
         <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
+          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
           testId="git-control-bar-push-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
+          shouldShowTooltip={!hasRepository}
         >
           <GitControlBarPushButton
             onSuggestionsClick={onSuggestionsClick}
@@ -145,9 +110,9 @@ export function GitControlBar({
         </GitControlBarTooltipWrapper>
 
         <GitControlBarTooltipWrapper
-          tooltipMessage={tooltipMessage}
+          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
           testId="git-control-bar-pr-button-tooltip"
-          shouldShowTooltip={shouldShowTooltipForGitActions}
+          shouldShowTooltip={!hasRepository}
         >
           <GitControlBarPrButton
             onSuggestionsClick={onSuggestionsClick}

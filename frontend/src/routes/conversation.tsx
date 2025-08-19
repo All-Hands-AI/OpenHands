@@ -1,13 +1,12 @@
 import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
-import { RootState } from "#/store";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -39,10 +38,6 @@ function AppContent() {
   const { providers } = useUserProviders();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-
-  const isRightPanelShown = useSelector(
-    (state: RootState) => state.conversation.isRightPanelShown,
-  );
 
   // Fetch batch feedback data when conversation is loaded
   useBatchFeedback();
@@ -88,12 +83,8 @@ function AppContent() {
             <div data-testid="app-route" className="flex flex-col h-full gap-3">
               <div className="flex items-center justify-between gap-4.5">
                 <ConversationName />
-                {isRightPanelShown && (
-                  <>
-                    <ConversationTabs />
-                    <div className="h-full w-0.25 bg-[#525252]" />
-                  </>
-                )}
+                <ConversationTabs />
+                <div className="h-full w-0.25 bg-[#525252]" />
                 <ChatActions />
               </div>
 
