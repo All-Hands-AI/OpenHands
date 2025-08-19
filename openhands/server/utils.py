@@ -13,6 +13,50 @@ from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 
 
+def validate_conversation_id(conversation_id: str) -> str:
+    """
+    Validate conversation ID format and length.
+
+    Args:
+        conversation_id: The conversation ID to validate
+
+    Returns:
+        The validated conversation ID
+
+    Raises:
+        HTTPException: If the conversation ID is invalid
+    """
+    # Check length - UUID hex is 32 characters, allow some flexibility but not excessive
+    if len(conversation_id) > 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Conversation ID is too long',
+        )
+
+    # Check for null bytes and other problematic characters
+    if '\x00' in conversation_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Conversation ID contains invalid characters',
+        )
+
+    # Check for path traversal attempts
+    if '..' in conversation_id or '/' in conversation_id or '\\' in conversation_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Conversation ID contains invalid path characters',
+        )
+
+    # Check for control characters and newlines
+    if any(ord(c) < 32 for c in conversation_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Conversation ID contains control characters',
+        )
+
+    return conversation_id
+
+
 async def get_conversation_store(request: Request) -> ConversationStore | None:
     conversation_store: ConversationStore | None = getattr(
         request.state, 'conversation_store', None
@@ -39,6 +83,8 @@ async def get_conversation_metadata(
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationMetadata:
     """Get conversation metadata and validate user access without requiring an active conversation."""
+    # Validate conversation ID format and length
+    conversation_id = validate_conversation_id(conversation_id)
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         return metadata
@@ -53,6 +99,8 @@ async def get_conversation(
     conversation_id: str, user_id: str | None = Depends(get_user_id)
 ):
     """Grabs conversation id set by middleware. Adds the conversation_id to the openapi schema."""
+    # Validate conversation ID format and length
+    conversation_id = validate_conversation_id(conversation_id)
     conversation = await conversation_manager.attach_to_conversation(
         conversation_id, user_id
     )
