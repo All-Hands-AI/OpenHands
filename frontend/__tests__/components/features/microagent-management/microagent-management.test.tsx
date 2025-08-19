@@ -444,12 +444,17 @@ describe("MicroagentManagement", () => {
     expect(filePath2).toBeInTheDocument();
   });
 
-  it("should display add microagent button in repository accordion", async () => {
+  it("should render add microagent button", async () => {
     renderMicroagentManagement();
 
-    // Wait for repositories to be loaded
+    // Wait for repositories to be loaded and processed
     await waitFor(() => {
       expect(mockUseUserRepositories).toHaveBeenCalled();
+    });
+
+    // Wait for repositories to be displayed in the accordion
+    await waitFor(() => {
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
     });
 
     // Check that add microagent buttons are present
@@ -457,13 +462,18 @@ describe("MicroagentManagement", () => {
     expect(addButtons.length).toBeGreaterThan(0);
   });
 
-  it("should open add microagent modal when add button is clicked", async () => {
+  it("should open modal when add button is clicked", async () => {
     const user = userEvent.setup();
     renderMicroagentManagement();
 
-    // Wait for repositories to be loaded
+    // Wait for repositories to be loaded and processed
     await waitFor(() => {
       expect(mockUseUserRepositories).toHaveBeenCalled();
+    });
+
+    // Wait for repositories to be displayed in the accordion
+    await waitFor(() => {
+      expect(screen.getByTestId("repository-name-tooltip")).toBeInTheDocument();
     });
 
     // Find and click the first add microagent button
@@ -1292,9 +1302,16 @@ describe("MicroagentManagement", () => {
     it("should render add microagent button", async () => {
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Check that add microagent buttons are present
@@ -1306,9 +1323,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1361,9 +1385,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1385,9 +1416,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1408,9 +1446,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1441,9 +1486,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1468,9 +1520,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
@@ -1494,9 +1553,16 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
-      // Wait for repositories to be loaded
+      // Wait for repositories to be loaded and processed
       await waitFor(() => {
         expect(mockUseUserRepositories).toHaveBeenCalled();
+      });
+
+      // Wait for repositories to be displayed in the accordion
+      await waitFor(() => {
+        expect(
+          screen.getByTestId("repository-name-tooltip"),
+        ).toBeInTheDocument();
       });
 
       // Find and click the first add microagent button
