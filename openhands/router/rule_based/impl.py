@@ -1,9 +1,10 @@
-from openhands.core.config import ModelRoutingConfig
+from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.router.base import ROUTER_REGISTRY, BaseRouter
 
 
@@ -13,10 +14,10 @@ class MultimodalRouter(BaseRouter):
 
     def __init__(
         self,
-        llm: LLM,
-        model_routing_config: ModelRoutingConfig,
+        llm_registry: LLMRegistry,
+        agent_config: AgentConfig,
     ):
-        super().__init__(llm, model_routing_config)
+        super().__init__(agent_config, llm_registry)
 
         self._validate_model_routing_config(self.llms_for_routing)
 
@@ -62,7 +63,7 @@ class MultimodalRouter(BaseRouter):
     def _validate_model_routing_config(self, llms_for_routing: dict[str, LLM]):
         if self.SECONDARY_MODEL_CONFIG_NAME not in llms_for_routing:
             raise ValueError(
-                f'Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found'
+                f'Secondary LLM config {self.SECONDARY_MODEL_CONFIG_NAME} not found.'
             )
 
 

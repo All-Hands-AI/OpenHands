@@ -95,8 +95,8 @@ class CodeActAgent(Agent):
 
         # Initialize the router
         self.router = BaseRouter.from_config(
-            llm=self.llm,
-            model_routing_config=self.config.model_routing,
+            llm_registry=llm_registry,
+            agent_config=self.config,
         )
 
     @property

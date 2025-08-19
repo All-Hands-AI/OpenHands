@@ -813,40 +813,10 @@ class AgentController:
             action = self._replay_manager.step()
         else:
             try:
-                # Take snapshots of all LLM metrics before the step
-                llm_metrics_before = {}
-                if hasattr(self.agent, 'router'):
-                    # Primary LLM
-                    llm_metrics_before['primary'] = self.agent.router.llm.metrics.copy()
-                    # All LLMs for routing
-                    for llm_name, llm in self.agent.router.llms_for_routing.items():
-                        llm_metrics_before[llm_name] = llm.metrics.copy()
-
                 action = self.agent.step(self.state)
                 if action is None:
                     raise LLMNoActionError('No action was returned')
                 action._source = EventSource.AGENT  # type: ignore [attr-defined]
-
-                # Identify which LLM was used and merge its incremental metrics
-                if llm_metrics_before and hasattr(self.agent, 'router'):
-                    # The active LLM after the step is the one that was used
-                    used_llm = self.agent.router.active_llm
-
-                    # Find the corresponding baseline metrics
-                    baseline_metrics = None
-                    if used_llm == self.agent.router.llm:
-                        # Primary LLM was used
-                        baseline_metrics = llm_metrics_before['primary']
-                    else:
-                        # A routing LLM was used - find which one
-                        for llm_name, llm in self.agent.router.llms_for_routing.items():
-                            if llm == used_llm:
-                                baseline_metrics = llm_metrics_before[llm_name]
-                                break
-
-                    if baseline_metrics is not None:
-                        incremental_metrics = used_llm.metrics.diff(baseline_metrics)
-                        self.state_tracker.merge_metrics(incremental_metrics)
             except (
                 LLMMalformedActionError,
                 LLMNoActionError,
