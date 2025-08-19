@@ -3,11 +3,13 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.metrics import Metrics
+from openhands.llm.model_features import get_features
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -47,78 +49,6 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     LLMNoResponseError,
 )
 
-# cache prompt supporting models
-# remove this when we gemini and deepseek are supported
-CACHE_PROMPT_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3.7-sonnet',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-haiku-20241022',
-    'claude-3-haiku-20240307',
-    'claude-3-opus-20240229',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    "us.anthropic.claude-3-7-sonnet-20250219-v1:0",
-]
-
-# function calling supporting models
-FUNCTION_CALLING_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'claude-3.5-haiku',
-    'claude-3-5-haiku-20241022',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    'gpt-4o-mini',
-    'gpt-4o',
-    'o1-2024-12-17',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o3',
-    'o3-2025-04-16',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-pro',
-    'gpt-4.1',
-    'kimi-k2-0711-preview',
-    'kimi-k2-instruct',
-    'kimi-k2-0905-preview',
-    'Qwen3-Coder-480B-A35B-Instruct',
-    'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
-]
-
-REASONING_EFFORT_SUPPORTED_MODELS = [
-    'o1-2024-12-17',
-    'o1',
-    'o3',
-    'o3-2025-04-16',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gpt-5',
-    'gpt-5-mini',
-]
-
-MODELS_WITHOUT_STOP_WORDS = [
-    'o1-mini',
-    'o1-preview',
-    'o1',
-    'o1-2024-12-17',
-    'xai/grok-4-0709',
-    'openai/gpt-5',
-    'openai/gpt-5-mini',
-]
-
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -149,6 +79,7 @@ class LLM(RetryMixin, DebugMixin):
         self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
+        self._function_calling_active: bool = False
         self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
@@ -197,10 +128,8 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        if (
-            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
-        ):
+        features = get_features(self.config.model)
+        if features.supports_reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
@@ -216,7 +145,12 @@ class LLM(RetryMixin, DebugMixin):
                 logger.debug(
                     f'Gemini model {self.config.model} with reasoning_effort {self.config.reasoning_effort} mapped to thinking {kwargs.get("thinking")}'
                 )
-
+            elif any(
+                k in self.config.model
+                for k in ('claude-sonnet-4-5', 'claude-haiku-4-5-20251001')
+            ):
+                # don't send reasoning_effort to specific Claude Sonnet/Haiku 4.5 variants
+                kwargs.pop('reasoning_effort', None)
             else:
                 kwargs['reasoning_effort'] = self.config.reasoning_effort
             kwargs.pop(
@@ -233,6 +167,31 @@ class LLM(RetryMixin, DebugMixin):
             kwargs['safety_settings'] = self.config.safety_settings
         elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
             kwargs['safety_settings'] = self.config.safety_settings
+
+        # support AWS Bedrock provider
+        kwargs['aws_region_name'] = self.config.aws_region_name
+        if self.config.aws_access_key_id:
+            kwargs['aws_access_key_id'] = (
+                self.config.aws_access_key_id.get_secret_value()
+            )
+        if self.config.aws_secret_access_key:
+            kwargs['aws_secret_access_key'] = (
+                self.config.aws_secret_access_key.get_secret_value()
+            )
+
+        # Explicitly disable Anthropic extended thinking for Opus 4.1 to avoid
+        # requiring 'thinking' content blocks. See issue #10510.
+        if 'claude-opus-4-1' in self.config.model.lower():
+            kwargs['thinking'] = {'type': 'disabled'}
+
+        # Anthropic constraint: Opus models cannot accept both temperature and top_p
+        # Prefer temperature (drop top_p) if both are specified.
+        _model_lower = self.config.model.lower()
+        # Limit to Opus 4.1 specifically to avoid changing behavior of other Anthropic models
+        if ('claude-opus-4-1' in _model_lower) and (
+            'temperature' in kwargs and 'top_p' in kwargs
+        ):
+            kwargs.pop('top_p', None)
 
         self._completion = partial(
             litellm_completion,
@@ -263,7 +222,9 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
-            messages_kwarg: list[dict[str, Any]] | dict[str, Any] = []
+            messages_kwarg: (
+                dict[str, Any] | Message | list[dict[str, Any]] | list[Message]
+            ) = []
             mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
@@ -282,9 +243,19 @@ class LLM(RetryMixin, DebugMixin):
                 messages_kwarg = kwargs['messages']
 
             # ensure we work with a list of messages
-            messages: list[dict[str, Any]] = (
+            messages_list = (
                 messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
             )
+            # Format Message objects to dict format if needed
+            messages: list[dict] = []
+            if messages_list and isinstance(messages_list[0], Message):
+                messages = self.format_messages_for_llm(
+                    cast(list[Message], messages_list)
+                )
+            else:
+                messages = cast(list[dict[str, Any]], messages_list)
+
+            kwargs['messages'] = messages
 
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
@@ -305,8 +276,11 @@ class LLM(RetryMixin, DebugMixin):
                 )
                 kwargs['messages'] = messages
 
-                # add stop words if the model supports it
-                if self.config.model not in MODELS_WITHOUT_STOP_WORDS:
+                # add stop words if the model supports it and stop words are not disabled
+                if (
+                    get_features(self.config.model).supports_stop_words
+                    and not self.config.disable_stop_word
+                ):
                     kwargs['stop'] = STOP_WORDS
 
                 mock_fncall_tools = kwargs.pop('tools')
@@ -531,11 +505,15 @@ class LLM(RetryMixin, DebugMixin):
 
         # Set max_output_tokens from model info if not explicitly set
         if self.config.max_output_tokens is None:
-            # Special case for Claude 3.7 Sonnet models
-            if any(
-                model in self.config.model
-                for model in ['claude-3-7-sonnet', 'claude-3.7-sonnet']
-            ):
+            # Special case for Claude Sonnet models
+            sonnet_models = [
+                'claude-3-7-sonnet',
+                'claude-3.7-sonnet',
+                'claude-sonnet-4',
+                'claude-sonnet-4-5-20250929',
+                'claude-haiku-4-5-20251001',
+            ]
+            if any(model in self.config.model for model in sonnet_models):
                 self.config.max_output_tokens = 64000  # litellm set max to 128k, but that requires a header to be set
             # Try to get from model info
             elif self.model_info is not None:
@@ -549,17 +527,10 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        # Initialize function calling capability
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
-
-        # Handle native_tool_calling user-defined configuration
+        # Initialize function calling using centralized model features
+        features = get_features(self.config.model)
         if self.config.native_tool_calling is None:
-            self._function_calling_active = model_name_supported
+            self._function_calling_active = features.supports_function_calling
         else:
             self._function_calling_active = self.config.native_tool_calling
 
@@ -574,6 +545,16 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             bool: True if model is vision capable. Return False if model not supported by litellm.
         """
+
+        # Allow manual override via environment variable
+        if os.getenv('OPENHANDS_FORCE_VISION', '').lower() in (
+            '1',
+            'true',
+            'yes',
+            'on',
+        ):
+            return True
+
         # litellm.supports_vision currently returns False for 'openai/gpt-...' or 'anthropic/claude-...' (with prefixes)
         # but model_info will have the correct value for some reason.
         # we can go with it, but we will need to keep an eye if model_info is correct for Vertex or other providers
@@ -594,14 +575,10 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
-            )
-            # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
-        )
+        if not self.config.caching_prompt:
+            return False
+        # We don't need to look-up model_info, because only Anthropic models need explicit caching breakpoints
+        return get_features(self.config.model).supports_prompt_cache
 
     def is_function_calling_active(self) -> bool:
         """Returns whether function calling is supported and enabled for this LLM instance.
@@ -841,6 +818,15 @@ class LLM(RetryMixin, DebugMixin):
             if 'deepseek' in self.config.model:
                 message.force_string_serializer = True
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
+                message.force_string_serializer = True
+            if any(
+                k in self.config.model
+                for k in (
+                    'openrouter/anthropic/claude-sonnet-4',
+                    'openrouter/anthropic/claude-sonnet-4-5-20250929',
+                    'openrouter/anthropic/claude-haiku-4-5-20251001',
+                )
+            ):
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

@@ -705,7 +705,7 @@ def filter_dataset(dataset: pd.DataFrame, filter_column: str) -> pd.DataFrame:
     return dataset
 
 
-def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4):
+def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4, num_to_skip=8):
     """Divide CPUs among workers, with better error handling for multiprocessing."""
     try:
         current_cpus = list(os.sched_getaffinity(0))
@@ -718,10 +718,19 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4):
     if num_workers <= 0:
         raise ValueError("Number of workers must be greater than 0")
 
+    # Chec that num worers and num_cpus_per_worker fit into available CPUs
+    total_cpus_needed = num_workers * num_cpus_per_worker + num_to_skip
+    if total_cpus_needed > num_cpus:
+        raise ValueError(
+            f"Not enough CPUs available. Requested {total_cpus_needed} "
+            f"CPUs (num_workers={num_workers}, num_cpus_per_worker={num_cpus_per_worker}, "
+            f"num_to_skip={num_to_skip}), but only {num_cpus} CPUs are available."
+        )
 
-    # Divide this into groups.
+    # Divide this into groups, skipping the first `num_to_skip` CPUs.
+    available_cpus = current_cpus[num_to_skip:]
     cpu_groups = [
-        current_cpus[i * num_cpus_per_worker : (i + 1) * num_cpus_per_worker]
+        available_cpus[i * num_cpus_per_worker : (i + 1) * num_cpus_per_worker]
         for i in range(num_workers)
     ]
     print(f"Divided {num_cpus} CPUs into {num_workers} groups, each with {num_cpus_per_worker} CPUs.")
@@ -732,7 +741,7 @@ def divide_cpus_among_workers(num_workers, num_cpus_per_worker=4):
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
