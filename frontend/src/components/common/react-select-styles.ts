@@ -186,7 +186,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     backgroundColor: "#454545",
     borderRadius: "0.25rem",
     boxShadow: "none",
-    padding: "0 0.75rem",
+    padding: "0 0.5rem 0 0.75rem",
     height: "42px",
     "> div:first-child": {
       transform: "translateY(-1px)",
@@ -216,7 +216,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     "& .repo-branch-dropdown__indicators": {
       transform: "translateY(-1px)",
       height: "42px",
-      padding: "0 0.5rem",
+      padding: "0",
       "& > div": {
         padding: "0",
       },
