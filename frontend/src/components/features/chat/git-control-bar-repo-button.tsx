@@ -29,7 +29,7 @@ export function GitControlBarRepoButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "group flex flex-row items-center justify-between pl-2.5 pr-2.5 py-1 rounded-[100px] gap-2",
+        "group flex flex-row items-center justify-between gap-2 pl-2.5 pr-2.5 py-1 rounded-[100px] w-fit min-w-fit max-w-none flex-shrink-0",
         hasRepository
           ? "bg-[#25272D] hover:bg-[#525662] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",
