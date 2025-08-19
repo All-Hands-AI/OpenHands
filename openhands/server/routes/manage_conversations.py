@@ -62,8 +62,8 @@ from openhands.server.user_auth import (
     get_user_settings_store,
 )
 from openhands.server.user_auth.user_auth import AuthType
+from openhands.server.utils import ValidatedConversationId, get_conversation_store
 from openhands.server.utils import get_conversation as get_conversation_metadata
-from openhands.server.utils import get_conversation_store, validate_conversation_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -297,11 +297,9 @@ async def search_conversations(
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     try:
         metadata = await conversation_store.get_metadata(conversation_id)
         num_connections = len(
@@ -321,11 +319,9 @@ async def get_conversation(
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
     try:
         await conversation_store.get_metadata(conversation_id)
@@ -342,13 +338,11 @@ async def delete_conversation(
 
 @app.get('/conversations/{conversation_id}/remember-prompt')
 async def get_prompt(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     event_id: int,
     user_settings: SettingsStore = Depends(get_user_settings_store),
     metadata: ConversationMetadata = Depends(get_conversation_metadata),
 ):
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     # get event store for the conversation
     event_store = EventStore(
         sid=conversation_id, file_store=file_store, user_id=metadata.user_id
@@ -446,14 +440,12 @@ async def _get_conversation_info(
 
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     providers_set: ProvidersSetModel,
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationResponse:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     """Start an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's maybe_start_agent_loop method
@@ -509,11 +501,9 @@ async def start_conversation(
 
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     user_id: str = Depends(get_user_id),
 ) -> ConversationResponse:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     """Stop an agent loop for a conversation.
 
     This endpoint calls the conversation_manager's close_session method
@@ -616,13 +606,11 @@ class UpdateConversationRequest(BaseModel):
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str,
+    conversation_id: ValidatedConversationId,
     data: UpdateConversationRequest,
     user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> bool:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     """Update conversation metadata.
 
     This endpoint allows updating conversation details like title.
@@ -726,10 +714,8 @@ async def update_conversation(
 
 @app.post('/conversations/{conversation_id}/exp-config')
 def add_experiment_config_for_conversation(
-    conversation_id: str, exp_config: ExperimentConfig
+    conversation_id: ValidatedConversationId, exp_config: ExperimentConfig
 ) -> bool:
-    # Validate conversation ID format and length
-    conversation_id = validate_conversation_id(conversation_id)
     exp_config_filepath = get_experiment_config_filename(conversation_id)
     exists = False
     try:
