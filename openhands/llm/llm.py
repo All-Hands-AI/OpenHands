@@ -8,6 +8,7 @@ from typing import Any, Callable
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.metrics import Metrics
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -34,7 +35,6 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
-from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -94,6 +94,7 @@ FUNCTION_CALLING_SUPPORTED_MODELS = [
     'kimi-k2-instruct',
     'Qwen3-Coder-480B-A35B-Instruct',
     'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
+    'gpt-5',
     'gpt-5-2025-08-07',
 ]
 
@@ -108,7 +109,9 @@ REASONING_EFFORT_SUPPORTED_MODELS = [
     'o4-mini-2025-04-16',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
+    'gpt-5',
     'gpt-5-2025-08-07',
+    'claude-opus-4-1-20250805',  # we need to remove top_p for opus 4.1
 ]
 
 MODELS_WITHOUT_STOP_WORDS = [
@@ -130,6 +133,7 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
+        service_id: str,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
@@ -142,11 +146,12 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
+        self.cost_metric_supported: bool = True
+        self.config: LLMConfig = copy.deepcopy(config)
+        self.service_id = service_id
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
-        self.cost_metric_supported: bool = True
-        self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
         self.retry_listener = retry_listener
@@ -405,8 +410,7 @@ class LLM(RetryMixin, DebugMixin):
                 assert self.config.log_completions_folder is not None
                 log_file = os.path.join(
                     self.config.log_completions_folder,
-                    # use the metric model name (for draft editor)
-                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    f'{self.config.model.replace("/", "__")}-{time.time()}.json',
                 )
 
                 # set up the dict to be logged
@@ -845,6 +849,8 @@ class LLM(RetryMixin, DebugMixin):
             if 'deepseek' in self.config.model:
                 message.force_string_serializer = True
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
+                message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

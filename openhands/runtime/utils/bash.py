@@ -312,7 +312,11 @@ class BashSession:
         return command_output.rstrip()
 
     def _handle_completed_command(
-        self, command: str, pane_content: str, ps1_matches: list[re.Match]
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        hidden: bool,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -359,6 +363,7 @@ class BashSession:
             content=command_output,
             command=command,
             metadata=metadata,
+            hidden=hidden,
         )
 
     def _handle_nochange_timeout_command(
@@ -549,11 +554,9 @@ class BashSession:
             metadata = CmdOutputMetadata()  # No metadata available
             metadata.suffix = (
                 f'\n[Your command "{command}" is NOT executed. '
-                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+                'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
                 'By setting `is_input` to `true`, you can interact with the current process: '
-                "You may wait longer to see additional output of the previous command by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE}]'
             )
             logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
@@ -566,6 +569,7 @@ class BashSession:
                 command=command,
                 content=command_output,
                 metadata=metadata,
+                hidden=getattr(action, 'hidden', False),
             )
 
         # Send actual command/inputs to the pane
@@ -616,6 +620,7 @@ class BashSession:
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
+                    hidden=getattr(action, 'hidden', False),
                 )
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.
