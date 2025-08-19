@@ -1,7 +1,6 @@
 import uuid
-from typing import Annotated
 
-from fastapi import Depends, HTTPException, Path, Request, status
+from fastapi import Depends, HTTPException, Request, status
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.shared import (
@@ -58,19 +57,6 @@ def validate_conversation_id(conversation_id: str) -> str:
     return conversation_id
 
 
-# Custom type annotation for validated conversation IDs
-# This combines FastAPI's Path parameter with automatic validation
-ValidatedConversationId = Annotated[
-    str,
-    Path(
-        ...,
-        description='Conversation ID (max 100 characters, alphanumeric and hyphens only)',
-        max_length=100,
-    ),
-    Depends(validate_conversation_id),
-]
-
-
 async def get_conversation_store(request: Request) -> ConversationStore | None:
     conversation_store: ConversationStore | None = getattr(
         request.state, 'conversation_store', None
@@ -93,7 +79,7 @@ async def generate_unique_conversation_id(
 
 
 async def get_conversation_metadata(
-    conversation_id: ValidatedConversationId,
+    conversation_id: str,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationMetadata:
     """Get conversation metadata and validate user access without requiring an active conversation."""
@@ -108,7 +94,7 @@ async def get_conversation_metadata(
 
 
 async def get_conversation(
-    conversation_id: ValidatedConversationId, user_id: str | None = Depends(get_user_id)
+    conversation_id: str, user_id: str | None = Depends(get_user_id)
 ):
     """Grabs conversation id set by middleware. Adds the conversation_id to the openapi schema."""
     conversation = await conversation_manager.attach_to_conversation(
