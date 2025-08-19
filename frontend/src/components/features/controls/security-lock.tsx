@@ -1,16 +1,11 @@
 import { IoLockClosed } from "react-icons/io5";
 import { Tooltip } from "@heroui/react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { I18nKey } from "#/i18n/declaration";
 
 export function SecurityLock() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-
-  const handleClick = () => {
-    navigate("/settings");
-  };
 
   return (
     <Tooltip
@@ -21,20 +16,14 @@ export function SecurityLock() {
       }
       placement="top"
     >
-      <div
+      <Link
+        to="/settings"
         className="cursor-pointer hover:opacity-80 transition-all"
         style={{ marginRight: "8px" }}
-        onClick={handleClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            handleClick();
-          }
-        }}
+        aria-label={t(I18nKey.SETTINGS$TITLE)}
       >
         <IoLockClosed size={20} />
-      </div>
+      </Link>
     </Tooltip>
   );
 }
