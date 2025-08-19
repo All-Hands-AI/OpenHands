@@ -244,7 +244,6 @@ class AgentSession:
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
 
-
     def _run_replay(
         self,
         initial_message: MessageAction | None,
