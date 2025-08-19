@@ -193,6 +193,19 @@ class Runtime(FileEditRuntimeMixin):
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
 
+        # Initialize security analyzer
+        self.security_analyzer = None
+        if self.config.security.security_analyzer:
+            from openhands.security import SecurityAnalyzer, options
+
+            analyzer_cls = options.SecurityAnalyzers.get(
+                self.config.security.security_analyzer, SecurityAnalyzer
+            )
+            self.security_analyzer = analyzer_cls()
+            logger.debug(
+                f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
+            )
+
     @property
     def runtime_initialized(self) -> bool:
         return self._runtime_initialized

@@ -29,7 +29,6 @@ from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
-from openhands.security import SecurityAnalyzer, options
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
@@ -54,7 +53,7 @@ class AgentSession:
     file_store: FileStore
     controller: AgentController | None = None
     runtime: Runtime | None = None
-    security_analyzer: SecurityAnalyzer | None = None
+
     memory: Memory | None = None
     _starting: bool = False
     _started_at: float = 0
@@ -133,8 +132,6 @@ class AgentSession:
             custom_secrets=custom_secrets if custom_secrets else {}  # type: ignore[arg-type]
         )
         try:
-            if config.security.security_analyzer:
-                self._create_security_analyzer(config.security.security_analyzer)
             runtime_connected = await self._create_runtime(
                 runtime_name=runtime_name,
                 config=config,
@@ -246,8 +243,7 @@ class AgentSession:
             await self.controller.close()
         if self.runtime is not None:
             EXECUTOR.submit(self.runtime.close)
-        if self.security_analyzer is not None:
-            await self.security_analyzer.close()
+
 
     def _run_replay(
         self,
@@ -278,20 +274,6 @@ class AgentSession:
         )
         assert isinstance(replay_events[0], MessageAction)
         return replay_events[0]
-
-    def _create_security_analyzer(self, security_analyzer: str) -> None:
-        """Creates a SecurityAnalyzer instance that will be used to analyze the agent actions
-
-        Parameters:
-        - security_analyzer: The name of the security analyzer to use
-        """
-        self.logger.debug(f'Using security analyzer: {security_analyzer}')
-        self.security_analyzer = options.SecurityAnalyzers.get(
-            security_analyzer, SecurityAnalyzer
-        )()
-        self.logger.debug(
-            f'Using security analyzer: {self.security_analyzer.__class__.__name__}'
-        )
 
     def override_provider_tokens_with_custom_secret(
         self,
@@ -464,7 +446,7 @@ class AgentSession:
             status_callback=self._status_callback,
             initial_state=initial_state,
             replay_events=replay_events,
-            security_analyzer=self.security_analyzer,
+            security_analyzer=self.runtime.security_analyzer if self.runtime else None,
         )
 
         return (controller, initial_state is not None)

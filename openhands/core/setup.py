@@ -26,7 +26,6 @@ from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.security import SecurityAnalyzer, options
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
@@ -63,17 +62,6 @@ def create_runtime(
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(session_id, file_store)
 
-    # set up the security analyzer
-    security_analyzer = None
-    if config.security.security_analyzer:
-        analyzer_cls = options.SecurityAnalyzers.get(
-            config.security.security_analyzer, SecurityAnalyzer
-        )
-        security_analyzer = analyzer_cls()
-        logger.debug(
-            f'Security analyzer {analyzer_cls.__name__} initialized for event stream {session_id}'
-        )
-
     # agent class
     if agent:
         agent_cls = type(agent)
@@ -92,9 +80,6 @@ def create_runtime(
         llm_registry=llm_registry or LLMRegistry(config),
         git_provider_tokens=git_provider_tokens,
     )
-
-    # Set the security analyzer on the runtime so AgentController can access it
-    runtime.security_analyzer = security_analyzer
 
     # Log the plugins that have been registered with the runtime for debugging purposes
     logger.debug(
