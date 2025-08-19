@@ -15,7 +15,7 @@ from openhands.llm.model_features import (
         ('anthropic/claude-3-7-sonnet', 'claude-3-7-sonnet'),
         ('litellm_proxy/gemini-2.5-pro', 'gemini-2.5-pro'),
         ('qwen3-coder-480b-a35b-instruct', 'qwen3-coder-480b-a35b-instruct'),
-        ('gpt-5', 'gpt-5-preview'),
+        ('gpt-5', 'gpt-5'),
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', 'deepseek-r1-0528'),
         ('openai/GLM-4.5-GGUF', 'glm-4.5'),
         ('openrouter/gpt-4o-mini', 'gpt-4o-mini'),
