@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
-import { SuggestedTaskGroup } from "#/components/features/home/tasks/task.types";
+import { SuggestedTaskGroup } from "#/utils/types";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import { SuggestedTask } from "./task.types";
+import { SuggestedTask } from "#/utils/types";
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { TaskIssueNumber } from "./task-issue-number";

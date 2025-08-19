@@ -1,8 +1,5 @@
 import { expect, test } from "vitest";
-import {
-  SuggestedTask,
-  SuggestedTaskGroup,
-} from "#/components/features/home/tasks/task.types";
+import { SuggestedTask, SuggestedTaskGroup } from "#/utils/types";
 import { groupSuggestedTasks } from "#/utils/group-suggested-tasks";
 
 const rawTasks: SuggestedTask[] = [
