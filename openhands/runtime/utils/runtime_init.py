@@ -51,7 +51,9 @@ def init_user_and_working_directory(
     except Exception:
         user_id = 1000
     if username != 'root' and user_id == 0:
-        logger.warning('Received UID 0 for non-root user; overriding to 1000 to avoid conflict with root')
+        logger.warning(
+            'Received UID 0 for non-root user; overriding to 1000 to avoid conflict with root'
+        )
         user_id = 1000
 
     # if username is CURRENT_USER, then we don't need to do anything
@@ -61,7 +63,9 @@ def init_user_and_working_directory(
 
     # First create the working directory
     logger.debug(f'Client working directory: {initial_cwd}')
-    output = subprocess.run(f'umask 002; mkdir -p {initial_cwd}', shell=True, capture_output=True)
+    output = subprocess.run(
+        f'umask 002; mkdir -p {initial_cwd}', shell=True, capture_output=True
+    )
     out_str = output.stdout.decode()
     logger.debug(f'Ensured working directory exists. Output: [{out_str}]')
 
@@ -112,7 +116,9 @@ def init_user_and_working_directory(
             raise
 
     # Now that the user exists, set ownership and permissions on the workspace
-    subprocess.run(f'chown -R {username}:root {initial_cwd}', shell=True, capture_output=True)
+    subprocess.run(
+        f'chown -R {username}:root {initial_cwd}', shell=True, capture_output=True
+    )
     subprocess.run(f'chmod g+rw {initial_cwd}', shell=True, capture_output=True)
 
     # Configure git for the target user: safe.directory and global hooks/template
@@ -121,7 +127,9 @@ def init_user_and_working_directory(
         hooks_root = '/openhands/git-hooks'
         hooks_dir = os.path.join(hooks_root, 'hooks')
         os.makedirs(hooks_dir, exist_ok=True)
-        hook_src = '/openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg'
+        hook_src = (
+            '/openhands/code/openhands/runtime/utils/git_hooks/prepare-commit-msg'
+        )
         hook_dest = os.path.join(hooks_dir, 'prepare-commit-msg')
         if os.path.exists(hook_src):
             shutil.copyfile(hook_src, hook_dest)
@@ -131,10 +139,14 @@ def init_user_and_working_directory(
             with open(hook_dest, 'w') as f:
                 f.write('#!/bin/sh\n')
                 f.write('FILE="$1"\n')
-                f.write('if ! grep -qi "co-authored-by.*openhands.*<openhands@all-hands.dev>" "$FILE" 2>/dev/null; then\n')
+                f.write(
+                    'if ! grep -qi "co-authored-by.*openhands.*<openhands@all-hands.dev>" "$FILE" 2>/dev/null; then\n'
+                )
                 f.write('  echo "" >> "$FILE"\n')
                 f.write('  echo "" >> "$FILE"\n')
-                f.write('  echo "Co-authored-by: openhands <openhands@all-hands.dev>" >> "$FILE"\n')
+                f.write(
+                    '  echo "Co-authored-by: openhands <openhands@all-hands.dev>" >> "$FILE"\n'
+                )
                 f.write('fi\n')
             os.chmod(hook_dest, 0o755)
 

@@ -251,7 +251,7 @@ class CLIRuntime(Runtime):
                     check=False,
                 )
                 logger.info(
-                    f"[CLIRuntime] Configured global git hooks at {hooks_dir} for co-authorship"
+                    f'[CLIRuntime] Configured global git hooks at {hooks_dir} for co-authorship'
                 )
         except Exception as e:
             logger.warning(f'[CLIRuntime] Failed to configure global git hook: {e}')
@@ -439,8 +439,10 @@ class CLIRuntime(Runtime):
 
         # Ensure our git wrapper bin dir is first in PATH for the subprocess
         env = os.environ.copy()
-        bin_dir = getattr(self, '_git_wrapper_bin_dir', os.path.expanduser('~/.openhands/bin'))
-        env['PATH'] = f"{bin_dir}:{env.get('PATH','')}"
+        bin_dir = getattr(
+            self, '_git_wrapper_bin_dir', os.path.expanduser('~/.openhands/bin')
+        )
+        env['PATH'] = f'{bin_dir}:{env.get("PATH", "")}'
 
         # Use shell=True to run complex bash commands
         process = subprocess.Popen(
@@ -454,7 +456,7 @@ class CLIRuntime(Runtime):
             env=env,
         )
         logger.debug(
-            f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}" with PATH={env.get('PATH')}'
+            f'[_execute_shell_command] PID of bash -c: {process.pid} for command: "{command}" with PATH={env.get("PATH")}'
         )
 
         exit_code = None
