@@ -1,10 +1,11 @@
 You are checked out to branch {{ branch_name }}, which has an open MR #{{ mr_number }}.
 A comment on the MR has been addressed to you.
 
-{% if previous_comments %}
+{% if review_thread %}
 You may find other comments in this review thread relevant:
 {% for comment in review_thread %}
-{{ comment }}
+- @{{ comment.author }} said at {{ comment.created_at }}:
+{{ comment.body }}
 {% if not loop.last %}\n\n{% endif %}
 {% endfor %}
 {% endif %}

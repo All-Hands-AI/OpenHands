@@ -12,7 +12,8 @@ Issue Body:
 For reference, here are the previous comments on the issue:
 
 {% for comment in previous_comments %}
-{{ comment }}
+- @{{ comment.author }} said:
+{{ comment.body }}
 {% if not loop.last %}\n\n{% endif %}
 {% endfor %}
 {% endif %}
