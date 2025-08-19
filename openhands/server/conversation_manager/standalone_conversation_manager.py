@@ -612,7 +612,11 @@ class StandaloneConversationManager(ConversationManager):
                 self._update_branch_in_conversation(conversation, current_branch)
 
         except Exception as e:
-            self._log_branch_update_error(e, conversation.conversation_id)
+            # Log an error that occurred during branch update
+            logger.warning(
+                f'Failed to update conversation branch: {e}',
+                extra={'session_id': conversation.conversation_id},
+            )
 
     def _get_session_and_runtime(
         self, conversation_id: str
@@ -644,23 +648,14 @@ class StandaloneConversationManager(ConversationManager):
         Returns:
             The current branch name or None if not found
         """
-        primary_repo_path = self._extract_repository_name(selected_repository)
-        return runtime.get_workspace_branch(primary_repo_path)
-
-    def _extract_repository_name(self, selected_repository: str | None) -> str | None:
-        """
-        Extract the repository name from the full repository path.
-
-        Args:
-            selected_repository: Full repository path (e.g., "org/repo")
-
-        Returns:
-            Repository name (e.g., "repo") or None if no repository
-        """
+        # Extract the repository name from the full repository path
         if not selected_repository:
-            return None
-        # Extract the repository name from the full path (e.g., "org/repo" -> "repo")
-        return selected_repository.split('/')[-1]
+            primary_repo_path = None
+        else:
+            # Extract the repository name from the full path (e.g., "org/repo" -> "repo")
+            primary_repo_path = selected_repository.split('/')[-1]
+
+        return runtime.get_workspace_branch(primary_repo_path)
 
     def _should_update_branch(
         self, current_branch: str | None, new_branch: str | None
@@ -693,19 +688,6 @@ class StandaloneConversationManager(ConversationManager):
         logger.info(
             f'Branch changed from {old_branch} to {new_branch}',
             extra={'session_id': conversation.conversation_id},
-        )
-
-    def _log_branch_update_error(self, error: Exception, conversation_id: str):
-        """
-        Log an error that occurred during branch update.
-
-        Args:
-            error: The exception that occurred
-            conversation_id: The conversation ID for logging context
-        """
-        logger.warning(
-            f'Failed to update conversation branch: {error}',
-            extra={'session_id': conversation_id},
         )
 
     async def get_agent_loop_info(
