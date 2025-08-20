@@ -642,23 +642,8 @@ def _extract_and_validate_params(
     # Collect parameters
     found_params = set()
     for param_match in param_matches:
-        raw_param_name = param_match.group(1).strip()
-        raw_param_value = param_match.group(2)
-
-        # Primary parse: <parameter=name>value</parameter>
-        param_name = raw_param_name
-        param_value = raw_param_value
-
-        # Fallback parse for malformed tags some models produce, e.g.:
-        # <parameter=command=str_replace</parameter>
-        # In this case, group(2) is empty and group(1) wrongly contains 'command=str_replace</parameter'!
-        if (not param_value or str(param_value).strip() == '') and ('=' in param_name):
-            # Split once on '=' and clean up any trailing tag fragments
-            name_part, value_part = param_name.split('=', 1)
-            # Remove any trailing tag content e.g. '</parameter' or '>'
-            value_part = value_part.split('</', 1)[0].split('>', 1)[0]
-            param_name = name_part.strip()
-            param_value = value_part.strip()
+        param_name = param_match.group(1)
+        param_value = param_match.group(2)
 
         # Validate parameter is allowed
         if allowed_params and param_name not in allowed_params:
@@ -673,14 +658,14 @@ def _extract_and_validate_params(
             if param_name_to_type[param_name] == 'integer':
                 try:
                     param_value = int(param_value)
-                except (TypeError, ValueError):
+                except ValueError:
                     raise FunctionCallValidationError(
                         f"Parameter '{param_name}' is expected to be an integer."
                     )
             elif param_name_to_type[param_name] == 'array':
                 try:
                     param_value = json.loads(param_value)
-                except Exception:
+                except json.JSONDecodeError:
                     raise FunctionCallValidationError(
                         f"Parameter '{param_name}' is expected to be an array."
                     )
