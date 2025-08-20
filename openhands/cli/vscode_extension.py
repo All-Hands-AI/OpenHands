@@ -113,13 +113,7 @@ def attempt_vscode_extension_install():
         return
 
     # Load status and optionally reset
-    status = {}
-    try:
-        if status_file.exists():
-            status = json.loads(status_file.read_text())
-    except Exception as e:
-        logger.debug(f'Could not read status file: {e}')
-        status = {}
+    status = _load_status(status_file)
 
     if os.environ.get('OPENHANDS_RESET_VSCODE') == '1':
         status.pop(editor_key, None)
@@ -254,6 +248,22 @@ def _save_status(path: pathlib.Path, data: dict) -> None:
 
 
 def _now_iso() -> str:
+
+
+def _load_status(status_file: pathlib.Path) -> dict:
+    """Load and validate status file."""
+    if not status_file.exists():
+        return {}
+    try:
+        data = json.loads(status_file.read_text())
+        if not isinstance(data, dict):
+            logger.debug('Status file contains invalid data type, resetting')
+            return {}
+        return data
+    except (json.JSONDecodeError, OSError) as e:
+        logger.debug(f'Could not read status file: {e}')
+        return {}
+
     return datetime.datetime.utcnow().isoformat() + 'Z'
 
 
