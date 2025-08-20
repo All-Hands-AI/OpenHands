@@ -22,24 +22,6 @@ class ActionSecurityRisk(int, Enum):
 class Action(Event):
     runnable: ClassVar[bool] = False
 
-    def __post_init__(self):
-        # Normalize thought attribute across all actions for backward compatibility
-        # Only coerce at construction time; internal components should assume Thought is present thereafter
-        try:
-            t = getattr(self, 'thought')
-        except AttributeError:
-            return
-        from openhands.events.action.action import (
-            Thought as _Thought,  # local import to avoid circular issues
-        )
-
-        if isinstance(t, str):
-            setattr(self, 'thought', _Thought(text=t))
-        elif t is None:
-            setattr(self, 'thought', _Thought())
-        elif not isinstance(t, _Thought):
-            setattr(self, 'thought', _Thought(text=str(t)))
-
 
 @dataclass
 class Thought:
