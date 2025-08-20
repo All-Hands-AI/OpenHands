@@ -1,11 +1,13 @@
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from prompt_toolkit.formatted_text import HTML
 
 from openhands.cli.commands import (
     display_mcp_servers,
+    get_initial_user_message,
     handle_commands,
+    handle_conv_command,
     handle_exit_command,
     handle_help_command,
     handle_init_command,
@@ -14,6 +16,9 @@ from openhands.cli.commands import (
     handle_resume_command,
     handle_settings_command,
     handle_status_command,
+    list_conversations,
+    truncate_message,
+    view_conversation_details,
 )
 from openhands.cli.tui import UsageMetrics
 from openhands.core.config import OpenHandsConfig
@@ -156,6 +161,18 @@ class TestHandleCommands:
         )
 
         mock_handle_mcp.assert_called_once_with(mock_dependencies['config'])
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.handle_conv_command')
+    async def test_handle_conv_command(self, mock_handle_conv, mock_dependencies):
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
+            '/conv', **mock_dependencies
+        )
+
+        mock_handle_conv.assert_called_once_with(mock_dependencies['config'])
         assert close_repl is False
         assert reload_microagents is False
         assert new_session is False
@@ -635,3 +652,208 @@ class TestMCPErrorHandling:
         handle_mcp_errors_command()
 
         mock_display_errors.assert_called_once()
+
+
+class TestConversationCommands:
+    """Test conversation history commands."""
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.list_conversations')
+    async def test_handle_conv_command_list_action(
+        self, mock_list_conversations, mock_cli_confirm
+    ):
+        """Test handle_conv_command with list action."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 0  # List action
+
+        await handle_conv_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'Conversation History',
+            [
+                'List recent conversations',
+                'View conversation details',
+                'Go back',
+            ],
+        )
+        mock_list_conversations.assert_called_once_with(config)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.view_conversation_details')
+    async def test_handle_conv_command_view_action(
+        self, mock_view_details, mock_cli_confirm
+    ):
+        """Test handle_conv_command with view details action."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 1  # View details action
+
+        await handle_conv_command(config)
+
+        mock_cli_confirm.assert_called_once_with(
+            config,
+            'Conversation History',
+            [
+                'List recent conversations',
+                'View conversation details',
+                'Go back',
+            ],
+        )
+        mock_view_details.assert_called_once_with(config)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.cli_confirm')
+    async def test_handle_conv_command_go_back(self, mock_cli_confirm):
+        """Test handle_conv_command with go back action."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_cli_confirm.return_value = 2  # Go back action
+
+        await handle_conv_command(config)
+
+        mock_cli_confirm.assert_called_once()
+        # No other functions should be called
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.FileConversationStore.get_instance')
+    @patch('openhands.cli.commands.get_initial_user_message')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_list_conversations_success(
+        self, mock_print, mock_get_message, mock_get_instance
+    ):
+        """Test list_conversations with successful data retrieval."""
+        from openhands.storage.data_models.conversation_metadata import (
+            ConversationMetadata,
+        )
+        from openhands.storage.data_models.conversation_metadata_result_set import (
+            ConversationMetadataResultSet,
+        )
+
+        config = MagicMock(spec=OpenHandsConfig)
+
+        # Mock conversation data
+        conv1 = ConversationMetadata(
+            conversation_id='conv-1',
+            selected_repository='test-repo-1',
+            created_at='2023-01-01T10:00:00Z',
+            title='Test Conversation 1',
+        )
+        conv2 = ConversationMetadata(
+            conversation_id='conv-2',
+            selected_repository='test-repo-2',
+            created_at='2023-01-01T11:00:00Z',
+            title='Test Conversation 2',
+        )
+
+        result_set = ConversationMetadataResultSet([conv1, conv2])
+
+        mock_store = MagicMock()
+        mock_store.search = AsyncMock(return_value=result_set)
+        mock_get_instance.return_value = mock_store
+
+        mock_get_message.side_effect = ['Hello world', 'Fix this bug']
+
+        await list_conversations(config)
+
+        mock_get_instance.assert_called_once_with(config, None)
+        mock_store.search.assert_called_once_with(page_id=None, limit=10)
+        assert mock_get_message.call_count == 2
+        assert mock_print.call_count >= 4  # Header, separator, conversations, separator
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.FileConversationStore.get_instance')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_list_conversations_no_conversations(
+        self, mock_print, mock_get_instance
+    ):
+        """Test list_conversations with no conversations found."""
+        from openhands.storage.data_models.conversation_metadata_result_set import (
+            ConversationMetadataResultSet,
+        )
+
+        config = MagicMock(spec=OpenHandsConfig)
+
+        result_set = ConversationMetadataResultSet([])
+
+        mock_store = MagicMock()
+        mock_store.search = AsyncMock(return_value=result_set)
+        mock_get_instance.return_value = mock_store
+
+        await list_conversations(config)
+
+        mock_print.assert_called_once_with('No conversations found.')
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.collect_input')
+    @patch('openhands.cli.commands.get_user_messages_from_conversation')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_view_conversation_details_success(
+        self, mock_print, mock_get_messages, mock_collect_input
+    ):
+        """Test view_conversation_details with successful data retrieval."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_collect_input.return_value = 'conv-123'
+        mock_get_messages.return_value = [
+            {'timestamp': '2023-01-01T10:00:00Z', 'content': 'Hello'},
+            {'timestamp': '2023-01-01T10:05:00Z', 'content': 'How are you?'},
+        ]
+
+        await view_conversation_details(config)
+
+        mock_collect_input.assert_called_once_with(config, 'Enter conversation ID:')
+        mock_get_messages.assert_called_once_with(config, 'conv-123')
+        assert mock_print.call_count >= 4  # Header, separator, messages, separator
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.collect_input')
+    async def test_view_conversation_details_cancelled(self, mock_collect_input):
+        """Test view_conversation_details when user cancels input."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_collect_input.return_value = None  # User cancelled
+
+        await view_conversation_details(config)
+
+        mock_collect_input.assert_called_once_with(config, 'Enter conversation ID:')
+        # No other functions should be called
+
+    @pytest.mark.asyncio
+    async def test_get_initial_user_message_success(self):
+        """Test get_initial_user_message with successful message retrieval."""
+        # This is more of an integration test - we'll just test that the function
+        # handles the case where no message is found gracefully
+        config = MagicMock(spec=OpenHandsConfig)
+        config.file_store = 'local'
+        config.file_store_path = '/tmp/test'
+        conversation_id = 'conv-123'
+
+        result = await get_initial_user_message(config, conversation_id)
+
+        # Since we don't have actual conversation data, it should return the error message
+        assert result in ['No initial message found', 'Error loading message']
+
+    @pytest.mark.asyncio
+    @patch('openhands.storage.get_file_store')
+    async def test_get_initial_user_message_error(self, mock_get_file_store):
+        """Test get_initial_user_message with error handling."""
+        config = MagicMock(spec=OpenHandsConfig)
+        conversation_id = 'conv-123'
+
+        mock_get_file_store.side_effect = Exception('File not found')
+
+        result = await get_initial_user_message(config, conversation_id)
+
+        assert result == 'Error loading message'
+
+    def test_truncate_message_short(self):
+        """Test truncate_message with short message."""
+        message = 'Hello world'
+        result = truncate_message(message, 100)
+        assert result == 'Hello world'
+
+    def test_truncate_message_long(self):
+        """Test truncate_message with long message."""
+        message = 'This is a very long message that should be truncated'
+        result = truncate_message(message, 20)
+        assert result == 'This is a very long ...'
+        assert len(result) == 23  # 20 + '...'

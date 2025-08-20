@@ -83,6 +83,7 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
+    '/conv': 'View conversation history and user messages',
 }
 
 print_lock = threading.Lock()

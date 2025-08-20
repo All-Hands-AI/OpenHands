@@ -50,6 +50,7 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.stream import EventStream
+from openhands.storage.conversation.file_conversation_store import FileConversationStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -165,6 +166,8 @@ async def handle_commands(
         )
     elif command == '/mcp':
         await handle_mcp_command(config)
+    elif command == '/conv':
+        await handle_conv_command(config)
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -882,3 +885,175 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
             restart_cli()
     else:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
+
+
+async def handle_conv_command(config: OpenHandsConfig) -> None:
+    """Handle conversation history command with interactive menu."""
+    action = cli_confirm(
+        config,
+        'Conversation History',
+        [
+            'List recent conversations',
+            'View conversation details',
+            'Go back',
+        ],
+    )
+
+    if action == 0:  # List
+        await list_conversations(config)
+    elif action == 1:  # View details
+        await view_conversation_details(config)
+    # action == 2 is "Go back", do nothing
+
+
+async def list_conversations(
+    config: OpenHandsConfig, page_id: str | None = None
+) -> None:
+    """List recent conversations with pagination."""
+    try:
+        conversation_store = await FileConversationStore.get_instance(config, None)
+        result = await conversation_store.search(page_id=page_id, limit=10)
+
+        if not result.results:
+            print_formatted_text('No conversations found.')
+            return
+
+        print_formatted_text('\n📋 Recent Conversations:')
+        print_formatted_text('=' * 80)
+
+        for i, conv in enumerate(result.results, 1):
+            # Get initial user message
+            initial_message = await get_initial_user_message(
+                config, conv.conversation_id
+            )
+            truncated_message = truncate_message(initial_message, 100)
+
+            created_at = conv.created_at or 'Unknown'
+            print_formatted_text(
+                f'{i:2d}. [{conv.conversation_id}] [{created_at}] '
+                f'Initial user message: {truncated_message}'
+            )
+
+        print_formatted_text('=' * 80)
+
+        # Handle pagination
+        if result.next_page_id:
+            action = cli_confirm(
+                config,
+                'More conversations available',
+                ['Next page', 'Previous page', 'Go back'],
+            )
+            if action == 0:  # Next page
+                await list_conversations(config, result.next_page_id)
+            elif action == 1:  # Previous page (simplified - just go back to first page)
+                await list_conversations(config, None)
+
+    except Exception as e:
+        print_formatted_text(f'❌ Error listing conversations: {e}')
+
+
+async def view_conversation_details(config: OpenHandsConfig) -> None:
+    """View details of a specific conversation."""
+    conversation_id = await collect_input(config, 'Enter conversation ID:')
+    if not conversation_id:
+        return
+
+    try:
+        # Get all user messages from the conversation
+        user_messages = await get_user_messages_from_conversation(
+            config, conversation_id
+        )
+
+        if not user_messages:
+            print_formatted_text(
+                f'No user messages found in conversation {conversation_id}'
+            )
+            return
+
+        print_formatted_text(f'\n💬 User Messages in Conversation {conversation_id}:')
+        print_formatted_text('=' * 80)
+
+        for i, message in enumerate(user_messages, 1):
+            timestamp = message.get('timestamp', 'Unknown')
+            content = message.get('content', '')
+            print_formatted_text(f'{i:2d}. [{timestamp}] {content}')
+
+        print_formatted_text('=' * 80)
+
+    except Exception as e:
+        print_formatted_text(f'❌ Error viewing conversation details: {e}')
+
+
+async def get_initial_user_message(
+    config: OpenHandsConfig, conversation_id: str
+) -> str:
+    """Get the initial user message from a conversation."""
+    try:
+        from openhands.events import EventSource
+        from openhands.events.action.message import MessageAction
+        from openhands.events.event_store import EventStore
+        from openhands.storage import get_file_store
+
+        file_store = get_file_store(
+            file_store_type=config.file_store,
+            file_store_path=config.file_store_path,
+        )
+
+        event_store = EventStore(
+            sid=conversation_id,
+            file_store=file_store,
+            user_id=None,
+        )
+
+        # Search for the first user message
+        for event in event_store.search_events(start_id=0, limit=50):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return event.content
+
+        return 'No initial message found'
+    except Exception:
+        return 'Error loading message'
+
+
+async def get_user_messages_from_conversation(
+    config: OpenHandsConfig, conversation_id: str
+) -> list[dict]:
+    """Get all user messages from a conversation."""
+    try:
+        from openhands.events import EventSource
+        from openhands.events.action.message import MessageAction
+        from openhands.events.event_store import EventStore
+        from openhands.storage import get_file_store
+
+        file_store = get_file_store(
+            file_store_type=config.file_store,
+            file_store_path=config.file_store_path,
+        )
+
+        event_store = EventStore(
+            sid=conversation_id,
+            file_store=file_store,
+            user_id=None,
+        )
+
+        user_messages = []
+        for event in event_store.search_events(start_id=0):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                user_messages.append(
+                    {
+                        'timestamp': event.timestamp if event.timestamp else 'Unknown',
+                        'content': event.content,
+                    }
+                )
+
+        return user_messages
+    except Exception as e:
+        print_formatted_text(f'Error loading messages: {e}')
+        return []
+
+
+def truncate_message(message: str, max_length: int) -> str:
+    """Truncate a message to a maximum length."""
+    if len(message) <= max_length:
+        return message
+    return message[:max_length] + '...'
