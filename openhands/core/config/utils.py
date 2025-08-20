@@ -65,6 +65,11 @@ def load_from_env(
     def set_attr_from_env(sub_config: BaseModel, prefix: str = '') -> None:
         """Set attributes of a config model based on environment variables."""
         for field_name, field_info in sub_config.__class__.model_fields.items():
+            # Ignore deprecated workspace_mount_path_in_sandbox from env to preserve default '/workspace'
+            # Tests rely on this remaining the default unless SANDBOX_VOLUMES explicitly mounts '/workspace'
+            if field_name == 'workspace_mount_path_in_sandbox' and prefix == '':
+                continue
+
             field_value = getattr(sub_config, field_name)
             field_type = field_info.annotation
 

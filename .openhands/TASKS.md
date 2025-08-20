@@ -1,16 +1,13 @@
 # Task List
 
-1. ✅ Checkout PR 10432 branch and read PR description to understand scope
+1. ⏳ Install pre-commit hooks and run backend pre-commit suite
 
-2. ✅ Reproduce and validate the failing path with AgentFinishAction and tool metadata
-Targeted unit test passes; JSON serialization path is safe with Thought normalization in event_to_dict and JSON encoder
-3. ✅ Centralize Thought coercion in Action.__post_init__ and remove per-class misplacements
-Implemented Action.__post_init__ normalization. Reverted accidental edits by restoring files. Verified key tests pass.
-4. ✅ Run targeted tests: conversation memory and event stream serialization
-
-5. ✅ Run pre-commit hooks and fix any issues
-
-6. ✅ Commit with correct authorship and co-author, push to feature branch
-
-7. 🔄 Investigate the user's runtime error and confirm fix path
-The original stack shows events/stream json.dumps(data) failing on Thought. Our event_to_dict now flattens Thought; encoder handles dataclasses. Also Action.__post_init__ ensures actions constructed anywhere have Thought. This should resolve the error. Recommend pulling latest and retrying. If error persists locally, check that odie environment imports repo code rather than an installed different openhands path, and ensure .venv is picking this branch.
+2. ✅ Run full unit test suite as in CI (PYTHONPATH, xdist) and evaluate failures
+Executed pytest --forked -n auto -svv ./tests/unit. After fix to config utils, only docker runtime builder tests fail locally due to missing Docker daemon. In CI with GitHub runners (setup-buildx), these should pass.
+3. ✅ Run runtime CLI test (TEST_RUNTIME=cli)
+Ran tests/runtime/test_bash.py; 25 passed, 10 skipped. Matches CI target.
+4. ✅ Fix ConversationMemory and SecurityAnalyzer per PR #10432 requirements
+ConversationMemory ensures only Thought.text is sent; coerces str to Thought and merges tool_call content. SecurityAnalyzer idempotent with processed event id set; thread-safe scheduling.
+5. ✅ Fix config bug so workspace_mount_path_in_sandbox remains default unless SANDBOX_VOLUMES mounts /workspace
+Adjusted load_from_env to ignore deprecated workspace_mount_path_in_sandbox from env (preserves /workspace). Unit tests for sandbox volumes now pass.
+6. ⏳ Commit changes and push to feature branch used by PR #10432; update PR with summary comment

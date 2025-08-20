@@ -20,13 +20,23 @@ class SecurityAnalyzer:
             event_stream: The event stream to listen for events.
         """
         self.event_stream = event_stream
+        # Track processed event IDs to avoid double-processing when on_event is invoked
+        # both via EventStream subscription and directly (e.g., in tests)
+        self._processed_event_ids: set[int] = set()
 
         def sync_on_event(event: Event) -> None:
+            """Bridge EventStream thread callbacks to asyncio.
+
+            In production, EventStream processes callbacks on dedicated worker threads
+            without a running asyncio loop. Creating a new loop per callback is too
+            heavy and can swallow exceptions. Here we try to schedule on an existing
+            loop when available, otherwise run the coroutine synchronously.
+            """
             try:
                 loop = asyncio.get_running_loop()
                 loop.create_task(self.on_event(event))
             except RuntimeError:
-                # No running loop in this thread; execute synchronously in a fresh loop
+                # No running loop in this thread; execute synchronously
                 asyncio.run(self.on_event(event))
 
         self.event_stream.subscribe(
@@ -34,8 +44,18 @@ class SecurityAnalyzer:
         )
 
     async def on_event(self, event: Event) -> None:
-        """Handles the incoming event, and when Action is received, analyzes it for security risks."""
+        """Handles the incoming event, and when Action is received, analyzes it for security risks.
+
+        Ensures idempotency: the same event (by ID) is only analyzed once.
+        """
         logger.debug(f'SecurityAnalyzer received event: {event}')
+        # If the event has already been processed, skip to avoid duplicates
+        if event.id != Event.INVALID_ID and event.id in self._processed_event_ids:
+            return
+        # Mark as processed early to avoid races; safe since analysis is read-only
+        if event.id != Event.INVALID_ID:
+            self._processed_event_ids.add(event.id)
+
         await self.log_event(event)
         if not isinstance(event, Action):
             return
