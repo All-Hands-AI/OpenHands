@@ -1,3 +1,4 @@
+import datetime
 import importlib.resources
 import json
 import os
@@ -261,29 +262,23 @@ def _save_status(path: pathlib.Path, data: dict) -> None:
 
 
 def _now_iso() -> str:
-    import datetime as _dt
-
-    return _dt.datetime.utcnow().isoformat() + 'Z'
+    return datetime.datetime.utcnow().isoformat() + 'Z'
 
 
 def _elapsed_enough(since_iso: str, wait_seconds: int) -> bool:
-    import datetime as _dt
-
     try:
-        t = _dt.datetime.fromisoformat(since_iso.replace('Z', ''))
+        t = datetime.datetime.fromisoformat(since_iso.replace('Z', ''))
     except Exception:
         return True
-    return (_dt.datetime.utcnow() - t).total_seconds() >= wait_seconds
+    return (datetime.datetime.utcnow() - t).total_seconds() >= wait_seconds
 
 
 def _remaining_seconds(since_iso: str, wait_seconds: int) -> int:
-    import datetime as _dt
-
     try:
-        t = _dt.datetime.fromisoformat(since_iso.replace('Z', ''))
+        t = datetime.datetime.fromisoformat(since_iso.replace('Z', ''))
     except Exception:
         return 0
-    elapsed = (_dt.datetime.utcnow() - t).total_seconds()
+    elapsed = (datetime.datetime.utcnow() - t).total_seconds()
     return max(0, int(wait_seconds - elapsed))
 
 
