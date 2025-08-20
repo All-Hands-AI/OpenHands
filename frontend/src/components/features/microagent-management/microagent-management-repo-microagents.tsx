@@ -65,6 +65,18 @@ export function MicroagentManagementRepoMicroagents({
     }
   }, [conversations]);
 
+  useEffect(
+    () => () => {
+      dispatch(
+        setSelectedMicroagentItem({
+          microagent: null,
+          conversation: null,
+        }),
+      );
+    },
+    [],
+  );
+
   // Show loading only when both queries are loading
   const isLoading = isLoadingMicroagents || isLoadingConversations;
 
@@ -82,7 +94,7 @@ export function MicroagentManagementRepoMicroagents({
   // If there's an error with microagents, show the learn this repo component
   if (isError) {
     return (
-      <div className="pb-4">
+      <div>
         <MicroagentManagementLearnThisRepo repository={repository} />
       </div>
     );
@@ -93,7 +105,7 @@ export function MicroagentManagementRepoMicroagents({
   const totalItems = numberOfMicroagents + numberOfConversations;
 
   return (
-    <div className="pb-4">
+    <div>
       {totalItems === 0 && (
         <MicroagentManagementLearnThisRepo repository={repository} />
       )}
