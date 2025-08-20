@@ -176,8 +176,10 @@ class EventStream(EventStore):
             current_write_page = self._write_page_cache
 
             data = event_to_dict(event)
-            data = self._replace_secrets(data)
-            event = event_from_dict(data)
+            redacted = self._replace_secrets(data)
+            # Rehydrate to ensure canonical normalization, then re-serialize for persistence
+            event = event_from_dict(redacted if isinstance(redacted, dict) else data)
+            data = event_to_dict(event)
             current_write_page.append(data)
 
             # If the page is full, create a new page for future events / other threads to use
@@ -219,9 +221,7 @@ class EventStream(EventStore):
     def update_secrets(self, secrets: dict[str, str]) -> None:
         self.secrets.update(secrets)
 
-    def _replace_secrets(
-        self, data: dict[str, Any], is_top_level: bool = True
-    ) -> dict[str, Any]:
+    def _replace_secrets(self, data: Any, is_top_level: bool = True) -> Any:
         # Fields that should not have secrets replaced (only at top level - system metadata)
         TOP_LEVEL_PROTECTED_FIELDS = {
             'timestamp',
@@ -233,15 +233,34 @@ class EventStream(EventStore):
             'message',
         }
 
-        for key in data:
-            if is_top_level and key in TOP_LEVEL_PROTECTED_FIELDS:
-                # Skip secret replacement for protected system fields at top level only
-                continue
-            elif isinstance(data[key], dict):
-                data[key] = self._replace_secrets(data[key], is_top_level=False)
-            elif isinstance(data[key], str):
-                for secret in self.secrets.values():
-                    data[key] = data[key].replace(secret, '<secret_hidden>')
+        if isinstance(data, dict):
+            for key, value in list(data.items()):
+                if is_top_level and key in TOP_LEVEL_PROTECTED_FIELDS:
+                    # Skip secret replacement for protected system fields at top level only
+                    continue
+                if isinstance(value, dict) or isinstance(value, list):
+                    data[key] = self._replace_secrets(value, is_top_level=False)  # type: ignore[assignment]
+                elif isinstance(value, str):
+                    for secret in self.secrets.values():
+                        data[key] = data[key].replace(secret, '<secret_hidden>')
+            return data
+        elif isinstance(data, list):
+            new_list: list[Any] = []
+            for item in data:
+                if isinstance(item, (dict, list)):
+                    new_list.append(self._replace_secrets(item, is_top_level=False))  # type: ignore[arg-type]
+                elif isinstance(item, str):
+                    for secret in self.secrets.values():
+                        item = item.replace(secret, '<secret_hidden>')
+                    new_list.append(item)
+                else:
+                    new_list.append(item)
+            return new_list
+        elif isinstance(data, str):
+            for secret in self.secrets.values():
+                data = data.replace(secret, '<secret_hidden>')
+            return data
+        # Fallback: return input unchanged for any other types
         return data
 
     def _run_queue_loop(self) -> None:
