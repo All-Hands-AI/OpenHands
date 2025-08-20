@@ -17,8 +17,6 @@ export function ConversationMain() {
     (state: RootState) => state.conversation.isRightPanelShown,
   );
 
-  const showResize = (width ?? 0) > 1024;
-
   const leftItem = useMemo(
     () => (
       <div className={cn("min-h-[494px] h-full overflow-auto")}>
@@ -44,16 +42,23 @@ export function ConversationMain() {
     );
   }, [isRightPanelShown]);
 
+  const windowWith = width ?? 0;
+  const showResize = windowWith > 1024 && rightItem;
+
   if (!showResize) {
     return (
       <div
         className={cn(
           "grow flex",
           "w-full h-full overflow-y-scroll relative",
-          "flex-col gap-3 overflow-auto w-full",
+          windowWith < 1024
+            ? "flex-col gap-3 overflow-auto w-full"
+            : "flex-row justify-center h-full",
         )}
       >
-        {leftItem}
+        <div className={cn(windowWith >= 1024 ? "max-w-[768px]" : "")}>
+          {leftItem}
+        </div>
         {rightItem}
       </div>
     );
@@ -62,7 +67,7 @@ export function ConversationMain() {
   return (
     <ResizableTwoPane>
       {leftItem}
-      {rightItem ?? <span />}
+      {rightItem}
     </ResizableTwoPane>
   );
 }

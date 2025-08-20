@@ -26,8 +26,6 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
     return [OFFSET, Math.max((width ?? 0) - 320, 0)];
   }, [width]);
 
-  const windowWith = width ?? 0;
-
   const containerRef = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
@@ -52,9 +50,7 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
       className={cn(
         "grow flex",
         "w-full h-full overflow-y-scroll relative",
-        windowWith < 1024
-          ? "flex-col gap-3 overflow-auto w-full"
-          : "flex-row justify-center h-full",
+        "flex-row justify-center h-full",
       )}
     >
       <ResizableBox
@@ -67,6 +63,7 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
         onResizeStop={(_, data) =>
           setPaneDim([data.size.width, data.size.height])
         }
+        className={cn("flex")}
         handle={
           <div
             className="absolute top-0 right-0 w-2.5 h-full cursor-col-resize flex items-center justify-center z-2"
@@ -76,7 +73,7 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
         }
         handleSize={[10, 10]}
       >
-        {first}
+        <div className="flex flex-1">{first}</div>
       </ResizableBox>
       {second}
     </div>
