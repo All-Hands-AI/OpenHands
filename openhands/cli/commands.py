@@ -1,6 +1,8 @@
 import asyncio
 import os
 import sys
+import threading
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -890,13 +892,35 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
 
 
+def show_loading_spinner(stop_event: threading.Event) -> None:
+    """Show a loading spinner animation."""
+    spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
+    i = 0
+    while not stop_event.is_set():
+        print(
+            f'\r{spinner_chars[i % len(spinner_chars)]} Loading conversations...',
+            end='',
+            flush=True,
+        )
+        time.sleep(0.1)
+        i += 1
+    print('\r' + ' ' * 30 + '\r', end='', flush=True)  # Clear the line
+
+
 async def handle_conv_command(config: OpenHandsConfig) -> None:
     """Handle the /conv command to view conversation history."""
-    print_formatted_text(HTML('<ansiblue>Conversation History</ansiblue>'))
-    print()
+    # Show loading animation while getting conversations
+    stop_event = threading.Event()
+    spinner_thread = threading.Thread(target=show_loading_spinner, args=(stop_event,))
+    spinner_thread.start()
 
-    # Get conversation folders sorted by creation time
-    conversation_folders = get_conversation_folders_by_time(config)
+    try:
+        # Get conversation folders sorted by creation time
+        conversation_folders = get_conversation_folders_by_time(config)
+    finally:
+        # Stop the spinner
+        stop_event.set()
+        spinner_thread.join()
 
     if not conversation_folders:
         print_formatted_text(HTML('<ansired>No conversations found.</ansired>'))
@@ -989,9 +1013,7 @@ async def display_conversation_page(
     config: OpenHandsConfig, conversations: list[tuple[str, float]], page_num: int
 ) -> None:
     """Display a page of conversations with their details."""
-    print_formatted_text(
-        HTML(f'<ansiblue>Recent Conversations (Page {page_num}):</ansiblue>')
-    )
+    print_formatted_text(f'Recent Conversations (Page {page_num}):')
     print()
 
     for i, (conversation_id, creation_time) in enumerate(conversations, 1):
