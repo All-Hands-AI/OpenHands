@@ -10,9 +10,10 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.schema.action import ActionType
 from openhands.core.schema.agent import AgentState
+from openhands.core.schema.observation import ObservationType
 from openhands.events.action import MessageAction
+from openhands.events.observation.commands import CmdOutputObservation
 from openhands.events.stream import EventStreamSubscriber, session_exists
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
@@ -520,6 +521,13 @@ class StandaloneConversationManager(ConversationManager):
 
         # Check for branch changes if this is a git-related event
         if event and self._is_git_related_event(event):
+            logger.info(
+                f'Git-related event detected, updating conversation branch for {conversation_id}',
+                extra={
+                    'session_id': conversation_id,
+                    'command': getattr(event, 'command', 'unknown'),
+                },
+            )
             await self._update_conversation_branch(conversation)
 
         default_title = get_default_conversation_title(conversation_id)
@@ -564,26 +572,38 @@ class StandaloneConversationManager(ConversationManager):
         Returns:
             True if the event is git-related and could change the branch, False otherwise
         """
-        # Check CmdRunAction for git commands that change branches
+        # Early return if event is None or not the correct type
+        if not event or not isinstance(event, CmdOutputObservation):
+            return False
+
+        # Check CmdOutputObservation for git commands that change branches
+        # We check the observation result, not the action request, to ensure the command actually succeeded
         if (
-            hasattr(event, 'command')
-            and hasattr(event, 'action')
-            and event.action == ActionType.RUN
+            event.observation == ObservationType.RUN
+            and event.metadata.exit_code == 0  # Only consider successful commands
         ):
             command = event.command.lower()
+
             # Check if any git command that changes branches is present anywhere in the command
             # This handles compound commands like "cd workspace && git checkout feature-branch"
-            return any(
-                git_cmd in command
-                for git_cmd in [
-                    'git checkout',
-                    'git switch',
-                    'git merge',
-                    'git rebase',
-                    'git reset',
-                    'git delete',
-                ]
-            )
+            git_commands = [
+                'git checkout',
+                'git switch',
+                'git merge',
+                'git rebase',
+                'git reset',
+                'git branch',
+            ]
+
+            is_git_related = any(git_cmd in command for git_cmd in git_commands)
+
+            if is_git_related:
+                logger.debug(
+                    f'Detected git-related command: {command} with exit code {event.metadata.exit_code}',
+                    extra={'command': command, 'exit_code': event.metadata.exit_code},
+                )
+
+            return is_git_related
 
         return False
 
