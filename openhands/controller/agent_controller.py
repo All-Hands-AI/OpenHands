@@ -110,6 +110,7 @@ class AgentController:
     delegate: 'AgentController | None' = None
     _pending_action_info: tuple[Action, float] | None = None  # (action, timestamp)
     _closed: bool = False
+    _shutdown_requested: bool = False
     _cached_first_user_message: MessageAction | None = None
 
     def __init__(
@@ -158,6 +159,8 @@ class AgentController:
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
         self.conversation_stats = conversation_stats
+        self._shutdown_requested = False
+        self._closed = False
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -284,6 +287,14 @@ class AgentController:
                 EventStreamSubscriber.AGENT_CONTROLLER, self.id
             )
         self._closed = True
+
+    def request_shutdown(self) -> None:
+        """Request a graceful shutdown of the agent controller.
+
+        This will prevent new agent steps from starting and allow current operations to complete.
+        """
+        self._shutdown_requested = True
+        self.log('info', 'Shutdown requested for agent controller')
 
     def log(self, level: str, message: str, extra: dict | None = None) -> None:
         """Logs a message to the agent controller's logger.
@@ -820,6 +831,15 @@ class AgentController:
 
     async def _step(self) -> None:
         """Executes a single step of the parent or delegate agent. Detects stuck agents and limits on the number of iterations and the task budget."""
+        if self._shutdown_requested:
+            self.log(
+                'info',
+                'Agent step cancelled due to shutdown request',
+                extra={'msg_type': 'STEP_CANCELLED_SHUTDOWN'},
+            )
+            await self.set_agent_state_to(AgentState.STOPPED)
+            return
+
         if self.get_agent_state() != AgentState.RUNNING:
             self.log(
                 'debug',
@@ -913,6 +933,18 @@ class AgentController:
                         return
                     else:
                         raise LLMContextWindowExceedError()
+                else:
+                    raise e
+            except RuntimeError as e:
+                # Handle interpreter shutdown errors gracefully
+                if 'cannot schedule new futures after interpreter shutdown' in str(e):
+                    self.log(
+                        'info',
+                        'Agent step cancelled due to interpreter shutdown',
+                        extra={'msg_type': 'STEP_CANCELLED_SHUTDOWN'},
+                    )
+                    await self.set_agent_state_to(AgentState.STOPPED)
+                    return
                 else:
                     raise e
 

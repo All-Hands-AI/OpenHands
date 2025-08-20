@@ -3,6 +3,7 @@ import openhands.cli.suppress_warnings  # noqa: F401  # isort: skip
 import asyncio
 import logging
 import os
+import signal
 import sys
 
 from prompt_toolkit import print_formatted_text
@@ -93,22 +94,29 @@ async def cleanup_session(
     agent: Agent,
     runtime: Runtime,
     controller: AgentController,
+    graceful_shutdown: bool = False,
 ) -> None:
     """Clean up all resources from the current session."""
-    event_stream = runtime.event_stream
-    end_state = controller.get_state()
-    end_state.save_to_session(
-        event_stream.sid,
-        event_stream.file_store,
-        event_stream.user_id,
-    )
-
     try:
+        # If this is a graceful shutdown, request the controller to stop first
+        if graceful_shutdown:
+            controller.request_shutdown()
+            # Give the controller a moment to stop gracefully
+            await asyncio.sleep(0.5)
+
+        event_stream = runtime.event_stream
+        end_state = controller.get_state()
+        end_state.save_to_session(
+            event_stream.sid,
+            event_stream.file_store,
+            event_stream.user_id,
+        )
+
         current_task = asyncio.current_task(loop)
         pending = [task for task in asyncio.all_tasks(loop) if task is not current_task]
 
         if pending:
-            done, pending_set = await asyncio.wait(set(pending), timeout=2.0)
+            done, pending_set = await asyncio.wait(set(pending), timeout=3.0)
             pending = list(pending_set)
 
         for task in pending:
@@ -181,6 +189,20 @@ async def run_session(
     event_stream = runtime.event_stream
 
     usage_metrics = UsageMetrics()
+
+    # Set up signal handling for graceful shutdown
+    shutdown_requested = asyncio.Event()
+
+    def signal_handler(signum, frame):
+        """Handle shutdown signals gracefully."""
+        logger.info(f'Received signal {signum}, requesting graceful shutdown...')
+        shutdown_requested.set()
+
+    # Register signal handlers (only works on Unix-like systems)
+    if hasattr(signal, 'SIGINT'):
+        signal.signal(signal.SIGINT, signal_handler)
+    if hasattr(signal, 'SIGTERM'):
+        signal.signal(signal.SIGTERM, signal_handler)
 
     async def prompt_for_next_task(agent_state: str) -> None:
         nonlocal reload_microagents, new_session_requested, exit_reason
@@ -429,11 +451,34 @@ async def run_session(
         # No session restored, no initial action: prompt for the user's first message
         asyncio.create_task(prompt_for_next_task(''))
 
-    await run_agent_until_done(
-        controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
-    )
+    # Create a task to monitor for shutdown requests
+    async def shutdown_monitor():
+        await shutdown_requested.wait()
+        logger.info('Shutdown requested, stopping agent gracefully...')
+        controller.request_shutdown()
 
-    await cleanup_session(loop, agent, runtime, controller)
+    shutdown_task = asyncio.create_task(shutdown_monitor())
+
+    try:
+        # Run the agent with shutdown monitoring
+        await asyncio.gather(
+            run_agent_until_done(
+                controller, runtime, memory, [AgentState.STOPPED, AgentState.ERROR]
+            ),
+            shutdown_task,
+            return_exceptions=True,
+        )
+    except KeyboardInterrupt:
+        logger.info('KeyboardInterrupt received, initiating graceful shutdown...')
+        controller.request_shutdown()
+        # Give the agent a moment to stop gracefully
+        await asyncio.sleep(1.0)
+    finally:
+        # Cancel the shutdown monitor if it's still running
+        if not shutdown_task.done():
+            shutdown_task.cancel()
+
+    await cleanup_session(loop, agent, runtime, controller, graceful_shutdown=True)
 
     if exit_reason == ExitReason.INTENTIONAL:
         print_formatted_text('✅ Session terminated successfully.\n')
