@@ -91,7 +91,7 @@ async def create_mcp_clients(
     # Try to connect with a few short retries to allow server-side proxy mounts
     # to become available (especially for DockerRuntime where stdio servers are
     # mounted behind an SSE proxy).
-    attempts = 3
+    attempts = 5
     delay_sec = 2.0
 
     for attempt in range(1, attempts + 1):
