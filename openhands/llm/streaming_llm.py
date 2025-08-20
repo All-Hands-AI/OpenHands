@@ -5,7 +5,12 @@ from typing import Any, Callable
 from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
-from openhands.llm.model_features import get_features
+
+try:
+    from openhands.llm.model_features import get_features  # type: ignore
+except Exception:
+    # Reuse fallback from LLM module to avoid duplication
+    from openhands.llm.llm import get_features  # type: ignore
 
 
 class StreamingLLM(AsyncLLM):

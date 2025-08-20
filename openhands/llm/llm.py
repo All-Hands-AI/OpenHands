@@ -9,7 +9,113 @@ import httpx
 
 from openhands.core.config import LLMConfig
 from openhands.llm.metrics import Metrics
-from openhands.llm.model_features import get_features
+
+try:
+    from openhands.llm.model_features import get_features  # type: ignore
+except Exception:
+    from dataclasses import dataclass
+    from fnmatch import fnmatch
+
+    def _normalize_model_name(model: str) -> str:
+        raw = (model or '').strip().lower()
+        if '/' in raw:
+            name = raw.split('/')[-1]
+            if ':' in name:
+                name = name.split(':', 1)[0]
+        else:
+            name = raw
+        if name.endswith('-gguf'):
+            name = name[: -len('-gguf')]
+        return name
+
+    def _model_matches(model: str, patterns: list[str]) -> bool:
+        raw = (model or '').strip().lower()
+        name = _normalize_model_name(model)
+        for pat in patterns:
+            pat_l = pat.lower()
+            if '/' in pat_l:
+                if fnmatch(raw, pat_l):
+                    return True
+            else:
+                if fnmatch(name, pat_l):
+                    return True
+        return False
+
+    @dataclass(frozen=True)
+    class _ModelFeatures:
+        supports_function_calling: bool
+        supports_reasoning_effort: bool
+        supports_prompt_cache: bool
+        supports_stop_words: bool
+
+    _FUNCTION_CALLING_PATTERNS: list[str] = [
+        'claude-3-7-sonnet*',
+        'claude-3.7-sonnet*',
+        'claude-sonnet-3-7-latest',
+        'claude-3-5-sonnet*',
+        'claude-3.5-haiku*',
+        'claude-3-5-haiku*',
+        'claude-sonnet-4*',
+        'claude-opus-4*',
+        'gpt-4o*',
+        'gpt-4.1',
+        'gpt-5*',
+        'o1-2024-12-17',
+        'o3*',
+        'o4-mini*',
+        'gemini-2.5-pro*',
+        'kimi-k2-0711-preview',
+        'kimi-k2-instruct',
+        'qwen3-coder*',
+        'qwen3-coder-480b-a35b-instruct',
+    ]
+
+    _REASONING_EFFORT_PATTERNS: list[str] = [
+        'o1-2024-12-17',
+        'o1',
+        'o3',
+        'o3-2025-04-16',
+        'o3-mini-2025-01-31',
+        'o3-mini',
+        'o4-mini',
+        'o4-mini-2025-04-16',
+        'gemini-2.5-flash',
+        'gemini-2.5-pro',
+        'gpt-5',
+        'gpt-5-2025-08-07',
+        'claude-opus-4-1-20250805',
+        'deepseek-r1-0528*',
+    ]
+
+    _PROMPT_CACHE_PATTERNS: list[str] = [
+        'claude-3-7-sonnet*',
+        'claude-3.7-sonnet*',
+        'claude-sonnet-3-7-latest',
+        'claude-3-5-sonnet*',
+        'claude-3-5-haiku*',
+        'claude-3.5-haiku*',
+        'claude-3-haiku-20240307',
+        'claude-3-opus-20240229',
+        'claude-sonnet-4*',
+        'claude-opus-4*',
+    ]
+
+    _SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
+        'o1*',
+        'grok-4-0709',
+        'deepseek-r1-0528*',
+    ]
+
+    def get_features(model: str) -> _ModelFeatures:  # type: ignore
+        return _ModelFeatures(
+            supports_function_calling=_model_matches(model, _FUNCTION_CALLING_PATTERNS),
+            supports_reasoning_effort=_model_matches(model, _REASONING_EFFORT_PATTERNS),
+            supports_prompt_cache=_model_matches(model, _PROMPT_CACHE_PATTERNS),
+            supports_stop_words=not _model_matches(
+                model, _SUPPORTS_STOP_WORDS_FALSE_PATTERNS
+            ),
+        )
+
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
