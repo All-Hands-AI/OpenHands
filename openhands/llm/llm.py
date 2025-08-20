@@ -170,10 +170,6 @@ class LLM(RetryMixin, DebugMixin):
         # requiring 'thinking' content blocks. See issue #10510.
         if 'claude-opus-4-1' in self.config.model.lower():
             kwargs['thinking'] = {'type': 'disabled'}
-            # Ensure LiteLLM forwards the 'thinking' param
-            existing = kwargs.get('allowed_openai_params') or []
-            if 'thinking' not in existing:
-                kwargs['allowed_openai_params'] = [*existing, 'thinking']
 
         self._completion = partial(
             litellm_completion,
