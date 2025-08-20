@@ -248,6 +248,7 @@ def _save_status(path: pathlib.Path, data: dict) -> None:
 
 
 def _now_iso() -> str:
+    return datetime.datetime.utcnow().isoformat() + 'Z'
 
 
 def _load_status(status_file: pathlib.Path) -> dict:
@@ -333,7 +334,7 @@ def _available_commands(candidates: list[str]) -> list[str]:
     available: list[str] = []
     for c in candidates:
         try:
-            proc = subprocess.run([c, '--version'], capture_output=True, text=True)
+            proc = subprocess.run([c, '--version'], capture_output=True, text=True, timeout=5)
             if proc.returncode == 0:
                 available.append(c)
         except FileNotFoundError:
@@ -389,6 +390,7 @@ def _is_extension_installed(editor_command: str, extension_id: str) -> bool:
             capture_output=True,
             text=True,
             check=False,
+            timeout=10,
         )
         if process.returncode == 0:
             installed_extensions = process.stdout.strip().split('\n')
@@ -428,6 +430,7 @@ def _attempt_github_install(editor_command: str, editor_name: str) -> bool:
             capture_output=True,
             text=True,
             check=False,
+            timeout=30,
         )
         if process.returncode == 0:
             print(
@@ -481,6 +484,7 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
                     capture_output=True,
                     text=True,
                     check=False,
+                    timeout=30,
                 )
                 if process.returncode == 0:
                     print(
@@ -524,6 +528,7 @@ def _attempt_marketplace_install(
             capture_output=True,
             text=True,
             check=False,
+            timeout=30,
         )
         if process.returncode == 0:
             print(
