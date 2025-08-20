@@ -275,8 +275,15 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             condenser_mapping = condenser_config_from_toml_section(
                 toml_config['condenser'], cfg.llms
             )
-            # Assign the default condenser configuration to the default agent configuration
-            if 'condenser' in condenser_mapping:
+            # Only apply top-level [condenser] to default agent if base [agent]
+            # does not explicitly specify its own condenser. This prevents
+            # overriding an agent-level condenser persisted in the config file.
+            agent_has_condenser = (
+                'agent' in toml_config
+                and isinstance(toml_config['agent'], dict)
+                and 'condenser' in toml_config['agent']
+            )
+            if 'condenser' in condenser_mapping and not agent_has_condenser:
                 # Get the default agent config and assign the condenser config to it
                 default_agent_config = cfg.get_agent_config()
                 default_agent_config.condenser = condenser_mapping['condenser']
