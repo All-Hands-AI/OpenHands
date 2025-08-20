@@ -156,15 +156,13 @@ class TOMLConfigWriter:
     # Agent explicit APIs
     def update_agent_base(self, config: AgentConfig) -> None:
         agent_table = self._ensure_table('agent')
-        cfg_dict = _serialize_dict(
-            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
-        )
-        for k, v in cfg_dict.items():
-            if isinstance(v, dict):
-                # nested tables are fine under base agent (e.g., condenser)
-                agent_table[k] = v
-            else:
-                agent_table[k] = v
+        # Serialize field-by-field to ensure nested models (e.g., condenser)
+        # include discriminator-like 'type' and other explicitly set values.
+        for field_name in config.__class__.model_fields.keys():
+            v = getattr(config, field_name)
+            if v is None:
+                continue
+            agent_table[field_name] = _serialize_value(v)
 
     def update_agent_named(self, name: str, config: AgentConfig) -> None:
         agent_table = self._ensure_table('agent')
@@ -176,11 +174,11 @@ class TOMLConfigWriter:
         if not isinstance(sub, tomlkit.items.Table):
             sub = tomlkit.table()
             agent_table[name] = sub
-        cfg_dict = _serialize_dict(
-            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
-        )
-        for k, v in cfg_dict.items():
-            sub[k] = v
+        for field_name in config.__class__.model_fields.keys():
+            v = getattr(config, field_name)
+            if v is None:
+                continue
+            sub[field_name] = _serialize_value(v)
 
     def update_security(self, config: SecurityConfig) -> None:
         sec = self._ensure_table('security')

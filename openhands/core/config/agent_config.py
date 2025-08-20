@@ -84,8 +84,14 @@ class AgentConfig(BaseModel):
         # Extract base config data (non-dict values)
         base_data = {}
         custom_sections: dict[str, dict] = {}
+        # Treat nested dicts that correspond to actual AgentConfig fields (e.g.,
+        # 'condenser' and 'extended') as part of the base config, not as
+        # custom agent subsections.
+        nested_dict_fields = {'condenser', 'extended'}
         for key, value in data.items():
-            if isinstance(value, dict):
+            if isinstance(value, dict) and key in nested_dict_fields:
+                base_data[key] = value
+            elif isinstance(value, dict):
                 custom_sections[key] = value
             else:
                 base_data[key] = value
