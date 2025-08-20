@@ -1,7 +1,5 @@
 from pathlib import Path
 
-import toml
-
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.condenser_config import LLMSummarizingCondenserConfig
 from openhands.core.config.kubernetes_config import KubernetesConfig
@@ -11,8 +9,8 @@ from openhands.core.config.mcp_config import (
     MCPStdioServerConfig,
 )
 from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.core.config.utils import load_from_toml
 from openhands.core.config.toml_writer import TOMLConfigWriter
+from openhands.core.config.utils import load_from_toml
 
 
 def test_roundtrip_mixed_sections(tmp_path: Path):
@@ -40,7 +38,9 @@ def test_roundtrip_mixed_sections(tmp_path: Path):
     # MCP and k8s
     mcp = MCPConfig(
         stdio_servers=[
-            MCPStdioServerConfig(name='tavily', command='npx', args=['-y', 'tavily-mcp'])
+            MCPStdioServerConfig(
+                name='tavily', command='npx', args=['-y', 'tavily-mcp']
+            )
         ]
     )
     writer.update_mcp(mcp)

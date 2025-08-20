@@ -110,7 +110,9 @@ class TOMLConfigWriter:
             self._doc = tomlkit.document()
 
     def _ensure_table(self, name: str):
-        if name not in self._doc or not isinstance(self._doc.get(name), tomlkit.items.Table):
+        if name not in self._doc or not isinstance(
+            self._doc.get(name), tomlkit.items.Table
+        ):
             self._doc[name] = tomlkit.table()
         return self._doc[name]
 
@@ -128,7 +130,9 @@ class TOMLConfigWriter:
     # LLM explicit APIs
     def update_llm_base(self, config: LLMConfig) -> None:
         llm_table = self._ensure_table('llm')
-        cfg_dict = _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True)))
+        cfg_dict = _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        )
         for k, v in cfg_dict.items():
             # only non-dict scalars in base
             if isinstance(v, dict):
@@ -143,14 +147,18 @@ class TOMLConfigWriter:
         if not isinstance(sub, tomlkit.items.Table):
             sub = tomlkit.table()
             llm_table[name] = sub
-        cfg_dict = _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True)))
+        cfg_dict = _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        )
         for k, v in cfg_dict.items():
             sub[k] = v
 
     # Agent explicit APIs
     def update_agent_base(self, config: AgentConfig) -> None:
         agent_table = self._ensure_table('agent')
-        cfg_dict = _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True)))
+        cfg_dict = _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        )
         for k, v in cfg_dict.items():
             if isinstance(v, dict):
                 # nested tables are fine under base agent (e.g., condenser)
@@ -161,39 +169,53 @@ class TOMLConfigWriter:
     def update_agent_named(self, name: str, config: AgentConfig) -> None:
         agent_table = self._ensure_table('agent')
         if name == 'agent':
-            raise ValueError("Named agent cannot be 'agent'; use update_agent_base instead")
+            raise ValueError(
+                "Named agent cannot be 'agent'; use update_agent_base instead"
+            )
         sub = agent_table.get(name)
         if not isinstance(sub, tomlkit.items.Table):
             sub = tomlkit.table()
             agent_table[name] = sub
-        cfg_dict = _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True)))
+        cfg_dict = _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        )
         for k, v in cfg_dict.items():
             sub[k] = v
 
     def update_security(self, config: SecurityConfig) -> None:
         sec = self._ensure_table('security')
-        for k, v in _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True))).items():
+        for k, v in _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        ).items():
             sec[k] = v
 
     def update_sandbox(self, config: SandboxConfig) -> None:
         sb = self._ensure_table('sandbox')
-        for k, v in _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True))).items():
+        for k, v in _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        ).items():
             sb[k] = v
 
     def update_kubernetes(self, config: KubernetesConfig) -> None:
         k8s = self._ensure_table('kubernetes')
-        for k, v in _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True))).items():
+        for k, v in _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        ).items():
             k8s[k] = v
 
     def update_cli(self, config: CLIConfig) -> None:
         cli = self._ensure_table('cli')
-        for k, v in _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True))).items():
+        for k, v in _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        ).items():
             cli[k] = v
 
     def update_extended(self, data: ExtendedConfig | dict[str, Any]) -> None:
         ext = self._ensure_table('extended')
         if isinstance(data, ExtendedConfig):
-            payload: dict[str, Any] = data.model_dump(exclude_unset=True, exclude_none=True)
+            payload: dict[str, Any] = data.model_dump(
+                exclude_unset=True, exclude_none=True
+            )
         else:
             payload = data
         for k, v in _serialize_dict(_strip_none(payload)).items():
@@ -210,7 +232,9 @@ class TOMLConfigWriter:
 
     def update_mcp(self, config: MCPConfig) -> None:
         mcp = self._ensure_table('mcp')
-        for k, v in _serialize_dict(_strip_none(config.model_dump(exclude_unset=True, exclude_none=True))).items():
+        for k, v in _serialize_dict(
+            _strip_none(config.model_dump(exclude_unset=True, exclude_none=True))
+        ).items():
             mcp[k] = v
 
     def remove_section(self, section: str, name: str | None = None) -> None:
@@ -228,7 +252,9 @@ class TOMLConfigWriter:
         with _SimpleFileLock(self.toml_file):
             # atomic write
             dir_name = os.path.dirname(self.toml_file) or '.'
-            with NamedTemporaryFile('w', encoding='utf-8', dir=dir_name, delete=False) as tmp:
+            with NamedTemporaryFile(
+                'w', encoding='utf-8', dir=dir_name, delete=False
+            ) as tmp:
                 tmp.write(tomlkit.dumps(self._doc))
                 tmp.flush()
                 os.fsync(tmp.fileno())

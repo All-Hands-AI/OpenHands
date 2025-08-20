@@ -5,7 +5,6 @@ import toml
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.toml_writer import TOMLConfigWriter
 
-
 EXISTING = """
 # Global configuration for OpenHands
 [core]

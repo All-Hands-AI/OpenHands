@@ -54,6 +54,7 @@ def test_agent_embeds_noop_condenser_and_persists(tmp_path: Path):
     cfg_path = tmp_path / 'config.toml'
 
     from openhands.core.config.agent_config import AgentConfig
+
     agent = AgentConfig()
     agent.condenser = NoOpCondenserConfig()
 
@@ -65,4 +66,3 @@ def test_agent_embeds_noop_condenser_and_persists(tmp_path: Path):
     assert 'agent' in data
     assert 'condenser' in data['agent']
     assert data['agent']['condenser']['type'] == 'noop'
-
