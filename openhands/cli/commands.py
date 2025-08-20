@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -50,7 +51,9 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.stream import EventStream
+from openhands.storage import get_file_store
 from openhands.storage.conversation.file_conversation_store import FileConversationStore
+from openhands.storage.local import LocalFileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -888,22 +891,128 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
 
 
 async def handle_conv_command(config: OpenHandsConfig) -> None:
-    """Handle conversation history command with interactive menu."""
-    action = cli_confirm(
-        config,
-        'Conversation History',
-        [
-            'List recent conversations',
-            'View conversation details',
-            'Go back',
-        ],
-    )
+    """Handle the /conv command to view conversation history."""
+    print_formatted_text(HTML('<ansiblue>Conversation History</ansiblue>'))
+    print()
 
-    if action == 0:  # List
-        await list_conversations(config)
-    elif action == 1:  # View details
-        await view_conversation_details(config)
-    # action == 2 is "Go back", do nothing
+    # Get conversation folders sorted by creation time
+    conversation_folders = get_conversation_folders_by_time(config)
+
+    if not conversation_folders:
+        print_formatted_text(HTML('<ansired>No conversations found.</ansired>'))
+        return
+
+    # Start with first page
+    current_page = 0
+    page_size = 10
+
+    while True:
+        # Display current page of conversations
+        start_idx = current_page * page_size
+        end_idx = start_idx + page_size
+        page_conversations = conversation_folders[start_idx:end_idx]
+
+        if not page_conversations:
+            print_formatted_text(HTML('<ansired>No more conversations.</ansired>'))
+            current_page = max(0, current_page - 1)
+            continue
+
+        # Display conversations for current page
+        await display_conversation_page(config, page_conversations, current_page + 1)
+
+        # Show navigation options
+        options = []
+        if current_page > 0:
+            options.append('Previous page')
+        if end_idx < len(conversation_folders):
+            options.append('Next page')
+        options.extend(
+            [
+                'View conversation details',
+                'Go back',
+            ]
+        )
+
+        action = cli_confirm(
+            config,
+            f'Conversation History (Page {current_page + 1})',
+            options,
+        )
+
+        if 'Next page' in options and action == options.index('Next page'):
+            current_page += 1
+        elif 'Previous page' in options and action == options.index('Previous page'):
+            current_page -= 1
+        elif action == options.index('View conversation details'):
+            await view_conversation_details(config)
+        else:  # Go back
+            break
+
+
+def get_conversation_folders_by_time(
+    config: OpenHandsConfig,
+) -> list[tuple[str, float]]:
+    """Get conversation folders sorted by creation time (most recent first)."""
+    try:
+        # Get the sessions directory path
+        file_store = get_file_store(config.file_store, config.file_store_path)
+
+        # Only works with LocalFileStore that has a root attribute
+        if not isinstance(file_store, LocalFileStore):
+            return []
+
+        sessions_path = Path(file_store.root) / 'sessions'
+
+        if not sessions_path.exists():
+            return []
+
+        # Get all conversation folders with their creation times
+        conversation_folders = []
+        for folder in sessions_path.iterdir():
+            if folder.is_dir():
+                try:
+                    # Use folder creation time (or modification time as fallback)
+                    creation_time = folder.stat().st_ctime
+                    conversation_folders.append((folder.name, creation_time))
+                except OSError:
+                    continue
+
+        # Sort by creation time (most recent first)
+        conversation_folders.sort(key=lambda x: x[1], reverse=True)
+        return conversation_folders
+
+    except Exception:
+        return []
+
+
+async def display_conversation_page(
+    config: OpenHandsConfig, conversations: list[tuple[str, float]], page_num: int
+) -> None:
+    """Display a page of conversations with their details."""
+    print_formatted_text(
+        HTML(f'<ansiblue>Recent Conversations (Page {page_num}):</ansiblue>')
+    )
+    print()
+
+    for i, (conversation_id, creation_time) in enumerate(conversations, 1):
+        # Get initial user message
+        initial_message = await get_initial_user_message(config, conversation_id)
+        if initial_message:
+            truncated_message = truncate_message(initial_message, 100)
+        else:
+            truncated_message = '[No user message found]'
+
+        # Format creation time
+        created_time = datetime.fromtimestamp(creation_time).isoformat()
+
+        print_formatted_text(
+            HTML(
+                f'<ansigreen>{i}.</ansigreen> '
+                f'<ansiyellow>[{conversation_id}]</ansiyellow> '
+                f'<ansiwhite>[Created: {created_time}]</ansiwhite>\n'
+                f'   Initial message: {truncated_message}\n'
+            )
+        )
 
 
 async def list_conversations(
