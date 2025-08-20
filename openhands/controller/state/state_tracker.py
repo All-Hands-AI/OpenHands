@@ -245,6 +245,16 @@ class StateTracker:
 
     def save_state(self):
         """Save's current state to persistent store"""
+        # Consolidate per-service metrics into state before saving so external
+        # consumers (eval scripts, tests) can read state.metrics
+        if self.state.conversation_stats:
+            try:
+                self.state.metrics = (
+                    self.state.conversation_stats.get_combined_metrics()
+                )
+            except Exception as e:
+                logger.debug(f'Failed to consolidate metrics before save: {e}')
+
         if self.sid and self.file_store:
             self.state.save_to_session(self.sid, self.file_store, self.user_id)
 
