@@ -38,7 +38,7 @@ def test_legacy_flag_stale_removed_and_install_attempted(set_home, monkeypatch):
     legacy_flag.write_text('1')
 
     # Simulate editor CLI present, extension not installed, then bundled install success
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         if args[:2] == ['code', '--version']:
             return mock.Mock(returncode=0, stdout='1.0.0', stderr='')
         if args[:2] == ['code', '--list-extensions']:
@@ -67,7 +67,7 @@ def test_permanent_failure_when_cli_missing(set_home, monkeypatch):
     monkeypatch.setenv('TERM_PROGRAM', 'vscode')
 
     # No editor CLI available: --version raises FileNotFoundError
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         raise FileNotFoundError('not found')
 
     monkeypatch.setattr('subprocess.run', fake_run)
@@ -110,7 +110,7 @@ def test_reset_clears_permanent_failure_and_allows_retry(set_home, monkeypatch):
     monkeypatch.setenv('OPENHANDS_RESET_VSCODE', '1')
 
     # Now simulate available CLI and successful bundled install
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         if args[:2] == ['code', '--version']:
             return mock.Mock(returncode=0, stdout='1.0.0', stderr='')
         if args[:2] == ['code', '--list-extensions']:
@@ -142,7 +142,7 @@ def test_backoff_skip(set_home, monkeypatch):
     )
 
     # Editor CLI present so skip is due to backoff, not missing CLI
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         if args[:2] == ['code', '--version']:
             return mock.Mock(returncode=0, stdout='1.0.0', stderr='')
         # Should not call --list-extensions because backoff blocks it
@@ -165,7 +165,7 @@ def test_success_sets_last_success_and_clears_failure(set_home, monkeypatch):
     tmp_path = set_home
     monkeypatch.setenv('TERM_PROGRAM', 'vscode')
 
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         if args[:2] == ['code', '--version']:
             return mock.Mock(returncode=0, stdout='1.0.0', stderr='')
         if args[:2] == ['code', '--list-extensions']:
@@ -195,7 +195,7 @@ def test_editor_variants_preference(set_home, monkeypatch):
     # We simulate that both return 0 for --version, and we only proceed with bundled install once.
     calls = []
 
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         calls.append(args)
         if args[:2] in (['code', '--version'], ['code-insiders', '--version']):
             return mock.Mock(returncode=0, stdout='1.0', stderr='')

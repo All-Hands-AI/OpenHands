@@ -128,6 +128,7 @@ def test_extension_already_installed_detected(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: OpenHands VS Code extension is already installed.'
@@ -273,7 +274,7 @@ def test_mark_installation_successful_os_error(mock_env_and_dependencies):
         'as_file'
     ].return_value.__enter__.return_value = mock_vsix_path
 
-    def fake_run(args, capture_output=True, text=True, check=False):
+    def fake_run(args, capture_output=True, text=True, check=False, **kwargs):
         if '--list-extensions' in args:
             return subprocess.CompletedProcess(
                 returncode=0, args=args, stdout='', stderr=''
@@ -361,12 +362,14 @@ def test_install_succeeds_from_bundled(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['subprocess'].assert_any_call(
         ['code', '--install-extension', '/fake/path/to/bundled.vsix', '--force'],
         capture_output=True,
         text=True,
         check=False,
+        timeout=30,
     )
     # skip strict print check; behavior verified via subprocess call
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
@@ -410,12 +413,14 @@ def test_bundled_fails_falls_back_to_github(mock_env_and_dependencies):
             capture_output=True,
             text=True,
             check=False,
+            timeout=10,
         )
         mock_env_and_dependencies['subprocess'].assert_any_call(
             ['code', '--install-extension', '/fake/path/to/github.vsix', '--force'],
             capture_output=True,
             text=True,
             check=False,
+            timeout=30,
         )
         # Success message may vary in wording; ensure at least one info message was printed
         assert any(
@@ -450,6 +455,7 @@ def test_all_methods_fail(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please install manually if needed.'
@@ -482,6 +488,7 @@ def test_windsurf_detection_and_install(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please install manually if needed.'
@@ -560,6 +567,7 @@ def test_successful_install_attempt_vscode(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please install manually if needed.'
@@ -587,6 +595,7 @@ def test_successful_install_attempt_windsurf(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please install manually if needed.'
@@ -805,6 +814,7 @@ def test_comprehensive_windsurf_detection_path_based(mock_env_and_dependencies):
         capture_output=True,
         text=True,
         check=False,
+        timeout=10,
     )
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: Automatic installation failed. Please install manually if needed.'
