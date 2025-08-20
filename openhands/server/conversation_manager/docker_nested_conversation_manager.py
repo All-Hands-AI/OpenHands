@@ -24,6 +24,7 @@ from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
+from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.config.server_config import ServerConfig
 from openhands.server.constants import ROOM_KEY
 from openhands.server.conversation_manager.conversation_manager import (
@@ -43,7 +44,6 @@ from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 from openhands.utils.utils import create_registry_and_conversation_stats
-from openhands.runtime.runtime_status import RuntimeStatus
 
 
 @dataclass
