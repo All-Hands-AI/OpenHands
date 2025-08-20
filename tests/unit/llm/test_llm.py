@@ -1218,7 +1218,8 @@ def test_opus_41_keeps_temperature_top_p(mock_completion):
     llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
     call_kwargs = mock_completion.call_args[1]
     assert call_kwargs.get('temperature') == 0.7
-    assert call_kwargs.get('top_p') == 0.9
+    # Anthropic rejects both temperature and top_p together on Opus; we keep temperature and drop top_p
+    assert 'top_p' not in call_kwargs
 
 
 @patch('openhands.llm.llm.litellm_completion')
