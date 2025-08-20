@@ -51,28 +51,16 @@ def combine_thought(
     if not hasattr(action, 'thought'):
         return action
     current = getattr(action, 'thought', None)
+    # Always normalize to Thought for downstream code
+    if not isinstance(current, Thought):
+        current = Thought(text=str(current) if current else '')
+        setattr(action, 'thought', current)
     if isinstance(current, Thought):
         cur_text = current.text or ''
         if thought:
             current.text = f'{thought}\n{cur_text}' if cur_text else thought
         if reasoning_content is not None:
             current.reasoning_content = reasoning_content
-    else:
-        # Legacy string thought - convert to Thought object
-        cur_text = current or ''
-        if thought:
-            new_text = f'{thought}\n{cur_text}' if cur_text else thought
-            setattr(
-                action,
-                'thought',
-                Thought(text=new_text, reasoning_content=reasoning_content),
-            )
-        elif reasoning_content is not None:
-            setattr(
-                action,
-                'thought',
-                Thought(text=cur_text, reasoning_content=reasoning_content),
-            )
     return action
 
 
