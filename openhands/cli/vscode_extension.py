@@ -205,13 +205,7 @@ def attempt_vscode_extension_install():
             _save_status(status_file, status)
             return
     except FileNotFoundError:
-        # Permanent failure for this environment until user fixes PATH
-        entry.update({'permanent_failure': 'command_not_found'})
-        status[editor_key] = entry
-        _save_status(status_file, status)
-        print(
-            f"INFO: '{editor_command}' not found. Please add it to PATH or install the extension manually."
-        )
+        _handle_command_not_found(entry, status, editor_key, status_file, editor_command)
         return
     except Exception as e:
         logger.debug(f'Bundled install attempt error: {e}')
@@ -221,12 +215,7 @@ def attempt_vscode_extension_install():
     try:
         github_ok = _attempt_github_install(editor_command, editor_name)
     except FileNotFoundError:
-        entry.update({'permanent_failure': 'command_not_found'})
-        status[editor_key] = entry
-        _save_status(status_file, status)
-        print(
-            f"INFO: '{editor_command}' not found. Please add it to PATH or install the extension manually."
-        )
+        _handle_command_not_found(entry, status, editor_key, status_file, editor_command)
         return
     except Exception as e:
         logger.debug(f'GitHub install attempt error: {e}')
@@ -244,6 +233,16 @@ def attempt_vscode_extension_install():
     print('INFO: Automatic installation failed. Please install manually if needed.')
     print(
         f'INFO: Will retry installation later based on backoff policy for {editor_name}.'
+
+
+def _handle_command_not_found(entry: dict, status: dict, editor_key: str,
+                             status_file: pathlib.Path, editor_command: str):
+    """Handle permanent failure when editor command is not found."""
+    entry.update({'permanent_failure': 'command_not_found'})
+    status[editor_key] = entry
+    _save_status(status_file, status)
+    print(
+        f"INFO: '{editor_command}' not found. Please add it to PATH or install the extension manually."
     )
 
 
