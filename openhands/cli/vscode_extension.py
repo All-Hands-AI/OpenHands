@@ -165,16 +165,8 @@ def attempt_vscode_extension_install():
         )
         return
 
-    if last_attempt:
-        wait_seconds = _calc_backoff_seconds(max(1, attempts))
-        if not _elapsed_enough(last_attempt, wait_seconds):
-            remaining = int(_remaining_seconds(last_attempt, wait_seconds))
-            hrs = max(1, remaining // 3600)
-            print(
-                f'INFO: Previous {editor_name} extension install attempt failed. Will retry later (~{hrs}h).\n'
-                '      Set OPENHANDS_RESET_VSCODE=1 to force retry sooner.'
-            )
-            return
+    if _should_skip_due_to_backoff(entry, editor_name):
+        return
 
     # Prepare available editor commands
     available = _available_commands(candidate_commands)
@@ -298,6 +290,26 @@ def _calc_backoff_seconds(attempts: int) -> int:
     """
     base = 24 * 3600
     return min(72 * 3600, base * (2 ** max(0, attempts - 1)))
+
+
+def _should_skip_due_to_backoff(entry: dict, editor_name: str) -> bool:
+    """Check if installation should be skipped due to backoff policy."""
+    attempts = int(entry.get('attempts', 0) or 0)
+    last_attempt = entry.get('last_attempt')
+
+    if not last_attempt:
+        return False
+
+    wait_seconds = _calc_backoff_seconds(max(1, attempts))
+    if not _elapsed_enough(last_attempt, wait_seconds):
+        remaining = int(_remaining_seconds(last_attempt, wait_seconds))
+        hrs = max(1, remaining // 3600)
+        print(
+            f'INFO: Previous {editor_name} extension install attempt failed. Will retry later (~{hrs}h).\n'
+            '      Set OPENHANDS_RESET_VSCODE=1 to force retry sooner.'
+        )
+        return True
+    return False
 
 
 def _available_commands(candidates: list[str]) -> list[str]:
