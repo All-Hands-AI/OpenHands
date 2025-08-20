@@ -97,8 +97,10 @@ export function MicroagentManagementRepositories({
         variant="splitted"
         className="w-full px-0 gap-3"
         itemClasses={{
-          base: "shadow-none bg-transparent border border-[#ffffff40] rounded-[6px] cursor-pointer",
-          trigger: "cursor-pointer gap-1",
+          base: "shadow-none bg-transparent cursor-pointer px-0",
+          trigger: "cursor-pointer gap-2 py-3",
+          indicator:
+            "flex items-center justify-center p-0.5 pr-[3px] text-white hover:bg-[#454545] rounded transition-colors duration-200 rotate-180",
         }}
         selectionMode="multiple"
       >

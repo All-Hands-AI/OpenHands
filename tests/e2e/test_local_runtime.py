@@ -5,8 +5,7 @@ import tempfile
 
 
 def test_headless_mode_with_dummy_agent_no_browser():
-    """
-    E2E test: build a docker image from python:3.13, install openhands from source,
+    """E2E test: build a docker image from python:3.13, install openhands from source,
     and run a local runtime task in headless mode.
     """
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
