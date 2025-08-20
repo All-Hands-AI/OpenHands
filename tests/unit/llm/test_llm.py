@@ -1239,7 +1239,6 @@ def test_opus_4_keeps_temperature_top_p(mock_completion):
     assert call_kwargs.get('top_p') == 0.9
 
 
-
 @patch('openhands.llm.llm.litellm_completion')
 def test_opus_41_disables_thinking(mock_completion):
     mock_completion.return_value = {
@@ -1255,6 +1254,7 @@ def test_opus_41_disables_thinking(mock_completion):
     assert call_kwargs.get('thinking') == {'type': 'disabled'}
     # allowed_openai_params should include thinking so LiteLLM forwards it
     assert 'thinking' in call_kwargs.get('allowed_openai_params', [])
+
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_is_caching_prompt_active_anthropic_prefixed(mock_get_model_info):
