@@ -220,7 +220,7 @@ describe("Content", () => {
         expect(agent).toHaveValue("CoActAgent");
         expect(confirmation).toBeChecked();
         expect(condensor).not.toBeChecked();
-        expect(securityAnalyzer).toHaveValue("None (Ask for every command)");
+        expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
       });
     });
   });
@@ -310,7 +310,7 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = screen.getByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("None (Ask for every command)");
+    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
     await userEvent.click(securityAnalyzerOption);
 
     const submitButton = screen.getByTestId("submit-button");
@@ -323,7 +323,7 @@ describe("Form submission", () => {
         agent: "CoActAgent",
         confirmation_mode: true,
         enable_default_condenser: false,
-        security_analyzer: "none",
+        security_analyzer: null,
       }),
     );
   });
@@ -470,17 +470,17 @@ describe("Form submission", () => {
     // select security analyzer
     const securityAnalyzer = await screen.findByTestId("security-analyzer-input");
     await userEvent.click(securityAnalyzer);
-    const securityAnalyzerOption = screen.getByText("None (Ask for every command)");
+    const securityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_NONE");
     await userEvent.click(securityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("None (Ask for every command)");
+    expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_NONE");
 
     expect(submitButton).not.toBeDisabled();
 
     // revert back to original value
     await userEvent.click(securityAnalyzer);
-    const originalSecurityAnalyzerOption = screen.getByText("LLM Analyzer (Default)");
+    const originalSecurityAnalyzerOption = screen.getByText("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
     await userEvent.click(originalSecurityAnalyzerOption);
-    expect(securityAnalyzer).toHaveValue("LLM Analyzer (Default)");
+    expect(securityAnalyzer).toHaveValue("SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT");
     expect(submitButton).toBeDisabled();
   });
 
