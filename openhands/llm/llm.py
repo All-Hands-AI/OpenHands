@@ -8,6 +8,8 @@ from typing import Any, Callable
 import httpx
 
 from openhands.core.config import LLMConfig
+from openhands.llm.metrics import Metrics
+from openhands.llm.model_features import get_features
 
 with warnings.catch_warnings():
     warnings.simplefilter('ignore')
@@ -34,7 +36,6 @@ from openhands.llm.fn_call_converter import (
     convert_fncall_messages_to_non_fncall_messages,
     convert_non_fncall_messages_to_fncall_messages,
 )
-from openhands.llm.metrics import Metrics
 from openhands.llm.retry_mixin import RetryMixin
 
 __all__ = ['LLM']
@@ -49,79 +50,6 @@ LLM_RETRY_EXCEPTIONS: tuple[type[Exception], ...] = (
     LLMNoResponseError,
 )
 
-# cache prompt supporting models
-# remove this when we gemini and deepseek are supported
-CACHE_PROMPT_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3.7-sonnet',
-    'claude-3-5-sonnet-20241022',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-haiku-20241022',
-    'claude-3-haiku-20240307',
-    'claude-3-opus-20240229',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    'claude-opus-4-1-20250805',
-]
-
-# function calling supporting models
-FUNCTION_CALLING_SUPPORTED_MODELS = [
-    'claude-3-7-sonnet-20250219',
-    'claude-sonnet-3-7-latest',
-    'claude-3-5-sonnet',
-    'claude-3-5-sonnet-20240620',
-    'claude-3-5-sonnet-20241022',
-    'claude-3.5-haiku',
-    'claude-3-5-haiku-20241022',
-    'claude-sonnet-4-20250514',
-    'claude-sonnet-4',
-    'claude-opus-4-20250514',
-    'claude-opus-4-1-20250805',
-    'gpt-4o-mini',
-    'gpt-4o',
-    'o1-2024-12-17',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o3',
-    'o3-2025-04-16',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-pro',
-    'gpt-4.1',
-    'kimi-k2-0711-preview',
-    'kimi-k2-instruct',
-    'Qwen3-Coder-480B-A35B-Instruct',
-    'qwen3-coder',  # this will match both qwen3-coder-480b (openhands provider) and qwen3-coder (for openrouter)
-    'gpt-5',
-    'gpt-5-2025-08-07',
-]
-
-REASONING_EFFORT_SUPPORTED_MODELS = [
-    'o1-2024-12-17',
-    'o1',
-    'o3',
-    'o3-2025-04-16',
-    'o3-mini-2025-01-31',
-    'o3-mini',
-    'o4-mini',
-    'o4-mini-2025-04-16',
-    'gemini-2.5-flash',
-    'gemini-2.5-pro',
-    'gpt-5',
-    'gpt-5-2025-08-07',
-    'claude-opus-4-1-20250805',  # we need to remove top_p for opus 4.1
-]
-
-MODELS_WITHOUT_STOP_WORDS = [
-    'o1-mini',
-    'o1-preview',
-    'o1',
-    'o1-2024-12-17',
-    'xai/grok-4-0709',
-]
-
 
 class LLM(RetryMixin, DebugMixin):
     """The LLM class represents a Language Model instance.
@@ -133,6 +61,7 @@ class LLM(RetryMixin, DebugMixin):
     def __init__(
         self,
         config: LLMConfig,
+        service_id: str,
         metrics: Metrics | None = None,
         retry_listener: Callable[[int, int], None] | None = None,
     ) -> None:
@@ -145,13 +74,15 @@ class LLM(RetryMixin, DebugMixin):
             metrics: The metrics to use.
         """
         self._tried_model_info = False
+        self.cost_metric_supported: bool = True
+        self.config: LLMConfig = copy.deepcopy(config)
+        self.service_id = service_id
         self.metrics: Metrics = (
             metrics if metrics is not None else Metrics(model_name=config.model)
         )
-        self.cost_metric_supported: bool = True
-        self.config: LLMConfig = copy.deepcopy(config)
 
         self.model_info: ModelInfo | None = None
+        self._function_calling_active: bool = False
         self.retry_listener = retry_listener
         if self.config.log_completions:
             if self.config.log_completions_folder is None:
@@ -200,10 +131,8 @@ class LLM(RetryMixin, DebugMixin):
                 f'Rewrote openhands/{model_name} to {self.config.model} with base URL {self.config.base_url}'
             )
 
-        if (
-            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
-        ):
+        features = get_features(self.config.model)
+        if features.supports_reasoning_effort:
             # For Gemini models, only map 'low' to optimized thinking budget
             # Let other reasoning_effort values pass through to API as-is
             if 'gemini-2.5-pro' in self.config.model:
@@ -310,7 +239,7 @@ class LLM(RetryMixin, DebugMixin):
 
                 # add stop words if the model supports it and stop words are not disabled
                 if (
-                    self.config.model not in MODELS_WITHOUT_STOP_WORDS
+                    get_features(self.config.model).supports_stop_words
                     and not self.config.disable_stop_word
                 ):
                     kwargs['stop'] = STOP_WORDS
@@ -408,8 +337,7 @@ class LLM(RetryMixin, DebugMixin):
                 assert self.config.log_completions_folder is not None
                 log_file = os.path.join(
                     self.config.log_completions_folder,
-                    # use the metric model name (for draft editor)
-                    f'{self.metrics.model_name.replace("/", "__")}-{time.time()}.json',
+                    f'{self.config.model.replace("/", "__")}-{time.time()}.json',
                 )
 
                 # set up the dict to be logged
@@ -555,17 +483,10 @@ class LLM(RetryMixin, DebugMixin):
                 ):
                     self.config.max_output_tokens = self.model_info['max_tokens']
 
-        # Initialize function calling capability
-        # Check if model name is in our supported list
-        model_name_supported = (
-            self.config.model in FUNCTION_CALLING_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in FUNCTION_CALLING_SUPPORTED_MODELS
-            or any(m in self.config.model for m in FUNCTION_CALLING_SUPPORTED_MODELS)
-        )
-
-        # Handle native_tool_calling user-defined configuration
+        # Initialize function calling using centralized model features
+        features = get_features(self.config.model)
         if self.config.native_tool_calling is None:
-            self._function_calling_active = model_name_supported
+            self._function_calling_active = features.supports_function_calling
         else:
             self._function_calling_active = self.config.native_tool_calling
 
@@ -600,14 +521,10 @@ class LLM(RetryMixin, DebugMixin):
         Returns:
             boolean: True if prompt caching is supported and enabled for the given model.
         """
-        return (
-            self.config.caching_prompt is True
-            and (
-                self.config.model in CACHE_PROMPT_SUPPORTED_MODELS
-                or self.config.model.split('/')[-1] in CACHE_PROMPT_SUPPORTED_MODELS
-            )
-            # We don't need to look-up model_info, because only Anthropic models needs the explicit caching breakpoint
-        )
+        if not self.config.caching_prompt:
+            return False
+        # We don't need to look-up model_info, because only Anthropic models need explicit caching breakpoints
+        return get_features(self.config.model).supports_prompt_cache
 
     def is_function_calling_active(self) -> bool:
         """Returns whether function calling is supported and enabled for this LLM instance.
@@ -848,6 +765,8 @@ class LLM(RetryMixin, DebugMixin):
             if 'deepseek' in self.config.model:
                 message.force_string_serializer = True
             if 'kimi-k2-instruct' in self.config.model and 'groq' in self.config.model:
+                message.force_string_serializer = True
+            if 'openrouter/anthropic/claude-sonnet-4' in self.config.model:
                 message.force_string_serializer = True
 
         # let pydantic handle the serialization

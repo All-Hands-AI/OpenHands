@@ -31,6 +31,12 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
+from openhands.cli.pt_style import (
+    COLOR_AGENT_BLUE,
+    COLOR_GOLD,
+    COLOR_GREY,
+    get_cli_style,
+)
 from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
@@ -69,16 +75,7 @@ MAX_RECENT_THOUGHTS = 5
 MAX_OUTPUT_LINES = 15
 
 # Color and styling constants
-COLOR_GOLD = '#FFD700'
-COLOR_GREY = '#808080'
-COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
-DEFAULT_STYLE = Style.from_dict(
-    {
-        'gold': COLOR_GOLD,
-        'grey': COLOR_GREY,
-        'prompt': f'{COLOR_GOLD} bold',
-    }
-)
+DEFAULT_STYLE = get_cli_style()
 
 COMMANDS = {
     '/exit': 'Exit the application',
