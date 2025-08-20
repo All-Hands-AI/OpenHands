@@ -252,7 +252,7 @@ def test_prompt_cache_models(model):
         ('gemini-2.5-pro', True),
         ('gpt-5', True),
         ('gpt-5-2025-08-07', True),
-        ('claude-opus-4-1-20250805', True),
+        ('claude-opus-4-1-20250805', False),
         # DeepSeek
         ('deepseek/DeepSeek-R1-0528:671b-Q4_K_XL', True),
         ('DeepSeek-R1-0528', True),
