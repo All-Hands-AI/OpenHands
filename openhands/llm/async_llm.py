@@ -10,12 +10,7 @@ from openhands.llm.llm import (
     LLM,
     LLM_RETRY_EXCEPTIONS,
 )
-
-try:
-    from openhands.llm.model_features import get_features  # type: ignore
-except Exception:
-    # Reuse fallback from LLM module to avoid duplication
-    from openhands.llm.llm import get_features  # type: ignore
+from openhands.llm.model_features import get_features
 from openhands.utils.shutdown_listener import should_continue
 
 
