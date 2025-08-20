@@ -248,4 +248,3 @@ To add a new LLM model to OpenHands, you need to update multiple files across bo
 - Thought.__eq__ allows comparing a Thought instance with a plain string by comparing to Thought.text
 - __str__ is for display only; only Thought.text should be sent to LLMs
 - Rationale: maintain legacy expectations in tests/logic that compare action.thought directly to strings, while ensuring reasoning_content is never included in prompts
-
