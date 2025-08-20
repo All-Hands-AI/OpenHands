@@ -14,11 +14,13 @@ on:
         default: "v0.1.10"
 
 jobs:
-  build-and-push:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
 
     steps:
       - name: Checkout repository
@@ -70,11 +72,16 @@ jobs:
 
       # Set up Docker Buildx
       - name: Set up Docker Buildx
+        if: steps.image_exists.outputs.image_exists == 'false'
         uses: docker/setup-buildx-action@v3
 
+      - name: Set up QEMU
+        if: steps.image_exists.outputs.image_exists == 'false'
+        uses: docker/setup-qemu-action@v3
 
       # Build and push using the custom Dockerfile path
       - name: Build and push Docker image
+        if: steps.image_exists.outputs.image_exists == 'false'
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -97,10 +104,14 @@ jobs:
           echo "image-tag=${{ steps.metadata.outputs.tags }}" >> $GITHUB_OUTPUT
 
       # TODO: Auto update chart
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Repository Dispatch
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.DISPATCH_INFRA_DEPLOYMENT_TOKEN }}
           repository: oraichain/infra-deployments
           event-type: image-tag-prod
-          client-payload: '{"chart_name": "thesis-be", "tag": "${{ env.SHORT_SHA }}", "target": "prod-aws", "env": "prod", "cluster_name": "prod-thesis"}'
+          client-payload: '{"chart_name": "thesis-be", "tag": "${{ needs.build.outputs.version }}", "target": "prod-aws", "env": "prod", "cluster_name": "prod-thesis"}'
