@@ -191,8 +191,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
     ) -> Repository:
-        """
-        Parse a Bitbucket API repository response into a Repository object.
+        """Parse a Bitbucket API repository response into a Repository object.
 
         Args:
             repo: Repository data from Bitbucket API
@@ -201,7 +200,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         Returns:
             Repository object
         """
-
         repo_id = repo.get('uuid', '')
 
         workspace_slug = repo.get('workspace', {}).get('slug', '')
@@ -292,8 +290,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     async def _fetch_paginated_data(
         self, url: str, params: dict, max_items: int
     ) -> list[dict]:
-        """
-        Fetch data with pagination support for Bitbucket API.
+        """Fetch data with pagination support for Bitbucket API.
 
         Args:
             url: The API endpoint URL
