@@ -17,10 +17,11 @@ from evaluation.benchmarks.swe_bench.run_infer import (
 from evaluation.benchmarks.swe_bench.run_infer import (
     get_instruction as base_get_instruction,
 )
-from evaluation.utils.shared import (, get_metrics
+from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
     EvalOutput,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,

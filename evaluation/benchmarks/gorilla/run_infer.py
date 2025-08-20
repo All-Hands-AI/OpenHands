@@ -6,12 +6,13 @@ import httpx
 import pandas as pd
 
 from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
-from evaluation.utils.shared import (, get_metrics
+from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,

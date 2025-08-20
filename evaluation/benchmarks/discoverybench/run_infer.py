@@ -11,12 +11,13 @@ from evaluation.benchmarks.discoverybench.eval_utils.eval_w_subhypo_gen import (
 from evaluation.benchmarks.discoverybench.eval_utils.response_parser import (
     extract_gen_hypo_from_logs,
 )
-from evaluation.utils.shared import (, get_metrics
+from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,

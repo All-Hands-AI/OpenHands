@@ -10,7 +10,7 @@ from openhands.llm.metrics import Metrics
 
 class FakeEventStream:
     def __init__(self):
-        self.sid = "test-sid"
+        self.sid = 'test-sid'
         self.file_store = None
         self.user_id = None
 
@@ -40,7 +40,7 @@ class DummyState:
         self.conversation_stats = conversation_stats
         self.metrics = Metrics()
         self.history = []
-        self.last_error = ""
+        self.last_error = ''
         self.extra_data = {}
 
 
@@ -78,15 +78,17 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
 
     # Prepare conversation stats with one service metrics
     store = InMemoryFileStore({})
-    conv_stats = ConversationStats(file_store=store, conversation_id="cid", user_id=None)
+    conv_stats = ConversationStats(
+        file_store=store, conversation_id='cid', user_id=None
+    )
     m = Metrics()
     m.add_cost(0.5)
-    conv_stats.service_to_metrics["svc"] = m
+    conv_stats.service_to_metrics['svc'] = m
 
     # Create a new tracker and initialize state
-    tracker = StateTracker(sid="sid", file_store=store, user_id=None)
+    tracker = StateTracker(sid='sid', file_store=store, user_id=None)
     tracker.set_initial_state(
-        id="sid",
+        id='sid',
         state=None,
         conversation_stats=conv_stats,
         max_iterations=1,
@@ -107,8 +109,8 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
 
 def test_run_controller_exposes_aggregated_metrics_in_state():
     """Ensure get_metrics(state) reads from ConversationStats when available."""
-    from openhands.core.main import run_controller
     from evaluation.utils.shared import get_metrics
+    from openhands.core.main import run_controller
 
     cfg = OpenHandsConfig()
     # Prevent run_controller from trying to persist state via DummyState
@@ -125,41 +127,74 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
             enable_mcp = False
 
         class _LLMCfg:
-            model = "test-model"
+            model = 'test-model'
 
         class _LLM:
             config = _LLMCfg()
 
         class _Agent:
-            name = "FakeAgent"
+            name = 'FakeAgent'
             config = _AgentCfg()
             llm = _LLM()
 
         return _Agent()
 
-    def fake_create_runtime(config, llm_registry, sid=None, headless_mode=True, agent=None, git_provider_tokens=None):
+    def fake_create_runtime(
+        config,
+        llm_registry,
+        sid=None,
+        headless_mode=True,
+        agent=None,
+        git_provider_tokens=None,
+    ):
         return FakeRuntime()
 
-    def fake_create_memory(runtime, event_stream, sid, selected_repository=None, repo_directory=None, status_callback=None, conversation_instructions=None, working_dir=None):
+    def fake_create_memory(
+        runtime,
+        event_stream,
+        sid,
+        selected_repository=None,
+        repo_directory=None,
+        status_callback=None,
+        conversation_instructions=None,
+        working_dir=None,
+    ):
         return object()
 
-    def fake_create_controller(agent, runtime, config, conversation_stats, headless_mode=True, replay_events=None):
+    def fake_create_controller(
+        agent,
+        runtime,
+        config,
+        conversation_stats,
+        headless_mode=True,
+        replay_events=None,
+    ):
         # Return a controller that yields a DummyState with provided conversation_stats
         state = DummyState(conversation_stats)
         return (FakeController(state), None)
 
     # Invoke run_controller under patch context
-    with patch("openhands.core.main.create_registry_and_conversation_stats", side_effect=fake_create_registry_and_conversation_stats), \
-         patch("openhands.core.main.create_agent", side_effect=fake_create_agent), \
-         patch("openhands.core.main.create_runtime", side_effect=fake_create_runtime), \
-         patch("openhands.core.main.create_memory", side_effect=fake_create_memory), \
-         patch("openhands.core.main.create_controller", side_effect=fake_create_controller), \
-         patch("openhands.core.main.run_agent_until_done", side_effect=lambda *args, **kwargs: None):
+    with (
+        patch(
+            'openhands.core.main.create_registry_and_conversation_stats',
+            side_effect=fake_create_registry_and_conversation_stats,
+        ),
+        patch('openhands.core.main.create_agent', side_effect=fake_create_agent),
+        patch('openhands.core.main.create_runtime', side_effect=fake_create_runtime),
+        patch('openhands.core.main.create_memory', side_effect=fake_create_memory),
+        patch(
+            'openhands.core.main.create_controller', side_effect=fake_create_controller
+        ),
+        patch(
+            'openhands.core.main.run_agent_until_done',
+            side_effect=lambda *args, **kwargs: None,
+        ),
+    ):
         state = asyncio.run(
             run_controller(
                 config=cfg,
-                initial_user_action=MessageAction(content="hi"),
-                sid="sid",
+                initial_user_action=MessageAction(content='hi'),
+                sid='sid',
                 fake_user_response_fn=None,
             )
         )
