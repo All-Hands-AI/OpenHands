@@ -216,7 +216,13 @@ class DockerRuntime(ActionExecutionClient):
         for network_name in self.config.sandbox.additional_networks:
             try:
                 network = self.docker_client.networks.get(network_name)
-                network.connect(self.container)
+                if self.container is not None:
+                    network.connect(self.container)
+                else:
+                    self.log(
+                        'warning',
+                        f'Container not available to connect to network {network_name}',
+                    )
             except Exception as e:
                 self.log(
                     'error',
