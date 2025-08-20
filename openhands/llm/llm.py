@@ -174,7 +174,8 @@ class LLM(RetryMixin, DebugMixin):
         # Anthropic constraint: Opus models cannot accept both temperature and top_p
         # Prefer temperature (drop top_p) if both are specified.
         _model_lower = self.config.model.lower()
-        if ('anthropic' in _model_lower or 'claude' in _model_lower) and (
+        # Limit to Opus 4.1 specifically to avoid changing behavior of other Anthropic models
+        if ('claude-opus-4-1' in _model_lower) and (
             'temperature' in kwargs and 'top_p' in kwargs
         ):
             kwargs.pop('top_p', None)
