@@ -88,8 +88,9 @@ def attempt_vscode_extension_install():
         os.environ.get('__CFBundleIdentifier') == 'com.exafunction.windsurf'
         or 'windsurf' in os.environ.get('PATH', '').lower()
         or any(
-            isinstance(val, str) and 'windsurf' in val.lower()
+            'windsurf' in str(val).lower()
             for val in os.environ.values()
+            if isinstance(val, str)
         )
     )
     if not (is_vscode_like or is_windsurf):
