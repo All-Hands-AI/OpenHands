@@ -260,7 +260,7 @@ def _now_iso() -> str:
 def _elapsed_enough(since_iso: str, wait_seconds: int) -> bool:
     try:
         t = datetime.datetime.fromisoformat(since_iso.replace('Z', ''))
-    except Exception:
+    except (ValueError, TypeError):
         return True
     return (datetime.datetime.utcnow() - t).total_seconds() >= wait_seconds
 
@@ -268,7 +268,7 @@ def _elapsed_enough(since_iso: str, wait_seconds: int) -> bool:
 def _remaining_seconds(since_iso: str, wait_seconds: int) -> int:
     try:
         t = datetime.datetime.fromisoformat(since_iso.replace('Z', ''))
-    except Exception:
+    except (ValueError, TypeError):
         return 0
     elapsed = (datetime.datetime.utcnow() - t).total_seconds()
     return max(0, int(wait_seconds - elapsed))
