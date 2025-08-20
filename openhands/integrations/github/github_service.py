@@ -695,6 +695,104 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(file_content, file_path)
 
+    async def get_issue_comments(
+        self, repository: str, issue_number: int, discussion_id: str | None = None
+    ) -> list:
+        """Get comments for an issue.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            issue_number: The issue number
+            discussion_id: Not used for GitHub (kept for compatibility with GitLab)
+
+        Returns:
+            List of Comment objects ordered by creation date
+        """
+        from openhands.integrations.service_types import Comment
+
+        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'
+        response, _ = await self._make_request(url)
+
+        comments: list[Comment] = []
+        for comment in response:
+            comments.append(
+                Comment(
+                    id=comment.get('id', 0),
+                    body=comment.get('body', ''),
+                    author=comment.get('user', {}).get('login', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment.get('created_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('created_at')
+                    else datetime.fromtimestamp(0),
+                    updated_at=datetime.fromisoformat(
+                        comment.get('updated_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('updated_at')
+                    else datetime.fromtimestamp(0),
+                    system=False,  # GitHub doesn't have system comments in the same way
+                )
+            )
+        return comments
+
+    async def get_issue_title_and_body(
+        self, repository: str, issue_number: int
+    ) -> tuple[str, str]:
+        """Get the title and body of an issue.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            issue_number: The issue number
+
+        Returns:
+            A tuple of (title, body)
+        """
+        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}'
+        response, _ = await self._make_request(url)
+        title = response.get('title') or ''
+        body = response.get('body') or ''
+        return title, body
+
+    async def get_review_thread_comments(
+        self, repository: str, pr_number: int, review_id: int
+    ) -> list:
+        """Get comments from a review thread by review ID.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The pull request number
+            review_id: The review ID
+
+        Returns:
+            List of Comment objects ordered as returned by the API
+        """
+        from openhands.integrations.service_types import Comment
+
+        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}/reviews/{review_id}/comments'
+        response, _ = await self._make_request(url)
+
+        comments: list[Comment] = []
+        for comment in response:
+            comments.append(
+                Comment(
+                    id=comment.get('id', 0),
+                    body=comment.get('body', ''),
+                    author=comment.get('user', {}).get('login', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment.get('created_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('created_at')
+                    else datetime.fromtimestamp(0),
+                    updated_at=datetime.fromisoformat(
+                        comment.get('updated_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('updated_at')
+                    else datetime.fromtimestamp(0),
+                    system=False,
+                )
+            )
+        return comments
+
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
