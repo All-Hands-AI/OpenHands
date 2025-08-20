@@ -93,14 +93,14 @@ function SecurityInvariant() {
     (risk: ActionSecurityRisk) => {
       switch (risk) {
         case ActionSecurityRisk.LOW:
-          return t(I18nKey.SECURITY_ANALYZER$LOW_RISK);
+          return t(I18nKey.SECURITY$LOW_RISK);
         case ActionSecurityRisk.MEDIUM:
-          return t(I18nKey.SECURITY_ANALYZER$MEDIUM_RISK);
+          return t(I18nKey.SECURITY$MEDIUM_RISK);
         case ActionSecurityRisk.HIGH:
-          return t(I18nKey.SECURITY_ANALYZER$HIGH_RISK);
+          return t(I18nKey.SECURITY$HIGH_RISK);
         case ActionSecurityRisk.UNKNOWN:
         default:
-          return t(I18nKey.SECURITY_ANALYZER$UNKNOWN_RISK);
+          return t(I18nKey.SECURITY$UNKNOWN_RISK);
       }
     },
     [t],
