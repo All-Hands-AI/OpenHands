@@ -102,18 +102,11 @@ class MCPProxyManager:
 
             return wrapped
 
-        # Get the SSE app
-        # mcp_app = self.proxy.http_app(path='/shttp')
+        # Get the SSE app and mount it under /mcp only
         mcp_app = close_on_double_start(
             self.proxy.http_app(path='/sse', transport='sse')
         )
         app.mount('/mcp', mcp_app)
-
-        # Remove any existing mounts at root path
-        if '/mcp' in app.routes:
-            app.routes.remove('/mcp')
-
-        app.mount('/', mcp_app)
         logger.info('Mounted FastMCP Proxy app at /mcp')
 
     async def update_and_remount(
