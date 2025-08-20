@@ -84,7 +84,7 @@ class _SimpleFileLock:
 
 
 class TOMLConfigWriter:
-    """TOML writer for OpenHands config using tomlkit.
+    """TOML writer for OpenHands config.
 
     - Preserves comments/formatting when updating
     - Merges keys without clobbering unrelated sections
