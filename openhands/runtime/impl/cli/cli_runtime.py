@@ -727,6 +727,8 @@ class CLIRuntime(Runtime):
                 mcp_config.shttp_servers,
                 self.sid,
                 mcp_config.stdio_servers,
+                attempts=5,
+                retry_delay_sec=2.0,
             )
 
             if not mcp_clients:

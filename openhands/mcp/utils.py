@@ -65,6 +65,9 @@ async def create_mcp_clients(
     shttp_servers: list[MCPSHTTPServerConfig],
     conversation_id: str | None = None,
     stdio_servers: list[MCPStdioServerConfig] | None = None,
+    *,
+    attempts: int = 1,
+    retry_delay_sec: float = 2.0,
 ) -> list[MCPClient]:
     import asyncio
     import sys
@@ -88,11 +91,10 @@ async def create_mcp_clients(
     if not servers:
         return []
 
-    # Try to connect with a few short retries to allow server-side proxy mounts
+    # Try to connect with optional short retries to allow server-side proxy mounts
     # to become available (especially for DockerRuntime where stdio servers are
     # mounted behind an SSE proxy).
-    attempts = 5
-    delay_sec = 2.0
+    attempts = max(1, attempts)
 
     for attempt in range(1, attempts + 1):
         mcp_clients: list[MCPClient] = []
@@ -164,9 +166,9 @@ async def create_mcp_clients(
 
         if attempt < attempts:
             logger.info(
-                f'No MCP clients connected on attempt {attempt}/{attempts}; retrying in {delay_sec}s...'
+                f'No MCP clients connected on attempt {attempt}/{attempts}; retrying in {retry_delay_sec}s...'
             )
-            await asyncio.sleep(delay_sec)
+            await asyncio.sleep(retry_delay_sec)
 
     return []
 
