@@ -46,3 +46,14 @@ class Thought:
         if self.reasoning_content:
             return self.reasoning_content
         return self.text
+
+    def __eq__(self, other: object) -> bool:  # type: ignore[override]
+        # Allow comparing Thought to plain strings for backward compatibility in tests/UI code
+        if isinstance(other, Thought):
+            return (
+                self.text == other.text
+                and self.reasoning_content == other.reasoning_content
+            )
+        if isinstance(other, str):
+            return self.text == other
+        return NotImplemented  # type: ignore[return-value]

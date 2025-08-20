@@ -22,7 +22,12 @@ class SecurityAnalyzer:
         self.event_stream = event_stream
 
         def sync_on_event(event: Event) -> None:
-            asyncio.create_task(self.on_event(event))
+            try:
+                loop = asyncio.get_running_loop()
+                loop.create_task(self.on_event(event))
+            except RuntimeError:
+                # No running loop in this thread; execute synchronously in a fresh loop
+                asyncio.run(self.on_event(event))
 
         self.event_stream.subscribe(
             EventStreamSubscriber.SECURITY_ANALYZER, sync_on_event, str(uuid4())

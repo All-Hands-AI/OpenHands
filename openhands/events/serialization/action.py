@@ -110,7 +110,8 @@ def action_from_dict(action: dict) -> Action:
         raise LLMMalformedActionError(
             f"'{action['action']=}' is not defined. Available actions: {ACTION_TYPE_TO_CLASS.keys()}"
         )
-    args = action.get('args', {})
+    # Work on a copy of args to avoid mutating the caller's dictionary
+    args = dict(action.get('args', {}))
     # Remove timestamp from args if present
     timestamp = args.pop('timestamp', None)
 

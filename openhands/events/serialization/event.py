@@ -6,6 +6,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from openhands.events import Event, EventSource
+from openhands.events.action.action import Thought
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
@@ -99,6 +100,20 @@ def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
 
 def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
+    # Normalize Thought dataclass in actions to a simple string for backward compatibility
+    if 'thought' in props and isinstance(props['thought'], (dict, Thought)):
+        # Preserve structured thought only when reasoning content is present; otherwise flatten to string for backward compatibility
+        if isinstance(props['thought'], Thought):
+            rc = props['thought'].reasoning_content
+            props['thought'] = (
+                {'text': props['thought'].text, 'reasoning_content': rc}
+                if rc
+                else props['thought'].text
+            )
+        else:
+            rc = props['thought'].get('reasoning_content')
+            text = props['thought'].get('text', '')
+            props['thought'] = {'text': text, 'reasoning_content': rc} if rc else text
     d = {}
     for key in TOP_KEYS:
         if hasattr(event, key) and getattr(event, key) is not None:
