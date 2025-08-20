@@ -347,6 +347,7 @@ def convert_markdown_to_html(text: str) -> str:
     Returns:
         HTML formatted text with custom styling for headers and bullet points
     """
+
     if not text:
         return text
 
@@ -354,20 +355,38 @@ def convert_markdown_to_html(text: str) -> str:
     # Enable the 'extra' extension for tables, fenced code, etc.
     html = markdown.markdown(text, extensions=['extra'])
 
-    # Customize headers
+    # Customize bullet points to use dashes with better formatting
+    # Replace list structure while maintaining better spacing
+    html = html.replace('<ul>\n', '\n')  # Remove opening ul with newline
+    html = html.replace('<ul>', '\n')  # Remove opening ul
+    html = html.replace('\n</ul>', '\n')  # Remove closing ul with newline
+    html = html.replace('</ul>', '\n')  # Remove closing ul
+    html = html.replace('<li>', '- ')  # Convert li to dash
+    html = html.replace('</li>', '')  # Remove closing li
+
+    # Customize headers with proper spacing - do this AFTER list processing
     for i in range(1, 7):
         # Get the appropriate number of # characters for this heading level
         prefix = '#' * i + ' '
 
         # Replace <h1> with the prefix and bold text
         html = html.replace(f'<h{i}>', f'<b>{prefix}')
-        html = html.replace(f'</h{i}>', '</b>\n')
+        html = html.replace(f'</h{i}>', '</b>')
 
-    # Customize bullet points to use dashes instead of dots with compact spacing
-    html = html.replace('<ul>', '')
-    html = html.replace('</ul>', '')
-    html = html.replace('<li>', '- ')
-    html = html.replace('</li>', '')
+    # Fix spacing issues: ensure headers have proper spacing from previous content
+    import re
+
+    # Apply spacing improvements for better visual formatting
+
+    # Add spacing before headers that come after other content (but not after newlines)
+    html = re.sub(r'([^\n])\n<b>##', r'\1\n\n<b>##', html)
+    html = re.sub(r'([^\n])\n<b>#', r'\1\n\n<b>#', html)  # Handle all header levels
+
+    # Clean up excessive newlines while preserving intentional spacing
+    html = re.sub(r'\n{3,}', '\n\n', html)
+
+    # Ensure list items are properly formatted and not split across lines
+    html = re.sub(r'\n- ([^\n]*)\n([^-\n<][^\n]*)', r'\n- \1 \2', html)
 
     return html
 
