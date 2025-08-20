@@ -17,7 +17,7 @@ from evaluation.benchmarks.swe_bench.run_infer import (
 from evaluation.benchmarks.swe_bench.run_infer import (
     get_instruction as base_get_instruction,
 )
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalException,
     EvalMetadata,
     EvalOutput,
@@ -179,7 +179,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     instruction = message_action.content

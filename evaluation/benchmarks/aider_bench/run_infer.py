@@ -12,7 +12,7 @@ from evaluation.benchmarks.aider_bench.helper import (
     INST_SUFFIXES,
     INSTRUCTIONS_ADDENDUM,
 )
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -246,7 +246,7 @@ def process_instance(
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
     histories = compatibility_for_eval_history_pairs(state.history)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

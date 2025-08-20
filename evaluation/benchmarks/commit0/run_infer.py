@@ -9,7 +9,7 @@ from commit0.harness.constants import SPLIT
 from datasets import load_dataset
 
 import openhands.agenthub
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalException,
     EvalMetadata,
     EvalOutput,
@@ -480,7 +480,7 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

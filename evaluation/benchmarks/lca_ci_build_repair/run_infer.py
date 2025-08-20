@@ -16,7 +16,7 @@ import pandas as pd
 import ruamel.yaml
 from datasets import load_dataset
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -335,7 +335,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         )
     )
     assert state is not None
-    metrics = state.metrics.get() if state.metrics else {}
+    metrics = get_metrics(state)
 
     test_result = complete_runtime(runtime, instance)
 

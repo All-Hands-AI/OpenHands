@@ -25,7 +25,7 @@ from typing import Callable
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -292,7 +292,7 @@ Ok now its time to start solving the question. Good luck!
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

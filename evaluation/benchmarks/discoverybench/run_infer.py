@@ -11,7 +11,7 @@ from evaluation.benchmarks.discoverybench.eval_utils.eval_w_subhypo_gen import (
 from evaluation.benchmarks.discoverybench.eval_utils.response_parser import (
     extract_gen_hypo_from_logs,
 )
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -294,7 +294,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     test_result = complete_runtime(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)

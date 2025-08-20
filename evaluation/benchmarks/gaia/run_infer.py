@@ -16,7 +16,7 @@ from evaluation.benchmarks.gaia.utils import (
     image_to_jpg_base64_url,
     image_to_png_base64_url,
 )
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -269,7 +269,7 @@ Here is the task:
         'model_answer': model_answer,
         'ground_truth': instance['Final answer'],
     }
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

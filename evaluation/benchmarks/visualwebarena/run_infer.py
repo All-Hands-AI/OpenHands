@@ -7,7 +7,7 @@ import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as g
 import gymnasium as gym
 import pandas as pd
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -179,7 +179,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Instruction obtained from the first message from the USER
     instruction = ''

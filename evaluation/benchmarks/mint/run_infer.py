@@ -10,7 +10,7 @@ from evaluation.benchmarks.mint.datatypes import TaskState
 from evaluation.benchmarks.mint.env import SimplifiedEnv
 from evaluation.benchmarks.mint.prompts import ToolPromptTemplate
 from evaluation.benchmarks.mint.tasks import Task
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -205,7 +205,7 @@ def process_instance(
         task_state = state.extra_data['task_state']
         logger.info('Task state: ' + str(task_state.to_dict()))
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

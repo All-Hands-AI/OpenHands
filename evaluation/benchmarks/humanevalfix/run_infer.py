@@ -17,7 +17,7 @@ import pandas as pd
 from datasets import load_dataset
 from evaluate import load
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -248,7 +248,7 @@ def process_instance(
 
     if state is None:
         raise ValueError('State should not be None.')
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     test_result = complete_runtime(runtime, instance)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)

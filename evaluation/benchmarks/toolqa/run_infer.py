@@ -5,7 +5,7 @@ from typing import Any
 import pandas as pd
 
 from evaluation.benchmarks.toolqa.utils import encode_question, eval_answer, get_data
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -134,7 +134,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
     correct = eval_answer(str(model_answer_raw), str(answer))
     logger.info(f'Final message: {model_answer_raw} | Correctness: {correct}')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

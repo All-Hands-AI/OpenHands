@@ -9,7 +9,7 @@ import pandas as pd
 from datasets import load_dataset
 
 from evaluation.benchmarks.biocoder.utils import BiocoderData
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -294,7 +294,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     test_result = complete_runtime(runtime, instance)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary

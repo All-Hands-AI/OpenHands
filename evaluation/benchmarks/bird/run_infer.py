@@ -13,7 +13,7 @@ from datasets import load_dataset
 from func_timeout import FunctionTimedOut, func_timeout
 from tqdm import tqdm
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -422,7 +422,7 @@ def process_instance(
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
     if state is None:
         raise ValueError('State should not be None.')
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

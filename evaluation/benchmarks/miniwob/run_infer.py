@@ -7,7 +7,7 @@ import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environment
 import gymnasium as gym
 import pandas as pd
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -174,7 +174,7 @@ def process_instance(
     if state is None:
         raise ValueError('State should not be None.')
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Instruction is the first message from the USER
     instruction = ''

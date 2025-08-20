@@ -6,7 +6,7 @@ import httpx
 import pandas as pd
 
 from evaluation.benchmarks.gorilla.utils import encode_question, get_data_for_hub
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -108,7 +108,7 @@ def process_instance(
     # attempt to parse model_answer
     ast_eval_fn = instance['ast_eval']
     correct, hallucination = ast_eval_fn(instance_id, model_answer_raw)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     logger.info(
         f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
     )

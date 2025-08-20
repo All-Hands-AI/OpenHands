@@ -4,7 +4,7 @@ import os
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -247,7 +247,7 @@ def process_instance(
     )
     test_result['final_message'] = final_message
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary

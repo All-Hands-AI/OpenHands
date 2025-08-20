@@ -13,7 +13,7 @@ from evaluation.benchmarks.agent_bench.helper import (
     compare_results,
     create_sh_file,
 )
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
@@ -273,7 +273,7 @@ def process_instance(
     # remove when it becomes unnecessary
     histories = compatibility_for_eval_history_pairs(state.history)
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

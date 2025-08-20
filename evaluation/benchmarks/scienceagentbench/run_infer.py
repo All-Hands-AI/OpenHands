@@ -6,7 +6,7 @@ import pandas as pd
 from datasets import load_dataset
 from tqdm import tqdm
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -218,7 +218,7 @@ If the program uses some packages that are incompatible, please figure out alter
     # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
     if state is None:
         raise ValueError('State should not be None.')
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

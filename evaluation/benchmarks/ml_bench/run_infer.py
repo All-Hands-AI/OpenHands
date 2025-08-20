@@ -20,7 +20,7 @@ from typing import Any
 import pandas as pd
 from datasets import load_dataset
 
-from evaluation.utils.shared import (
+from evaluation.utils.shared import (, get_metrics
     EvalMetadata,
     EvalOutput,
     codeact_user_response,
@@ -250,7 +250,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         )
     )
     assert state is not None
-    metrics = state.metrics.get() if state.metrics else {}
+    metrics = get_metrics(state)
 
     test_result = complete_runtime(runtime)
 
