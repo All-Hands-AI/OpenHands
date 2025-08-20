@@ -242,9 +242,23 @@ def _handle_command_not_found(entry: dict, status: dict, editor_key: str,
 
 def _save_status(path: pathlib.Path, data: dict) -> None:
     try:
-        path.write_text(json.dumps(data))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), prefix=path.name + '.', suffix='.tmp')
+        try:
+            with os.fdopen(fd, 'w') as f:
+                json.dump(data, f)
+                f.flush()
+                os.fsync(f.fileno())
+            os.replace(tmp_path, path)
+        finally:
+            # If replace succeeded, tmp_path no longer exists; ignore errors
+            try:
+                if os.path.exists(tmp_path):
+                    os.remove(tmp_path)
+            except OSError:
+                pass
     except Exception as e:
-        logger.debug(f'Could not write status file: {e}')
+        logger.debug(f'Could not write status file atomically: {e}')
 
 
 def _now_iso() -> str:
