@@ -14,13 +14,16 @@ class MultimodalRouter(BaseRouter):
 
     def __init__(
         self,
-        llm_registry: LLMRegistry,
         agent_config: AgentConfig,
+        llm_registry: LLMRegistry,
     ):
         super().__init__(agent_config, llm_registry)
 
         self._validate_model_routing_config(self.llms_for_routing)
 
+        # Primary LLM
+        self.llm = llm_registry.get_llm_from_agent_config('agent', agent_config)
+        # Secondary LLM
         self.secondary_llm = self.llms_for_routing[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 

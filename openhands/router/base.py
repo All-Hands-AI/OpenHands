@@ -17,9 +17,6 @@ class BaseRouter(ABC):
         self.llm_registry = llm_registry
         self.model_routing_config = agent_config.model_routing
 
-        # Primary LLM for the agent
-        self.llm = llm_registry.get_llm_from_agent_config('agent', agent_config)
-
         # Instantiate all the LLM instances for routing
         llms_for_routing_config = self.model_routing_config.llms_for_routing
         self.llms_for_routing = {
@@ -30,7 +27,7 @@ class BaseRouter(ABC):
         }
 
         # The active LLM for the current turn
-        self.active_llm = self.llm
+        self.active_llm = llm_registry.get_llm_from_agent_config('agent', agent_config)
 
     @abstractmethod
     def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
