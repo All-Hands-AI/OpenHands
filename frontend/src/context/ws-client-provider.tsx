@@ -317,15 +317,22 @@ export function WsClientProvider({
       session_api_key: conversation.session_api_key, // Have to set here because socketio doesn't support custom headers. :(
     };
 
-    let baseUrl = null;
+    let baseUrl: string | null = null;
+    let socketPath: string | undefined = undefined;
     if (conversation.url && !conversation.url.startsWith("/")) {
-      baseUrl = new URL(conversation.url).host;
+      const u = new URL(conversation.url);
+      baseUrl = u.host;
+      const pathBeforeApi = u.pathname.split("/api/conversations")[0] || "/";
+      // Socket.IO server default path is /socket.io; prefix with pathBeforeApi for path mode
+      socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
     } else {
-      baseUrl = import.meta.env.VITE_BACKEND_BASE_URL || window?.location.host;
+      baseUrl = (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) || window?.location.host;
+      socketPath = "/socket.io";
     }
 
     sio = io(baseUrl, {
       transports: ["websocket"],
+      path: socketPath,
       query,
     });
 

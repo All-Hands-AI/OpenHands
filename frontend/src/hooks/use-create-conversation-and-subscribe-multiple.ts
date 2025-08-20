@@ -50,12 +50,17 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         {
           onSuccess: (data) => {
             let baseUrl = "";
+            let socketPath: string | undefined = undefined;
             if (data?.url && !data.url.startsWith("/")) {
-              baseUrl = new URL(data.url).host;
+              const u = new URL(data.url);
+              baseUrl = u.host;
+              const pathBeforeApi = u.pathname.split("/api/conversations")[0] || "/";
+              socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
             } else {
               baseUrl =
                 (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
                 window?.location.host;
+              socketPath = "/socket.io";
             }
 
             // Subscribe to the conversation
@@ -64,6 +69,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
               sessionApiKey: data.session_api_key,
               providersSet: providers,
               baseUrl,
+              socketPath,
               onEvent: onEventCallback,
             });
 
