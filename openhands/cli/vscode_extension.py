@@ -118,7 +118,7 @@ def attempt_vscode_extension_install():
     if os.environ.get('OPENHANDS_RESET_VSCODE') == '1':
         status.pop(editor_key, None)
         try:
-            status_file.write_text(json.dumps(status))
+            _save_status(status_file, status)
         except Exception:
             pass
 
@@ -148,7 +148,7 @@ def attempt_vscode_extension_install():
 
     # Decide if we should attempt now based on backoff
     attempts = int(entry.get('attempts', 0) or 0)
-    last_attempt = entry.get('last_attempt')
+    entry.get('last_attempt')
     permanent_failure = entry.get('permanent_failure')
 
     if permanent_failure:
@@ -199,7 +199,9 @@ def attempt_vscode_extension_install():
             _save_status(status_file, status)
             return
     except FileNotFoundError:
-        _handle_command_not_found(entry, status, editor_key, status_file, editor_command)
+        _handle_command_not_found(
+            entry, status, editor_key, status_file, editor_command
+        )
         return
     except Exception as e:
         logger.debug(f'Bundled install attempt error: {e}')
@@ -209,7 +211,9 @@ def attempt_vscode_extension_install():
     try:
         github_ok = _attempt_github_install(editor_command, editor_name)
     except FileNotFoundError:
-        _handle_command_not_found(entry, status, editor_key, status_file, editor_command)
+        _handle_command_not_found(
+            entry, status, editor_key, status_file, editor_command
+        )
         return
     except Exception as e:
         logger.debug(f'GitHub install attempt error: {e}')
@@ -227,10 +231,16 @@ def attempt_vscode_extension_install():
     print('INFO: Automatic installation failed. Please install manually if needed.')
     print(
         f'INFO: Will retry installation later based on backoff policy for {editor_name}.'
+    )
 
 
-def _handle_command_not_found(entry: dict, status: dict, editor_key: str,
-                             status_file: pathlib.Path, editor_command: str):
+def _handle_command_not_found(
+    entry: dict,
+    status: dict,
+    editor_key: str,
+    status_file: pathlib.Path,
+    editor_command: str,
+):
     """Handle permanent failure when editor command is not found."""
     entry.update({'permanent_failure': 'command_not_found'})
     status[editor_key] = entry
@@ -243,7 +253,9 @@ def _handle_command_not_found(entry: dict, status: dict, editor_key: str,
 def _save_status(path: pathlib.Path, data: dict) -> None:
     try:
         path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), prefix=path.name + '.', suffix='.tmp')
+        fd, tmp_path = tempfile.mkstemp(
+            dir=str(path.parent), prefix=path.name + '.', suffix='.tmp'
+        )
         try:
             with os.fdopen(fd, 'w') as f:
                 json.dump(data, f)
@@ -278,8 +290,6 @@ def _load_status(status_file: pathlib.Path) -> dict:
     except (json.JSONDecodeError, OSError) as e:
         logger.debug(f'Could not read status file: {e}')
         return {}
-
-    return datetime.datetime.utcnow().isoformat() + 'Z'
 
 
 def _elapsed_enough(since_iso: str, wait_seconds: int) -> bool:
@@ -348,7 +358,9 @@ def _available_commands(candidates: list[str]) -> list[str]:
     available: list[str] = []
     for c in candidates:
         try:
-            proc = subprocess.run([c, '--version'], capture_output=True, text=True, timeout=5)
+            proc = subprocess.run(
+                [c, '--version'], capture_output=True, text=True, timeout=5
+            )
             if proc.returncode == 0:
                 available.append(c)
         except FileNotFoundError:
