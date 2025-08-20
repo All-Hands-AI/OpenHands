@@ -59,8 +59,10 @@ export function MicroagentManagementMicroagentCard({
     if (runtimeStatus === "STATUS$ERROR") {
       return t(I18nKey.MICROAGENT$STATUS_ERROR);
     }
-    if (conversationStatus === "RUNNING" && runtimeStatus === "STATUS$READY") {
-      return t(I18nKey.MICROAGENT$STATUS_OPENING_PR);
+    if (conversationStatus === "RUNNING") {
+      return runtimeStatus === "STATUS$READY"
+        ? t(I18nKey.MICROAGENT$STATUS_OPENING_PR)
+        : t(I18nKey.COMMON$STARTING);
     }
     return "";
   }, [conversationStatus, runtimeStatus, t, hasPr]);

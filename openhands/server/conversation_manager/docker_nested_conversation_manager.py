@@ -43,6 +43,7 @@ from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
 from openhands.utils.utils import create_registry_and_conversation_stats
+from openhands.runtime.runtime_status import RuntimeStatus
 
 
 @dataclass
@@ -137,9 +138,11 @@ class DockerNestedConversationManager(ConversationManager):
                 user_id=user_id,
                 session_api_key=session_api_key,
             ),
-            status=ConversationStatus.STARTING
-            if sid in self._starting_conversation_ids
-            else ConversationStatus.RUNNING,
+            status=(
+                ConversationStatus.STARTING
+                if sid in self._starting_conversation_ids
+                else ConversationStatus.RUNNING
+            ),
         )
 
     async def _start_agent_loop(
@@ -248,7 +251,11 @@ class DockerNestedConversationManager(ConversationManager):
                         response.raise_for_status()
 
                 init_conversation: dict[str, Any] = {
-                    'initial_user_msg': initial_user_msg,
+                    'initial_user_msg': (
+                        initial_user_msg.content
+                        if initial_user_msg and initial_user_msg.content
+                        else None
+                    ),
                     'image_urls': [],
                     'replay_json': replay_json,
                     'conversation_id': sid,
@@ -335,6 +342,45 @@ class DockerNestedConversationManager(ConversationManager):
             )
         container.stop()
 
+    async def _get_runtime_status_from_nested_runtime(
+        self, conversation_id: str, nested_url: str
+    ) -> RuntimeStatus | None:
+        """Get runtime status from the nested runtime via API call.
+
+        Args:
+            conversation_id: The conversation ID to query
+            nested_url: The base URL of the nested runtime
+
+        Returns:
+            The runtime status if available, None otherwise
+        """
+        try:
+            async with httpx.AsyncClient(
+                headers={
+                    'X-Session-API-Key': self._get_session_api_key_for_conversation(
+                        conversation_id
+                    )
+                }
+            ) as client:
+                # Query the nested runtime for conversation info
+                response = await client.get(nested_url)
+                if response.status_code == 200:
+                    conversation_data = response.json()
+                    runtime_status_str = conversation_data.get('runtime_status')
+                    if runtime_status_str:
+                        # Convert string back to RuntimeStatus enum
+                        return RuntimeStatus(runtime_status_str)
+                else:
+                    logger.debug(
+                        f'Failed to get conversation info for {conversation_id}: {response.status_code}'
+                    )
+        except ValueError:
+            logger.debug(f'Invalid runtime status value: {runtime_status_str}')
+        except Exception as e:
+            logger.debug(f'Could not get runtime status for {conversation_id}: {e}')
+
+        return None
+
     async def get_agent_loop_info(
         self, user_id: str | None = None, filter_to_sids: set[str] | None = None
     ) -> list[AgentLoopInfo]:
@@ -355,6 +401,12 @@ class DockerNestedConversationManager(ConversationManager):
                     self.config.sandbox.local_runtime_url,
                     os.getenv('NESTED_RUNTIME_BROWSER_HOST', ''),
                 )
+
+            # Get runtime status from nested runtime
+            runtime_status = await self._get_runtime_status_from_nested_runtime(
+                conversation_id, nested_url
+            )
+
             agent_loop_info = AgentLoopInfo(
                 conversation_id=conversation_id,
                 url=nested_url,
@@ -366,9 +418,12 @@ class DockerNestedConversationManager(ConversationManager):
                     sid=conversation_id,
                     user_id=user_id,
                 ),
-                status=ConversationStatus.STARTING
-                if conversation_id in self._starting_conversation_ids
-                else ConversationStatus.RUNNING,
+                status=(
+                    ConversationStatus.STARTING
+                    if conversation_id in self._starting_conversation_ids
+                    else ConversationStatus.RUNNING
+                ),
+                runtime_status=runtime_status,
             )
             results.append(agent_loop_info)
         return results
