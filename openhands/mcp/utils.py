@@ -66,6 +66,7 @@ async def create_mcp_clients(
     conversation_id: str | None = None,
     stdio_servers: list[MCPStdioServerConfig] | None = None,
 ) -> list[MCPClient]:
+    import asyncio
     import sys
 
     # Skip MCP clients on Windows
@@ -87,65 +88,87 @@ async def create_mcp_clients(
     if not servers:
         return []
 
-    mcp_clients = []
+    # Try to connect with a few short retries to allow server-side proxy mounts
+    # to become available (especially for DockerRuntime where stdio servers are
+    # mounted behind an SSE proxy).
+    attempts = 3
+    delay_sec = 2.0
 
-    for server in servers:
-        if isinstance(server, MCPStdioServerConfig):
-            # Validate that the command exists before connecting
-            if not shutil.which(server.command):
-                logger.error(
-                    f'Skipping MCP stdio server "{server.name}": command "{server.command}" not found. '
-                    f'Please install {server.command} or remove this server from your configuration.'
+    for attempt in range(1, attempts + 1):
+        mcp_clients: list[MCPClient] = []
+
+        for server in servers:
+            if isinstance(server, MCPStdioServerConfig):
+                # Validate that the command exists before connecting
+                if not shutil.which(server.command):
+                    logger.error(
+                        f'Skipping MCP stdio server "{server.name}": command "{server.command}" not found. '
+                        f'Please install {server.command} or remove this server from your configuration.'
+                    )
+                    continue
+
+                logger.info(
+                    f'Initializing MCP agent for {server} with stdio connection...'
                 )
+                client = MCPClient()
+                try:
+                    await client.connect_stdio(server)
+
+                    # Log which tools this specific server provides
+                    tool_names = [tool.name for tool in client.tools]
+                    server_name = getattr(
+                        server,
+                        'name',
+                        f'{server.command} {" ".join(server.args or [])}',
+                    )
+                    logger.debug(
+                        f'Successfully connected to MCP stdio server {server_name} - '
+                        f'provides {len(tool_names)} tools: {tool_names}'
+                    )
+
+                    mcp_clients.append(client)
+                except Exception as e:
+                    # Error is already logged and collected in client.connect_stdio()
+                    logger.error(
+                        f'Failed to connect to {server}: {str(e)}', exc_info=True
+                    )
                 continue
 
-            logger.info(f'Initializing MCP agent for {server} with stdio connection...')
+            is_shttp = isinstance(server, MCPSHTTPServerConfig)
+
+            connection_type = 'SHTTP' if is_shttp else 'SSE'
+            logger.info(
+                f'Initializing MCP agent for {server} with {connection_type} connection...'
+            )
             client = MCPClient()
+
             try:
-                await client.connect_stdio(server)
+                await client.connect_http(server, conversation_id=conversation_id)
 
                 # Log which tools this specific server provides
                 tool_names = [tool.name for tool in client.tools]
-                server_name = getattr(
-                    server, 'name', f'{server.command} {" ".join(server.args or [])}'
-                )
                 logger.debug(
-                    f'Successfully connected to MCP stdio server {server_name} - '
+                    f'Successfully connected to MCP STTP server {server.url} - '
                     f'provides {len(tool_names)} tools: {tool_names}'
                 )
 
+                # Only add the client to the list after a successful connection
                 mcp_clients.append(client)
+
             except Exception as e:
-                # Error is already logged and collected in client.connect_stdio()
+                # Error is already logged and collected in client.connect_http()
                 logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
-            continue
 
-        is_shttp = isinstance(server, MCPSHTTPServerConfig)
+        if mcp_clients:
+            return mcp_clients
 
-        connection_type = 'SHTTP' if is_shttp else 'SSE'
-        logger.info(
-            f'Initializing MCP agent for {server} with {connection_type} connection...'
-        )
-        client = MCPClient()
-
-        try:
-            await client.connect_http(server, conversation_id=conversation_id)
-
-            # Log which tools this specific server provides
-            tool_names = [tool.name for tool in client.tools]
-            logger.debug(
-                f'Successfully connected to MCP STTP server {server.url} - '
-                f'provides {len(tool_names)} tools: {tool_names}'
+        if attempt < attempts:
+            logger.info(
+                f'No MCP clients connected on attempt {attempt}/{attempts}; retrying in {delay_sec}s...'
             )
+            await asyncio.sleep(delay_sec)
 
-            # Only add the client to the list after a successful connection
-            mcp_clients.append(client)
-
-        except Exception as e:
-            # Error is already logged and collected in client.connect_http()
-            logger.error(f'Failed to connect to {server}: {str(e)}', exc_info=True)
-
-    return mcp_clients
+    return []
 
 
 async def fetch_mcp_tools_from_config(
@@ -229,14 +252,32 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     # Find the MCP client that has the matching tool name
     matching_client = None
+    resolved_tool_name = action.name
     logger.debug(f'MCP clients: {mcp_clients}')
     logger.debug(f'MCP action name: {action.name}')
 
     for client in mcp_clients:
-        logger.debug(f'MCP client tools: {client.tools}')
-        if action.name in [tool.name for tool in client.tools]:
+        tool_names = [tool.name for tool in client.tools]
+        logger.debug(f'MCP client tools: {tool_names}')
+        if action.name in tool_names:
             matching_client = client
+            resolved_tool_name = action.name
             break
+
+    # Fallback: FastMCP may prefix server name to tool names (e.g., fetch -> fetch_fetch)
+    if matching_client is None:
+        for client in mcp_clients:
+            tool_names = [tool.name for tool in client.tools]
+            for tname in tool_names:
+                if tname.endswith(f'_{action.name}'):
+                    matching_client = client
+                    resolved_tool_name = tname
+                    logger.debug(
+                        f'Resolved MCP tool name from {action.name} to {resolved_tool_name}'
+                    )
+                    break
+            if matching_client:
+                break
 
     if matching_client is None:
         raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
@@ -245,21 +286,21 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     try:
         # Call the tool - this will create a new connection internally
-        response = await matching_client.call_tool(action.name, action.arguments)
+        response = await matching_client.call_tool(resolved_tool_name, action.arguments)
         logger.debug(f'MCP response: {response}')
 
         return MCPObservation(
             content=json.dumps(response.model_dump(mode='json')),
-            name=action.name,
+            name=resolved_tool_name,
             arguments=action.arguments,
         )
     except McpError as e:
         # Handle MCP errors by returning an error observation instead of raising
-        logger.error(f'MCP error when calling tool {action.name}: {e}')
+        logger.error(f'MCP error when calling tool {resolved_tool_name}: {e}')
         error_content = json.dumps({'isError': True, 'error': str(e), 'content': []})
         return MCPObservation(
             content=error_content,
-            name=action.name,
+            name=resolved_tool_name,
             arguments=action.arguments,
         )
 
