@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
@@ -57,6 +58,7 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    config = get_default_openhands_config_for_eval(config)
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False

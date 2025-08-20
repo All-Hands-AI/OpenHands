@@ -8,6 +8,7 @@ from evaluation.integration_tests.tests.base import BaseIntegrationTest, TestRes
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
@@ -56,6 +57,7 @@ def get_config(
         # debug
         debug=True,
     )
+    config = get_default_openhands_config_for_eval(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance_id

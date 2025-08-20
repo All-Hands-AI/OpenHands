@@ -24,6 +24,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     assert_and_raise,
     codeact_user_response,
+    get_default_openhands_config_for_eval,
     get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
@@ -150,6 +151,8 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+
+    config = get_default_openhands_config_for_eval(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['id']

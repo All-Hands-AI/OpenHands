@@ -37,6 +37,7 @@ from evaluation.benchmarks.testgeneval.utils import load_testgeneval_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    get_default_openhands_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
@@ -58,20 +59,22 @@ def get_config(instance: pd.Series) -> OpenHandsConfig:
         f'Invalid container image for instance {instance["instance_id_swebench"]}.'
     )
     logger.info(f'Using instance container image: {base_container_image}.')
-    return OpenHandsConfig(
-        run_as_openhands=False,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
-        sandbox=SandboxConfig(
-            base_container_image=base_container_image,
-            use_host_network=False,
-            timeout=1800,
-            api_key=os.environ.get('ALLHANDS_API_KEY'),
-            remote_runtime_api_url=os.environ.get(
-                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
+    return get_default_openhands_config_for_eval(
+        OpenHandsConfig(
+            run_as_openhands=False,
+            runtime=os.environ.get('RUNTIME', 'eventstream'),
+            sandbox=SandboxConfig(
+                base_container_image=base_container_image,
+                use_host_network=False,
+                timeout=1800,
+                api_key=os.environ.get('ALLHANDS_API_KEY'),
+                remote_runtime_api_url=os.environ.get(
+                    'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
+                ),
             ),
-        ),
-        workspace_base=None,
-        workspace_mount_path=None,
+            workspace_base=None,
+            workspace_mount_path=None,
+        )
     )
 
 

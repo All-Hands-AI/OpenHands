@@ -623,6 +623,50 @@ def compatibility_for_eval_history_pairs(
     return history_pairs
 
 
+def get_default_openhands_config_for_eval(config):
+    """Apply default OpenHands configuration tweaks for evaluation runs.
+
+    Specifically, redirect the file_store_path so evaluation sessions do not
+    pollute the default CLI/GUI session directory (~/.openhands/sessions).
+
+    Priority order for the file store path:
+    1) Environment variable EVAL_FILE_STORE_PATH (if set)
+    2) Environment variable EVAL_SESSIONS_DIR (if set)
+    3) Project-local .eval_sessions directory (absolute path)
+
+    Args:
+        config: An existing OpenHandsConfig to be updated.
+
+    Returns:
+        OpenHandsConfig: The same config instance with an evaluation-specific
+        file_store_path applied.
+    """
+    import os
+    from os import path as _path
+
+    # Defer import to avoid circular imports at module load time
+    from openhands.core.config.openhands_config import (
+        OpenHandsConfig as _OHConfig,  # type: ignore
+    )
+
+    assert isinstance(config, _OHConfig)
+
+    eval_store = (
+        os.getenv('EVAL_FILE_STORE_PATH')
+        or os.getenv('EVAL_SESSIONS_DIR')
+        or _path.join(os.getcwd(), '.eval_sessions')
+    )
+
+    # Expand user (~) and make absolute for consistency
+    eval_store = _path.abspath(_path.expanduser(eval_store))
+
+    # Ensure we use local file store and redirect to eval-specific directory
+    config.file_store = 'local'
+    config.file_store_path = eval_store
+
+    return config
+
+
 def is_fatal_evaluation_error(error: str | None) -> bool:
     """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here

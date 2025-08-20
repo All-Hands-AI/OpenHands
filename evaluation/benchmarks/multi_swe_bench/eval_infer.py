@@ -22,6 +22,7 @@ from evaluation.benchmarks.swe_bench.run_infer import get_instance_docker_image
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -95,6 +96,7 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> OpenHandsConfig:
         workspace_base=None,
         workspace_mount_path=None,
     )
+    config = get_default_openhands_config_for_eval(config)
     return config
 
 

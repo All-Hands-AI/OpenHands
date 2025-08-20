@@ -12,6 +12,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     codeact_user_response,
     compatibility_for_eval_history_pairs,
+    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
     make_metadata,
     prepare_dataset,
@@ -67,6 +68,7 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
+    config = get_default_openhands_config_for_eval(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, env_id
