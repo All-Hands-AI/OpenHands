@@ -1085,6 +1085,8 @@ async def view_conversation_details(config: OpenHandsConfig) -> None:
         for i, message in enumerate(user_messages, 1):
             timestamp = message.get('timestamp', 'Unknown')
             content = message.get('content', '')
+            # Replace newlines with visual symbols for better display
+            content = content.replace('\n', '↵').replace('\r', '↵')
             print_formatted_text(f'{i:2d}. [{timestamp}] {content}')
 
         print_formatted_text('=' * 80)
@@ -1162,7 +1164,10 @@ async def get_user_messages_from_conversation(
 
 
 def truncate_message(message: str, max_length: int) -> str:
-    """Truncate a message to a maximum length."""
+    """Truncate a message to a maximum length and replace newlines with visual symbols."""
+    # Replace actual newlines with visual newline symbols
+    message = message.replace('\n', '↵').replace('\r', '↵')
+
     if len(message) <= max_length:
         return message
     return message[:max_length] + '...'

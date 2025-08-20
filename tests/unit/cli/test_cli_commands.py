@@ -804,3 +804,14 @@ class TestConversationCommands:
         result = truncate_message(message, 20)
         assert result == 'This is a very long ...'
         assert len(result) == 23  # 20 + '...'
+
+    def test_truncate_message_with_newlines(self):
+        """Test truncate_message with newlines."""
+        message = 'Hello\nworld\rtest'
+        result = truncate_message(message, 100)
+        assert result == 'Hello↵world↵test'
+
+        # Test with truncation and newlines
+        message = 'Hello\nworld\nthis is a long message'
+        result = truncate_message(message, 15)
+        assert result == 'Hello↵world↵thi...'
