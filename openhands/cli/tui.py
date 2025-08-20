@@ -31,6 +31,12 @@ from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
+from openhands.cli.pt_style import (
+    COLOR_AGENT_BLUE,
+    COLOR_GOLD,
+    COLOR_GREY,
+    get_cli_style,
+)
 from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
@@ -41,6 +47,7 @@ from openhands.events.action import (
     CmdRunAction,
     MCPAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -50,6 +57,7 @@ from openhands.events.observation import (
     FileEditObservation,
     FileReadObservation,
     MCPObservation,
+    TaskTrackingObservation,
 )
 from openhands.llm.metrics import Metrics
 from openhands.mcp.error_collector import mcp_error_collector
@@ -64,16 +72,7 @@ recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
 
 # Color and styling constants
-COLOR_GOLD = '#FFD700'
-COLOR_GREY = '#808080'
-COLOR_AGENT_BLUE = '#4682B4'  # Steel blue - less saturated, works well on both light and dark backgrounds
-DEFAULT_STYLE = Style.from_dict(
-    {
-        'gold': COLOR_GOLD,
-        'grey': COLOR_GREY,
-        'prompt': f'{COLOR_GOLD} bold',
-    }
-)
+DEFAULT_STYLE = get_cli_style()
 
 COMMANDS = {
     '/exit': 'Exit the application',
@@ -273,6 +272,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
                 initialize_streaming_output()
         elif isinstance(event, MCPAction):
             display_mcp_action(event)
+        elif isinstance(event, TaskTrackingAction):
+            display_task_tracking_action(event)
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
@@ -293,6 +294,8 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
             display_file_read(event)
         elif isinstance(event, MCPObservation):
             display_mcp_observation(event)
+        elif isinstance(event, TaskTrackingObservation):
+            display_task_tracking_observation(event)
         elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
@@ -515,6 +518,74 @@ def display_mcp_observation(event: MCPObservation) -> None:
             wrap_lines=True,
         ),
         title='MCP Tool Result',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_action(event: TaskTrackingAction) -> None:
+    """Display a TaskTracking action in the CLI."""
+    # Display thought first if present
+    if hasattr(event, 'thought') and event.thought:
+        display_message(event.thought)
+
+    # Format the command and task list for display
+    display_text = f'Command: {event.command}'
+
+    if event.command == 'plan':
+        if event.task_list:
+            display_text += f'\n\nTask List ({len(event.task_list)} items):'
+            for i, task in enumerate(event.task_list, 1):
+                status = task.get('status', 'unknown')
+                title = task.get('title', 'Untitled task')
+                task_id = task.get('id', f'task-{i}')
+                notes = task.get('notes', '')
+
+                # Add status indicator with color
+                status_indicator = {
+                    'todo': '⏳',
+                    'in_progress': '🔄',
+                    'done': '✅',
+                }.get(status, '❓')
+
+                display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
+                if notes:
+                    display_text += f'\n     Notes: {notes}'
+        else:
+            display_text += '\n\nTask List: Empty'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansigreen',
+            wrap_lines=True,
+        ),
+        title='Task Tracking Action',
+        style='ansigreen',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_observation(event: TaskTrackingObservation) -> None:
+    """Display a TaskTracking observation in the CLI."""
+    # Format the content and task list for display
+    content = (
+        event.content.strip() if event.content else 'Task tracking operation completed'
+    )
+
+    display_text = f'Result: {content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Task Tracking Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -906,7 +977,6 @@ def cli_confirm(
         layout=layout,
         key_bindings=kb,
         style=style,
-        mouse_support=True,
         full_screen=False,
     )
 

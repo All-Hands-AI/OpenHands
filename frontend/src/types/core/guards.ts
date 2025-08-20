@@ -6,6 +6,7 @@ import {
   SystemMessageAction,
   CommandAction,
   FinishAction,
+  TaskTrackingAction,
 } from "./actions";
 import {
   AgentStateChangeObservation,
@@ -13,6 +14,7 @@ import {
   ErrorObservation,
   MCPObservation,
   OpenHandsObservation,
+  TaskTrackingObservation,
 } from "./observations";
 import { StatusUpdate } from "./variances";
 
@@ -86,6 +88,16 @@ export const isMcpObservation = (
   event: OpenHandsParsedEvent,
 ): event is MCPObservation =>
   isOpenHandsObservation(event) && event.observation === "mcp";
+
+export const isTaskTrackingAction = (
+  event: OpenHandsParsedEvent,
+): event is TaskTrackingAction =>
+  isOpenHandsAction(event) && event.action === "task_tracking";
+
+export const isTaskTrackingObservation = (
+  event: OpenHandsParsedEvent,
+): event is TaskTrackingObservation =>
+  isOpenHandsObservation(event) && event.observation === "task_tracking";
 
 export const isStatusUpdate = (event: unknown): event is StatusUpdate =>
   typeof event === "object" &&
