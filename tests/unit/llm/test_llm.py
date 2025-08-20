@@ -1204,7 +1204,7 @@ def test_gemini_medium_reasoning_effort_passes_through(mock_completion):
 
 
 @patch('openhands.llm.llm.litellm_completion')
-def test_opus_41_reasoning_pops_temperature_top_p(mock_completion):
+def test_opus_41_keeps_temperature_top_p(mock_completion):
     mock_completion.return_value = {
         'choices': [{'message': {'content': 'ok'}}],
     }
@@ -1217,8 +1217,8 @@ def test_opus_41_reasoning_pops_temperature_top_p(mock_completion):
     llm = LLM(config, service_id='svc')
     llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
     call_kwargs = mock_completion.call_args[1]
-    assert 'temperature' not in call_kwargs
-    assert 'top_p' not in call_kwargs
+    assert call_kwargs.get('temperature') == 0.7
+    assert call_kwargs.get('top_p') == 0.9
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -1238,6 +1238,23 @@ def test_opus_4_keeps_temperature_top_p(mock_completion):
     assert call_kwargs.get('temperature') == 0.7
     assert call_kwargs.get('top_p') == 0.9
 
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_opus_41_disables_thinking(mock_completion):
+    mock_completion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(
+        model='anthropic/claude-opus-4-1-20250805',
+        api_key='k',
+    )
+    llm = LLM(config, service_id='svc')
+    llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_completion.call_args[1]
+    assert call_kwargs.get('thinking') == {'type': 'disabled'}
+    # allowed_openai_params should include thinking so LiteLLM forwards it
+    assert 'thinking' in call_kwargs.get('allowed_openai_params', [])
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_is_caching_prompt_active_anthropic_prefixed(mock_get_model_info):

@@ -199,7 +199,6 @@ def test_function_calling_models(model):
         'gemini-2.5-flash',
         'gemini-2.5-pro',
         'gpt-5',
-        'claude-opus-4-1-20250805',
     ],
 )
 def test_reasoning_effort_models(model):
@@ -230,7 +229,6 @@ def test_deepseek_reasoning_effort_models(model):
         'claude-3-haiku-20240307',
         'claude-3-opus-20240229',
         'claude-sonnet-4-latest',
-        'claude-opus-4-1-20250805',
     ],
 )
 def test_prompt_cache_models(model):

@@ -166,6 +166,15 @@ class LLM(RetryMixin, DebugMixin):
         elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
             kwargs['safety_settings'] = self.config.safety_settings
 
+        # Explicitly disable Anthropic extended thinking for Opus 4.1 to avoid
+        # requiring 'thinking' content blocks. See issue #10510.
+        if 'claude-opus-4-1' in self.config.model.lower():
+            kwargs['thinking'] = {'type': 'disabled'}
+            # Ensure LiteLLM forwards the 'thinking' param
+            existing = kwargs.get('allowed_openai_params') or []
+            if 'thinking' not in existing:
+                kwargs['allowed_openai_params'] = [*existing, 'thinking']
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,
