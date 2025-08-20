@@ -8,7 +8,9 @@ from pydantic import BaseModel
 
 from openhands.controller.state.state import State
 from openhands.core.config.condenser_config import CondenserConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.agent import CondensationAction
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.view import View
 
 CONDENSER_METADATA_KEY = 'condenser_meta'
@@ -101,9 +103,28 @@ class Condenser(ABC):
 
     def condensed_history(self, state: State) -> View | Condensation:
         """Condense the state's history."""
-        self._llm_metadata = state.to_llm_metadata('condenser')
+        if hasattr(self, 'llm'):
+            model_name = self.llm.config.model
+        else:
+            model_name = 'unknown'
+
+        self._llm_metadata = state.to_llm_metadata(
+            model_name=model_name, agent_name='condenser'
+        )
         with self.metadata_batch(state):
             return self.condense(state.view)
+
+    @property
+    def llm_metadata(self) -> dict[str, Any]:
+        """Metadata to be passed to the LLM when using this condenser.
+
+        This metadata is used to provide context about the condensation process and can be used by the LLM to understand how the history was condensed.
+        """
+        if not self._llm_metadata:
+            logger.warning(
+                'LLM metadata is empty. Ensure to set it in the condenser implementation.'
+            )
+        return self._llm_metadata
 
     @classmethod
     def register_config(cls, configuration_type: type[CondenserConfig]) -> None:
@@ -124,7 +145,9 @@ class Condenser(ABC):
         CONDENSER_REGISTRY[configuration_type] = cls
 
     @classmethod
-    def from_config(cls, config: CondenserConfig) -> Condenser:
+    def from_config(
+        cls, config: CondenserConfig, llm_registry: LLMRegistry
+    ) -> Condenser:
         """Create a condenser from a configuration object.
 
         Args:
@@ -138,7 +161,7 @@ class Condenser(ABC):
         """
         try:
             condenser_class = CONDENSER_REGISTRY[type(config)]
-            return condenser_class.from_config(config)
+            return condenser_class.from_config(config, llm_registry)
         except KeyError:
             raise ValueError(f'Unknown condenser config: {config}')
 

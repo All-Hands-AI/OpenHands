@@ -8,8 +8,6 @@ from openhands.events.action import (
     Action,
     AgentFinishAction,
     AgentRejectAction,
-    BrowseInteractiveAction,
-    BrowseURLAction,
     CmdRunAction,
     FileReadAction,
     FileWriteAction,
@@ -17,7 +15,6 @@ from openhands.events.action import (
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
-    BrowserOutputObservation,
     CmdOutputMetadata,
     CmdOutputObservation,
     FileReadObservation,
@@ -25,7 +22,7 @@ from openhands.events.observation import (
     Observation,
 )
 from openhands.events.serialization.event import event_to_dict
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 
 """
 FIXME: There are a few problems this surfaced
@@ -45,8 +42,12 @@ class DummyAgent(Agent):
     without making any LLM calls.
     """
 
-    def __init__(self, llm: LLM, config: AgentConfig):
-        super().__init__(llm, config)
+    def __init__(
+        self,
+        config: AgentConfig,
+        llm_registry: LLMRegistry,
+    ):
+        super().__init__(config, llm_registry)
         self.steps: list[ActionObs] = [
             {
                 'action': MessageAction('Time to get started!'),
@@ -54,17 +55,19 @@ class DummyAgent(Agent):
             },
             {
                 'action': CmdRunAction(command='echo "foo"'),
-                'observations': [CmdOutputObservation('foo', command='echo "foo"')],
+                'observations': [
+                    CmdOutputObservation(
+                        'foo',
+                        command='echo "foo"',
+                        metadata=CmdOutputMetadata(exit_code=0),
+                    )
+                ],
             },
             {
                 'action': FileWriteAction(
                     content='echo "Hello, World!"', path='hello.sh'
                 ),
-                'observations': [
-                    FileWriteObservation(
-                        content='echo "Hello, World!"', path='hello.sh'
-                    )
-                ],
+                'observations': [FileWriteObservation(content='', path='hello.sh')],
             },
             {
                 'action': FileReadAction(path='hello.sh'),
@@ -76,34 +79,10 @@ class DummyAgent(Agent):
                 'action': CmdRunAction(command='bash hello.sh'),
                 'observations': [
                     CmdOutputObservation(
-                        'bash: hello.sh: No such file or directory',
-                        command='bash workspace/hello.sh',
-                        metadata=CmdOutputMetadata(exit_code=127),
+                        'Hello, World!',
+                        command='bash hello.sh',
+                        metadata=CmdOutputMetadata(exit_code=0),
                     )
-                ],
-            },
-            {
-                'action': BrowseURLAction(url='https://google.com'),
-                'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                        trigger_by_action='',
-                    ),
-                ],
-            },
-            {
-                'action': BrowseInteractiveAction(
-                    browser_actions='goto("https://google.com")'
-                ),
-                'observations': [
-                    BrowserOutputObservation(
-                        '<html><body>Simulated Google page after interaction</body></html>',
-                        url='https://google.com',
-                        screenshot='',
-                        trigger_by_action='',
-                    ),
                 ],
             },
             {
@@ -147,6 +126,47 @@ class DummyAgent(Agent):
                         obs.pop('timestamp', None)
                         obs.pop('cause', None)
                         obs.pop('source', None)
+                        # Remove dynamic metadata fields that vary between runs
+                        if 'extras' in obs and 'metadata' in obs['extras']:
+                            metadata = obs['extras']['metadata']
+                            if isinstance(metadata, dict):
+                                metadata.pop('pid', None)
+                                metadata.pop('username', None)
+                                metadata.pop('hostname', None)
+                                metadata.pop('working_dir', None)
+                                metadata.pop('py_interpreter_path', None)
+                                metadata.pop('suffix', None)
+                        # Normalize file paths for comparison - extract just the filename
+                        if 'extras' in obs and 'path' in obs['extras']:
+                            path = obs['extras']['path']
+                            if isinstance(path, str):
+                                # Extract just the filename from the path
+                                import os
+
+                                obs['extras']['path'] = os.path.basename(path)
+                        # Normalize message field to handle path differences
+                        if 'message' in obs:
+                            import os
+
+                            message = obs['message']
+                            if isinstance(message, str):
+                                # Replace full paths with just filenames in messages
+                                if 'I wrote to the file ' in message:
+                                    parts = message.split('I wrote to the file ')
+                                    if len(parts) == 2:
+                                        filename = os.path.basename(
+                                            parts[1].rstrip('.')
+                                        )
+                                        obs['message'] = (
+                                            f'I wrote to the file {filename}.'
+                                        )
+                                elif 'I read the file ' in message:
+                                    parts = message.split('I read the file ')
+                                    if len(parts) == 2:
+                                        filename = os.path.basename(
+                                            parts[1].rstrip('.')
+                                        )
+                                        obs['message'] = f'I read the file {filename}.'
 
                     if hist_obs != expected_obs:
                         print(

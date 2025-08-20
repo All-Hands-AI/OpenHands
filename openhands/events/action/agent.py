@@ -1,5 +1,4 @@
 from dataclasses import dataclass, field
-from enum import Enum
 from typing import Any
 
 from openhands.core.schema import ActionType
@@ -20,26 +19,18 @@ class ChangeAgentStateAction(Action):
         return f'Agent state changed to {self.agent_state}'
 
 
-class AgentFinishTaskCompleted(Enum):
-    FALSE = 'false'
-    PARTIAL = 'partial'
-    TRUE = 'true'
-
-
 @dataclass
 class AgentFinishAction(Action):
     """An action where the agent finishes the task.
 
     Attributes:
         final_thought (str): The message to send to the user.
-        task_completed (enum): Whether the agent believes the task has been completed.
         outputs (dict): The other outputs of the agent, for instance "content".
         thought (str): The agent's explanation of its actions.
         action (str): The action type, namely ActionType.FINISH.
     """
 
     final_thought: str = ''
-    task_completed: AgentFinishTaskCompleted | None = None
     outputs: dict[str, Any] = field(default_factory=dict)
     thought: str = ''
     action: str = ActionType.FINISH
@@ -210,3 +201,28 @@ class CondensationRequestAction(Action):
     @property
     def message(self) -> str:
         return 'Requesting a condensation of the conversation history.'
+
+
+@dataclass
+class TaskTrackingAction(Action):
+    """An action where the agent writes or updates a task list for task management.
+    Attributes:
+        task_list (list): The list of task items with their status and metadata.
+        thought (str): The agent's explanation of its actions.
+        action (str): The action type, namely ActionType.TASK_TRACKING.
+    """
+
+    command: str = 'view'
+    task_list: list[dict[str, Any]] = field(default_factory=list)
+    thought: str = ''
+    action: str = ActionType.TASK_TRACKING
+
+    @property
+    def message(self) -> str:
+        num_tasks = len(self.task_list)
+        if num_tasks == 0:
+            return 'Clearing the task list.'
+        elif num_tasks == 1:
+            return 'Managing 1 task item.'
+        else:
+            return f'Managing {num_tasks} task items.'

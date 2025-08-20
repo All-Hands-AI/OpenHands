@@ -26,6 +26,7 @@ from openhands.events.observation import (
 )
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -36,6 +37,7 @@ from openhands.runtime.impl.docker.docker_runtime import (
     VSCODE_PORT_RANGE,
 )
 from openhands.runtime.plugins import PluginRequirement
+from openhands.runtime.plugins.vscode import VSCodeRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.command import get_action_execution_server_startup_command
@@ -134,6 +136,7 @@ class LocalRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -185,6 +188,7 @@ class LocalRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -279,7 +283,10 @@ class LocalRuntime(ActionExecutionClient):
                         shutil.rmtree(server_info.temp_workspace)
 
                     # Create a new temp workspace for this session
-                    if self._temp_workspace is None:
+                    if (
+                        self._temp_workspace is None
+                        and self.config.workspace_base is None
+                    ):
                         self._temp_workspace = tempfile.mkdtemp(
                             prefix=f'openhands_workspace_{self.sid}',
                         )
@@ -379,7 +386,7 @@ class LocalRuntime(ActionExecutionClient):
                 _create_warm_server_in_background(self.config, self.plugins)
 
     @classmethod
-    def setup(cls, config: OpenHandsConfig):
+    def setup(cls, config: OpenHandsConfig, headless_mode: bool = False):
         should_check_dependencies = os.getenv('SKIP_DEPENDENCY_CHECK', '') != '1'
         if should_check_dependencies:
             code_repo_path = os.path.dirname(os.path.dirname(openhands.__file__))
@@ -390,8 +397,13 @@ class LocalRuntime(ActionExecutionClient):
         # Initialize warm servers if needed
         if initial_num_warm_servers > 0 and len(_WARM_SERVERS) == 0:
             plugins = _get_plugins(config)
+
+            # Copy the logic from Runtime where we add a VSCodePlugin on init if missing
+            if not headless_mode:
+                plugins.append(VSCodeRequirement())
+
             for _ in range(initial_num_warm_servers):
-                _create_warm_server_in_background(config, plugins)
+                _create_warm_server(config, plugins)
 
     @tenacity.retry(
         wait=tenacity.wait_fixed(2),
@@ -566,25 +578,30 @@ class LocalRuntime(ActionExecutionClient):
         # Fallback to localhost
         return self.config.sandbox.local_runtime_url
 
+    def _create_url(self, prefix: str, port: int) -> str:
+        runtime_url = self.runtime_url
+        if 'localhost' in runtime_url:
+            url = f'{self.runtime_url}:{self._vscode_port}'
+        else:
+            # Similar to remote runtime...
+            parsed_url = urlparse(runtime_url)
+            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+        return url
+
     @property
     def vscode_url(self) -> str | None:
         token = super().get_vscode_token()
         if not token:
             return None
-        runtime_url = self.runtime_url
-        if 'localhost' in runtime_url:
-            vscode_url = f'{self.runtime_url}:{self._vscode_port}'
-        else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            vscode_url = f'{parsed_url.scheme}://vscode-{parsed_url.netloc}'
+        vscode_url = self._create_url('vscode', self._vscode_port)
         return f'{vscode_url}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
 
     @property
     def web_hosts(self) -> dict[str, int]:
         hosts: dict[str, int] = {}
-        for port in self._app_ports:
-            hosts[f'{self.runtime_url}:{port}'] = port
+        for index, port in enumerate(self._app_ports):
+            url = self._create_url(f'work-{index + 1}', port)
+            hosts[url] = port
         return hosts
 
 
@@ -614,8 +631,16 @@ def _create_server(
         os.getenv('VSCODE_PORT') or str(find_available_tcp_port(*VSCODE_PORT_RANGE))
     )
     app_ports = [
-        int(os.getenv('APP_PORT_1') or str(find_available_tcp_port(*APP_PORT_RANGE_1))),
-        int(os.getenv('APP_PORT_2') or str(find_available_tcp_port(*APP_PORT_RANGE_2))),
+        int(
+            os.getenv('WORK_PORT_1')
+            or os.getenv('APP_PORT_1')
+            or str(find_available_tcp_port(*APP_PORT_RANGE_1))
+        ),
+        int(
+            os.getenv('WORK_PORT_2')
+            or os.getenv('APP_PORT_2')
+            or str(find_available_tcp_port(*APP_PORT_RANGE_2))
+        ),
     ]
 
     # Get user info
@@ -626,7 +651,8 @@ def _create_server(
         server_port=execution_server_port,
         plugins=plugins,
         app_config=config,
-        python_prefix=['poetry', 'run'],
+        python_prefix=[],
+        python_executable=sys.executable,
         override_user_id=user_id,
         override_username=username,
     )
@@ -778,12 +804,6 @@ def _create_warm_server_in_background(
 
 def _get_plugins(config: OpenHandsConfig) -> list[PluginRequirement]:
     from openhands.controller.agent import Agent
-    from openhands.llm.llm import LLM
 
-    agent_config = config.get_agent_config(config.default_agent)
-    llm = LLM(
-        config=config.get_llm_config_from_agent(config.default_agent),
-    )
-    agent = Agent.get_cls(config.default_agent)(llm, agent_config)
-    plugins = agent.sandbox_plugins
+    plugins = Agent.get_cls(config.default_agent).sandbox_plugins
     return plugins

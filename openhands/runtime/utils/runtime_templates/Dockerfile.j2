@@ -1,5 +1,7 @@
 FROM {{ base_image }}
 
+SHELL ["/bin/bash", "-c"]
+
 # Shared environment variables
 ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
     MAMBA_ROOT_PREFIX=/openhands/micromamba \
@@ -14,34 +16,38 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 
 # Install base system dependencies
 
-{% if 'ubuntu' in base_image %}
+{% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
-        {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04')) -%}
+        {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
         libgl1 \
         {%- else %}
         libgl1-mesa-glx \
         {% endif -%}
-        libasound2-plugins libatomic1 && \
+        libasound2-plugins libatomic1 \
+        # Install Docker dependencies
+        apt-transport-https ca-certificates curl gnupg lsb-release && \
     curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     TZ=Etc/UTC DEBIAN_FRONTEND=noninteractive \
-        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        {%- if ('mswebench' in base_image) -%}
+        apt-get install -y --no-install-recommends nodejs python3 python-is-python3 python3-pip python3-venv
+        {%- else %}
+        apt-get install -y --no-install-recommends nodejs python3.12 python-is-python3 python3-pip python3.12-venv
+        {% endif -%}
 {% endif %}
 
-{% if 'ubuntu' not in base_image %}
+{% if (('ubuntu' not in base_image) and ('mswebench' not in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
         libgl1-mesa-glx \
-        libasound2-plugins libatomic1 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        libasound2-plugins libatomic1 \
+        # Install Docker dependencies
+        apt-transport-https ca-certificates curl gnupg lsb-release
 {% endif %}
 
-{% if 'ubuntu' in base_image %}
+{% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN ln -s "$(dirname $(which node))/corepack" /usr/local/bin/corepack && \
     npm install -g corepack && corepack enable yarn && \
     curl -fsSL --compressed https://install.python-poetry.org | python -
@@ -61,6 +67,54 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
     mkdir -p /openhands/poetry
+
+
+# ================================================================
+# Define Docker installation macro
+{% macro install_docker() %}
+# Install Docker following official documentation
+# https://docs.docker.com/engine/install/ubuntu/
+# https://docs.docker.com/engine/install/debian/
+RUN \
+    # Determine OS type and install accordingly
+    if [[ "{{ base_image }}" == *"ubuntu"* ]]; then \
+        # Handle Ubuntu (following https://docs.docker.com/engine/install/ubuntu/)
+        # Add Docker's official GPG key
+        apt-get update && \
+        apt-get install -y ca-certificates curl && \
+        install -m 0755 -d /etc/apt/keyrings && \
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc && \
+        chmod a+r /etc/apt/keyrings/docker.asc && \
+        # Add the repository to Apt sources
+        # For Ubuntu 24.04 (noble), use jammy repository as noble isn't supported yet
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    else \
+        # Handle Debian (following https://docs.docker.com/engine/install/debian/)
+        # Add Docker's official GPG key
+        apt-get update && \
+        apt-get install -y ca-certificates curl && \
+        install -m 0755 -d /etc/apt/keyrings && \
+        curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc && \
+        chmod a+r /etc/apt/keyrings/docker.asc && \
+        # Add the repository to Apt sources (default to bookworm for stability)
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian bookworm stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null; \
+    fi && \
+    # Install Docker Engine, containerd, and Docker Compose
+    apt-get update && \
+    apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Configure Docker daemon with MTU 1450 to prevent packet fragmentation issues
+RUN mkdir -p /etc/docker && \
+    echo '{"mtu": 1450}' > /etc/docker/daemon.json
+{% endmacro %}
+
+# Install Docker only if not a swebench or mswebench image
+{% if not ('swebench' in base_image) and not ('mswebench' in base_image) %}
+{{ install_docker() }}
+{% endif %}
+# ================================================================
 
 {% endmacro %}
 
@@ -123,7 +177,7 @@ RUN \
     /openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime --no-interaction --no-root && \
     # Update and install additional tools
     # (There used to be an "apt-get update" here, hopefully we can skip it.)
-    /openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \
+    {% if enable_browser %}/openhands/micromamba/bin/micromamba run -n openhands poetry run playwright install --with-deps chromium && \{% endif %}
     # Set environment variables
     /openhands/micromamba/bin/micromamba run -n openhands poetry run python -c "import sys; print('OH_INTERPRETER_PATH=' + sys.executable)" >> /etc/environment && \
     # Set permissions
@@ -159,7 +213,10 @@ RUN /openhands/micromamba/bin/micromamba create -n openhands -y && \
 RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
-    touch /openhands/code/openhands/__init__.py
+    touch /openhands/code/openhands/__init__.py && \
+    # Set global git configuration to ensure proper author/committer information
+    git config --global user.name "openhands" && \
+    git config --global user.email "openhands@all-hands.dev"
 
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
@@ -177,7 +234,8 @@ COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
 COPY ./code/pyproject.toml ./code/poetry.lock /openhands/code/
-
+RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagents; fi
+COPY ./code/microagents /openhands/code/microagents
 COPY ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py
 

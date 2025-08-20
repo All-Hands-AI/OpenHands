@@ -3,6 +3,8 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
+from openhands.llm.llm_registry import LLMRegistry
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -21,6 +23,9 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
+from openhands.agenthub.codeact_agent.tools.task_tracker import (
+    create_task_tracker_tool,
+)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State
@@ -29,7 +34,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
@@ -71,18 +75,13 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
@@ -90,7 +89,7 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
+        self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     @property
@@ -98,7 +97,7 @@ class CodeActAgent(Agent):
         if self._prompt_manager is None:
             self._prompt_manager = PromptManager(
                 prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                system_prompt_filename=self.config.system_prompt_filename,
+                system_prompt_filename=self.config.resolved_system_prompt_filename,
             )
 
         return self._prompt_manager
@@ -106,10 +105,15 @@ class CodeActAgent(Agent):
     def _get_tools(self) -> list['ChatCompletionToolParam']:
         # For these models, we use short tool descriptions ( < 1024 tokens)
         # to avoid hitting the OpenAI token limit for tool descriptions.
-        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-', 'o3', 'o1', 'o4']
+        SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS = ['gpt-4', 'o3', 'o1', 'o4']
 
         use_short_tool_desc = False
         if self.llm is not None:
+            # For historical reasons, previously OpenAI enforces max function description length of 1k characters
+            # https://community.openai.com/t/function-call-description-max-length/529902
+            # But it no longer seems to be an issue recently
+            # https://community.openai.com/t/was-the-character-limit-for-schema-descriptions-upgraded/1225975
+            # Tested on GPT-5 and longer description still works. But we still keep the logic to be safe for older models.
             use_short_tool_desc = any(
                 model_substr in self.llm.config.model
                 for model_substr in SHORT_TOOL_DESCRIPTION_LLM_SUBSTRS
@@ -131,6 +135,9 @@ class CodeActAgent(Agent):
                 tools.append(BrowserTool)
         if self.config.enable_jupyter:
             tools.append(IPythonTool)
+        if self.config.enable_plan_mode:
+            # In plan mode, we use the task_tracker tool for task management
+            tools.append(create_task_tracker_tool(use_short_tool_desc))
         if self.config.enable_llm_editor:
             tools.append(LLMBasedFileEditTool)
         elif self.config.enable_editor:
@@ -161,6 +168,13 @@ class CodeActAgent(Agent):
         - AgentDelegateAction(agent, inputs) - delegate action for (sub)task
         - MessageAction(content) - Message action to run (e.g. ask for clarification)
         - AgentFinishAction() - end the interaction
+        - CondensationAction(...) - condense conversation history by forgetting specified events and optionally providing a summary
+        - FileReadAction(path, ...) - read file content from specified path
+        - FileEditAction(path, ...) - edit file using LLM-based (deprecated) or ACI-based editing
+        - AgentThinkAction(thought) - log agent's thought/reasoning process
+        - CondensationRequestAction() - request condensation of conversation history
+        - BrowseInteractiveAction(browser_actions) - interact with browser using specified actions
+        - MCPAction(name, arguments) - interact with MCP server tools
         """
         # Continue with pending actions if any
         if self.pending_actions:
@@ -193,7 +207,11 @@ class CodeActAgent(Agent):
             'messages': self.llm.format_messages_for_llm(messages),
         }
         params['tools'] = check_tools(self.tools, self.llm.config)
-        params['extra_body'] = {'metadata': state.to_llm_metadata(agent_name=self.name)}
+        params['extra_body'] = {
+            'metadata': state.to_llm_metadata(
+                model_name=self.llm.config.model, agent_name=self.name
+            )
+        }
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)

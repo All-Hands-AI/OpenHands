@@ -12,19 +12,20 @@ import docker
 import httpx
 import socketio
 from docker.models.containers import Container
-from fastapi import status
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
+from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import MessageAction
 from openhands.events.nested_event_store import NestedEventStore
 from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentManagerImpl
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE, ProviderHandler
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.server.config.server_config import ServerConfig
+from openhands.server.constants import ROOM_KEY
 from openhands.server.conversation_manager.conversation_manager import (
     ConversationManager,
 )
@@ -32,7 +33,7 @@ from openhands.server.data_models.agent_loop_info import AgentLoopInfo
 from openhands.server.monitoring import MonitoringListener
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.session.conversation_init_data import ConversationInitData
-from openhands.server.session.session import ROOM_KEY, Session
+from openhands.server.session.session import Session
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import ConversationMetadata
 from openhands.storage.data_models.conversation_status import ConversationStatus
@@ -41,6 +42,7 @@ from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.import_utils import get_impl
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 @dataclass
@@ -204,11 +206,11 @@ class DockerNestedConversationManager(ConversationManager):
                 settings_json.pop('git_provider_tokens', None)
                 if settings_json.get('git_provider'):
                     settings_json['git_provider'] = settings_json['git_provider'].value
-                secrets_store = settings_json.pop('secrets_store', None) or {}
+                settings_json.pop('secrets_store', None) or {}
                 response = await client.post(
                     f'{api_url}/api/settings', json=settings_json
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
 
                 # Setup provider tokens
                 provider_handler = self._get_provider_handler(settings)
@@ -229,21 +231,21 @@ class DockerNestedConversationManager(ConversationManager):
                             'provider_tokens': provider_tokens_json,
                         },
                     )
-                    assert response.status_code == status.HTTP_200_OK
+                    response.raise_for_status()
 
                 # Setup custom secrets
-                custom_secrets = secrets_store.get('custom_secrets') or {}
+                custom_secrets = settings.custom_secrets  # type: ignore
                 if custom_secrets:
-                    for key, value in custom_secrets.items():
+                    for key, secret in custom_secrets.items():
                         response = await client.post(
                             f'{api_url}/api/secrets',
                             json={
                                 'name': key,
-                                'description': value.description,
-                                'value': value.value,
+                                'description': secret.description,
+                                'value': secret.secret.get_secret_value(),
                             },
                         )
-                        assert response.status_code == status.HTTP_200_OK
+                        response.raise_for_status()
 
                 init_conversation: dict[str, Any] = {
                     'initial_user_msg': initial_user_msg,
@@ -266,11 +268,21 @@ class DockerNestedConversationManager(ConversationManager):
                 logger.info(
                     f'_start_agent_loop:{response.status_code}:{response.json()}'
                 )
-                assert response.status_code == status.HTTP_200_OK
+                response.raise_for_status()
         finally:
             self._starting_conversation_ids.discard(sid)
 
     async def send_to_event_stream(self, connection_id: str, data: dict):
+        # Not supported - clients should connect directly to the nested server!
+        raise ValueError('unsupported_operation')
+
+    async def request_llm_completion(
+        self,
+        sid: str,
+        service_id: str,
+        llm_config: LLMConfig,
+        messages: list[dict[str, str]],
+    ) -> str:
         # Not supported - clients should connect directly to the nested server!
         raise ValueError('unsupported_operation')
 
@@ -469,24 +481,30 @@ class DockerNestedConversationManager(ConversationManager):
     ) -> DockerRuntime:
         # This session is created here only because it is the easiest way to get a runtime, which
         # is the easiest way to create the needed docker container
+
+        config: OpenHandsConfig = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
+
+        llm_registry, conversation_stats, config = (
+            create_registry_and_conversation_stats(config, sid, user_id, settings)
+        )
+
         session = Session(
             sid=sid,
+            llm_registry=llm_registry,
+            conversation_stats=conversation_stats,
             file_store=self.file_store,
-            config=self.config,
+            config=config,
             sio=self.sio,
             user_id=user_id,
         )
-        agent_cls = settings.agent or self.config.default_agent
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        llm = LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=session._notify_on_llm_retry,
-        )
-        llm = session._create_llm(agent_cls)
-        agent_config = self.config.get_agent_config(agent_cls)
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        llm_registry.retry_listner = session._notify_on_llm_retry
+        agent_cls = settings.agent or config.default_agent
+        agent_config = config.get_agent_config(agent_cls)
+        agent = Agent.get_cls(agent_cls)(agent_config, llm_registry)
 
-        config = self.config.model_copy(deep=True)
+        config = config.model_copy(deep=True)
         env_vars = config.sandbox.runtime_startup_env_vars
         env_vars['CONVERSATION_MANAGER_CLASS'] = (
             'openhands.server.conversation_manager.standalone_conversation_manager.StandaloneConversationManager'
@@ -498,6 +516,7 @@ class DockerNestedConversationManager(ConversationManager):
         env_vars['SESSION_API_KEY'] = self._get_session_api_key_for_conversation(sid)
         # We need to be able to specify the nested conversation id within the nested runtime
         env_vars['ALLOW_SET_CONVERSATION_ID'] = '1'
+        env_vars['WORKSPACE_BASE'] = '/workspace'
         env_vars['SANDBOX_CLOSE_DELAY'] = '0'
         env_vars['SKIP_DEPENDENCY_CHECK'] = '1'
         env_vars['INITIAL_NUM_WARM_SERVERS'] = '1'
@@ -535,6 +554,7 @@ class DockerNestedConversationManager(ConversationManager):
             headless_mode=False,
             attach_to_existing=False,
             main_module='openhands.server',
+            llm_registry=llm_registry,
         )
 
         # Hack - disable setting initial env.

@@ -43,9 +43,11 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
+from openhands.runtime.utils.system_stats import update_last_execution_time
 from openhands.utils.http_session import HttpSession
 from openhands.utils.tenacity_stop import stop_if_should_exit
 
@@ -67,6 +69,7 @@ class ActionExecutionClient(Runtime):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -84,6 +87,7 @@ class ActionExecutionClient(Runtime):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -137,7 +141,6 @@ class ActionExecutionClient(Runtime):
 
         If path is None, list files in the sandbox's initial working directory (e.g., /workspace).
         """
-
         try:
             data = {}
             if path is not None:
@@ -322,12 +325,16 @@ class ActionExecutionClient(Runtime):
                 )
                 assert response.is_closed
                 output = response.json()
+                if getattr(action, 'hidden', False):
+                    output.get('extras')['hidden'] = True
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except httpx.TimeoutException:
                 raise AgentRuntimeTimeoutError(
                     f'Runtime failed to return execute_action before the requested timeout of {action.timeout}s'
                 )
+            finally:
+                update_last_execution_time()
             return obs
 
     def run(self, action: CmdRunAction) -> Observation:

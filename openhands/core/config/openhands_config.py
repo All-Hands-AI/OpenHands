@@ -7,6 +7,7 @@ from openhands.core import logger
 from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
+    DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
     OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
@@ -56,6 +57,8 @@ class OpenHandsConfig(BaseModel):
             input is read line by line. When enabled, input continues until /exit command.
         mcp_host: Host for OpenHands' default MCP server
         mcp: MCP configuration settings.
+        git_user_name: Git user name for commits made by the agent.
+        git_user_email: Git user email for commits made by the agent.
     """
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
@@ -69,6 +72,7 @@ class OpenHandsConfig(BaseModel):
     file_store_path: str = Field(default='~/.openhands')
     file_store_web_hook_url: str | None = Field(default=None)
     file_store_web_hook_headers: dict | None = Field(default=None)
+    file_store_web_hook_batch: bool = Field(default=False)
     enable_browser: bool = Field(default=True)
     save_trajectory_path: str | None = Field(default=None)
     save_screenshots_in_trajectory: bool = Field(default=False)
@@ -78,10 +82,13 @@ class OpenHandsConfig(BaseModel):
         description='API key for Tavily search engine (https://tavily.com/). Required for search functionality.',
     )
 
+    workspace_base: str | None = Field(default=None)
+    workspace_mount_path_in_sandbox: str = Field(
+        default=DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX
+    )
+
     # Deprecated parameters - will be removed in a future version
-    workspace_base: str | None = Field(default=None, deprecated=True)
     workspace_mount_path: str | None = Field(default=None, deprecated=True)
-    workspace_mount_path_in_sandbox: str = Field(default='/workspace', deprecated=True)
     workspace_mount_rewrite: str | None = Field(default=None, deprecated=True)
     # End of deprecated parameters
 
@@ -89,6 +96,7 @@ class OpenHandsConfig(BaseModel):
     run_as_openhands: bool = Field(default=True)
     max_iterations: int = Field(default=OH_MAX_ITERATIONS)
     max_budget_per_task: float | None = Field(default=None)
+    init_git_in_empty_workspace: bool = Field(default=False)
 
     disable_color: bool = Field(default=False)
     jwt_secret: SecretStr | None = Field(default=None)
@@ -107,6 +115,13 @@ class OpenHandsConfig(BaseModel):
     mcp: MCPConfig = Field(default_factory=MCPConfig)
     kubernetes: KubernetesConfig = Field(default_factory=KubernetesConfig)
     cli: CLIConfig = Field(default_factory=CLIConfig)
+    git_user_name: str = Field(
+        default='openhands', description='Git user name for commits made by the agent'
+    )
+    git_user_email: str = Field(
+        default='openhands@all-hands.dev',
+        description='Git user email for commits made by the agent',
+    )
 
     defaults_dict: ClassVar[dict] = {}
 
@@ -142,12 +157,15 @@ class OpenHandsConfig(BaseModel):
         """Get a map of agent names to llm configs."""
         return {name: self.get_llm_config_from_agent(name) for name in self.agents}
 
-    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
-        agent_config: AgentConfig = self.get_agent_config(name)
+    def get_llm_config_from_agent_config(self, agent_config: AgentConfig):
         llm_config_name = (
             agent_config.llm_config if agent_config.llm_config is not None else 'llm'
         )
         return self.get_llm_config(llm_config_name)
+
+    def get_llm_config_from_agent(self, name: str = 'agent') -> LLMConfig:
+        agent_config: AgentConfig = self.get_agent_config(name)
+        return self.get_llm_config_from_agent_config(agent_config)
 
     def get_agent_configs(self) -> dict[str, AgentConfig]:
         return self.agents

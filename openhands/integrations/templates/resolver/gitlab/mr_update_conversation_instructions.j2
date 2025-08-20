@@ -6,7 +6,7 @@ A comment on the MR has been addressed to you. Do NOT respond to this comment vi
 # Steps to Handle the Comment
 
 ## Understand the MR Context
-Use the GitLab API to:
+Use the $GITLAB_TOKEN and GitLab API to:
     1. Retrieve the diff against main to understand the changes
     2. Fetch the MR body and the linked issue for context
 
@@ -17,5 +17,6 @@ If it's a question:
 
 If it requests a code update:
     1. Modify the code accordingly in the current branch
-    2. Push the changes to update the MR
-    3. DO NOT leave any comments on the MR
+    2. Commit your changes with a clear commit message
+    3. Push the changes to GitLab to update the MR
+    4. DO NOT leave any comments on the MR

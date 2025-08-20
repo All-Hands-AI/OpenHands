@@ -10,27 +10,29 @@ from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, ConfigDict, Field
 
 from openhands.core.config.llm_config import LLMConfig
+from openhands.core.config.mcp_config import MCPConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     ChangeAgentStateAction,
     NullAction,
 )
 from openhands.events.event_filter import EventFilter
+from openhands.events.event_store import EventStore
 from openhands.events.observation import (
     AgentStateChangedObservation,
     NullObservation,
 )
-from openhands.events.stream import EventStream
+from openhands.experiments.experiment_manager import ExperimentConfig
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
+    CreateMicroagent,
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -41,13 +43,14 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
-from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
+    file_store,
 )
 from openhands.server.types import LLMAuthenticationError, MissingSettingsError
 from openhands.server.user_auth import (
@@ -59,8 +62,8 @@ from openhands.server.user_auth import (
     get_user_settings_store,
 )
 from openhands.server.user_auth.user_auth import AuthType
-from openhands.server.utils import get_conversation as get_conversation_object
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation as get_conversation_metadata
+from openhands.server.utils import get_conversation_store, validate_conversation_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -69,6 +72,7 @@ from openhands.storage.data_models.conversation_metadata import (
 from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
+from openhands.storage.locations import get_experiment_config_filename
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
@@ -84,7 +88,9 @@ class InitSessionRequest(BaseModel):
     image_urls: list[str] | None = None
     replay_json: str | None = None
     suggested_task: SuggestedTask | None = None
+    create_microagent: CreateMicroagent | None = None
     conversation_instructions: str | None = None
+    mcp_config: MCPConfig | None = None
     # Only nested runtimes require the ability to specify a conversation id, and it could be a security risk
     if os.getenv('ALLOW_SET_CONVERSATION_ID', '0') == '1':
         conversation_id: str = Field(default_factory=lambda: uuid.uuid4().hex)
@@ -123,6 +129,7 @@ async def new_conversation(
     image_urls = data.image_urls or []
     replay_json = data.replay_json
     suggested_task = data.suggested_task
+    create_microagent = data.create_microagent
     git_provider = data.git_provider
     conversation_instructions = data.conversation_instructions
 
@@ -131,6 +138,13 @@ async def new_conversation(
     if suggested_task:
         initial_user_msg = suggested_task.get_prompt_for_task()
         conversation_trigger = ConversationTrigger.SUGGESTED_TASK
+    elif create_microagent:
+        conversation_trigger = ConversationTrigger.MICROAGENT_MANAGEMENT
+        # Set repository and git_provider from create_microagent if not already set
+        if not repository and create_microagent.repo:
+            repository = create_microagent.repo
+        if not git_provider and create_microagent.git_provider:
+            git_provider = create_microagent.git_provider
 
     if auth_type == AuthType.BEARER:
         conversation_trigger = ConversationTrigger.REMOTE_API_KEY
@@ -168,6 +182,7 @@ async def new_conversation(
             conversation_instructions=conversation_instructions,
             git_provider=git_provider,
             conversation_id=conversation_id,
+            mcp_config=data.mcp_config,
         )
 
         return ConversationResponse(
@@ -210,20 +225,43 @@ async def new_conversation(
 async def search_conversations(
     page_id: str | None = None,
     limit: int = 20,
+    selected_repository: str | None = None,
+    conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
-    # Filter out conversations older than max_age
+    # Apply filters at API level
+    filtered_results = []
     now = datetime.now(timezone.utc)
     max_age = config.conversation_max_age_seconds
-    filtered_results = [
-        conversation
-        for conversation in conversation_metadata_result_set.results
-        if hasattr(conversation, 'created_at')
-        and (now - conversation.created_at.replace(tzinfo=timezone.utc)).total_seconds()
-        <= max_age
-    ]
+
+    for conversation in conversation_metadata_result_set.results:
+        # Skip conversations without created_at or older than max_age
+        if not hasattr(conversation, 'created_at'):
+            continue
+
+        age_seconds = (
+            now - conversation.created_at.replace(tzinfo=timezone.utc)
+        ).total_seconds()
+        if age_seconds > max_age:
+            continue
+
+        # Apply repository filter
+        if (
+            selected_repository is not None
+            and conversation.selected_repository != selected_repository
+        ):
+            continue
+
+        # Apply conversation trigger filter
+        if (
+            conversation_trigger is not None
+            and conversation.trigger != conversation_trigger
+        ):
+            continue
+
+        filtered_results.append(conversation)
 
     conversation_ids = set(
         conversation.conversation_id for conversation in filtered_results
@@ -259,7 +297,7 @@ async def search_conversations(
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
     try:
@@ -281,7 +319,7 @@ async def get_conversation(
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -298,23 +336,20 @@ async def delete_conversation(
     return True
 
 
-@app.get('/conversations/{conversation_id}/remember_prompt')
+@app.get('/conversations/{conversation_id}/remember-prompt')
 async def get_prompt(
     event_id: int,
+    conversation_id: str = Depends(validate_conversation_id),
     user_settings: SettingsStore = Depends(get_user_settings_store),
-    conversation: ServerConversation | None = Depends(get_conversation_object),
+    metadata: ConversationMetadata = Depends(get_conversation_metadata),
 ):
-    if conversation is None:
-        return JSONResponse(
-            status_code=404,
-            content={'error': 'Conversation not found.'},
-        )
-
-    # get event stream for the conversation
-    event_stream = conversation.event_stream
+    # get event store for the conversation
+    event_store = EventStore(
+        sid=conversation_id, file_store=file_store, user_id=metadata.user_id
+    )
 
     # retrieve the relevant events
-    stringified_events = _get_contextual_events(event_stream, event_id)
+    stringified_events = _get_contextual_events(event_store, event_id)
 
     # generate a prompt
     settings = await user_settings.load()
@@ -329,7 +364,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -345,8 +380,9 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
+) -> str:
     messages = [
         {
             'role': 'system',
@@ -358,8 +394,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:
@@ -391,6 +428,7 @@ async def _get_conversation_info(
             num_connections=num_connections,
             url=agent_loop_info.url if agent_loop_info else None,
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
+            pr_number=conversation.pr_number,
         )
     except Exception as e:
         logger.error(
@@ -402,8 +440,8 @@ async def _get_conversation_info(
 
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
-    conversation_id: str,
     providers_set: ProvidersSetModel,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
@@ -430,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 
@@ -463,7 +501,7 @@ async def start_conversation(
 
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
 ) -> ConversationResponse:
     """Stop an agent loop for a conversation.
@@ -517,7 +555,7 @@ async def stop_conversation(
         )
 
 
-def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
+def _get_contextual_events(event_store: EventStore, event_id: int) -> str:
     # find the specified events to learn from
     # Get X events around the target event
     context_size = 4
@@ -533,7 +571,7 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     )  # the types of events that can be in an agent's history
 
     # from event_id - context_size to event_id..
-    context_before = event_stream.search_events(
+    context_before = event_store.search_events(
         start_id=event_id,
         filter=agent_event_filter,
         reverse=True,
@@ -541,7 +579,7 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     )
 
     # from event_id to event_id + context_size + 1
-    context_after = event_stream.search_events(
+    context_after = event_store.search_events(
         start_id=event_id + 1,
         filter=agent_event_filter,
         limit=context_size + 1,
@@ -554,3 +592,147 @@ def _get_contextual_events(event_stream: EventStream, event_id: int) -> str:
     all_events = itertools.chain(ordered_context_before, context_after)
     stringified_events = '\n'.join(str(event) for event in all_events)
     return stringified_events
+
+
+class UpdateConversationRequest(BaseModel):
+    """Request model for updating conversation metadata."""
+
+    title: str = Field(
+        ..., min_length=1, max_length=200, description='New conversation title'
+    )
+
+    model_config = ConfigDict(extra='forbid')
+
+
+@app.patch('/conversations/{conversation_id}')
+async def update_conversation(
+    data: UpdateConversationRequest,
+    conversation_id: str = Depends(validate_conversation_id),
+    user_id: str | None = Depends(get_user_id),
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+) -> bool:
+    """Update conversation metadata.
+
+    This endpoint allows updating conversation details like title.
+    Only the conversation owner can update the conversation.
+
+    Args:
+        conversation_id: The ID of the conversation to update
+        data: The conversation update data (title, etc.)
+        user_id: The authenticated user ID
+        conversation_store: The conversation store dependency
+
+    Returns:
+        bool: True if the conversation was updated successfully
+
+    Raises:
+        HTTPException: If conversation is not found or user lacks permission
+    """
+    logger.info(
+        f'Updating conversation {conversation_id} with title: {data.title}',
+        extra={'session_id': conversation_id, 'user_id': user_id},
+    )
+
+    try:
+        # Get the existing conversation metadata
+        metadata = await conversation_store.get_metadata(conversation_id)
+
+        # Validate that the user owns this conversation
+        if user_id and metadata.user_id != user_id:
+            logger.warning(
+                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+                extra={'session_id': conversation_id, 'user_id': user_id},
+            )
+            return JSONResponse(
+                content={
+                    'status': 'error',
+                    'message': 'Permission denied: You can only update your own conversations',
+                    'msg_id': 'AUTHORIZATION$PERMISSION_DENIED',
+                },
+                status_code=status.HTTP_403_FORBIDDEN,
+            )
+
+        # Update the conversation metadata
+        original_title = metadata.title
+        metadata.title = data.title.strip()
+        metadata.last_updated_at = datetime.now(timezone.utc)
+
+        # Save the updated metadata
+        await conversation_store.save_metadata(metadata)
+
+        # Emit a status update to connected clients about the title change
+        try:
+            status_update_dict = {
+                'status_update': True,
+                'type': 'info',
+                'message': conversation_id,
+                'conversation_title': metadata.title,
+            }
+            await conversation_manager.sio.emit(
+                'oh_event',
+                status_update_dict,
+                to=f'room:{conversation_id}',
+            )
+        except Exception as e:
+            logger.error(f'Error emitting title update event: {e}')
+            # Don't fail the update if we can't emit the event
+
+        logger.info(
+            f'Successfully updated conversation {conversation_id} title from "{original_title}" to "{metadata.title}"',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+
+        return True
+
+    except FileNotFoundError:
+        logger.warning(
+            f'Conversation {conversation_id} not found for update',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': 'Conversation not found',
+                'msg_id': 'CONVERSATION$NOT_FOUND',
+            },
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    except Exception as e:
+        logger.error(
+            f'Error updating conversation {conversation_id}: {str(e)}',
+            extra={'session_id': conversation_id, 'user_id': user_id},
+        )
+        return JSONResponse(
+            content={
+                'status': 'error',
+                'message': f'Failed to update conversation: {str(e)}',
+                'msg_id': 'CONVERSATION$UPDATE_ERROR',
+            },
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+
+@app.post('/conversations/{conversation_id}/exp-config')
+def add_experiment_config_for_conversation(
+    exp_config: ExperimentConfig,
+    conversation_id: str = Depends(validate_conversation_id),
+) -> bool:
+    exp_config_filepath = get_experiment_config_filename(conversation_id)
+    exists = False
+    try:
+        file_store.read(exp_config_filepath)
+        exists = True
+    except FileNotFoundError:
+        pass
+
+    # Don't modify again if it already exists
+    if exists:
+        return False
+
+    try:
+        file_store.write(exp_config_filepath, exp_config.model_dump_json())
+    except Exception as e:
+        logger.info(f'Failed to write experiment config for {conversation_id}: {e}')
+        return True
+
+    return False

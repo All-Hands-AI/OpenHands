@@ -21,6 +21,7 @@ from openhands.events.action.agent import AgentFinishAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.metrics import Metrics
 from openhands.memory.view import View
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.files import FileStore
 from openhands.storage.locations import get_conversation_agent_state_filename
 
@@ -46,8 +47,7 @@ class TrafficControlState(str, Enum):
 
 @dataclass
 class State:
-    """
-    Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
+    """Represents the running state of an agent in the OpenHands system, saving data of its operation and memory.
 
     - Multi-agent/delegate state:
       - store the task (conversation between the agent and the user)
@@ -79,11 +79,13 @@ class State:
     """
 
     session_id: str = ''
+    user_id: str | None = None
     iteration_flag: IterationControlFlag = field(
         default_factory=lambda: IterationControlFlag(
             limit_increase_amount=100, current_value=0, max_value=100
         )
     )
+    conversation_stats: ConversationStats | None = None
     budget_flag: BudgetControlFlag | None = None
     confirmation_mode: bool = False
     history: list[Event] = field(default_factory=list)
@@ -91,8 +93,7 @@ class State:
     outputs: dict = field(default_factory=dict)
     agent_state: AgentState = AgentState.LOADING
     resume_state: AgentState | None = None
-    # global metrics for the current task
-    metrics: Metrics = field(default_factory=Metrics)
+
     # root agent has level 0, and every delegate increases the level by one
     delegate_level: int = 0
     # start_id and end_id track the range of events in history
@@ -116,9 +117,14 @@ class State:
     local_metrics: Metrics | None = None
     delegates: dict[tuple[int, int], tuple[str, str]] | None = None
 
+    metrics: Metrics = field(default_factory=Metrics)
+
     def save_to_session(
         self, sid: str, file_store: FileStore, user_id: str | None
     ) -> None:
+        conversation_stats = self.conversation_stats
+        self.conversation_stats = None  # Don't save conversation stats, handles itself
+
         pickled = pickle.dumps(self)
         logger.debug(f'Saving state to session {sid}:{self.agent_state}')
         encoded = base64.b64encode(pickled).decode('utf-8')
@@ -138,14 +144,13 @@ class State:
             logger.error(f'Failed to save state to session: {e}')
             raise e
 
+        self.conversation_stats = conversation_stats  # restore reference
+
     @staticmethod
     def restore_from_session(
         sid: str, file_store: FileStore, user_id: str | None = None
     ) -> 'State':
-        """
-        Restores the state from the previously saved session.
-        """
-
+        """Restores the state from the previously saved session."""
         state: State
         try:
             encoded = file_store.read(
@@ -265,16 +270,19 @@ class State:
                 return event
         return None
 
-    def to_llm_metadata(self, agent_name: str) -> dict:
-        return {
+    def to_llm_metadata(self, model_name: str, agent_name: str) -> dict:
+        metadata = {
             'session_id': self.session_id,
             'trace_version': openhands.__version__,
+            'trace_user_id': self.user_id,
             'tags': [
+                f'model:{model_name}',
                 f'agent:{agent_name}',
                 f'web_host:{os.environ.get("WEB_HOST", "unspecified")}',
                 f'openhands_version:{openhands.__version__}',
             ],
         }
+        return metadata
 
     def get_local_step(self):
         if not self.parent_iteration:
