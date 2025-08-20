@@ -41,6 +41,7 @@ class DummyState:
         self.metrics = Metrics()
         self.history = []
         self.last_error = ""
+        self.extra_data = {}
 
 
 class FakeController:
@@ -67,7 +68,10 @@ class FakeConversationStats:
 
 
 def test_state_tracker_save_state_consolidates_metrics(tmp_path):
-    """Ensure StateTracker.save_state copies ConversationStats aggregate into State.metrics."""
+    """Ensure StateTracker.save_state persists ConversationStats and does not touch State.metrics.
+
+    Eval scripts should read from state.conversation_stats via evaluation.utils.shared.get_metrics.
+    """
     from openhands.controller.state.state_tracker import StateTracker
     from openhands.server.services.conversation_stats import ConversationStats
     from openhands.storage.memory import InMemoryFileStore
@@ -96,23 +100,21 @@ def test_state_tracker_save_state_consolidates_metrics(tmp_path):
     # Act
     tracker.save_state()
 
-    # Assert consolidated metrics copied to state
-    assert tracker.state.metrics.accumulated_cost == 0.5
+    # Assert state.metrics unaffected (source of truth remains ConversationStats)
+    assert tracker.state.metrics.accumulated_cost == 0.0
+    # Persistence still called on ConversationStats (no exception)
 
 
 def test_run_controller_exposes_aggregated_metrics_in_state():
-    """Ensure run_controller returns state with consolidated metrics for eval scripts."""
+    """Ensure get_metrics(state) reads from ConversationStats when available."""
     from openhands.core.main import run_controller
+    from evaluation.utils.shared import get_metrics
 
     cfg = OpenHandsConfig()
     # Prevent run_controller from trying to persist state via DummyState
     cfg.file_store = 'memory'
 
     fake_conv_stats = FakeConversationStats(cost=2.5)
-
-    # Patch symbols as imported within openhands.core.main
-    async def noop_run_agent_until_done(controller, runtime, memory, end_states):
-        return None
 
     def fake_create_registry_and_conversation_stats(config, sid, _):
         # return (llm_registry, conversation_stats, config)
@@ -163,5 +165,6 @@ def test_run_controller_exposes_aggregated_metrics_in_state():
         )
 
     assert state is not None
-    assert isinstance(state.metrics, Metrics)
-    assert pytest.approx(state.metrics.accumulated_cost, rel=1e-6) == 2.5
+    # get_metrics must prefer conversation_stats and reflect its values
+    m = get_metrics(state)
+    assert pytest.approx(m.get('accumulated_cost', 0.0), rel=1e-6) == 2.5

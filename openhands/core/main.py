@@ -229,15 +229,6 @@ async def run_controller(
 
     state = controller.get_state()
 
-    # Ensure eval scripts can access aggregated LLM metrics via state.metrics
-    # ConversationStats tracks per-service metrics; consolidate them here at the end
-    try:
-        if state and state.conversation_stats:
-            combined_metrics = state.conversation_stats.get_combined_metrics()
-            state.metrics = combined_metrics
-    except Exception as e:
-        logger.debug(f'Failed to consolidate conversation stats into state: {e}')
-
     # save trajectories if applicable
     if config.save_trajectory_path is not None:
         # if save_trajectory_path is a folder, use session id as file name
