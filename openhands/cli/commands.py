@@ -171,7 +171,7 @@ async def handle_commands(
         )
     elif command == '/mcp':
         await handle_mcp_command(config)
-    elif command == '/conv':
+    elif command == '/conversations':
         await handle_conv_command(config)
     else:
         close_repl = True
