@@ -22,7 +22,7 @@ import {
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
-import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { SuggestedTask } from "#/utils/types";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";

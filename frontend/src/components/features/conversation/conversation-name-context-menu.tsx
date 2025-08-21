@@ -77,7 +77,12 @@ export function ConversationNameContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasTools && <ContextMenuSeparator className="bg-[#5C5D62]" />}
+      {hasTools && (
+        <ContextMenuSeparator
+          testId="separator-tools"
+          className="bg-[#5C5D62]"
+        />
+      )}
 
       {onShowMicroagents && (
         <ContextMenuListItem
@@ -108,7 +113,10 @@ export function ConversationNameContextMenu({
       )}
 
       {(hasExport || hasDownload) && (
-        <ContextMenuSeparator className="bg-[#5C5D62]" />
+        <ContextMenuSeparator
+          testId="separator-export"
+          className="bg-[#5C5D62]"
+        />
       )}
 
       {onExportConversation && (
@@ -140,7 +148,10 @@ export function ConversationNameContextMenu({
       )}
 
       {(hasInfo || hasControl) && (
-        <ContextMenuSeparator className="bg-[#5C5D62]" />
+        <ContextMenuSeparator
+          testId="separator-info-control"
+          className="bg-[#5C5D62]"
+        />
       )}
 
       {onDisplayCost && (
