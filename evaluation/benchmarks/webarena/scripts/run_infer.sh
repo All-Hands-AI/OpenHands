@@ -3,8 +3,14 @@ set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
 
-# configure webarena websites and environment
-source evaluation/benchmarks/webarena/scripts/webarena_env.sh
+# Ensure required environment variables
+if [ -z "$WEBARENA_BASE_URL" ]; then
+  echo "ERROR: WEBARENA_BASE_URL is not set. e.g. export WEBARENA_BASE_URL=http://<host>" >&2
+  exit 1
+fi
+if [ -z "$OPENAI_API_KEY" ]; then
+  echo "WARNING: OPENAI_API_KEY is not set. We'll try to use the LLM api_key from config.toml if available." >&2
+fi
 
 # configure browsing agent
 export USE_NAV="false"
