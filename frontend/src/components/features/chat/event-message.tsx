@@ -134,7 +134,7 @@ export function EventMessage({
         <div>
           {event.args.thought?.reasoning_content && (
             <GenericEventMessage
-              title="Reasoning"
+              title={t("ACTION_MESSAGE$REASONING")}
               details={event.args.thought.reasoning_content}
               initiallyExpanded={false}
             />
@@ -277,7 +277,7 @@ export function EventMessage({
           <>
             {event.args.thought?.reasoning_content && (
               <GenericEventMessage
-                title="Reasoning"
+                title={t("ACTION_MESSAGE$REASONING")}
                 details={event.args.thought.reasoning_content}
                 initiallyExpanded={false}
               />
