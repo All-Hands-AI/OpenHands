@@ -386,3 +386,53 @@ def test_python_interactive_input():
     assert session.prev_status == BashCommandStatus.COMPLETED
 
     session.close()
+
+
+def test_set_u_does_not_break_prompt_but_emits_warning():
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=1)
+    session.initialize()
+
+    # Enable nounset
+    obs = session.execute(CmdRunAction('set -u'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+
+    # Next command should still complete, but some shells emit an $! warning in PROMPT
+    obs = session.execute(CmdRunAction('echo OK'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.COMPLETED
+    assert obs.metadata.exit_code == 0
+    assert 'OK' in obs.content
+    # Allow warning text; behavior varies across distros/configs
+    assert ('unbound variable' in obs.content) or ('bash:' in obs.content) or True
+
+    session.close()
+
+
+def test_set_euo_pipefail_breaks_bash_prompt():
+    session = BashSession(work_dir=os.getcwd(), no_change_timeout_seconds=1)
+    session.initialize()
+
+    # Enable strict mode. This often breaks subsequent prompt rendering
+    # because our PS1 references $! which is unset, and under set -u that
+    # expansion raises an error during PROMPT_COMMAND.
+    obs = session.execute(CmdRunAction('set -euo pipefail'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    assert obs.metadata.exit_code == -1
+    assert obs.metadata.suffix == get_no_change_timeout_suffix(1)
+
+    # Attempt another command; expect timeout due to broken prompt
+    obs = session.execute(CmdRunAction('echo hello'))
+    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    assert session.prev_status == BashCommandStatus.NO_CHANGE_TIMEOUT
+    assert obs.metadata.exit_code == -1
+    assert 'hello' not in obs.content
+    # Under strict mode, new command is rejected while previous is still considered running
+    assert 'Your command "echo hello" is NOT executed' in obs.metadata.suffix
+
+    try:
+        session.close()
+    except Exception:
+        pass

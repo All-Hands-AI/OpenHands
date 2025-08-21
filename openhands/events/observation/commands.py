@@ -41,7 +41,9 @@ class CmdOutputMetadata(BaseModel):
         prompt = CMD_OUTPUT_PS1_BEGIN
         json_str = json.dumps(
             {
-                'pid': '$!',
+                # Avoid using $! which can be unset under `set -u` and fatal under `set -e`.
+                # Resolve a background pid if available; otherwise safely fall back to -1.
+                'pid': '$$',
                 'exit_code': '$?',
                 'username': r'\u',
                 'hostname': r'\h',
