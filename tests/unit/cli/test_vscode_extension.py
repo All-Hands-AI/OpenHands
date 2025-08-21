@@ -197,6 +197,7 @@ def test_extension_detection_partial_match_ignored(mock_env_and_dependencies):
     assert mock_env_and_dependencies['subprocess'].call_count >= 1
     mock_env_and_dependencies['as_file'].assert_called_once()
     # GitHub download should not be attempted since bundled install succeeds
+    mock_env_and_dependencies['download'].assert_not_called()
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
 
