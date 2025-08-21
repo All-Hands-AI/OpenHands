@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
     assert_and_raise,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -480,7 +481,7 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(
