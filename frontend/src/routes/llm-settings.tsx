@@ -467,7 +467,12 @@ function LlmSettingsScreen() {
                     // Add any other analyzers that might exist
                     analyzers.forEach((analyzer) => {
                       if (!["llm", "invariant", "none"].includes(analyzer)) {
-                        orderedItems.push({ key: analyzer, label: analyzer });
+                        // For unknown analyzers, use the analyzer name as fallback
+                        // In the future, add specific i18n keys for new analyzers
+                        orderedItems.push({
+                          key: analyzer,
+                          label: analyzer, // TODO: Add i18n support for new analyzers
+                        });
                       }
                     });
 
@@ -593,7 +598,7 @@ function LlmSettingsScreen() {
                 items={
                   resources?.agents.map((agent) => ({
                     key: agent,
-                    label: agent,
+                    label: agent, // TODO: Add i18n support for agent names
                   })) || []
                 }
                 defaultSelectedKey={settings.AGENT}

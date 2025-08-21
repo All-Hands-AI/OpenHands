@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSettings } from "#/hooks/query/use-settings";
 import { openHands } from "#/api/open-hands-axios";
 import { displaySuccessToast } from "#/utils/custom-toast-handlers";
+import { RiskAlert } from "#/components/shared/risk-alert";
 
 // Email validation regex pattern
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -95,15 +96,25 @@ function EmailInputSection({
 function VerificationAlert() {
   const { t } = useTranslation();
   return (
-    <div
-      className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-sm mt-4"
-      role="alert"
-    >
-      <p className="font-bold">{t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}</p>
-      <p className="text-sm">
-        {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
-      </p>
-    </div>
+    <RiskAlert
+      className="mt-4"
+      icon={
+        // eslint-disable-next-line i18next/no-literal-string
+        <span role="img" aria-label="warning">
+          ⚠️
+        </span>
+      }
+      content={
+        <div>
+          <p className="font-bold">
+            {t("SETTINGS$EMAIL_VERIFICATION_REQUIRED")}
+          </p>
+          <p className="text-sm">
+            {t("SETTINGS$EMAIL_VERIFICATION_RESTRICTION_MESSAGE")}
+          </p>
+        </div>
+      }
+    />
   );
 }
 
