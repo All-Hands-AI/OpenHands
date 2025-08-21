@@ -232,11 +232,16 @@ if __name__ == '__main__':
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
-        # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
-        if llm_config is not None:
-            llm_config.modify_params = False
+    if llm_config is None:
+        # Fallback to the default [llm] config in config.toml
+        from openhands.core.config.utils import load_openhands_config
+
+        cfg = load_openhands_config()
+        llm_config = cfg.get_llm_config()
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
+    # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
+    llm_config.modify_params = False
 
     metadata = make_metadata(
         llm_config,
