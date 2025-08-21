@@ -19,11 +19,11 @@ from evaluation.utils.shared import (
     assert_and_raise,
     check_maximum_retries_exceeded,
     codeact_user_response,
-    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
     get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
+    override_openhands_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
@@ -354,7 +354,7 @@ def get_config(
         workspace_mount_path=None,
     )
 
-    config = get_default_openhands_config_for_eval(config)
+    config = override_openhands_config_for_eval(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']

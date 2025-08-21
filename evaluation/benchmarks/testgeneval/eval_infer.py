@@ -37,7 +37,7 @@ from evaluation.benchmarks.testgeneval.utils import load_testgeneval_dataset
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
-    get_default_openhands_config_for_eval,
+    override_openhands_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
@@ -59,7 +59,7 @@ def get_config(instance: pd.Series) -> OpenHandsConfig:
         f'Invalid container image for instance {instance["instance_id_swebench"]}.'
     )
     logger.info(f'Using instance container image: {base_container_image}.')
-    return get_default_openhands_config_for_eval(
+    return override_openhands_config_for_eval(
         OpenHandsConfig(
             run_as_openhands=False,
             runtime=os.environ.get('RUNTIME', 'eventstream'),

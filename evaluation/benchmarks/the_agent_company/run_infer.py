@@ -13,8 +13,8 @@ import yaml
 from browsing import pre_login
 
 from evaluation.utils.shared import (
-    get_default_openhands_config_for_eval,
     get_default_sandbox_config_for_eval,
+    override_openhands_config_for_eval,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -58,7 +58,7 @@ def get_config(
         workspace_mount_path=mount_path_on_host,
         workspace_mount_path_in_sandbox='/outputs',
     )
-    config = get_default_openhands_config_for_eval(config)
+    config = override_openhands_config_for_eval(config)
     config.set_llm_config(llm_config)
     if agent_config:
         config.set_agent_config(agent_config)
