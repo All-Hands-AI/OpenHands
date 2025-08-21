@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
     EvalOutput,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -179,7 +180,7 @@ def process_instance(
         raise ValueError('State should not be None.')
 
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     instruction = message_action.content
