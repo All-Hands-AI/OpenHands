@@ -24,6 +24,29 @@ class BaseMicroagent(BaseModel):
     type: MicroagentType
 
     @classmethod
+    def _handle_third_party(
+        cls, path: Path, file_content: str
+    ) -> 'RepoMicroagent' | None:
+        # Determine the agent name based on file type
+        microagent_name = None
+        if path.name == '.cursorrules':
+            microagent_name = 'cursorrules'
+        elif path.name.lower() in ['agents.md', 'agent.md']:
+            microagent_name = 'agents'
+
+        # Create RepoMicroagent if we recognized the file type
+        if microagent_name is not None:
+            return RepoMicroagent(
+                name=microagent_name,
+                content=file_content,
+                metadata=MicroagentMetadata(name=microagent_name),
+                source=str(path),
+                type=MicroagentType.REPO_KNOWLEDGE,
+            )
+
+        return None
+
+    @classmethod
     def load(
         cls,
         path: Union[str, Path],
@@ -63,25 +86,10 @@ class BaseMicroagent(BaseModel):
                 type=MicroagentType.REPO_KNOWLEDGE,
             )
 
-        # Handle .cursorrules files
-        if path.name == '.cursorrules':
-            return RepoMicroagent(
-                name='cursorrules',
-                content=file_content,
-                metadata=MicroagentMetadata(name='cursorrules'),
-                source=str(path),
-                type=MicroagentType.REPO_KNOWLEDGE,
-            )
-
-        # Handle AGENTS.md files (case-insensitive)
-        if path.name.lower() in ['agents.md', 'agent.md']:
-            return RepoMicroagent(
-                name='agents',
-                content=file_content,
-                metadata=MicroagentMetadata(name='agents'),
-                source=str(path),
-                type=MicroagentType.REPO_KNOWLEDGE,
-            )
+        # Handle third-party agent instruction files
+        third_party_agent = cls._handle_third_party(path, file_content)
+        if third_party_agent is not None:
+            return third_party_agent
 
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
