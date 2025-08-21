@@ -55,36 +55,35 @@ if TYPE_CHECKING:
     from openhands.runtime.utils.windows_bash import WindowsPowershellSession
 
 # Import Windows PowerShell support if on Windows
-if sys.platform == 'win32':
+if sys.platform == "win32":
+    # Ensure the custom exception name exists, even if the import below fails
+    try:
+        from openhands.runtime.utils.windows_exceptions import DotNetMissingError
+    except Exception:
+        class DotNetMissingError(Exception):
+            pass
+
     try:
         from openhands.runtime.utils.windows_bash import WindowsPowershellSession
-        from openhands.runtime.utils.windows_exceptions import DotNetMissingError
     except (ImportError, DotNetMissingError) as err:
-        # Print a user-friendly error message without stack trace
         friendly_message = """
-ERROR: PowerShell and .NET SDK are required but not properly configured
+            ERROR: PowerShell and .NET SDK are required but not properly configured
 
-The .NET SDK and PowerShell are required for OpenHands CLI on Windows.
-PowerShell integration cannot function without .NET Core.
+            The .NET SDK and PowerShell are required for OpenHands CLI on Windows.
+            PowerShell integration cannot function without .NET Core.
 
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
+            Please install the .NET SDK by following the instructions at:
+            https://docs.all-hands.dev/usage/windows-without-wsl
 
-After installing .NET SDK, restart your terminal and try again.
-"""
+            After installing .NET SDK, restart your terminal and try again.
+        """
         print(friendly_message, file=sys.stderr)
-        logger.error(
-            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
-        )
-        if (
-            isinstance(err, DotNetMissingError)
-            and hasattr(err, 'details')
-            and err.details
-        ):
-            logger.debug(f'Details: {err.details}')
-
-        # Exit the program with an error code
+        logger.error(f'Windows runtime initialization failed: {type(err).__name__}: {err}')
+        details = getattr(err, "details", None)
+        if details:
+            logger.debug(f"Details: {details}")
         sys.exit(1)
+
 
 
 class CLIRuntime(Runtime):
