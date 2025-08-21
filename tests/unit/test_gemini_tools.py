@@ -5,9 +5,10 @@ from litellm import ModelResponse
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.agenthub.codeact_agent.function_calling import response_to_actions
 from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.action import FileEditAction, FileReadAction, FileWriteAction
 from openhands.events.event import FileEditSource, FileReadSource
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 
 
 def create_mock_response(function_name: str, arguments: dict) -> ModelResponse:
@@ -83,10 +84,12 @@ def test_gemini_tool_mapping_replace_defaults_expected_1():
 
 
 def test_tool_exposure_gemini_models_excludes_str_replace(monkeypatch):
-    # Build a dummy LLM that looks like a gemini model
+    # Build a dummy LLM that looks like a gemini model through registry
     cfg = AgentConfig()
-    llm = LLM(LLMConfig(model='gemini-2.5-pro'))
-    agent = CodeActAgent(llm, cfg)
+    oh_cfg = OpenHandsConfig()
+    oh_cfg.set_llm_config(LLMConfig(model='gemini-2.5-pro'))
+    registry = LLMRegistry(config=oh_cfg)
+    agent = CodeActAgent(config=cfg, llm_registry=registry)
 
     # Get the tool names exposed
     tool_names = {t['function']['name'] for t in agent.tools}
