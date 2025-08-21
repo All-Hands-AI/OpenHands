@@ -13,7 +13,6 @@ from openhands.core.exceptions import UserCancelledError
 from openhands.core.logger import openhands_logger as logger
 from openhands.llm.async_llm import LLM_RETRY_EXCEPTIONS, AsyncLLM
 from openhands.llm.llm import (
-    MODELS_USING_MAX_COMPLETION_TOKENS,
     REASONING_EFFORT_SUPPORTED_MODELS,
 )
 from openhands.utils.ensure_session_close import ensure_aiohttp_close
@@ -35,6 +34,8 @@ class StreamingLLM(AsyncLLM):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
+        kwargs = self.get_litellm_kwargs()
+
         self._async_streaming_completion = partial(
             self._call_acompletion,
             model=self.config.model,
@@ -44,18 +45,12 @@ class StreamingLLM(AsyncLLM):
             base_url=self.config.base_url,
             api_version=self.config.api_version,
             custom_llm_provider=self.config.custom_llm_provider,
-            max_tokens=self.config.max_output_tokens
-            if self.config.model not in MODELS_USING_MAX_COMPLETION_TOKENS
-            else None,
-            max_completion_tokens=self.config.max_output_tokens
-            if self.config.model in MODELS_USING_MAX_COMPLETION_TOKENS
-            else None,
             timeout=self.config.timeout,
-            temperature=self.config.temperature,
             top_p=self.config.top_p,
             drop_params=self.config.drop_params,
             seed=self.config.seed,
-            stream=True,  # Ensure streaming is enabled
+            stream=True,  # Ensure streaming is enabled,
+            **kwargs,
         )
 
         self.async_streaming_completion_unwrapped = self._async_streaming_completion
