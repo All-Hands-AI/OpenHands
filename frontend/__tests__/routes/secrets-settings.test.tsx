@@ -107,7 +107,9 @@ describe("Content", () => {
       expect(screen.queryByTestId("add-secret-button")).not.toBeInTheDocument(),
     );
     const button = await screen.findByTestId("connect-git-button");
-    expect(button).toHaveAttribute("href", "/settings/integrations");
+    await userEvent.click(button);
+
+    screen.getByTestId("git-settings-screen");
   });
 
   it("should render an empty table when there are no existing secrets", async () => {
