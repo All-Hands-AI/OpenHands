@@ -20,12 +20,13 @@ from evaluation.utils.shared import (
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
+    update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
     get_llm_config_arg,
-    parse_arguments,
+    get_evaluation_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -86,7 +87,13 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config.set_llm_config(metadata.llm_config)
+    config.set_llm_config(
+        update_llm_config_for_completions_logging(
+            metadata.llm_config,
+            metadata.eval_output_dir,
+            env_id,
+        )
+    )
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
     return config
@@ -209,14 +216,8 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
-
-    # Enforce supported agent class for WebArena
-    if args.agent_cls not in SUPPORTED_AGENT_CLS:
-        logger.warning(
-            f"Agent '{args.agent_cls}' is not supported for WebArena; falling back to 'BrowsingAgent'"
-        )
-        args.agent_cls = 'BrowsingAgent'
+    parser = get_evaluation_parser()
+    args = parser.parse_args()
 
     dataset = pd.DataFrame(
         {

@@ -32,11 +32,6 @@ if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default BrowsingAgent"
   AGENT="BrowsingAgent"
 fi
-# Enforce BrowsingAgent for WebArena
-if [ "$AGENT" != "BrowsingAgent" ]; then
-  echo "NOTE: '$AGENT' is not supported for WebArena. Using BrowsingAgent instead."
-  AGENT="BrowsingAgent"
-fi
 
 get_openhands_version
 
