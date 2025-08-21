@@ -234,11 +234,23 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 
     for client in mcp_clients:
         logger.debug(f'MCP client tools: {client.tools}')
-        if action.name in [tool.name for tool in client.tools]:
-            matching_client = client
+        tool_names = [tool.name for tool in client.tools]
+        for t in tool_names:
+            if (
+                t == action.name
+                or t.endswith('_' + action.name)
+                or action.name.endswith('_' + t)
+            ):
+                matching_client = client
+                break
+        if matching_client:
             break
 
     if matching_client is None:
+        available = [tool.name for c in mcp_clients for tool in c.tools]
+        logger.error(
+            f'No matching MCP agent found for tool name: {action.name}. Available tools: {available}'
+        )
         raise ValueError(f'No matching MCP agent found for tool name: {action.name}')
 
     logger.debug(f'Matching client: {matching_client}')
