@@ -28,6 +28,14 @@ i18n
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
 
+    // Load translations relative to current base path so it works under nested routes
+    backend: {
+      loadPath: "locales/{{lng}}/{{ns}}.json",
+    },
+
+    ns: ["translation"],
+    defaultNS: "translation",
+
     // Define supported languages explicitly to prevent 404 errors
     // According to i18next documentation, this is the recommended way to prevent
     // 404 requests for unsupported language codes like 'en-US@posix'
