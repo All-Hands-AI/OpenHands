@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
 
@@ -42,10 +42,7 @@ export function MacrosSubmenu({ onClose }: MacrosSubmenuProps) {
   };
 
   return (
-    <ContextMenu
-      testId="macros-submenu"
-      className="text-white bg-tertiary rounded-[6px] py-[6px] px-1 flex flex-col gap-2 overflow-visible"
-    >
+    <ContextMenu testId="macros-submenu" className="overflow-visible">
       <ContextMenuListItem
         testId="increase-test-coverage-button"
         onClick={onIncreaseTestCoverage}

@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
-import { ContextMenu } from "./context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
@@ -101,7 +101,9 @@ export function AccountSettingsContextMenu({
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
-      className="absolute right-0 md:right-full md:left-full mt-2 md:mt-0 md:bottom-0 ml-2 z-10 w-fit bg-tertiary rounded-[6px] py-[6px] px-1 flex flex-col gap-2"
+      position="bottom"
+      alignment="right"
+      className="md:right-full md:left-full md:mt-0 md:bottom-0 ml-2 z-10 w-fit"
     >
       {navItems.map(({ to, text, icon }) => (
         <Link key={to} to={to} className="text-decoration-none">
