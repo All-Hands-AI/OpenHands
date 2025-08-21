@@ -26,7 +26,7 @@ class BaseMicroagent(BaseModel):
     @classmethod
     def _handle_third_party(
         cls, path: Path, file_content: str
-    ) -> 'RepoMicroagent' | None:
+    ) -> Union['RepoMicroagent', None]:
         # Determine the agent name based on file type
         microagent_name = None
         if path.name == '.cursorrules':
