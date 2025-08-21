@@ -166,6 +166,20 @@ class LLM(RetryMixin, DebugMixin):
         elif 'gemini' in self.config.model.lower() and self.config.safety_settings:
             kwargs['safety_settings'] = self.config.safety_settings
 
+        # Explicitly disable Anthropic extended thinking for Opus 4.1 to avoid
+        # requiring 'thinking' content blocks. See issue #10510.
+        if 'claude-opus-4-1' in self.config.model.lower():
+            kwargs['thinking'] = {'type': 'disabled'}
+
+        # Anthropic constraint: Opus models cannot accept both temperature and top_p
+        # Prefer temperature (drop top_p) if both are specified.
+        _model_lower = self.config.model.lower()
+        # Limit to Opus 4.1 specifically to avoid changing behavior of other Anthropic models
+        if ('claude-opus-4-1' in _model_lower) and (
+            'temperature' in kwargs and 'top_p' in kwargs
+        ):
+            kwargs.pop('top_p', None)
+
         self._completion = partial(
             litellm_completion,
             model=self.config.model,

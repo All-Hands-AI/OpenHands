@@ -130,3 +130,28 @@ docker run # ... \
 <Note>
 **Docker Desktop Required**: Network isolation features, including custom networks and `host.docker.internal` routing, require Docker Desktop. Docker Engine alone does not support these features on localhost across custom networks. If you're using Docker Engine without Docker Desktop, network isolation may not work as expected.
 </Note>
+
+### Sidecar Containers
+
+If you want to run sidecar containers to the sandbox 'runner' containers without exposing the sandbox containers to the host network, you can use the `SANDBOX_ADDITIONAL_NETWORKS` environment variable to specify additional Docker network names that should be added to the sandbox containers.
+
+```bash
+docker network create openhands-sccache
+
+docker run -d \
+  --hostname openhandsredis \
+  --network openhands-sccache \
+  redis
+
+docker run # ...
+    -e SANDBOX_ADDITIONAL_NETWORKS='["openhands-sccache"]' \
+    # ...
+```
+
+Then all sandbox instances will have to access a shared redis instance at `openhandsredis:6379`.
+
+#### Docker Compose gotcha
+
+Note that Docker Compose adds a prefix (a scope) by default to created networks, which is not taken into account by the additional networks config. Therefore when using docker compose you have to either:
+- specify a network name via the `name` field to remove the scoping (https://docs.docker.com/reference/compose-file/networks/#name) 
+- or provide the scope within the given config (e.g. `SANDBOX_ADDITIONAL_NETWORKS: '["myscope_openhands-sccache"]'` where `myscope` is the docker-compose assigned prefix). 

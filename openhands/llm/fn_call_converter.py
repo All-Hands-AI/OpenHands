@@ -705,6 +705,25 @@ def _fix_stopword(content: str) -> str:
     return content
 
 
+def _normalize_parameter_tags(fn_body: str) -> str:
+    """Normalize malformed parameter tags to the canonical format.
+
+    Some models occasionally emit malformed parameter tags like:
+        <parameter=command=str_replace</parameter>
+    instead of the correct:
+        <parameter=command>str_replace</parameter>
+
+    This function rewrites the malformed form into the correct one to allow
+    downstream parsing to succeed.
+    """
+    # Replace '<parameter=name=value</parameter>' with '<parameter=name>value</parameter>'
+    return re.sub(
+        r'<parameter=([a-zA-Z0-9_]+)=([^<]*)</parameter>',
+        r'<parameter=\1>\2</parameter>',
+        fn_body,
+    )
+
+
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
@@ -852,7 +871,7 @@ def convert_non_fncall_messages_to_fncall_messages(
 
             if fn_match:
                 fn_name = fn_match.group(1)
-                fn_body = fn_match.group(2)
+                fn_body = _normalize_parameter_tags(fn_match.group(2))
                 matching_tool = next(
                     (
                         tool['function']
