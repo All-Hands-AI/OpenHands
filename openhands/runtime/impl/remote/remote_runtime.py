@@ -385,14 +385,10 @@ class RemoteRuntime(ActionExecutionClient):
         # Path mode if runtime_url path starts with /{id}
         path_mode = path.startswith(f'/{self.runtime_id}')
         if path_mode:
-            base = f"{scheme}://{netloc}"
-            vscode_url = (
-                f"{base}/vscode/{self.runtime_id}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}"
-            )
+            base = f'{scheme}://{netloc}'
+            vscode_url = f'{base}/vscode/{self.runtime_id}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         else:
-            vscode_url = (
-                f"{scheme}://vscode-{netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}"
-            )
+            vscode_url = f'{scheme}://vscode-{netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         self.log('debug', f'VSCode URL: {vscode_url}')
         return vscode_url
 
