@@ -21,6 +21,7 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
+    codeact_user_response,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
@@ -186,11 +187,14 @@ def process_instance(
     call_async_from_sync(runtime.connect)
     task_str = initialize_runtime(runtime)
 
+    # Provide a default fake user responder to avoid stdin issues in headless eval
     state: State | None = asyncio.run(
         run_controller(
             config=config,
             initial_user_action=MessageAction(content=task_str),
             runtime=runtime,
+            fake_user_response_fn=lambda st: codeact_user_response(st, encapsulate_solution=False),
+            headless_mode=True,
         )
     )
     # ======= Attempt to evaluate the agent's environment impact =======
