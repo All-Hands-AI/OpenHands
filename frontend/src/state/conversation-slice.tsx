@@ -1,12 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export interface IMessageToSend {
+  text: string;
+  timestamp: number;
+}
+
 interface ConversationState {
   isRightPanelShown: boolean;
   images: File[];
   files: File[];
   loadingFiles: string[]; // File names currently being processed
   loadingImages: string[]; // Image names currently being processed
-  messageToSend: string | null;
+  messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
 }
 
@@ -80,7 +85,10 @@ export const conversationSlice = createSlice({
       state.loadingImages = [];
     },
     setMessageToSend: (state, action) => {
-      state.messageToSend = action.payload;
+      state.messageToSend = {
+        text: action.payload,
+        timestamp: Date.now(),
+      };
     },
   },
 });

@@ -320,7 +320,6 @@ describe("InteractiveChatBox", () => {
         <InteractiveChatBox
           onSubmit={onSubmit}
           onStop={onStop}
-          value=""
           isWaitingForUserInput={true}
           hasSubstantiveAgentActions={true}
           optimisticUserMessage={false}
