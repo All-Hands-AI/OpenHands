@@ -132,15 +132,20 @@ export function EventMessage({
     if (hasThoughtProperty(event.args) && event.action !== "think") {
       return (
         <div>
-          <ChatMessage
-            type="agent"
-            message={
-              event.args.thought?.reasoning_content
-                ? `${event.args.thought.reasoning_content}\n\n${event.args.thought.text}`
-                : event.args.thought?.text || ""
-            }
-            actions={actions}
-          />
+          {event.args.thought?.reasoning_content && (
+            <GenericEventMessage
+              title="Reasoning"
+              details={event.args.thought.reasoning_content}
+              initiallyExpanded={false}
+            />
+          )}
+          {(event.args.thought?.text || "") !== "" && (
+            <ChatMessage
+              type="agent"
+              message={event.args.thought?.text || ""}
+              actions={actions}
+            />
+          )}
           {microagentStatus && actions && (
             <MicroagentStatusIndicator
               status={microagentStatus}
@@ -262,14 +267,21 @@ export function EventMessage({
       {isOpenHandsAction(event) &&
         hasThoughtProperty(event.args) &&
         event.action !== "think" && (
-          <ChatMessage
-            type="agent"
-            message={
-              event.args.thought?.reasoning_content
-                ? `${event.args.thought.reasoning_content}\n\n${event.args.thought.text}`
-                : event.args.thought?.text || ""
-            }
-          />
+          <>
+            {event.args.thought?.reasoning_content && (
+              <GenericEventMessage
+                title="Reasoning"
+                details={event.args.thought.reasoning_content}
+                initiallyExpanded={false}
+              />
+            )}
+            {(event.args.thought?.text || "") !== "" && (
+              <ChatMessage
+                type="agent"
+                message={event.args.thought?.text || ""}
+              />
+            )}
+          </>
         )}
 
       <GenericEventMessage
