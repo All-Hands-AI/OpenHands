@@ -1,8 +1,9 @@
 """TomCodeActAgent: CodeAct Agent enhanced with Tom agent integration."""
 
-import asyncio
 import os
 from collections import deque
+import json
+from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, List, Dict, Any
 
@@ -27,16 +28,10 @@ from openhands.storage.locations import CONVERSATION_BASE_DIR
 from openhands.utils.prompt import PromptManager
 
 from tom_swe.tom_agent import create_tom_agent
-from tom_swe.memory.locations import get_cleaned_sessions_dir
+from tom_swe.memory.locations import get_cleaned_sessions_dir, get_usermodeling_dir
+from openhands.cli.tui import capture_tom_thinking, display_instruction_improvement, CLI_DISPLAY_LEVEL
 
-# Import CLI capture function for tom thinking process
-try:
-    from openhands.cli.tui import capture_tom_thinking
-    CLI_AVAILABLE = True
-except ImportError:
-    # CLI not available (e.g., in headless mode)
-    CLI_AVAILABLE = False
-
+CLI_AVAILABLE = os.environ.get('CLI_AVAILABLE', 'True').lower() == 'true'
 
 class TomCodeActAgent(CodeActAgent):
     """CodeAct Agent enhanced with Tom agent integration.
@@ -128,12 +123,11 @@ class TomCodeActAgent(CodeActAgent):
         formatted_messages = self.llm.format_messages_for_llm(messages)
 
         # INTEGRATION POINT 1: Improve instruction when new user message received
-
         if (self.tom_enabled and
             latest_user_message and
             self._is_new_user_message(latest_user_message)):
-
             logger.info(f"🚀 Tom: Integration Point 1 triggered - improving user instruction")
+            self._last_processed_user_message_id = latest_user_message.id
             try:
                 enhanced_instruction = self._improve_instruction_with_tom(latest_user_message, formatted_messages, state)
                 if enhanced_instruction:
@@ -141,7 +135,6 @@ class TomCodeActAgent(CodeActAgent):
                     # Update the formatted messages with the enhanced instruction
                     formatted_messages = self._update_messages_with_enhanced_understanding(formatted_messages, enhanced_instruction)
                     # Mark this message as processed
-                    self._last_processed_user_message_id = id(latest_user_message)
                 else:
                     logger.info(f"➡️ Tom: No improvement provided, continuing with original instruction")
             except Exception as e:
@@ -157,13 +150,12 @@ class TomCodeActAgent(CodeActAgent):
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)
         logger.debug(f'Actions after response_to_actions: {actions}')
-
         # INTEGRATION POINT 2: Run sleeptime compute when agent finishes
         finish_actions = [action for action in actions if isinstance(action, AgentFinishAction)]
         logger.debug(f"🔍 Tom: Integration Point 2 check - tom_enabled: {self.tom_enabled}, finish_actions: {len(finish_actions)}")
         if self.tom_enabled and finish_actions and not self.skip_memory_collection:
             logger.info("🚀 Tom: Integration Point 2 triggered - running sleeptime compute")
-            self.sleeptime_compute(user_id=state.user_id)
+            self.sleeptime_compute(user_id=state.user_id or "")
 
         # Queue all actions for execution
         for action in actions:
@@ -181,15 +173,15 @@ class TomCodeActAgent(CodeActAgent):
             True if this is a new user message that should trigger Tom improvement
         """
         source_check = user_message.source == 'user'
-        id_check = id(user_message) != self._last_processed_user_message_id
+        id_check = user_message.id != self._last_processed_user_message_id
         length_check = len(user_message.content.strip()) >= self.tom_min_instruction_length
 
-        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={id(user_message)} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.tom_min_instruction_length}: {length_check})")
+        logger.debug(f"🔍 Tom: Message checks - source='{user_message.source}' (=='user': {source_check}), id={user_message.id} (!=last: {id_check}), length={len(user_message.content.strip())} (>={self.tom_min_instruction_length}: {length_check})")
 
         return source_check and id_check and length_check
 
 
-    def _update_messages_with_enhanced_understanding(self, formatted_messages: list, enhanced_message: str) -> list:
+    def _update_messages_with_enhanced_understanding(self, formatted_messages: list[Message], enhanced_message: str) -> list[Message]:
         """Update the formatted messages with enhanced user message understanding.
 
         Args:
@@ -234,81 +226,66 @@ class TomCodeActAgent(CodeActAgent):
             Enhanced instruction string if improvements are available, None otherwise
         """
         try:
-            user_id = state.user_id
-            context = self._extract_context_from_messages(formatted_messages)
-
-            logger.info(f"🔄 Tom: Requesting instruction improvement for user: {user_id}")
-            logger.info(f"📝 Tom: Original instruction: {user_message.content}")
-            logger.info(f"📋 Tom: Context length: {len(context)} characters")
-
+            user_id = state.user_id or ""
             # Single synchronous call that includes user context analysis
             # Capture tom thinking process in CLI if available
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
                     improved_instruction = self.tom_agent.propose_instructions(
                         user_id=user_id,
-                        original_instruction=user_message.content,
-                        user_msg_context=context,
+                        formatted_messages=formatted_messages,
                     )
             else:
                 improved_instruction = self.tom_agent.propose_instructions(
                     user_id=user_id,
-                    original_instruction=user_message.content,
-                    user_msg_context=context,
+                    formatted_messages=formatted_messages,
                 )
             if improved_instruction:
-                logger.info(f"✅ Tom: Received improved instruction")
-                logger.info(f"💡 Tom: Improved instruction: {improved_instruction}")
+                logger.debug(f"✅ Tom: Received improved instruction")
+                logger.debug(f"💡 Tom: Improved instruction: {improved_instruction}")
+                # In CLI mode, show improvement to user and get their choice
+                if CLI_AVAILABLE:
+                    user_accepted = display_instruction_improvement(improved_instruction.improved_instruction)
 
-                return improved_instruction.improved_instruction
+                    # Record the interaction as JSON
+                    try:
+                        user_data_dir = Path(get_usermodeling_dir(user_id))
+                        record_file = user_data_dir / 'interaction_record.jsonl'
+
+                        interaction = {
+                            "session_id": state.session_id,
+                            "original": user_message.content,
+                            "improved": improved_instruction.improved_instruction,
+                            "accepted": 1 if user_accepted else 0,
+                            "timestamp": datetime.now().isoformat()
+                        }
+
+                        # FileStore expects a string path; ensure correct type
+                        self.file_store.write(str(record_file), json.dumps(interaction) + '\n')
+                        # Only use improved instruction if accepted
+                        if user_accepted:
+                            logger.log(CLI_DISPLAY_LEVEL, f"📝 Tom: User accepted improvement, using improved instruction")
+                            return improved_instruction.improved_instruction
+                        else:
+                            logger.log(CLI_DISPLAY_LEVEL, f"🚫 Tom: User rejected improvement, using original instruction")
+                            return None
+
+                    except Exception as e:
+                        logger.error(f"❌ Tom: Failed to record interaction: {e}")
+                        # Still proceed with improvement if user accepted, even if recording failed
+                        if user_accepted:
+                            return improved_instruction.improved_instruction
+                        return None
+                else:
+                    # Non-CLI mode: use improvement automatically
+                    return improved_instruction.improved_instruction
             else:
-                logger.warning(f"⚠️ Tom: No instruction improvements provided")
+                logger.warning(f"⚠️ Tom: No instruction improvements provided (could be the original instruction is clear enough)")
 
         except Exception as e:
             logger.warning(f"🔄 Tom: Falling back to original instruction due to error")
 
         return None
-
-    def _extract_context_from_messages(self, formatted_messages: list) -> str:
-        """Extract context from the formatted LLM messages.
-
-        Args:
-            formatted_messages: Messages formatted for LLM consumption
-
-        Returns:
-            String representation of the conversation context
-        """
-        context_parts = []
-
-        for message in formatted_messages:  # All messages for context
-            role = message.get('role', '')
-            content = message.get('content', '')
-
-            # Convert content to string if it's a list (for vision/multi-content messages)
-            if isinstance(content, list):
-                text_parts = []
-                for item in content:
-                    if isinstance(item, dict):
-                        text_parts.append(item.get('text', ''))
-                    else:
-                        text_parts.append(str(item))
-                content = ' '.join(text_parts)
-
-            # Skip empty content
-            if not content.strip():
-                continue
-
-            # Format based on role
-            if role == 'system':
-                context_parts.append(f"System: {content}")
-            elif role == 'user':
-                context_parts.append(f"User: {content}")
-            elif role == 'assistant':
-                context_parts.append(f"Assistant: {content}")
-            elif role == 'tool':
-                context_parts.append(f"Tool: {content}")
-
-        return '\n'.join(context_parts)
 
     def sleeptime_compute(
         self,

@@ -8,6 +8,7 @@ import asyncio
 import sys
 import tempfile
 import os
+os.environ['CLI_AVAILABLE'] = 'False'
 import shutil
 from pathlib import Path
 from typing import List
@@ -27,6 +28,7 @@ from openhands.runtime.impl.local import LocalRuntime
 from openhands.controller.state.state import State
 from openhands.llm.metrics import Metrics
 # Removed sleeptime import since it's now integrated into TomCodeActAgent
+
 
 async def test_tom_agent(instruction: str, workspace_dir: str = None):
     """Test TomCodeActAgent with a custom instruction."""

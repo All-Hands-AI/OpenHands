@@ -3,6 +3,7 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
+import re
 import contextlib
 import datetime
 import json
@@ -527,8 +528,6 @@ def display_mcp_observation(event: MCPObservation) -> None:
     )
     print_formatted_text('')
     print_container(container)
-
-
 def display_task_tracking_action(event: TaskTrackingAction) -> None:
     """Display a TaskTracking action in the CLI."""
     # Display thought first if present
@@ -1023,13 +1022,13 @@ def display_tom_thinking_step(message: str) -> None:
         color = COLOR_GOLD
         prefix = "Tom Analysis"
     elif message.startswith('⏱️') or 'time' in message.lower():
-        color = COLOR_GREY  
+        color = COLOR_GREY
         prefix = "Tom Performance"
     elif message.startswith('🔍'):
         color = '#32CD32'  # Lime green for search results
-        prefix = "Tom Search"
+        prefix = "Action Parameters/Results"
     elif message.startswith('🧠'):
-        color = '#9370DB'  # Medium purple for reasoning 
+        color = '#9370DB'  # Medium purple for reasoning
         prefix = "Tom Reasoning"
     elif message.startswith('⚡'):
         color = '#FF6347'  # Tomato red for actions
@@ -1061,27 +1060,115 @@ class TomCliLogHandler(logging.Handler):
 
     def emit(self, record):
         """Emit a log record for CLI display."""
-        # Only handle our custom CLI_DISPLAY messages, ignore everything else
-        if record.levelno == CLI_DISPLAY_LEVEL:
-            try:
-                display_tom_thinking_step(record.getMessage())
-            except Exception:
-                # Don't let display errors break tom functionality
-                pass
+        message = record.getMessage()
+        try:
+            if record.levelno == CLI_DISPLAY_LEVEL:
+                # Special styling for our custom display level
+                display_tom_thinking_step(message)
+        except Exception:
+            # Don't let display errors break tom functionality
+            pass
+
+
+class TomMessageFilter(logging.Filter):
+    """Filter to suppress Tom-related messages from regular OpenHands logger."""
+
+    def filter(self, record):
+        message = record.getMessage()
+        # Suppress messages that contain "Tom:" to avoid duplicates
+        return not ("Tom:" in message or record.levelno == CLI_DISPLAY_LEVEL)
 
 
 @contextmanager
 def capture_tom_thinking():
     """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
-    display_tom_thinking_step("🎯 Analyzing your instruction...")
-    
-    # Minimal setup: just add our handler to tom-swe loggers to catch CLI_DISPLAY_LEVEL
     handler = TomCliLogHandler()
+    tom_filter = TomMessageFilter()
     tom_logger = logging.getLogger('tom_swe')
-    
+    oh_logger = logging.getLogger('openhands')
+
     try:
+        # Add Tom CLI handler for clean display
+        tom_logger.setLevel(logging.INFO)
         tom_logger.addHandler(handler)
+        tom_logger.propagate = False
+
+        # Add filter to OpenHands logger to suppress Tom messages
+        oh_logger.addFilter(tom_filter)
+
         yield
     finally:
-        tom_logger.removeHandler(handler)
-        display_tom_thinking_step("✅ Analysis complete")
+        with contextlib.suppress(Exception):
+            tom_logger.removeHandler(handler)
+            oh_logger.removeFilter(tom_filter)
+
+
+def display_instruction_improvement(improved_instruction: str) -> bool:
+    """Display improved instruction and get user acceptance.
+
+    Args:
+        improved_instruction: The improved instruction text
+
+    Returns:
+        bool: True if user accepts, False if rejected
+    """
+    from openhands.core.config import OpenHandsConfig
+
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🎯 Tom has improved your instruction:</gold>'))
+    print_formatted_text('')
+
+    # Extract content after the ToM Agent Analysis marker
+    text = improved_instruction.strip()
+
+    # Look for the ToM Agent Analysis marker and extract content after it
+    marker = "*****************ToM Agent Analysis Start Here*****************"
+    if marker in text:
+        # Split on the marker and take everything after it
+        parts = text.split(marker, 1)
+        if len(parts) > 1:
+            text = parts[1].strip()
+
+    try:
+        # Convert markdown to HTML and display with proper formatting
+        html_content = convert_markdown_to_html(text)
+
+        # Use HTML rendering in the TextArea for rich markdown display
+        container = Frame(
+            Window(
+                FormattedTextControl(
+                    HTML(html_content),
+                    wrap_lines=True,
+                ),
+                wrap_lines=True,
+            ),
+            title='Instruction Proposal',
+            style=f'fg:{COLOR_GREY}',
+        )
+    except Exception as e:
+        # Fallback to plain text if HTML rendering fails
+        container = Frame(
+            TextArea(
+                text=text,
+                read_only=True,
+                wrap_lines=True,
+            ),
+            title='Instruction Proposal',
+            style=f'fg:{COLOR_GREY}',
+        )
+    print_container(container)
+
+    print_formatted_text('')
+    print_formatted_text('')
+    print_formatted_text(HTML('<grey>Use ↑/↓ to select, then press Enter</grey>'))
+
+    # Get user choice
+    config = OpenHandsConfig()  # Create minimal config for cli_confirm
+    choice = cli_confirm(
+        config,
+        'Would you like to use this improved instruction?',
+        ['Accept', 'Reject'],
+        initial_selection=0
+    )
+
+    return choice == 0  # 0 = Accept, 1 = Reject
