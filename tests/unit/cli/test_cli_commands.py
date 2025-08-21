@@ -168,9 +168,11 @@ class TestHandleCommands:
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.handle_conv_command')
-    async def test_handle_conv_command(self, mock_handle_conv, mock_dependencies):
+    async def test_handle_conversations_command(
+        self, mock_handle_conv, mock_dependencies
+    ):
         close_repl, reload_microagents, new_session, _ = await handle_commands(
-            '/conv', **mock_dependencies
+            '/conversations', **mock_dependencies
         )
 
         mock_handle_conv.assert_called_once_with(mock_dependencies['config'])

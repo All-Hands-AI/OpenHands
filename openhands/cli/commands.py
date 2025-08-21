@@ -908,7 +908,7 @@ def show_loading_spinner(stop_event: threading.Event) -> None:
 
 
 async def handle_conv_command(config: OpenHandsConfig) -> None:
-    """Handle the /conv command to view conversation history."""
+    """Handle the /conversations command to view conversation history."""
     # Show loading animation while getting conversations
     stop_event = threading.Event()
     spinner_thread = threading.Thread(target=show_loading_spinner, args=(stop_event,))

@@ -2,7 +2,7 @@
 
 1. ✅ Explore current CLI structure and session storage
 
-2. ✅ Implement /conv command to list conversations
+2. ✅ Implement /conversations command to list conversations
 
 3. ✅ Implement conversation viewer to show user messages
 
