@@ -103,6 +103,8 @@ jobs:
 
           # Create a new requirements.txt locally within the workflow, ensuring no reference to the repo's file
           echo "openhands-ai==${OPENHANDS_VERSION}" > /tmp/requirements.txt
+          # for Pin OpenAI Python SDK to 1.99.9 to avoid LiteLLM import breakage (BerriAI/litellm#13711) 
+          echo "openai==1.99.9" >> /tmp/requirements.txt
           cat /tmp/requirements.txt
 
       - name: Cache pip dependencies
