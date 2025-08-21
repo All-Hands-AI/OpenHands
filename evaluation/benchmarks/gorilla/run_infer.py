@@ -12,6 +12,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -108,7 +109,7 @@ def process_instance(
     # attempt to parse model_answer
     ast_eval_fn = instance['ast_eval']
     correct, hallucination = ast_eval_fn(instance_id, model_answer_raw)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     logger.info(
         f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
     )
