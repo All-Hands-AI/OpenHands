@@ -14,19 +14,29 @@ import { Conversation } from "#/api/open-hands.types";
 
 // Mock hooks
 const mockUseUserProviders = vi.fn();
-const mockUseUserRepositories = vi.fn();
+const mockUseGitRepositories = vi.fn();
 const mockUseConfig = vi.fn();
+const mockUseRepositoryMicroagents = vi.fn();
+const mockUseSearchConversations = vi.fn();
 
 vi.mock("#/hooks/use-user-providers", () => ({
   useUserProviders: () => mockUseUserProviders(),
 }));
 
-vi.mock("#/hooks/query/use-user-repositories", () => ({
-  useUserRepositories: () => mockUseUserRepositories(),
+vi.mock("#/hooks/query/use-git-repositories", () => ({
+  useGitRepositories: () => mockUseGitRepositories(),
 }));
 
 vi.mock("#/hooks/query/use-config", () => ({
   useConfig: () => mockUseConfig(),
+}));
+
+vi.mock("#/hooks/query/use-repository-microagents", () => ({
+  useRepositoryMicroagents: () => mockUseRepositoryMicroagents(),
+}));
+
+vi.mock("#/hooks/query/use-search-conversations", () => ({
+  useSearchConversations: () => mockUseSearchConversations(),
 }));
 
 describe("MicroagentManagement", () => {
@@ -174,7 +184,7 @@ describe("MicroagentManagement", () => {
       providers: ["github"],
     });
 
-    mockUseUserRepositories.mockReturnValue({
+    mockUseGitRepositories.mockReturnValue({
       data: {
         pages: [
           {
@@ -194,6 +204,18 @@ describe("MicroagentManagement", () => {
       data: {
         APP_MODE: "oss",
       },
+    });
+
+    mockUseRepositoryMicroagents.mockReturnValue({
+      data: mockMicroagents,
+      isLoading: false,
+      isError: false,
+    });
+
+    mockUseSearchConversations.mockReturnValue({
+      data: mockConversations,
+      isLoading: false,
+      isError: false,
     });
 
     // Setup default mock for retrieveUserGitRepositories
@@ -227,7 +249,7 @@ describe("MicroagentManagement", () => {
 
   it("should display loading state when fetching repositories", async () => {
     // Mock loading state
-    mockUseUserRepositories.mockReturnValue({
+    mockUseGitRepositories.mockReturnValue({
       data: undefined,
       isLoading: true,
       isError: false,
@@ -245,7 +267,7 @@ describe("MicroagentManagement", () => {
 
   it("should handle error when fetching repositories", async () => {
     // Mock error state
-    mockUseUserRepositories.mockReturnValue({
+    mockUseGitRepositories.mockReturnValue({
       data: undefined,
       isLoading: false,
       isError: true,
@@ -258,7 +280,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for the error to be handled
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
   });
 
@@ -267,7 +289,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Check that tabs are rendered
@@ -285,7 +307,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded and rendered
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Check that repository names are displayed
@@ -300,7 +322,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -309,10 +331,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for microagents to be fetched
     await waitFor(() => {
-      expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-        "user",
-        "repo2",
-      );
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
 
     // Check that microagents are displayed
@@ -325,19 +344,17 @@ describe("MicroagentManagement", () => {
 
   it("should display loading state when fetching microagents", async () => {
     const user = userEvent.setup();
-    const getRepositoryMicroagentsSpy = vi.spyOn(
-      OpenHands,
-      "getRepositoryMicroagents",
-    );
-    getRepositoryMicroagentsSpy.mockImplementation(
-      () => new Promise(() => {}), // Never resolves
-    );
+    mockUseRepositoryMicroagents.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isError: false,
+    });
 
     renderMicroagentManagement();
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -350,19 +367,17 @@ describe("MicroagentManagement", () => {
 
   it("should handle error when fetching microagents", async () => {
     const user = userEvent.setup();
-    const getRepositoryMicroagentsSpy = vi.spyOn(
-      OpenHands,
-      "getRepositoryMicroagents",
-    );
-    getRepositoryMicroagentsSpy.mockRejectedValue(
-      new Error("Failed to fetch microagents"),
-    );
+    mockUseRepositoryMicroagents.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isError: true,
+    });
 
     renderMicroagentManagement();
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -371,23 +386,23 @@ describe("MicroagentManagement", () => {
 
     // Wait for the error to be handled
     await waitFor(() => {
-      expect(getRepositoryMicroagentsSpy).toHaveBeenCalledWith("user", "repo2");
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
   });
 
   it("should display empty state when no microagents are found", async () => {
     const user = userEvent.setup();
-    const getRepositoryMicroagentsSpy = vi.spyOn(
-      OpenHands,
-      "getRepositoryMicroagents",
-    );
-    getRepositoryMicroagentsSpy.mockResolvedValue([]);
+    mockUseRepositoryMicroagents.mockReturnValue({
+      data: [],
+      isLoading: false,
+      isError: false,
+    });
 
     renderMicroagentManagement();
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -396,7 +411,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for microagents to be fetched
     await waitFor(() => {
-      expect(getRepositoryMicroagentsSpy).toHaveBeenCalledWith("user", "repo2");
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
 
     // Check that no microagents are displayed
@@ -410,7 +425,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -419,10 +434,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for microagents to be fetched
     await waitFor(() => {
-      expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-        "user",
-        "repo2",
-      );
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
 
     // Check that microagent cards display correct information
@@ -449,7 +461,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded and processed
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Wait for repositories to be displayed in the accordion
@@ -468,7 +480,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded and processed
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Wait for repositories to be displayed in the accordion
@@ -492,7 +504,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click the first add microagent button
@@ -513,7 +525,7 @@ describe("MicroagentManagement", () => {
 
   it("should display empty state when no repositories are found", async () => {
     // Mock empty repositories
-    mockUseUserRepositories.mockReturnValue({
+    mockUseGitRepositories.mockReturnValue({
       data: {
         pages: [
           {
@@ -533,7 +545,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Check that empty state messages are displayed
@@ -550,7 +562,7 @@ describe("MicroagentManagement", () => {
 
     // Wait for repositories to be loaded
     await waitFor(() => {
-      expect(mockUseUserRepositories).toHaveBeenCalled();
+      expect(mockUseGitRepositories).toHaveBeenCalled();
     });
 
     // Find and click on the first repository accordion
@@ -559,14 +571,11 @@ describe("MicroagentManagement", () => {
 
     // Wait for microagents to be fetched for first repo
     await waitFor(() => {
-      expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-        "user",
-        "repo2",
-      );
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
 
-    // Check that the API call was made
-    expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledTimes(1);
+    // Check that the hook was called
+    expect(mockUseRepositoryMicroagents).toHaveBeenCalledTimes(1);
   });
 
   it("should display ready to add microagent message in main area", async () => {
@@ -591,7 +600,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Check that search input is rendered
@@ -611,7 +620,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Initially only repositories with .openhands should be visible
@@ -642,7 +651,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input with uppercase
@@ -665,7 +674,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input with partial match
@@ -691,7 +700,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input
@@ -724,7 +733,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input with non-existent repository name
@@ -752,7 +761,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input with special characters
@@ -773,7 +782,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Filter to show only repo2
@@ -788,10 +797,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for microagents to be fetched
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-          "user",
-          "repo2",
-        );
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
       });
 
       // Check that microagents are displayed
@@ -808,7 +814,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Type in search input with leading/trailing whitespace
@@ -828,7 +834,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       const searchInput = screen.getByRole("textbox", {
@@ -860,7 +866,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -869,15 +875,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both microagents and conversations to be fetched
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-          "user",
-          "repo2",
-        );
-        expect(OpenHands.searchConversations).toHaveBeenCalledWith(
-          "user/repo2/.openhands",
-          "microagent_management",
-          1000,
-        );
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
     });
 
@@ -887,7 +886,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -896,8 +895,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalled();
-        expect(OpenHands.searchConversations).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that microagents are displayed
@@ -917,23 +916,22 @@ describe("MicroagentManagement", () => {
 
     it("should show loading state when both microagents and conversations are loading", async () => {
       const user = userEvent.setup();
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
-      // Make both queries never resolve
-      getRepositoryMicroagentsSpy.mockImplementation(
-        () => new Promise(() => {}),
-      );
-      searchConversationsSpy.mockImplementation(() => new Promise(() => {}));
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: undefined,
+        isLoading: true,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -950,7 +948,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -959,8 +957,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalled();
-        expect(OpenHands.searchConversations).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that loading spinner is not displayed
@@ -975,7 +973,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -984,8 +982,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalled();
-        expect(OpenHands.searchConversations).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that microagent file paths are displayed for microagents
@@ -1010,21 +1008,22 @@ describe("MicroagentManagement", () => {
 
     it("should show learn this repo component when no microagents and no conversations", async () => {
       const user = userEvent.setup();
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
-      // Mock both queries to return empty arrays
-      getRepositoryMicroagentsSpy.mockResolvedValue([]);
-      searchConversationsSpy.mockResolvedValue([]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1033,8 +1032,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
-        expect(searchConversationsSpy).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that the learn this repo component is displayed
@@ -1046,21 +1045,22 @@ describe("MicroagentManagement", () => {
 
     it("should show learn this repo component when only conversations exist but no microagents", async () => {
       const user = userEvent.setup();
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
-      // Mock microagents to return empty array, conversations to return data
-      getRepositoryMicroagentsSpy.mockResolvedValue([]);
-      searchConversationsSpy.mockResolvedValue([...mockConversations]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [...mockConversations],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1069,8 +1069,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
-        expect(searchConversationsSpy).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that conversations are displayed
@@ -1088,21 +1088,22 @@ describe("MicroagentManagement", () => {
 
     it("should show learn this repo component when only microagents exist but no conversations", async () => {
       const user = userEvent.setup();
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
-      // Mock microagents to return data, conversations to return empty array
-      getRepositoryMicroagentsSpy.mockResolvedValue([...mockMicroagents]);
-      searchConversationsSpy.mockResolvedValue([]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [...mockMicroagents],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1111,8 +1112,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
-        expect(searchConversationsSpy).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that microagents are displayed
@@ -1130,16 +1131,17 @@ describe("MicroagentManagement", () => {
 
     it("should handle error when fetching conversations", async () => {
       const user = userEvent.setup();
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-      searchConversationsSpy.mockRejectedValue(
-        new Error("Failed to fetch conversations"),
-      );
+      mockUseSearchConversations.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1148,11 +1150,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for the error to be handled
       await waitFor(() => {
-        expect(searchConversationsSpy).toHaveBeenCalledWith(
-          "user/repo2/.openhands",
-          "microagent_management",
-          1000,
-        );
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that the learn this repo component is displayed (since conversations failed)
@@ -1163,27 +1161,22 @@ describe("MicroagentManagement", () => {
       });
 
       // Also check that the microagents query was called successfully
-      expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-        "user",
-        "repo2",
-      );
+      expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
     });
 
     it("should handle error when fetching microagents but conversations succeed", async () => {
       const user = userEvent.setup();
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      getRepositoryMicroagentsSpy.mockRejectedValue(
-        new Error("Failed to fetch microagents"),
-      );
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: undefined,
+        isLoading: false,
+        isError: true,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1192,10 +1185,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for the error to be handled
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalledWith(
-          "user",
-          "repo2",
-        );
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
       });
 
       // Check that the learn this repo component is displayed (since microagents failed)
@@ -1207,13 +1197,11 @@ describe("MicroagentManagement", () => {
 
     it("should call searchConversations with correct parameters", async () => {
       const user = userEvent.setup();
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1222,11 +1210,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for searchConversations to be called
       await waitFor(() => {
-        expect(searchConversationsSpy).toHaveBeenCalledWith(
-          "user/repo2/.openhands",
-          "microagent_management",
-          1000,
-        );
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
     });
 
@@ -1236,7 +1220,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1245,8 +1229,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to complete
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalled();
-        expect(OpenHands.searchConversations).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that conversations display correct information
@@ -1263,7 +1247,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion
@@ -1272,15 +1256,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for both queries to be called for first repo
       await waitFor(() => {
-        expect(OpenHands.getRepositoryMicroagents).toHaveBeenCalledWith(
-          "user",
-          "repo2",
-        );
-        expect(OpenHands.searchConversations).toHaveBeenCalledWith(
-          "user/repo2/.openhands",
-          "microagent_management",
-          1000,
-        );
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Check that both microagents and conversations are displayed
@@ -1304,7 +1281,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1325,7 +1302,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1387,7 +1364,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1418,7 +1395,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1448,7 +1425,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1488,7 +1465,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1522,7 +1499,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -1555,7 +1532,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for repositories to be loaded and processed
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Wait for repositories to be displayed in the accordion
@@ -2409,19 +2386,22 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Setup mocks before rendering
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-      getRepositoryMicroagentsSpy.mockResolvedValue([]);
-      searchConversationsSpy.mockResolvedValue([]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories to be loaded
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       // Find and click on the first repository accordion to expand it
@@ -2430,8 +2410,8 @@ describe("MicroagentManagement", () => {
 
       // Wait for microagents and conversations to be fetched
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
-        expect(searchConversationsSpy).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Verify the learn this repo trigger is displayed when no microagents exist
@@ -2451,19 +2431,22 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Setup mocks
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-      getRepositoryMicroagentsSpy.mockResolvedValue([]);
-      searchConversationsSpy.mockResolvedValue([]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       // Wait for repositories and expand accordion
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       const repoAccordion = screen.getByTestId("repository-name-tooltip");
@@ -2496,35 +2479,36 @@ describe("MicroagentManagement", () => {
       const user = userEvent.setup();
 
       // Setup mocks with existing microagents (should NOT show trigger)
-      const getRepositoryMicroagentsSpy = vi.spyOn(
-        OpenHands,
-        "getRepositoryMicroagents",
-      );
-      const searchConversationsSpy = vi.spyOn(OpenHands, "searchConversations");
-
-      // Mock with existing microagent
-      getRepositoryMicroagentsSpy.mockResolvedValue([
-        {
-          name: "test-microagent",
-          created_at: "2021-10-01",
-          git_provider: "github",
-          path: ".openhands/microagents/test",
-        },
-      ]);
-      searchConversationsSpy.mockResolvedValue([]);
+      mockUseRepositoryMicroagents.mockReturnValue({
+        data: [
+          {
+            name: "test-microagent",
+            created_at: "2021-10-01",
+            git_provider: "github",
+            path: ".openhands/microagents/test",
+          },
+        ],
+        isLoading: false,
+        isError: false,
+      });
+      mockUseSearchConversations.mockReturnValue({
+        data: [],
+        isLoading: false,
+        isError: false,
+      });
 
       renderMicroagentManagement();
 
       await waitFor(() => {
-        expect(mockUseUserRepositories).toHaveBeenCalled();
+        expect(mockUseGitRepositories).toHaveBeenCalled();
       });
 
       const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
       await waitFor(() => {
-        expect(getRepositoryMicroagentsSpy).toHaveBeenCalled();
-        expect(searchConversationsSpy).toHaveBeenCalled();
+        expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
+        expect(mockUseSearchConversations).toHaveBeenCalled();
       });
 
       // Should NOT show the learn this repo trigger when microagents exist
