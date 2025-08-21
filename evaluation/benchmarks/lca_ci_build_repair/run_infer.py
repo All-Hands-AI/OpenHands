@@ -22,6 +22,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -335,7 +336,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         )
     )
     assert state is not None
-    metrics = state.metrics.get() if state.metrics else {}
+    metrics = get_metrics(state)
 
     test_result = complete_runtime(runtime, instance)
 
