@@ -100,7 +100,6 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'gemini-2.5-pro',
     'gpt-5',
     'gpt-5-2025-08-07',
-    'claude-opus-4-1-20250805',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
 ]
