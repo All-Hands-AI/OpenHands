@@ -318,7 +318,7 @@ export function WsClientProvider({
     };
 
     let baseUrl: string | null = null;
-    let socketPath: string | undefined = undefined;
+    let socketPath: string;
     if (conversation.url && !conversation.url.startsWith("/")) {
       const u = new URL(conversation.url);
       baseUrl = u.host;
@@ -326,7 +326,9 @@ export function WsClientProvider({
       // Socket.IO server default path is /socket.io; prefix with pathBeforeApi for path mode
       socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
     } else {
-      baseUrl = (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) || window?.location.host;
+      baseUrl =
+        (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
+        window?.location.host;
       socketPath = "/socket.io";
     }
 

@@ -50,11 +50,12 @@ export const useCreateConversationAndSubscribeMultiple = () => {
         {
           onSuccess: (data) => {
             let baseUrl = "";
-            let socketPath: string | undefined = undefined;
+            let socketPath: string;
             if (data?.url && !data.url.startsWith("/")) {
               const u = new URL(data.url);
               baseUrl = u.host;
-              const pathBeforeApi = u.pathname.split("/api/conversations")[0] || "/";
+              const pathBeforeApi =
+                u.pathname.split("/api/conversations")[0] || "/";
               socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
             } else {
               baseUrl =

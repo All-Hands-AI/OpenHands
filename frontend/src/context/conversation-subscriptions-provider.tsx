@@ -141,8 +141,14 @@ export function ConversationSubscriptionsProvider({
       socketPath?: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
-      const { conversationId, sessionApiKey, providersSet, baseUrl, socketPath, onEvent } =
-        options;
+      const {
+        conversationId,
+        sessionApiKey,
+        providersSet,
+        baseUrl,
+        socketPath,
+        onEvent,
+      } = options;
 
       // If already subscribed, don't create a new subscription
       if (conversationSockets[conversationId]) {
@@ -201,7 +207,7 @@ export function ConversationSubscriptionsProvider({
         // Create socket connection
         const socket = io(baseUrl, {
           transports: ["websocket"],
-          path: options.socketPath ?? "/socket.io",
+          path: socketPath ?? "/socket.io",
           query: {
             conversation_id: conversationId,
             session_api_key: sessionApiKey,
