@@ -77,10 +77,19 @@ def get_config(
         'MAP': f'{base_url}:3000',
         'HOMEPAGE': f'{base_url}:4399',
     }
+    # Prefer remote runtime when configured; otherwise use Docker
+    runtime_name = (
+        'remote' if os.environ.get('SANDBOX_REMOTE_RUNTIME_API_URL') else 'docker'
+    )
+    if runtime_name == 'docker':
+        logger.warning(
+            'No SANDBOX_REMOTE_RUNTIME_API_URL provided. Using Docker runtime. '
+            'Ensure Docker daemon is available, or set SANDBOX_REMOTE_RUNTIME_API_URL and ALLHANDS_API_KEY to use the remote runtime.'
+        )
     config = OpenHandsConfig(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
-        runtime='docker',
+        runtime=runtime_name,
         max_iterations=metadata.max_iterations,
         sandbox=sandbox_config,
         # do not mount workspace
