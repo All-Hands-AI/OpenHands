@@ -108,14 +108,6 @@
 }
 
 /* Custom styles for contenteditable */
-.chat-input:empty:before {
-  content: attr(data-placeholder);
-  color: #A1A1A1;
-  pointer-events: none;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 20px;
-}
 
 .chat-input:focus {
   outline: none;

@@ -322,7 +322,8 @@ export function CustomChatInput({
                 <div
                   ref={chatInputRef}
                   className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    "chat-input bg-transparent  text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                    "peer",
                     isDisabled && "cursor-not-allowed",
                   )}
                   contentEditable={!isDisabled}
@@ -334,6 +335,15 @@ export function CustomChatInput({
                   onFocus={onFocus}
                   onBlur={handleBlur}
                 />
+                <span
+                  className="absolute top-2.25 left-0.25 right-0 text-white text-[16px] font-normal hidden peer-empty:block"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    chatInputRef.current?.focus();
+                  }}
+                >
+                  {t("SUGGESTIONS$WHAT_TO_BUILD")}
+                </span>
               </div>
             </div>
           </div>
