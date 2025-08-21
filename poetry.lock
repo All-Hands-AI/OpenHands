@@ -6558,53 +6558,49 @@ pydantic = ">=1.8"
 
 [[package]]
 name = "openhands-aci"
-version = "0.3.1"
+version = "0.3.2"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
-python-versions = "^3.12"
+python-versions = "<4.0,>=3.12"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "openhands_aci-0.3.2-py3-none-any.whl", hash = "sha256:a3ff6fe3dd50124598b8bc3aff8d9742d6e75f933f7e7635a9d0b37d45eb826e"},
+    {file = "openhands_aci-0.3.2.tar.gz", hash = "sha256:df7b64df6acb70b45b23e88c13508e7af8f27725bed30c3e88691a0f3d1f7a44"},
+]
 
 [package.dependencies]
 beautifulsoup4 = ">=4.12.3"
-binaryornot = "^0.4.4"
-cachetools = "^5.5.2"
-charset-normalizer = "^3.4.1"
+binaryornot = ">=0.4.4,<0.5.0"
+cachetools = ">=5.5.2,<6.0.0"
+charset-normalizer = ">=3.4.1,<4.0.0"
 flake8 = "*"
 gitpython = "*"
-grep-ast = "^0.9.0"
+grep-ast = ">=0.9.0,<0.10.0"
 libcst = "1.5.0"
 mammoth = ">=1.8.0"
 markdownify = ">=0.13.1"
-matplotlib = "^3.10.3"
-networkx = "^3.4.2"
-openpyxl = "^3.1.5"
+matplotlib = ">=3.10.3,<4.0.0"
+networkx = ">=3.4.2,<4.0.0"
+openpyxl = ">=3.1.5,<4.0.0"
 pandas = "*"
 pdfminer-six = ">=20240706"
 puremagic = ">=1.28"
-pydantic = "^2.11.3"
-pydub = "^0.25.1"
+pydantic = ">=2.11.3,<3.0.0"
+pydub = ">=0.25.1,<0.26.0"
 pypdf = ">=5.1.0"
-pypdf2 = "^3.0.1"
-python-pptx = "^1.0.2"
-rapidfuzz = "^3.13.0"
+pypdf2 = ">=3.0.1,<4.0.0"
+python-pptx = ">=1.0.2,<2.0.0"
+rapidfuzz = ">=3.13.0,<4.0.0"
 requests = ">=2.32.3"
-speechrecognition = "^3.14.1"
-tree-sitter = "^0.24.0"
+speechrecognition = ">=3.14.1,<4.0.0"
+tree-sitter = ">=0.24.0,<0.25.0"
 tree-sitter-language-pack = "0.7.3"
-whatthepatch = "^1.0.6"
-xlrd = "^2.0.1"
+whatthepatch = ">=1.0.6,<2.0.0"
+xlrd = ">=2.0.1,<3.0.0"
 youtube-transcript-api = ">=0.6.2"
 
 [package.extras]
 llama = ["llama-index (>=0.12.29,<0.13.0)", "llama-index-core (>=0.12.29,<0.13.0)", "llama-index-retrievers-bm25 (>=0.5.2,<0.6.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/timofimo/openhands-aci.git"
-reference = "HEAD"
-resolved_reference = "89bfad35ce9d488669dd982ce1e91b20427183f9"
 
 [[package]]
 name = "openpyxl"
@@ -11883,4 +11879,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "e50289be15ac8d0844af9b844c98ff27fc055f8ae60400020dcbfc9265c069b2"
+content-hash = "469b54a3f7f5d104f68503fc70a89c016cbb7d9b7dc019226ed62e93ee928b98"
