@@ -85,6 +85,8 @@ def test_not_in_vscode_environment(mock_env_and_dependencies):
     """Should not attempt any installation if not in a VSCode-like environment."""
     os.environ['TERM_PROGRAM'] = 'not_vscode'
     vscode_extension.attempt_vscode_extension_install()
+    mock_env_and_dependencies['download'].assert_not_called()
+    mock_env_and_dependencies['subprocess'].assert_not_called()
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
     # --version probes may occur; ensure no install/list attempts beyond probes
