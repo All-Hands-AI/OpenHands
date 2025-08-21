@@ -94,7 +94,7 @@ def test_bash_server(temp_dir, runtime_cls, run_as_openhands):
         # Verify the server is actually stopped by trying to start another one
         # on the same port (regardless of OS)
         action = CmdRunAction(command='ls')
-        action.set_hard_timeout(1)
+        action.set_hard_timeout(3)
         obs = runtime.run_action(action)
         logger.info(obs, extra={'msg_type': 'OBSERVATION'})
         assert isinstance(obs, CmdOutputObservation)

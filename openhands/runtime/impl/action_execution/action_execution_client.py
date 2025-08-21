@@ -43,6 +43,7 @@ from openhands.events.observation import (
 from openhands.events.serialization import event_to_dict, observation_from_dict
 from openhands.events.serialization.action import ACTION_TYPE_TO_CLASS
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.utils.request import send_request
@@ -68,6 +69,7 @@ class ActionExecutionClient(Runtime):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -85,6 +87,7 @@ class ActionExecutionClient(Runtime):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -322,6 +325,8 @@ class ActionExecutionClient(Runtime):
                 )
                 assert response.is_closed
                 output = response.json()
+                if getattr(action, 'hidden', False):
+                    output.get('extras')['hidden'] = True
                 obs = observation_from_dict(output)
                 obs._cause = action.id  # type: ignore[attr-defined]
             except httpx.TimeoutException:

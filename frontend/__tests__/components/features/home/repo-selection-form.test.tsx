@@ -232,13 +232,16 @@ describe("RepositorySelectionForm", () => {
     renderForm();
 
     const dropdown = await screen.findByTestId("repo-dropdown");
-    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    const input = dropdown.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
+      "github",
     );
   });
 
@@ -268,13 +271,16 @@ describe("RepositorySelectionForm", () => {
     renderForm();
 
     const dropdown = await screen.findByTestId("repo-dropdown");
-    const input = dropdown.querySelector('input[type="text"]') as HTMLInputElement;
+    const input = dropdown.querySelector(
+      'input[type="text"]',
+    ) as HTMLInputElement;
     expect(input).toBeInTheDocument();
 
     await userEvent.type(input, "https://github.com/kubernetes/kubernetes");
     expect(searchGitReposSpy).toHaveBeenLastCalledWith(
       "kubernetes/kubernetes",
       3,
+      "github",
     );
   });
 });
