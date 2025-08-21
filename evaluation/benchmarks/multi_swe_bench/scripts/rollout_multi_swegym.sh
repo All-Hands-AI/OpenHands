@@ -27,12 +27,11 @@ poetry run python ./evaluation/benchmarks/multi_swe_bench/scripts/data/data_chan
 SPLIT="train"
 export LANGUAGE=java
 
-if [ -z "$ALLHANDS_API_KEY" ]; then
-    echo "ALLHANDS_API_KEY is not set. Will rollout and evaluate locally using Docker. WARNING: A large value of N_WORKERS will result in a large number of Docker containers being spun up and may crash your machine."
+if [ -z "$ALLHANDS_API_KEY" ] || [ "$RUNTIME" != "remote" ]; then
+    echo "ALLHANDS_API_KEY is not set or RUNTIME is not set to remote. Will rollout and evaluate locally using Docker. WARNING: A large value of N_WORKERS will result in a large number of Docker containers being spun up and may crash your machine."
     export RUNTIME=docker
 else
-    echo "ALLHANDS_API_KEY is set. Continuing rollout and evaluation with remote runtime..."
-    export RUNTIME=remote
+    echo "ALLHANDS_API_KEY is set and RUNTIME is set to remote. Continuing rollout and evaluation with remote runtime..."
     export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.eval.all-hands.dev"
 fi
 
