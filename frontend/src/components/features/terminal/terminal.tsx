@@ -25,13 +25,7 @@ function Terminal() {
   });
 
   return (
-    <div
-      className={cn(
-        "border-1 border-[#474A54] rounded-xl",
-        "bg-[#282A2E]",
-        expanded && "h-80",
-      )}
-    >
+    <div className={cn("border-1 border-[#474A54] rounded-xl", "bg-[#282A2E]")}>
       <div
         className={cn(
           "flex flex-row items-center justify-between",
@@ -74,13 +68,14 @@ function Terminal() {
       )}
 
       <div
-        ref={ref}
         className={cn(
           isRuntimeInactive || !expanded
             ? "p-0 w-0 h-0 opacity-0 overflow-hidden"
-            : "p-4 h-full w-full",
+            : "p-4 h-70 w-full",
         )}
-      />
+      >
+        <div ref={ref} className="w-full h-full" />
+      </div>
     </div>
   );
 }

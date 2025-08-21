@@ -14,16 +14,23 @@ type ResizableTwoPaneProps = {
   children: [ReactElement, ReactElement];
 };
 
+type PanelDimension = {
+  width: number;
+  height: number;
+};
+
 export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
   const [first, second] = children;
-  const [[paneWidth, paneHeight], setPaneDim] = useState<[number, number]>([
-    0, 0,
-  ]);
+
+  const [panelDimension, setPanelDimension] = useState<PanelDimension>({
+    width: 0,
+    height: 0,
+  });
   const { width } = useWindowSize();
 
   const [minConstraint, maxConstraint] = useMemo(() => {
     const OFFSET = 320;
-    return [OFFSET, Math.max((width ?? 0) - 320, 0)];
+    return [OFFSET, Math.max((width ?? 0) - OFFSET, 0)];
   }, [width]);
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,13 +39,11 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
     const el = containerRef.current;
     if (!el) return;
 
-    const update = () => {
-      setPaneDim([el.clientWidth, el.clientHeight]);
-    };
+    setPanelDimension({ width: el.clientWidth / 2, height: el.clientHeight });
 
-    setPaneDim([el.clientWidth / 2, el.clientHeight]);
-
-    const ro = new ResizeObserver(update);
+    const ro = new ResizeObserver(() => {
+      setPanelDimension({ width: el.clientWidth, height: el.clientHeight });
+    });
     ro.observe(el);
     // eslint-disable-next-line consistent-return
     return ro.disconnect();
@@ -49,21 +54,29 @@ export function ResizableTwoPane({ children }: ResizableTwoPaneProps) {
       ref={containerRef}
       className={cn(
         "grow flex",
-        "w-full h-full overflow-y-scroll relative",
+        "w-full h-full overflow-y-scroll",
         "flex-row justify-center h-full",
       )}
     >
       <ResizableBox
-        width={paneWidth}
-        height={paneHeight ?? 1}
+        width={panelDimension.width}
+        height={panelDimension.height ?? 1}
         axis="x"
-        minConstraints={[minConstraint, paneHeight ?? 1]}
-        maxConstraints={[maxConstraint, paneHeight ?? 1]}
-        onResize={(_, data) => setPaneDim([data.size.width, data.size.height])}
-        onResizeStop={(_, data) =>
-          setPaneDim([data.size.width, data.size.height])
+        minConstraints={[minConstraint, panelDimension.height ?? 1]}
+        maxConstraints={[maxConstraint, panelDimension.height ?? 1]}
+        onResize={(_, data) =>
+          setPanelDimension({
+            width: data.size.width,
+            height: data.size.height,
+          })
         }
-        className={cn("flex")}
+        onResizeStop={(_, data) =>
+          setPanelDimension({
+            width: data.size.width,
+            height: data.size.height,
+          })
+        }
+        className="flex"
         handle={
           <div
             className="absolute top-0 right-0 w-2.5 h-full cursor-col-resize flex items-center justify-center z-2"

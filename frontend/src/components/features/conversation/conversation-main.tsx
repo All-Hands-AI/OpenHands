@@ -19,7 +19,7 @@ export function ConversationMain() {
 
   const leftItem = useMemo(
     () => (
-      <div className={cn("min-h-[494px] h-full overflow-auto")}>
+      <div className="min-h-[494px] w-full h-full overflow-auto">
         <ChatInterface />
       </div>
     ),
@@ -40,10 +40,10 @@ export function ConversationMain() {
         )}
       </div>
     );
-  }, [isRightPanelShown]);
+  }, [isRightPanelShown, terminalOpen]);
 
-  const windowWith = width ?? 0;
-  const showResize = windowWith > 1024 && rightItem;
+  const windowWidth = width ?? 0;
+  const showResize = windowWidth > 1024 && rightItem;
 
   if (!showResize) {
     return (
@@ -51,12 +51,12 @@ export function ConversationMain() {
         className={cn(
           "grow flex",
           "w-full h-full overflow-y-scroll relative",
-          windowWith < 1024
+          windowWidth < 1024
             ? "flex-col gap-3 overflow-auto w-full"
             : "flex-row justify-center h-full",
         )}
       >
-        <div className={cn(windowWith >= 1024 ? "max-w-[768px]" : "")}>
+        <div className={windowWidth >= 1024 ? "max-w-[768px]" : ""}>
           {leftItem}
         </div>
         {rightItem}
