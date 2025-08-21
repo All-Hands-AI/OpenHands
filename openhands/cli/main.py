@@ -265,7 +265,7 @@ async def run_session(
 
             if event.agent_state == AgentState.RUNNING:
                 display_agent_running_message()
-                start_pause_listener(loop, is_paused, event_stream)
+                start_pause_listener(loop, is_paused, event_stream, config)
 
     def on_event(event: Event) -> None:
         loop.create_task(on_event_async(event))
