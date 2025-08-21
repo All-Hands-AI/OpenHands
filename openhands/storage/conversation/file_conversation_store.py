@@ -79,20 +79,26 @@ class FileConversationStore(ConversationStore):
             ]
         except FileNotFoundError:
             return ConversationMetadataResultSet([])
-        num_conversations = len(conversation_ids)
-        start = page_id_to_offset(page_id)
-        end = min(limit + start, num_conversations)
-        conversations = []
+        # Load valid conversations, then paginate based on valid count
         for conversation_id in conversation_ids:
             try:
                 conversations.append(await self.get_metadata(conversation_id))
-            except Exception:
-                logger.warning(
-                    f'Could not load conversation metadata: {conversation_id}'
+            except FileNotFoundError:
+                # Common for CLI-created sessions that don't have metadata.json
+                logger.debug(
+                    f'Skipping conversation without metadata: {conversation_id}'
                 )
+            except Exception as e:
+                logger.warning(
+                    f'Could not load conversation metadata: {conversation_id} ({e})'
+                )
+
         conversations.sort(key=_sort_key, reverse=True)
+        total_valid = len(conversations)
+        start = page_id_to_offset(page_id)
+        end = min(limit + start, total_valid)
         conversations = conversations[start:end]
-        next_page_id = offset_to_page_id(end, end < num_conversations)
+        next_page_id = offset_to_page_id(end, end < total_valid)
         return ConversationMetadataResultSet(conversations, next_page_id)
 
     def get_conversation_metadata_dir(self) -> str:
