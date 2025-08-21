@@ -94,7 +94,6 @@ describe("InteractiveChatBox", () => {
       {
         onSubmit: onSubmitMock,
         onStop: onStopMock,
-        value: "Hello, world!",
         isWaitingForUserInput: true,
         hasSubstantiveAgentActions: true,
         optimisticUserMessage: false,
@@ -103,6 +102,20 @@ describe("InteractiveChatBox", () => {
         preloadedState: {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
+          },
+          conversation: {
+            isRightPanelShown: true,
+            shouldStopConversation: false,
+            shouldStartConversation: false,
+            images: [],
+            files: [],
+            loadingFiles: [],
+            loadingImages: [],
+            messageToSend: {
+              text: "Hello, world!",
+              timestamp: Date.now(),
+            },
+            shouldShownAgentLoading: false,
           },
         },
       },
@@ -286,7 +299,6 @@ describe("InteractiveChatBox", () => {
       {
         onSubmit: onSubmit,
         onStop: onStop,
-        value: "test message",
         isWaitingForUserInput: true,
         hasSubstantiveAgentActions: true,
         optimisticUserMessage: false,
@@ -295,6 +307,20 @@ describe("InteractiveChatBox", () => {
         preloadedState: {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
+          },
+          conversation: {
+            isRightPanelShown: true,
+            shouldStopConversation: false,
+            shouldStartConversation: false,
+            images: [],
+            files: [],
+            loadingFiles: [],
+            loadingImages: [],
+            messageToSend: {
+              text: "test message",
+              timestamp: Date.now(),
+            },
+            shouldShownAgentLoading: false,
           },
         },
       },
