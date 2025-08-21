@@ -878,6 +878,7 @@ def test_no_editor_detection_skips_installation(mock_env_and_dependencies):
     vscode_extension.attempt_vscode_extension_install()
     mock_env_and_dependencies['exists'].assert_not_called()
     mock_env_and_dependencies['touch'].assert_not_called()
+    mock_env_and_dependencies['subprocess'].assert_not_called()
     # --version probes may occur; ensure no install/list attempts beyond probes
     mock_env_and_dependencies['print'].assert_not_called()
 
