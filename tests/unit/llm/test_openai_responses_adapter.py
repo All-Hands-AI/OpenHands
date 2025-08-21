@@ -51,7 +51,7 @@ def test_responses_success_normalizes(
     mock_responses, _supports, config_openai_responses
 ):
     mock_responses.return_value = DummyResponses(with_tool=True)
-    llm = LLM(config_openai_responses)
+    llm = LLM(config_openai_responses, service_id='test')
 
     resp = llm.completion(messages=[{'role': 'user', 'content': 'Hi'}])
     # Pass api_key=None to avoid triggering OpenAI client in fallback path
@@ -90,7 +90,7 @@ def test_responses_fallback_to_chat_completions(
         'usage': {'prompt_tokens': 1, 'completion_tokens': 1, 'total_tokens': 2},
     }
 
-    llm = LLM(config_openai_responses)
+    llm = LLM(config_openai_responses, service_id='test')
     resp = llm.completion(messages=[{'role': 'user', 'content': 'Hi'}])
 
     assert resp.get('id') == 'cc-1'
@@ -107,6 +107,6 @@ def test_flag_disabled_uses_chat_completions(_supports, mock_completion):
         'usage': {'prompt_tokens': 1, 'completion_tokens': 1, 'total_tokens': 2},
     }
     cfg = LLMConfig(model='gpt-5', api_key='test', use_openai_responses=False)
-    llm = LLM(cfg)
+    llm = LLM(cfg, service_id='test')
     resp = llm.completion(messages=[{'role': 'user', 'content': 'Hi'}])
     assert resp.get('id') == 'cc-2'

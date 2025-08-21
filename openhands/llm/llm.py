@@ -720,16 +720,10 @@ class LLM(RetryMixin, DebugMixin):
             if not is_openai_provider:
                 return False
 
-            # Check reasoning capability via either our list or litellm helper
+            # Check reasoning capability via features list or litellm helper
             name = model.split('/')[-1]
-            if (
-                name in REASONING_EFFORT_SUPPORTED_MODELS
-                or model in REASONING_EFFORT_SUPPORTED_MODELS
-                or any(
-                    m == name or m in name for m in REASONING_EFFORT_SUPPORTED_MODELS
-                )
-                or litellm.supports_reasoning(name)
-            ):
+            features = get_features(model)
+            if features.supports_reasoning_effort or litellm.supports_reasoning(name):
                 return True
         except Exception as e:
             logger.debug(f'_should_use_openai_responses error: {e}')
@@ -760,16 +754,12 @@ class LLM(RetryMixin, DebugMixin):
             call_kwargs['reasoning'] = {'effort': self.config.reasoning_effort}
         # Temperature/top_p for non-reasoning models only
         name = self.config.model.split('/')[-1] if self.config.model else ''
-        if (
-            name not in REASONING_EFFORT_SUPPORTED_MODELS
-            and self.config.temperature is not None
-        ):
-            call_kwargs['temperature'] = self.config.temperature
-        if (
-            name not in REASONING_EFFORT_SUPPORTED_MODELS
-            and self.config.top_p is not None
-        ):
-            call_kwargs['top_p'] = self.config.top_p
+        # Only apply temperature/top_p when model does not support reasoning_effort
+        if not get_features(self.config.model).supports_reasoning_effort:
+            if self.config.temperature is not None:
+                call_kwargs['temperature'] = self.config.temperature
+            if self.config.top_p is not None:
+                call_kwargs['top_p'] = self.config.top_p
 
         # Azure specific mapping
         if (
