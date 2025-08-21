@@ -1,5 +1,4 @@
-"""
-评测block的预测能力
+"""评测block的预测能力
 1、判断是否包含正确的函数名
 2、判断是否合法
 3、计算ISM，和PM
@@ -22,8 +21,7 @@ def is_code_valid(code):
 
 
 def longest_common_prefix_between_lists_with_elements(list1, list2):
-    """
-    计算两个字符串列表中元素的最长前缀匹配长度
+    """计算两个字符串列表中元素的最长前缀匹配长度
     :param list1:
     :param list2:
     :return:
@@ -46,8 +44,7 @@ def longest_common_prefix_between_lists_with_elements(list1, list2):
 
 
 def get_token(ans_code: str, output_code: str):
-    """
-    对代码进行词法分析，分解成标识符，返回两个标识符列表
+    """对代码进行词法分析，分解成标识符，返回两个标识符列表
     :param ans_code:
     :param output_code:
     :return:
@@ -94,8 +91,7 @@ def get_token(ans_code: str, output_code: str):
 
 
 def get_token_per_line(code: str):
-    """
-    对每一行代码进行词法分析，记录每一行的标识符
+    """对每一行代码进行词法分析，记录每一行的标识符
     :param code: 代码字符串
     :return: 每一行的标识符列表组成的列表
     """
@@ -117,8 +113,7 @@ def get_token_per_line(code: str):
 
 
 def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list:
-    """
-    计算ISM，返回一个有序的得分列表
+    """计算ISM，返回一个有序的得分列表
     :return:
     """
     score_list = []
@@ -157,8 +152,7 @@ def get_ISM(answer_code: str, model_output_list: list, answer_name: str) -> list
 def get_ISM_without_verification(
     answer_code: str, model_output_list: list, answer_name: str
 ) -> list:
-    """
-    计算ISM，返回一个有序的得分列表
+    """计算ISM，返回一个有序的得分列表
     :return:
     """
     score_list = []
@@ -190,8 +184,7 @@ def get_ISM_without_verification(
 
 
 def longest_common_prefix_with_lengths(list1, list2):
-    """
-    计算两个二维列表中每个子列表的最长前缀匹配长度，并记录拥有最长前缀匹配长度的两个子列表的长度
+    """计算两个二维列表中每个子列表的最长前缀匹配长度，并记录拥有最长前缀匹配长度的两个子列表的长度
     :param list1: 第一个二维列表
     :param list2: 第二个二维列表
     :return: 最长前缀匹配长度以及拥有最长前缀匹配长度的两个子列表的长度
@@ -216,8 +209,7 @@ def longest_common_prefix_with_lengths(list1, list2):
 
 
 def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
-    """
-    计算PM，返回一个有序的得分列表
+    """计算PM，返回一个有序的得分列表
     :return:
     """
     score_list = []
@@ -254,8 +246,7 @@ def get_PM(answer_code: str, model_output_list: list, answer_name: str) -> list:
 
 
 def get_score(score_list: list, k):
-    """
-    计算score@n,k
+    """计算score@n,k
     :param score_list:
     :param k:
     :return:
