@@ -59,7 +59,7 @@ def test_thought_backwards_compat_direct_init_with_str():
     # Direct construction with a string should still work via __str__ accessors elsewhere
     a = CmdRunAction(command='echo 1', thought='plain')  # type: ignore[arg-type]
     d = event_to_dict(a)  # serializer should keep thought as string on wire
-    assert d['args']['thought'] == 'plain'
+    assert d['args']['thought'] == {'text': 'plain', 'reasoning_content': None}
 
     # When it comes back from wire, it becomes Thought
     a2 = event_from_dict(d)

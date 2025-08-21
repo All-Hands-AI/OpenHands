@@ -100,20 +100,17 @@ def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
 
 def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
-    # Normalize Thought dataclass in actions to a simple string for backward compatibility
-    if 'thought' in props and isinstance(props['thought'], (dict, Thought)):
-        # Preserve structured thought only when reasoning content is present; otherwise flatten to string for backward compatibility
-        if isinstance(props['thought'], Thought):
-            rc = props['thought'].reasoning_content
-            props['thought'] = (
-                {'text': props['thought'].text, 'reasoning_content': rc}
-                if rc
-                else props['thought'].text
-            )
+    # Normalize Thought representation to a single canonical wire format
+    # Always emit a dict-shaped thought: {"text": str, "reasoning_content": str|null}
+    if 'thought' in props:
+        t = props['thought']
+        if isinstance(t, dict):
+            text = t.get('text') or t.get('thought') or ''
+            rc = t.get('reasoning_content')
+            props['thought'] = {'text': text, 'reasoning_content': rc}
         else:
-            rc = props['thought'].get('reasoning_content')
-            text = props['thought'].get('text', '')
-            props['thought'] = {'text': text, 'reasoning_content': rc} if rc else text
+            # Strings or any other legacy types become canonical dict
+            props['thought'] = {'text': str(t) if t is not None else '', 'reasoning_content': None}
     d = {}
     for key in TOP_KEYS:
         if hasattr(event, key) and getattr(event, key) is not None:

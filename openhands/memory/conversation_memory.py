@@ -308,11 +308,7 @@ class ConversationMemory:
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
             # Only send plain thought text to the LLM
-            thought_text = (
-                action.thought.text
-                if hasattr(action.thought, 'text')
-                else str(action.thought or '')
-            )
+            thought_text = action.thought.text if hasattr(action.thought, 'text') else ''
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
