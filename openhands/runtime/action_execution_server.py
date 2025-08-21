@@ -127,6 +127,10 @@ def _execute_file_editor(
     """
     result: ToolResult | None = None
 
+    # Normalize command alias: treat 'replace' as 'str_replace' for OHEditor
+    if command == 'replace':
+        command = 'str_replace'
+
     # Convert insert_line from string to int if needed
     if insert_line is not None and isinstance(insert_line, str):
         try:
