@@ -66,9 +66,11 @@ def get_config(
     sandbox_config.browsergym_eval_env = env_id
     # Ensure evaluation dependencies are installed in runtime image
     sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime,evaluation --no-interaction --no-root'
+    # Provide both legacy and WA_* env vars expected by browsergym-webarena
     sandbox_config.runtime_startup_env_vars = {
         'BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
+        # Legacy names
         'SHOPPING': f'{base_url}:7770/',
         'SHOPPING_ADMIN': f'{base_url}:7780/admin',
         'REDDIT': f'{base_url}:9999',
@@ -76,6 +78,14 @@ def get_config(
         'WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
         'MAP': f'{base_url}:3000',
         'HOMEPAGE': f'{base_url}:4399',
+        # WA_* names required by browsergym.webarena.instance
+        'WA_SHOPPING': f'{base_url}:7770/',
+        'WA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
+        'WA_REDDIT': f'{base_url}:9999',
+        'WA_GITLAB': f'{base_url}:8023',
+        'WA_WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
+        'WA_MAP': f'{base_url}:3000',
+        'WA_HOMEPAGE': f'{base_url}:4399',
     }
     # Prefer remote runtime when configured; otherwise use Docker
     runtime_name = (
