@@ -46,7 +46,7 @@ For stdio-based MCP servers, we recommend using MCP proxy tools like [`supergate
 Start the proxy servers separately:
 ```bash
 # Terminal 1: Filesystem server proxy
-supergateway --stdio "npx @modelcontextprotocol/server-filesystem /" --port 8080
+supergateway --stdio "npx -y @modelcontextprotocol/server-filesystem@2025.8.18 /" --port 8080
 
 # Terminal 2: Fetch server proxy
 supergateway --stdio "uvx mcp-server-fetch" --port 8081
@@ -84,7 +84,7 @@ stdio_servers = [
     {
         name="filesystem",
         command="npx",
-        args=["@modelcontextprotocol/server-filesystem", "/"],
+        args=["@modelcontextprotocol/server-filesystem@2025.8.18", "/"],
         env={
             "DEBUG": "true"
         }
