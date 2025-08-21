@@ -262,3 +262,6 @@ test-results
 
 # Eval sessions local store
 .eval_sessions
+
+# Ignore task tracker file
+.openhands/TASKS.md
