@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { ConfirmationButtons } from "#/components/shared/buttons/confirmation-buttons";
 import { OpenHandsAction } from "#/types/core/actions";
 import {
@@ -10,12 +11,14 @@ import {
   isFinishAction,
   isRejectObservation,
   isMcpObservation,
+  isTaskTrackingObservation,
 } from "#/types/core/guards";
 import { OpenHandsObservation } from "#/types/core/observations";
 import { ImageCarousel } from "../images/image-carousel";
 import { ChatMessage } from "./chat-message";
 import { ErrorMessage } from "./error-message";
 import { MCPObservationContent } from "./mcp-observation-content";
+import { TaskTrackingObservationContent } from "./task-tracking-observation-content";
 import { getObservationResult } from "./event-content-helpers/get-observation-result";
 import { getEventContent } from "./event-content-helpers/get-event-content";
 import { GenericEventMessage } from "./generic-event-message";
@@ -58,6 +61,7 @@ export function EventMessage({
   actions,
   isInLast10Actions,
 }: EventMessageProps) {
+  const { t } = useTranslation();
   const shouldShowConfirmationButtons =
     isLastMessage && event.source === "agent" && isAwaitingUserConfirmation;
 
@@ -113,7 +117,7 @@ export function EventMessage({
   }
 
   if (hasObservationPair && isOpenHandsAction(event)) {
-    if (hasThoughtProperty(event.args)) {
+    if (hasThoughtProperty(event.args) && event.action !== "think") {
       return (
         <div>
           <ChatMessage
@@ -209,11 +213,41 @@ export function EventMessage({
     );
   }
 
+  if (isTaskTrackingObservation(event)) {
+    const { command } = event.extras;
+    let title: React.ReactNode;
+    let initiallyExpanded = false;
+
+    // Determine title and expansion state based on command
+    if (command === "plan") {
+      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_PLAN");
+      initiallyExpanded = true;
+    } else {
+      // command === "view"
+      title = t("OBSERVATION_MESSAGE$TASK_TRACKING_VIEW");
+      initiallyExpanded = false;
+    }
+
+    return (
+      <div>
+        <GenericEventMessage
+          title={title}
+          details={<TaskTrackingObservationContent event={event} />}
+          success={getObservationResult(event)}
+          initiallyExpanded={initiallyExpanded}
+        />
+        {shouldShowConfirmationButtons && <ConfirmationButtons />}
+      </div>
+    );
+  }
+
   return (
     <div>
-      {isOpenHandsAction(event) && hasThoughtProperty(event.args) && (
-        <ChatMessage type="agent" message={event.args.thought} />
-      )}
+      {isOpenHandsAction(event) &&
+        hasThoughtProperty(event.args) &&
+        event.action !== "think" && (
+          <ChatMessage type="agent" message={event.args.thought} />
+        )}
 
       <GenericEventMessage
         title={getEventContent(event).title}

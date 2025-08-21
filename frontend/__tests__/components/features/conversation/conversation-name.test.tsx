@@ -472,9 +472,10 @@ describe("ConversationNameContextMenu", () => {
       <ConversationNameContextMenu {...defaultProps} {...handlers} />,
     );
 
-    // Look for separator divs with the specific class
-    const separators = document.querySelectorAll('div[class*="bg-[#959CB2]"]');
-    expect(separators.length).toBeGreaterThan(0);
+    // Look for separator elements using test IDs
+    expect(screen.getByTestId("separator-tools")).toBeInTheDocument();
+    expect(screen.getByTestId("separator-export")).toBeInTheDocument();
+    expect(screen.getByTestId("separator-info-control")).toBeInTheDocument();
   });
 
   it("should apply correct positioning class when position is top", () => {

@@ -1,7 +1,7 @@
 import { FaBitbucket, FaGithub, FaGitlab } from "react-icons/fa6";
 import { TaskCard } from "./task-card";
 import { TaskItemTitle } from "./task-item-title";
-import { SuggestedTask } from "./task.types";
+import { SuggestedTask } from "#/utils/types";
 
 interface TaskGroupProps {
   title: string;

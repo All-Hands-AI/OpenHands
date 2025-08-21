@@ -22,6 +22,14 @@ vi.mock("react-i18next", async () => {
   };
 });
 
+// Mock the useIsAuthed hook to return authenticated
+vi.mock("#/hooks/query/use-is-authed", () => ({
+  useIsAuthed: () => ({
+    data: true,
+    isLoading: false,
+  }),
+}));
+
 const renderTaskSuggestions = () => {
   const RouterStub = createRoutesStub([
     {
@@ -75,9 +83,9 @@ describe("TaskSuggestions", () => {
     renderTaskSuggestions();
 
     await waitFor(() => {
-      MOCK_TASKS.forEach((taskGroup) => {
-        screen.getByText(taskGroup.title);
-      });
+      // Check for repository names (grouped by repo) - only the first 3 tasks are shown
+      screen.getByText("octocat/hello-world");
+      screen.getByText("octocat/earth");
     });
   });
 
@@ -86,9 +94,11 @@ describe("TaskSuggestions", () => {
     renderTaskSuggestions();
 
     await waitFor(() => {
-      MOCK_TASKS.forEach((task) => {
-        screen.getByText(task.title);
-      });
+      // Only check for the first 3 tasks that are actually rendered
+      // The component limits to 3 tasks due to getLimitedTaskGroups function
+      screen.getByText("Fix merge conflicts"); // First task from octocat/hello-world
+      screen.getByText("Fix broken CI checks"); // First task from octocat/earth
+      screen.getByText("Fix issue"); // Second task from octocat/earth
     });
   });
 
@@ -100,9 +110,9 @@ describe("TaskSuggestions", () => {
     expect(skeletons.length).toBeGreaterThan(0);
 
     await waitFor(() => {
-      MOCK_TASKS.forEach((taskGroup) => {
-        screen.getByText(taskGroup.title);
-      });
+      // Check for repository names (grouped by repo) - only the first 3 tasks are shown
+      screen.getByText("octocat/hello-world");
+      screen.getByText("octocat/earth");
     });
 
     expect(screen.queryByTestId("task-group-skeleton")).not.toBeInTheDocument();
