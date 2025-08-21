@@ -637,8 +637,6 @@ def override_openhands_config_for_eval(config):
         OpenHandsConfig: The same config instance with evaluation-specific
         overrides applied.
     """
-    import os
-    from os import path as _path
 
     # Defer import to avoid circular imports at module load time
     from openhands.core.config.openhands_config import (
@@ -648,7 +646,7 @@ def override_openhands_config_for_eval(config):
     assert isinstance(config, _OHConfig)
 
     # Always use repo-local .eval_sessions directory (absolute path)
-    eval_store = _path.abspath(_path.join(os.getcwd(), '.eval_sessions'))
+    eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
 
     config.file_store = 'local'
     config.file_store_path = eval_store
