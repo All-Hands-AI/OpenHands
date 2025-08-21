@@ -33,7 +33,6 @@ from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
 )
-from openhands.llm.llm import LLM
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.data_models.agent_loop_info import AgentLoopInfo
@@ -44,9 +43,10 @@ from openhands.server.data_models.conversation_info_result_set import (
 from openhands.server.dependencies import get_dependencies
 from openhands.server.services.conversation_service import (
     create_new_conversation,
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
 from openhands.server.shared import (
+    ConversationManagerImpl,
     ConversationStoreImpl,
     config,
     conversation_manager,
@@ -63,7 +63,7 @@ from openhands.server.user_auth import (
 )
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation as get_conversation_metadata
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation_store, validate_conversation_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -297,7 +297,7 @@ async def search_conversations(
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
     try:
@@ -319,7 +319,7 @@ async def get_conversation(
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -338,8 +338,8 @@ async def delete_conversation(
 
 @app.get('/conversations/{conversation_id}/remember-prompt')
 async def get_prompt(
-    conversation_id: str,
     event_id: int,
+    conversation_id: str = Depends(validate_conversation_id),
     user_settings: SettingsStore = Depends(get_user_settings_store),
     metadata: ConversationMetadata = Depends(get_conversation_metadata),
 ):
@@ -364,7 +364,7 @@ async def get_prompt(
     )
 
     prompt_template = generate_prompt_template(stringified_events)
-    prompt = generate_prompt(llm_config, prompt_template)
+    prompt = generate_prompt(llm_config, prompt_template, conversation_id)
 
     return JSONResponse(
         {
@@ -380,8 +380,9 @@ def generate_prompt_template(events: str) -> str:
     return template.render(events=events)
 
 
-def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
-    llm = LLM(llm_config)
+def generate_prompt(
+    llm_config: LLMConfig, prompt_template: str, conversation_id: str
+) -> str:
     messages = [
         {
             'role': 'system',
@@ -393,8 +394,9 @@ def generate_prompt(llm_config: LLMConfig, prompt_template: str) -> str:
         },
     ]
 
-    response = llm.completion(messages=messages)
-    raw_prompt = response['choices'][0]['message']['content'].strip()
+    raw_prompt = ConversationManagerImpl.request_llm_completion(
+        'remember_prompt', conversation_id, llm_config, messages
+    )
     prompt = re.search(r'<update_prompt>(.*?)</update_prompt>', raw_prompt, re.DOTALL)
 
     if prompt:
@@ -438,8 +440,8 @@ async def _get_conversation_info(
 
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
-    conversation_id: str,
     providers_set: ProvidersSetModel,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
@@ -466,7 +468,7 @@ async def start_conversation(
             )
 
         # Set up conversation init data with provider information
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set.providers_set or []
         )
 
@@ -499,7 +501,7 @@ async def start_conversation(
 
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
 ) -> ConversationResponse:
     """Stop an agent loop for a conversation.
@@ -604,8 +606,8 @@ class UpdateConversationRequest(BaseModel):
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str,
     data: UpdateConversationRequest,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> bool:
@@ -712,7 +714,8 @@ async def update_conversation(
 
 @app.post('/conversations/{conversation_id}/exp-config')
 def add_experiment_config_for_conversation(
-    conversation_id: str, exp_config: ExperimentConfig
+    exp_config: ExperimentConfig,
+    conversation_id: str = Depends(validate_conversation_id),
 ) -> bool:
     exp_config_filepath = get_experiment_config_filename(conversation_id)
     exists = False

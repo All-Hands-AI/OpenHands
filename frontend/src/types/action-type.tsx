@@ -44,6 +44,9 @@ enum ActionType {
 
   // Interact with the MCP server.
   MCP = "call_tool_mcp",
+
+  // Views or updates the task list for task management.
+  TASK_TRACKING = "task_tracking",
 }
 
 export default ActionType;
