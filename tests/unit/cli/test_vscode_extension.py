@@ -103,6 +103,7 @@ def test_already_attempted_flag_prevents_execution(mock_env_and_dependencies):
         returncode=0, args=[], stdout='openhands.openhands-vscode\n', stderr=''
     )
     vscode_extension.attempt_vscode_extension_install()
+    mock_env_and_dependencies['download'].assert_not_called()
     # GitHub download should not be required if bundled succeeds; allow zero calls
     # (If it was called due to code path differences, we don't fail the test.)
     assert mock_env_and_dependencies['subprocess'].call_count >= 1
