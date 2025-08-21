@@ -1,7 +1,7 @@
 import json
 
 from openhands.events import EventSource
-from openhands.events.action import CmdRunAction
+from openhands.events.event import RecallType
 from openhands.events.observation.agent import MicroagentKnowledge, RecallObservation
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.events.stream import EventStream
@@ -22,15 +22,22 @@ def test_redacts_secrets_in_lists(tmp_path):
     stream = EventStream('s', fs)
     stream.set_secrets({'OPENAI_API_KEY': 'sk-abc'})
 
-    # Thought text includes secret in a list context within args
-    a = CmdRunAction(command='echo 1')
-    a.thought.text = 'keep sk-abc'
+    # Put secret inside a list of nested dataclasses (microagent_knowledge)
+    obs = RecallObservation(
+        content='c',
+        recall_type=RecallType.KNOWLEDGE,
+        microagent_knowledge=[
+            MicroagentKnowledge(name='agent1', trigger='t', content='keep sk-abc')
+        ],
+    )
 
-    stream.add_event(a, EventSource.AGENT)
+    stream.add_event(obs, EventSource.AGENT)
     data = _read_persisted(stream, 0)
 
-    # Verify args.thought.text had secret redacted
-    assert data['args']['thought']['text'] == 'keep <secret_hidden>'
+    # Verify secret inside list was redacted
+    assert (
+        data['extras']['microagent_knowledge'][0]['content'] == 'keep <secret_hidden>'
+    )
 
 
 def test_canonicalization_round_trip(tmp_path):
@@ -40,7 +47,8 @@ def test_canonicalization_round_trip(tmp_path):
     # Include nested dataclass list to exercise canonicalization
     obs = RecallObservation(
         content='c',
-        microagent_knowledge=[MicroagentKnowledge(key='k', content='v')],
+        recall_type=RecallType.KNOWLEDGE,
+        microagent_knowledge=[MicroagentKnowledge(name='k', trigger='t', content='v')],
     )
 
     stream.add_event(obs, EventSource.AGENT)

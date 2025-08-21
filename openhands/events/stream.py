@@ -180,6 +180,8 @@ class EventStream(EventStore):
             # Rehydrate to ensure canonical normalization, then re-serialize for persistence
             event = event_from_dict(redacted if isinstance(redacted, dict) else data)
             data = event_to_dict(event)
+            # Ensure secrets are still redacted on the canonicalized dict
+            data = self._replace_secrets(data)
             current_write_page.append(data)
 
             # If the page is full, create a new page for future events / other threads to use
