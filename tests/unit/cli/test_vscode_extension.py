@@ -136,6 +136,7 @@ def test_extension_already_installed_detected(mock_env_and_dependencies):
     mock_env_and_dependencies['print'].assert_any_call(
         'INFO: OpenHands VS Code extension is already installed.'
     )
+    mock_env_and_dependencies['download'].assert_not_called()
     # Success flag may be skipped if status-only success is recorded; allow zero or one touch calls
     assert mock_env_and_dependencies['touch'].call_count in (0, 1)
     # GitHub download should not be required if bundled succeeds; allow zero calls
