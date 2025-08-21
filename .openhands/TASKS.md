@@ -14,4 +14,3 @@ Eval started; building Docker runtime image; log at /tmp/webarena_eval.out
 Installed docker.io; started dockerd; Docker server 28.3.3 running
 7. ✅ Re-run eval choosing best available runtime (remote if configured else docker) and verify progress
 Relaunched job; runtime image building and container starting
-

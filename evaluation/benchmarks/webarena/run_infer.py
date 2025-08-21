@@ -14,6 +14,7 @@ import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     make_metadata,
@@ -21,13 +22,12 @@ from evaluation.utils.shared import (
     reset_logger_for_multiprocessing,
     run_evaluation,
     update_llm_config_for_completions_logging,
-    codeact_user_response,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
-    get_llm_config_arg,
     get_evaluation_parser,
+    get_llm_config_arg,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -163,8 +163,20 @@ def complete_runtime(
     logger.info(obs, extra={'msg_type': 'OBSERVATION'})
 
     logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
+
+    # Debug: log the actual content being parsed
+    logger.info(f'Attempting to parse rewards from obs.content: {repr(obs.content)}')
+
+    try:
+        rewards = json.loads(obs.content)
+    except json.JSONDecodeError as e:
+        logger.error(f'Failed to parse rewards JSON: {e}')
+        logger.error(f'Raw content: {repr(obs.content)}')
+        # Return empty rewards if parsing fails
+        rewards = []
+
     return {
-        'rewards': json.loads(obs.content),
+        'rewards': rewards,
     }
 
 
@@ -193,7 +205,9 @@ def process_instance(
             config=config,
             initial_user_action=MessageAction(content=task_str),
             runtime=runtime,
-            fake_user_response_fn=lambda st: codeact_user_response(st, encapsulate_solution=False),
+            fake_user_response_fn=lambda st: codeact_user_response(
+                st, encapsulate_solution=False
+            ),
             headless_mode=True,
         )
     )
@@ -216,7 +230,14 @@ def process_instance(
 
     return_val = complete_runtime(runtime)
     logger.info(f'Return value from complete_runtime: {return_val}')
-    reward = max(return_val['rewards'])
+
+    # Handle empty rewards list
+    rewards = return_val['rewards']
+    if rewards:
+        reward = max(rewards)
+    else:
+        logger.warning('No rewards found, using default reward of 0.0')
+        reward = 0.0
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
