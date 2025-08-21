@@ -8,8 +8,8 @@ from prompt_toolkit.shortcuts import print_container
 from prompt_toolkit.widgets import Frame, TextArea
 from pydantic import SecretStr
 
+from openhands.cli.pt_style import COLOR_GREY, get_cli_style
 from openhands.cli.tui import (
-    COLOR_GREY,
     UserCancelledError,
     cli_confirm,
     kb_cancel,
@@ -242,7 +242,7 @@ async def modify_llm_settings_basic(
     provider_list = verified_providers + provider_list
 
     provider_completer = FuzzyWordCompleter(provider_list, WORD=True)
-    session = PromptSession(key_bindings=kb_cancel())
+    session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
 
     current_provider, current_model, current_api_key = (
         _get_current_values_for_modification_basic(config)
@@ -490,7 +490,7 @@ async def modify_llm_settings_basic(
 async def modify_llm_settings_advanced(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
-    session = PromptSession(key_bindings=kb_cancel())
+    session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
     llm_config = config.get_llm_config()
 
     custom_model = None
@@ -621,7 +621,7 @@ async def modify_search_api_settings(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> None:
     """Modify search API settings."""
-    session = PromptSession(key_bindings=kb_cancel())
+    session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
 
     search_api_key = None
 

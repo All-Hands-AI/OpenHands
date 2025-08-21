@@ -6,6 +6,7 @@ import {
   BrowseObservation,
   OpenHandsObservation,
   RecallObservation,
+  TaskTrackingObservation,
 } from "#/types/core/observations";
 import { getObservationResult } from "./get-observation-result";
 import { getDefaultEventContent, MAX_CONTENT_LENGTH } from "./shared";
@@ -102,6 +103,40 @@ const getRecallObservationContent = (event: RecallObservation): string => {
   return content;
 };
 
+const getTaskTrackingObservationContent = (
+  event: TaskTrackingObservation,
+): string => {
+  const { command, task_list: taskList } = event.extras;
+  let content = `**Command:** \`${command}\``;
+
+  if (command === "plan" && taskList.length > 0) {
+    content += `\n\n**Task List (${taskList.length} ${taskList.length === 1 ? "item" : "items"}):**\n`;
+
+    taskList.forEach((task, index) => {
+      const statusIcon =
+        {
+          todo: "⏳",
+          in_progress: "🔄",
+          done: "✅",
+        }[task.status] || "❓";
+
+      content += `\n${index + 1}. ${statusIcon} **[${task.status.toUpperCase().replace("_", " ")}]** ${task.title}`;
+      content += `\n   *ID: ${task.id}*`;
+      if (task.notes) {
+        content += `\n   *Notes: ${task.notes}*`;
+      }
+    });
+  } else if (command === "plan") {
+    content += "\n\n**Task List:** Empty";
+  }
+
+  if (event.content && event.content.trim()) {
+    content += `\n\n**Result:** ${event.content.trim()}`;
+  }
+
+  return content;
+};
+
 export const getObservationContent = (event: OpenHandsObservation): string => {
   switch (event.observation) {
     case "read":
@@ -118,6 +153,8 @@ export const getObservationContent = (event: OpenHandsObservation): string => {
       return getBrowseObservationContent(event);
     case "recall":
       return getRecallObservationContent(event);
+    case "task_tracking":
+      return getTaskTrackingObservationContent(event);
     default:
       return getDefaultEventContent(event);
   }

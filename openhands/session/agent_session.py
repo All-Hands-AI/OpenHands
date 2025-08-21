@@ -21,6 +21,7 @@ from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
 from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
@@ -29,6 +30,7 @@ from openhands.runtime.base import Runtime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.security import SecurityAnalyzer, options
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
@@ -50,6 +52,7 @@ class AgentSession:
     sid: str
     user_id: str | None
     event_stream: EventStream
+    llm_registry: LLMRegistry
     file_store: FileStore
     controller: AgentController | None = None
     runtime: Runtime | None = None
@@ -65,6 +68,8 @@ class AgentSession:
         self,
         sid: str,
         file_store: FileStore,
+        llm_registry: LLMRegistry,
+        conversation_stats: ConversationStats,
         status_callback: Callable | None = None,
         user_id: str | None = None,
     ) -> None:
@@ -73,6 +78,8 @@ class AgentSession:
         Args:
             sid: Conversation/session id (a.k.a. conversation_id)
             file_store: File store backing the EventStream
+            llm_registry: LLM registry for runtime and controller
+            conversation_stats: Conversation statistics tracker
             status_callback: Optional callback for runtime/controller status updates
             user_id: Optional current user id for multi-user stores
         """
@@ -84,6 +91,8 @@ class AgentSession:
         self.logger = OpenHandsLoggerAdapter(
             extra={'session_id': sid, 'user_id': user_id}
         )
+        self.llm_registry = llm_registry
+        self.conversation_stats = conversation_stats
 
     async def start(
         self,
@@ -326,6 +335,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -346,6 +356,7 @@ class AgentSession:
             self.runtime = runtime_cls(
                 config=config,
                 event_stream=self.event_stream,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 plugins=agent.sandbox_plugins,
                 status_callback=self._status_callback,
@@ -419,6 +430,7 @@ class AgentSession:
             file_store=self.file_store,
             event_stream=self.event_stream,
             agent=agent,
+            conversation_stats=self.conversation_stats,
             iteration_delta=int(max_iterations),
             budget_per_task_delta=max_budget_per_task,
             agent_to_llm_config=agent_to_llm_config,

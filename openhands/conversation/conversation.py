@@ -2,6 +2,7 @@ import asyncio
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.stream import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.security import SecurityAnalyzer, options
@@ -24,6 +25,7 @@ class Conversation:
     sid: str
     file_store: FileStore
     event_stream: EventStream
+    llm_registry: LLMRegistry
     runtime: Runtime | None
     user_id: str | None
     _attach_to_existing: bool = False
@@ -34,6 +36,7 @@ class Conversation:
         sid: str,
         file_store: FileStore,
         config: OpenHandsConfig,
+        llm_registry: LLMRegistry,
         user_id: str | None,
         event_stream: EventStream | None = None,
         runtime: Runtime | None = None,
@@ -44,6 +47,7 @@ class Conversation:
         self.sid = sid
         self.config = config
         self.file_store = file_store
+        self.llm_registry = llm_registry
         self.user_id = user_id
         self._attach_to_existing = attach_to_existing
         self._headless_mode = headless_mode
@@ -73,6 +77,7 @@ class Conversation:
             self.runtime = runtime_cls(
                 config=self.config,
                 event_stream=self.event_stream,
+                llm_registry=self.llm_registry,
                 sid=self.sid,
                 attach_to_existing=self._attach_to_existing,
                 headless_mode=self._headless_mode,

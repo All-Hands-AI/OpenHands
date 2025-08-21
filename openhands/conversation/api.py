@@ -11,6 +11,7 @@ from typing import Optional
 from openhands.conversation.conversation import Conversation
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.events.stream import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage import get_file_store
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.conversation.file_conversation_store import (
@@ -67,7 +68,10 @@ def get_event_stream(
 
 
 def attach_to_conversation(
-    config: OpenHandsConfig, sid: str, user_id: Optional[str] = None
+    config: OpenHandsConfig,
+    sid: str,
+    llm_registry: LLMRegistry,
+    user_id: Optional[str] = None,
 ) -> Conversation:
     """Create a Conversation facade attached to an existing session.
 
@@ -84,6 +88,7 @@ def attach_to_conversation(
         sid,
         file_store,
         config,
+        llm_registry,
         user_id,
         headless_mode=True,
         attach_to_existing=True,
