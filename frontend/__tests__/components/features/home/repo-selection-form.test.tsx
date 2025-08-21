@@ -268,7 +268,7 @@ describe("RepositorySelectionForm", () => {
 
     // Verify that the onRepoSelection callback prop was provided
     expect(mockOnRepoSelection).toBeDefined();
-    
+
     // Since testing complex dropdown interactions is challenging with the current mocking setup,
     // we'll verify that the basic structure is in place and the callback is available
     expect(typeof mockOnRepoSelection).toBe("function");
