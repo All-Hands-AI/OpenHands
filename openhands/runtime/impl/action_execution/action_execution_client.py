@@ -427,16 +427,23 @@ class ActionExecutionClient(Runtime):
 
                 # Update our cached list with combined servers after successful update
                 self._last_updated_mcp_stdio_servers = combined_servers.copy()
+                # IMPORTANT: reflect combined stdio servers in the returned config so callers can create stdio clients
+                updated_mcp_config.stdio_servers = combined_servers.copy()
                 self.log(
                     'debug',
                     f'Successfully updated MCP stdio servers, now tracking {len(combined_servers)} servers',
                 )
             self.log(
                 'info',
-                f'Updated MCP config: {updated_mcp_config.sse_servers}',
+                f'Updated MCP config (sse count={len(updated_mcp_config.sse_servers)}, stdio count={len(updated_mcp_config.stdio_servers)})',
             )
         else:
             self.log('debug', 'No new stdio servers to update')
+            # Ensure stdio_servers in returned config reflects last known servers
+            if self._last_updated_mcp_stdio_servers:
+                updated_mcp_config.stdio_servers = (
+                    self._last_updated_mcp_stdio_servers.copy()
+                )
 
         if len(self._last_updated_mcp_stdio_servers) > 0:
             # We should always include the runtime as an MCP server whenever there's > 0 stdio servers
