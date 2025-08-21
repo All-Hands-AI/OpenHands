@@ -205,6 +205,11 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       padding: "0 0.5rem",
       transform: "translateY(-1px)",
       paddingLeft: "0.25rem",
+      "& .repo-branch-dropdown__input": {
+        color: "#A3A3A3 !important",
+        fontSize: "0.875rem !important",
+        fontWeight: "400 !important",
+      },
     },
     "& .repo-branch-dropdown__indicators-container": {
       height: "42px",
