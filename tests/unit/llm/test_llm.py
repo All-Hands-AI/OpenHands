@@ -12,8 +12,10 @@ from litellm.exceptions import (
 from openhands.core.config import LLMConfig
 from openhands.core.exceptions import LLMNoResponseError, OperationCancelled
 from openhands.core.message import Message, TextContent
+from openhands.llm.async_llm import AsyncLLM
 from openhands.llm.llm import LLM
 from openhands.llm.metrics import Metrics, TokenUsage
+from openhands.llm.streaming_llm import StreamingLLM
 
 
 @pytest.fixture(autouse=True)
@@ -252,7 +254,7 @@ def test_response_latency_tracking(mock_time, mock_litellm_completion):
 
 @patch('openhands.llm.llm.litellm.get_model_info')
 def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
-    default_config.model = 'openrouter:gpt-4o-mini'
+    default_config.model = 'openrouter/gpt-4o-mini'
     mock_get_model_info.return_value = {
         'max_input_tokens': 7000,
         'max_output_tokens': 1500,
@@ -261,7 +263,7 @@ def test_llm_init_with_openrouter_model(mock_get_model_info, default_config):
     llm.init_model_info()
     assert llm.config.max_input_tokens == 7000
     assert llm.config.max_output_tokens == 1500
-    mock_get_model_info.assert_called_once_with('openrouter:gpt-4o-mini')
+    mock_get_model_info.assert_called_once_with('openrouter/gpt-4o-mini')
 
 
 @patch('openhands.llm.llm.litellm_completion')
@@ -1202,6 +1204,108 @@ def test_gemini_medium_reasoning_effort_passes_through(mock_completion):
 
 
 @patch('openhands.llm.llm.litellm_completion')
+def test_opus_41_keeps_temperature_top_p(mock_completion):
+    mock_completion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(
+        model='anthropic/claude-opus-4-1-20250805',
+        api_key='k',
+        temperature=0.7,
+        top_p=0.9,
+    )
+    llm = LLM(config, service_id='svc')
+    llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_completion.call_args[1]
+    assert call_kwargs.get('temperature') == 0.7
+    # Anthropic rejects both temperature and top_p together on Opus; we keep temperature and drop top_p
+    assert 'top_p' not in call_kwargs
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_opus_4_keeps_temperature_top_p(mock_completion):
+    mock_completion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(
+        model='anthropic/claude-opus-4-20250514',
+        api_key='k',
+        temperature=0.7,
+        top_p=0.9,
+    )
+    llm = LLM(config, service_id='svc')
+    llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_completion.call_args[1]
+    assert call_kwargs.get('temperature') == 0.7
+    assert call_kwargs.get('top_p') == 0.9
+
+
+@patch('openhands.llm.llm.litellm_completion')
+def test_opus_41_disables_thinking(mock_completion):
+    mock_completion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(
+        model='anthropic/claude-opus-4-1-20250805',
+        api_key='k',
+    )
+    llm = LLM(config, service_id='svc')
+    llm.completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_completion.call_args[1]
+    assert call_kwargs.get('thinking') == {'type': 'disabled'}
+
+
+@patch('openhands.llm.llm.litellm.get_model_info')
+def test_is_caching_prompt_active_anthropic_prefixed(mock_get_model_info):
+    # Avoid external calls, but behavior shouldn't depend on model info
+    mock_get_model_info.side_effect = Exception('skip')
+    config = LLMConfig(
+        model='anthropic/claude-3-7-sonnet', api_key='k', caching_prompt=True
+    )
+    llm = LLM(config, service_id='svc')
+    assert llm.is_caching_prompt_active() is True
+
+
+@patch('openhands.llm.llm.httpx.get')
+@patch('openhands.llm.llm.litellm.get_model_info')
+def test_openhands_provider_rewrite_and_caching_prompt(
+    mock_get_model_info, mock_httpx_get
+):
+    # Mock LiteLLM proxy /v1/model/info response
+    mock_httpx_get.return_value = type(
+        'Resp',
+        (),
+        {
+            'json': lambda self=None: {
+                'data': [
+                    {
+                        'model_name': 'claude-3.7-sonnet',
+                        'model_info': {
+                            'max_input_tokens': 200000,
+                            'max_output_tokens': 64000,
+                            'supports_vision': True,
+                        },
+                    }
+                ]
+            }
+        },
+    )()
+    mock_get_model_info.return_value = {
+        'max_input_tokens': 200000,
+        'max_output_tokens': 64000,
+    }
+
+    config = LLMConfig(
+        model='openhands/claude-3.7-sonnet', api_key='k', caching_prompt=True
+    )
+    llm = LLM(config, service_id='svc')
+    # Model should be rewritten to litellm_proxy/...
+    assert llm.config.model.startswith('litellm_proxy/claude-3.7-sonnet')
+    # Caching prompt should be active for Claude
+    assert llm.is_caching_prompt_active() is True
+
+
+@patch('openhands.llm.llm.litellm_completion')
 def test_gemini_high_reasoning_effort_passes_through(mock_completion):
     """Test that Gemini with reasoning_effort='high' passes through to litellm."""
     config = LLMConfig(
@@ -1239,10 +1343,61 @@ def test_non_gemini_uses_reasoning_effort(mock_completion):
     sample_messages = [{'role': 'user', 'content': 'Hello, how are you?'}]
     llm.completion(messages=sample_messages)
 
-    # Verify that reasoning_effort was used and thinking budget was not set
-    call_kwargs = mock_completion.call_args[1]
+
+@patch('openhands.llm.async_llm.litellm_acompletion')
+@pytest.mark.asyncio
+async def test_async_reasoning_effort_passthrough(mock_acompletion):
+    mock_acompletion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(
+        model='o3', api_key='k', temperature=0.7, top_p=0.9, reasoning_effort='low'
+    )
+    llm = AsyncLLM(config, service_id='svc')
+    await llm.async_completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_acompletion.call_args[1]
+    assert call_kwargs.get('reasoning_effort') == 'low'
+    # Async path does not pop temperature/top_p (parity with main)
+    assert call_kwargs.get('temperature') == 0.7
+    assert call_kwargs.get('top_p') == 0.9
+
+
+@patch('openhands.llm.streaming_llm.AsyncLLM._call_acompletion')
+@pytest.mark.asyncio
+async def test_streaming_reasoning_effort_passthrough(mock_call):
+    async def fake_stream(*args, **kwargs):
+        class Dummy:
+            async def __aiter__(self):
+                yield {'choices': [{'delta': {'content': 'x'}}]}
+
+        return Dummy()
+
+    mock_call.side_effect = fake_stream
+    config = LLMConfig(
+        model='o3', api_key='k', temperature=0.7, top_p=0.9, reasoning_effort='low'
+    )
+    sllm = StreamingLLM(config, service_id='svc')
+    async for _ in sllm.async_streaming_completion(
+        messages=[{'role': 'user', 'content': 'hi'}]
+    ):
+        break
+    call_kwargs = mock_call.call_args[1]
+    assert call_kwargs.get('reasoning_effort') == 'low'
+    assert call_kwargs.get('temperature') == 0.7
+    assert call_kwargs.get('top_p') == 0.9
+
+
+@patch('openhands.llm.async_llm.litellm_acompletion')
+@pytest.mark.asyncio
+async def test_async_streaming_no_thinking_for_gemini(mock_acompletion):
+    mock_acompletion.return_value = {
+        'choices': [{'message': {'content': 'ok'}}],
+    }
+    config = LLMConfig(model='gemini-2.5-pro', api_key='k', reasoning_effort='low')
+    llm = AsyncLLM(config, service_id='svc')
+    await llm.async_completion(messages=[{'role': 'user', 'content': 'hi'}])
+    call_kwargs = mock_acompletion.call_args[1]
     assert 'thinking' not in call_kwargs
-    assert call_kwargs.get('reasoning_effort') == 'high'
 
 
 @patch('openhands.llm.llm.litellm_completion')
