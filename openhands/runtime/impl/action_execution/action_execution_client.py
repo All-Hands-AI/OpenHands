@@ -472,11 +472,7 @@ class ActionExecutionClient(Runtime):
 
         # Create clients for this specific operation
         mcp_clients = await create_mcp_clients(
-            updated_mcp_config.sse_servers,
-            updated_mcp_config.shttp_servers,
-            self.sid,
-            attempts=5,
-            retry_delay_sec=2.0,
+            updated_mcp_config.sse_servers, updated_mcp_config.shttp_servers, self.sid
         )
 
         # Call the tool and return the result

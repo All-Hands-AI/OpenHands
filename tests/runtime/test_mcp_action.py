@@ -123,14 +123,6 @@ def test_default_activated_tools():
 
 @pytest.mark.asyncio
 async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
-    if runtime_cls.__name__ == 'DockerRuntime':
-        try:
-            import docker as _dd
-
-            _client = _dd.from_env()
-            _client.ping()
-        except Exception:
-            pytest.skip('Skipping DockerRuntime: Docker daemon not available')
     mcp_stdio_server_config = MCPStdioServerConfig(
         name='fetch', command='uvx', args=['mcp-server-fetch']
     )
@@ -182,14 +174,6 @@ async def test_fetch_mcp_via_stdio(temp_dir, runtime_cls, run_as_openhands):
 async def test_filesystem_mcp_via_sse(
     temp_dir, runtime_cls, run_as_openhands, sse_mcp_docker_server
 ):
-    if runtime_cls.__name__ == 'DockerRuntime':
-        try:
-            import docker as _dd
-
-            _client = _dd.from_env()
-            _client.ping()
-        except Exception:
-            pytest.skip('Skipping DockerRuntime: Docker daemon not available')
     sse_server_info = sse_mcp_docker_server
     sse_url = sse_server_info['url']
     runtime = None
@@ -221,14 +205,6 @@ async def test_filesystem_mcp_via_sse(
 async def test_both_stdio_and_sse_mcp(
     temp_dir, runtime_cls, run_as_openhands, sse_mcp_docker_server
 ):
-    if runtime_cls.__name__ == 'DockerRuntime':
-        try:
-            import docker as _dd
-
-            _client = _dd.from_env()
-            _client.ping()
-        except Exception:
-            pytest.skip('Skipping DockerRuntime: Docker daemon not available')
     sse_server_info = sse_mcp_docker_server
     sse_url = sse_server_info['url']
     runtime = None
@@ -310,14 +286,6 @@ async def test_both_stdio_and_sse_mcp(
 async def test_microagent_and_one_stdio_mcp_in_config(
     temp_dir, runtime_cls, run_as_openhands
 ):
-    if runtime_cls.__name__ == 'DockerRuntime':
-        try:
-            import docker as _dd
-
-            _client = _dd.from_env()
-            _client.ping()
-        except Exception:
-            pytest.skip('Skipping DockerRuntime: Docker daemon not available')
     runtime = None
     try:
         filesystem_config = MCPStdioServerConfig(
