@@ -3,7 +3,11 @@ import json
 import os
 from typing import Any
 
-import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+try:
+    import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
+except ModuleNotFoundError:
+    # webarena package will be installed in the sandbox runtime; safe to proceed
+    pass
 import gymnasium as gym
 import pandas as pd
 
@@ -46,13 +50,21 @@ def get_config(
     env_id: str,
 ) -> OpenHandsConfig:
     base_url = os.environ.get('WEBARENA_BASE_URL', None)
+    # Allow OPENAI_API_KEY from env or from LLM config
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
     assert base_url is not None, 'WEBARENA_BASE_URL must be set'
-    assert openai_api_key is not None, 'OPENAI_API_KEY must be set'
+    if not openai_api_key and metadata.llm_config and metadata.llm_config.api_key:
+        try:
+            openai_api_key = metadata.llm_config.api_key.get_secret_value()
+        except Exception:
+            pass
+    assert openai_api_key, 'OPENAI_API_KEY must be set (env or llm.api_key)'
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.browsergym_eval_env = env_id
+    # Ensure evaluation dependencies are installed in runtime image
+    sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime,evaluation --no-interaction --no-root'
     sandbox_config.runtime_startup_env_vars = {
         'BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
@@ -199,6 +211,13 @@ def process_instance(
 if __name__ == '__main__':
     args = parse_arguments()
 
+    # Enforce supported agent class for WebArena
+    if args.agent_cls not in SUPPORTED_AGENT_CLS:
+        logger.warning(
+            f"Agent '{args.agent_cls}' is not supported for WebArena; falling back to 'BrowsingAgent'"
+        )
+        args.agent_cls = 'BrowsingAgent'
+
     dataset = pd.DataFrame(
         {
             'instance_id': [
@@ -213,13 +232,14 @@ if __name__ == '__main__':
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
         # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
-        llm_config.modify_params = False
+        if llm_config is not None:
+            llm_config.modify_params = False
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        'webarena',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
