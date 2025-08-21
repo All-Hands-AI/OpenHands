@@ -1,17 +1,19 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
-import { useUserRepositories } from "#/hooks/query/use-user-repositories";
+import { useGitRepositories } from "#/hooks/query/use-git-repositories";
 import { useUserProviders } from "#/hooks/use-user-providers";
+import { GitProviderDropdown } from "#/components/common/git-provider-dropdown";
 import {
   setPersonalRepositories,
   setOrganizationRepositories,
   setRepositories,
 } from "#/state/microagent-management-slice";
 import { GitRepository } from "#/types/git";
+import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
 
 interface MicroagentManagementSidebarProps {
@@ -21,12 +23,32 @@ interface MicroagentManagementSidebarProps {
 export function MicroagentManagementSidebar({
   isSmallerScreen = false,
 }: MicroagentManagementSidebarProps) {
-  const dispatch = useDispatch();
-  const { t } = useTranslation();
   const { providers } = useUserProviders();
-  const selectedProvider = providers.length > 0 ? providers[0] : null;
-  const { data: repositories, isLoading } =
-    useUserRepositories(selectedProvider);
+
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
+    providers.length > 0 ? providers[0] : null,
+  );
+
+  const dispatch = useDispatch();
+
+  const { t } = useTranslation();
+
+  const { data: repositories, isLoading } = useGitRepositories({
+    provider: selectedProvider,
+    pageSize: 200,
+    enabled: !!selectedProvider,
+  });
+
+  // Auto-select provider if there's only one
+  useEffect(() => {
+    if (providers.length > 0 && !selectedProvider) {
+      setSelectedProvider(providers[0]);
+    }
+  }, [providers, selectedProvider]);
+
+  const handleProviderChange = (provider: Provider | null) => {
+    setSelectedProvider(provider);
+  };
 
   useEffect(() => {
     if (repositories?.pages) {
@@ -38,7 +60,10 @@ export function MicroagentManagementSidebar({
       const allRepositories = repositories.pages.flatMap((page) => page.data);
 
       allRepositories.forEach((repo: GitRepository) => {
-        const hasOpenHandsSuffix = repo.full_name.endsWith("/.openhands");
+        const hasOpenHandsSuffix =
+          selectedProvider === "gitlab"
+            ? repo.full_name.endsWith("/openhands-config")
+            : repo.full_name.endsWith("/.openhands");
 
         if (repo.owner_type === "user" && hasOpenHandsSuffix) {
           personalRepos.push(repo);
@@ -53,7 +78,7 @@ export function MicroagentManagementSidebar({
       dispatch(setOrganizationRepositories(organizationRepos));
       dispatch(setRepositories(otherRepos));
     }
-  }, [repositories, dispatch]);
+  }, [repositories, selectedProvider, dispatch]);
 
   return (
     <div
@@ -63,6 +88,20 @@ export function MicroagentManagementSidebar({
       )}
     >
       <MicroagentManagementSidebarHeader />
+
+      {/* Provider Selection */}
+      {providers.length > 1 && (
+        <div className="mt-6">
+          <GitProviderDropdown
+            providers={providers}
+            value={selectedProvider}
+            placeholder="Select Provider"
+            onChange={handleProviderChange}
+            className="w-full"
+          />
+        </div>
+      )}
+
       {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">
           <Spinner size="sm" />
