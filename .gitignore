@@ -259,9 +259,3 @@ containers/runtime/code
 test-results
 
 .eval_sessions
-
-# Eval sessions local store
-.eval_sessions
-
-# Ignore task tracker file
-.openhands/TASKS.md
