@@ -168,6 +168,13 @@ export function EventMessage({
   if (isFinishAction(event)) {
     return (
       <>
+        {event.args.thought?.reasoning_content && (
+          <GenericEventMessage
+            title="Reasoning"
+            details={event.args.thought.reasoning_content}
+            initiallyExpanded={false}
+          />
+        )}
         <ChatMessage
           type="agent"
           message={getEventContent(event).details}
