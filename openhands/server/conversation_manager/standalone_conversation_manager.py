@@ -517,14 +517,20 @@ class StandaloneConversationManager(ConversationManager):
                     token_usage.prompt_tokens + token_usage.completion_tokens
                 )
         default_title = get_default_conversation_title(conversation_id)
+        # Only attempt to autogenerate if:
+        # 1. Title is the default title, OR
+        # 2. Title is None/empty and user hasn't manually set it
+        # 3. User hasn't manually set the title (user_set_title is False)
         if (
-            conversation.title == default_title
-        ):  # attempt to autogenerate if default title is in use
+            not getattr(conversation, 'user_set_title', False)
+            and (conversation.title == default_title or not conversation.title)
+        ):  # attempt to autogenerate if default title is in use and user hasn't set custom title
             title = await auto_generate_title(
                 conversation_id, user_id, self.file_store, settings, llm_registry
             )
             if title and not title.isspace():
                 conversation.title = title
+                # Don't set user_set_title=True here since this is auto-generated
                 try:
                     # Emit a status update to the client with the new title
                     status_update_dict = {

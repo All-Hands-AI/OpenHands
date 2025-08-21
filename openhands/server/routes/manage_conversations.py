@@ -655,6 +655,7 @@ async def update_conversation(
         # Update the conversation metadata
         original_title = metadata.title
         metadata.title = data.title.strip()
+        metadata.user_set_title = True  # Mark that user has manually set the title
         metadata.last_updated_at = datetime.now(timezone.utc)
 
         # Save the updated metadata
