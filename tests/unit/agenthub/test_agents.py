@@ -271,8 +271,8 @@ def test_step_with_no_pending_actions(mock_state: State, create_llm_registry):
     config = AgentConfig()
     config.enable_prompt_extensions = False
     agent = CodeActAgent(config=config, llm_registry=create_llm_registry(llm_config))
-    # Replace the LLM with our mock after creation
-    agent.llm_registry.active_agent_llm = llm
+    # Replace the active LLM with our mock after creation
+    agent.llm_registry.get_active_llm = Mock(return_value=llm)
 
     # Test step with no pending actions
     mock_state.latest_user_message = None
