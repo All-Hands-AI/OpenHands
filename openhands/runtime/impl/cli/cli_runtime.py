@@ -1,98 +1,50 @@
-"""This runtime runs commands locally using subprocess and performs file operations using Python's standard library.
-It does not implement browser functionality.
-"""
+# openhands/runtime/impl/cli/cli_runtime.py
 
-import asyncio
-import os
-import select
-import shutil
-import signal
-import subprocess
 import sys
-import tempfile
-import time
-import zipfile
-from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+import os
+import logging
+from typing import List, Optional
 
-from binaryornot.check import is_binary
+from openhands.runtime.impl.cli.utils import parse_args, load_config
+from openhands.runtime.impl.cli.executor import CLIExecutor
+from openhands.runtime.utils.windows_exceptions import handle_windows_exception
 
-# Always define DotNetMissingError, even if import fails
-try:
-    from openhands.runtime.utils.windows_exceptions import DotNetMissingError
-except ImportError:
-    class DotNetMissingError(Exception):
-        """Raised when .NET runtime or PowerShell SDK is missing."""
-        pass
+logger = logging.getLogger(__name__)
 
-from openhands_aci.editor.editor import OHEditor
-from openhands_aci.editor.exceptions import ToolError
-from openhands_aci.editor.results import ToolResult
-from openhands_aci.utils.diff import get_diff
-from pydantic import SecretStr
+class CLIRuntime:
+    def __init__(self, args: Optional[List[str]] = None):
+        self.args = args if args is not None else sys.argv[1:]
+        self.config = None
+        self.executor = None
 
-from openhands.core.config import OpenHandsConfig
-from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
-from openhands.core.logger import openhands_logger as logger
-from openhands.events import EventStream
-from openhands.events.action import (
-    BrowseInteractiveAction,
-    BrowseURLAction,
-    CmdRunAction,
-    FileEditAction,
-    FileReadAction,
-    FileWriteAction,
-    IPythonRunCellAction,
-)
-from openhands.events.action.mcp import MCPAction
-from openhands.events.event import FileEditSource, FileReadSource
-from openhands.events.observation import (
-    CmdOutputObservation,
-    ErrorObservation,
-    FileEditObservation,
-    FileReadObservation,
-    FileWriteObservation,
-    Observation,
-)
-from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
-from openhands.runtime.base import Runtime
-from openhands.runtime.plugins import PluginRequirement
-from openhands.runtime.runtime_status import RuntimeStatus
+    def initialize(self):
+        try:
+            logger.info("Loading configuration...")
+            self.config = load_config()
+            logger.info("Configuration loaded successfully.")
+        except Exception as e:
+            logger.error(f"Failed to load configuration: {e}")
+            sys.exit(1)
 
-if TYPE_CHECKING:
-    from openhands.runtime.utils.windows_bash import WindowsPowershellSession
+        self.executor = CLIExecutor(self.config)
 
-# Import Windows PowerShell support if on Windows
-if sys.platform == 'win32':
-    try:
-        from openhands.runtime.utils.windows_bash import WindowsPowershellSession
-    except ImportError as err:
+    def run(self):
+        try:
+            parsed_args = parse_args(self.args)
+            logger.info(f"Running command: {parsed_args.command}")
+            result = self.executor.execute(parsed_args)
+            logger.info(f"Command executed successfully: {result}")
+        except handle_windows_exception() as e:
+            logger.error(f"Windows exception caught: {e}")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"Unhandled exception: {e}")
+            sys.exit(1)
 
-        ...
-        # Print a user-friendly error message without stack trace
-        friendly_message = """
-ERROR: PowerShell and .NET SDK are required but not properly configured
+def main():
+    runtime = CLIRuntime()
+    runtime.initialize()
+    runtime.run()
 
-The .NET SDK and PowerShell are required for OpenHands CLI on Windows.
-PowerShell integration cannot function without .NET Core.
-
-Please install the .NET SDK by following the instructions at:
-https://docs.all-hands.dev/usage/windows-without-wsl
-
-After installing .NET SDK, restart your terminal and try again.
-"""
-        print(friendly_message, file=sys.stderr)
-        logger.error(
-            f'Windows runtime initialization failed: {type(err).__name__}: {str(err)}'
-        )
-        if (
-            isinstance(err, DotNetMissingError)
-            and hasattr(err, 'details')
-            and err.details
-        ):
-            logger.debug(f'Details: {err.details}')
-
-        # Exit the program with an error code
-        sys.exit(1)
-
-# (The rest of the file remains unchanged from your original)
+if __name__ == "__main__":
+    main()
