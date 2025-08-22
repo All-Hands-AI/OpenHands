@@ -117,7 +117,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-unused-imports": "^4.1.4",
+    "eslint-plugin-unused-imports": "^4.2.0",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.4",
