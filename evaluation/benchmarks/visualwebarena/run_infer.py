@@ -78,7 +78,6 @@ def get_config(
         metadata=metadata,
         runtime='docker',
         sandbox_config=sandbox_config,
-
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

@@ -91,7 +91,6 @@ def get_config(metadata: EvalMetadata, instance: pd.Series) -> OpenHandsConfig:
     config = get_openhands_config_for_eval(
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox_config=sandbox_config,
-
     )
     return config
 

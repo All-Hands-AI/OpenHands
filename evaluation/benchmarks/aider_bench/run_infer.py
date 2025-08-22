@@ -55,7 +55,6 @@ def get_config(
         metadata=metadata,
         sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'docker'),
-
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)

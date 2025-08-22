@@ -120,7 +120,6 @@ def get_config(
         sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'docker'),
         enable_browser=RUN_WITH_BROWSING,
-
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

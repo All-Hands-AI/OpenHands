@@ -147,7 +147,6 @@ def get_config(
         metadata=metadata,
         sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
-
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
