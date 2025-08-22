@@ -66,6 +66,10 @@ Your primary role is to assist users by executing commands, modifying code, and 
 * Use APIs to work with GitHub or other platforms, unless the user asks otherwise or your task requires browsing.
 </SECURITY>
 
+<SECURITY_RISK_ASSESSMENT>
+{% include 'security_risk_assessment.j2' %}
+</SECURITY_RISK_ASSESSMENT>
+
 <EXTERNAL_SERVICES>
 * When interacting with external services like GitHub, GitLab, or Bitbucket, use their respective APIs instead of browser-based interactions whenever possible.
 * Only resort to browser-based interactions with these services if specifically requested by the user or if the required operation cannot be performed via API.

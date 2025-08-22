@@ -1,6 +1,10 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
 from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+from openhands.agenthub.codeact_agent.tools.security_utils import (
+    RISK_LEVELS,
+    SECURITY_RISK_DESC,
+)
 from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
@@ -65,8 +69,13 @@ def create_cmd_run_tool(
                         'type': 'number',
                         'description': 'Optional. Sets a hard timeout in seconds for the command execution. If not provided, the command will use the default soft timeout behavior.',
                     },
+                    'security_risk': {
+                        'type': 'string',
+                        'description': SECURITY_RISK_DESC,
+                        'enum': RISK_LEVELS,
+                    },
                 },
-                'required': ['command'],
+                'required': ['command', 'security_risk'],
             },
         ),
     )
