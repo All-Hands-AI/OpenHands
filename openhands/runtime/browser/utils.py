@@ -12,7 +12,11 @@ from openhands.core.schema import ActionType
 from openhands.events.action import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.observation import BrowserOutputObservation
 from openhands.runtime.browser.base64 import png_base64_url_to_image
-from openhands.runtime.browser.browser_env import BrowserEnv
+from openhands.runtime.browser.browser_env import (
+    BROWSER_EVAL_GET_GOAL_ACTION,
+    BROWSER_EVAL_GET_REWARDS_ACTION,
+    BrowserEnv,
+)
 from openhands.utils.async_utils import call_sync_from_async
 
 
@@ -161,35 +165,34 @@ async def browse(
                 image = png_base64_url_to_image(obs.get('screenshot'))
                 image.save(screenshot_path, format='PNG', optimize=True)
 
+        # Determine if this is a special eval info query where the env returns JSON in text_content
+        is_eval_info = isinstance(action, BrowseInteractiveAction) and (
+            action.browser_actions == BROWSER_EVAL_GET_GOAL_ACTION
+            or action.browser_actions == BROWSER_EVAL_GET_REWARDS_ACTION
+        )
+
         # Create the observation with all data
         observation = BrowserOutputObservation(
-            content=obs['text_content'],  # text content of the page
-            url=obs.get('url', ''),  # URL of the page
-            screenshot=obs.get('screenshot', None),  # base64-encoded screenshot, png
-            screenshot_path=screenshot_path,  # path to saved screenshot file
-            set_of_marks=obs.get(
-                'set_of_marks', None
-            ),  # base64-encoded Set-of-Marks annotated screenshot, png,
+            content=obs.get('text_content', ''),
+            url=obs.get('url', ''),
+            screenshot=obs.get('screenshot', None),
+            screenshot_path=screenshot_path,
+            set_of_marks=obs.get('set_of_marks', None),
             goal_image_urls=obs.get('image_content', []),
-            open_pages_urls=obs.get('open_pages_urls', []),  # list of open pages
-            active_page_index=obs.get(
-                'active_page_index', -1
-            ),  # index of the active page
-            axtree_object=obs.get('axtree_object', {}),  # accessibility tree object
+            open_pages_urls=obs.get('open_pages_urls', []),
+            active_page_index=obs.get('active_page_index', -1),
+            axtree_object=obs.get('axtree_object', {}),
             extra_element_properties=obs.get('extra_element_properties', {}),
-            focused_element_bid=obs.get(
-                'focused_element_bid', None
-            ),  # focused element bid
-            last_browser_action=obs.get(
-                'last_action', ''
-            ),  # last browser env action performed
+            focused_element_bid=obs.get('focused_element_bid', None),
+            last_browser_action=obs.get('last_action', ''),
             last_browser_action_error=obs.get('last_action_error', ''),
-            error=True if obs.get('last_action_error', '') else False,  # error flag
+            error=True if obs.get('last_action_error', '') else False,
             trigger_by_action=action.action,
         )
 
-        # Process the content first using the axtree_object
-        observation.content = get_agent_obs_text(observation)
+        # For special eval info actions, keep raw JSON content intact; otherwise format for the agent
+        if not is_eval_info:
+            observation.content = get_agent_obs_text(observation)
 
         # If return_axtree is False, remove the axtree_object to save space
         if not action.return_axtree:

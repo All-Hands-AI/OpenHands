@@ -67,6 +67,8 @@ def get_config(
     sandbox_config.browsergym_eval_env = env_id
     # Ensure evaluation dependencies are installed in runtime image
     sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry install --only main,runtime,evaluation --no-interaction --no-root'
+    # Force rebuild runtime so updated OpenHands code (including eval fixes) is included
+    sandbox_config.force_rebuild_runtime = True
     # Provide both legacy and WA_* env vars expected by browsergym-webarena
     sandbox_config.runtime_startup_env_vars = {
         'BASE_URL': base_url,
