@@ -55,7 +55,7 @@ class Session:
         sid: str,
         config: OpenHandsConfig,
         llm_registry: LLMRegistry,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -66,12 +66,12 @@ class Session:
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
         self.llm_registry = llm_registry
-        self.convo_stats = convo_stats
+        self.conversation_stats = conversation_stats
         self.agent_session = AgentSession(
             sid,
             file_store,
             llm_registry=self.llm_registry,
-            convo_stats=convo_stats,
+            conversation_stats=conversation_stats,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
@@ -118,7 +118,9 @@ class Session:
             else settings.confirmation_mode
         )
         self.config.security.security_analyzer = (
-            settings.security_analyzer or self.config.security.security_analyzer
+            self.config.security.security_analyzer
+            if settings.security_analyzer is None
+            else settings.security_analyzer
         )
         self.config.sandbox.base_container_image = (
             settings.sandbox_base_container_image

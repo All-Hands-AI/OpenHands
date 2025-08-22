@@ -172,9 +172,6 @@ class LLMConfig(BaseModel):
 
         # Set reasoning_effort to 'high' by default for non-Gemini models
         # Gemini models use optimized thinking budget when reasoning_effort is None
-        logger.debug(
-            f'Setting reasoning_effort for model {self.model} with reasoning_effort {self.reasoning_effort}'
-        )
         if self.reasoning_effort is None and 'gemini-2.5-pro' not in self.model:
             self.reasoning_effort = 'high'
 

@@ -26,7 +26,6 @@ from openhands.memory.memory import Memory
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.security import SecurityAnalyzer, options
 from openhands.server.services.conversation_stats import ConversationStats
 from openhands.storage import get_file_store
 from openhands.storage.data_models.user_secrets import UserSecrets
@@ -62,12 +61,6 @@ def create_runtime(
     # set up the event stream
     file_store = get_file_store(config.file_store, config.file_store_path)
     event_stream = EventStream(session_id, file_store)
-
-    # set up the security analyzer
-    if config.security.security_analyzer:
-        options.SecurityAnalyzers.get(
-            config.security.security_analyzer, SecurityAnalyzer
-        )(event_stream)
 
     # agent class
     if agent:
@@ -218,7 +211,7 @@ def create_controller(
     agent: Agent,
     runtime: Runtime,
     config: OpenHandsConfig,
-    convo_stats: ConversationStats,
+    conversation_stats: ConversationStats,
     headless_mode: bool = True,
     replay_events: list[Event] | None = None,
 ) -> tuple[AgentController, State | None]:
@@ -236,7 +229,7 @@ def create_controller(
 
     controller = AgentController(
         agent=agent,
-        convo_stats=convo_stats,
+        conversation_stats=conversation_stats,
         iteration_delta=config.max_iterations,
         budget_per_task_delta=config.max_budget_per_task,
         agent_to_llm_config=config.get_agent_to_llm_config_map(),
@@ -245,6 +238,7 @@ def create_controller(
         headless_mode=headless_mode,
         confirmation_mode=config.security.confirmation_mode,
         replay_events=replay_events,
+        security_analyzer=runtime.security_analyzer,
     )
     return (controller, initial_state)
 

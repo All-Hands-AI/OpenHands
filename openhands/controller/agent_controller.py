@@ -5,7 +5,10 @@ import copy
 import os
 import time
 import traceback
-from typing import Callable
+from typing import TYPE_CHECKING, Callable
+
+if TYPE_CHECKING:
+    from openhands.security.analyzer import SecurityAnalyzer
 
 from litellm.exceptions import (  # noqa
     APIConnectionError,
@@ -49,11 +52,15 @@ from openhands.events import (
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
+    BrowseInteractiveAction,
     ChangeAgentStateAction,
     CmdRunAction,
+    FileEditAction,
+    FileReadAction,
     IPythonRunCellAction,
     MessageAction,
     NullAction,
@@ -109,7 +116,7 @@ class AgentController:
         self,
         agent: Agent,
         event_stream: EventStream,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         iteration_delta: int,
         budget_per_task_delta: float | None = None,
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
@@ -123,6 +130,7 @@ class AgentController:
         headless_mode: bool = True,
         status_callback: Callable | None = None,
         replay_events: list[Event] | None = None,
+        security_analyzer: 'SecurityAnalyzer | None' = None,
     ):
         """Initializes a new instance of the AgentController class.
 
@@ -149,7 +157,7 @@ class AgentController:
         self.agent = agent
         self.headless_mode = headless_mode
         self.is_delegate = is_delegate
-        self.convo_stats = convo_stats
+        self.conversation_stats = conversation_stats
 
         # the event stream must be set before maybe subscribing to it
         self.event_stream = event_stream
@@ -165,7 +173,7 @@ class AgentController:
         # state from the previous session, state from a parent agent, or a fresh state
         self.set_initial_state(
             state=initial_state,
-            convo_stats=convo_stats,
+            conversation_stats=conversation_stats,
             max_iterations=iteration_delta,
             max_budget_per_task=budget_per_task_delta,
             confirmation_mode=confirmation_mode,
@@ -185,8 +193,51 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        # security analyzer for direct access
+        self.security_analyzer = security_analyzer
+
         # Add the system message to the event stream
         self._add_system_message()
+
+    async def _handle_security_analyzer(self, action: Action) -> None:
+        """Handle security risk analysis for an action.
+
+        If a security analyzer is configured, use it to analyze the action.
+        If no security analyzer is configured, set the risk to HIGH (fail-safe approach).
+
+        Args:
+            action: The action to analyze for security risks.
+        """
+        if self.security_analyzer:
+            try:
+                if (
+                    hasattr(action, 'security_risk')
+                    and action.security_risk is not None
+                ):
+                    logger.debug(
+                        f'Original security risk for {action}: {action.security_risk})'
+                    )
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = await self.security_analyzer.security_risk(
+                        action
+                    )
+                    logger.debug(
+                        f'[Security Analyzer: {self.security_analyzer.__class__}] Override security risk for action {action}: {action.security_risk}'
+                    )
+            except Exception as e:
+                logger.warning(
+                    f'Failed to analyze security risk for action {action}: {e}'
+                )
+                if hasattr(action, 'security_risk'):
+                    action.security_risk = ActionSecurityRisk.UNKNOWN
+        else:
+            # When no security analyzer is configured, treat all actions as HIGH risk
+            # This is a fail-safe approach that ensures confirmation is required
+            logger.debug(
+                f'No security analyzer configured, setting HIGH risk for action: {action}'
+            )
+            if hasattr(action, 'security_risk'):
+                action.security_risk = ActionSecurityRisk.HIGH
 
     def _add_system_message(self):
         for event in self.event_stream.search_events(start_id=self.state.start_id):
@@ -687,7 +738,7 @@ class AgentController:
             user_id=self.user_id,
             agent=delegate_agent,
             event_stream=self.event_stream,
-            convo_stats=self.convo_stats,
+            conversation_stats=self.conversation_stats,
             iteration_delta=self._initial_max_iterations,
             budget_per_task_delta=self._initial_max_budget_per_task,
             agent_to_llm_config=self.agent_to_llm_config,
@@ -695,6 +746,7 @@ class AgentController:
             initial_state=state,
             is_delegate=True,
             headless_mode=self.headless_mode,
+            security_analyzer=self.security_analyzer,
         )
 
     def end_delegate(self) -> None:
@@ -862,11 +914,37 @@ class AgentController:
 
         if action.runnable:
             if self.state.confirmation_mode and (
-                type(action) is CmdRunAction or type(action) is IPythonRunCellAction
+                type(action) is CmdRunAction
+                or type(action) is IPythonRunCellAction
+                or type(action) is BrowseInteractiveAction
+                or type(action) is FileEditAction
+                or type(action) is FileReadAction
             ):
-                action.confirmation_state = (
-                    ActionConfirmationStatus.AWAITING_CONFIRMATION
+                # Handle security risk analysis using the dedicated method
+                await self._handle_security_analyzer(action)
+
+                # Check if the action has a security_risk attribute set by the LLM or security analyzer
+                security_risk = getattr(
+                    action, 'security_risk', ActionSecurityRisk.UNKNOWN
                 )
+
+                # If security_risk is HIGH, requires confirmation
+                # UNLESS it is CLI which will handle action risks it itself
+                if self.agent.config.cli_mode:
+                    # TODO(refactor): this is not ideal to have CLI been an exception
+                    # We should refactor agent controller to consider this in the future
+                    # See issue: https://github.com/All-Hands-AI/OpenHands/issues/10464
+                    action.confirmation_state = (  # type: ignore[union-attr]
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
+                # Only HIGH security risk actions require confirmation
+                elif security_risk == ActionSecurityRisk.HIGH:
+                    logger.debug(
+                        f'[non-CLI mode] Detected HIGH security risk in action: {action}. Ask for confirmation'
+                    )
+                    action.confirmation_state = (  # type: ignore[union-attr]
+                        ActionConfirmationStatus.AWAITING_CONFIRMATION
+                    )
             self._pending_action = action
 
         if not isinstance(action, NullAction):
@@ -951,7 +1029,7 @@ class AgentController:
     def set_initial_state(
         self,
         state: State | None,
-        convo_stats: ConversationStats,
+        conversation_stats: ConversationStats,
         max_iterations: int,
         max_budget_per_task: float | None,
         confirmation_mode: bool = False,
@@ -959,7 +1037,7 @@ class AgentController:
         self.state_tracker.set_initial_state(
             self.id,
             state,
-            convo_stats,
+            conversation_stats,
             max_iterations,
             max_budget_per_task,
             confirmation_mode,
@@ -1000,7 +1078,7 @@ class AgentController:
             action: The action to attach metrics to
         """
         # Get metrics from agent LLM
-        metrics = self.convo_stats.get_combined_metrics()
+        metrics = self.conversation_stats.get_combined_metrics()
 
         # Create a clean copy with only the fields we want to keep
         clean_metrics = Metrics()
