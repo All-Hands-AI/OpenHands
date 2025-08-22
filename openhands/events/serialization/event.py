@@ -124,6 +124,9 @@ def event_to_dict(event: 'Event') -> dict:
     # Remove task_completed from serialization when it's None (backward compatibility)
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
+    # Remove expected_replacements when it's None to maintain backward compatibility
+    if 'expected_replacements' in props and props['expected_replacements'] is None:
+        props.pop('expected_replacements')
     if 'action' in d:
         d['args'] = props
         if event.timeout is not None:
