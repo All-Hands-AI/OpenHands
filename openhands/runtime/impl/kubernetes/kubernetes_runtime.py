@@ -43,6 +43,7 @@ from openhands.core.logger import DEBUG
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
@@ -81,6 +82,7 @@ class KubernetesRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -137,6 +139,7 @@ class KubernetesRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -735,7 +738,7 @@ class KubernetesRuntime(ActionExecutionClient):
     @classmethod
     async def delete(cls, conversation_id: str):
         """Delete resources associated with a conversation."""
-        # This is triggered when you actually do the delete in the UI on the convo.
+        # This is triggered when you actually do the delete in the UI on the conversation.
         try:
             cls._cleanup_k8s_resources(
                 namespace=cls._namespace,

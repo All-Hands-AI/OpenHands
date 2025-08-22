@@ -1,5 +1,6 @@
 import os
 import tempfile
+from time import sleep
 from pathlib import Path
 from typing import Callable
 
@@ -149,6 +150,8 @@ class ModalRuntime(ActionExecutionClient):
             raise Exception("Sandbox not initialized")
         tunnel = self.sandbox.tunnels()[self.container_port]
         self.api_url = tunnel.url
+        self.log("info", "Waiting 20 secs for the container to be ready... (avoiding RemoteProtocolError)")
+        sleep(20)
         self.log("debug", f"Container started. Server url: {self.api_url}")
 
         if not self.attach_to_existing:
@@ -192,13 +195,9 @@ class ModalRuntime(ActionExecutionClient):
                 extra_deps=runtime_extra_deps,
                 enable_browser=True,
             )
-
             base_runtime_image = modal.Image.from_dockerfile(
                 path=os.path.join(build_folder, "Dockerfile"),
-                context_mount=modal.Mount.from_local_dir(
-                    local_path=build_folder,
-                    remote_path=".",  # to current WORKDIR
-                ),
+                context_dir=build_folder,
             )
         else:
             raise ValueError(
@@ -254,7 +253,7 @@ echo 'export INPUTRC=/etc/inputrc' >> /etc/bash.bashrc
                 timeout=60 * 60,
             )
             MODAL_RUNTIME_IDS[self.sid] = self.sandbox.object_id
-            self.log("debug", "Container started")
+            self.log("debug", f"Container started with modal sandbox ID: {self.sandbox.object_id}")
 
         except Exception as e:
             self.log(

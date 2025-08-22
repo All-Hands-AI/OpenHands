@@ -172,9 +172,6 @@ class LLMConfig(BaseModel):
 
         # Set reasoning_effort to 'high' by default for non-Gemini models
         # Gemini models use optimized thinking budget when reasoning_effort is None
-        logger.debug(
-            f'Setting reasoning_effort for model {self.model} with reasoning_effort {self.reasoning_effort}'
-        )
         if self.reasoning_effort is None and 'gemini-2.5-pro' not in self.model:
             self.reasoning_effort = 'high'
 
@@ -183,3 +180,13 @@ class LLMConfig(BaseModel):
         # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/7755
         if self.model.startswith('azure') and self.api_version is None:
             self.api_version = '2024-12-01-preview'
+
+        # Set AWS credentials as environment variables for LiteLLM Bedrock
+        if self.aws_access_key_id:
+            os.environ['AWS_ACCESS_KEY_ID'] = self.aws_access_key_id.get_secret_value()
+        if self.aws_secret_access_key:
+            os.environ['AWS_SECRET_ACCESS_KEY'] = (
+                self.aws_secret_access_key.get_secret_value()
+            )
+        if self.aws_region_name:
+            os.environ['AWS_REGION_NAME'] = self.aws_region_name

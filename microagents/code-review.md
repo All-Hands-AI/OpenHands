@@ -47,8 +47,8 @@ Then, for each issue you find:
 - Suggest a concrete improvement
 
 Use the following structure in your output:
-[Line 42] :hammer_and_wrench: Unused import: The 'os' module is imported but never used. Remove it to clean up the code.
-[Lines 78–85] :mag: Readability: This nested if-else block is hard to follow. Consider refactoring into smaller functions or using early returns.
-[Line 102] :closed_lock_with_key: Security Risk: User input is directly concatenated into an SQL query. This could allow SQL injection. Use parameterized queries instead.
+[src/utils.py, Line 42] :hammer_and_wrench: Unused import: The 'os' module is imported but never used. Remove it to clean up the code.
+[src/database.py, Lines 78–85] :mag: Readability: This nested if-else block is hard to follow. Consider refactoring into smaller functions or using early returns.
+[src/auth.py, Line 102] :closed_lock_with_key: Security Risk: User input is directly concatenated into an SQL query. This could allow SQL injection. Use parameterized queries instead.
 
 REMEMBER, DO NOT MODIFY THE CODE. ONLY PROVIDE FEEDBACK IN YOUR RESPONSE.

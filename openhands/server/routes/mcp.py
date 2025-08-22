@@ -28,21 +28,23 @@ mcp_server = FastMCP(
 )
 
 HOST = f'https://{os.getenv("WEB_HOST", "app.all-hands.dev").strip()}'
-CONVO_URL = HOST + '/conversations/{}'
+CONVERSATION_URL = HOST + '/conversations/{}'
 
 
-async def get_convo_link(service: GitService, conversation_id: str, body: str) -> str:
+async def get_conversation_link(
+    service: GitService, conversation_id: str, body: str
+) -> str:
     """Appends a followup link, in the PR body, to the OpenHands conversation that opened the PR"""
     if server_config.app_mode != AppMode.SAAS:
         return body
 
     user = await service.get_user()
     username = user.login
-    convo_url = CONVO_URL.format(conversation_id)
-    convo_link = (
-        f'@{username} can click here to [continue refining the PR]({convo_url})'
+    conversation_url = CONVERSATION_URL.format(conversation_id)
+    conversation_link = (
+        f'@{username} can click here to [continue refining the PR]({conversation_url})'
     )
-    body += f'\n\n{convo_link}'
+    body += f'\n\n{conversation_link}'
     return body
 
 
@@ -68,10 +70,12 @@ async def save_pr_metadata(
         pr_number = int(match_merge_request.group(1))
 
     if pr_number:
-        logger.info(f'Saving PR number: {pr_number} for convo {conversation_id}')
+        logger.info(f'Saving PR number: {pr_number} for conversation {conversation_id}')
         conversation.pr_number.append(pr_number)
     else:
-        logger.warning(f'Failed to extract PR number for convo {conversation_id}')
+        logger.warning(
+            f'Failed to extract PR number for conversation {conversation_id}'
+        )
 
     await conversation_store.save_metadata(conversation)
 
@@ -116,9 +120,9 @@ async def create_pr(
     )
 
     try:
-        body = await get_convo_link(github_service, conversation_id, body or '')
+        body = await get_conversation_link(github_service, conversation_id, body or '')
     except Exception as e:
-        logger.warning(f'Failed to append convo link: {e}')
+        logger.warning(f'Failed to append conversation link: {e}')
 
     try:
         response = await github_service.create_pr(
@@ -186,11 +190,11 @@ async def create_mr(
     )
 
     try:
-        description = await get_convo_link(
+        description = await get_conversation_link(
             gitlab_service, conversation_id, description or ''
         )
     except Exception as e:
-        logger.warning(f'Failed to append convo link: {e}')
+        logger.warning(f'Failed to append conversation link: {e}')
 
     try:
         response = await gitlab_service.create_mr(
@@ -253,11 +257,11 @@ async def create_bitbucket_pr(
     )
 
     try:
-        description = await get_convo_link(
+        description = await get_conversation_link(
             bitbucket_service, conversation_id, description or ''
         )
     except Exception as e:
-        logger.warning(f'Failed to append convo link: {e}')
+        logger.warning(f'Failed to append conversation link: {e}')
 
     try:
         response = await bitbucket_service.create_pr(

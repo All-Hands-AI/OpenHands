@@ -115,9 +115,12 @@ class CmdOutputObservation(Observation):
         **kwargs: Any,
     ) -> None:
         # Truncate content before passing it to parent
-        truncated_content = self._maybe_truncate(content)
+        # Hidden commands don't go through LLM/event stream, so no need to truncate
+        truncate = not hidden
+        if truncate:
+            content = self._maybe_truncate(content)
 
-        super().__init__(truncated_content)
+        super().__init__(content)
 
         self.command = command
         self.observation = observation

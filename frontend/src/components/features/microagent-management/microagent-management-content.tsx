@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { MicroagentManagementSidebar } from "./microagent-management-sidebar";
 import { MicroagentManagementMain } from "./microagent-management-main";
@@ -25,6 +26,12 @@ import { GitRepository } from "#/types/git";
 import { queryClient } from "#/query-client-config";
 import { Provider } from "#/types/settings";
 import { MicroagentManagementLearnThisRepoModal } from "./microagent-management-learn-this-repo-modal";
+import {
+  displaySuccessToast,
+  displayErrorToast,
+} from "#/utils/custom-toast-handlers";
+import { getFirstPRUrl } from "#/utils/parse-pr-url";
+import { I18nKey } from "#/i18n/declaration";
 
 // Handle error events
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
@@ -112,6 +119,8 @@ export function MicroagentManagementContent() {
     learnThisRepoModalVisible,
   } = useSelector((state: RootState) => state.microagentManagement);
 
+  const { t } = useTranslation();
+
   const dispatch = useDispatch();
 
   const { createConversationAndSubscribe, isPending } =
@@ -158,6 +167,37 @@ export function MicroagentManagementContent() {
         selectedRepository && typeof selectedRepository === "object"
           ? (selectedRepository as GitRepository).full_name
           : "";
+
+      // Check if agent is running and ready to work
+      if (
+        isOpenHandsEvent(socketEvent) &&
+        isAgentStateChangeObservation(socketEvent) &&
+        socketEvent.extras.agent_state === AgentState.RUNNING
+      ) {
+        displaySuccessToast(
+          t(I18nKey.MICROAGENT_MANAGEMENT$OPENING_PR_TO_CREATE_MICROAGENT),
+        );
+      }
+
+      // Check if agent has finished and we have a PR
+      if (isOpenHandsEvent(socketEvent) && isFinishAction(socketEvent)) {
+        const prUrl = getFirstPRUrl(socketEvent.args.final_thought || "");
+        if (prUrl) {
+          displaySuccessToast(
+            t(I18nKey.MICROAGENT_MANAGEMENT$PR_READY_FOR_REVIEW),
+          );
+        } else {
+          // Agent finished but no PR found
+          displaySuccessToast(t(I18nKey.MICROAGENT_MANAGEMENT$PR_NOT_CREATED));
+        }
+      }
+
+      // Handle error events
+      if (isErrorEvent(socketEvent) || isAgentStatusError(socketEvent)) {
+        displayErrorToast(
+          t(I18nKey.MICROAGENT_MANAGEMENT$ERROR_CREATING_MICROAGENT),
+        );
+      }
 
       if (shouldInvalidateConversationsList(socketEvent)) {
         invalidateConversationsList(repositoryName);

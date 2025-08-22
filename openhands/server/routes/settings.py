@@ -162,6 +162,22 @@ async def store_settings(
                 settings.remote_runtime_resource_factor
             )
 
+        # Update git configuration with new settings
+        git_config_updated = False
+        if settings.git_user_name is not None:
+            config.git_user_name = settings.git_user_name
+            git_config_updated = True
+        if settings.git_user_email is not None:
+            config.git_user_email = settings.git_user_email
+            git_config_updated = True
+
+        # Note: Git configuration will be applied when new sessions are initialized
+        # Existing sessions will continue with their current git configuration
+        if git_config_updated:
+            logger.info(
+                f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}'
+            )
+
         settings = convert_to_settings(settings)
         await settings_store.store(settings)
         return JSONResponse(
