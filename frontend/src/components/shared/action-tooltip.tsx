@@ -11,18 +11,19 @@ interface ActionTooltipProps {
 export function ActionTooltip({ type, onClick }: ActionTooltipProps) {
   const { t } = useTranslation();
 
-  const ariaLabel =
-    type === "confirm" ? t(I18nKey.ACTION$CONFIRM) : t(I18nKey.ACTION$REJECT);
+  const isConfirm = type === "confirm";
 
-  const content =
-    type === "confirm"
-      ? t(I18nKey.CHAT_INTERFACE$USER_CONFIRMED)
-      : t(I18nKey.CHAT_INTERFACE$USER_REJECTED);
+  const ariaLabel = isConfirm
+    ? t(I18nKey.ACTION$CONFIRM)
+    : t(I18nKey.ACTION$REJECT);
 
-  const buttonLabel =
-    type === "confirm"
-      ? `${t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)} ⌘↩`
-      : `${t(I18nKey.BUTTON$CANCEL)} ⇧⌘⌫`;
+  const content = isConfirm
+    ? t(I18nKey.CHAT_INTERFACE$USER_CONFIRMED)
+    : t(I18nKey.CHAT_INTERFACE$USER_REJECTED);
+
+  const buttonLabel = isConfirm
+    ? `${t(I18nKey.CHAT_INTERFACE$INPUT_CONTINUE_MESSAGE)} ⌘↩`
+    : `${t(I18nKey.BUTTON$CANCEL)} ⇧⌘⌫`;
 
   return (
     <Tooltip content={content} closeDelay={100}>
