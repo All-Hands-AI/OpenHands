@@ -5,6 +5,7 @@ Default base_url is https://app.all-hands.dev.
 
 from __future__ import annotations
 
+import argparse
 import os
 import time
 from pathlib import Path
@@ -134,3 +135,27 @@ class OpenHandsAPI:
         data = {'body': comment}
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
+
+
+def cli_create_convo_from_prompt():
+    parser = argparse.ArgumentParser(description='Create an OpenHands conversation from a prompt file')
+    parser.add_argument('--prompt', required=True, help='Path to the main prompt file (e.g., scripts/prompts/architecture_refresh.j2)')
+    parser.add_argument('--repo', required=False, help='owner/repo to associate in conversation')
+    parser.add_argument('--append-common-tail', action='store_true', help='Append common_tail.j2 if present')
+    parser.add_argument('--common-tail', default='scripts/prompts/common_tail.j2', help='Path to common tail file')
+    parser.add_argument('--base-url', default='https://app.all-hands.dev', help='OpenHands API base URL')
+    args = parser.parse_args()
+
+    client = OpenHandsAPI(base_url=args.base_url)
+    resp = client.create_conversation_from_files(
+        main_prompt_path=args.prompt,
+        repository=args.repo,
+        append_common_tail=args.append_common_tail,
+        common_tail_path=args.common_tail,
+    )
+    print(resp.get('conversation_id') or resp)
+
+
+if __name__ == '__main__':
+    cli_create_convo_from_prompt()
+
