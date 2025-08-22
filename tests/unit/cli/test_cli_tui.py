@@ -6,7 +6,7 @@ from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
-    convert_markdown_to_html,
+    _render_basic_markdown,
     display_banner,
     display_command,
     display_event,
@@ -506,88 +506,35 @@ class TestMCPTUIDisplay:
 
 
 class TestMarkdownRendering:
-    """Minimal tests for markdown rendering in CLI TUI."""
+    """Minimal tests for basic markdown handling in CLI TUI.
 
-    def test_convert_markdown_to_html_empty_string(self):
-        result = convert_markdown_to_html('')
-        assert result == ''
+    We only support bold (**) and underline (__). All HTML is escaped.
+    """
 
-    def test_convert_markdown_to_html_none_input(self):
-        result = convert_markdown_to_html(None)
-        assert result is None
+    def test_empty_string(self):
+        assert _render_basic_markdown('') == ''
 
-    def test_convert_markdown_to_html_plain_text(self):
+    def test_none_input(self):
+        assert _render_basic_markdown(None) is None
+
+    def test_plain_text(self):
         text = 'Plain text without markdown'
-        result = convert_markdown_to_html(text)
-        assert result == '<p>Plain text without markdown</p>'
+        assert _render_basic_markdown(text) == text
 
-    def test_convert_markdown_to_html_headers(self):
-        # Verify headers are converted to bold with a leading newline before <b>
-        test_cases = [
-            ('# H1', '\n<b># H1</b>\n'),
-            ('## H2', '\n<b>## H2</b>\n'),
-            ('### H3', '\n<b>### H3</b>\n'),
-        ]
-        for md, expected in test_cases:
-            out = convert_markdown_to_html(md)
-            assert expected in out
-            # Ensure raw <h*> tags are not present
-            assert '<h1>' not in out and '</h1>' not in out
-            assert '<h2>' not in out and '</h2>' not in out
-            assert '<h3>' not in out and '</h3>' not in out
+    def test_bold(self):
+        assert _render_basic_markdown('**bold**') == '<b>bold</b>'
 
-    def test_headers_have_leading_newline(self):
-        md = '# Title\n\n## Subtitle'
-        out = convert_markdown_to_html(md)
-        assert '\n<b># Title</b>\n' in out
-        assert '\n<b>## Subtitle</b>\n' in out
+    def test_underline(self):
+        assert _render_basic_markdown('__under__') == '<u>under</u>'
 
-    def test_convert_markdown_to_html_unordered_lists(self):
-        md = '- Item 1\n- Item 2\n- Item 3'
-        out = convert_markdown_to_html(md)
-        # ul/li tags removed, items rendered as dash lines
-        assert '<ul>' not in out and '</ul>' not in out
-        assert '<li>' not in out and '</li>' not in out
-        assert '- Item 1\n' in out
-        assert '- Item 2\n' in out
-        assert '- Item 3\n' in out
+    def test_combined(self):
+        assert _render_basic_markdown('a **b** and __u__') == 'a <b>b</b> and <u>u</u>'
 
-    def test_list_newlines_after_li_and_ul(self):
-        # A list followed by a header should have at least two newlines between
-        # the last list item and the header: one from </li> and one from </ul>
-        md = '- A\n- B\n\n## Next'
-        out = convert_markdown_to_html(md)
-        # Ordered appearance
-        end_last_item = out.find('- B') + len('- B')
-        header_idx = out.find('<b>## Next</b>')
-        assert end_last_item != -1 and header_idx != -1 and end_last_item < header_idx
-        gap = out[end_last_item:header_idx]
-        assert gap.count('\n') >= 2, (
-            f'Expected at least two newlines between last list item and header, got: {repr(gap)}'
+    def test_escape_html(self):
+        assert (
+            _render_basic_markdown('<b onclick="x">X</b>')
+            == '&lt;b onclick=&quot;x&quot;&gt;X&lt;/b&gt;'
         )
 
-    def test_convert_markdown_to_html_ordered_lists(self):
-        md = '1. One\n2. Two'
-        out = convert_markdown_to_html(md)
-        assert '<ol>' in out and '</ol>' in out
-        assert '- One' in out and '- Two' in out
-
-    def test_convert_markdown_to_html_inline_code(self):
-        out = convert_markdown_to_html('`x`')
-        assert out == '<p><code>x</code></p>'
-
-    def test_convert_markdown_to_html_code_blocks(self):
-        md = '```python\nprint("hello")\n```'
-        out = convert_markdown_to_html(md)
-        assert '<pre><code' in out and '</code></pre>' in out
-
-    def test_convert_markdown_to_html_code_blocks_with_language(self):
-        md = '```javascript\nconsole.log("hi");\n```'
-        out = convert_markdown_to_html(md)
-        assert '<pre><code class="language-javascript">' in out
-        assert 'console.log(&quot;hi&quot;);' in out
-
-    def test_convert_markdown_to_html_links(self):
-        md = '[OpenHands](https://openhands.ai)'
-        out = convert_markdown_to_html(md)
-        assert '<a href="https://openhands.ai">OpenHands</a>' in out
+    def test_bold_with_special_chars(self):
+        assert _render_basic_markdown('**x < y & z**') == '<b>x &lt; y &amp; z</b>'
