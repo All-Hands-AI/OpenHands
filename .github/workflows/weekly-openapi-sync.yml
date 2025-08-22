@@ -26,13 +26,7 @@ jobs:
 
       - name: Generate openapi.json from FastAPI app
         run: |
-          python - << 'PY'
-          import json
-          from openhands.server.app import app
-          spec = app.openapi()
-          with open('docs/openapi.json', 'w') as f:
-              json.dump(spec, f, indent=2)
-          PY
+          python scripts/update_openapi.py
 
       - name: Run pre-commit (python only)
         run: pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --all-files || true
