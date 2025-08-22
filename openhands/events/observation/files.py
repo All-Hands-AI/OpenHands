@@ -144,6 +144,10 @@ class FileEditObservation(Observation):
         Returns:
             A string containing the formatted diff visualization.
         """
+        # For OH_ACI edits, prefer the raw diff if available; otherwise show content
+        if self.impl_source == FileEditSource.OH_ACI:
+            return self.diff or (self.content or '')
+
         # Use cached diff if available
         if self._diff_cache is not None:
             return self._diff_cache

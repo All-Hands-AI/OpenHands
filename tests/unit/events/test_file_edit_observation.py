@@ -133,3 +133,46 @@ def test_file_edit_observation_context_lines():
         len(g['before_edits']) + len(g['after_edits']) for g in groups_2
     )
     assert total_lines_2 > total_lines_0
+
+
+def test_file_edit_observation_oh_aci_uses_diff_when_available():
+    """In OH_ACI mode, visualize_diff should prefer provided diff output."""
+    diff_text = (
+        '--- /test/new_file.txt\n'
+        '+++ /test/new_file.txt\n'
+        '@@ -0,0 +1,3 @@\n'
+        '+line 1\n'
+        '+line 2\n'
+        '+line 3\n'
+    )
+    obs = FileEditObservation(
+        path='/test/new_file.txt',
+        prev_exist=False,
+        old_content=None,
+        new_content=None,
+        impl_source=FileEditSource.OH_ACI,
+        content='[The file /test/new_file.txt is created with the provided content.]',
+        diff=diff_text,
+    )
+
+    out = obs.visualize_diff()
+    assert out == diff_text
+    assert 'no changes detected' not in out
+
+
+def test_file_edit_observation_oh_aci_falls_back_to_content():
+    """In OH_ACI mode when diff is not provided, use the raw content message."""
+    content_msg = '[The file /test/new_file.txt is created with the provided content.]'
+    obs = FileEditObservation(
+        path='/test/new_file.txt',
+        prev_exist=False,
+        old_content=None,
+        new_content=None,
+        impl_source=FileEditSource.OH_ACI,
+        content=content_msg,
+        diff=None,
+    )
+
+    out = obs.visualize_diff()
+    assert out == content_msg
+    assert 'no changes detected' not in out
