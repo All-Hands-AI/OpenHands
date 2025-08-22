@@ -123,7 +123,7 @@ const openHandsHandlers = [
   ),
 
   http.get("/api/options/security-analyzers", async () =>
-    HttpResponse.json(["mock-invariant"]),
+    HttpResponse.json(["llm", "none"]),
   ),
 
   http.post("http://localhost:3001/api/submit-feedback", async () => {
