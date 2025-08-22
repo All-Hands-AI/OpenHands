@@ -52,7 +52,7 @@ def get_config(
         sandbox_config=sandbox_config,
         workspace_mount_path=mount_path_on_host,
     )
-    config.save_trajectory_path=os.path.join(
+    config.save_trajectory_path = os.path.join(
         mount_path_on_host, f'traj_{task_short_name}.json'
     )
     config.max_budget_per_task = 4

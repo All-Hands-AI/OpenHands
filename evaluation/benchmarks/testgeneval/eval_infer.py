@@ -73,7 +73,7 @@ def get_config(instance: pd.Series) -> OpenHandsConfig:
 
     return get_openhands_config_for_eval(
         sandbox_config=sandbox_config,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),  # Different default runtime
+        runtime=os.environ.get('RUNTIME', 'docker'),  # Different default runtime
     )
 
 

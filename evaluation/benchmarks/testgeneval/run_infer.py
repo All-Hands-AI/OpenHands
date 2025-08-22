@@ -146,7 +146,7 @@ def get_config(
     config = get_openhands_config_for_eval(
         metadata=metadata,
         sandbox_config=sandbox_config,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
+        runtime=os.environ.get('RUNTIME', 'docker'),
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
