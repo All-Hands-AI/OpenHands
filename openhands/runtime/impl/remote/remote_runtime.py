@@ -380,6 +380,7 @@ class RemoteRuntime(ActionExecutionClient):
         if not token:
             return None
         assert self.runtime_url is not None and self.runtime_id is not None
+        logger.info(f'vscode_url runtime_url is {self.runtime_url}')
         parsed = urlparse(self.runtime_url)
         scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
         # Path mode if runtime_url path starts with /{id}
