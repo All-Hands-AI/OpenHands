@@ -1,7 +1,6 @@
 """OpenHands API Python helper for automation tasks.
 
-Default base_url is local server at http://localhost:3000.
-Use https://app.all-hands.dev as secondary non-default option.
+Default base_url is https://app.all-hands.dev.
 """
 
 from __future__ import annotations
@@ -20,13 +19,13 @@ class OpenHandsAPI:
     def __init__(
         self,
         api_key: str | None = None,
-        base_url: str = 'http://localhost:3000',
+        base_url: str = 'https://app.all-hands.dev',
     ):
         """Initialize the API client.
 
         Args:
             api_key: OpenHands API key. If not provided, will use OPENHANDS_API_KEY env var.
-            base_url: Base URL for the OpenHands API. Defaults to localhost:3000.
+            base_url: Base URL for the OpenHands API. Defaults to https://app.all-hands.dev.
         """
         self.api_key = api_key or os.getenv('OPENHANDS_API_KEY')
         if not self.api_key:
