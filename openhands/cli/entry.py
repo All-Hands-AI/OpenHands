@@ -1,5 +1,6 @@
 """Main entry point for OpenHands CLI with subcommand support."""
 
+import os
 import sys
 
 import openhands
@@ -8,6 +9,25 @@ from openhands.cli.gui_launcher import launch_gui_server
 from openhands.cli.main import run_cli_command
 from openhands.core.config import get_cli_parser
 from openhands.core.config.arg_utils import get_subparser
+
+
+def _maybe_preflight_mcp() -> None:
+    """Fail fast if MCP stdio binaries are missing."""
+    if sys.platform == 'win32':
+        return
+
+    mcp_config_path = os.environ.get('OPENHANDS_MCP_CONFIG') or os.environ.get(
+        'MCP_CONFIG'
+    )
+    if not mcp_config_path or not os.path.isfile(mcp_config_path):
+        return
+
+    try:
+        from openhands.cli.mcp_preflight import check_mcp_commands_exist
+    except ImportError:
+        return
+
+    check_mcp_commands_exist(mcp_config_path)
 
 
 def main():
@@ -30,24 +50,22 @@ def main():
 
     # Special case: no subcommand provided, simulate "openhands cli"
     if len(sys.argv) == 1 or (
-        len(sys.argv) > 1 and sys.argv[1] not in ['cli', 'serve']
+        len(sys.argv) > 1 and sys.argv[1] not in ('cli', 'serve')
     ):
-        # Inject 'cli' as default command
         sys.argv.insert(1, 'cli')
 
     args = parser.parse_args()
 
-    if hasattr(args, 'version') and args.version:
+    if getattr(args, 'version', False):
         print(f'OpenHands CLI version: {openhands.get_version()}')
         sys.exit(0)
 
     if args.command == 'serve':
         launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
-    elif args.command == 'cli' or args.command is None:
-        run_cli_command(args)
     else:
-        parser.print_help()
-        sys.exit(1)
+        # args.command == 'cli' or None
+        _maybe_preflight_mcp()
+        run_cli_command(args)
 
 
 if __name__ == '__main__':
