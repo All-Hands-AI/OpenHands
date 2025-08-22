@@ -63,7 +63,7 @@ async def load_settings(
                     provider_tokens_set[provider_type] = provider_token.host
 
         settings_with_token_data = GETSettingsModel(
-            **settings.model_dump(exclude='secrets_store'),
+            **settings.model_dump(exclude={'secrets_store'}),
             llm_api_key_set=settings.llm_api_key is not None
             and bool(settings.llm_api_key),
             search_api_key_set=settings.search_api_key is not None
@@ -72,6 +72,7 @@ async def load_settings(
         )
         settings_with_token_data.llm_api_key = None
         settings_with_token_data.search_api_key = None
+        settings_with_token_data.sandbox_api_key = None
         return settings_with_token_data
     except Exception as e:
         logger.warning(f'Invalid token: {e}')
@@ -96,9 +97,7 @@ async def load_settings(
     },
 )
 async def reset_settings() -> JSONResponse:
-    """
-    Resets user settings. (Deprecated)
-    """
+    """Resets user settings. (Deprecated)"""
     logger.warning('Deprecated endpoint /api/reset-settings called by user')
     return JSONResponse(
         status_code=status.HTTP_410_GONE,
@@ -161,6 +160,22 @@ async def store_settings(
         if settings.remote_runtime_resource_factor is not None:
             config.sandbox.remote_runtime_resource_factor = (
                 settings.remote_runtime_resource_factor
+            )
+
+        # Update git configuration with new settings
+        git_config_updated = False
+        if settings.git_user_name is not None:
+            config.git_user_name = settings.git_user_name
+            git_config_updated = True
+        if settings.git_user_email is not None:
+            config.git_user_email = settings.git_user_email
+            git_config_updated = True
+
+        # Note: Git configuration will be applied when new sessions are initialized
+        # Existing sessions will continue with their current git configuration
+        if git_config_updated:
+            logger.info(
+                f'Updated global git configuration: name={config.git_user_name}, email={config.git_user_email}'
             )
 
         settings = convert_to_settings(settings)

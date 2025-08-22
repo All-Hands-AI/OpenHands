@@ -16,7 +16,7 @@ export function SuggestionItem({ suggestion, onClick }: SuggestionItemProps) {
         type="button"
         data-testid="suggestion"
         onClick={() => onClick(suggestion.value)}
-        className="text-[16px] leading-6 -tracking-[0.01em] text-center w-full p-3 font-semibold"
+        className="text-[16px] leading-6 -tracking-[0.01em] text-center w-full p-3 font-semibold cursor-pointer"
       >
         {t(suggestion.label)}
       </button>

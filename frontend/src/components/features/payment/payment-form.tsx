@@ -64,7 +64,7 @@ export function PaymentForm() {
           onChange={handleTopUpInputChange}
           type="number"
           label={t(I18nKey.PAYMENT$ADD_FUNDS)}
-          placeholder="Specify an amount in USD to add - min $10"
+          placeholder={t(I18nKey.PAYMENT$SPECIFY_AMOUNT_USD)}
           className="w-[680px]"
           min={10}
           max={25000}

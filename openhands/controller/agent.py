@@ -3,21 +3,22 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from openhands.llm.llm_registry import LLMRegistry
+
 if TYPE_CHECKING:
     from openhands.controller.state.state import State
-    from openhands.core.config import AgentConfig
     from openhands.events.action import Action
     from openhands.events.action.message import SystemMessageAction
     from openhands.utils.prompt import PromptManager
 from litellm import ChatCompletionToolParam
 
+from openhands.core.config import AgentConfig
 from openhands.core.exceptions import (
     AgentAlreadyRegisteredError,
     AgentNotRegisteredError,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.event import EventSource
-from openhands.llm.llm import LLM
 from openhands.runtime.plugins import PluginRequirement
 
 
@@ -33,12 +34,16 @@ class Agent(ABC):
     _registry: dict[str, type['Agent']] = {}
     sandbox_plugins: list[PluginRequirement] = []
 
+    config_model: type[AgentConfig] = AgentConfig
+    """Class field that specifies the config model to use for the agent. Subclasses may override with a derived config model if needed."""
+
     def __init__(
         self,
-        llm: LLM,
-        config: 'AgentConfig',
+        config: AgentConfig,
+        llm_registry: LLMRegistry,
     ):
-        self.llm = llm
+        self.llm = llm_registry.get_llm_from_agent_config('agent', config)
+        self.llm_registry = llm_registry
         self.config = config
         self._complete = False
         self._prompt_manager: 'PromptManager' | None = None
@@ -52,8 +57,7 @@ class Agent(ABC):
         return self._prompt_manager
 
     def get_system_message(self) -> 'SystemMessageAction | None':
-        """
-        Returns a SystemMessageAction containing the system message and tools.
+        """Returns a SystemMessageAction containing the system message and tools.
         This will be added to the event stream as the first message.
 
         Returns:

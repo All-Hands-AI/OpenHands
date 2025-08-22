@@ -11,6 +11,7 @@ from litellm import (
 
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
+    CondensationRequestTool,
     FinishTool,
     IPythonTool,
     LLMBasedFileEditTool,
@@ -34,10 +35,13 @@ from openhands.events.action import (
     FileReadAction,
     IPythonRunCellAction,
     MessageAction,
+    TaskTrackingAction,
 )
+from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
+from openhands.llm.tool_names import TASK_TRACKER_TOOL_NAME
 
 
 def combine_thought(action: Action, thought: str) -> Action:
@@ -121,7 +125,6 @@ def response_to_actions(
             elif tool_call.function.name == FinishTool['function']['name']:
                 action = AgentFinishAction(
                     final_thought=arguments.get('message', ''),
-                    task_completed=arguments.get('task_completed', None),
                 )
 
             # ================================================
@@ -204,6 +207,12 @@ def response_to_actions(
                 action = AgentThinkAction(thought=arguments.get('thought', ''))
 
             # ================================================
+            # CondensationRequestAction
+            # ================================================
+            elif tool_call.function.name == CondensationRequestTool['function']['name']:
+                action = CondensationRequestAction()
+
+            # ================================================
             # BrowserTool
             # ================================================
             elif tool_call.function.name == BrowserTool['function']['name']:
@@ -212,6 +221,24 @@ def response_to_actions(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
                 action = BrowseInteractiveAction(browser_actions=arguments['code'])
+
+            # ================================================
+            # TaskTrackingAction
+            # ================================================
+            elif tool_call.function.name == TASK_TRACKER_TOOL_NAME:
+                if 'command' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "command" in tool call {tool_call.function.name}'
+                    )
+                if arguments['command'] == 'plan' and 'task_list' not in arguments:
+                    raise FunctionCallValidationError(
+                        f'Missing required argument "task_list" for "plan" command in tool call {tool_call.function.name}'
+                    )
+
+                action = TaskTrackingAction(
+                    command=arguments['command'],
+                    task_list=arguments.get('task_list', []),
+                )
 
             # ================================================
             # MCPAction (MCP)

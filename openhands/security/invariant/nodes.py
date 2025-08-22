@@ -32,7 +32,7 @@ class Message(Event):
     content: str | None
     tool_calls: list[ToolCall] | None = None
 
-    def __rich_repr__(
+    def __rich_repr__(  # type: ignore[override]
         self,
     ) -> Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]:
         # Print on separate line

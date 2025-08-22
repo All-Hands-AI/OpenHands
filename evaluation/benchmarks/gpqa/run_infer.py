@@ -38,8 +38,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -312,7 +312,7 @@ Ok now its time to start solving the question. Good luck!
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     # data split must be one of 'gpqa_main', 'gqpa_diamond', 'gpqa_experts', 'gpqa_extended'
     parser.add_argument(
         '--data-split',

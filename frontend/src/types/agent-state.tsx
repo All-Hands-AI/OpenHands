@@ -15,7 +15,8 @@ export enum AgentState {
 }
 
 export const RUNTIME_INACTIVE_STATES = [
+  AgentState.INIT,
   AgentState.LOADING,
-  AgentState.STOPPED,
+  // Removed AgentState.STOPPED to allow tabs to remain visible when agent is stopped
   AgentState.ERROR,
 ];

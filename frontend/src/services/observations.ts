@@ -13,8 +13,10 @@ export function handleObservationMessage(message: ObservationMessage) {
       let { content } = message;
 
       if (content.length > 5000) {
-        const head = content.slice(0, 5000);
-        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...`;
+        const halfLength = 2500;
+        const head = content.slice(0, halfLength);
+        const tail = content.slice(content.length - halfLength);
+        content = `${head}\r\n\n... (truncated ${message.content.length - 5000} characters) ...\r\n\n${tail}`;
       }
 
       store.dispatch(appendOutput({ content, isPartial: false }));
@@ -50,6 +52,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.RECALL:
     case ObservationType.ERROR:
     case ObservationType.MCP:
+    case ObservationType.TASK_TRACKING:
       break; // We don't display the default message for these observations
     default:
       break;

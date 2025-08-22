@@ -79,8 +79,7 @@ def split_bash_commands(commands: str) -> list[str]:
 
 
 def escape_bash_special_chars(command: str) -> str:
-    r"""
-    Escapes characters that have different interpretations in bash vs python.
+    r"""Escapes characters that have different interpretations in bash vs python.
     Specifically handles escape sequences like \;, \|, \&, etc.
     """
     if command.strip() == '':
@@ -230,7 +229,7 @@ class BashSession:
         )
         self.pane = self.window.active_pane
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
-        _initial_window.kill_window()
+        _initial_window.kill()
 
         # Configure bash to use simple PS1 and disable PS2
         self.pane.send_keys(
@@ -268,7 +267,7 @@ class BashSession:
         """Clean up the session."""
         if self._closed:
             return
-        self.session.kill_session()
+        self.session.kill()
         self._closed = True
 
     @property
@@ -313,7 +312,11 @@ class BashSession:
         return command_output.rstrip()
 
     def _handle_completed_command(
-        self, command: str, pane_content: str, ps1_matches: list[re.Match]
+        self,
+        command: str,
+        pane_content: str,
+        ps1_matches: list[re.Match],
+        hidden: bool,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -360,6 +363,7 @@ class BashSession:
             content=command_output,
             command=command,
             metadata=metadata,
+            hidden=hidden,
         )
 
     def _handle_nochange_timeout_command(
@@ -446,6 +450,7 @@ class BashSession:
             ps1_matches: List of regex matches for PS1 prompts
             get_content_before_last_match: when there's only one PS1 match, whether to get
                 the content before the last PS1 prompt (True) or after the last PS1 prompt (False)
+
         Returns:
             Combined string of all outputs between matches
         """
@@ -560,11 +565,9 @@ class BashSession:
             metadata = CmdOutputMetadata()  # No metadata available
             metadata.suffix = (
                 f'\n[Your command "{command}" is NOT executed. '
-                f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
+                'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
                 'By setting `is_input` to `true`, you can interact with the current process: '
-                "You may wait longer to see additional output of the previous command by sending empty command '', "
-                'send other commands to interact with the current process, '
-                'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+                f'{TIMEOUT_MESSAGE_TEMPLATE}]'
             )
             logger.debug(f'PREVIOUS COMMAND OUTPUT: {raw_command_output}')
             command_output = self._get_command_output(
@@ -577,6 +580,7 @@ class BashSession:
                 command=command,
                 content=command_output,
                 metadata=metadata,
+                hidden=getattr(action, 'hidden', False),
             )
 
         # Send actual command/inputs to the pane
@@ -653,6 +657,7 @@ class BashSession:
                     command,
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
+                    hidden=getattr(action, 'hidden', False),
                 )
                 # Send a final callback with the complete result and isComplete=True
                 if stream_callback:

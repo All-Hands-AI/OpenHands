@@ -1,6 +1,5 @@
 import asyncio
 import time
-from copy import deepcopy
 from logging import LoggerAdapter
 
 import socketio
@@ -10,9 +9,10 @@ from openhands.core.config import OpenHandsConfig
 from openhands.core.config.condenser_config import (
     BrowserOutputCondenserConfig,
     CondenserPipelineConfig,
+    ConversationWindowCondenserConfig,
     LLMSummarizingCondenserConfig,
 )
-from openhands.core.config.mcp_config import MCPConfig, OpenHandsMCPConfigImpl
+from openhands.core.config.mcp_config import OpenHandsMCPConfigImpl
 from openhands.core.exceptions import MicroagentValidationError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema import AgentState
@@ -27,13 +27,14 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
+from openhands.runtime.runtime_status import RuntimeStatus
+from openhands.server.constants import ROOM_KEY
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
-
-ROOM_KEY = 'room:{sid}'
 
 
 class Session:
@@ -44,6 +45,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: OpenHandsConfig
+    llm_registry: LLMRegistry
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -52,6 +54,8 @@ class Session:
         self,
         sid: str,
         config: OpenHandsConfig,
+        llm_registry: LLMRegistry,
+        conversation_stats: ConversationStats,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -61,17 +65,27 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.llm_registry = llm_registry
+        self.conversation_stats = conversation_stats
         self.agent_session = AgentSession(
             sid,
             file_store,
+            llm_registry=self.llm_registry,
+            conversation_stats=conversation_stats,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
-        # Copying this means that when we update variables they are not applied to the shared global configuration!
-        self.config = deepcopy(config)
+        self.config = config
+
+        # Lazy import to avoid circular dependency
+        from openhands.experiments.experiment_manager import ExperimentManagerImpl
+
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            user_id, sid, self.config
+        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -116,47 +130,76 @@ class Session:
             or settings.sandbox_runtime_container_image
             else self.config.sandbox.runtime_container_image
         )
+
+        # Set Git user configuration if provided in settings
+        git_user_name = getattr(settings, 'git_user_name', None)
+        if git_user_name is not None:
+            self.config.git_user_name = git_user_name
+        git_user_email = getattr(settings, 'git_user_email', None)
+        if git_user_email is not None:
+            self.config.git_user_email = git_user_email
         max_iterations = settings.max_iterations or self.config.max_iterations
 
-        # This is a shallow copy of the default LLM config, so changes here will
-        # persist if we retrieve the default LLM config again when constructing
-        # the agent
-        default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = settings.llm_model or ''
-        default_llm_config.api_key = settings.llm_api_key
-        default_llm_config.base_url = settings.llm_base_url
+        # Prioritize settings over config for max_budget_per_task
+        max_budget_per_task = (
+            settings.max_budget_per_task
+            if settings.max_budget_per_task is not None
+            else self.config.max_budget_per_task
+        )
+
         self.config.search_api_key = settings.search_api_key
+        if settings.sandbox_api_key:
+            self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
         # NOTE: this need to happen AFTER the config is updated with the search_api_key
-        self.config.mcp = settings.mcp_config or MCPConfig(
-            sse_servers=[], stdio_servers=[]
+        self.logger.debug(
+            f'MCP configuration before setup - self.config.mcp_config: {self.config.mcp}'
         )
+
+        # Check if settings has custom mcp_config
+        mcp_config = getattr(settings, 'mcp_config', None)
+        if mcp_config is not None:
+            # Use the provided MCP SHTTP servers instead of default setup
+            self.config.mcp = self.config.mcp.merge(mcp_config)
+            self.logger.debug(f'Merged custom MCP Config: {mcp_config}')
+
         # Add OpenHands' MCP server by default
         openhands_mcp_server, openhands_mcp_stdio_servers = (
             OpenHandsMCPConfigImpl.create_default_mcp_server_config(
                 self.config.mcp_host, self.config, self.user_id
             )
         )
+
         if openhands_mcp_server:
             self.config.mcp.shttp_servers.append(openhands_mcp_server)
-        self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+            self.logger.debug('Added default MCP HTTP server to config')
+
+            self.config.mcp.stdio_servers.extend(openhands_mcp_stdio_servers)
+
+        self.logger.debug(
+            f'MCP configuration after setup - self.config.mcp: {self.config.mcp}'
+        )
 
         # TODO: override other LLM config & agent config groups (#2075)
-
-        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
+        agent_name = agent_cls if agent_cls is not None else 'agent'
+        llm_config = self.config.get_llm_config_from_agent(agent_name)
         if settings.enable_default_condenser:
-            # Default condenser chains a condenser that limits browser the total
-            # size of browser observations with a condenser that limits the size
-            # of the view given to the LLM. The order matters: with the browser
-            # output first, the summarizer will only see the most recent browser
-            # output, which should keep the summarization cost down.
+            # Default condenser chains three condensers together:
+            # 1. a conversation window condenser that handles explicit
+            # condensation requests,
+            # 2. a condenser that limits the total size of browser observations,
+            # and
+            # 3. a condenser that limits the size of the view given to the LLM.
+            # The order matters: with the browser output first, the summarizer
+            # will only see the most recent browser output, which should keep
+            # the summarization cost down.
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
+                    ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=120
+                        llm_config=llm_config, keep_first=4, max_size=120
                     ),
                 ]
             )
@@ -164,12 +207,14 @@ class Session:
             self.logger.info(
                 f'Enabling pipeline condenser with:'
                 f' browser_output_masking(attention_window=2), '
-                f' llm(model="{llm.config.model}", '
-                f' base_url="{llm.config.base_url}", '
+                f' llm(model="{llm_config.model}", '
+                f' base_url="{llm_config.base_url}", '
                 f' keep_first=4, max_size=80)'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(agent_config, self.llm_registry)
+
+        self.llm_registry.retry_listner = self._notify_on_llm_retry
 
         git_provider_tokens = None
         selected_repository = None
@@ -189,7 +234,7 @@ class Session:
                 config=self.config,
                 agent=agent,
                 max_iterations=max_iterations,
-                max_budget_per_task=self.config.max_budget_per_task,
+                max_budget_per_task=max_budget_per_task,
                 agent_to_llm_config=self.config.get_agent_to_llm_config_map(),
                 agent_configs=self.config.get_agent_configs(),
                 git_provider_tokens=git_provider_tokens,
@@ -225,18 +270,9 @@ class Session:
             )
             return
 
-    def _create_llm(self, agent_cls: str | None) -> LLM:
-        """Initialize LLM, extracted for testing."""
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        return LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=self._notify_on_llm_retry,
-        )
-
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
-        msg_id = 'STATUS$LLM_RETRY'
         self.queue_status_message(
-            'info', msg_id, f'Retrying LLM request, {retries} / {max}'
+            'info', RuntimeStatus.LLM_RETRY, f'Retrying LLM request, {retries} / {max}'
         )
 
     def on_event(self, event: Event) -> None:
@@ -244,6 +280,7 @@ class Session:
 
     async def _on_event(self, event: Event) -> None:
         """Callback function for events that mainly come from the agent.
+
         Event is the base class for any agent action and observation.
 
         Args:
@@ -322,7 +359,9 @@ class Session:
         """Sends an error message to the client."""
         await self.send({'error': True, 'message': message})
 
-    async def _send_status_message(self, msg_type: str, id: str, message: str) -> None:
+    async def _send_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Sends a status message to the client."""
         if msg_type == 'error':
             agent_session = self.agent_session
@@ -334,11 +373,18 @@ class Session:
                 extra={'signal': 'agent_status_error'},
             )
         await self.send(
-            {'status_update': True, 'type': msg_type, 'id': id, 'message': message}
+            {
+                'status_update': True,
+                'type': msg_type,
+                'id': runtime_status.value,
+                'message': message,
+            }
         )
 
-    def queue_status_message(self, msg_type: str, id: str, message: str) -> None:
+    def queue_status_message(
+        self, msg_type: str, runtime_status: RuntimeStatus, message: str
+    ) -> None:
         """Queues a status message to be sent asynchronously."""
         asyncio.run_coroutine_threadsafe(
-            self._send_status_message(msg_type, id, message), self.loop
+            self._send_status_message(msg_type, runtime_status, message), self.loop
         )

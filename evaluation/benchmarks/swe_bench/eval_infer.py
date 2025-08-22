@@ -26,7 +26,7 @@ from evaluation.utils.shared import (
 from openhands.core.config import (
     LLMConfig,
     OpenHandsConfig,
-    get_parser,
+    get_evaluation_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime
@@ -111,8 +111,7 @@ def process_instance(
     runtime_failure_count: int = 0,
     conditional_imports: ConditionalImports | None = None,
 ) -> EvalOutput:
-    """
-    Evaluate agent performance on a SWE-bench problem instance.
+    """Evaluate agent performance on a SWE-bench problem instance.
 
     Note that this signature differs from the expected input to `run_evaluation`. Use
     `functools.partial` to provide optional arguments before passing to the evaluation harness.
@@ -353,7 +352,7 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--input-file',
         type=str,

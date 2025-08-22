@@ -6,14 +6,17 @@ from openhands.core.config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.message import MessageAction
 from openhands.events.event import EventSource
-from openhands.events.stream import EventStream
-from openhands.llm.llm import LLM
+from openhands.events.event_store import EventStore
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
 
 
 async def generate_conversation_title(
-    message: str, llm_config: LLMConfig, max_length: int = 50
+    message: str,
+    llm_config: LLMConfig,
+    llm_registry: LLMRegistry,
+    max_length: int = 50,
 ) -> Optional[str]:
     """Generate a concise title for a conversation based on the first user message.
 
@@ -35,8 +38,6 @@ async def generate_conversation_title(
         truncated_message = message
 
     try:
-        llm = LLM(llm_config)
-
         # Create a simple prompt for the LLM to generate a title
         messages = [
             {
@@ -49,8 +50,9 @@ async def generate_conversation_title(
             },
         ]
 
-        response = llm.completion(messages=messages)
-        title = response.choices[0].message.content.strip()
+        title = llm_registry.request_extraneous_completion(
+            'conversation_title_creator', llm_config, messages
+        )
 
         # Ensure the title isn't too long
         if len(title) > max_length:
@@ -63,8 +65,7 @@ async def generate_conversation_title(
 
 
 def get_default_conversation_title(conversation_id: str) -> str:
-    """
-    Generate a default title for a conversation based on its ID.
+    """Generate a default title for a conversation based on its ID.
 
     Args:
         conversation_id: The ID of the conversation
@@ -76,10 +77,13 @@ def get_default_conversation_title(conversation_id: str) -> str:
 
 
 async def auto_generate_title(
-    conversation_id: str, user_id: str | None, file_store: FileStore, settings: Settings
+    conversation_id: str,
+    user_id: str | None,
+    file_store: FileStore,
+    settings: Settings,
+    llm_registry: LLMRegistry,
 ) -> str:
-    """
-    Auto-generate a title for a conversation based on the first user message.
+    """Auto-generate a title for a conversation based on the first user message.
     Uses LLM-based title generation if available, otherwise falls back to a simple truncation.
 
     Args:
@@ -90,12 +94,12 @@ async def auto_generate_title(
         A generated title string
     """
     try:
-        # Create an event stream for the conversation
-        event_stream = EventStream(conversation_id, file_store, user_id)
+        # Create an event store for the conversation
+        event_store = EventStore(conversation_id, file_store, user_id)
 
         # Find the first user message
         first_user_message = None
-        for event in event_stream.search_events():
+        for event in event_store.search_events():
             if (
                 event.source == EventSource.USER
                 and isinstance(event, MessageAction)
@@ -118,7 +122,7 @@ async def auto_generate_title(
 
                     # Try to generate title using LLM
                     llm_title = await generate_conversation_title(
-                        first_user_message, llm_config
+                        first_user_message, llm_config, llm_registry
                     )
                     if llm_title:
                         logger.info(f'Generated title using LLM: {llm_title}')

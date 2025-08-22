@@ -41,6 +41,10 @@ default, it is set to 1.
 - `language`, the language of your evaluating dataset.
 - `dataset`, the absolute position of the dataset jsonl.
 
+**Skipping errors on build**
+
+For debugging purposes, you can set `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=true` to continue evaluation even when instances reach maximum retries. After evaluation completes, check `maximum_retries_exceeded.jsonl` for a list of failed instances, fix those issues, and then run the evaluation again with `export EVAL_SKIP_MAXIMUM_RETRIES_EXCEEDED=false`.
+
 The results will be generated in evaluation/evaluation_outputs/outputs/XXX/CodeActAgent/YYY/output.jsonl, you can refer to the [example](examples/output.jsonl).
 
 ## Runing evaluation

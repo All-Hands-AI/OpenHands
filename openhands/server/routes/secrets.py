@@ -33,12 +33,10 @@ app = APIRouter(prefix='/api', dependencies=get_dependencies())
 async def invalidate_legacy_secrets_store(
     settings: Settings, settings_store: SettingsStore, secrets_store: SecretsStore
 ) -> UserSecrets | None:
-    """
-    We are moving `secrets_store` (a field from `Settings` object) to its own dedicated store
+    """We are moving `secrets_store` (a field from `Settings` object) to its own dedicated store
     This function moves the values from Settings to UserSecrets, and deletes the values in Settings
     While this function in called multiple times, the migration only ever happens once
     """
-
     if len(settings.secrets_store.provider_tokens.items()) > 0:
         user_secrets = UserSecrets(
             provider_tokens=settings.secrets_store.provider_tokens
@@ -239,10 +237,10 @@ async def create_custom_secret(
 
         # Create a new UserSecrets that preserves provider tokens
         updated_user_secrets = UserSecrets(
-            custom_secrets=custom_secrets,
+            custom_secrets=custom_secrets,  # type: ignore[arg-type]
             provider_tokens=existing_secrets.provider_tokens
             if existing_secrets
-            else {},
+            else {},  # type: ignore[arg-type]
         )
 
         await secrets_store.store(updated_user_secrets)
@@ -293,7 +291,7 @@ async def update_custom_secret(
             )
 
             updated_secrets = UserSecrets(
-                custom_secrets=custom_secrets,
+                custom_secrets=custom_secrets,  # type: ignore[arg-type]
                 provider_tokens=existing_secrets.provider_tokens,
             )
 
@@ -334,7 +332,7 @@ async def delete_custom_secret(
 
             # Create a new UserSecrets that preserves provider tokens and remaining secrets
             updated_secrets = UserSecrets(
-                custom_secrets=custom_secrets,
+                custom_secrets=custom_secrets,  # type: ignore[arg-type]
                 provider_tokens=existing_secrets.provider_tokens,
             )
 

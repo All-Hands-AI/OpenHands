@@ -38,6 +38,21 @@ On initial prompt, an error is seen with `Permission Denied` or `PermissionError
 * If mounting a local directory, ensure your `WORKSPACE_BASE` has the necessary permissions for the user running
   OpenHands.
 
+### Internal Server Error. Ports are not available
+
+**Description**
+
+When running on Windows, the error `Internal Server Error ("ports are not available: exposing port TCP
+...: bind: An attempt was made to access a socket in a
+way forbidden by its access permissions.")` is encountered.
+
+**Resolution**
+
+* Run the following command in PowerShell, as Administrator to reset the NAT service and release the ports:
+```
+Restart-Service -Name "winnat"
+```
+
 ### Unable to access VS Code tab via local IP
 
 **Description**

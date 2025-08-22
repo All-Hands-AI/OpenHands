@@ -1,5 +1,6 @@
 import io
 import re
+from itertools import chain
 from pathlib import Path
 from typing import Union
 
@@ -39,7 +40,11 @@ class BaseMicroagent(BaseModel):
         # Otherwise, we will rely on the name from metadata later
         derived_name = None
         if microagent_dir is not None:
-            derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+            # Special handling for .cursorrules files which are not in microagent_dir
+            if path.name == '.cursorrules':
+                derived_name = 'cursorrules'
+            else:
+                derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
@@ -56,12 +61,26 @@ class BaseMicroagent(BaseModel):
                 type=MicroagentType.REPO_KNOWLEDGE,
             )
 
+        # Handle .cursorrules files
+        if path.name == '.cursorrules':
+            return RepoMicroagent(
+                name='cursorrules',
+                content=file_content,
+                metadata=MicroagentMetadata(name='cursorrules'),
+                source=str(path),
+                type=MicroagentType.REPO_KNOWLEDGE,
+            )
+
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
         content = loaded.content
 
         # Handle case where there's no frontmatter or empty frontmatter
         metadata_dict = loaded.metadata or {}
+
+        # Ensure version is always a string (YAML may parse numeric versions as integers)
+        if 'version' in metadata_dict and not isinstance(metadata_dict['version'], str):
+            metadata_dict['version'] = str(metadata_dict['version'])
 
         try:
             metadata = MicroagentMetadata(**metadata_dict)
@@ -258,10 +277,15 @@ def load_microagents_from_dir(
     # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
     if microagent_dir.exists():
-        for file in microagent_dir.rglob('*.md'):
-            # skip README.md
-            if file.name == 'README.md':
-                continue
+        # Collect .cursorrules file from repo root and .md files from microagents dir
+        cursorrules_files = []
+        if (microagent_dir.parent.parent / '.cursorrules').exists():
+            cursorrules_files = [microagent_dir.parent.parent / '.cursorrules']
+
+        md_files = [f for f in microagent_dir.rglob('*.md') if f.name != 'README.md']
+
+        # Process all files in one loop
+        for file in chain(cursorrules_files, md_files):
             try:
                 agent = BaseMicroagent.load(file, microagent_dir)
                 if isinstance(agent, RepoMicroagent):

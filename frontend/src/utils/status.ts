@@ -47,7 +47,8 @@ export function getIndicatorColor(
     webSocketStatus === "DISCONNECTED" ||
     conversationStatus === "STOPPED" ||
     runtimeStatus === "STATUS$STOPPED" ||
-    agentState === AgentState.STOPPED
+    agentState === AgentState.STOPPED ||
+    agentState === AgentState.ERROR
   ) {
     return IndicatorColor.RED;
   }
@@ -88,11 +89,15 @@ export function getStatusCode(
   if (conversationStatus === "STOPPED" || runtimeStatus === "STATUS$STOPPED") {
     return I18nKey.CHAT_INTERFACE$STOPPED;
   }
-  if (runtimeStatus === "STATUS$BUILDING_RUNTIME") {
-    return I18nKey.STATUS$BUILDING_RUNTIME;
-  }
-  if (runtimeStatus === "STATUS$STARTING_RUNTIME") {
-    return I18nKey.STATUS$STARTING_RUNTIME;
+  if (
+    runtimeStatus &&
+    !["STATUS$READY", "STATUS$RUNTIME_STARTED"].includes(runtimeStatus)
+  ) {
+    const result = (I18nKey as { [key: string]: string })[runtimeStatus];
+    if (result) {
+      return result;
+    }
+    return runtimeStatus;
   }
   if (webSocketStatus === "DISCONNECTED") {
     return I18nKey.CHAT_INTERFACE$DISCONNECTED;
@@ -117,5 +122,5 @@ export function getStatusCode(
     return runtimeStatus;
   }
 
-  return "STATUS$ERROR"; // illegal state
+  return I18nKey.CHAT_INTERFACE$AGENT_ERROR_MESSAGE;
 }

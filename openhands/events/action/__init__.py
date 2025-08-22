@@ -6,6 +6,7 @@ from openhands.events.action.agent import (
     AgentThinkAction,
     ChangeAgentStateAction,
     RecallAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
@@ -38,4 +39,5 @@ __all__ = [
     'AgentThinkAction',
     'RecallAction',
     'MCPAction',
+    'TaskTrackingAction',
 ]

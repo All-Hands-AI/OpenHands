@@ -14,6 +14,7 @@ interface UserAvatarProps {
 
 export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
   const { t } = useTranslation();
+
   return (
     <TooltipButton
       testId="user-avatar"
@@ -21,7 +22,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
       ariaLabel={t(I18nKey.USER$ACCOUNT_SETTINGS)}
       onClick={onClick}
       className={cn(
-        "w-8 h-8 rounded-full flex items-center justify-center",
+        "w-8 h-8 rounded-full flex items-center justify-center cursor-pointer",
         isLoading && "bg-transparent",
       )}
     >

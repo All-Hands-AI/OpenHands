@@ -42,19 +42,28 @@ _DUMMY_PAGE = _CachePage(None, 1, -1)
 
 @dataclass
 class EventStore(EventStoreABC):
-    """
-    A stored list of events backing a conversation
-    """
+    """A stored list of events backing a conversation"""
 
     sid: str
     file_store: FileStore
     user_id: str | None
-    cur_id: int = -1  # We fix this in post init if it is not specified
     cache_size: int = 25
+    _cur_id: int | None = None  # Private field to cache the calculated value
 
-    def __post_init__(self) -> None:
-        if self.cur_id >= 0:
-            return
+    @property
+    def cur_id(self) -> int:
+        """Lazy calculated property for the current event ID."""
+        if self._cur_id is None:
+            self._cur_id = self._calculate_cur_id()
+        return self._cur_id
+
+    @cur_id.setter
+    def cur_id(self, value: int) -> None:
+        """Setter for cur_id to allow updates."""
+        self._cur_id = value
+
+    def _calculate_cur_id(self) -> int:
+        """Calculate the current event ID based on file system content."""
         events = []
         try:
             events_dir = get_conversation_events_dir(self.sid, self.user_id)
@@ -63,14 +72,15 @@ class EventStore(EventStoreABC):
             logger.debug(f'No events found for session {self.sid} at {events_dir}')
 
         if not events:
-            self.cur_id = 0
-            return
+            return 0
 
         # if we have events, we need to find the highest id to prepare for new events
+        max_id = -1
         for event_str in events:
             id = self._get_id_from_filename(event_str)
-            if id >= self.cur_id:
-                self.cur_id = id + 1
+            if id >= max_id:
+                max_id = id
+        return max_id + 1
 
     def search_events(
         self,
@@ -80,8 +90,7 @@ class EventStore(EventStoreABC):
         filter: EventFilter | None = None,
         limit: int | None = None,
     ) -> Iterable[Event]:
-        """
-        Retrieve events from the event stream, optionally filtering out events of a given type
+        """Retrieve events from the event stream, optionally filtering out events of a given type
         and events marked as hidden.
 
         Args:
@@ -93,7 +102,6 @@ class EventStore(EventStoreABC):
         Yields:
             Events from the stream that match the criteria.
         """
-
         if end_id is None:
             end_id = self.cur_id
         else:

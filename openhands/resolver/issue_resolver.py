@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
@@ -70,7 +71,6 @@ class IssueResolver:
             comment_id: Optional ID of a specific comment to focus on.
             base_domain: The base domain for the git server.
         """
-
         parts = args.selected_repo.rsplit('/', 1)
         if len(parts) < 2:
             raise ValueError('Invalid repository format. Expected owner/repo')
@@ -149,6 +149,7 @@ class IssueResolver:
             args.base_container_image,
             args.runtime_container_image,
             args.is_experimental,
+            args.runtime,
         )
 
         self.owner = owner
@@ -182,9 +183,11 @@ class IssueResolver:
         base_container_image: str | None,
         runtime_container_image: str | None,
         is_experimental: bool,
+        runtime: str | None = None,
     ) -> OpenHandsConfig:
         config.default_agent = 'CodeActAgent'
-        config.runtime = 'docker'
+        # Use provided runtime or fallback to config value or default to 'docker'
+        config.runtime = runtime or config.runtime or 'docker'
         config.max_budget_per_task = 4
         config.max_iterations = max_iterations
 
@@ -410,7 +413,8 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        runtime = create_runtime(self.app_config)
+        llm_registry = LLMRegistry(self.app_config)
+        runtime = create_runtime(self.app_config, llm_registry)
         await runtime.connect()
 
         def on_event(evt: Event) -> None:
@@ -537,7 +541,6 @@ class IssueResolver:
         Args:
             reset_logger: Whether to reset the logger for multiprocessing.
         """
-
         issue = self.extract_issue()
 
         if self.comment_id is not None:

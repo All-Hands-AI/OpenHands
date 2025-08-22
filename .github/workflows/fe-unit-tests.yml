@@ -9,8 +9,8 @@ on:
       - main
   pull_request:
     paths:
-      - 'frontend/**'
-      -  '.github/workflows/fe-unit-tests.yml'
+      - "frontend/**"
+      - ".github/workflows/fe-unit-tests.yml"
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -24,7 +24,7 @@ jobs:
     runs-on: blacksmith-4vcpu-ubuntu-2204
     strategy:
       matrix:
-        node-version: [20, 22]
+        node-version: [22]
       fail-fast: true
     steps:
       - name: Checkout
@@ -38,7 +38,7 @@ jobs:
         run: npm ci
       - name: Run TypeScript compilation
         working-directory: ./frontend
-        run: npm run make-i18n && tsc
+        run: npm run build
       - name: Run tests and collect coverage
         working-directory: ./frontend
         run: npm run test:coverage

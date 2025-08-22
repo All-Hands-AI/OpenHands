@@ -10,13 +10,12 @@ from pytest import TempPathFactory
 from openhands.core.config import MCPConfig, OpenHandsConfig, load_openhands_config
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.base import Runtime
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
-from openhands.runtime.impl.daytona.daytona_runtime import DaytonaRuntime
 from openhands.runtime.impl.docker.docker_runtime import DockerRuntime
 from openhands.runtime.impl.local.local_runtime import LocalRuntime
 from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
-from openhands.runtime.impl.runloop.runloop_runtime import RunloopRuntime
 from openhands.runtime.plugins import AgentSkillsRequirement, JupyterRequirement
 from openhands.storage import get_file_store
 from openhands.utils.async_utils import call_async_from_sync
@@ -130,10 +129,6 @@ def get_runtime_classes() -> list[type[Runtime]]:
         return [LocalRuntime]
     elif runtime.lower() == 'remote':
         return [RemoteRuntime]
-    elif runtime.lower() == 'runloop':
-        return [RunloopRuntime]
-    elif runtime.lower() == 'daytona':
-        return [DaytonaRuntime]
     elif runtime.lower() == 'cli':
         return [CLIRuntime]
     else:
@@ -218,6 +213,7 @@ def _load_runtime(
     runtime_startup_env_vars: dict[str, str] | None = None,
     docker_runtime_kwargs: dict[str, str] | None = None,
     override_mcp_config: MCPConfig | None = None,
+    enable_browser: bool = False,
 ) -> tuple[Runtime, OpenHandsConfig]:
     sid = 'rt_' + str(random.randint(100000, 999999))
 
@@ -227,6 +223,7 @@ def _load_runtime(
 
     config = load_openhands_config()
     config.run_as_openhands = run_as_openhands
+    config.enable_browser = enable_browser
     config.sandbox.force_rebuild_runtime = force_rebuild_runtime
     config.sandbox.keep_runtime_alive = False
     config.sandbox.docker_runtime_kwargs = docker_runtime_kwargs
@@ -264,16 +261,21 @@ def _load_runtime(
         config.mcp = override_mcp_config
 
     file_store = file_store = get_file_store(
-        config.file_store,
-        config.file_store_path,
-        config.file_store_web_hook_url,
-        config.file_store_web_hook_headers,
+        file_store_type=config.file_store,
+        file_store_path=config.file_store_path,
+        file_store_web_hook_url=config.file_store_web_hook_url,
+        file_store_web_hook_headers=config.file_store_web_hook_headers,
+        file_store_web_hook_batch=config.file_store_web_hook_batch,
     )
     event_stream = EventStream(sid, file_store)
+
+    # Create a LLMRegistry instance for the runtime
+    llm_registry = LLMRegistry(config=OpenHandsConfig())
 
     runtime = runtime_cls(
         config=config,
         event_stream=event_stream,
+        llm_registry=llm_registry,
         sid=sid,
         plugins=plugins,
     )

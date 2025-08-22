@@ -6,6 +6,7 @@ import { AvailableLanguages } from "#/i18n";
 import { DEFAULT_SETTINGS } from "#/services/settings";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { SettingsInput } from "#/components/features/settings/settings-input";
 import { I18nKey } from "#/i18n/declaration";
 import { LanguageInput } from "#/components/features/settings/app-settings/language-input";
 import { handleCaptureConsent } from "#/utils/handle-capture-consent";
@@ -16,6 +17,7 @@ import {
 import { retrieveAxiosErrorMessage } from "#/utils/retrieve-axios-error-message";
 import { AppSettingsInputsSkeleton } from "#/components/features/settings/app-settings/app-settings-inputs-skeleton";
 import { useConfig } from "#/hooks/query/use-config";
+import { parseMaxBudgetPerTask } from "#/utils/settings-utils";
 
 function AppSettingsScreen() {
   const { t } = useTranslation();
@@ -36,6 +38,16 @@ function AppSettingsScreen() {
     proactiveConversationsSwitchHasChanged,
     setProactiveConversationsSwitchHasChanged,
   ] = React.useState(false);
+  const [
+    solvabilityAnalysisSwitchHasChanged,
+    setSolvabilityAnalysisSwitchHasChanged,
+  ] = React.useState(false);
+  const [maxBudgetPerTaskHasChanged, setMaxBudgetPerTaskHasChanged] =
+    React.useState(false);
+  const [gitUserNameHasChanged, setGitUserNameHasChanged] =
+    React.useState(false);
+  const [gitUserEmailHasChanged, setGitUserEmailHasChanged] =
+    React.useState(false);
 
   const formAction = (formData: FormData) => {
     const languageLabel = formData.get("language-input")?.toString();
@@ -53,12 +65,31 @@ function AppSettingsScreen() {
       formData.get("enable-proactive-conversations-switch")?.toString() ===
       "on";
 
+    const enableSolvabilityAnalysis =
+      formData.get("enable-solvability-analysis-switch")?.toString() === "on";
+
+    const maxBudgetPerTaskValue = formData
+      .get("max-budget-per-task-input")
+      ?.toString();
+    const maxBudgetPerTask = parseMaxBudgetPerTask(maxBudgetPerTaskValue || "");
+
+    const gitUserName =
+      formData.get("git-user-name-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_NAME;
+    const gitUserEmail =
+      formData.get("git-user-email-input")?.toString() ||
+      DEFAULT_SETTINGS.GIT_USER_EMAIL;
+
     saveSettings(
       {
         LANGUAGE: language,
         user_consents_to_analytics: enableAnalytics,
         ENABLE_SOUND_NOTIFICATIONS: enableSoundNotifications,
         ENABLE_PROACTIVE_CONVERSATION_STARTERS: enableProactiveConversations,
+        ENABLE_SOLVABILITY_ANALYSIS: enableSolvabilityAnalysis,
+        MAX_BUDGET_PER_TASK: maxBudgetPerTask,
+        GIT_USER_NAME: gitUserName,
+        GIT_USER_EMAIL: gitUserEmail,
       },
       {
         onSuccess: () => {
@@ -74,6 +105,9 @@ function AppSettingsScreen() {
           setAnalyticsSwitchHasChanged(false);
           setSoundNotificationsSwitchHasChanged(false);
           setProactiveConversationsSwitchHasChanged(false);
+          setMaxBudgetPerTaskHasChanged(false);
+          setGitUserNameHasChanged(false);
+          setGitUserEmailHasChanged(false);
         },
       },
     );
@@ -110,11 +144,38 @@ function AppSettingsScreen() {
     );
   };
 
+  const checkIfSolvabilityAnalysisSwitchHasChanged = (checked: boolean) => {
+    const currentSolvabilityAnalysis = !!settings?.ENABLE_SOLVABILITY_ANALYSIS;
+    setSolvabilityAnalysisSwitchHasChanged(
+      checked !== currentSolvabilityAnalysis,
+    );
+  };
+
+  const checkIfMaxBudgetPerTaskHasChanged = (value: string) => {
+    const newValue = parseMaxBudgetPerTask(value);
+    const currentValue = settings?.MAX_BUDGET_PER_TASK;
+    setMaxBudgetPerTaskHasChanged(newValue !== currentValue);
+  };
+
+  const checkIfGitUserNameHasChanged = (value: string) => {
+    const currentValue = settings?.GIT_USER_NAME;
+    setGitUserNameHasChanged(value !== currentValue);
+  };
+
+  const checkIfGitUserEmailHasChanged = (value: string) => {
+    const currentValue = settings?.GIT_USER_EMAIL;
+    setGitUserEmailHasChanged(value !== currentValue);
+  };
+
   const formIsClean =
     !languageInputHasChanged &&
     !analyticsSwitchHasChanged &&
     !soundNotificationsSwitchHasChanged &&
-    !proactiveConversationsSwitchHasChanged;
+    !proactiveConversationsSwitchHasChanged &&
+    !solvabilityAnalysisSwitchHasChanged &&
+    !maxBudgetPerTaskHasChanged &&
+    !gitUserNameHasChanged &&
+    !gitUserEmailHasChanged;
 
   const shouldBeLoading = !settings || isLoading || isPending;
 
@@ -163,6 +224,61 @@ function AppSettingsScreen() {
               {t(I18nKey.SETTINGS$PROACTIVE_CONVERSATION_STARTERS)}
             </SettingsSwitch>
           )}
+
+          {config?.APP_MODE === "saas" && (
+            <SettingsSwitch
+              testId="enable-solvability-analysis-switch"
+              name="enable-solvability-analysis-switch"
+              defaultIsToggled={!!settings.ENABLE_SOLVABILITY_ANALYSIS}
+              onToggle={checkIfSolvabilityAnalysisSwitchHasChanged}
+            >
+              {t(I18nKey.SETTINGS$SOLVABILITY_ANALYSIS)}
+            </SettingsSwitch>
+          )}
+
+          <SettingsInput
+            testId="max-budget-per-task-input"
+            name="max-budget-per-task-input"
+            type="number"
+            label={t(I18nKey.SETTINGS$MAX_BUDGET_PER_CONVERSATION)}
+            defaultValue={settings.MAX_BUDGET_PER_TASK?.toString() || ""}
+            onChange={checkIfMaxBudgetPerTaskHasChanged}
+            placeholder={t(I18nKey.SETTINGS$MAXIMUM_BUDGET_USD)}
+            min={1}
+            step={1}
+            className="w-full max-w-[680px]" // Match the width of the language field
+          />
+
+          <div className="border-t border-t-tertiary pt-6 mt-2">
+            <h3 className="text-lg font-medium mb-2">
+              {t(I18nKey.SETTINGS$GIT_SETTINGS)}
+            </h3>
+            <p className="text-xs mb-4">
+              {t(I18nKey.SETTINGS$GIT_SETTINGS_DESCRIPTION)}
+            </p>
+            <div className="flex flex-col gap-6">
+              <SettingsInput
+                testId="git-user-name-input"
+                name="git-user-name-input"
+                type="text"
+                label={t(I18nKey.SETTINGS$GIT_USERNAME)}
+                defaultValue={settings.GIT_USER_NAME || ""}
+                onChange={checkIfGitUserNameHasChanged}
+                placeholder="Username for git commits"
+                className="w-full max-w-[680px]"
+              />
+              <SettingsInput
+                testId="git-user-email-input"
+                name="git-user-email-input"
+                type="email"
+                label={t(I18nKey.SETTINGS$GIT_EMAIL)}
+                defaultValue={settings.GIT_USER_EMAIL || ""}
+                onChange={checkIfGitUserEmailHasChanged}
+                placeholder="Email for git commits"
+                className="w-full max-w-[680px]"
+              />
+            </div>
+          </div>
         </div>
       )}
 

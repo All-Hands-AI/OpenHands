@@ -1,5 +1,4 @@
-"""
-This is the main file for the runtime client.
+"""This is the main file for the runtime client.
 It is responsible for executing actions received from OpenHands backend and producing observations.
 
 NOTE: this will be executed inside the docker sandbox.
@@ -22,6 +21,7 @@ from pathlib import Path
 from typing import AsyncIterator
 from zipfile import ZipFile
 
+import puremagic
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
@@ -54,6 +54,7 @@ from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
+    FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
     FileWriteObservation,
@@ -73,7 +74,10 @@ from openhands.runtime.utils.bash import BashSession
 from openhands.runtime.utils.files import insert_lines, read_lines
 from openhands.runtime.utils.memory_monitor import MemoryMonitor
 from openhands.runtime.utils.runtime_init import init_user_and_working_directory
-from openhands.runtime.utils.system_stats import get_system_stats
+from openhands.runtime.utils.system_stats import (
+    get_system_stats,
+    update_last_execution_time,
+)
 from openhands.utils.async_utils import call_sync_from_async, wait_all
 
 if sys.platform == 'win32':
@@ -173,6 +177,7 @@ class ActionExecutor:
         work_dir: str,
         username: str,
         user_id: int,
+        enable_browser: bool,
         browsergym_eval_env: str | None,
     ) -> None:
         self.plugins_to_load = plugins_to_load
@@ -189,13 +194,21 @@ class ActionExecutor:
         self.lock = asyncio.Lock()
         self.plugins: dict[str, Plugin] = {}
         self.file_editor = OHEditor(workspace_root=self._initial_cwd)
+        self.enable_browser = enable_browser
         self.browser: BrowserEnv | None = None
         self.browser_init_task: asyncio.Task | None = None
         self.browsergym_eval_env = browsergym_eval_env
 
+        if (not self.enable_browser) and self.browsergym_eval_env:
+            raise BrowserUnavailableException(
+                'Browser environment is not enabled in config, but browsergym_eval_env is set'
+            )
+
         self.start_time = time.time()
         self.last_execution_time = self.start_time
         self._initialized = False
+        self.downloaded_files: list[str] = []
+        self.downloads_directory = '/workspace/.downloads'
 
         # Queue for terminal output streaming
         self.terminal_output_queue: deque = deque(
@@ -225,6 +238,10 @@ class ActionExecutor:
 
     async def _init_browser_async(self):
         """Initialize the browser asynchronously."""
+        if not self.enable_browser:
+            logger.info('Browser environment is not enabled in config')
+            return
+
         if sys.platform == 'win32':
             logger.warning('Browser environment not supported on windows')
             return
@@ -333,38 +350,10 @@ class ActionExecutor:
             )
 
     async def _init_bash_commands(self):
+        # You can add any bash commands you want to run on startup here
+        # It is empty because: Git configuration is now handled by the runtime client after connection
         INIT_COMMANDS = []
-        is_local_runtime = os.environ.get('LOCAL_RUNTIME_MODE') == '1'
         is_windows = sys.platform == 'win32'
-
-        # Determine git config commands based on platform and runtime mode
-        if is_local_runtime:
-            if is_windows:
-                # Windows, local - split into separate commands
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.name "openhands"'
-                )
-                INIT_COMMANDS.append(
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev"'
-                )
-                INIT_COMMANDS.append(
-                    '$env:GIT_CONFIG = (Join-Path (Get-Location) ".git_config")'
-                )
-            else:
-                # Linux/macOS, local
-                base_git_config = (
-                    'git config --file ./.git_config user.name "openhands" && '
-                    'git config --file ./.git_config user.email "openhands@all-hands.dev" && '
-                    'export GIT_CONFIG=$(pwd)/.git_config'
-                )
-                INIT_COMMANDS.append(base_git_config)
-        else:
-            # Non-local (implies Linux/macOS)
-            base_git_config = (
-                'git config --global user.name "openhands" && '
-                'git config --global user.email "openhands@all-hands.dev"'
-            )
-            INIT_COMMANDS.append(base_git_config)
 
         # Determine no-pager command
         if is_windows:
@@ -639,7 +628,7 @@ class ActionExecutor:
     async def browse(self, action: BrowseURLAction) -> Observation:
         if self.browser is None:
             return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
+                'Browser functionality is not supported or disabled.'
             )
         await self._ensure_browser_ready()
         return await browse(action, self.browser, self.initial_cwd)
@@ -647,10 +636,48 @@ class ActionExecutor:
     async def browse_interactive(self, action: BrowseInteractiveAction) -> Observation:
         if self.browser is None:
             return ErrorObservation(
-                'Browser functionality is not supported on Windows.'
+                'Browser functionality is not supported or disabled.'
             )
         await self._ensure_browser_ready()
-        return await browse(action, self.browser, self.initial_cwd)
+        browser_observation = await browse(action, self.browser, self.initial_cwd)
+        if not browser_observation.error:
+            return browser_observation
+        else:
+            curr_files = os.listdir(self.downloads_directory)
+            new_download = False
+            for file in curr_files:
+                if file not in self.downloaded_files:
+                    new_download = True
+                    self.downloaded_files.append(file)
+                    break  # FIXME: assuming only one file will be downloaded for simplicity
+
+            if not new_download:
+                return browser_observation
+            else:
+                # A new file is downloaded in self.downloads_directory, shift file to /workspace
+                src_path = os.path.join(
+                    self.downloads_directory, self.downloaded_files[-1]
+                )
+                # Guess extension of file using puremagic and add it to tgt_path file name
+                file_ext = ''
+                try:
+                    guesses = puremagic.magic_file(src_path)
+                    if len(guesses) > 0:
+                        ext = guesses[0].extension.strip()
+                        if len(ext) > 0:
+                            file_ext = ext
+                except Exception as _:
+                    pass
+
+                tgt_path = os.path.join(
+                    '/workspace', f'file_{len(self.downloaded_files)}{file_ext}'
+                )
+                shutil.copy(src_path, tgt_path)
+                file_download_obs = FileDownloadObservation(
+                    content=f'Execution of the previous action {action.browser_actions} resulted in a file download. The downloaded file is saved at location: {tgt_path}',
+                    file_path=tgt_path,
+                )
+                return file_download_obs
 
     def close(self):
         self.memory_monitor.stop_monitoring()
@@ -671,6 +698,12 @@ if __name__ == '__main__':
         '--username', type=str, help='User to run as', default='openhands'
     )
     parser.add_argument('--user-id', type=int, help='User ID to run as', default=1000)
+    parser.add_argument(
+        '--enable-browser',
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help='Enable the browser environment',
+    )
     parser.add_argument(
         '--browsergym-eval-env',
         type=str,
@@ -708,6 +741,7 @@ if __name__ == '__main__':
             work_dir=args.working_dir,
             username=args.username,
             user_id=args.user_id,
+            enable_browser=args.enable_browser,
             browsergym_eval_env=args.browsergym_eval_env,
         )
         await client.ainit()
@@ -840,6 +874,8 @@ if __name__ == '__main__':
                 status_code=500,
                 detail=traceback.format_exc(),
             )
+        finally:
+            update_last_execution_time()
 
     @app.post('/update_mcp_server')
     async def update_mcp_server(request: Request):

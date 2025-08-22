@@ -59,13 +59,22 @@ def get_agent_obs_text(obs: BrowserOutputObservation) -> str:
             cur_axtree_txt = get_axtree_str(
                 obs.axtree_object,
                 obs.extra_element_properties,
-                filter_visible_only=False,
+                filter_visible_only=obs.filter_visible_only,
             )
-            text += (
-                f'============== BEGIN accessibility tree ==============\n'
-                f'{cur_axtree_txt}\n'
-                f'============== END accessibility tree ==============\n'
-            )
+            if not obs.filter_visible_only:
+                text += (
+                    f'Accessibility tree of the COMPLETE webpage:\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                    f'============== BEGIN accessibility tree ==============\n'
+                    f'{cur_axtree_txt}\n'
+                    f'============== END accessibility tree ==============\n'
+                )
+            else:
+                text += (
+                    f'Accessibility tree of the VISIBLE portion of the webpage (accessibility tree of complete webpage is too large and you may need to scroll to view remaining portion of the webpage):\nNote: [bid] is the unique alpha-numeric identifier at the beginning of lines for each element in the AXTree. Always use bid to refer to elements in your actions.\n'
+                    f'============== BEGIN accessibility tree ==============\n'
+                    f'{cur_axtree_txt}\n'
+                    f'============== END accessibility tree ==============\n'
+                )
         except Exception as e:
             text += f'\n[Error encountered when processing the accessibility tree: {e}]'
         return text

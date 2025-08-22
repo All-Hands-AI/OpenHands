@@ -118,7 +118,7 @@ export function SystemMessageModal({
               )}
             </div>
 
-            <div className="h-[60vh] overflow-auto rounded-md">
+            <div className="max-h-[51vh] overflow-auto rounded-md">
               {activeTab === "system" && (
                 <div className="p-4 whitespace-pre-wrap font-mono text-sm leading-relaxed text-gray-300 shadow-inner">
                   {systemMessage.content}

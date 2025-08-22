@@ -9,7 +9,9 @@ from openhands.events.action.agent import (
     AgentThinkAction,
     ChangeAgentStateAction,
     CondensationAction,
+    CondensationRequestAction,
     RecallAction,
+    TaskTrackingAction,
 )
 from openhands.events.action.browse import BrowseInteractiveAction, BrowseURLAction
 from openhands.events.action.commands import (
@@ -43,7 +45,9 @@ actions = (
     MessageAction,
     SystemMessageAction,
     CondensationAction,
+    CondensationRequestAction,
     MCPAction,
+    TaskTrackingAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]
@@ -53,6 +57,10 @@ def handle_action_deprecated_args(args: dict[str, Any]) -> dict[str, Any]:
     # keep_prompt has been deprecated in https://github.com/All-Hands-AI/OpenHands/pull/4881
     if 'keep_prompt' in args:
         args.pop('keep_prompt')
+
+    # task_completed has been deprecated - remove it from args to maintain backward compatibility
+    if 'task_completed' in args:
+        args.pop('task_completed')
 
     # Handle translated_ipython_code deprecation
     if 'translated_ipython_code' in args:

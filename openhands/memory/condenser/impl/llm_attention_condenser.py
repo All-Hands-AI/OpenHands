@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from openhands.core.config.condenser_config import LLMAttentionCondenserConfig
 from openhands.events.action.agent import CondensationAction
 from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser.condenser import (
     Condensation,
     RollingCondenser,
@@ -22,7 +23,12 @@ class ImportantEventSelection(BaseModel):
 class LLMAttentionCondenser(RollingCondenser):
     """Rolling condenser strategy that uses an LLM to select the most important events when condensing the history."""
 
-    def __init__(self, llm: LLM, max_size: int = 100, keep_first: int = 1):
+    def __init__(
+        self,
+        llm: LLM,
+        max_size: int = 100,
+        keep_first: int = 1,
+    ):
         if keep_first >= max_size // 2:
             raise ValueError(
                 f'keep_first ({keep_first}) must be less than half of max_size ({max_size})'
@@ -113,15 +119,19 @@ class LLMAttentionCondenser(RollingCondenser):
         return len(view) > self.max_size
 
     @classmethod
-    def from_config(cls, config: LLMAttentionCondenserConfig) -> LLMAttentionCondenser:
+    def from_config(
+        cls, config: LLMAttentionCondenserConfig, llm_registry: LLMRegistry
+    ) -> LLMAttentionCondenser:
         # This condenser cannot take advantage of prompt caching. If it happens
         # to be set, we'll pay for the cache writes but never get a chance to
         # save on a read.
         llm_config = config.llm_config.model_copy()
         llm_config.caching_prompt = False
 
+        llm = llm_registry.get_llm('condenser', llm_config)
+
         return LLMAttentionCondenser(
-            llm=LLM(config=llm_config),
+            llm=llm,
             max_size=config.max_size,
             keep_first=config.keep_first,
         )

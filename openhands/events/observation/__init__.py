@@ -16,6 +16,7 @@ from openhands.events.observation.empty import (
     NullObservation,
 )
 from openhands.events.observation.error import ErrorObservation
+from openhands.events.observation.file_download import FileDownloadObservation
 from openhands.events.observation.files import (
     FileEditObservation,
     FileReadObservation,
@@ -25,6 +26,7 @@ from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
+from openhands.events.observation.task_tracking import TaskTrackingObservation
 
 __all__ = [
     'Observation',
@@ -46,4 +48,6 @@ __all__ = [
     'RecallObservation',
     'RecallType',
     'MCPObservation',
+    'FileDownloadObservation',
+    'TaskTrackingObservation',
 ]

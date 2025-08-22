@@ -50,7 +50,7 @@ function ServedApp() {
     return (
       <div className="flex items-center justify-center w-full h-full p-10">
         <span className="text-neutral-400 font-bold">
-          If you tell OpenHands to start a web server, the app will appear here.
+          {t(I18nKey.BROWSER$SERVER_MESSAGE)}
         </span>
       </div>
     );

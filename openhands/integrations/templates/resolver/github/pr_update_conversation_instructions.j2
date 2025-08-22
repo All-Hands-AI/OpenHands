@@ -6,7 +6,7 @@ A comment on the PR has been addressed to you. Do NOT respond to this comment vi
 # Steps to Handle the Comment
 
 ## Understand the PR Context
-Use the GitHub API to:
+Use the $GITHUB_TOKEN and GitHub API to:
     1. Retrieve the diff against main to understand the changes
     2. Fetch the PR body and the linked issue for context
 
@@ -17,5 +17,6 @@ If it's a question:
 
 If it requests a code update:
     1. Modify the code accordingly in the current branch
-    2. Push the changes to update the PR
-    3. DO NOT leave any comments on the PR
+    2. Commit your changes with a clear commit message
+    3. Push the changes to GitHub to update the PR
+    4. DO NOT leave any comments on the PR

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
 import { ModalBackdrop } from "./modal-backdrop";
 
@@ -12,6 +14,7 @@ export function ConfirmationModal({
   onConfirm,
   onCancel,
 }: ConfirmationModalProps) {
+  const { t } = useTranslation();
   return (
     <ModalBackdrop onClose={onCancel}>
       <div
@@ -27,7 +30,7 @@ export function ConfirmationModal({
             variant="secondary"
             className="grow"
           >
-            Cancel
+            {t(I18nKey.BUTTON$CANCEL)}
           </BrandButton>
           <BrandButton
             testId="confirm-button"
@@ -36,7 +39,7 @@ export function ConfirmationModal({
             variant="primary"
             className="grow"
           >
-            Confirm
+            {t(I18nKey.BUTTON$CONFIRM)}
           </BrandButton>
         </div>
       </div>

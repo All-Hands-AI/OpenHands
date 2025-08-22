@@ -52,3 +52,9 @@ class ObservationType(str, Enum):
 
     MCP = 'mcp'
     """Result of a MCP Server operation"""
+
+    DOWNLOAD = 'download'
+    """Result of downloading/opening a file via the browser"""
+
+    TASK_TRACKING = 'task_tracking'
+    """Result of a task tracking operation"""

@@ -69,6 +69,7 @@ prepareApp().then(() =>
             <PosthogInit />
           </QueryClientProvider>
         </Provider>
+        <div id="modal-portal-exit" />
       </StrictMode>,
     );
   }),
