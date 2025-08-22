@@ -69,6 +69,15 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'claude-3-5-haiku*',
     'claude-sonnet-4*',
     'claude-opus-4*',
+    # Bedrock Anthropic families (with bedrock/ prefix)
+    'bedrock/anthropic.claude-3-7-sonnet*',
+    'bedrock/anthropic.claude-3.7-sonnet*',
+    'bedrock/anthropic.claude-sonnet-3-7-latest',
+    'bedrock/anthropic.claude-3-5-sonnet*',
+    'bedrock/anthropic.claude-3.5-haiku*',
+    'bedrock/anthropic.claude-3-5-haiku*',
+    'bedrock/anthropic.claude-sonnet-4*',
+    'bedrock/anthropic.claude-opus-4*',
     # OpenAI families
     'gpt-4o*',
     'gpt-4.1',
@@ -115,6 +124,17 @@ PROMPT_CACHE_PATTERNS: list[str] = [
     'claude-3-opus-20240229',
     'claude-sonnet-4*',
     'claude-opus-4*',
+    # Bedrock Anthropic families (with bedrock/ prefix)
+    'bedrock/anthropic.claude-3-7-sonnet*',
+    'bedrock/anthropic.claude-3.7-sonnet*',
+    'bedrock/anthropic.claude-sonnet-3-7-latest',
+    'bedrock/anthropic.claude-3-5-sonnet*',
+    'bedrock/anthropic.claude-3-5-haiku*',
+    'bedrock/anthropic.claude-3.5-haiku*',
+    'bedrock/anthropic.claude-3-haiku-20240307',
+    'bedrock/anthropic.claude-3-opus-20240229',
+    'bedrock/anthropic.claude-sonnet-4*',
+    'bedrock/anthropic.claude-opus-4*',
 ]
 
 SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
