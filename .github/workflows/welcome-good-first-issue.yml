@@ -43,7 +43,7 @@ jobs:
               issue_number: context.issue.number,
               body: "🙌 **Hey there, future contributor!** 🙌\n\n" +
                     "This issue has been labeled as **good first issue**, which means it's a great place to get started with the OpenHands project.\n\n" +
-                    "If you're interested in working on it, feel free to comment below to let us know — no need to ask for permission, just give us a heads-up so others don't duplicate work.\n\n" +
+                    "If you're interested in working on it, feel free to! No need to ask for permission.\n\n" +
                     "Be sure to check out our [development setup guide](" + repoUrl + "/blob/main/Development.md) to get your environment set up, and follow our [contribution guidelines](" + repoUrl + "/blob/main/CONTRIBUTING.md) when you're ready to submit a fix.\n\n" +
                     "🙌 Happy hacking! 🙌\n\n" +
                     "<!-- auto-comment:good-first-issue -->"
