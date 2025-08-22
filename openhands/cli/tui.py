@@ -1104,14 +1104,15 @@ def capture_tom_thinking():
             oh_logger.removeFilter(tom_filter)
 
 
-def display_instruction_improvement(improved_instruction: str) -> bool:
-    """Display improved instruction and get user acceptance.
+def display_instruction_improvement(improved_instruction: str) -> dict:
+    """Display improved instruction and get user choice with tri-state response.
 
     Args:
         improved_instruction: The improved instruction text
 
     Returns:
-        bool: True if user accepts, False if rejected
+        dict: Response containing action ('accept', 'modify', 'reject'),
+              value (1, 0.5, 0), and instruction (combined text if modified)
     """
     from openhands.core.config import OpenHandsConfig
 
@@ -1167,9 +1168,22 @@ def display_instruction_improvement(improved_instruction: str) -> bool:
     config = OpenHandsConfig()  # Create minimal config for cli_confirm
     choice = cli_confirm(
         config,
-        'Would you like to use this improved instruction?',
-        ['Accept', 'Reject'],
+        'How would you like to proceed with this improved instruction?',
+        ['Accept', 'Almost right, let me modify it', 'Reject'],
         initial_selection=0
     )
 
-    return choice == 0  # 0 = Accept, 1 = Reject
+    # Return structured response instead of boolean
+    if choice == 0:
+        return {'action': 'accept', 'value': 1, 'instruction': improved_instruction}
+    elif choice == 1:
+        # Return enhanced instruction that tells LLM to ask for modification
+        enhanced_instruction = f"""Tom suggested this improvement to my instruction:
+
+{improved_instruction}
+
+However, I indicated this needs modification. Please ask me how I'd like to modify Tom's suggestion and wait for my input before proceeding."""
+
+        return {'action': 'modify', 'value': 0.5, 'instruction': enhanced_instruction, 'skip_next_tom': True}
+    else:
+        return {'action': 'reject', 'value': 0, 'instruction': None}

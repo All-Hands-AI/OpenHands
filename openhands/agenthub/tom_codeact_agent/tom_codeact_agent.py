@@ -14,9 +14,10 @@ from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 from openhands.controller.state.state import State
 from openhands.controller.state.state_tracker import StateTracker
 from openhands.core.config import AgentConfig
+from openhands.core.schema import AgentState
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.events.action import AgentFinishAction, MessageAction
+from openhands.events.action import AgentFinishAction, MessageAction, ChangeAgentStateAction
 from openhands.events.event import Event
 from openhands.events.stream import EventStream
 from openhands.llm.llm import LLM
@@ -28,7 +29,7 @@ from openhands.storage.locations import CONVERSATION_BASE_DIR
 from openhands.utils.prompt import PromptManager
 
 from tom_swe.tom_agent import create_tom_agent
-from tom_swe.memory.locations import get_cleaned_sessions_dir, get_usermodeling_dir
+from tom_swe.memory.locations import get_usermodeling_dir
 from openhands.cli.tui import capture_tom_thinking, display_instruction_improvement, CLI_DISPLAY_LEVEL
 
 CLI_AVAILABLE = os.environ.get('CLI_AVAILABLE', 'True').lower() == 'true'
@@ -72,6 +73,7 @@ class TomCodeActAgent(CodeActAgent):
             skip_memory_collection=config.skip_memory_collection,
         )
         self._last_processed_user_message_id: Optional[int] = None
+        self._skip_next_tom_analysis: bool = False
 
         logger.info(f"TomCodeActAgent initialized with Tom integration: {self.tom_enabled}")
 
@@ -101,14 +103,12 @@ class TomCodeActAgent(CodeActAgent):
         # Continue with pending actions first
         if self.pending_actions:
             return self.pending_actions.popleft()
-        # Handle exit command
-        latest_user_message = state.get_last_user_message()
-        if latest_user_message and latest_user_message.content.strip() == '/exit':
-            return AgentFinishAction()
-
         # Handle sleeptime command
+        latest_user_message = state.get_last_user_message()
         if latest_user_message and latest_user_message.content.strip() == '/sleeptime':
+            logger.info("🕐 Tom: /sleeptime command detected from event stream")
             self.sleeptime_compute(user_id=state.user_id or "")
+            logger.info("🕐 Tom: /sleeptime sleeptime compute completed")
             return AgentFinishAction()
 
         # Get condensed history and messages (same as CodeAct)
@@ -128,7 +128,10 @@ class TomCodeActAgent(CodeActAgent):
         formatted_messages = self.llm.format_messages_for_llm(messages)
 
         # INTEGRATION POINT 1: Improve instruction when new user message received
-        if (self.tom_enabled and
+        if self._skip_next_tom_analysis and latest_user_message:
+            logger.info(f"🔧 Tom: Skipping Tom analysis for modification input: {latest_user_message.content}")
+            self._skip_next_tom_analysis = False  # Reset flag after skipping
+        elif (self.tom_enabled and
             latest_user_message and
             self._is_new_user_message(latest_user_message)):
             logger.info(f"🚀 Tom: Integration Point 1 triggered - improving user instruction")
@@ -250,9 +253,9 @@ class TomCodeActAgent(CodeActAgent):
                 logger.debug(f"💡 Tom: Improved instruction: {improved_instruction}")
                 # In CLI mode, show improvement to user and get their choice
                 if CLI_AVAILABLE:
-                    user_accepted = display_instruction_improvement(improved_instruction.improved_instruction)
+                    user_response = display_instruction_improvement(improved_instruction.improved_instruction)
 
-                    # Record the interaction as JSON
+                    # Record the interaction with tri-state value
                     try:
                         user_data_dir = Path(get_usermodeling_dir(user_id))
                         record_file = user_data_dir / 'interaction_record.jsonl'
@@ -261,25 +264,43 @@ class TomCodeActAgent(CodeActAgent):
                             "session_id": state.session_id,
                             "original": user_message.content,
                             "improved": improved_instruction.improved_instruction,
-                            "accepted": 1 if user_accepted else 0,
+                            "accepted": user_response['value'],  # Now 1, 0.5, or 0
                             "timestamp": datetime.now().isoformat()
                         }
 
-                        # FileStore expects a string path; ensure correct type
-                        self.file_store.write(str(record_file), json.dumps(interaction) + '\n')
-                        # Only use improved instruction if accepted
-                        if user_accepted:
-                            logger.log(CLI_DISPLAY_LEVEL, f"📝 Tom: User accepted improvement, using improved instruction")
-                            return improved_instruction.improved_instruction
+                        # Append to JSONL file (read existing content + append new line)
+                        new_line = json.dumps(interaction) + '\n'
+                        if self.file_store.exists(str(record_file)):
+                            existing_content = self.file_store.read(str(record_file))
+                            self.file_store.write(str(record_file), existing_content + new_line)
                         else:
+                            self.file_store.write(str(record_file), new_line)
+                        logger.log(CLI_DISPLAY_LEVEL, f"🔍 Tom: Recorded interaction")
+
+                        # Handle tri-state response
+                        if user_response['action'] == 'accept':
+                            logger.log(CLI_DISPLAY_LEVEL, f"📝 Tom: User accepted improvement, using improved instruction")
+                            return user_response['instruction']
+                        elif user_response['action'] == 'modify':
+                            logger.log(CLI_DISPLAY_LEVEL, f"🔧 Tom: User wants modification, using enhanced instruction")
+                            # Set flag to skip Tom analysis on next user input (the modification)
+                            if user_response.get('skip_next_tom'):
+                                self._skip_next_tom_analysis = True
+                            return user_response['instruction']  # Enhanced instruction telling LLM to ask for modification
+                        else:  # reject
                             logger.log(CLI_DISPLAY_LEVEL, f"🚫 Tom: User rejected improvement, using original instruction")
                             return None
 
                     except Exception as e:
                         logger.error(f"❌ Tom: Failed to record interaction: {e}")
-                        # Still proceed with improvement if user accepted, even if recording failed
-                        if user_accepted:
-                            return improved_instruction.improved_instruction
+                        # Still proceed based on user choice, even if recording failed
+                        if user_response['action'] == 'accept':
+                            return user_response['instruction']
+                        elif user_response['action'] == 'modify':
+                            # Set flag even if recording failed
+                            if user_response.get('skip_next_tom'):
+                                self._skip_next_tom_analysis = True
+                            return user_response['instruction']  # Enhanced instruction
                         return None
                 else:
                     # Non-CLI mode: use improvement automatically
@@ -288,7 +309,8 @@ class TomCodeActAgent(CodeActAgent):
                 logger.warning(f"⚠️ Tom: No instruction improvements provided (could be the original instruction is clear enough)")
 
         except Exception as e:
-            logger.warning(f"🔄 Tom: Falling back to original instruction due to error")
+            logger.warning(f"🔄 Tom: Falling back to original instruction due to error: {e}")
+            logger.debug(f"🔄 Tom: Full error traceback:", exc_info=True)
 
         return None
 
@@ -306,17 +328,25 @@ class TomCodeActAgent(CodeActAgent):
         """
         logger.info("🔄 Tom: Starting sleeptime compute process")
 
-        # Get all available sessions using FileStore
+        # Get all available sessions
         try:
             session_paths = self.file_store.list(CONVERSATION_BASE_DIR)
-            processed_session_paths = self.file_store.list(get_cleaned_sessions_dir(user_id))
             all_sessions = [Path(path).name for path in session_paths if not Path(path).name.startswith('.')]
-            processed_sessions = [Path(path).name.replace(".json", "") for path in processed_session_paths if not Path(path).name.startswith('.')]
         except FileNotFoundError:
             logger.info("📭 Tom: No sessions directory found")
             return
-        # Simple approach: assume all sessions are "unprocessed" for now
-        # In a full implementation, you'd track processed sessions
+
+        # Read processed sessions from tracking file
+        processed_sessions_file = Path(get_usermodeling_dir(user_id)) / 'processed_session_ids'
+        processed_sessions = set()
+        try:
+            if self.file_store.exists(str(processed_sessions_file)):
+                content = self.file_store.read(str(processed_sessions_file))
+                processed_sessions = set(line.strip() for line in content.splitlines() if line.strip())
+        except Exception as e:
+            logger.warning(f"⚠️ Tom: Could not read processed sessions file: {e}")
+
+        # Find unprocessed sessions
         unprocessed = [session for session in all_sessions if session not in processed_sessions]
         logger.info(f"📊 Tom: Found {len(unprocessed)} sessions to process (out of {len(all_sessions)} total)")
 
@@ -347,6 +377,20 @@ class TomCodeActAgent(CodeActAgent):
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             executor.submit(run_sleeptime_compute)
+
+        # Record ALL attempted sessions as processed (both successful and failed)
+        if unprocessed:
+            processed_sessions.update(unprocessed)
+
+            try:
+                # Write back to file
+                self.file_store.write(
+                    str(processed_sessions_file),
+                    '\n'.join(sorted(processed_sessions)) + '\n'
+                )
+                logger.info(f"📝 Tom: Marked {len(unprocessed)} sessions as processed")
+            except Exception as e:
+                logger.error(f"❌ Tom: Failed to update processed sessions file: {e}")
 
         logger.info("✅ Tom: Sleeptime compute completed successfully")
 
