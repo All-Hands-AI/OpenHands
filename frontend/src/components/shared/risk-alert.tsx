@@ -16,7 +16,7 @@ export function RiskAlert({
   className,
   severity,
 }: RiskAlertProps) {
-  // Currently, we are only supporting the high risk alert. If we use want to support other risk levels, we can add them here and cva to create different variants of this component.
+  // Currently, we are only supporting the high risk alert. If we use want to support other risk levels, we can add them here and use cva to create different variants of this component.
   if (severity === "high") {
     return (
       <div

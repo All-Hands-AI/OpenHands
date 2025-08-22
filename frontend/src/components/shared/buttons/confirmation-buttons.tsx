@@ -41,10 +41,7 @@ export function ConfirmationButtons() {
       }
 
       dispatch(addSubmittedEventId(awaitingAction.id));
-
-      const event = generateAgentStateChangeEvent(state);
-
-      send(event);
+      send(generateAgentStateChangeEvent(state));
     },
     [send],
   );
@@ -55,18 +52,25 @@ export function ConfirmationButtons() {
       return undefined;
     }
 
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Cancel: Shift+Cmd+Backspace (⇧⌘⌫)
+    const handleCancelShortcut = (event: KeyboardEvent) => {
       if (event.shiftKey && event.metaKey && event.key === "Backspace") {
         event.preventDefault();
         handleStateChange(AgentState.USER_REJECTED);
       }
+    };
 
-      // Continue: Cmd+Enter (⌘↩)
+    const handleContinueShortcut = (event: KeyboardEvent) => {
       if (event.metaKey && event.key === "Enter") {
         event.preventDefault();
         handleStateChange(AgentState.USER_CONFIRMED);
       }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cancel: Shift+Cmd+Backspace (⇧⌘⌫)
+      handleCancelShortcut(event);
+      // Continue: Cmd+Enter (⌘↩)
+      handleContinueShortcut(event);
     };
 
     document.addEventListener("keydown", handleKeyDown);
@@ -79,7 +83,9 @@ export function ConfirmationButtons() {
   }
 
   const { args } = awaitingAction as { args: Record<string, unknown> };
+
   const risk = args?.security_risk;
+
   const isHighRisk =
     typeof risk === "string"
       ? risk.toLowerCase() === "high"
