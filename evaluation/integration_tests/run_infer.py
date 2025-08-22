@@ -50,11 +50,8 @@ def get_config(
         metadata=metadata,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox_config=sandbox_config,
-        # do not mount workspace
-        # debug
-        workspace_base=None,
-        workspace_mount_path=None,
     )
+    config.debug = True
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance_id

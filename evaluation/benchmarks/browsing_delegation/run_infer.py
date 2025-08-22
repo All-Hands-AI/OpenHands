@@ -42,11 +42,7 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     config = get_openhands_config_for_eval(
-        metadata=metadata,
-        runtime='docker',
-        sandbox_config=sandbox_config,
-        workspace_base=None,
-        workspace_mount_path=None,
+        metadata=metadata, runtime='docker', sandbox_config=sandbox_config
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)

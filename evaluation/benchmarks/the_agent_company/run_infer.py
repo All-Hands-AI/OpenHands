@@ -52,6 +52,10 @@ def get_config(
         sandbox_config=sandbox_config,
         workspace_mount_path=mount_path_on_host,
     )
+    config.save_trajectory_path=os.path.join(
+        mount_path_on_host, f'traj_{task_short_name}.json'
+    )
+    config.max_budget_per_task = 4
     config.set_llm_config(llm_config)
     if agent_config:
         config.set_agent_config(agent_config)
