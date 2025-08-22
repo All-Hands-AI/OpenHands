@@ -1,7 +1,7 @@
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
-import { Spinner } from "../shared/spinner";
+import { Spinner } from "#/components/shared/spinner";
 
 interface NavTabProps {
   to: string;

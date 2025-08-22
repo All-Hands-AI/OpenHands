@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { useLocation } from "react-router";
-import { Spinner } from "../shared/spinner";
+import { Spinner } from "#/components/shared/spinner";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
