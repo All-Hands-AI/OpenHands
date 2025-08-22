@@ -30,6 +30,7 @@ from openhands.agenthub.readonly_agent.tools import (
 )
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig
+from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.exceptions import FunctionCallNotExistsError
 from openhands.core.message import ImageContent, Message, TextContent
 from openhands.events.action import (
@@ -42,8 +43,18 @@ from openhands.events.observation.commands import (
     CmdOutputObservation,
 )
 from openhands.events.tool import ToolCallMetadata
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.memory.condenser import View
+
+
+@pytest.fixture
+def create_llm_registry():
+    def _get_registry(llm_config):
+        config = OpenHandsConfig()
+        config.set_llm_config(llm_config)
+        return LLMRegistry(config=config)
+
+    return _get_registry
 
 
 @pytest.fixture(params=['CodeActAgent', 'ReadOnlyAgent'])
@@ -57,18 +68,22 @@ def agent_class(request):
 
 
 @pytest.fixture
-def agent(agent_class) -> Union[CodeActAgent, ReadOnlyAgent]:
+def agent(agent_class, create_llm_registry) -> Union[CodeActAgent, ReadOnlyAgent]:
+    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     config = AgentConfig()
-    agent = agent_class(llm=LLM(LLMConfig()), config=config)
+    agent = agent_class(config=config, llm_registry=create_llm_registry(llm_config))
     agent.llm = Mock()
     agent.llm.config = Mock()
     agent.llm.config.max_message_chars = 1000
     return agent
 
 
-def test_agent_with_default_config_has_default_tools():
+def test_agent_with_default_config_has_default_tools(create_llm_registry):
+    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     config = AgentConfig()
-    codeact_agent = CodeActAgent(llm=LLM(LLMConfig()), config=config)
+    codeact_agent = CodeActAgent(
+        config=config, llm_registry=create_llm_registry(llm_config)
+    )
     assert len(codeact_agent.tools) > 0
     default_tool_names = [tool['function']['name'] for tool in codeact_agent.tools]
     assert {
@@ -231,7 +246,7 @@ def test_response_to_actions_invalid_tool():
         readonly_response_to_actions(mock_response)
 
 
-def test_step_with_no_pending_actions(mock_state: State):
+def test_step_with_no_pending_actions(mock_state: State, create_llm_registry):
     # Mock the LLM response
     mock_response = Mock()
     mock_response.id = 'mock_id'
@@ -252,9 +267,12 @@ def test_step_with_no_pending_actions(mock_state: State):
     llm.format_messages_for_llm = Mock(return_value=[])  # Mock message formatting
 
     # Create agent with mocked LLM
+    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
     config = AgentConfig()
     config.enable_prompt_extensions = False
-    agent = CodeActAgent(llm=llm, config=config)
+    agent = CodeActAgent(config=config, llm_registry=create_llm_registry(llm_config))
+    # Replace the LLM with our mock after creation
+    agent.llm = llm
 
     # Test step with no pending actions
     mock_state.latest_user_message = None
@@ -281,15 +299,10 @@ def test_step_with_no_pending_actions(mock_state: State):
 
 @pytest.mark.parametrize('agent_type', ['CodeActAgent', 'ReadOnlyAgent'])
 def test_correct_tool_description_loaded_based_on_model_name(
-    agent_type, mock_state: State
+    agent_type, create_llm_registry
 ):
     """Tests that the simplified tool descriptions are loaded for specific models."""
-    o3_mock_config = Mock()
-    o3_mock_config.model = 'mock_o3_model'
-
-    llm = Mock()
-    llm.config = o3_mock_config
-
+    o3_mock_config = LLMConfig(model='mock_o3_model', api_key='test_key')
     if agent_type == 'CodeActAgent':
         from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
 
@@ -299,16 +312,19 @@ def test_correct_tool_description_loaded_based_on_model_name(
 
         agent_class = ReadOnlyAgent
 
-    agent = agent_class(llm=llm, config=AgentConfig())
+    agent = agent_class(
+        config=AgentConfig(),
+        llm_registry=create_llm_registry(o3_mock_config),
+    )
     for tool in agent.tools:
         # Assert all descriptions have less than 1024 characters
         assert len(tool['function']['description']) < 1024
 
-    sonnet_mock_config = Mock()
-    sonnet_mock_config.model = 'mock_sonnet_model'
-
-    llm.config = sonnet_mock_config
-    agent = agent_class(llm=llm, config=AgentConfig())
+    sonnect_mock_config = LLMConfig(model='mock_sonnet_model', api_key='test_key')
+    agent = agent_class(
+        config=AgentConfig(),
+        llm_registry=create_llm_registry(sonnect_mock_config),
+    )
     # Assert existence of the detailed tool descriptions that are longer than 1024 characters
     if agent_type == 'CodeActAgent':
         # This only holds for CodeActAgent
@@ -481,10 +497,12 @@ def test_enhance_messages_adds_newlines_between_consecutive_user_messages(
     assert isinstance(enhanced_messages[5].content[0], ImageContent)
 
 
-def test_get_system_message():
+def test_get_system_message(create_llm_registry):
     """Test that the Agent.get_system_message method returns a SystemMessageAction."""
     # Create a mock agent
-    agent = CodeActAgent(llm=LLM(LLMConfig()), config=AgentConfig())
+    config = AgentConfig()
+    llm_config = LLMConfig(model='gpt-4o', api_key='test_key')
+    agent = CodeActAgent(config=config, llm_registry=create_llm_registry(llm_config))
 
     result = agent.get_system_message()
 

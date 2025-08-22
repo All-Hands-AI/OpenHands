@@ -53,6 +53,7 @@ class EvalMetadata(BaseModel):
     data_split: str | None = None
     details: dict[str, Any] | None = None
     condenser_config: CondenserConfig | None = None
+    instruction_template_name: str | None = None
 
 
 class EvalOutput(BaseModel):
@@ -205,6 +206,7 @@ def make_metadata(
         condenser_config=condenser_config
         if condenser_config
         else NoOpCondenserConfig(),
+        instruction_template_name=os.environ.get('INSTRUCTION_TEMPLATE_NAME'),
     )
     metadata_json = metadata.model_dump_json()
     logger.info(f'Metadata: {metadata_json}')
@@ -666,8 +668,23 @@ def is_fatal_runtime_error(error: str | None) -> bool:
 
 
 def get_metrics(state: State) -> dict[str, Any]:
-    """Extract metrics from the state."""
-    metrics = state.metrics.get() if state.metrics else {}
+    """Extract metrics for evaluations.
+
+    Prefer ConversationStats (source of truth) and fall back to state.metrics for
+    backward compatibility.
+    """
+    metrics: dict[str, Any]
+    try:
+        if getattr(state, 'conversation_stats', None):
+            combined = state.conversation_stats.get_combined_metrics()
+            metrics = combined.get()
+        elif getattr(state, 'metrics', None):
+            metrics = state.metrics.get()
+        else:
+            metrics = {}
+    except Exception:
+        metrics = state.metrics.get() if getattr(state, 'metrics', None) else {}
+
     metrics['condenser'] = get_condensation_metadata(state)
     return metrics
 

@@ -3,6 +3,8 @@ import sys
 from collections import deque
 from typing import TYPE_CHECKING
 
+from openhands.llm.llm_registry import LLMRegistry
+
 if TYPE_CHECKING:
     from litellm import ChatCompletionToolParam
 
@@ -32,7 +34,6 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
 from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
-from openhands.llm.llm import LLM
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser import Condenser
 from openhands.memory.condenser.condenser import Condensation, View
@@ -74,18 +75,13 @@ class CodeActAgent(Agent):
         JupyterRequirement(),
     ]
 
-    def __init__(
-        self,
-        llm: LLM,
-        config: AgentConfig,
-    ) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initializes a new instance of the CodeActAgent class.
 
         Parameters:
-        - llm (LLM): The llm to be used by this agent
         - config (AgentConfig): The configuration for this agent
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         self.pending_actions: deque['Action'] = deque()
         self.reset()
         self.tools = self._get_tools()
@@ -93,7 +89,7 @@ class CodeActAgent(Agent):
         # Create a ConversationMemory instance
         self.conversation_memory = ConversationMemory(self.config, self.prompt_manager)
 
-        self.condenser = Condenser.from_config(self.config.condenser)
+        self.condenser = Condenser.from_config(self.config.condenser, llm_registry)
         logger.debug(f'Using condenser: {type(self.condenser)}')
 
     @property

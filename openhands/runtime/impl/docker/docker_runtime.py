@@ -20,6 +20,7 @@ from openhands.core.logger import DEBUG, DEBUG_RUNTIME
 from openhands.core.logger import openhands_logger as logger
 from openhands.events import EventStream
 from openhands.integrations.provider import PROVIDER_TOKEN_TYPE
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.builder import DockerRuntimeBuilder
 from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
@@ -90,6 +91,7 @@ class DockerRuntime(ActionExecutionClient):
         self,
         config: OpenHandsConfig,
         event_stream: EventStream,
+        llm_registry: LLMRegistry,
         sid: str = 'default',
         plugins: list[PluginRequirement] | None = None,
         env_vars: dict[str, str] | None = None,
@@ -143,6 +145,7 @@ class DockerRuntime(ActionExecutionClient):
         super().__init__(
             config,
             event_stream,
+            llm_registry,
             sid,
             plugins,
             env_vars,
@@ -209,6 +212,23 @@ class DockerRuntime(ActionExecutionClient):
         if not self.attach_to_existing:
             self.set_runtime_status(RuntimeStatus.READY)
         self._runtime_initialized = True
+
+        for network_name in self.config.sandbox.additional_networks:
+            try:
+                network = self.docker_client.networks.get(network_name)
+                if self.container is not None:
+                    network.connect(self.container)
+                else:
+                    self.log(
+                        'warning',
+                        f'Container not available to connect to network {network_name}',
+                    )
+            except Exception as e:
+                self.log(
+                    'error',
+                    f'Error: Failed to connect instance {self.container_name} to network {network_name}',
+                )
+                self.log('error', str(e))
 
     def maybe_build_runtime_container_image(self):
         if self.runtime_container_image is None:

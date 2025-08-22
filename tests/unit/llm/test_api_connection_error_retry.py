@@ -34,7 +34,7 @@ def test_completion_retries_api_connection_error(
     ]
 
     # Create an LLM instance and call completion
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, service_id='test-service')
     response = llm.completion(
         messages=[{'role': 'user', 'content': 'Hello!'}],
         stream=False,
@@ -70,7 +70,7 @@ def test_completion_max_retries_api_connection_error(
     ]
 
     # Create an LLM instance and call completion
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, service_id='test-service')
 
     # The completion should raise an APIConnectionError after exhausting all retries
     with pytest.raises(APIConnectionError) as excinfo:

@@ -108,7 +108,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     llm_model = metadata.llm_config.model
 
     # Determine the template file based on mode and LLM
-    if mode.startswith('swt'):
+    if metadata.instruction_template_name:
+        template_name = metadata.instruction_template_name
+    elif mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
         if 'gpt-4.1' in llm_model:
@@ -122,6 +124,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
+    logger.debug(f'Using instruction template file: {template_name}')
     # Set up Jinja2 environment
     # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
     prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')

@@ -13,6 +13,7 @@ from openhands.core.config.mcp_config import (
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
 
@@ -23,8 +24,12 @@ class TestCLIRuntimeMCP:
         """Set up test fixtures."""
         self.config = OpenHandsConfig()
         self.event_stream = MagicMock()
+        llm_registry = LLMRegistry(config=OpenHandsConfig())
         self.runtime = CLIRuntime(
-            config=self.config, event_stream=self.event_stream, sid='test-session'
+            config=self.config,
+            event_stream=self.event_stream,
+            sid='test-session',
+            llm_registry=llm_registry,
         )
 
     @pytest.mark.asyncio

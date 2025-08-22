@@ -9,10 +9,12 @@ import pytest
 from openhands.core.config import OpenHandsConfig, SandboxConfig
 from openhands.events import EventStream
 from openhands.integrations.service_types import ProviderType, Repository
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.microagent.microagent import (
     RepoMicroagent,
 )
 from openhands.runtime.base import Runtime
+from openhands.storage import get_file_store
 
 
 class MockRuntime(Runtime):
@@ -24,12 +26,21 @@ class MockRuntime(Runtime):
         config.workspace_mount_path_in_sandbox = str(workspace_root)
         config.sandbox = SandboxConfig()
 
-        # Create a mock event stream
+        # Create a mock event stream and file store
+        file_store = get_file_store('local', str(workspace_root))
         event_stream = MagicMock(spec=EventStream)
+        event_stream.file_store = file_store
+
+        # Create a mock LLM registry
+        llm_registry = LLMRegistry(config)
 
         # Initialize the parent class properly
         super().__init__(
-            config=config, event_stream=event_stream, sid='test', git_provider_tokens={}
+            config=config,
+            event_stream=event_stream,
+            llm_registry=llm_registry,
+            sid='test',
+            git_provider_tokens={},
         )
 
         self._workspace_root = workspace_root
