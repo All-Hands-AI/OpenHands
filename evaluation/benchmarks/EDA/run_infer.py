@@ -9,8 +9,8 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
-    get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -61,18 +61,15 @@ AGENT_CLS_TO_INST_SUFFIX = {
 def get_config(
     metadata: EvalMetadata,
 ) -> OpenHandsConfig:
-    sandbox_config = get_default_sandbox_config_for_eval()
-    sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    # Create config with EDA-specific container image
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
+
+    # Override the container image for EDA
+    config.sandbox.base_container_image = 'python:3.12-bookworm'
+
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
