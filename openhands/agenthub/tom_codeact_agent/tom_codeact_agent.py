@@ -329,20 +329,6 @@ class TomCodeActAgent(CodeActAgent):
         # limite to 30 latest sessions (end_time)
         sessions_data_limited = sorted(sessions_data, key=lambda x: x['end_time'], reverse=True)[:30]
 
-        # Save sessions_data_limited to JSON files in the specified directory
-        output_dir = Path("/Users/xuhuizhou/Projects/ToM-SWE/data/example_sessions")
-        output_dir.mkdir(parents=True, exist_ok=True)
-        for session in sessions_data_limited:
-            session_id = session['session_id']
-            output_file = output_dir / f"{session_id}.json"
-
-            try:
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    json.dump(session, f, indent=2, ensure_ascii=False, default=str)
-                logger.info(f"💾 Tom: Saved {session_id} to {output_file}")
-            except Exception as e:
-                logger.error(f"❌ Tom: Failed to save sessions data: {e}")
-
         if not sessions_data_limited:
             logger.info("📭 Tom: No valid session data extracted")
             return
@@ -370,7 +356,6 @@ class TomCodeActAgent(CodeActAgent):
         file_store: Any
     ) -> List[Dict[str, Any]]:
         """Extract sessions data using OpenHands infrastructure."""
-        from openhands.core.config.llm_config import LLMConfig
 
         # Create ConversationMemory components (minimal setup)
         agent_config = AgentConfig()
