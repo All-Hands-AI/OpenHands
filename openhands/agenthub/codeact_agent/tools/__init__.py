@@ -1,4 +1,9 @@
-from .bash import create_cmd_run_tool
+from .bash import create_cmd_run_tool, execute_bash
+
+# NOTE: This module currently exposes schema-only tools. As part of #10441 we are
+# gradually encapsulating tools as classes that own schema and validation. See
+# bash.CmdRunTool for the first example. Existing code remains backward
+# compatible by exporting ChatCompletionToolParam for now.
 from .browser import BrowserTool
 from .condensation_request import CondensationRequestTool
 from .finish import FinishTool
@@ -11,6 +16,7 @@ __all__ = [
     'BrowserTool',
     'CondensationRequestTool',
     'create_cmd_run_tool',
+    'execute_bash',
     'FinishTool',
     'IPythonTool',
     'LLMBasedFileEditTool',
