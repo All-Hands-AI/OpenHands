@@ -42,6 +42,8 @@ describe("LikertScale", () => {
     expect(screen.getByText(I18nKey.FEEDBACK$REASON_MISUNDERSTOOD_INSTRUCTION)).toBeInTheDocument();
     expect(screen.getByText(I18nKey.FEEDBACK$REASON_FORGOT_CONTEXT)).toBeInTheDocument();
     expect(screen.getByText(I18nKey.FEEDBACK$REASON_UNNECESSARY_CHANGES)).toBeInTheDocument();
+    expect(screen.getByText(I18nKey.FEEDBACK$REASON_SHOULD_ASK_FIRST)).toBeInTheDocument();
+    expect(screen.getByText(I18nKey.FEEDBACK$REASON_DIDNT_FINISH_JOB)).toBeInTheDocument();
     expect(screen.getByText(I18nKey.FEEDBACK$REASON_OTHER)).toBeInTheDocument();
   });
 

@@ -20,9 +20,7 @@ DIFF_MODIFIED_FILE_REGEX = r'--- a/(.*)'
 
 @dataclass
 class TestSpec:
-    """
-    A dataclass that represents a test specification for a single instance of SWE-bench.
-    """
+    """A dataclass that represents a test specification for a single instance of SWE-bench."""
 
     instance_id: str
     id: str
@@ -86,10 +84,7 @@ def make_test_setup(specs, env_name, repo_directory, includes_tox=False):
 
 
 def make_test_script_list(test_cmd, specs, env_name, repo_directory):
-    """
-    Runs the tests.
-    """
-
+    """Runs the tests."""
     includes_tox = 'tox' in test_cmd
     eval_commands = make_test_setup(specs, env_name, repo_directory, includes_tox)
     eval_commands += [
@@ -104,10 +99,7 @@ def make_test_script_list(test_cmd, specs, env_name, repo_directory):
 
 
 def make_mutation_script_list(specs, env_name, repo_directory, mutation_timeout):
-    """
-    Runs the tests.
-    """
-
+    """Runs the tests."""
     eval_commands = make_test_setup(specs, env_name, repo_directory)
     eval_commands += [
         'cosmic-ray init mutation.toml mutation.sqlite',

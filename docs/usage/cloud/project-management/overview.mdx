@@ -58,17 +58,18 @@ The OpenHands agent needs to identify which Git repository to work with when pro
 
 ### Platform Configuration Issues
 - **Webhook not triggering**: Verify the webhook URL is correct and the proper event types are selected (Comment, Issue updated)
-- **API authentication failing**: Check API key/token validity and ensure required scopes are granted
+- **API authentication failing**: Check API key/token validity and ensure required scopes are granted. If your current API token is expired, make sure to update it in the respective integration settings
 - **Permission errors**: Ensure the service account has access to relevant projects/teams and appropriate permissions
 
 ### Workspace Integration Issues
 - **Workspace linking requests credentials**: If there are no active workspace integrations for the workspace you specified, you need to configure it first. Contact your platform administrator that you want to integrate with (eg: Jira, Linear)
-- **OAuth flow fails**: Ensure you're signing in with the same Git provider account that contains the repositories you want OpenHands to work on
 - **Integration not found**: Verify the workspace name matches exactly and that platform configuration was completed first
+- **OAuth flow fails**: Make sure that you're authorizing with the correct account with proper workspace access
 
 ### General Issues
 - **Agent not responding**: Check webhook logs in your platform settings and verify service account status
 - **Authentication errors**: Verify Git provider permissions and OpenHands Cloud access
+- **Agent fails to identify git repo**: Ensure you're signing in with the same Git provider account that contains the repositories you want OpenHands to work on
 - **Partial functionality**: Ensure both platform configuration and workspace integration are properly completed
 
 ### Getting Help

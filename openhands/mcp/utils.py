@@ -26,8 +26,7 @@ from openhands.runtime.impl.cli.cli_runtime import CLIRuntime
 
 
 def convert_mcp_clients_to_tools(mcp_clients: list[MCPClient] | None) -> list[dict]:
-    """
-    Converts a list of MCPClient instances to ChatCompletionToolParam format
+    """Converts a list of MCPClient instances to ChatCompletionToolParam format
     that can be used by CodeActAgent.
 
     Args:
@@ -152,8 +151,7 @@ async def create_mcp_clients(
 async def fetch_mcp_tools_from_config(
     mcp_config: MCPConfig, conversation_id: str | None = None, use_stdio: bool = False
 ) -> list[dict]:
-    """
-    Retrieves the list of MCP tools from the MCP clients.
+    """Retrieves the list of MCP tools from the MCP clients.
 
     Args:
         mcp_config: The MCP configuration
@@ -206,8 +204,7 @@ async def fetch_mcp_tools_from_config(
 
 
 async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Observation:
-    """
-    Call a tool on an MCP server and return the observation.
+    """Call a tool on an MCP server and return the observation.
 
     Args:
         mcp_clients: The list of MCP clients to execute the action on
@@ -270,9 +267,7 @@ async def call_tool_mcp(mcp_clients: list[MCPClient], action: MCPAction) -> Obse
 async def add_mcp_tools_to_agent(
     agent: 'Agent', runtime: Runtime, memory: 'Memory'
 ) -> MCPConfig:
-    """
-    Add MCP tools to an agent.
-    """
+    """Add MCP tools to an agent."""
     import sys
 
     # Skip MCP tools on Windows

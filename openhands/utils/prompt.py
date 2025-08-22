@@ -29,8 +29,7 @@ class RepositoryInfo:
 
 @dataclass
 class ConversationInstructions:
-    """
-    Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
+    """Optional instructions the agent must follow throughout the conversation while addressing the user's initial task
 
     Examples include
 
@@ -42,8 +41,7 @@ class ConversationInstructions:
 
 
 class PromptManager:
-    """
-    Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
+    """Manages prompt templates and includes information from the user's workspace micro-agents and global micro-agents.
 
     This class is dedicated to loading and rendering prompts (system prompt, user prompt).
 
@@ -71,8 +69,7 @@ class PromptManager:
         )
 
     def _load_template(self, template_name: str) -> Template:
-        """
-        Load a template from the prompt directory.
+        """Load a template from the prompt directory.
 
         Args:
             template_name: Full filename of the template to load, including the .j2 extension.
@@ -89,10 +86,10 @@ class PromptManager:
             template_path = os.path.join(self.prompt_dir, template_name)
             raise FileNotFoundError(f'Prompt file {template_path} not found')
 
-    def get_system_message(self) -> str:
+    def get_system_message(self, **context) -> str:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 
-        system_message = self.system_template.render().strip()
+        system_message = self.system_template.render(**context).strip()
         return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
@@ -105,7 +102,6 @@ class PromptManager:
         These additional context will convert the current generic agent
         into a more specialized agent that is tailored to the user's task.
         """
-
         return self.user_template.render().strip()
 
     def build_workspace_context(

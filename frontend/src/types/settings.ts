@@ -24,9 +24,15 @@ export type MCPStdioServer = {
   env?: Record<string, string>;
 };
 
+export type MCPSHTTPServer = {
+  url: string;
+  api_key?: string;
+};
+
 export type MCPConfig = {
   sse_servers: (string | MCPSSEServer)[];
   stdio_servers: MCPStdioServer[];
+  shttp_servers: (string | MCPSHTTPServer)[];
 };
 
 export type Settings = {
@@ -37,7 +43,7 @@ export type Settings = {
   LLM_API_KEY_SET: boolean;
   SEARCH_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
-  SECURITY_ANALYZER: string;
+  SECURITY_ANALYZER: string | null;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
@@ -64,7 +70,7 @@ export type ApiSettings = {
   llm_api_key_set: boolean;
   search_api_key_set: boolean;
   confirmation_mode: boolean;
-  security_analyzer: string;
+  security_analyzer: string | null;
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
@@ -77,6 +83,7 @@ export type ApiSettings = {
   mcp_config?: {
     sse_servers: (string | MCPSSEServer)[];
     stdio_servers: MCPStdioServer[];
+    shttp_servers: (string | MCPSHTTPServer)[];
   };
   email?: string;
   email_verified?: boolean;
