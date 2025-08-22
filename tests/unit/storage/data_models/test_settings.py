@@ -16,7 +16,8 @@ def test_settings_from_config():
         default_agent='test-agent',
         max_iterations=100,
         security=SecurityConfig(
-            security_analyzer='test-analyzer', confirmation_mode=True
+            security_analyzer='test-analyzer',
+            confirmation_mode=True,
         ),
         llms={
             'llm': LLMConfig(
@@ -53,7 +54,8 @@ def test_settings_from_config_no_api_key():
         default_agent='test-agent',
         max_iterations=100,
         security=SecurityConfig(
-            security_analyzer='test-analyzer', confirmation_mode=True
+            security_analyzer='test-analyzer',
+            confirmation_mode=True,
         ),
         llms={
             'llm': LLMConfig(
