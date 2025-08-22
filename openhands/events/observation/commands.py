@@ -41,18 +41,18 @@ class CmdOutputMetadata(BaseModel):
         prompt = CMD_OUTPUT_PS1_BEGIN
         json_str = json.dumps(
             {
-                # Avoid using $! which can be unset under `set -u` and fatal under `set -e`.
+                # Use safe shell variables that work under strict mode
                 'pid': '$$',  # shell PID is always defined
-                'exit_code': r'\\?',  # backslash-escaped; expands to last exit code at prompt time
-                'username': r'\\u',  # prompt escape
-                'hostname': r'\\h',  # prompt escape
-                'working_dir': r'\\w',  # prompt escape; avoid command substitution under strict mode
+                'exit_code': '$?',  # exit code - works when PS1 is set directly
+                'username': '\\u',  # bash escape sequence for username
+                'hostname': '\\h',  # bash escape sequence for hostname
+                'working_dir': '\\w',  # bash escape sequence for working directory
                 'py_interpreter_path': '',  # keep empty to avoid command substitution pitfalls
             },
             indent=2,
         )
-        # For single-quoted PS1 assignment, keep JSON quotes as-is
-        prompt += json_str
+        # Escape double quotes in the JSON string so they survive bash processing
+        prompt += json_str.replace('"', r'\"')
         prompt += CMD_OUTPUT_PS1_END + '\n'  # Ensure there's a newline at the end
         return prompt
 
