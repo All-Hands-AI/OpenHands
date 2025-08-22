@@ -16,11 +16,11 @@ from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
     EvalOutput,
-    apply_eval_config_overrides,
     assert_and_raise,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
@@ -161,19 +161,15 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=sandbox_config,
+        sandbox_config=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-
-    config = apply_eval_config_overrides(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config, metadata.eval_output_dir, instance['instance_id']

@@ -623,37 +623,6 @@ def compatibility_for_eval_history_pairs(
     return history_pairs
 
 
-def apply_eval_config_overrides(config):
-    """Apply default OpenHands configuration tweaks for evaluation runs.
-
-    Force local file store, and always save sessions under the repo-local
-    `.eval_sessions` directory so evaluation data does not pollute the
-    default CLI/GUI session directory (~/.openhands/sessions).
-
-    Args:
-        config: An existing OpenHandsConfig to be updated.
-
-    Returns:
-        OpenHandsConfig: The same config instance with evaluation-specific
-        overrides applied.
-    """
-
-    # Defer import to avoid circular imports at module load time
-    from openhands.core.config.openhands_config import (
-        OpenHandsConfig as _OHConfig,  # type: ignore
-    )
-
-    assert isinstance(config, _OHConfig)
-
-    # Always use repo-local .eval_sessions directory (absolute path)
-    eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
-
-    config.file_store = 'local'
-    config.file_store_path = eval_store
-
-    return config
-
-
 def is_fatal_evaluation_error(error: str | None) -> bool:
     """The AgentController class overrides last error for certain exceptions
     We want to ensure those exeption do not overlap with fatal exceptions defined here
@@ -792,7 +761,10 @@ def get_openhands_config_for_eval(
     if max_iterations is None:
         max_iterations = 30
 
-    # Create the base config
+    # Always use repo-local .eval_sessions directory (absolute path)
+    eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
+
+    # Create the base config with evaluation-specific overrides
     config = _OHConfig(
         default_agent=default_agent,
         run_as_openhands=False,
@@ -802,9 +774,8 @@ def get_openhands_config_for_eval(
         sandbox=sandbox_config,
         workspace_base=workspace_base,
         workspace_mount_path=workspace_mount_path,
+        file_store='local',
+        file_store_path=eval_store,
     )
-
-    # Apply evaluation-specific overrides
-    config = apply_eval_config_overrides(config)
 
     return config

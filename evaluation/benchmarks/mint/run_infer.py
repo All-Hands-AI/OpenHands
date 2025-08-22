@@ -13,10 +13,10 @@ from evaluation.benchmarks.mint.tasks import Task
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
-    apply_eval_config_overrides,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -111,18 +111,14 @@ def get_config(
         f'$OH_INTERPRETER_PATH -m pip install {" ".join(MINT_DEPENDENCIES)}'
     )
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
+        sandbox_config=sandbox_config,
         # do not mount workspace
         workspace_base=None,
         workspace_mount_path=None,
     )
-
-    config = apply_eval_config_overrides(config)
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
