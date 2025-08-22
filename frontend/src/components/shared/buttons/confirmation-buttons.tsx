@@ -1,3 +1,4 @@
+import { useDispatch, useSelector } from "react-redux";
 import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
@@ -9,18 +10,19 @@ import { isOpenHandsAction } from "#/types/core/guards";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { RiskAlert } from "#/components/shared/risk-alert";
 import WarningIcon from "#/icons/warning.svg?react";
+import { RootState } from "#/store";
+import { addSubmittedEventId } from "#/state/event-message-slice";
 
 export function ConfirmationButtons() {
-  const { t } = useTranslation();
-  const { send, parsedEvents } = useWsClient();
-
-  const handleStateChange = useCallback(
-    (state: AgentState) => {
-      const event = generateAgentStateChangeEvent(state);
-      send(event);
-    },
-    [send],
+  const submittedEventIds = useSelector(
+    (state: RootState) => state.eventMessage.submittedEventIds,
   );
+
+  const dispatch = useDispatch();
+
+  const { t } = useTranslation();
+
+  const { send, parsedEvents } = useWsClient();
 
   // Find the most recent action awaiting confirmation
   const awaitingAction = parsedEvents
@@ -31,6 +33,21 @@ export function ConfirmationButtons() {
       const args = ev.args as Record<string, unknown>;
       return args?.confirmation_state === "awaiting_confirmation";
     });
+
+  const handleStateChange = useCallback(
+    (state: AgentState) => {
+      if (!awaitingAction) {
+        return;
+      }
+
+      dispatch(addSubmittedEventId(awaitingAction.id));
+
+      const event = generateAgentStateChangeEvent(state);
+
+      send(event);
+    },
+    [send],
+  );
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -57,7 +74,7 @@ export function ConfirmationButtons() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [awaitingAction, handleStateChange]);
 
-  if (!awaitingAction) {
+  if (!awaitingAction || submittedEventIds.includes(awaitingAction.id)) {
     return null;
   }
 
