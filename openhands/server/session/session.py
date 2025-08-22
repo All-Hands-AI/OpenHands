@@ -58,6 +58,7 @@ class WebSession:
         user_id: Optional multi-tenant user identifier.
         logger: Logger with session context.
     """
+
     sid: str
     sio: socketio.AsyncServer | None
     last_active_ts: int = 0
@@ -409,7 +410,7 @@ class WebSession:
             self._send_status_message(msg_type, runtime_status, message), self.loop
         )
 
+
 # Backward-compatible alias for external imports that still reference
 # openhands.server.session.session import Session
 Session = WebSession
-
