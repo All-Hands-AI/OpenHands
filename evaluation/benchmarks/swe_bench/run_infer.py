@@ -27,6 +27,7 @@ from evaluation.utils.shared import (
     EvalException,
     EvalMetadata,
     EvalOutput,
+    apply_eval_config_overrides,
     assert_and_raise,
     check_maximum_retries_exceeded,
     codeact_user_response,
@@ -34,7 +35,6 @@ from evaluation.utils.shared import (
     get_metrics,
     is_fatal_evaluation_error,
     make_metadata,
-    override_openhands_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
@@ -240,7 +240,7 @@ def get_config(
         workspace_mount_path=None,
     )
 
-    config = override_openhands_config_for_eval(config)
+    config = apply_eval_config_overrides(config)
 
     config.set_llm_config(
         update_llm_config_for_completions_logging(

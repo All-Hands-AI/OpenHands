@@ -15,9 +15,9 @@ import ruamel.yaml
 
 from evaluation.utils.shared import (
     EvalMetadata,
+    apply_eval_config_overrides,
     get_default_sandbox_config_for_eval,
     make_metadata,
-    override_openhands_config_for_eval,
 )
 from openhands.core.config import (
     LLMConfig,
@@ -48,7 +48,7 @@ def get_config(
         workspace_base=None,
         workspace_mount_path=None,
     )
-    config = override_openhands_config_for_eval(config)
+    config = apply_eval_config_overrides(config)
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False

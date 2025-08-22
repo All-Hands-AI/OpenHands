@@ -10,11 +10,11 @@ import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    apply_eval_config_overrides,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     get_metrics,
     make_metadata,
-    override_openhands_config_for_eval,
     prepare_dataset,
     reset_logger_for_multiprocessing,
     run_evaluation,
@@ -85,7 +85,7 @@ def get_config(
         workspace_mount_path=None,
         attach_to_existing=True,
     )
-    config = override_openhands_config_for_eval(config)
+    config = apply_eval_config_overrides(config)
     config.set_llm_config(
         update_llm_config_for_completions_logging(
             metadata.llm_config,

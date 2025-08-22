@@ -623,7 +623,7 @@ def compatibility_for_eval_history_pairs(
     return history_pairs
 
 
-def override_openhands_config_for_eval(config):
+def apply_eval_config_overrides(config):
     """Apply default OpenHands configuration tweaks for evaluation runs.
 
     Force local file store, and always save sessions under the repo-local
@@ -805,6 +805,6 @@ def get_openhands_config_for_eval(
     )
 
     # Apply evaluation-specific overrides
-    config = override_openhands_config_for_eval(config)
+    config = apply_eval_config_overrides(config)
 
     return config
