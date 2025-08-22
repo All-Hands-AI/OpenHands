@@ -109,7 +109,7 @@ function LlmSettingsScreen() {
   // Update selected security analyzer state when settings change
   React.useEffect(() => {
     if (settings?.SECURITY_ANALYZER !== undefined) {
-      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER);
+      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
     }
   }, [settings?.SECURITY_ANALYZER]);
 
@@ -319,6 +319,47 @@ function LlmSettingsScreen() {
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
 
+  const getSecurityAnalyzerOptions = () => {
+    const analyzers = resources?.securityAnalyzers || [];
+    const orderedItems = [];
+
+    // Add LLM analyzer first
+    if (analyzers.includes("llm")) {
+      orderedItems.push({
+        key: "llm",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT),
+      });
+    }
+
+    // Add None option second
+    orderedItems.push({
+      key: "none",
+      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
+    });
+
+    // Add Invariant analyzer third
+    if (analyzers.includes("invariant")) {
+      orderedItems.push({
+        key: "invariant",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
+      });
+    }
+
+    // Add any other analyzers that might exist
+    analyzers.forEach((analyzer) => {
+      if (!["llm", "invariant", "none"].includes(analyzer)) {
+        // For unknown analyzers, use the analyzer name as fallback
+        // In the future, add specific i18n keys for new analyzers
+        orderedItems.push({
+          key: analyzer,
+          label: analyzer, // TODO: Add i18n support for new analyzers
+        });
+      }
+    });
+
+    return orderedItems;
+  };
+
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
   return (
@@ -407,107 +448,6 @@ function LlmSettingsScreen() {
                 href="https://tavily.com/"
               />
             </div>
-          )}
-
-          {/* Confirmation mode and security analyzer - always visible */}
-          <div className="flex items-center gap-2">
-            <SettingsSwitch
-              testId="enable-confirmation-mode-switch"
-              name="enable-confirmation-mode-switch"
-              onToggle={handleConfirmationModeIsDirty}
-              defaultIsToggled={settings.CONFIRMATION_MODE}
-              isBeta
-            >
-              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-            </SettingsSwitch>
-            <TooltipButton
-              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
-              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              className="text-[#9099AC] hover:text-white cursor-help"
-            >
-              <QuestionCircleIcon width={16} height={16} />
-            </TooltipButton>
-          </div>
-
-          {confirmationModeEnabled && (
-            <>
-              <div className="w-full max-w-[680px]">
-                <SettingsDropdownInput
-                  testId="security-analyzer-input"
-                  name="security-analyzer-display"
-                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={(() => {
-                    const analyzers = resources?.securityAnalyzers || [];
-                    const orderedItems = [];
-
-                    // Add LLM analyzer first
-                    if (analyzers.includes("llm")) {
-                      orderedItems.push({
-                        key: "llm",
-                        label: t(
-                          I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT,
-                        ),
-                      });
-                    }
-
-                    // Add None option second
-                    orderedItems.push({
-                      key: "none",
-                      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
-                    });
-
-                    // Add Invariant analyzer third
-                    if (analyzers.includes("invariant")) {
-                      orderedItems.push({
-                        key: "invariant",
-                        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
-                      });
-                    }
-
-                    // Add any other analyzers that might exist
-                    analyzers.forEach((analyzer) => {
-                      if (!["llm", "invariant", "none"].includes(analyzer)) {
-                        // For unknown analyzers, use the analyzer name as fallback
-                        // In the future, add specific i18n keys for new analyzers
-                        orderedItems.push({
-                          key: analyzer,
-                          label: analyzer, // TODO: Add i18n support for new analyzers
-                        });
-                      }
-                    });
-
-                    return orderedItems;
-                  })()}
-                  placeholder={t(
-                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
-                  )}
-                  selectedKey={selectedSecurityAnalyzer || undefined}
-                  isClearable
-                  onSelectionChange={(key) => {
-                    const newValue = key?.toString() || "";
-                    setSelectedSecurityAnalyzer(newValue);
-                    handleSecurityAnalyzerIsDirty(newValue);
-                  }}
-                  onInputChange={(value) => {
-                    // Handle when input is cleared
-                    if (!value) {
-                      setSelectedSecurityAnalyzer("");
-                      handleSecurityAnalyzerIsDirty("");
-                    }
-                  }}
-                  wrapperClassName="w-full"
-                />
-                {/* Hidden input to store the actual key value for form submission */}
-                <input
-                  type="hidden"
-                  name="security-analyzer-input"
-                  value={selectedSecurityAnalyzer || ""}
-                />
-              </div>
-              <p className="text-xs text-tertiary-alt max-w-[680px]">
-                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
-              </p>
-            </>
           )}
 
           {view === "advanced" && (
@@ -634,6 +574,66 @@ function LlmSettingsScreen() {
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
               </SettingsSwitch>
             </div>
+          )}
+
+          {/* Confirmation mode and security analyzer - always visible */}
+          <div className="flex items-center gap-2">
+            <SettingsSwitch
+              testId="enable-confirmation-mode-switch"
+              name="enable-confirmation-mode-switch"
+              onToggle={handleConfirmationModeIsDirty}
+              defaultIsToggled={settings.CONFIRMATION_MODE}
+              isBeta
+            >
+              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+            </SettingsSwitch>
+            <TooltipButton
+              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+              className="text-[#9099AC] hover:text-white cursor-help"
+            >
+              <QuestionCircleIcon width={16} height={16} />
+            </TooltipButton>
+          </div>
+
+          {confirmationModeEnabled && (
+            <>
+              <div className="w-full max-w-[680px]">
+                <SettingsDropdownInput
+                  testId="security-analyzer-input"
+                  name="security-analyzer-display"
+                  label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
+                  items={getSecurityAnalyzerOptions()}
+                  placeholder={t(
+                    I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
+                  )}
+                  selectedKey={selectedSecurityAnalyzer || "none"}
+                  isClearable={false}
+                  onSelectionChange={(key) => {
+                    const newValue = key?.toString() || "";
+                    setSelectedSecurityAnalyzer(newValue);
+                    handleSecurityAnalyzerIsDirty(newValue);
+                  }}
+                  onInputChange={(value) => {
+                    // Handle when input is cleared
+                    if (!value) {
+                      setSelectedSecurityAnalyzer("");
+                      handleSecurityAnalyzerIsDirty("");
+                    }
+                  }}
+                  wrapperClassName="w-full"
+                />
+                {/* Hidden input to store the actual key value for form submission */}
+                <input
+                  type="hidden"
+                  name="security-analyzer-input"
+                  value={selectedSecurityAnalyzer || ""}
+                />
+              </div>
+              <p className="text-xs text-tertiary-alt max-w-[680px]">
+                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
+              </p>
+            </>
           )}
         </div>
 

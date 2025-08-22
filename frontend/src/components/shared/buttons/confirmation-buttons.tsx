@@ -1,3 +1,4 @@
+import { useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { AgentState } from "#/types/agent-state";
@@ -7,15 +8,19 @@ import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { RiskAlert } from "#/components/shared/risk-alert";
+import WarningIcon from "#/icons/warning.svg?react";
 
 export function ConfirmationButtons() {
   const { t } = useTranslation();
   const { send, parsedEvents } = useWsClient();
 
-  const handleStateChange = (state: AgentState) => {
-    const event = generateAgentStateChangeEvent(state);
-    send(event);
-  };
+  const handleStateChange = useCallback(
+    (state: AgentState) => {
+      const event = generateAgentStateChangeEvent(state);
+      send(event);
+    },
+    [send],
+  );
 
   // Find the most recent action awaiting confirmation
   const awaitingAction = parsedEvents
@@ -26,6 +31,31 @@ export function ConfirmationButtons() {
       const args = ev.args as Record<string, unknown>;
       return args?.confirmation_state === "awaiting_confirmation";
     });
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    if (!awaitingAction) {
+      return undefined;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cancel: Shift+Cmd+Backspace (⇧⌘⌫)
+      if (event.shiftKey && event.metaKey && event.key === "Backspace") {
+        event.preventDefault();
+        handleStateChange(AgentState.USER_REJECTED);
+      }
+
+      // Continue: Cmd+Enter (⌘↩)
+      if (event.metaKey && event.key === "Enter") {
+        event.preventDefault();
+        handleStateChange(AgentState.USER_CONFIRMED);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [awaitingAction, handleStateChange]);
 
   if (!awaitingAction) {
     return null;
@@ -39,28 +69,27 @@ export function ConfirmationButtons() {
       : Number(risk) === ActionSecurityRisk.HIGH;
 
   return (
-    <div className="flex flex-col gap-3 pt-4">
+    <div className="flex flex-col gap-2 pt-4">
       {isHighRisk && (
         <RiskAlert
-          icon={
-            // eslint-disable-next-line i18next/no-literal-string
-            <span role="img" aria-label="warning">
-              ⚠️
-            </span>
-          }
+          severity="high"
+          icon={<WarningIcon width={16} height={16} color="#fff" />}
+          riskTitle={t(I18nKey.COMMON$HIGH_RISK)}
           content={t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
         />
       )}
       <div className="flex justify-between items-center">
-        <p>{t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}</p>
+        <p className="text-sm font-normal text-white">
+          {t(I18nKey.CHAT_INTERFACE$USER_ASK_CONFIRMATION)}
+        </p>
         <div className="flex items-center gap-3">
-          <ActionTooltip
-            type="confirm"
-            onClick={() => handleStateChange(AgentState.USER_CONFIRMED)}
-          />
           <ActionTooltip
             type="reject"
             onClick={() => handleStateChange(AgentState.USER_REJECTED)}
+          />
+          <ActionTooltip
+            type="confirm"
+            onClick={() => handleStateChange(AgentState.USER_CONFIRMED)}
           />
         </div>
       </div>

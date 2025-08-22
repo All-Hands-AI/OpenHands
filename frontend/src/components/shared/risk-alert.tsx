@@ -1,23 +1,36 @@
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
+import { cn } from "#/utils/utils";
 
 interface RiskAlertProps {
+  riskTitle: string;
   content: ReactNode;
   icon?: ReactNode;
   className?: string;
+  severity: "high" | "medium" | "low";
 }
 
-export function RiskAlert({ content, icon, className }: RiskAlertProps) {
-  return (
-    <div
-      className={[
-        "bg-red-500/10 border border-red-400/50 text-red-400 rounded-lg px-3 py-2 text-sm",
-        className || "",
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      {icon && <span className="mr-1 inline-block align-middle">{icon}</span>}
-      <span className="align-middle">{content}</span>
-    </div>
-  );
+export function RiskAlert({
+  riskTitle,
+  content,
+  icon,
+  className,
+  severity,
+}: RiskAlertProps) {
+  // Currently, we are only supporting the high risk alert. If we use want to support other risk levels, we can add them here and cva to create different variants of this component.
+  if (severity === "high") {
+    return (
+      <div
+        className={cn(
+          "flex items-center gap-3.5 bg-[#4A0709] border border-[#FF0006] text-red-400 rounded-xl px-3.5 h-13 text-sm text-white",
+          className,
+        )}
+      >
+        {icon && <span className="">{icon}</span>}
+        <span className="font-bold">{riskTitle}</span>
+        <span className="font-normal">{content}</span>
+      </div>
+    );
+  }
+
+  return null;
 }

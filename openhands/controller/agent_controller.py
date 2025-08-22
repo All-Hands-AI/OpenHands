@@ -193,6 +193,8 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        self.confirmation_mode = confirmation_mode
+
         # security analyzer for direct access
         self.security_analyzer = security_analyzer
 
@@ -938,7 +940,9 @@ class AgentController:
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )
                 # Only HIGH security risk actions require confirmation
-                elif security_risk == ActionSecurityRisk.HIGH:
+                elif (
+                    security_risk == ActionSecurityRisk.HIGH and self.confirmation_mode
+                ):
                     logger.debug(
                         f'[non-CLI mode] Detected HIGH security risk in action: {action}. Ask for confirmation'
                     )

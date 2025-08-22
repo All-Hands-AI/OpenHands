@@ -5712,20 +5712,20 @@
     "uk": "Ви хочете продовжити цю дію?"
   },
   "CHAT_INTERFACE$HIGH_RISK_WARNING": {
-    "en": "Risk: High - Review carefully before proceeding.",
-    "de": "Hochrisikohandlung erkannt. Bitte vor dem Fortfahren sorgfältig prüfen.",
-    "zh-CN": "检测到高风险操作。继续之前请仔细检查。",
-    "zh-TW": "檢測到高風險操作。繼續之前請仔細檢查。",
-    "ko-KR": "고위험 작업이 감지되었습니다. 진행하기 전에 주의 깊게 검토하세요.",
-    "no": "Høyrisiko-handling oppdaget. Gå nøye gjennom før du fortsetter.",
-    "it": "Azione ad alto rischio rilevata. Esaminare attentamente prima di procedere.",
-    "pt": "Ação de alto risco detectada. Revise com cuidado antes de prosseguir.",
-    "es": "Se detectó una acción de alto riesgo. Revise cuidadosamente antes de continuar.",
-    "ar": "تم اكتشاف إجراء عالي المخاطر. يرجى المراجعة بعناية قبل المتابعة.",
-    "fr": "Action à haut risque détectée. Veuillez examiner attentivement avant de continuer.",
-    "tr": "Yüksek riskli bir eylem tespit edildi. Devam etmeden önce dikkatlice inceleyin.",
-    "ja": "高リスクの操作が検出されました。続行する前によく確認してください。",
-    "uk": "Виявлено дію з високим ризиком. Уважно перевірте перед продовженням."
+    "en": "Review carefully before proceeding.",
+    "zh-CN": "在继续之前请仔细检查。",
+    "de": "Überprüfen Sie sorgfältig, bevor Sie fortfahren.",
+    "zh-TW": "在繼續之前請仔細檢查。",
+    "ko-KR": "계속하기 전에 신중히 검토하세요.",
+    "no": "Gå nøye gjennom før du fortsetter.",
+    "it": "Esamina attentamente prima di procedere.",
+    "pt": "Revise cuidadosamente antes de prosseguir.",
+    "es": "Revise cuidadosamente antes de continuar.",
+    "ar": "يرجى المراجعة بعناية قبل المتابعة.",
+    "fr": "Examinez attentivement avant de continuer.",
+    "tr": "Devam etmeden önce dikkatlice gözden geçirin.",
+    "ja": "続行する前に慎重に確認してください。",
+    "uk": "Уважно перевірте перед продовженням."
   },
   "CHAT_INTERFACE$USER_CONFIRMED": {
     "en": "Confirm the requested action",
@@ -13070,5 +13070,21 @@
     "tr": "Invariant Kural Tabanlı Analizör",
     "de": "Invariant regelbasierter Analysator",
     "uk": "Аналізатор на основі правил Invariant"
+  },
+  "COMMON$HIGH_RISK": {
+    "en": "High Risk",
+    "ja": "高リスク",
+    "zh-CN": "高风险",
+    "zh-TW": "高風險",
+    "ko-KR": "고위험",
+    "no": "Høy risiko",
+    "it": "Alto rischio",
+    "pt": "Alto risco",
+    "es": "Alto riesgo",
+    "ar": "مخاطر عالية",
+    "fr": "Risque élevé",
+    "tr": "Yüksek Risk",
+    "de": "Hohes Risiko",
+    "uk": "Високий ризик"
   }
 }
