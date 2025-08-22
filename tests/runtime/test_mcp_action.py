@@ -44,7 +44,7 @@ def sse_mcp_docker_server():
 
     container_command_args = [
         '--stdio',
-        'npx -y @modelcontextprotocol/server-filesystem /',
+        'npx -y @modelcontextprotocol/server-filesystem@2025.8.18 /',
         '--port',
         str(container_internal_port),  # MCP server inside container listens on this
         '--baseUrl',
@@ -292,7 +292,7 @@ async def test_microagent_and_one_stdio_mcp_in_config(
             name='filesystem',
             command='npx',
             args=[
-                '@modelcontextprotocol/server-filesystem',
+                '@modelcontextprotocol/server-filesystem@2025.8.18',
                 '/',
             ],
         )
