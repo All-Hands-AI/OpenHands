@@ -25,6 +25,7 @@ from evaluation.utils.shared import (
     assert_and_raise,
     codeact_user_response,
     get_metrics,
+    get_openhands_config_for_eval,
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
@@ -126,29 +127,26 @@ def get_config(
         f'Submit an issue on https://github.com/All-Hands-AI/OpenHands if you run into any issues.'
     )
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
-        runtime=os.environ.get('RUNTIME', 'eventstream'),
-        sandbox=SandboxConfig(
-            base_container_image=base_container_image,
-            enable_auto_lint=True,
-            use_host_network=False,
-            # large enough timeout, since some testcases take very long to run
-            timeout=300,
-            # Add platform to the sandbox config to solve issue 4401
-            platform='linux/amd64',
-            api_key=os.environ.get('ALLHANDS_API_KEY', None),
-            remote_runtime_api_url=os.environ.get(
-                'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
-            ),
-            keep_runtime_alive=False,
-            remote_runtime_init_timeout=3600,
+    sandbox_config = SandboxConfig(
+        base_container_image=base_container_image,
+        enable_auto_lint=True,
+        use_host_network=False,
+        # large enough timeout, since some testcases take very long to run
+        timeout=300,
+        # Add platform to the sandbox config to solve issue 4401
+        platform='linux/amd64',
+        api_key=os.environ.get('ALLHANDS_API_KEY', None),
+        remote_runtime_api_url=os.environ.get(
+            'SANDBOX_REMOTE_RUNTIME_API_URL', 'http://localhost:8000'
         ),
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        keep_runtime_alive=False,
+        remote_runtime_init_timeout=3600,
+    )
+
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
+        sandbox_config=sandbox_config,
+        runtime=os.environ.get('RUNTIME', 'docker'),
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
