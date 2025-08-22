@@ -156,12 +156,12 @@ class RemoteRuntime(ActionExecutionClient):
                 )
                 self.container_image = self.config.sandbox.runtime_container_image
             self._start_runtime()
-        assert self.runtime_id is not None, (
-            'Runtime ID is not set. This should never happen.'
-        )
-        assert self.runtime_url is not None, (
-            'Runtime URL is not set. This should never happen.'
-        )
+        assert (
+            self.runtime_id is not None
+        ), 'Runtime ID is not set. This should never happen.'
+        assert (
+            self.runtime_url is not None
+        ), 'Runtime URL is not set. This should never happen.'
         if not self.attach_to_existing:
             self.log('info', 'Waiting for runtime to be alive...')
         self._wait_until_alive()
@@ -380,18 +380,20 @@ class RemoteRuntime(ActionExecutionClient):
         if not token:
             return None
         assert self.runtime_url is not None and self.runtime_id is not None
-        logger.info(f'vscode_url runtime_url is {self.runtime_url}')
+        self.log('info', f'runtime_url: {self.runtime_url}')
         parsed = urlparse(self.runtime_url)
         scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
         # Path mode if runtime_url path starts with /{id}
-        logger.info(f'vscode_url path is {path}')
+        self.log('info', f'vscode_url: {path}')
         path_mode = path.startswith(f'/{self.runtime_id}')
         if path_mode:
             base = f'{scheme}://{netloc}'
             vscode_url = f'{base}/{self.runtime_id}/vscode?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         else:
             vscode_url = f'{scheme}://vscode-{netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-        self.log('debug', f'VSCode URL: {vscode_url}')
+        self.log(
+            'info', f'runtime_url: {self.runtime_url} means VSCode URL: {vscode_url}'
+        )
         return vscode_url
 
     @property
