@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS: Settings = {
   LLM_API_KEY_SET: false,
   SEARCH_API_KEY_SET: false,
   CONFIRMATION_MODE: false,
-  SECURITY_ANALYZER: "",
+  SECURITY_ANALYZER: "llm",
   REMOTE_RUNTIME_RESOURCE_FACTOR: 1,
   PROVIDER_TOKENS_SET: {},
   ENABLE_DEFAULT_CONDENSER: true,
@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   MCP_CONFIG: {
     sse_servers: [],
     stdio_servers: [],
+    shttp_servers: [],
   },
   GIT_USER_NAME: "openhands",
   GIT_USER_EMAIL: "openhands@all-hands.dev",
