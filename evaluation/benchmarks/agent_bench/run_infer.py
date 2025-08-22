@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
+    get_metrics,
     get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
@@ -266,7 +267,7 @@ def process_instance(
     # remove when it becomes unnecessary
     histories = compatibility_for_eval_history_pairs(state.history)
 
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(

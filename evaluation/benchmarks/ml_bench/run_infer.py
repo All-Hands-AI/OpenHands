@@ -26,6 +26,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     override_openhands_config_for_eval,
     prepare_dataset,
@@ -252,7 +253,7 @@ def process_instance(instance: Any, metadata: EvalMetadata, reset_logger: bool =
         )
     )
     assert state is not None
-    metrics = state.metrics.get() if state.metrics else {}
+    metrics = get_metrics(state)
 
     test_result = complete_runtime(runtime)
 
