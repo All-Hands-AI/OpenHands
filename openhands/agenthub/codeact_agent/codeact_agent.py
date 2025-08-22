@@ -28,17 +28,9 @@ from openhands.agenthub.codeact_agent.tools.llm_based_edit import LLMBasedFileEd
 from openhands.agenthub.codeact_agent.tools.str_replace_editor import (
     create_str_replace_editor_tool,
 )
-<<<<<<< HEAD
 from openhands.agenthub.codeact_agent.tools.task_tracker import (
     create_task_tracker_tool,
 )
-from openhands.agenthub.codeact_agent.tools.gemini import (
-    create_gemini_read_file_tool,
-    create_gemini_write_file_tool,
-    create_gemini_replace_tool,
-)
-=======
->>>>>>> fa40eaf0b (test(gemini): stabilize Gemini editor integration test; avoid useradd and plugin init; relax success assertion\n\nAlso make GeminiEditor optional in runtime and import FileWriteAction.\n\nCo-authored-by: openhands <openhands@all-hands.dev>)
 from openhands.agenthub.codeact_agent.tools.think import ThinkTool
 from openhands.controller.agent import Agent
 from openhands.controller.state.state import State

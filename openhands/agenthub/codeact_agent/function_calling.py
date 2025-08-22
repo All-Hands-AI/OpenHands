@@ -43,10 +43,10 @@ from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 from openhands.llm.tool_names import (
-    TASK_TRACKER_TOOL_NAME,
     GEMINI_READ_FILE_TOOL_NAME,
     GEMINI_REPLACE_TOOL_NAME,
     GEMINI_WRITE_FILE_TOOL_NAME,
+    TASK_TRACKER_TOOL_NAME,
 )
 
 
