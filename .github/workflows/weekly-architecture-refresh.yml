@@ -1,0 +1,78 @@
+name: Weekly Architecture Docs Refresh
+
+on:
+  schedule:
+    - cron: '0 7 * * 1'
+  workflow_dispatch:
+
+jobs:
+  arch-refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests jinja2
+
+      - name: Run OpenHands conversation to refresh architecture docs
+        env:
+          OPENHANDS_API_KEY: ${{ secrets.OPENHANDS_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python - << 'PY'
+          import os
+          from pathlib import Path
+          from jinja2 import Environment, FileSystemLoader
+          from scripts.openhands_api import OpenHandsAPI
+
+          repo = os.environ.get('GITHUB_REPOSITORY')
+          prompts_dir = Path('scripts/prompts')
+          env = Environment(loader=FileSystemLoader(str(prompts_dir)))
+
+          # Render the architecture prompt with common tail
+          common_tail = Path(prompts_dir / 'common_tail.j2').read_text()
+          template = env.get_template('architecture_refresh.j2')
+          prompt = template.render(common_tail=common_tail)
+
+          client = OpenHandsAPI()
+          resp = client.create_conversation(
+              initial_user_msg=prompt,
+              repository=repo,
+          )
+          convo_id = resp['conversation_id']
+          print(f"Started conversation: {convo_id}")
+          PY
+
+      - name: Run pre-commit for docs
+        run: pre-commit run --config ./dev_config/python/.pre-commit-config.yaml --all-files || true
+
+      - name: Create Pull Request for docs refresh
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: |
+            docs: weekly architecture docs refresh
+
+            Co-authored-by: OpenHands-GPT-5 openhands@all-hands.dev
+          committer: Engel Nyst <engel.nyst@gmail.com>
+          author: Engel Nyst <engel.nyst@gmail.com>
+          branch: docs/arch-refresh-${{ github.run_id }}
+          title: 'docs: weekly architecture docs refresh'
+          body: |
+            This automated PR refreshes the architecture documentation per the weekly workflow.
+            The agent was instructed to open a PR itself if it has changes; this PR consolidates local changes as well.
+          labels: documentation
+          add-paths: |
+            docs/usage/architecture/**
