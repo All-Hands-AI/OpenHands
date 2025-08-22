@@ -89,7 +89,7 @@ function ServedApp() {
         key={refreshKey}
         title={t(I18nKey.SERVED_APP$TITLE)}
         src={fullUrl}
-        className="w-full h-full"
+        className="w-full h-full custom-scrollbar-always"
       />
     </div>
   );

@@ -172,7 +172,6 @@ export function ConversationSubscriptionsProvider({
         // Handle error events
         if (isErrorEvent(event) || isAgentStatusError(event)) {
           renderConversationErroredToast(
-            conversationId,
             isErrorEvent(event)
               ? event.message
               : "Unknown error, please try again",

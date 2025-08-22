@@ -14,11 +14,11 @@ export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   return (
     <div
       data-testid="chat-suggestions"
-      className="flex flex-col gap-6 h-full px-4 items-center justify-center"
+      className="flex flex-col h-full px-4 items-center justify-center"
     >
-      <div className="flex flex-col items-center p-4 bg-tertiary rounded-xl w-full">
-        <BuildIt width={45} height={54} />
-        <span className="font-semibold text-[20px] leading-6 -tracking-[0.01em] gap-1">
+      <div className="flex flex-col items-center p-4 rounded-xl w-full">
+        <BuildIt width={86} height={103} />
+        <span className="text-[32px] font-bold leading-5 text-white pt-4 pb-6">
           {t(I18nKey.LANDING$TITLE)}
         </span>
       </div>

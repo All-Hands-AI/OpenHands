@@ -1,10 +1,14 @@
-import { FaEllipsisV } from "react-icons/fa";
+import ThreeDotsVerticalIcon from "#/icons/three-dots-vertical.svg?react";
 
 interface EllipsisButtonProps {
   onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  fill?: string;
 }
 
-export function EllipsisButton({ onClick }: EllipsisButtonProps) {
+export function EllipsisButton({
+  onClick,
+  fill = "#a3a3a3",
+}: EllipsisButtonProps) {
   return (
     <button
       data-testid="ellipsis-button"
@@ -12,7 +16,7 @@ export function EllipsisButton({ onClick }: EllipsisButtonProps) {
       onClick={onClick}
       className="cursor-pointer"
     >
-      <FaEllipsisV fill="#a3a3a3" />
+      <ThreeDotsVerticalIcon width={24} height={24} color={fill} />
     </button>
   );
 }

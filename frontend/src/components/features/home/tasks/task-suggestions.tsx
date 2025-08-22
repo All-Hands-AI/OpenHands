@@ -1,11 +1,10 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaInfoCircle } from "react-icons/fa";
 import { TaskGroup } from "./task-group";
 import { useSuggestedTasks } from "#/hooks/query/use-suggested-tasks";
 import { TaskSuggestionsSkeleton } from "./task-suggestions-skeleton";
-import { cn } from "#/utils/utils";
+import { cn, getDisplayedTaskGroups, getTotalTaskCount } from "#/utils/utils";
 import { I18nKey } from "#/i18n/declaration";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 import { GitRepository } from "#/types/git";
 
 interface TaskSuggestionsProps {
@@ -14,6 +13,7 @@ interface TaskSuggestionsProps {
 
 export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
   const { t } = useTranslation();
+  const [isExpanded, setIsExpanded] = useState(false);
   const { data: tasks, isLoading } = useSuggestedTasks();
 
   const suggestedTasks = filterFor
@@ -28,38 +28,72 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
 
   const hasSuggestedTasks = suggestedTasks && suggestedTasks.length > 0;
 
+  // Get the task groups to display based on expanded state
+  const displayedTaskGroups = getDisplayedTaskGroups(
+    suggestedTasks,
+    isExpanded,
+  );
+
+  // Check if there are more individual tasks to show
+  const hasMoreTasks = getTotalTaskCount(suggestedTasks) > 3;
+
+  const handleToggle = () => {
+    setIsExpanded((prev) => !prev);
+  };
+
   return (
-    <section
-      data-testid="task-suggestions"
-      className={cn("flex flex-col w-full", !hasSuggestedTasks && "gap-6")}
-    >
-      <div className="flex items-center gap-2">
-        <h2 className="heading">{t(I18nKey.TASKS$SUGGESTED_TASKS)}</h2>
-        <TooltipButton
-          testId="task-suggestions-info"
-          tooltip={t(I18nKey.TASKS$TASK_SUGGESTIONS_TOOLTIP)}
-          ariaLabel={t(I18nKey.TASKS$TASK_SUGGESTIONS_INFO)}
-          className="text-[#9099AC] hover:text-white"
-          placement="bottom"
-          tooltipClassName="max-w-[348px]"
-        >
-          <FaInfoCircle size={16} />
-        </TooltipButton>
+    <section data-testid="task-suggestions" className="flex flex-col w-full">
+      <div
+        className={cn(
+          "flex items-center gap-2",
+          !hasSuggestedTasks && "mb-[14px]",
+        )}
+      >
+        <h3 className="text-xs leading-4 text-white font-semibold py-[14px] pl-4">
+          {t(I18nKey.TASKS$SUGGESTED_TASKS)}
+        </h3>
       </div>
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col">
         {isLoading && <TaskSuggestionsSkeleton />}
         {!hasSuggestedTasks && !isLoading && (
-          <p>{t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}</p>
+          <span className="text-xs leading-4 text-white font-medium pl-4">
+            {t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}
+          </span>
         )}
-        {suggestedTasks?.map((taskGroup, index) => (
-          <TaskGroup
-            key={index}
-            title={decodeURIComponent(taskGroup.title)}
-            tasks={taskGroup.tasks}
-          />
-        ))}
+
+        {!isLoading &&
+          displayedTaskGroups &&
+          displayedTaskGroups.length > 0 && (
+            <div className="flex flex-col">
+              <div className="transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar">
+                <div className="flex flex-col">
+                  {displayedTaskGroups.map((taskGroup, index) => (
+                    <TaskGroup
+                      key={index}
+                      title={decodeURIComponent(taskGroup.title)}
+                      tasks={taskGroup.tasks}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
       </div>
+
+      {!isLoading && hasMoreTasks && (
+        <div className="flex justify-start mt-6 mb-8 ml-4">
+          <button
+            type="button"
+            onClick={handleToggle}
+            className="text-xs leading-4 text-[#FAFAFA] font-normal cursor-pointer hover:underline"
+          >
+            {isExpanded
+              ? t(I18nKey.COMMON$VIEW_LESS)
+              : t(I18nKey.COMMON$VIEW_MORE)}
+          </button>
+        </div>
+      )}
     </section>
   );
 }
