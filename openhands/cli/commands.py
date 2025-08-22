@@ -2,7 +2,6 @@ import asyncio
 import os
 import sys
 import threading
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -20,6 +19,7 @@ from openhands.cli.settings import (
     modify_llm_settings_basic,
     modify_search_api_settings,
 )
+from openhands.cli.spinner import show_loading_spinner
 from openhands.cli.tui import (
     COLOR_GREY,
     UsageMetrics,
@@ -890,21 +890,6 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
             restart_cli()
     else:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
-
-
-def show_loading_spinner(stop_event: threading.Event) -> None:
-    """Show a loading spinner animation."""
-    spinner_chars = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-    i = 0
-    while not stop_event.is_set():
-        print(
-            f'\r{spinner_chars[i % len(spinner_chars)]} Loading conversations...',
-            end='',
-            flush=True,
-        )
-        time.sleep(0.1)
-        i += 1
-    print('\r' + ' ' * 30 + '\r', end='', flush=True)  # Clear the line
 
 
 async def handle_conv_command(config: OpenHandsConfig) -> None:

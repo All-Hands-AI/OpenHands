@@ -21,6 +21,7 @@ from openhands.cli.shell_config import (
     aliases_exist_in_shell_config,
     mark_alias_setup_declined,
 )
+from openhands.cli.spinner import display_initialization_animation
 from openhands.cli.tui import (
     UsageMetrics,
     cli_confirm,
@@ -28,7 +29,6 @@ from openhands.cli.tui import (
     display_banner,
     display_event,
     display_initial_user_prompt,
-    display_initialization_animation,
     display_runtime_initialization_message,
     display_welcome_message,
     read_confirmation_input,

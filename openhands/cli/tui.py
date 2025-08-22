@@ -129,23 +129,6 @@ def display_runtime_initialization_message(runtime: str) -> None:
     print_formatted_text('')
 
 
-def display_initialization_animation(text: str, is_loaded: asyncio.Event) -> None:
-    ANIMATION_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
-
-    i = 0
-    while not is_loaded.is_set():
-        sys.stdout.write('\n')
-        sys.stdout.write(
-            f'\033[s\033[J\033[38;2;255;215;0m[{ANIMATION_FRAMES[i % len(ANIMATION_FRAMES)]}] {text}\033[0m\033[u\033[1A'
-        )
-        sys.stdout.flush()
-        time.sleep(0.1)
-        i += 1
-
-    sys.stdout.write('\r' + ' ' * (len(text) + 10) + '\r')
-    sys.stdout.flush()
-
-
 def display_banner(session_id: str) -> None:
     print_formatted_text(
         HTML(r"""<gold>
