@@ -10,7 +10,6 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
