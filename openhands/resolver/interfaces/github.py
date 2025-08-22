@@ -92,7 +92,6 @@ class GithubIssueHandler(IssueHandlerInterface):
         Returns:
             List of Github issues.
         """
-
         if not issue_numbers:
             raise ValueError('Unspecified issue number')
 

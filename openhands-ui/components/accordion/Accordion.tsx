@@ -5,13 +5,13 @@ import {
   type AccordionItemPropsPublic,
 } from "./components/AccordionItem";
 import { cn } from "../../shared/utils/cn";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 
 export type AccordionProps = HTMLProps<"div"> & {
   expandedKeys: string[];
   type?: "multi" | "single";
   setExpandedKeys(keys: string[]): void;
-};
+} & BaseProps;
 
 type AccordionType = React.FC<PropsWithChildren<AccordionProps>> & {
   Item: React.FC<PropsWithChildren<AccordionItemPropsPublic>>;
@@ -23,6 +23,7 @@ const Accordion: AccordionType = ({
   setExpandedKeys,
   children,
   type = "multi",
+  testId,
   ...props
 }) => {
   const onChange = useCallback(
@@ -54,6 +55,7 @@ const Accordion: AccordionType = ({
   return (
     <div
       className={cn("flex flex-col gap-y-2.5 items-start", className)}
+      data-testid={testId}
       {...props}
     >
       {items}

@@ -1,1 +1,0 @@
-Write an API server in node express which responds with a random number, and a frontend in React that displays the next number from the API

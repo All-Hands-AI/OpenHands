@@ -52,6 +52,7 @@ export function handleObservationMessage(message: ObservationMessage) {
     case ObservationType.RECALL:
     case ObservationType.ERROR:
     case ObservationType.MCP:
+    case ObservationType.TASK_TRACKING:
       break; // We don't display the default message for these observations
     default:
       break;

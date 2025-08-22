@@ -2,6 +2,7 @@ export const ProviderOptions = {
   github: "github",
   gitlab: "gitlab",
   bitbucket: "bitbucket",
+  enterprise_sso: "enterprise_sso",
 } as const;
 
 export type Provider = keyof typeof ProviderOptions;
@@ -23,9 +24,15 @@ export type MCPStdioServer = {
   env?: Record<string, string>;
 };
 
+export type MCPSHTTPServer = {
+  url: string;
+  api_key?: string;
+};
+
 export type MCPConfig = {
   sse_servers: (string | MCPSSEServer)[];
   stdio_servers: MCPStdioServer[];
+  shttp_servers: (string | MCPSHTTPServer)[];
 };
 
 export type Settings = {
@@ -42,6 +49,7 @@ export type Settings = {
   ENABLE_DEFAULT_CONDENSER: boolean;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
+  ENABLE_SOLVABILITY_ANALYSIS: boolean;
   USER_CONSENTS_TO_ANALYTICS: boolean | null;
   SEARCH_API_KEY?: string;
   IS_NEW_USER?: boolean;
@@ -49,6 +57,8 @@ export type Settings = {
   MAX_BUDGET_PER_TASK: number | null;
   EMAIL?: string;
   EMAIL_VERIFIED?: boolean;
+  GIT_USER_NAME?: string;
+  GIT_USER_EMAIL?: string;
 };
 
 export type ApiSettings = {
@@ -65,6 +75,7 @@ export type ApiSettings = {
   enable_default_condenser: boolean;
   enable_sound_notifications: boolean;
   enable_proactive_conversation_starters: boolean;
+  enable_solvability_analysis: boolean;
   user_consents_to_analytics: boolean | null;
   search_api_key?: string;
   provider_tokens_set: Partial<Record<Provider, string | null>>;
@@ -72,9 +83,12 @@ export type ApiSettings = {
   mcp_config?: {
     sse_servers: (string | MCPSSEServer)[];
     stdio_servers: MCPStdioServer[];
+    shttp_servers: (string | MCPSHTTPServer)[];
   };
   email?: string;
   email_verified?: boolean;
+  git_user_name?: string;
+  git_user_email?: string;
 };
 
 export type PostSettings = Settings & {

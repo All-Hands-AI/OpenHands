@@ -16,7 +16,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const CheckboxComponent = (props: CheckboxProps) => {
-  const [checked, setChecked] = useState(false);
+  const [checked, setChecked] = useState(props.checked);
   return (
     <Checkbox
       {...props}
@@ -28,6 +28,7 @@ const CheckboxComponent = (props: CheckboxProps) => {
 
 export const Enabled: Story = {
   args: {
+    checked: false,
     label:
       "Lorem Ipsum is simply dummy text of the printing and typesetting industry",
   },
@@ -37,6 +38,7 @@ export const Enabled: Story = {
 export const Disabled: Story = {
   args: {
     disabled: true,
+    checked: false,
     label:
       "Lorem Ipsum is simply dummy text of the printing and typesetting industry",
   },

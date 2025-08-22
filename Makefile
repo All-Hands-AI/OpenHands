@@ -3,10 +3,10 @@ SHELL=/usr/bin/env bash
 
 # Variables
 BACKEND_HOST ?= "127.0.0.1"
-BACKEND_PORT = 3000
+BACKEND_PORT ?= 3000
 BACKEND_HOST_PORT = "$(BACKEND_HOST):$(BACKEND_PORT)"
 FRONTEND_HOST ?= "127.0.0.1"
-FRONTEND_PORT = 3001
+FRONTEND_PORT ?= 3001
 DEFAULT_WORKSPACE_DIR = "./workspace"
 DEFAULT_MODEL = "gpt-4o"
 CONFIG_FILE = config.toml
@@ -174,7 +174,7 @@ install-python-dependencies:
 	fi
 	@echo "$(GREEN)Python dependencies installed successfully.$(RESET)"
 
-install-frontend-dependencies:
+install-frontend-dependencies: check-npm check-nodejs
 	@echo "$(YELLOW)Setting up frontend environment...$(RESET)"
 	@echo "$(YELLOW)Detect Node.js version...$(RESET)"
 	@cd frontend && node ./scripts/detect-node-version.js
@@ -182,17 +182,17 @@ install-frontend-dependencies:
 	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
-install-pre-commit-hooks:
+install-pre-commit-hooks: check-python check-poetry install-python-dependencies
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
-lint-backend:
+lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
 	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
-lint-frontend:
+lint-frontend: install-frontend-dependencies
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
 	@cd frontend && npm run lint
 

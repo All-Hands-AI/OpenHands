@@ -29,7 +29,7 @@ const InteractiveChipComponent = (props: InteractiveChipProps) => {
 
 export const Elevated: Story = {
   args: {
-    type: "elevated",
+    chipType: "elevated",
     disabled: false,
   },
   render: InteractiveChipComponent,
@@ -37,7 +37,7 @@ export const Elevated: Story = {
 
 export const Filled: Story = {
   args: {
-    type: "filled",
+    chipType: "filled",
     disabled: false,
   },
   render: InteractiveChipComponent,

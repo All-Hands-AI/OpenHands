@@ -146,6 +146,20 @@ export interface UserRejectedObservation
   extras: Record<string, unknown>;
 }
 
+export interface TaskTrackingObservation
+  extends OpenHandsObservationEvent<"task_tracking"> {
+  source: "agent";
+  extras: {
+    command: string;
+    task_list: Array<{
+      id: string;
+      title: string;
+      status: "todo" | "in_progress" | "done";
+      notes?: string;
+    }>;
+  };
+}
+
 export type OpenHandsObservation =
   | AgentStateChangeObservation
   | AgentThinkObservation
@@ -160,4 +174,5 @@ export type OpenHandsObservation =
   | ErrorObservation
   | RecallObservation
   | MCPObservation
-  | UserRejectedObservation;
+  | UserRejectedObservation
+  | TaskTrackingObservation;

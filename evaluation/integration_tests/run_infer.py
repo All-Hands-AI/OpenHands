@@ -9,6 +9,7 @@ from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -135,7 +136,7 @@ def process_instance(
         assert len(histories) > 0, 'History should not be empty'
 
         test_result: TestResult = test_class.verify_result(runtime, histories)
-        metrics = state.metrics.get() if state.metrics else None
+        metrics = get_metrics(state)
     finally:
         runtime.close()
 

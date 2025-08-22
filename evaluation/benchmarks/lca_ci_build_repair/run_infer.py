@@ -22,6 +22,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -30,8 +31,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
     load_openhands_config,
 )
 from openhands.core.logger import openhands_logger as logger
@@ -335,7 +336,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
         )
     )
     assert state is not None
-    metrics = state.metrics.get() if state.metrics else {}
+    metrics = get_metrics(state)
 
     test_result = complete_runtime(runtime, instance)
 
@@ -358,7 +359,7 @@ Be thorough in your exploration, testing, and reasoning. It's fine if your think
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '-s',
         '--eval-split',

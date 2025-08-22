@@ -28,7 +28,6 @@ describe("EventMessage", () => {
       action: "finish" as const,
       args: {
         final_thought: "Task completed successfully",
-        task_completed: "success" as const,
         outputs: {},
         thought: "Task completed successfully",
       },
@@ -114,7 +113,6 @@ describe("EventMessage", () => {
       action: "finish" as const,
       args: {
         final_thought: "Task completed successfully",
-        task_completed: "success" as const,
         outputs: {},
         thought: "Task completed successfully",
       },

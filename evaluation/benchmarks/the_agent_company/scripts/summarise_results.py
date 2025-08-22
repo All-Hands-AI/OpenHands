@@ -11,9 +11,7 @@ import sys
 
 
 def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> float:
-    """
-    Calculate the cost of the model call.
-    """
+    """Calculate the cost of the model call."""
     if 'claude-3-5-sonnet' in model.lower():
         # https://www.anthropic.com/pricing#anthropic-api, accessed 12/11/2024
         return 0.000003 * prompt_tokens + 0.000015 * completion_tokens
@@ -60,8 +58,7 @@ def calculate_cost(model: str, prompt_tokens: int, completion_tokens: int) -> fl
 
 
 def analyze_eval_json_file(filepath: str) -> tuple[int, int]:
-    """
-    Analyze a single eval JSON file and extract the total and result from final_score.
+    """Analyze a single eval JSON file and extract the total and result from final_score.
 
     Args:
         filepath: Path to the JSON file
@@ -84,8 +81,7 @@ def analyze_eval_json_file(filepath: str) -> tuple[int, int]:
 
 
 def analyze_traj_json_file(filepath: str) -> tuple[int, float]:
-    """
-    Analyze a single trajectory JSON file and extract the steps and tokens
+    """Analyze a single trajectory JSON file and extract the steps and tokens
     for each step. Then estimate the cost based on the tokens and the model type.
     Note: this is assuming there's no prompt caching at all.
     """
@@ -115,8 +111,7 @@ def analyze_traj_json_file(filepath: str) -> tuple[int, float]:
 def analyze_folder(
     folder_path: str,
 ) -> tuple[dict[str, tuple[int, int]], dict[str, tuple[int, float]]]:
-    """
-    Analyze all eval_*.json & traj_*.json files in the specified folder.
+    """Analyze all eval_*.json & traj_*.json files in the specified folder.
 
     Args:
         folder_path: Path to the folder containing JSON files
@@ -148,9 +143,7 @@ def analyze_folder(
 
 
 def get_task_nature_category(task_name: str) -> str:
-    """
-    Get the nature category of the task.
-    """
+    """Get the nature category of the task."""
     task_nature = task_name.split('-')[0]
     if task_nature.lower() in ['sde', 'pm', 'ds', 'admin', 'hr', 'finance']:
         return task_nature
@@ -159,8 +152,7 @@ def get_task_nature_category(task_name: str) -> str:
 
 
 def calculate_score(total: int, result: int) -> float:
-    """
-    Calculate the score as a number between 0 and 1.
+    """Calculate the score as a number between 0 and 1.
 
     Formula: score = (result / total) * 0.5 + (result // total) * 0.5
     Explanation:
@@ -178,8 +170,7 @@ def calculate_score(total: int, result: int) -> float:
 
 
 def is_perfect_completion(total: int, result: int) -> bool:
-    """
-    Check if the task achieved perfect completion.
+    """Check if the task achieved perfect completion.
 
     Args:
         total: Total possible points

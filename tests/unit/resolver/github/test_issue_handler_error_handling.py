@@ -153,9 +153,7 @@ class MockLLMResponse:
 
 
 class DotDict(dict):
-    """
-    A dictionary that supports dot notation access.
-    """
+    """A dictionary that supports dot notation access."""
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -190,7 +188,6 @@ class DotDict(dict):
 @patch('openhands.llm.llm.litellm_completion')
 def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_config):
     """Test that the retry mechanism in guess_success respects wait time between retries."""
-
     with patch('time.sleep') as mock_sleep:
         # Simulate a rate limit error followed by a successful response
         mock_litellm_completion.side_effect = [
@@ -210,7 +207,7 @@ def test_guess_success_rate_limit_wait_time(mock_litellm_completion, default_con
             ),
         ]
 
-        llm = LLM(config=default_config)
+        llm = LLM(config=default_config, service_id='test-service')
         handler = ServiceContextIssue(
             GithubIssueHandler('test-owner', 'test-repo', 'test-token'), default_config
         )
@@ -254,7 +251,7 @@ def test_guess_success_exhausts_retries(mock_completion, default_config):
     )
 
     # Initialize LLM and handler
-    llm = LLM(config=default_config)
+    llm = LLM(config=default_config, service_id='test-service')
     handler = ServiceContextPR(
         GithubPRHandler('test-owner', 'test-repo', 'test-token'), default_config
     )

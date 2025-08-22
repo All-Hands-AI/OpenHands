@@ -35,6 +35,8 @@ interface ConversationCardProps {
   conversationStatus?: ConversationStatus;
   variant?: "compact" | "default";
   conversationId?: string; // Optional conversation ID for VS Code URL
+  contextMenuOpen?: boolean;
+  onContextMenuToggle?: (isOpen: boolean) => void;
 }
 
 const MAX_TIME_BETWEEN_CREATION_AND_UPDATE = 1000 * 60 * 30; // 30 minutes
@@ -55,10 +57,11 @@ export function ConversationCard({
   conversationStatus = "STOPPED",
   variant = "default",
   conversationId,
+  contextMenuOpen = false,
+  onContextMenuToggle,
 }: ConversationCardProps) {
   const { t } = useTranslation();
   const { parsedEvents } = useWsClient();
-  const [contextMenuVisible, setContextMenuVisible] = React.useState(false);
   const [titleMode, setTitleMode] = React.useState<"view" | "edit">("view");
   const [metricsModalVisible, setMetricsModalVisible] = React.useState(false);
   const [systemModalVisible, setSystemModalVisible] = React.useState(false);
@@ -101,21 +104,21 @@ export function ConversationCard({
     event.preventDefault();
     event.stopPropagation();
     onDelete?.();
-    setContextMenuVisible(false);
+    onContextMenuToggle?.(false);
   };
 
   const handleStop = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     onStop?.();
-    setContextMenuVisible(false);
+    onContextMenuToggle?.(false);
   };
 
   const handleEdit = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
-    setContextMenuVisible(false);
+    onContextMenuToggle?.(false);
   };
 
   const handleDownloadViaVSCode = async (
@@ -141,7 +144,7 @@ export function ConversationCard({
       }
     }
 
-    setContextMenuVisible(false);
+    onContextMenuToggle?.(false);
   };
 
   const handleDisplayCost = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -224,15 +227,15 @@ export function ConversationCard({
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
-                    setContextMenuVisible((prev) => !prev);
+                    onContextMenuToggle?.(!contextMenuOpen);
                   }}
                 />
               </div>
             )}
             <div className="relative">
-              {contextMenuVisible && (
+              {contextMenuOpen && (
                 <ConversationCardContextMenu
-                  onClose={() => setContextMenuVisible(false)}
+                  onClose={() => onContextMenuToggle?.(false)}
                   onDelete={onDelete && handleDelete}
                   onStop={
                     conversationStatus !== "STOPPED"

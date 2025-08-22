@@ -3,16 +3,18 @@ import React from "react";
 import posthog from "posthog-js";
 import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
-import { useUserProviders } from "../use-user-providers";
+import { useShouldShowUserFeatures } from "#/hooks/use-should-show-user-features";
 
 export const useGitUser = () => {
-  const { providers } = useUserProviders();
   const { data: config } = useConfig();
+
+  // Use the shared hook to determine if we should fetch user data
+  const shouldFetchUser = useShouldShowUserFeatures();
 
   const user = useQuery({
     queryKey: ["user"],
     queryFn: OpenHands.getGitUser,
-    enabled: !!config?.APP_MODE && providers.length > 0,
+    enabled: shouldFetchUser,
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15, // 15 minutes

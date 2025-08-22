@@ -306,12 +306,11 @@ Review the changes and make sure they are as expected. Edit the file again if ne
 """,
     },
     'finish': {
-        'task_completed': """
+        'example': """
 ASSISTANT:
 The server is running on port 5000 with PID 126. You can access the list of numbers in a table format by visiting http://127.0.0.1:5000. Let me know if you have any further requests!
 <function=finish>
 <parameter=message>The task has been completed. The web server is running and displaying numbers 1-10 in a table format at http://127.0.0.1:5000.</parameter>
-<parameter=task_completed>true</parameter>
 </function>
 """
     },
@@ -373,7 +372,7 @@ USER: Create a list of numbers from 1 to 10, and display them in a web page at p
         example += TOOL_EXAMPLES['execute_bash']['run_server_again']
 
     if 'finish' in available_tools:
-        example += TOOL_EXAMPLES['finish']['task_completed']
+        example += TOOL_EXAMPLES['finish']['example']
 
     example += """
 --------------------- END OF EXAMPLE ---------------------
@@ -384,7 +383,7 @@ Do NOT assume the environment is the same as in the example above.
 """
     example = example.lstrip()
 
-    return example
+    return refine_prompt(example)
 
 
 IN_CONTEXT_LEARNING_EXAMPLE_PREFIX = get_example_for_tools
@@ -706,6 +705,25 @@ def _fix_stopword(content: str) -> str:
     return content
 
 
+def _normalize_parameter_tags(fn_body: str) -> str:
+    """Normalize malformed parameter tags to the canonical format.
+
+    Some models occasionally emit malformed parameter tags like:
+        <parameter=command=str_replace</parameter>
+    instead of the correct:
+        <parameter=command>str_replace</parameter>
+
+    This function rewrites the malformed form into the correct one to allow
+    downstream parsing to succeed.
+    """
+    # Replace '<parameter=name=value</parameter>' with '<parameter=name>value</parameter>'
+    return re.sub(
+        r'<parameter=([a-zA-Z0-9_]+)=([^<]*)</parameter>',
+        r'<parameter=\1>\2</parameter>',
+        fn_body,
+    )
+
+
 def convert_non_fncall_messages_to_fncall_messages(
     messages: list[dict],
     tools: list[ChatCompletionToolParam],
@@ -853,7 +871,7 @@ def convert_non_fncall_messages_to_fncall_messages(
 
             if fn_match:
                 fn_name = fn_match.group(1)
-                fn_body = fn_match.group(2)
+                fn_body = _normalize_parameter_tags(fn_match.group(2))
                 matching_tool = next(
                     (
                         tool['function']

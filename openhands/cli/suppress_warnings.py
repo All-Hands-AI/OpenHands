@@ -5,7 +5,6 @@ import warnings
 
 def suppress_cli_warnings():
     """Suppress common warnings that appear during CLI usage."""
-
     # Suppress pydub warning about ffmpeg/avconv
     warnings.filterwarnings(
         'ignore',
@@ -40,6 +39,13 @@ def suppress_cli_warnings():
         'ignore',
         message='.*Expected .* fields but got .*',
         category=UserWarning,
+    )
+
+    # Suppress LiteLLM close_litellm_async_clients was never awaited warning
+    warnings.filterwarnings(
+        'ignore',
+        message="coroutine 'close_litellm_async_clients' was never awaited",
+        category=RuntimeWarning,
     )
 
 

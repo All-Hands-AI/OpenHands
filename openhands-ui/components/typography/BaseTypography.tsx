@@ -6,6 +6,7 @@ import {
   type FontWeight,
 } from "./utils";
 import { cn } from "../../shared/utils/cn";
+import type { BaseProps } from "../../shared/types";
 
 type SupportedReactNodes = "h6" | "h5" | "h4" | "h3" | "h2" | "h1" | "span";
 
@@ -13,7 +14,7 @@ export type BaseTypographyProps = React.HTMLAttributes<HTMLElement> & {
   fontSize?: FontSize;
   fontWeight?: FontWeight;
   as: SupportedReactNodes;
-};
+} & BaseProps;
 
 export const BaseTypography = ({
   fontSize,
@@ -21,6 +22,7 @@ export const BaseTypography = ({
   className,
   children,
   as,
+  testId,
   ...props
 }: PropsWithChildren<BaseTypographyProps>) => {
   const Component = as;
@@ -28,6 +30,7 @@ export const BaseTypography = ({
   return (
     <Component
       {...props}
+      data-testid={testId}
       className={cn(
         "tg-family-outfit text-white leading-[100%]",
         fontSize ? fontSizes[fontSize] : undefined,

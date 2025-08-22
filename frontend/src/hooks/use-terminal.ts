@@ -22,8 +22,18 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
 };
 
-const renderCommand = (command: Command, terminal: Terminal) => {
-  const { content } = command;
+const renderCommand = (
+  command: Command,
+  terminal: Terminal,
+  isUserInput: boolean = false,
+) => {
+  const { content, type } = command;
+
+  // Skip rendering user input commands that come from the event stream
+  // as they've already been displayed in the terminal as the user typed
+  if (type === "input" && isUserInput) {
+    return;
+  }
 
   terminal.writeln(
     parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
@@ -123,7 +133,9 @@ export const useTerminal = ({
           if (commands[i].type === "input") {
             terminal.current.write("$ ");
           }
-          renderCommand(commands[i], terminal.current);
+          // Don't pass isUserInput=true here because we're initializing the terminal
+          // and need to show all previous commands
+          renderCommand(commands[i], terminal.current, false);
         }
         lastCommandIndex.current = commands.length;
       }
@@ -144,7 +156,9 @@ export const useTerminal = ({
       let lastCommandType = "";
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         lastCommandType = commands[i].type;
-        renderCommand(commands[i], terminal.current);
+        // Pass true for isUserInput to skip rendering user input commands
+        // that have already been displayed as the user typed
+        renderCommand(commands[i], terminal.current, true);
       }
       lastCommandIndex.current = commands.length;
       if (lastCommandType === "output") {

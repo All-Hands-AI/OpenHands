@@ -23,7 +23,7 @@ class ServiceContext:
     def __init__(self, strategy: IssueHandlerInterface, llm_config: LLMConfig | None):
         self._strategy = strategy
         if llm_config is not None:
-            self.llm = LLM(llm_config)
+            self.llm = LLM(llm_config, service_id='resolver')
 
     def set_strategy(self, strategy: IssueHandlerInterface) -> None:
         self._strategy = strategy

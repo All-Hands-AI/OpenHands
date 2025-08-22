@@ -16,6 +16,7 @@ from evaluation.utils.shared import (
     assert_and_raise,
     codeact_user_response,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -26,8 +27,8 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
+    get_evaluation_parser,
     get_llm_config_arg,
-    get_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -117,6 +118,7 @@ def get_config(
         default_agent=metadata.agent_class,
         run_as_openhands=False,
         max_iterations=metadata.max_iterations,
+        enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox=sandbox_config,
         # do not mount workspace
@@ -479,7 +481,7 @@ def process_instance(
 
     # NOTE: this is NO LONGER the event stream, but an agent history that includes delegate agent's events
     histories = [event_to_dict(event) for event in state.history]
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(
@@ -505,7 +507,6 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
     Returns:
         Filtered dataset based on split type
     """
-
     filtered_dataset = pd.concat(
         [
             dataset[dataset['repo'].str.split('/').str[1] == repo]
@@ -524,7 +525,7 @@ def commit0_setup(dataset: pd.DataFrame, repo_split: str) -> pd.DataFrame:
 
 
 if __name__ == '__main__':
-    parser = get_parser()
+    parser = get_evaluation_parser()
     parser.add_argument(
         '--dataset',
         type=str,
