@@ -22,7 +22,6 @@ class SecurityAnalyzer:
         self.event_stream = event_stream
 
         def sync_on_event(event: Event) -> None:
-            # Schedule analysis on the current event loop
             asyncio.create_task(self.on_event(event))
 
         self.event_stream.subscribe(
@@ -32,7 +31,6 @@ class SecurityAnalyzer:
     async def on_event(self, event: Event) -> None:
         """Handles the incoming event, and when Action is received, analyzes it for security risks."""
         logger.debug(f'SecurityAnalyzer received event: {event}')
-
         await self.log_event(event)
         if not isinstance(event, Action):
             return

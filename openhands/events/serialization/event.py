@@ -6,7 +6,6 @@ from typing import Any
 from pydantic import BaseModel
 
 from openhands.events import Event, EventSource
-from openhands.events.action.action import Thought
 from openhands.events.serialization.action import action_from_dict
 from openhands.events.serialization.observation import observation_from_dict
 from openhands.events.serialization.utils import remove_fields
@@ -110,7 +109,10 @@ def event_to_dict(event: 'Event') -> dict:
             props['thought'] = {'text': text, 'reasoning_content': rc}
         else:
             # Strings or any other legacy types become canonical dict
-            props['thought'] = {'text': str(t) if t is not None else '', 'reasoning_content': None}
+            props['thought'] = {
+                'text': str(t) if t is not None else '',
+                'reasoning_content': None,
+            }
     d = {}
     for key in TOP_KEYS:
         if hasattr(event, key) and getattr(event, key) is not None:

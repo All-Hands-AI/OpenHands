@@ -295,7 +295,10 @@ def test_file_llm_based_edit_action_legacy_serialization():
     # Common arguments
     assert event_dict['args']['path'] == '/path/to/file.txt'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert event_dict['args']['thought'] == {'text': 'Replacing text', 'reasoning_content': None}
+    assert event_dict['args']['thought'] == {
+        'text': 'Replacing text',
+        'reasoning_content': None,
+    }
 
     # OH_ACI arguments
     assert event_dict['args']['command'] == ''
@@ -354,10 +357,10 @@ def test_file_ohaci_edit_action_legacy_serialization():
     # Common arguments
     assert event_dict['args']['path'] == '/workspace/game_2048.py'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert (
-        event_dict['args']['thought']
-        == "I'll help you create a simple 2048 game in Python. I'll use the str_replace_editor to create the file."
-    )
+    assert event_dict['args']['thought'] == {
+        'text': "I'll help you create a simple 2048 game in Python. I'll use the str_replace_editor to create the file.",
+        'reasoning_content': None,
+    }
 
     # OH_ACI arguments
     assert event_dict['args']['command'] == 'create'
@@ -377,7 +380,10 @@ def test_agent_microagent_action_serialization_deserialization():
         'action': 'recall',
         'args': {
             'query': 'What is the capital of France?',
-            'thought': {'text': 'I need to find information about France', 'reasoning_content': None},
+            'thought': {
+                'text': 'I need to find information about France',
+                'reasoning_content': None,
+            },
             'recall_type': 'knowledge',
         },
     }
@@ -423,7 +429,10 @@ def test_file_read_action_legacy_serialization():
     # Common arguments in serialized form
     assert event_dict['args']['path'] == '/workspace/test.txt'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert event_dict['args']['thought'] == {'text': 'Reading the file contents', 'reasoning_content': None}
+    assert event_dict['args']['thought'] == {
+        'text': 'Reading the file contents',
+        'reasoning_content': None,
+    }
 
     # Read-specific arguments in serialized form
     assert event_dict['args']['start'] == 0
