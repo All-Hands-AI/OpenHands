@@ -408,3 +408,8 @@ class WebSession:
         asyncio.run_coroutine_threadsafe(
             self._send_status_message(msg_type, runtime_status, message), self.loop
         )
+
+# Backward-compatible alias for external imports that still reference
+# openhands.server.session.session import Session
+Session = WebSession
+
