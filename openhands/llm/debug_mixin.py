@@ -31,9 +31,14 @@ class DebugMixin:
         else:
             logger.debug('No completion messages!')
 
-    def log_response(self, resp: ModelResponse) -> None:
+    def log_response(self, resp: ModelResponse | str) -> None:
         if not logger.isEnabledFor(DEBUG):
             # Don't use memory building message string if not logging.
+            return
+        # Allow logging plain text in streaming path
+        if isinstance(resp, str):
+            if resp:
+                llm_response_logger.debug(resp)
             return
         message_back: str = resp['choices'][0]['message']['content'] or ''
         tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][

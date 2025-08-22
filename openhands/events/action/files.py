@@ -1,8 +1,8 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSecurityRisk, Thought
 from openhands.events.event import FileEditSource, FileReadSource
 
 
@@ -16,7 +16,7 @@ class FileReadAction(Action):
     path: str
     start: int = 0
     end: int = -1
-    thought: str = ''
+    thought: Thought = field(default_factory=Thought)
     action: str = ActionType.READ
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
@@ -39,7 +39,7 @@ class FileWriteAction(Action):
     content: str
     start: int = 0
     end: int = -1
-    thought: str = ''
+    thought: Thought = field(default_factory=Thought)
     action: str = ActionType.WRITE
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None
@@ -108,7 +108,7 @@ class FileEditAction(Action):
     end: int = -1
 
     # Shared arguments
-    thought: str = ''
+    thought: Thought = field(default_factory=Thought)
     action: str = ActionType.EDIT
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None

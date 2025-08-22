@@ -13022,5 +13022,21 @@
     "tr": "Bir şeyler ters gitti. Mikro ajanı tekrar başlatmayı deneyin.",
     "de": "Etwas ist schiefgelaufen. Versuchen Sie, den Microagenten erneut zu starten.",
     "uk": "Щось пішло не так. Спробуйте ініціювати мікроагента ще раз."
+  },
+  "ACTION_MESSAGE$REASONING": {
+    "en": "Reasoning",
+    "ja": "Reasoning",
+    "zh-CN": "Reasoning",
+    "zh-TW": "Reasoning",
+    "ko-KR": "Reasoning",
+    "no": "Reasoning",
+    "ar": "Reasoning",
+    "de": "Reasoning",
+    "fr": "Reasoning",
+    "it": "Reasoning",
+    "pt": "Reasoning",
+    "es": "Reasoning",
+    "tr": "Reasoning",
+    "uk": "Reasoning"
   }
 }

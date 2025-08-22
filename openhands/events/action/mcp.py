@@ -2,14 +2,14 @@ from dataclasses import dataclass, field
 from typing import Any, ClassVar
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, ActionSecurityRisk
+from openhands.events.action.action import Action, ActionSecurityRisk, Thought
 
 
 @dataclass
 class MCPAction(Action):
     name: str
     arguments: dict[str, Any] = field(default_factory=dict)
-    thought: str = ''
+    thought: Thought = field(default_factory=Thought)
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
     security_risk: ActionSecurityRisk | None = None

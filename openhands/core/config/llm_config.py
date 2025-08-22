@@ -92,6 +92,9 @@ class LLMConfig(BaseModel):
         default=None,
         description='Safety settings for models that support them (like Mistral AI and Gemini)',
     )
+    # Use OpenAI Responses API (via LiteLLM) for reasoning-capable OpenAI models
+    # to capture provider-native reasoning. Guarded behind this flag; default False.
+    use_openai_responses: bool = Field(default=False)
 
     model_config = ConfigDict(extra='forbid')
 

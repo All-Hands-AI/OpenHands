@@ -7,6 +7,7 @@ from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
 )
+from openhands.events.action.action import Thought
 
 
 class BrowsingResponseParser(ResponseParser):
@@ -62,9 +63,10 @@ class BrowsingActionParserMessage(ActionParser):
 
     def parse(self, action_str: str) -> Action:
         msg = f'send_msg_to_user("""{action_str}""")'
+
         return BrowseInteractiveAction(
             browser_actions=msg,
-            thought=action_str,
+            thought=Thought(text=action_str),
             browsergym_send_msg_to_user=action_str,
         )
 
@@ -121,6 +123,6 @@ class BrowsingActionParserBrowseInteractive(ActionParser):
 
         return BrowseInteractiveAction(
             browser_actions=browser_actions,
-            thought=thought,
+            thought=Thought(text=thought),
             browsergym_send_msg_to_user=msg_content,
         )

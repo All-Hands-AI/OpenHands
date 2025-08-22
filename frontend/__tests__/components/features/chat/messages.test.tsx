@@ -58,7 +58,7 @@ describe("Messages", () => {
     args: {
       image_urls: [],
       file_urls: [],
-      thought: "",
+      thought: { text: "" },
       wait_for_response: false,
     },
   };

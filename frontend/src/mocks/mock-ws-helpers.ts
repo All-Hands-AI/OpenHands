@@ -29,7 +29,7 @@ export const generateAssistantMessageAction = (
   timestamp: new Date().toISOString(),
   action: "message",
   args: {
-    thought: message,
+    thought: { text: message },
     image_urls: [],
     file_urls: [],
     wait_for_response: false,
