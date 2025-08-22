@@ -95,7 +95,7 @@ pyyaml = "^6.0.2"
 memory-profiler = "^0.61.0"
 jupyter_kernel_gateway = "*"
 # tom-swe = { path = "/Users/xuhuizhou/Projects/ToM-SWE", develop = true }
-tom-swe = { git = "https://github.com/all-hands-ai/ToM-SWE.git", branch = "main" }
+tom-swe = { git = "https://github.com/all-hands-ai/ToM-SWE.git", branch = "feat/improve_prompts" }
 
 # Third-party runtime dependencies (optional)
 e2b = { version = ">=1.0.5,<1.8.0", optional = true }
