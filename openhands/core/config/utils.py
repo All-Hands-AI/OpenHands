@@ -296,6 +296,7 @@ def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None
             )
     # If no condenser section is in toml but enable_default_condenser is True,
     # set LLMSummarizingCondenserConfig as default
+    # enable default condenser only if the agent hasn't defined its own
     elif cfg.enable_default_condenser and not (
         'agent' in toml_config
         and isinstance(toml_config['agent'], dict)
