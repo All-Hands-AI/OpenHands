@@ -64,8 +64,6 @@ opentelemetry-exporter-otlp-proto-grpc = "^1.33.1"
 libtmux = ">=0.37,<0.40"
 pygithub = "^2.5.0"
 joblib = "*"
-# Use ACI branch that includes GeminiEditor
-# Use ACI branch (fork) that includes GeminiEditor until upstream is merged
 openhands-aci = { git = "https://github.com/enyst/openhands-aci.git", branch = "feat/gemini-cli-tools-phase1a" }
 python-socketio = "^5.11.4"
 sse-starlette = "^2.1.3"
