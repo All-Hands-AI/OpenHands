@@ -9,7 +9,7 @@ import { ActionTooltip } from "../action-tooltip";
 import { isOpenHandsAction } from "#/types/core/guards";
 import { ActionSecurityRisk } from "#/state/security-analyzer-slice";
 import { RiskAlert } from "#/components/shared/risk-alert";
-import WarningIcon from "#/icons/warning.svg?react";
+import WarningIcon from "#/icons/u-warning.svg?react";
 import { RootState } from "#/store";
 import { addSubmittedEventId } from "#/state/event-message-slice";
 
