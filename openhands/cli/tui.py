@@ -89,6 +89,7 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
+    '/sleeptime': 'Run Tom sleeptime computation to process recent sessions',
 }
 
 print_lock = threading.Lock()

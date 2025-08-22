@@ -106,6 +106,11 @@ class TomCodeActAgent(CodeActAgent):
         if latest_user_message and latest_user_message.content.strip() == '/exit':
             return AgentFinishAction()
 
+        # Handle sleeptime command
+        if latest_user_message and latest_user_message.content.strip() == '/sleeptime':
+            self.sleeptime_compute(user_id=state.user_id or "")
+            return AgentFinishAction()
+
         # Get condensed history and messages (same as CodeAct)
         condensed_history: list[Event] = []
         match self.condenser.condensed_history(state):
@@ -321,12 +326,28 @@ class TomCodeActAgent(CodeActAgent):
 
         # Collect session data using existing logic from sleeptime.py
         sessions_data = self._get_sessions_data(unprocessed, self.file_store)
+        # limite to 30 latest sessions (end_time)
+        sessions_data_limited = sorted(sessions_data, key=lambda x: x['end_time'], reverse=True)[:30]
 
-        if not sessions_data:
+        # Save sessions_data_limited to JSON files in the specified directory
+        output_dir = Path("/Users/xuhuizhou/Projects/ToM-SWE/data/example_sessions")
+        output_dir.mkdir(parents=True, exist_ok=True)
+        for session in sessions_data_limited:
+            session_id = session['session_id']
+            output_file = output_dir / f"{session_id}.json"
+
+            try:
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(session, f, indent=2, ensure_ascii=False, default=str)
+                logger.info(f"💾 Tom: Saved {session_id} to {output_file}")
+            except Exception as e:
+                logger.error(f"❌ Tom: Failed to save sessions data: {e}")
+
+        if not sessions_data_limited:
             logger.info("📭 Tom: No valid session data extracted")
             return
 
-        logger.info(f"📊 Tom: Successfully extracted {len(sessions_data)} sessions")
+        logger.info(f"📊 Tom: Successfully extracted {len(sessions_data_limited)} sessions")
 
         # Call tom_agent.sleeptime_compute in a thread pool to avoid event loop conflict
         import concurrent.futures
@@ -334,9 +355,9 @@ class TomCodeActAgent(CodeActAgent):
         def run_sleeptime_compute():
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
-                    self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
+                    self.tom_agent.sleeptime_compute(sessions_data=sessions_data_limited, user_id=user_id)
             else:
-                self.tom_agent.sleeptime_compute(sessions_data=sessions_data, user_id=user_id)
+                self.tom_agent.sleeptime_compute(sessions_data=sessions_data_limited, user_id=user_id)
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
             executor.submit(run_sleeptime_compute)

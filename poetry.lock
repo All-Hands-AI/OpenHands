@@ -583,6 +583,31 @@ files = [
 ]
 
 [[package]]
+name = "bm25s"
+version = "0.2.13"
+description = "An ultra-fast implementation of BM25 based on sparse matrices."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "bm25s-0.2.13-py3-none-any.whl", hash = "sha256:2ac797226b43e260c58b99eaf374a77b39d8a00d0f6f7f965539703e8b9a1171"},
+    {file = "bm25s-0.2.13.tar.gz", hash = "sha256:b6f6e787fbdb7f0441c7d3c201d62a5581f4387e5ee2c0b14fa5bec4b432fe45"},
+]
+
+[package.dependencies]
+numpy = "*"
+scipy = "*"
+
+[package.extras]
+core = ["PyStemmer", "numba", "orjson", "tqdm"]
+dev = ["black"]
+evaluation = ["pytrec-eval"]
+full = ["PyStemmer", "black", "huggingface-hub", "jax[cpu]", "numba", "orjson", "pytrec-eval", "tqdm"]
+hf = ["huggingface-hub"]
+selection = ["jax[cpu]"]
+stem = ["PyStemmer"]
+
+[[package]]
 name = "boto3"
 version = "1.39.13"
 description = "The AWS SDK for Python"
@@ -7933,6 +7958,98 @@ files = [
 ]
 
 [[package]]
+name = "pystemmer"
+version = "3.0.0"
+description = "Snowball stemming algorithms, for information retrieval"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "PyStemmer-3.0.0-cp310-cp310-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:dabc4adba4cf3bd880d5b709b710f98c5034a76bbaa465b054e3b318d5ed544d"},
+    {file = "PyStemmer-3.0.0-cp310-cp310-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c87366308fe7298829173833a69fbfc731f19829d4788b6cfc8cfe9eff7f7fe9"},
+    {file = "PyStemmer-3.0.0-cp310-cp310-musllinux_1_2_i686.whl", hash = "sha256:88d56b84249057907efefd54bc7efa9b84752fcdcd00c3f8e1e73c3157ecb9d0"},
+    {file = "PyStemmer-3.0.0-cp310-cp310-musllinux_1_2_x86_64.whl", hash = "sha256:8e1edc824faf9815b51069137b4ca246f696cb62714aea6444e63b59e35d46aa"},
+    {file = "PyStemmer-3.0.0-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6ec2370337cf7c9c48ce68d926bbef252bc30b9c55b6d97124a0555da644c5e6"},
+    {file = "PyStemmer-3.0.0-cp311-cp311-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:89a7a6acd77de08fa4b53221eb8c54c53cbc04229cca6ce48bce272b4f1ba98a"},
+    {file = "PyStemmer-3.0.0-cp311-cp311-musllinux_1_2_i686.whl", hash = "sha256:9e753c9f6b6927c4e874c8e5c1cd401d98b6e7f2979b5b2a540c802bfd019494"},
+    {file = "PyStemmer-3.0.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:c71467e9570bbe7aaf12d0f6deebb45d0a0de68b6b0d545b5a2fe935a03970ea"},
+    {file = "PyStemmer-3.0.0-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d0497993de48ba98ce2e6b31ace4a1f5af5c24630d15b997e9be1a1049ee07be"},
+    {file = "PyStemmer-3.0.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a61d4b74b87a72d3a3bb1d1a28ab5fbacd2835e059049111185b3023d64bddd6"},
+    {file = "PyStemmer-3.0.0-cp312-cp312-musllinux_1_2_i686.whl", hash = "sha256:e9fc61a241df3c754c16f44acf523a67c16ecf7a0af14d339649a89f5a1ed669"},
+    {file = "PyStemmer-3.0.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:076099cb664d9ef245d0b2ef3378f00e01185985c79c6e6316d570a76c15fadf"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:2153848f4e619952c54fa82e54b845b33ee7222a953e0da7cc1735350cb77d41"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:98b09a4c0acdda67d2f1249bba681f021733252706ca57744bb684e0e8b89094"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:bf11360948be0112ff9e97ad22decddf615b110015514a8f40cdde6f170787f7"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-musllinux_1_2_i686.whl", hash = "sha256:d0555f0b79412597f53db25aa6cd70dc41428aad37b2ca630baaa24f680ef5ec"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-musllinux_1_2_x86_64.whl", hash = "sha256:66b3bbbf34905f1f23993d3ddd289152fb4a19e8363f2739b6152cb25655fac2"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-win32.whl", hash = "sha256:7ac89337f4c3758b2a5f22e02a4b6341d01137c09002d0e6dca6813d15f6618d"},
+    {file = "PyStemmer-3.0.0-cp36-cp36m-win_amd64.whl", hash = "sha256:b0f23059371bae4f02faeb2e8192e3652b74a74aa61a60237b9741eddc10dacf"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:43c50915092edc9f80063da8d667b549357e29807be815e86852c9b92a0ace4c"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:9720b9f75384d14c0cd352809930bbaa4dd0167bb70ecb78ba9bcc26774be8f1"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:83a61338cc27ab427ca78a6a08ca2c4ed68d8ec5c69c9bc56c43ad0678d38ff1"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-musllinux_1_2_i686.whl", hash = "sha256:2bd9e7b52ec0e4b5f4008aa63ca0d72c279232d15e8522eb41a98c03a5347dab"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-musllinux_1_2_x86_64.whl", hash = "sha256:e80f4189d47d810b4a1cdba96fabf35aead7668f61da8c5ae80cc6b6b087e441"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-win32.whl", hash = "sha256:40985534f2bdb62bc96482927d2177e92d38262f2f3680813cfaefeb493fb78f"},
+    {file = "PyStemmer-3.0.0-cp37-cp37m-win_amd64.whl", hash = "sha256:a1c79d6e95dcbeaac3e78581d0efadde9dba1a589421c03ea272d7c6f9006257"},
+    {file = "PyStemmer-3.0.0-cp38-cp38-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:bd38112ba7a21df6cc8980270c98c7f5023b56fa5fb3a091ccdb9229fc3b745e"},
+    {file = "PyStemmer-3.0.0-cp38-cp38-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0f278c6f4eb7cecee4000ea4afc8248b28530793f41f22493e22575cb09b51db"},
+    {file = "PyStemmer-3.0.0-cp38-cp38-musllinux_1_2_i686.whl", hash = "sha256:b8f1f3fc758528028c0accca80332b63cc63d1ed38e863d4b8d6eb04afb717c2"},
+    {file = "PyStemmer-3.0.0-cp38-cp38-musllinux_1_2_x86_64.whl", hash = "sha256:f43a5ef06fa39a4f9be5a0957e1d06ff74cc7e4698ff69c4cedeef104d6f39ee"},
+    {file = "PyStemmer-3.0.0-cp39-cp39-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:fb5f68508790a149b7b759e8dc44b3809086712e166f1ebc95196a82c4af3328"},
+    {file = "PyStemmer-3.0.0-cp39-cp39-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8c19ac24ad91198af8b0deb23878f7d442e2d6a9f86158b8ee9553f5dab7155b"},
+    {file = "PyStemmer-3.0.0-cp39-cp39-musllinux_1_2_i686.whl", hash = "sha256:1815172afb88919d3c2317aafbe2faae509e5420f3f51a7b3aa5f651b850baa8"},
+    {file = "PyStemmer-3.0.0-cp39-cp39-musllinux_1_2_x86_64.whl", hash = "sha256:92fa2f214f09c6c0fae464fe7d0415adffc3af158a288b7e33ce6be832a5732e"},
+    {file = "PyStemmer-3.0.0-pp310-pypy310_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:2346cfda0f5490ef595b2baf0ba3dc23b80eb2d4d47e69e76071af173da0ccc3"},
+    {file = "PyStemmer-3.0.0-pp310-pypy310_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:cb1a9666f1964635170d5abe44beb2d6f33894aa49b18037ac2340eb0a53e14e"},
+    {file = "PyStemmer-3.0.0-pp37-pypy37_pp73-macosx_10_9_x86_64.whl", hash = "sha256:bc101fe9fb8c590177f3cb6d8a4bde0001b28b02da3df98d2803b7352b03d931"},
+    {file = "PyStemmer-3.0.0-pp37-pypy37_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:e8274384060bf4be5a6f438b6a5870eb30ed0331232bf4d0bdf5a03f74439eb5"},
+    {file = "PyStemmer-3.0.0-pp37-pypy37_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:183794fc1afc5b08a3d4d6651861e91627c24126e292ab0b658210eb80458bb4"},
+    {file = "PyStemmer-3.0.0-pp37-pypy37_pp73-win_amd64.whl", hash = "sha256:85da6de34beb515c64cd8973840e245d048dacd9b65d83af0dc1df3b1549eb62"},
+    {file = "PyStemmer-3.0.0-pp38-pypy38_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:579312adb8805138ca595a5dd256997142b4bba36f57cd131f1d9c4cbdd81efe"},
+    {file = "PyStemmer-3.0.0-pp38-pypy38_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:61d1c991483cee5f599fa96e2daab20219175f84a1e233e7bac33b7fce0292c4"},
+    {file = "PyStemmer-3.0.0-pp39-pypy39_pp73-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:d03320f487c16e3776f33801f30b1aadee77c893006a40e4fb18d779069c3f50"},
+    {file = "PyStemmer-3.0.0-pp39-pypy39_pp73-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:c605230994861fab243f96afd1e8c00280baa6f7f1f104e84dc21c78d70013f6"},
+    {file = "pystemmer-3.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:0887a76bb1574aa615cc7a8ddbae386a6713a6e470ed6866a1cf222a1ad0aca4"},
+    {file = "pystemmer-3.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:849013b9ac5739d6782df8d98cbdf3910b815386aa97a8d8bd35e379d79d9988"},
+    {file = "pystemmer-3.0.0-cp310-cp310-win32.whl", hash = "sha256:e7b31a9f67c6b5abb1557f1d59b7f30d90743175c5185f18caf7c15e27c49734"},
+    {file = "pystemmer-3.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:78d8909d4011f5300a052653497364e199bf3ff42fd60d5495e4bfb803dc8e45"},
+    {file = "pystemmer-3.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:aaf3bf810f33ec6b2e907157a54e7d8b8179060fc02d27a9b14d7845244c434c"},
+    {file = "pystemmer-3.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:c3d908c8e8e61fb392cc34e063bd225b59f3809d3b6fdb25ffc49f652695bd46"},
+    {file = "pystemmer-3.0.0-cp311-cp311-win32.whl", hash = "sha256:8df0a5e8cfb6577ae201bd6bbd1ecee76519459064e3ff886779ca5182f9b59c"},
+    {file = "pystemmer-3.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:cf8717e0fa0975daaffe14cc0fa4ba1c66cc00daf7b7bb9afcdc2c6159e9f5d4"},
+    {file = "pystemmer-3.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:88c3e9dddc97d6697cb086d66c8655e2ed051acacffb479cc6423e56b1413b66"},
+    {file = "pystemmer-3.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:78555f22dd211b220c421b5edafb5f81d2ddb259c668b347aed6853da3695c6d"},
+    {file = "pystemmer-3.0.0-cp312-cp312-win32.whl", hash = "sha256:f6f3db949aa4e0f97be9b800bf1c026229f373e39ebfead8975569a87af39f29"},
+    {file = "pystemmer-3.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:62ad69d85819082e77e720f25818a5219c5429d508ccdcf5da37405c92ca4a30"},
+    {file = "pystemmer-3.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:1a48f350ad92c3b6e05295ae5fcb710fdb15203b15b8590cd7fb49d604385abe"},
+    {file = "pystemmer-3.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:159e9b6b85da4accbae1223b486413e4293f7736cc9fd124c170e78ee49d10bc"},
+    {file = "pystemmer-3.0.0-cp313-cp313-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6764805aa21d302b4471a956ea6a1df496d363dfd39bcbe28d03ca8e7d4f7fdd"},
+    {file = "pystemmer-3.0.0-cp313-cp313-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4d77852e6a7729c6606da7daa914f3ab29c9d5cb4b74dc05f5e1fc0947551d62"},
+    {file = "pystemmer-3.0.0-cp313-cp313-musllinux_1_2_i686.whl", hash = "sha256:e311f34e666c1efe5bd23705dc95d0c832e773c00fdf3b7f065e853bc651af1a"},
+    {file = "pystemmer-3.0.0-cp313-cp313-musllinux_1_2_x86_64.whl", hash = "sha256:a3cb3bf0b8b5926423d0675265058889f30c5c37edc45961e9c92622814c8c27"},
+    {file = "pystemmer-3.0.0-cp313-cp313-win32.whl", hash = "sha256:9792c3bccf0782017eea951c5aac986f87f16149e9587761522da94d77ab3d79"},
+    {file = "pystemmer-3.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:24602d321690946dcb015aa01f6bc9e504eaafd023da23a160c9c16852098a88"},
+    {file = "pystemmer-3.0.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7ae7f1de24e32d314e84e812f78066cce2b5896f60a87d3a9435265a366e627c"},
+    {file = "pystemmer-3.0.0-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:4d83f161fa97a73f114c6768f8e40311ff45599b8c1eab4b283756d4f53849c2"},
+    {file = "pystemmer-3.0.0-cp38-cp38-win32.whl", hash = "sha256:b7a6b37c3e16b1ef3bf3b81fbeea5a32fea9ce4aff305266b8995a207cfe7b4e"},
+    {file = "pystemmer-3.0.0-cp38-cp38-win_amd64.whl", hash = "sha256:390e034f9e8071eb8957648beed50995286d81805f6127af3fafbb49ff58451a"},
+    {file = "pystemmer-3.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:170c347fe842183ef90775ecd0ec027a2e6d2bb2150f0ec033d9badd4a16fd6e"},
+    {file = "pystemmer-3.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:37f035fb4472d4a99c6d52f28f0c491991ecb779216d3183b0cdfd6d9a93eff1"},
+    {file = "pystemmer-3.0.0-cp39-cp39-win32.whl", hash = "sha256:18d18ae92e65f2fdc19e728c96f02e6df42656088f5d1dba95dde1123d6e1633"},
+    {file = "pystemmer-3.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:1f881051986786e65e8fef1e721bff8b562422c2ed5189d97c107e8b2c87446b"},
+    {file = "pystemmer-3.0.0-pp310-pypy310_pp73-macosx_10_15_x86_64.whl", hash = "sha256:f8f6ac3d031776d4512e7feb0f4411b43dacda3de91c24c418d2cff7e4e2db82"},
+    {file = "pystemmer-3.0.0-pp310-pypy310_pp73-macosx_11_0_arm64.whl", hash = "sha256:67e4d3f04829e672399542476163ed2e9067d56159d4a65d87d6839aa0b4fd25"},
+    {file = "pystemmer-3.0.0-pp310-pypy310_pp73-win_amd64.whl", hash = "sha256:753dde65d031a9181d3d1def6c69cf29f90d749f60dbe257360a2bf52d06870d"},
+    {file = "pystemmer-3.0.0-pp38-pypy38_pp73-macosx_10_9_x86_64.whl", hash = "sha256:dfc69688d97efd11171faf69d4243e8260aaf7ba048a7f739130d541dceb506f"},
+    {file = "pystemmer-3.0.0-pp38-pypy38_pp73-macosx_11_0_arm64.whl", hash = "sha256:a437f5051889c4f6c38811751577e803a2c93370fc62f0460b2451ebdfcafb86"},
+    {file = "pystemmer-3.0.0-pp38-pypy38_pp73-win_amd64.whl", hash = "sha256:03cc901734aff701690fcbb60d27dd4dfe47dcea2daa3ddb78364d6d7fe9ac45"},
+    {file = "pystemmer-3.0.0-pp39-pypy39_pp73-macosx_10_15_x86_64.whl", hash = "sha256:96e858254a7a0b26820b1c3fe6caf8fd8f569be8ade67ab823ef91224e31127c"},
+    {file = "pystemmer-3.0.0-pp39-pypy39_pp73-macosx_11_0_arm64.whl", hash = "sha256:da6629f47f3232167636e6f9734129f3f4fe500045138a0cea2cab5f5ea460a6"},
+    {file = "pystemmer-3.0.0-pp39-pypy39_pp73-win_amd64.whl", hash = "sha256:65d8c40ef68363b074d1101efb24eb1183ba6860f5a3593d88b1b32f257c4f2b"},
+    {file = "pystemmer-3.0.0.tar.gz", hash = "sha256:eb9f31accf188e733f0f375cad1594f7cc21ad86b20977ccce0c7162c7c6c35e"},
+]
+
+[[package]]
 name = "pytest"
 version = "8.4.1"
 description = "pytest: simple powerful testing with Python"
@@ -9312,7 +9429,7 @@ version = "1.15.3"
 description = "Fundamental algorithms for scientific computing in Python"
 optional = false
 python-versions = ">=3.10"
-groups = ["evaluation"]
+groups = ["main", "evaluation"]
 files = [
     {file = "scipy-1.15.3-cp310-cp310-macosx_10_13_x86_64.whl", hash = "sha256:a345928c86d535060c9c2b25e71e87c39ab2f22fc96e9636bd74d1dbf9de448c"},
     {file = "scipy-1.15.3-cp310-cp310-macosx_12_0_arm64.whl", hash = "sha256:ad3432cb0f9ed87477a8d97f03b763fd1d57709f1bbde3c9369b1dff5503b253"},
@@ -10111,6 +10228,7 @@ develop = true
 
 [package.dependencies]
 aiofiles = ">=23.0.0"
+bm25s = ">=0.2.0"
 fastapi = ">=0.104.0"
 httpx = ">=0.25.0"
 json-repair = ">=0.1.0"
@@ -10118,6 +10236,7 @@ litellm = ">=1.0.0"
 numpy = ">=1.24.0"
 pandas = ">=2.0.0"
 pydantic = ">=2.0.0"
+PyStemmer = ">=2.2.0"
 python-dotenv = ">=1.0.0"
 rich = ">=13.0.0"
 tqdm = ">=4.65.0"
