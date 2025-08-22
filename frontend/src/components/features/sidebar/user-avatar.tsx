@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { Spinner } from "#/components/shared/spinner";
 import ProfileIcon from "#/icons/profile.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
@@ -35,7 +35,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
           className="text-[#9099AC]"
         />
       )}
-      {isLoading && <LoadingSpinner size="small" />}
+      {isLoading && <Spinner size="small" />}
     </TooltipButton>
   );
 }

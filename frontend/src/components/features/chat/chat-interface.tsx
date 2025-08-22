@@ -22,7 +22,7 @@ import { ActionSuggestions } from "./action-suggestions";
 import { ScrollProvider } from "#/context/scroll-context";
 
 import { ScrollToBottomButton } from "#/components/shared/buttons/scroll-to-bottom-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { Spinner } from "#/components/shared/spinner";
 import { useGetTrajectory } from "#/hooks/mutation/use-get-trajectory";
 import { downloadTrajectory } from "#/utils/download-trajectory";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -208,7 +208,7 @@ export function ChatInterface() {
         >
           {isLoadingMessages && (
             <div className="flex justify-center">
-              <LoadingSpinner size="small" />
+              <Spinner size="small" />
             </div>
           )}
 

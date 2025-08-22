@@ -1,13 +1,17 @@
 # Task List
 
-1. ✅ Explore current CLI structure and session storage
+1. ✅ Analyze all spinner implementations and their usage
 
-2. ✅ Implement /conversations command to list conversations
+2. ✅ Create a unified spinner component to replace all duplicates
 
-3. ✅ Implement conversation viewer to show user messages
+3. ✅ Replace LoadingSpinner usages with unified spinner
 
-4. ✅ Add pagination support for conversation list
+4. ✅ Replace local LoadingSpinner in diff-viewer with unified spinner
 
-5. ✅ Write tests for the new functionality
+5. ✅ Replace HeroUI Spinner usages with unified spinner
 
-6. 🔄 Test the implementation manually and run tests
+6. ✅ Remove duplicate spinner components
+
+7. 🔄 Test that all spinner replacements work correctly
+
+

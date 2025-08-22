@@ -1,7 +1,7 @@
 import { NavLink } from "react-router";
 import { cn } from "#/utils/utils";
 import { BetaBadge } from "./beta-badge";
-import { LoadingSpinner } from "../shared/loading-spinner";
+import { Spinner } from "../shared/spinner";
 
 interface NavTabProps {
   to: string;
@@ -40,7 +40,7 @@ export function NavTab({
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {rightContent}
-            {isLoading && <LoadingSpinner size="small" />}
+            {isLoading && <Spinner size="small" />}
           </div>
         </div>
       )}

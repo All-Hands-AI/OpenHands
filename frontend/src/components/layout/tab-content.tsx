@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from "react";
 import { useLocation } from "react-router";
-import { LoadingSpinner } from "../shared/loading-spinner";
+import { Spinner } from "../shared/spinner";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -32,7 +32,7 @@ export function TabContent({ conversationPath }: TabContentProps) {
       <Suspense
         fallback={
           <div className="flex items-center justify-center h-full">
-            <LoadingSpinner size="large" />
+            <Spinner size="large" />
           </div>
         }
       >

@@ -1,9 +1,9 @@
 import { useTranslation } from "react-i18next";
-import { Spinner } from "@heroui/react";
 import { useSelector } from "react-redux";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { Spinner } from "#/components/shared/spinner";
 import { code } from "../markdown/code";
 import { ul, ol } from "../markdown/list";
 import { paragraph } from "../markdown/paragraph";
@@ -46,7 +46,10 @@ export function MicroagentManagementViewMicroagentContent() {
     <div className="w-full h-full p-6 bg-[#ffffff1a] rounded-2xl text-white text-sm">
       {isLoading && (
         <div className="flex items-center justify-center w-full h-full">
-          <Spinner size="lg" data-testid="loading-microagent-content-spinner" />
+          <Spinner
+            size="large"
+            data-testid="loading-microagent-content-spinner"
+          />
         </div>
       )}
       {error && (

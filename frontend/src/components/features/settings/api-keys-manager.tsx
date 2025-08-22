@@ -3,7 +3,7 @@ import { useTranslation, Trans } from "react-i18next";
 import { FaTrash, FaEye, FaEyeSlash, FaCopy } from "react-icons/fa6";
 import { I18nKey } from "#/i18n/declaration";
 import { BrandButton } from "#/components/features/settings/brand-button";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
+import { Spinner } from "#/components/shared/spinner";
 import { ApiKey, CreateApiKeyResponse } from "#/api/api-keys";
 import {
   displayErrorToast,
@@ -64,7 +64,7 @@ function LlmApiKeyManager({
           isDisabled={refreshLlmApiKey.isPending}
         >
           {refreshLlmApiKey.isPending ? (
-            <LoadingSpinner size="small" />
+            <Spinner size="small" />
           ) : (
             t(I18nKey.SETTINGS$REFRESH_LLM_API_KEY)
           )}
@@ -148,7 +148,7 @@ function ApiKeysTable({ apiKeys, isLoading, onDeleteKey }: ApiKeysTableProps) {
   if (isLoading) {
     return (
       <div className="flex justify-center p-4">
-        <LoadingSpinner size="large" />
+        <Spinner size="large" />
       </div>
     );
   }
