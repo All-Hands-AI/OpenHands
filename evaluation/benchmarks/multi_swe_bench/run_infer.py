@@ -347,9 +347,7 @@ def get_config(
         enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
         sandbox_config=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

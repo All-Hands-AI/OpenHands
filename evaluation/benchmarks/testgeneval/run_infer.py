@@ -147,9 +147,7 @@ def get_config(
         metadata=metadata,
         sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'eventstream'),
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

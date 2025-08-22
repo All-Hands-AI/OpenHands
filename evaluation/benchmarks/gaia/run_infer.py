@@ -65,9 +65,7 @@ def get_config(
         metadata=metadata,
         sandbox_config=sandbox_config,
         runtime='docker',
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+
     )
     config.set_llm_config(metadata.llm_config)
     if metadata.agent_config:
