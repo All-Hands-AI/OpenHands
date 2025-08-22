@@ -411,7 +411,7 @@ class ActionExecutor:
 
             def stream_callback(content: str, metadata: dict):
                 self._add_to_output_queue(
-                    command_id, content, {**metadata, 'command_id': command_id}
+                    command_id, content, {**metadata, 'commandId': command_id}
                 )
 
             # Execute the command with streaming enabled if not in Windows
@@ -433,8 +433,13 @@ class ActionExecutor:
             # This is from an old command, ignore it
             return
 
-        # Add to queue
-        self.terminal_output_queue.append({'content': content, 'metadata': metadata})
+        # Add to queue with simplified structure
+        self.terminal_output_queue.append(
+            {
+                'content': content,
+                **metadata,  # Flatten metadata into the main object
+            }
+        )
 
         # Notify listeners
         self.terminal_output_event.set()

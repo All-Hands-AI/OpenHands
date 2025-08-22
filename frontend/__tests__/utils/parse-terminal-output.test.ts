@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTerminalOutput } from "../../src/utils/parse-terminal-output";
+import { parseTerminalOutput, processTerminalOutput } from "../../src/utils/terminal-output-processor";
 
 describe("parseTerminalOutput", () => {
   it("should parse the command, env, and symbol", () => {
@@ -22,5 +22,28 @@ describe("parseTerminalOutput", () => {
     const raw = "web_scraper.py";
     const parsed = parseTerminalOutput(raw);
     expect(parsed).toBe("web_scraper.py");
+  });
+});
+
+describe("processTerminalOutput", () => {
+  it("should process terminal output with line ending conversion", () => {
+    const raw = "hello\nworld";
+    const processed = processTerminalOutput(raw);
+    expect(processed).toBe("hello\r\nworld");
+  });
+
+  it("should remove Python interpreter info", () => {
+    const raw = "output\n[Python Interpreter: /path/to/python]";
+    const processed = processTerminalOutput(raw);
+    expect(processed).toBe("output");
+  });
+
+  it("should remove command prefix on first chunk", () => {
+    const raw = "echo hello\nhello";
+    const processed = processTerminalOutput(raw, {
+      isFirstChunk: true,
+      removeCommandPrefix: "echo hello"
+    });
+    expect(processed).toBe("hello");
   });
 });

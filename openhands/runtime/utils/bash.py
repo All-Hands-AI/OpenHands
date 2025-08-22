@@ -628,10 +628,10 @@ class BashSession:
 
                 # Call the stream callback with the new content if provided
                 if stream_callback and delta_output:
-                    # Create a simple metadata dict with basic info
+                    # Create simplified metadata
                     chunk_metadata = {
                         'command': command,
-                        'is_complete': False,
+                        'isComplete': False,
                     }
 
                     # Process the new content to remove command prefix if it's the first update
@@ -654,11 +654,11 @@ class BashSession:
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                 )
-                # Send a final callback with the complete result and is_complete=True
+                # Send a final callback with the complete result and isComplete=True
                 if stream_callback:
                     chunk_metadata = {
                         'command': command,
-                        'is_complete': True,
+                        'isComplete': True,
                     }
                     stream_callback(result.content, chunk_metadata)
 
@@ -687,9 +687,8 @@ class BashSession:
                 if stream_callback:
                     chunk_metadata = {
                         'command': command,
-                        'is_complete': False,
-                        'is_timeout': True,
-                        'timeout_type': 'no_change',
+                        'isComplete': False,
+                        'isTimeout': True,
                     }
                     stream_callback(result.content, chunk_metadata)
 
@@ -713,9 +712,8 @@ class BashSession:
                 if stream_callback:
                     chunk_metadata = {
                         'command': command,
-                        'is_complete': False,
-                        'is_timeout': True,
-                        'timeout_type': 'hard',
+                        'isComplete': False,
+                        'isTimeout': True,
                     }
                     stream_callback(result.content, chunk_metadata)
 

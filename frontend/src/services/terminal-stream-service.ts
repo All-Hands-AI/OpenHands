@@ -1,17 +1,13 @@
 import { appendOutput } from "#/state/command-slice";
 import store from "#/store";
-import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { processTerminalOutput } from "#/utils/terminal-output-processor";
 
 interface TerminalStreamChunk {
   content: string;
-  metadata: {
-    command: string;
-    is_complete: boolean;
-    exit_code?: number;
-    is_timeout?: boolean;
-    timeout_type?: string;
-    command_id?: number;
-  };
+  command: string;
+  isComplete: boolean;
+  commandId?: number;
+  isTimeout?: boolean;
 }
 
 export class TerminalStreamService {
@@ -28,11 +24,8 @@ export class TerminalStreamService {
 
   private reconnectDelay: number = 1000; // Start with 1 second delay
 
+  // Track current command for first chunk detection
   private currentCommandId: number | null = null;
-
-  private accumulatedOutput: string = "";
-
-  private chunkNumber: number = 0;
 
   constructor(private baseUrl: string) {}
 
@@ -56,12 +49,12 @@ export class TerminalStreamService {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
           this.handleStreamChunk(data);
         } catch (error) {
-          console.error("Error parsing terminal stream data:", error);
+          // console.error("Error parsing terminal stream data:", error);
         }
       };
 
-      this.eventSource.onerror = (error) => {
-        console.error("Terminal stream error:", error);
+      this.eventSource.onerror = () => {
+        // console.error("Terminal stream error:", error);
         this.isConnected = false;
         this.eventSource?.close();
         this.eventSource = null;
@@ -76,7 +69,7 @@ export class TerminalStreamService {
         }
       };
     } catch (error) {
-      console.error("Failed to connect to terminal stream:", error);
+      // console.error("Failed to connect to terminal stream:", error);
     }
   }
 
@@ -89,46 +82,56 @@ export class TerminalStreamService {
   }
 
   private handleStreamChunk(data: TerminalStreamChunk): void {
-    const { content, metadata } = data;
+    const { content, command, isComplete, commandId, isTimeout } = data;
 
-    // If this is a new command, reset the accumulated output
-    if (this.currentCommandId !== metadata.command_id) {
-      this.currentCommandId = metadata.command_id || null;
-      this.accumulatedOutput = "";
-      this.chunkNumber = 0;
+    // Check if this is a new command
+    const isNewCommand = this.currentCommandId !== commandId;
+    const isFirstChunk = isNewCommand;
+
+    if (isNewCommand) {
+      this.currentCommandId = commandId || null;
     }
 
-    // Add the new content to the accumulated output
-    this.accumulatedOutput += content;
-    this.chunkNumber += 1;
+    // Process the output with unified processing
+    const processedOutput = processTerminalOutput(content, {
+      isFirstChunk,
+      removeCommandPrefix: isFirstChunk ? command : undefined,
+    });
 
-    // Process the output
-    const processedOutput = parseTerminalOutput(
-      content.replaceAll("\n", "\r\n"),
-    );
-
-    // If this is the final chunk, reset the command ID and skip the full output if this is not the
-    // first chunk
-    if (metadata.is_complete) {
+    // Handle completion
+    if (isComplete) {
       this.currentCommandId = null;
       store.dispatch(
         appendOutput({
-          content:
-            this.chunkNumber === 1
-              ? processedOutput
-              : TerminalStreamService.END_OF_OUTPUT_INDICATOR,
+          content: isFirstChunk
+            ? processedOutput
+            : TerminalStreamService.END_OF_OUTPUT_INDICATOR,
           isPartial: false,
         }),
       );
       return;
     }
 
-    store.dispatch(
-      appendOutput({
-        content: processedOutput,
-        isPartial: true,
-      }),
-    );
+    // Handle timeout
+    if (isTimeout) {
+      store.dispatch(
+        appendOutput({
+          content: processedOutput,
+          isPartial: false, // Timeout is considered final
+        }),
+      );
+      return;
+    }
+
+    // Handle partial output
+    if (processedOutput) {
+      store.dispatch(
+        appendOutput({
+          content: processedOutput,
+          isPartial: true,
+        }),
+      );
+    }
   }
 
   isStreamConnected(): boolean {
