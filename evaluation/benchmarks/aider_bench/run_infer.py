@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     EvalOutput,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -246,7 +247,7 @@ def process_instance(
     # for compatibility with the existing output format, we can remake the pairs here
     # remove when it becomes unnecessary
     histories = compatibility_for_eval_history_pairs(state.history)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
 
     # Save the output
     output = EvalOutput(
