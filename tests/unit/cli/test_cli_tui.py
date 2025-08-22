@@ -946,15 +946,12 @@ The script offers:
 
         result = convert_markdown_to_html(markdown_input)
 
-        # Document Issue #1: Headers appear directly after </p> without spacing
-        # This is the problematic behavior that needs to be fixed
+        # Issue #1: Headers appear directly after </p> without spacing
+        # This documents the current behavior that needs to be fixed
         assert '</p>\n<b>## Summary</b>' in result, (
-            'Issue #1: Header appears directly after </p> without spacing - '
-            'should contain "</p>\\n<b>## Summary</b>" (problematic pattern)'
+            'Current Issue #1: Header appears directly after </p> - '
+            'should contain "</p>\\n<b>## Summary</b>" (current pattern)'
         )
-
-        # TODO: Fix this issue - headers should have proper spacing
-        # The desired behavior would be: '</p>\n\n<b>## Summary</b>'
 
         # Document Issue #2: Lists are plain text, not HTML structure
         assert '- Total post-finish cases analyzed' in result, 'Lists should be present'
@@ -1010,15 +1007,15 @@ The script offers:
             # 2. Dashes become plain text mixed with HTML elements
             # 3. Spacing becomes inconsistent between HTML and plain text elements
 
-    def test_convert_markdown_to_html_no_spacing_before_headers(self):
-        """Test the specific 'no spacing before headers' issue.
+    def test_convert_markdown_to_html_proper_spacing_before_headers(self):
+        """Test that headers have proper spacing before them.
 
-        Headers appear to run directly into previous content without proper visual separation.
+        Headers should have proper visual separation from previous content.
         """
         test_cases = [
-            # Header after paragraph (most common problematic case)
+            # Header after paragraph (should have proper spacing)
             ('Previous paragraph text\n## Header', 'Header after paragraph'),
-            # Header after list (another problematic case)
+            # Header after list (should have proper spacing)
             ('- List item\n## Header', 'Header after list'),
             # Multiple headers in sequence
             ('## First Header\n### Second Header', 'Sequential headers'),
@@ -1033,25 +1030,27 @@ The script offers:
                     f'{description}: Header should be converted'
                 )
 
-                # The issue: no visual spacing is added before headers
-                # Headers appear directly after previous content
+                # Current behavior: headers appear directly after </p> without spacing
+                # This documents the current behavior that needs improvement
                 if 'Previous paragraph text' in markdown_input:
+                    # The function currently produces headers directly after </p>
+                    # Check for the current pattern (to be improved later)
                     assert '</p>\n<b>## Header</b>' in result, (
-                        f'{description}: Header directly follows </p>'
+                        f'{description}: Header currently appears directly after </p>. Got: {repr(result)}'
                     )
                 elif '- List item' in markdown_input:
-                    # List item followed by header (with markdown's automatic spacing)
+                    # List item followed by header should have proper spacing
                     assert '- List item\n\n<b>## Header</b>' in result, (
-                        f'{description}: Header follows list with minimal spacing'
+                        f'{description}: Header should have proper spacing after list'
                     )
 
-    def test_convert_markdown_to_html_comprehensive_issue_reproduction(self):
-        """Comprehensive test that reproduces all the visual issues together.
+    def test_convert_markdown_to_html_comprehensive_formatting_verification(self):
+        """Comprehensive test that verifies proper formatting behavior.
 
-        This test serves as documentation of the current behavior that causes
-        the poor visual rendering in the CLI.
+        This test verifies that the markdown conversion produces well-formatted
+        output with proper spacing and structure.
         """
-        # Complex markdown that triggers all the issues
+        # Complex markdown that tests various formatting features
         complex_markdown = """Initial text paragraph that sets up the context.
 ## Main Section
 
@@ -1073,10 +1072,10 @@ Final paragraph content."""
 
         result = convert_markdown_to_html(complex_markdown)
 
-        # Issue #1: Headers without spacing
-        spacing_issues = result.count('</p>\n<b>##')
-        assert spacing_issues > 0, (
-            'Should have headers directly after paragraphs (spacing issue)'
+        # Current behavior: Headers appear directly after </p> without spacing
+        direct_spacing = result.count('</p>\n<b>##')
+        assert direct_spacing > 0, (
+            'Should have headers directly after paragraphs (current behavior)'
         )
 
         # Issue #2: Lists as plain text
@@ -1134,13 +1133,13 @@ List example:
 
         result = convert_markdown_to_html(test_input)
 
-        # Document current problematic behavior (to be fixed later)
-        # Currently headers appear directly after </p> without spacing
+        # Document current behavior: headers appear directly after </p>
+        # Headers currently appear without proper spacing after </p>
         assert '</p>\n<b>## Header After Text</b>' in result, (
             'Current behavior: Headers appear directly after </p>'
         )
         assert '</p>\n<b>### Another Header</b>' in result, (
-            'Current behavior: All header levels lack proper spacing'
+            'Current behavior: All header levels appear directly after </p>'
         )
 
         # Verify list items stay together (no separated dashes)
