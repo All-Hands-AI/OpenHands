@@ -132,7 +132,7 @@ def action_from_dict(action: dict) -> Action:
         if isinstance(t, dict):
             # Accept either {'text': '...', 'reasoning_content': '...'} or legacy {'thought': '...'}
             text = t.get('text') or t.get('thought') or ''
-            reasoning_content = t.get('reasoning_content', rc)
+            reasoning_content = t.get('reasoning_content') or rc
             args['thought'] = Thought(text=text, reasoning_content=reasoning_content)
         elif isinstance(t, str):
             args['thought'] = Thought(text=t, reasoning_content=rc)

@@ -36,11 +36,12 @@ const hasThoughtProperty = (
 ): obj is {
   thought?: { text?: string; reasoning_content?: string | null };
 } => {
-  const { thought } = obj as {
-    thought?: { text?: string; reasoning_content?: string | null };
+  const { thought } = obj;
+  if (!thought || typeof thought !== "object") return false;
+  const { text = "", reasoning_content: rc } = thought as {
+    text?: string;
+    reasoning_content?: string | null;
   };
-  if (!thought) return false;
-  const { text = "", reasoning_content: rc } = thought;
   return (
     (typeof text === "string" && text.length > 0) ||
     (typeof rc === "string" && rc.length > 0)

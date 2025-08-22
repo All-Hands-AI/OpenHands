@@ -282,22 +282,13 @@ class ConversationMemory:
                 )
                 content = assistant_msg.content or ''
 
-                # save content if any, to thought (backward compatible with str)
-                if getattr(action, 'thought', None) is not None:
-                    if hasattr(action.thought, 'text'):
-                        cur_text = action.thought.text
-                        if cur_text != content:
-                            action.thought.text = (
-                                (cur_text + '\n' + content) if cur_text else content
-                            )
-                    else:
-                        # thought provided as a plain string in older code/tests
-                        cur_text = str(action.thought)
-                        combined = (cur_text + '\n' + content) if cur_text else content
-                        # normalize to structured Thought
-                        from openhands.events.action.action import Thought as _Thought
-
-                        action.thought = _Thought(text=combined)
+                # save content if any, to thought
+                if hasattr(action, 'thought') and action.thought is not None:
+                    cur_text = action.thought.text
+                    if cur_text != content:
+                        action.thought.text = (
+                            (cur_text + '\n' + content) if cur_text else content
+                        )
                 else:
                     from openhands.events.action.action import Thought as _Thought
 

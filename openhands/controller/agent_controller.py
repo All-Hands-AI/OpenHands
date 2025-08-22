@@ -659,11 +659,8 @@ class AgentController:
             new_state in (AgentState.USER_CONFIRMED, AgentState.USER_REJECTED)
         ):
             if hasattr(self._pending_action, 'thought'):
-                # Support both Thought dataclass and legacy string
-                if hasattr(self._pending_action.thought, 'text'):
-                    self._pending_action.thought.text = ''  # type: ignore[attr-defined]
-                else:
-                    self._pending_action.thought = ''  # type: ignore[union-attr]
+                # Clear the thought text for confirmed/rejected actions
+                self._pending_action.thought.text = ''  # type: ignore[attr-defined]
             if new_state == AgentState.USER_CONFIRMED:
                 confirmation_state = ActionConfirmationStatus.CONFIRMED
             else:

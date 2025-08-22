@@ -108,7 +108,7 @@ def response_to_actions(
             rc = getattr(assistant_msg, attr, None)
             if isinstance(rc, str) and rc.strip():
                 reasoning_content = (
-                    rc if reasoning_content is None else reasoning_content + '\n' + rc
+                    rc if not reasoning_content else reasoning_content + '\n' + rc
                 )
 
         # Process each tool call to OpenHands action
