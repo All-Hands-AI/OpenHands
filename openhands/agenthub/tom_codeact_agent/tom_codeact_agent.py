@@ -17,16 +17,17 @@ from openhands.core.config import AgentConfig
 from openhands.core.schema import AgentState
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message, TextContent
-from openhands.events.action import AgentFinishAction, MessageAction, ChangeAgentStateAction
+from openhands.events.action import AgentFinishAction, MessageAction
 from openhands.events.event import Event
 from openhands.events.stream import EventStream
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.llm_utils import check_tools
 from openhands.memory.condenser.condenser import Condensation, View
 from openhands.memory.conversation_memory import ConversationMemory
 from openhands.storage import get_file_store
 from openhands.storage.locations import CONVERSATION_BASE_DIR
 from openhands.utils.prompt import PromptManager
+from openhands.server.services.conversation_stats import ConversationStats
 
 from tom_swe.tom_agent import create_tom_agent
 from tom_swe.memory.locations import get_usermodeling_dir
@@ -45,14 +46,14 @@ class TomCodeActAgent(CodeActAgent):
 
     VERSION = '1.0'
 
-    def __init__(self, llm: LLM, config: AgentConfig) -> None:
+    def __init__(self, config: AgentConfig, llm_registry: LLMRegistry) -> None:
         """Initialize TomCodeActAgent.
 
         Args:
             llm: Language model to use
             config: Agent configuration with Tom settings
         """
-        super().__init__(llm, config)
+        super().__init__(config, llm_registry)
         self.file_store = get_file_store(
             'local',
             "~/.openhands"
@@ -67,9 +68,9 @@ class TomCodeActAgent(CodeActAgent):
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
             enable_rag=config.tom_enable_rag,
-            llm_model=llm.config.model,
-            api_key=llm.config.api_key.get_secret_value() if llm.config.api_key else None,
-            api_base=llm.config.base_url,
+            llm_model=llm_registry.config.llms['llm'].model,
+            api_key=llm_registry.config.llms['llm'].api_key.get_secret_value() if llm_registry.config.llms['llm'].api_key else None,
+            api_base=llm_registry.config.llms['llm'].base_url,
             skip_memory_collection=config.skip_memory_collection,
         )
         self._last_processed_user_message_id: Optional[int] = None
@@ -77,15 +78,6 @@ class TomCodeActAgent(CodeActAgent):
 
         logger.info(f"TomCodeActAgent initialized with Tom integration: {self.tom_enabled}")
 
-    @property
-    def prompt_manager(self) -> PromptManager:
-        """Get the prompt manager, using tom_codeact_agent prompts."""
-        if self._prompt_manager is None:
-            self._prompt_manager = PromptManager(
-                prompt_dir=os.path.join(os.path.dirname(__file__), 'prompts'),
-                system_prompt_filename=self.config.system_prompt_filename,
-            )
-        return self._prompt_manager
 
     def step(self, state: State) -> 'Action':
         """Enhanced step method with Tom integration at two key points.
@@ -417,7 +409,7 @@ class TomCodeActAgent(CodeActAgent):
                 state_tracker = StateTracker(session_id, file_store, None)
                 state_tracker.set_initial_state(
                     id=session_id,
-                    agent=CodeActAgent(llm=self.llm, config=agent_config),
+                    conversation_stats=ConversationStats(file_store=file_store, conversation_id=session_id, user_id=None),
                     state=None,
                     max_iterations=100,
                     max_budget_per_task=None,
@@ -489,7 +481,3 @@ class TomCodeActAgent(CodeActAgent):
                 })
 
         return conversation_messages
-
-    async def __aenter__(self):
-        """Async context manager entry."""
-        return self
