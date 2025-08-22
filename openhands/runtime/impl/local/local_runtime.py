@@ -590,17 +590,16 @@ class LocalRuntime(ActionExecutionClient):
         if 'localhost' in runtime_url:
             url = f'{self.runtime_url}:{self._vscode_port}'
         else:
-            # parsed = urlparse(self.runtime_url)
-            # scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
-            # path_mode = path.startswith(f'/{self.runtime_id}')
-            # if path_mode:
-            #     base = f'{scheme}://{netloc}'
-            #     vscode_url = f'{base}/{self.runtime_id}/vscode'
-            # else:
-            #     vscode_url = f'{scheme}://vscode-{netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+            parsed = urlparse(self.runtime_url)
+            scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
+            logger.info(f'scheme is {scheme}, netloc is {netloc}, path is {path}')
+            path_mode = netloc.startswith('runtime.')
+            if path_mode:
+                url = f'{runtime_url}/vscode'
+            else:
+                parsed_url = urlparse(runtime_url)
+                url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+        logger.info(f'_create_url url is {url}')
         return url
 
     @property
