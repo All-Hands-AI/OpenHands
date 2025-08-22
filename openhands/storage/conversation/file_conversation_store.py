@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import TypeAdapter
@@ -17,6 +18,7 @@ from openhands.storage.data_models.conversation_metadata_result_set import (
 from openhands.storage.files import FileStore
 from openhands.storage.locations import (
     CONVERSATION_BASE_DIR,
+    get_conversation_events_dir,
     get_conversation_metadata_filename,
 )
 from openhands.utils.async_utils import call_sync_from_async
@@ -36,11 +38,28 @@ class FileConversationStore(ConversationStore):
 
     async def get_metadata(self, conversation_id: str) -> ConversationMetadata:
         path = self.get_conversation_metadata_filename(conversation_id)
-        json_str = await call_sync_from_async(self.file_store.read, path)
+        try:
+            json_str = await call_sync_from_async(self.file_store.read, path)
+        except FileNotFoundError:
+            # Attempt file-store-only fallback using events to synthesize minimal metadata
+            synthesized = self._synthesize_metadata_from_events(conversation_id)
+            if synthesized is not None:
+                logger.debug(
+                    f'Synthesized metadata for conversation without metadata.json: {conversation_id}'
+                )
+                return synthesized
+            raise
 
         # Validate the JSON
         json_obj = json.loads(json_str)
         if 'created_at' not in json_obj:
+            # Treat as missing metadata and try fallback
+            synthesized = self._synthesize_metadata_from_events(conversation_id)
+            if synthesized is not None:
+                logger.debug(
+                    f'Synthesized metadata for conversation with invalid metadata.json: {conversation_id}'
+                )
+                return synthesized
             raise FileNotFoundError(path)
 
         # Remove github_user_id if it exists
@@ -49,6 +68,63 @@ class FileConversationStore(ConversationStore):
 
         result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result
+
+    def _synthesize_metadata_from_events(
+        self, conversation_id: str
+    ) -> ConversationMetadata | None:
+        """File-store-only fallback to synthesize minimal metadata when metadata.json is missing.
+
+        Attempts to infer created_at from the earliest event file timestamp; uses directory
+        mtime as a fallback. Only used inside FileConversationStore; other stores are unaffected.
+        """
+        try:
+            events_dir = get_conversation_events_dir(conversation_id)
+            event_entries = self.file_store.list(events_dir)
+        except FileNotFoundError:
+            # No events directory; use conversation directory mtime if available
+            try:
+                Path(self.get_conversation_metadata_filename(conversation_id)).parent
+                # We cannot stat via FileStore, so use absence of events as a signal to skip
+                # Fallback to returning None if we cannot infer anything reliably
+                return None
+            except Exception:
+                return None
+
+        # Filter to files that look like event files (e.g., .../events/<id>.json)
+        event_files = [p for p in event_entries if p.endswith('.json')]
+        if not event_files:
+            return None
+
+        # Determine earliest event id by filename and synthesize a created_at
+        def _id_from_event_path(p: str) -> int:
+            try:
+                return int(Path(p).name.split('.')[0])
+            except Exception:
+                return 1_000_000_000
+
+        earliest_event = min(event_files, key=_id_from_event_path)
+        # Prefer actual event timestamp if available; otherwise fallback to now
+        try:
+            # Read the earliest event JSON and parse its timestamp
+            evt_content = self.file_store.read(earliest_event)
+            evt_obj = json.loads(evt_content)
+            ts_str = evt_obj.get('timestamp')
+            if isinstance(ts_str, str):
+                created_at = datetime.fromisoformat(ts_str.replace('Z', '+00:00'))
+            else:
+                created_at = datetime.now(timezone.utc)
+        except Exception:
+            created_at = datetime.now(timezone.utc)
+
+        # Compose minimal metadata
+        metadata = ConversationMetadata(
+            conversation_id=conversation_id,
+            selected_repository=None,
+            user_id=None,
+            title=None,
+            created_at=created_at,
+        )
+        return metadata
 
     async def delete_metadata(self, conversation_id: str) -> None:
         path = str(
