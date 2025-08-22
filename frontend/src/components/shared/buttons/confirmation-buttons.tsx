@@ -95,10 +95,10 @@ export function ConfirmationButtons() {
     <div className="flex flex-col gap-2 pt-4">
       {isHighRisk && (
         <RiskAlert
-          severity="high"
-          icon={<WarningIcon width={16} height={16} color="#fff" />}
-          riskTitle={t(I18nKey.COMMON$HIGH_RISK)}
           content={t(I18nKey.CHAT_INTERFACE$HIGH_RISK_WARNING)}
+          icon={<WarningIcon width={16} height={16} color="#fff" />}
+          severity="high"
+          title={t(I18nKey.COMMON$HIGH_RISK)}
         />
       )}
       <div className="flex justify-between items-center">

@@ -2,19 +2,19 @@ import { ReactNode } from "react";
 import { cn } from "#/utils/utils";
 
 interface RiskAlertProps {
-  riskTitle: string;
+  className?: string;
   content: ReactNode;
   icon?: ReactNode;
-  className?: string;
   severity: "high" | "medium" | "low";
+  title: string;
 }
 
 export function RiskAlert({
-  riskTitle,
+  className,
   content,
   icon,
-  className,
   severity,
+  title,
 }: RiskAlertProps) {
   // Currently, we are only supporting the high risk alert. If we use want to support other risk levels, we can add them here and use cva to create different variants of this component.
   if (severity === "high") {
@@ -26,7 +26,7 @@ export function RiskAlert({
         )}
       >
         {icon && <span className="">{icon}</span>}
-        <span className="font-bold">{riskTitle}</span>
+        <span className="font-bold">{title}</span>
         <span className="font-normal">{content}</span>
       </div>
     );
