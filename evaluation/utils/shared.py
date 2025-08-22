@@ -759,7 +759,7 @@ def get_openhands_config_for_eval(
     if default_agent is None:
         default_agent = 'CodeActAgent'
     if max_iterations is None:
-        max_iterations = 30
+        max_iterations = 50
 
     # Always use repo-local .eval_sessions directory (absolute path)
     eval_store = os.path.abspath(os.path.join(os.getcwd(), '.eval_sessions'))
