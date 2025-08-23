@@ -1,21 +1,35 @@
+from __future__ import annotations
+
 import asyncio
+
+# NOTE: This module intentionally defers certain imports to support legacy tests that
+# patch via the deprecated shim path openhands.server.session.agent_session.
+# See openhands/server/session/agent_session.py which re-exports AgentController,
+# EventStream, and Memory so that tests can patch them there.
 import json
 import time
+
+# AgentController is resolved dynamically via server shim to support legacy tests
+# Do not import at module level to allow patching via openhands.server.session.agent_session
+from importlib import import_module
 from logging import LoggerAdapter
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Callable, cast
 
-from openhands.controller import AgentController
+# from openhands.controller import AgentController  # moved to _get_AgentController() helper
 from openhands.controller.agent import Agent
 from openhands.controller.replay import ReplayManager
 from openhands.controller.state.state import State
 from openhands.core.config import AgentConfig, LLMConfig, OpenHandsConfig
 from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
+
+# Shim helpers to dynamically resolve AgentController, EventStream, Memory via
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
 from openhands.events.event import Event, EventSource
-from openhands.events.stream import EventStream
+
+# EventStream is resolved via _get_EventStream_cls() to support legacy tests
 from openhands.integrations.provider import (
     CUSTOM_SECRETS_TYPE,
     PROVIDER_TOKEN_TYPE,
@@ -23,7 +37,8 @@ from openhands.integrations.provider import (
 )
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.mcp import add_mcp_tools_to_agent
-from openhands.memory.memory import Memory
+
+# Memory is resolved via _get_Memory_cls() to support legacy tests
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
@@ -36,7 +51,31 @@ from openhands.storage.files import FileStore
 from openhands.utils.async_utils import EXECUTOR, call_sync_from_async
 from openhands.utils.shutdown_listener import should_continue
 
-# Public constants used by server and other modules
+if TYPE_CHECKING:
+    from openhands.controller import AgentController
+    from openhands.events.stream import EventStream
+    from openhands.memory.memory import Memory
+
+# Shim helpers to dynamically resolve AgentController, EventStream, Memory via
+# openhands.server.session.agent_session for legacy patch support
+
+
+def _get_shim():
+    return import_module('openhands.server.session.agent_session')
+
+
+def _get_AgentController():
+    return getattr(_get_shim(), 'AgentController')
+
+
+def _get_EventStream_cls():
+    return getattr(_get_shim(), 'EventStream')
+
+
+def _get_Memory_cls():
+    return getattr(_get_shim(), 'Memory')
+
+
 WAIT_TIME_BEFORE_CLOSE = 90
 WAIT_TIME_BEFORE_CLOSE_INTERVAL = 5
 
@@ -51,13 +90,13 @@ class AgentSession:
 
     sid: str
     user_id: str | None
-    event_stream: EventStream
+    event_stream: 'EventStream'
     llm_registry: LLMRegistry
     file_store: FileStore
-    controller: AgentController | None = None
+    controller: 'AgentController' | None = None
     runtime: Runtime | None = None
     security_analyzer: SecurityAnalyzer | None = None
-    memory: Memory | None = None
+    memory: 'Memory' | None = None
     _starting: bool = False
     _started_at: float = 0
     _closed: bool = False
@@ -84,6 +123,7 @@ class AgentSession:
             user_id: Optional current user id for multi-user stores
         """
         self.sid = sid
+        EventStream = _get_EventStream_cls()
         self.event_stream = EventStream(sid, file_store, user_id)
         self.file_store = file_store
         self._status_callback = status_callback
@@ -401,7 +441,7 @@ class AgentSession:
         agent_to_llm_config: dict[str, LLMConfig] | None = None,
         agent_configs: dict[str, AgentConfig] | None = None,
         replay_events: list[Event] | None = None,
-    ) -> tuple[AgentController, bool]:
+    ) -> tuple['AgentController', bool]:
         """Create an AgentController instance.
 
         Returns the controller and whether state was restored from a previous conversation.
@@ -424,6 +464,7 @@ class AgentSession:
         )
         self.logger.debug(msg)
         initial_state = self._maybe_restore_state()
+        AgentController = _get_AgentController()
         controller = AgentController(
             sid=self.sid,
             user_id=self.user_id,
@@ -452,7 +493,8 @@ class AgentSession:
         conversation_instructions: str | None,
         custom_secrets_descriptions: dict[str, str],
         working_dir: str,
-    ) -> Memory:
+    ) -> 'Memory':
+        Memory = _get_Memory_cls()
         memory = Memory(
             event_stream=self.event_stream,
             sid=self.sid,
