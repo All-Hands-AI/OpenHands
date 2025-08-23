@@ -92,6 +92,7 @@ Your primary role is to assist users by executing commands, modifying code, and 
   2. If dependency files exist, use them to install all dependencies at once (e.g., `pip install -r requirements.txt`, `npm install`, etc.)
   3. Only install individual packages directly if no dependency files are found or if only specific packages are needed
 * Similarly, if you encounter missing dependencies for essential tools requested by the user, install them when possible.
+* Do NOT use `set -e`, `set -eu`, or `set -euo pipefail` in shell scripts or commands in this environment. The runtime may not support them and can cause unusable shell sessions. Use direct commands and handle errors normally.
 </ENVIRONMENT_SETUP>
 
 <TROUBLESHOOTING>
