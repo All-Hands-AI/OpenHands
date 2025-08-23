@@ -17,6 +17,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -114,16 +115,11 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = base_container_image
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
-        enable_browser=RUN_WITH_BROWSING,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
+        sandbox_config=sandbox_config,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        enable_browser=RUN_WITH_BROWSING,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(

@@ -20,6 +20,7 @@ def test_event_serialization_deserialization():
             'image_urls': None,
             'file_urls': None,
             'wait_for_response': False,
+            'security_risk': -1,
         },
     }
     assert deserialized == expected
@@ -42,6 +43,7 @@ def test_array_serialization_deserialization():
                 'image_urls': None,
                 'file_urls': None,
                 'wait_for_response': False,
+                'security_risk': -1,
             },
         }
     ]

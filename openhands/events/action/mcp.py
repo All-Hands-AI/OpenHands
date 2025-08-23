@@ -12,7 +12,7 @@ class MCPAction(Action):
     thought: Thought = field(default_factory=Thought)
     action: str = ActionType.MCP
     runnable: ClassVar[bool] = True
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
