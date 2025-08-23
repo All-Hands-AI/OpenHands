@@ -24,6 +24,7 @@ from openhands.core.config import (
     OpenHandsConfig,
     get_llm_config_arg,
     parse_arguments,
+    get_evaluation_parser,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -56,19 +57,20 @@ def get_config(
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.browsergym_eval_env = env_id
     sandbox_config.runtime_startup_env_vars = {
-        'BASE_URL': base_url,
+        'WEBARENA_BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
-        'SHOPPING': f'{base_url}:7770/',
-        'SHOPPING_ADMIN': f'{base_url}:7780/admin',
-        'REDDIT': f'{base_url}:9999',
-        'GITLAB': f'{base_url}:8023',
-        'WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
-        'MAP': f'{base_url}:3000',
-        'HOMEPAGE': f'{base_url}:4399',
+        'WA_SHOPPING': f'{base_url}:7770/',
+        'WA_SHOPPING_ADMIN': f'{base_url}:7780/admin',
+        'WA_REDDIT': f'{base_url}:9999',
+        'WA_GITLAB': f'{base_url}:8023',
+        'WA_WIKIPEDIA': f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing',
+        'WA_MAP': f'{base_url}:3000',
+        'WA_HOMEPAGE': f'{base_url}:4399',
     }
     config = get_openhands_config_for_eval(
         metadata=metadata,
         runtime='docker',
+        enable_browser=True,
         sandbox_config=sandbox_config,
     )
     config.set_llm_config(metadata.llm_config)
@@ -194,7 +196,8 @@ def process_instance(
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_evaluation_parser()
+    args = parser.parse_args()
 
     dataset = pd.DataFrame(
         {
@@ -216,7 +219,7 @@ if __name__ == '__main__':
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        "webarena",
         args.agent_cls,
         args.max_iterations,
         args.eval_note,

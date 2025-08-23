@@ -3,9 +3,6 @@ set -eo pipefail
 
 source "evaluation/utils/version_control.sh"
 
-# configure webarena websites and environment
-source evaluation/benchmarks/webarena/scripts/webarena_env.sh
-
 # configure browsing agent
 export USE_NAV="false"
 export USE_CONCISE_ANSWER="true"
