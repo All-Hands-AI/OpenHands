@@ -453,8 +453,12 @@ class TestHandleSettingsCommand:
     @patch('openhands.cli.commands.display_settings')
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.modify_llm_settings_basic')
+    @patch('openhands.cli.commands.prompt_for_restart')
+    @patch('openhands.cli.commands.restart_cli')
     async def test_settings_basic_with_changes(
         self,
+        mock_restart_cli,
+        mock_prompt_for_restart,
         mock_modify_basic,
         mock_cli_confirm,
         mock_display_settings,
@@ -464,6 +468,9 @@ class TestHandleSettingsCommand:
 
         # Mock user selecting "Basic" settings
         mock_cli_confirm.return_value = 0
+        # Simulate that settings changed and restart is asked but user says no
+        mock_modify_basic.return_value = True
+        mock_prompt_for_restart.return_value = False
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
@@ -472,6 +479,8 @@ class TestHandleSettingsCommand:
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_basic.assert_called_once_with(config, settings_store)
+        mock_prompt_for_restart.assert_called_once_with(config)
+        mock_restart_cli.assert_not_called()
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.display_settings')
@@ -488,6 +497,8 @@ class TestHandleSettingsCommand:
 
         # Mock user selecting "Basic" settings
         mock_cli_confirm.return_value = 0
+        # Simulate no changes
+        mock_modify_basic.return_value = False
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
@@ -501,8 +512,12 @@ class TestHandleSettingsCommand:
     @patch('openhands.cli.commands.display_settings')
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.modify_llm_settings_advanced')
+    @patch('openhands.cli.commands.prompt_for_restart')
+    @patch('openhands.cli.commands.restart_cli')
     async def test_settings_advanced_with_changes(
         self,
+        mock_restart_cli,
+        mock_prompt_for_restart,
         mock_modify_advanced,
         mock_cli_confirm,
         mock_display_settings,
@@ -512,6 +527,9 @@ class TestHandleSettingsCommand:
 
         # Mock user selecting "Advanced" settings
         mock_cli_confirm.return_value = 1
+        # Simulate that settings changed and restart is asked but user says yes
+        mock_modify_advanced.return_value = True
+        mock_prompt_for_restart.return_value = True
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
@@ -520,13 +538,17 @@ class TestHandleSettingsCommand:
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_advanced.assert_called_once_with(config, settings_store)
+        mock_prompt_for_restart.assert_called_once_with(config)
+        mock_restart_cli.assert_called_once()
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.display_settings')
     @patch('openhands.cli.commands.cli_confirm')
     @patch('openhands.cli.commands.modify_llm_settings_advanced')
+    @patch('openhands.cli.commands.prompt_for_restart')
     async def test_settings_advanced_without_changes(
         self,
+        mock_prompt_for_restart,
         mock_modify_advanced,
         mock_cli_confirm,
         mock_display_settings,
@@ -536,6 +558,8 @@ class TestHandleSettingsCommand:
 
         # Mock user selecting "Advanced" settings
         mock_cli_confirm.return_value = 1
+        # Simulate no changes
+        mock_modify_advanced.return_value = False
 
         # Call the function under test
         await handle_settings_command(config, settings_store)
@@ -544,6 +568,7 @@ class TestHandleSettingsCommand:
         mock_display_settings.assert_called_once_with(config)
         mock_cli_confirm.assert_called_once()
         mock_modify_advanced.assert_called_once_with(config, settings_store)
+        mock_prompt_for_restart.assert_not_called()
 
     @pytest.mark.asyncio
     @patch('openhands.cli.commands.display_settings')
