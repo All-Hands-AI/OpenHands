@@ -56,10 +56,7 @@ def get_config(
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.browsergym_eval_env = env_id
     # Install evaluation dependencies in the runtime container (into Poetry environment)
-    # Updated browser utils to preserve goal text - v4 (committed changes)
-    sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry run pip install browsergym-webarena==0.13.3 && echo "Browser utils fixed for GET_EVAL_GOAL exception handling v4"'
-    # Force rebuild to test browser utils fix
-    sandbox_config.force_rebuild_runtime = True
+    sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry run pip install browsergym-webarena==0.13.3'
     sandbox_config.runtime_startup_env_vars = {
         'WEBARENA_BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
