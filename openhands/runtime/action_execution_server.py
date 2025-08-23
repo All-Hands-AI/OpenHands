@@ -568,8 +568,10 @@ class ActionExecutor:
         return FileEditObservation(
             content=result_str,
             path=action.path,
-            old_content=action.old_str,
-            new_content=action.new_str,
+            # Use actual file contents returned by the editor to avoid
+            # incorrect "no changes detected" messages in visualization.
+            old_content=old_content,
+            new_content=new_content,
             impl_source=FileEditSource.OH_ACI,
             diff=get_diff(
                 old_contents=old_content or '',
