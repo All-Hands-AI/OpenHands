@@ -59,7 +59,7 @@ class Conversation:
         if config.security.security_analyzer:
             self.security_analyzer = options.SecurityAnalyzers.get(
                 config.security.security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
+            )()
 
         # Do not eagerly create a runtime. Some runtimes (e.g., Docker) perform
         # client initialization in __init__, which breaks simple attach/inspect

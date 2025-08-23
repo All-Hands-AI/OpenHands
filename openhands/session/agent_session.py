@@ -281,7 +281,7 @@ class AgentSession:
             self.logger.debug(f'Using security analyzer: {security_analyzer}')
             self.security_analyzer = options.SecurityAnalyzers.get(
                 security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
+            )()
 
     def override_provider_tokens_with_custom_secret(
         self,
