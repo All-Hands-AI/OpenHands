@@ -2,8 +2,9 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from openhands.core.schema import ActionType
-from openhands.events.action.action import Action, Thought
 from openhands.events.event import RecallType
+
+from .action import Action, Thought
 
 
 @dataclass

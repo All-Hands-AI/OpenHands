@@ -6,8 +6,8 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
     Action,
     BrowseInteractiveAction,
+    Thought,
 )
-from openhands.events.action.action import Thought
 
 
 class BrowsingResponseParser(ResponseParser):

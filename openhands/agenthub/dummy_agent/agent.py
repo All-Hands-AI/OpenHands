@@ -12,8 +12,8 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
+    Thought,
 )
-from openhands.events.action.action import Thought
 from openhands.events.observation import (
     AgentStateChangedObservation,
     CmdOutputMetadata,

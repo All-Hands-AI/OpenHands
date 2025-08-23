@@ -1,4 +1,4 @@
-from openhands.events.action.action import Thought
+from openhands.events.action import Thought
 from openhands.events.action.commands import CmdRunAction
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 

@@ -290,7 +290,7 @@ class ConversationMemory:
                             (cur_text + '\n' + content) if cur_text else content
                         )
                 else:
-                    from openhands.events.action.action import Thought as _Thought
+                    from openhands.events.action import Thought as _Thought
 
                     action.thought = _Thought(text=content)
 

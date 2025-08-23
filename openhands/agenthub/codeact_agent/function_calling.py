@@ -38,8 +38,8 @@ from openhands.events.action import (
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
+    Thought,
 )
-from openhands.events.action.action import Thought
 from openhands.events.action.agent import CondensationRequestAction
 from openhands.events.action.mcp import MCPAction
 from openhands.events.event import FileEditSource, FileReadSource

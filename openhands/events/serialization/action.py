@@ -1,7 +1,7 @@
 from typing import Any
 
 from openhands.core.exceptions import LLMMalformedActionError
-from openhands.events.action.action import Action, ActionSecurityRisk, Thought
+from openhands.events.action import Action, ActionSecurityRisk, Thought
 from openhands.events.action.agent import (
     AgentDelegateAction,
     AgentFinishAction,

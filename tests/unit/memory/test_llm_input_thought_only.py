@@ -1,7 +1,7 @@
 from unittest.mock import MagicMock
 
 from openhands.core.config.agent_config import AgentConfig
-from openhands.events.action.action import Thought
+from openhands.events.action import Thought
 from openhands.events.action.agent import AgentFinishAction
 from openhands.events.action.message import MessageAction
 from openhands.memory.conversation_memory import ConversationMemory
