@@ -22,9 +22,8 @@ from evaluation.utils.shared import (
 from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
-    get_llm_config_arg,
-    parse_arguments,
     get_evaluation_parser,
+    get_llm_config_arg,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -56,6 +55,9 @@ def get_config(
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
     sandbox_config.browsergym_eval_env = env_id
+    # Install evaluation dependencies in the runtime container (into Poetry environment)
+    sandbox_config.runtime_extra_deps = '/openhands/micromamba/bin/micromamba run -n openhands poetry run pip install browsergym-webarena==0.13.3'
+    # No need to force rebuild since extra_deps is now included in hash calculation
     sandbox_config.runtime_startup_env_vars = {
         'WEBARENA_BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
@@ -219,7 +221,7 @@ if __name__ == '__main__':
 
     metadata = make_metadata(
         llm_config,
-        "webarena",
+        'webarena',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
