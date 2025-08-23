@@ -32,6 +32,7 @@ from openhands.events.action import (
     CmdRunAction,
     MessageAction,
 )
+from openhands.events.event import EventSource
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
 from openhands.runtime.browser.browser_env import (
@@ -82,7 +83,7 @@ def get_config(
 
 def initialize_runtime(
     runtime: Runtime,
-) -> dict:
+) -> str:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -148,13 +149,48 @@ def process_instance(
     call_async_from_sync(runtime.connect)
     task_str = initialize_runtime(runtime)
 
+    logger.info(f"DEBUG: task_str = {repr(task_str)}")
+    logger.info(f"DEBUG: task_str type = {type(task_str)}")
+    
+    # Use EventSource.ENVIRONMENT to bypass recall processing in evaluation
+    initial_action = MessageAction(content=task_str)
+    initial_action._source = EventSource.ENVIRONMENT  # Bypass recall for evaluation
+    logger.info(f"DEBUG: Created MessageAction: {initial_action}")
+    logger.info(f"DEBUG: MessageAction content: {repr(initial_action.content)}")
+    logger.info(f"DEBUG: MessageAction source: {initial_action.source}")
+
+    # Enable detailed logging for debugging
+    import os
+    os.environ['LOG_ALL_EVENTS'] = '1'
+    
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(content=task_str),
+            initial_user_action=initial_action,
             runtime=runtime,
         )
     )
+    
+    logger.info(f"DEBUG: run_controller returned state: {state}")
+    if state:
+        logger.info(f"DEBUG: state.agent_state: {state.agent_state}")
+        logger.info(f"DEBUG: state.history length: {len(state.history)}")
+        logger.info(f"DEBUG: Last 10 events in history:")
+        for i, event in enumerate(state.history[-10:]):
+            logger.info(f"DEBUG:   {i}: {type(event).__name__} - {event}")
+        
+        # Look for RecallActions specifically
+        recall_actions = [e for e in state.history if e.__class__.__name__ == 'RecallAction']
+        logger.info(f"DEBUG: Found {len(recall_actions)} RecallAction(s)")
+        for i, recall in enumerate(recall_actions):
+            logger.info(f"DEBUG: RecallAction {i}: {recall}")
+            
+        # Look for any observations related to RecallActions
+        recall_observations = [e for e in state.history if hasattr(e, 'cause') and any(str(e.cause) == str(r.id) for r in recall_actions)]
+        logger.info(f"DEBUG: Found {len(recall_observations)} RecallAction observation(s)")
+        for i, obs in enumerate(recall_observations):
+            logger.info(f"DEBUG: RecallAction observation {i}: {obs}")
+    
     # ======= Attempt to evaluate the agent's environment impact =======
 
     # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
