@@ -27,6 +27,7 @@ from openhands.events import EventSource
 from openhands.runtime.impl.local import LocalRuntime
 from openhands.controller.state.state import State
 from openhands.llm.metrics import Metrics
+from openhands.llm.llm_registry import LLMRegistry
 # Removed sleeptime import since it's now integrated into TomCodeActAgent
 
 
@@ -65,7 +66,7 @@ async def test_tom_agent(instruction: str, workspace_dir: str = None):
     runtime = None
     try:
         # Create the agent
-        agent = create_agent(config)
+        agent = create_agent(config, llm_registry=LLMRegistry(config=config))
         print(f"Created agent: {agent.__class__.__name__}")
 
         # Create local runtime
