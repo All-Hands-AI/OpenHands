@@ -54,7 +54,7 @@ class EventStream(EventStore):
     _write_page_cache: list[dict]
 
     def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
-        super().__init__(sid, file_store, user_id)
+        super().__init__(sid, file_store, user_id, use_cache=True)  # EventStream can write cache files
         self._stop_flag = threading.Event()
         self._queue: queue.Queue[Event] = queue.Queue()
         self._thread_pools = {}

@@ -48,6 +48,7 @@ class EventStore(EventStoreABC):
     file_store: FileStore
     user_id: str | None
     cache_size: int = 25
+    use_cache: bool = False  # EventStore doesn't write cache files, so disable cache reading by default
     _cur_id: int | None = None  # Private field to cache the calculated value
 
     @property
@@ -170,6 +171,9 @@ class EventStore(EventStoreABC):
         return page
 
     def _load_cache_page_for_index(self, index: int) -> _CachePage:
+        if not self.use_cache:
+            # Return a dummy page with no events, forcing fallback to individual event reading
+            return _DUMMY_PAGE
         offset = index % self.cache_size
         index -= offset
         return self._load_cache_page(index, index + self.cache_size)
