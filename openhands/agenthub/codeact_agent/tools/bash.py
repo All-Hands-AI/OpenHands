@@ -27,6 +27,7 @@ _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a 
 ### Best Practices
 * Directory verification: Before creating new directories or files, first verify the parent directory exists and is the correct location.
 * Directory management: Try to maintain working directory by using absolute paths and avoiding excessive use of `cd`.
+* Shell options: Do NOT use `set -e`, `set -eu`, or `set -euo pipefail` in shell scripts or commands in this environment. The runtime may not support them and can cause unusable shell sessions. Use direct commands and handle errors normally.
 
 ### Output Handling
 * Output truncation: If the output exceeds a maximum length, it will be truncated before being returned.
