@@ -1,6 +1,7 @@
 import json
 
 from openhands.core.schema import ActionType, ObservationType
+from openhands.events.action.action import ActionSecurityRisk
 from openhands.events.action.mcp import MCPAction
 from openhands.events.observation.mcp import MCPObservation
 
@@ -14,7 +15,7 @@ def test_mcp_action_creation():
     assert action.action == ActionType.MCP
     assert action.thought == ''
     assert action.runnable is True
-    assert action.security_risk is None
+    assert action.security_risk == ActionSecurityRisk.UNKNOWN
 
 
 def test_mcp_action_with_thought():
