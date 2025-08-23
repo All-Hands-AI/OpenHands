@@ -177,6 +177,7 @@ def build_runtime_image_in_folder(
     enable_browser: bool = True,
 ) -> str:
     runtime_image_repo, _ = get_runtime_image_repo_and_tag(base_image)
+    print(f"DEBUG: oh_version = {oh_version}")
     lock_tag = f'oh_v{oh_version}_{get_hash_for_lock_files(base_image, enable_browser, extra_deps)}'
     versioned_tag = (
         # truncate the base image to 96 characters to fit in the tag max length (128 characters)
