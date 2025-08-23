@@ -133,5 +133,3 @@ def test_file_edit_observation_context_lines():
         len(g['before_edits']) + len(g['after_edits']) for g in groups_2
     )
     assert total_lines_2 > total_lines_0
-
-
