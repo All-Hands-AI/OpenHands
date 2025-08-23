@@ -3,8 +3,6 @@ import Backend from "i18next-http-backend";
 import LanguageDetector from "i18next-browser-languagedetector";
 import { initReactI18next } from "react-i18next";
 
-import translationMap from "./translation.json";
-
 export const AvailableLanguages = [
   { label: "English", value: "en" },
   { label: "日本語", value: "ja" },
@@ -29,22 +27,6 @@ i18n
   .init({
     fallbackLng: "en",
     debug: import.meta.env.NODE_ENV === "development",
-
-    // Load translations relative to current base path so it works under nested routes
-    backend: {
-      loadPath: "locales/{{lng}}/{{ns}}.json",
-    },
-
-    ns: ["translation"],
-    defaultNS: "translation",
-
-    // Prime resources to avoid flash of raw keys when route-level fetch fails
-    resources: Object.fromEntries(
-      Object.entries(translationMap).map(([key, value]) => [
-        key,
-        { translation: value },
-      ]),
-    ),
 
     // Define supported languages explicitly to prevent 404 errors
     // According to i18next documentation, this is the recommended way to prevent
