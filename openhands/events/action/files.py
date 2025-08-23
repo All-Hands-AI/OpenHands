@@ -2,9 +2,8 @@ from dataclasses import dataclass, field
 from typing import ClassVar
 
 from openhands.core.schema import ActionType
+from openhands.events.action import Action, ActionSecurityRisk, Thought
 from openhands.events.event import FileEditSource, FileReadSource
-
-from .action import Action, ActionSecurityRisk, Thought
 
 
 @dataclass
