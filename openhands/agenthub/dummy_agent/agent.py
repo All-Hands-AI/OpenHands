@@ -12,6 +12,7 @@ from openhands.events.action import (
     FileReadAction,
     FileWriteAction,
     MessageAction,
+    Thought,
 )
 from openhands.events.observation import (
     AgentStateChangedObservation,
@@ -91,7 +92,7 @@ class DummyAgent(Agent):
             },
             {
                 'action': AgentFinishAction(
-                    outputs={}, thought='Task completed', action='finish'
+                    outputs={}, thought=Thought(text='Task completed'), action='finish'
                 ),
                 'observations': [AgentStateChangedObservation('', AgentState.FINISHED)],
             },

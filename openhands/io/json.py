@@ -1,4 +1,6 @@
 import json
+from dataclasses import asdict as dataclass_asdict
+from dataclasses import is_dataclass
 from datetime import datetime
 
 from json_repair import repair_json
@@ -12,13 +14,18 @@ from openhands.llm.metrics import Metrics
 
 
 class OpenHandsJSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder that handles datetime and event objects"""
+    """Custom JSON encoder that handles datetime, event objects, and nested dataclasses"""
 
     def default(self, obj):
         if isinstance(obj, datetime):
             return obj.isoformat()
+        # Important: handle Event before generic dataclass handling
         if isinstance(obj, Event):
             return event_to_dict(obj)
+        # Fallback: serialize any dataclass (e.g., Thought) to a dict
+        # Guard against dataclass classes (types) which also return True for is_dataclass
+        if is_dataclass(obj) and not isinstance(obj, type):
+            return dataclass_asdict(obj)  # type: ignore[arg-type]
         if isinstance(obj, Metrics):
             return obj.get()
         if isinstance(obj, ModelResponse):
