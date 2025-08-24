@@ -98,6 +98,25 @@ class Conversation:
         self._thread: threading.Thread | None = None
         # Attach handlers to runtime-backed tools
         self._attach_runtime_handlers()
+        # Load and persist system_message at loop start for reproducibility
+        from .system_prompt_loader import load_codeact_system_prompt
+
+        sys_prompt = self.agent.system_prompt or load_codeact_system_prompt(render=True)
+        if self.agent.system_prompt_extensions:
+            sys_prompt = (
+                sys_prompt.rstrip()
+                + '\n\n'
+                + '\n\n'.join(self.agent.system_prompt_extensions)
+            )
+        self.messages.append({'role': 'system', 'content': sys_prompt})
+        self._emit(
+            SDKEvent(
+                type='system_message',
+                ts=datetime.utcnow(),
+                conversation_id=self.conversation_id,
+                data={'text': sys_prompt},
+            )
+        )
 
     def _emit(self, evt: SDKEvent) -> None:
         if self.jsonl_path:
