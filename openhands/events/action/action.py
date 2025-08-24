@@ -29,7 +29,7 @@ class Thought:
 
     Attributes:
         text: The visible plain thought string used throughout the UI/logs.
-        reasoning_content: Optional provider-native reasoning content (e.g., LiteLLM reasoning).
+        reasoning_content: Optional provider-native reasoning content (e.g., OpenAI reasoning).
     """
 
     text: str = ''
