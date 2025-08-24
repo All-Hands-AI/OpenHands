@@ -22,6 +22,7 @@ from openhands.agenthub.readonly_agent.tools import (
     GlobTool,
     GrepTool,
     ViewTool,
+    create_plan_md_tool,
 )
 from openhands.core.exceptions import (
     FunctionCallNotExistsError,
@@ -33,11 +34,12 @@ from openhands.events.action import (
     AgentFinishAction,
     AgentThinkAction,
     CmdRunAction,
+    FileEditAction,
     FileReadAction,
     MCPAction,
     MessageAction,
 )
-from openhands.events.event import FileReadSource
+from openhands.events.event import FileEditSource, FileReadSource
 from openhands.events.tool import ToolCallMetadata
 
 
@@ -193,6 +195,42 @@ def response_to_actions(
 
                 glob_cmd = glob_to_cmdrun(pattern, path)
                 action = CmdRunAction(command=glob_cmd, is_input=False)
+            # ================================================
+            # Plan MD Tool (ACI: FileReadAction/FileEditAction)
+            # ================================================
+            elif tool_call.function.name == 'plan_md':
+                cmd = arguments.get('command')
+                if cmd not in ['view', 'create', 'edit']:
+                    raise FunctionCallValidationError(
+                        f'Invalid command for plan_md: {cmd}'
+                    )
+                plan_path = '/workspace/PLAN.md'
+                if cmd == 'view':
+                    action = FileReadAction(
+                        path=plan_path, impl_source=FileReadSource.OH_ACI
+                    )
+                elif cmd == 'create':
+                    file_text = arguments.get('file_text', '')
+                    action = FileEditAction(
+                        path=plan_path,
+                        command='create',
+                        file_text=file_text,
+                        impl_source=FileEditSource.OH_ACI,
+                    )
+                else:  # edit
+                    old_str = arguments.get('old_str')
+                    new_str = arguments.get('new_str')
+                    if old_str is None or new_str is None:
+                        raise FunctionCallValidationError(
+                            'plan_md.edit requires both old_str and new_str (replace full content). Use plan_md.view first to get exact old_str.'
+                        )
+                    action = FileEditAction(
+                        path=plan_path,
+                        command='str_replace',
+                        old_str=old_str,
+                        new_str=new_str,
+                        impl_source=FileEditSource.OH_ACI,
+                    )
 
             # ================================================
             # MCPAction (MCP)
@@ -245,4 +283,5 @@ def get_tools() -> list[ChatCompletionToolParam]:
         GrepTool,
         GlobTool,
         ViewTool,
+        create_plan_md_tool(),
     ]
