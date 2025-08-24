@@ -5,3 +5,4 @@ class ConversationStatus(Enum):
     STARTING = 'STARTING'
     RUNNING = 'RUNNING'
     STOPPED = 'STOPPED'
+    ARCHIVED = 'ARCHIVED'
