@@ -1,0 +1,21 @@
+{# Base template for suggested tasks #}
+
+{% block task_introduction %}
+You are working on {% block request_type %}{{ requestType }}{% endblock %} #{{ issue_number }} in repository {{ repo }}. {% block task_goal %}Your goal is to complete the task.{% endblock %}
+{% endblock %}
+
+{% block api_retrieval %}
+Use the {{ apiName }} with the {{ tokenEnvVar }} environment variable to retrieve the {% block retrieval_target %}{{ requestTypeShort }} details{% endblock %}.
+{% endblock %}
+
+{% block branch_checkout %}
+{% block checkout_instructions %}Check out the branch from that {{ requestVerb }}{% endblock %} and look at the diff versus the base branch of the {{ requestTypeShort }} to understand the {{ requestTypeShort }}'s intention.
+{% endblock %}
+
+{% block task_specific_instructions %}
+{# Override in child templates for specific task instructions #}
+{% endblock %}
+
+{% block additional_steps %}
+{# Additional steps can be added by child templates #}
+{% endblock %}

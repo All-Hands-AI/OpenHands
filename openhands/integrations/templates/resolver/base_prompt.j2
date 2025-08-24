@@ -1,0 +1,44 @@
+{# Base template for all resolver prompts #}
+{# This template contains common instructions that are shared across different platforms and use cases #}
+
+{# Block for issue context - can be overridden by child templates #}
+{% block issue_context %}
+{# Default empty - child templates should override this #}
+{% endblock %}
+
+{# Block for platform-specific API instructions #}
+{% block api_instructions %}
+{# Default empty - child templates should override this #}
+{% endblock %}
+
+{# Block for specific task instructions #}
+{% block task_instructions %}
+{# Default empty - child templates should override this #}
+{% endblock %}
+
+{# Common testing instructions - used by most templates #}
+{% block testing_instructions %}
+2. For all changes to actual application code (e.g. in Python or Javascript), add an appropriate test to the testing directory to make sure that the issue has been fixed
+3. Run the tests, and if they pass you are done!
+4. You do NOT need to write new tests if there are only changes to documentation or configuration files.
+{% endblock %}
+
+{# Block for completion workflow - can be customized by child templates #}
+{% block completion_workflow %}
+When you're done, make sure to
+
+1. {% block final_verification %}Re-read the issue title, body, and comments and make sure that you have successfully implemented all requirements.{% endblock %}
+2. {% block branch_creation %}Create a new branch with a descriptive name (e.g., `openhands/fix-issue-123`){% endblock %}
+3. Commit your changes with a clear commit message
+4. {% block push_instructions %}Push the branch to the remote repository{% endblock %}
+5. {% block pr_creation %}Create a pull request{% endblock %}
+6. {% block pr_description %}The PR description should:
+   - Follow the repository's PR template (check for template files if they exist)
+   - Mention that it "fixes" or "closes" the issue number
+   - Include all required sections from the template{% endblock %}
+{% endblock %}
+
+{# Block for additional instructions - can be used by child templates #}
+{% block additional_instructions %}
+{# Default empty - child templates can add specific instructions here #}
+{% endblock %}
