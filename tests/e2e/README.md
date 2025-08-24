@@ -22,6 +22,7 @@ The following environment variables are required:
 Optional environment variables:
 
 - `LLM_BASE_URL`: The base URL for the LLM API (if using a custom endpoint)
+- `TAVILY_API_KEY`: Required for the web search test - API key for Tavily search engine (https://tavily.com/)
 
 ### Configuration Options
 
@@ -76,6 +77,8 @@ poetry run pytest test_conversation.py::test_conversation_start -v
 # Run individual tests with custom base URL
 poetry run pytest test_settings.py::test_github_token_configuration -v --base-url=https://my-instance.com
 
+# Run the web search test (Tavily)
+poetry run pytest test_web_search.py::test_web_search_current_us_president -v
 ```
 
 ### Running with Visible Browser
@@ -86,6 +89,7 @@ To run the tests with a visible browser (non-headless mode) so you can watch the
 cd tests/e2e
 poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50
 poetry run pytest test_conversation.py::test_conversation_start -v --no-headless --slow-mo=50
+poetry run pytest test_web_search.py::test_web_search_current_us_president -v --no-headless --slow-mo=50
 
 # Combine with custom base URL
 poetry run pytest test_settings.py::test_github_token_configuration -v --no-headless --slow-mo=50 --base-url=https://my-instance.com
@@ -127,6 +131,21 @@ The conversation start test (`test_conversation_start`) performs the following s
 ### Simple Browser Navigation Test
 
 A simple test (`test_simple_browser_navigation`) that just navigates to the OpenHands GitHub repository to verify the browser setup works correctly.
+
+### Web Search Test (Tavily)
+
+The web search test (`test_web_search_current_us_president`) performs the following steps:
+
+1. Navigates to the OpenHands application (assumes GitHub token is already configured)
+2. Selects the "openhands-agent/OpenHands" repository
+3. Clicks the "Launch" button
+4. Waits for the conversation interface to load
+5. Waits for the agent to initialize
+6. Asks "Who is the current US president? Please use web search to find the most up-to-date information."
+7. Waits for and verifies the agent's response uses Tavily search (not browser)
+8. Verifies the response contains relevant information about the current US president
+
+This test specifically validates that the agent uses Tavily search functionality rather than browser-based search tools.
 
 ### Local Runtime Test
 
