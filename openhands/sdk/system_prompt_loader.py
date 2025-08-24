@@ -2,27 +2,27 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from jinja2 import Environment, FileSystemLoader
+
 
 def load_codeact_system_prompt(render: bool = True) -> str:
-    """Load the CodeActAgent system prompt.
+    """Load and render the CodeActAgent system prompt copied under SDK prompts.
 
-    By default, returns the fully rendered template (resolves includes)
-    by simply returning the main prompt content without the surrounding
-    Jinja include wrapper files (the base file already inlines policy text).
-
-    We do not evaluate Jinja variables here; the referenced system_prompt.j2
-    is mostly static text with includes. Since openhands/agenthub/.../system_prompt.j2
-    already contains literal content for our needs, we can return it as-is.
-    If in the future variables are used, consider minimal Jinja2 rendering.
+    Renders includes with cli_mode=True to match CLIRuntime semantics.
     """
-    # Use repo path relative to package root
-    base = (
-        Path(__file__).resolve().parents[2] / 'agenthub' / 'codeact_agent' / 'prompts'
-    )
-    system_prompt_path = base / 'system_prompt.j2'
+    prompts_dir = Path(__file__).resolve().parent / 'prompts'
+    system_prompt_path = prompts_dir / 'system_prompt.j2'
     if not system_prompt_path.exists():
-        # fallback: return a minimal prompt
         return 'You are OpenHands agent, a helpful AI assistant that can interact with a computer to solve tasks.'
-    text = system_prompt_path.read_text(encoding='utf-8')
-    # The includes are already expanded in system_prompt.j2 content; we return as-is.
-    return text
+    if not render:
+        return system_prompt_path.read_text(encoding='utf-8')
+    env = Environment(loader=FileSystemLoader(str(prompts_dir)))
+    tpl = env.get_template('system_prompt.j2')
+    rendered = tpl.render(cli_mode=True).strip()
+    try:
+        from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
+
+        rendered = refine_prompt(rendered)
+    except Exception:
+        pass
+    return rendered
