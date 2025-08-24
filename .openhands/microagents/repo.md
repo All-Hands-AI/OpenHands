@@ -236,15 +236,3 @@ To add a new LLM model to OpenHands, you need to update multiple files across bo
 - Default model selection prioritizes verified models for each provider
 
 
-## Action Thought Serialization and Thought Dataclass (PR #10432)
-
-1) Serialization behavior in openhands/events/serialization/event.py
-- If Thought.reasoning_content is present, serialize Action.thought as a dict:
-  {"text": "...", "reasoning_content": "..."}
-- If Thought.reasoning_content is not present, serialize Action.thought as a plain string (legacy compatibility)
-- Rationale: preserves backwards-compatible event format while allowing structured reasoning content when available
-
-2) Thought equality and prompting in openhands/events/action/action.py
-- Thought.__eq__ allows comparing a Thought instance with a plain string by comparing to Thought.text
-- __str__ is for display only; only Thought.text should be sent to LLMs
-- Rationale: maintain legacy expectations in tests/logic that compare action.thought directly to strings, while ensuring reasoning_content is never included in prompts
