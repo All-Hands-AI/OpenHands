@@ -6,38 +6,15 @@ from openhands.agenthub.codeact_agent.tools.security_utils import (
 )
 from openhands.llm.tool_names import STR_REPLACE_EDITOR_TOOL_NAME
 
-_DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
-* State is persistent across command calls and discussions with the user
-* If `path` is a text file, `view` displays the result of applying `cat -n`. If `path` is a directory, `view` lists non-hidden files and directories up to 2 levels deep
-* The following binary file extensions can be viewed in Markdown format: [".xlsx", ".pptx", ".wav", ".mp3", ".m4a", ".flac", ".pdf", ".docx"]. IT DOES NOT HANDLE IMAGES.
-* The `create` command cannot be used if the specified `path` already exists as a file
-* If a `command` generates a long output, it will be truncated and marked with `<response clipped>`
-* The `undo_edit` command will revert the last edit made to the file at `path`
-* This tool can be used for creating and editing files in plain-text format.
+_DETAILED_STR_REPLACE_EDITOR_DESCRIPTION = """This tool can create or edit plain text files. It can also view the contents of directories and text files such as plain text, PDF, DOCX, XLSX, and PPTX.  This tool persists the state across multiple commands which allows you to make multiple changes to the same file in separate commands.
 
-
-Before using this tool:
-1. Use the view tool to understand the file's contents and context
-2. Verify the directory path is correct (only applicable when creating new files):
-   - Use the view tool to verify the parent directory exists and is the correct location
-
-When making edits:
-   - Ensure the edit results in idiomatic, correct code
-   - Do not leave the code in a broken state
-   - Always use absolute file paths (starting with /)
-
-CRITICAL REQUIREMENTS FOR USING THIS TOOL:
-
-1. EXACT MATCHING: The `old_str` parameter must match EXACTLY one or more consecutive lines from the file, including all whitespace and indentation. The tool will fail if `old_str` matches multiple locations or doesn't match exactly with the file content.
-
-2. UNIQUENESS: The `old_str` must uniquely identify a single instance in the file:
-   - Include sufficient context before and after the change point (3-5 lines recommended)
-   - If not unique, the replacement will not be performed
-
-3. REPLACEMENT: The `new_str` parameter should contain the edited lines that replace the `old_str`. Both strings must be different.
-
-Remember: when making multiple file edits in a row to the same file, you should prefer to send all edits in a single message with multiple calls to this tool, rather than multiple messages with a single call each.
-"""
+- Before editing any file, use the `view` command to understand the file's contents and find a block of text that uniquely identifies the target location of the desired change.
+- Always specify absolute file paths starting from the root directory.
+- The `view` command returns line numbers similar to the `cat -n` command.
+- When you run the `view` command with a directory it lists all non-hidden files and directories up to 2 levels deep starting from the specified directory path.
+- When using the str_replace command, the old_str parameter must be both an exact and unique match to the content you intend to replace within the file. An exact match means every character, space, indentation, and line break must be identical to the corresponding section of the file. To ensure the string is unique, which is required for the command to succeed, you must include enough surrounding context—typically 3-5 lines before and after the target lines. The new_str parameter then provides the new content that will completely overwrite the block of text defined by old_str.
+- The `create` command will fail if `path` points to an existing file.
+-`undo_edit` reverts the last edit made to the specified file."""
 
 _SHORT_STR_REPLACE_EDITOR_DESCRIPTION = """Custom editing tool for viewing, creating and editing files in plain-text format
 * State is persistent across command calls and discussions with the user
@@ -84,23 +61,23 @@ def create_str_replace_editor_tool(
                         'type': 'string',
                     },
                     'file_text': {
-                        'description': 'Required parameter of `create` command, with the content of the file to be created.',
+                        'description': 'Required for the `create` command, with the content of the file to be created.',
                         'type': 'string',
                     },
                     'old_str': {
-                        'description': 'Required parameter of `str_replace` command containing the string in `path` to replace.',
+                        'description': 'Required for the `str_replace` command, contains the string that should be replaced in the file identified by `path`.',
                         'type': 'string',
                     },
                     'new_str': {
-                        'description': 'Optional parameter of `str_replace` command containing the new string (if not given, no string will be added). Required parameter of `insert` command containing the string to insert.',
+                        'description': 'Required for the `insert` command, contains the string to insert. Passes the new text to the `str_replace` command but can be empty if the goal is to delete some text.',
                         'type': 'string',
                     },
                     'insert_line': {
-                        'description': 'Required parameter of `insert` command. The `new_str` will be inserted AFTER the line `insert_line` of `path`.',
+                        'description': 'Required for the `insert` command. The text passed in `new_str` parameter will be inserted AFTER the line `insert_line`.',
                         'type': 'integer',
                     },
                     'view_range': {
-                        'description': 'Optional parameter of `view` command when `path` points to a file. If none is given, the full file is shown. If provided, the file will be shown in the indicated line number range, e.g. [11, 12] will show lines 11 and 12. Indexing at 1 to start. Setting `[start_line, -1]` shows all lines from `start_line` to the end of the file.',
+                        'description': 'Optional parameter for the `view` command when `path` points to a file, passes the range of line numbers, e.g. [1, 2] will return the first two lines from the file identified by `path`. Setting `[start_line, -1]` shows all lines starting from `start_line`.',
                         'items': {'type': 'integer'},
                         'type': 'array',
                     },

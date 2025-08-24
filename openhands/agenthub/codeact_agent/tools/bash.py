@@ -9,27 +9,24 @@ from openhands.llm.tool_names import EXECUTE_BASH_TOOL_NAME
 
 _DETAILED_BASH_DESCRIPTION = """Execute a bash command in the terminal within a persistent shell session.
 
+# Command Execution
+- You can execute one  bash command at a time or use operators `&&` or `;` to execute multiple commands sequentially.
+- Commands execute in a persistent shell session where environment variables, virtual environments, and working directory persist between commands.
+- Soft timeout: all commands have a soft timeout of 10 seconds, once that's reached, after which you have an option to continue or interrupt the command.
 
-### Command Execution
-* One command at a time: You can only execute one bash command at a time. If you need to run multiple commands sequentially, use `&&` or `;` to chain them together.
-* Persistent session: Commands execute in a persistent shell session where environment variables, virtual environments, and working directory persist between commands.
-* Soft timeout: Commands have a soft timeout of 10 seconds, once that's reached, you have the option to continue or interrupt the command (see section below for details)
+# Long-running Commands
+- Start all commands that are expected to run indefinitely in the background and redirect their output to a file, e.g. `python3 app.py > server.log 2>&1 &`.
+- When running commands that are expected to run for a long time (e.g. automated tests or the `sleep` command) pass the expected run time in the `timeout` parameter.
+- If a bash command returns exit code `-1`, this means that the process hit the soft timeout and is not yet finished. You can use the execute_bash tools to interact with such commands by setting the `is_input` parameter  to `true`. For example:
+  - You can send an empty `command` to retrieve the latest logs.
+  - You can send STDIN input to the running command by passing text in the `command` parameter.
+  - You can send control commands like `C-c` (Ctrl+C), `C-d` (Ctrl+D), or `C-z` (Ctrl+Z) to interrupt the running command.
 
-### Long-running Commands
-* For commands that may run indefinitely, run them in the background and redirect output to a file, e.g. `python3 app.py > server.log 2>&1 &`.
-* For commands that may run for a long time (e.g. installation or testing commands), or commands that run for a fixed amount of time (e.g. sleep), you should set the "timeout" parameter of your function call to an appropriate value.
-* If a bash command returns exit code `-1`, this means the process hit the soft timeout and is not yet finished. By setting `is_input` to `true`, you can:
-  - Send empty `command` to retrieve additional logs
-  - Send text (set `command` to the text) to STDIN of the running process
-  - Send control commands like `C-c` (Ctrl+C), `C-d` (Ctrl+D), or `C-z` (Ctrl+Z) to interrupt the process
-  - If you do C-c, you can re-start the process with a longer "timeout" parameter to let it run to completion
+# Current directory
+- Passing absolute paths to specify the working directory is preferred over using the `cd` command and relative paths.
 
-### Best Practices
-* Directory verification: Before creating new directories or files, first verify the parent directory exists and is the correct location.
-* Directory management: Try to maintain working directory by using absolute paths and avoiding excessive use of `cd`.
-
-### Output Handling
-* Output truncation: If the output exceeds a maximum length, it will be truncated before being returned.
+# Command Output length
+- If some command generates a large amount of output text it can be truncated.
 """
 
 _SHORT_BASH_DESCRIPTION = """Execute a bash command in the terminal.
