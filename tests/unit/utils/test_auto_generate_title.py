@@ -194,6 +194,7 @@ async def test_update_conversation_with_title():
     mock_conversation_store = AsyncMock()
     mock_metadata = MagicMock()
     mock_metadata.title = f'Conversation {conversation_id[:5]}'  # Default title
+    mock_metadata.user_set_title = False  # Not user-set, so auto-generation should work
     mock_conversation_store.get_metadata.return_value = mock_metadata
 
     # Create the conversation manager
@@ -229,3 +230,60 @@ async def test_update_conversation_with_title():
         assert call_args[1]['type'] == 'info'
         assert call_args[1]['message'] == conversation_id
         assert call_args[1]['conversation_title'] == 'Generated Title'
+
+
+@pytest.mark.asyncio
+async def test_update_conversation_preserves_user_set_title():
+    """Test that _update_conversation_for_event preserves user-set titles."""
+    # Mock dependencies
+    sio = MagicMock()
+    sio.emit = AsyncMock()
+    file_store = InMemoryFileStore()
+    server_config = MagicMock()
+    llm_registry = MagicMock(spec=LLMRegistry)
+
+    # Create test conversation
+    conversation_id = 'test-conversation'
+    user_id = 'test-user'
+
+    # Create test settings
+    settings = Settings(
+        llm_model='test-model',
+        llm_api_key='test-key',
+        llm_base_url='test-url',
+    )
+
+    # Mock the conversation store and metadata with user-set title
+    mock_conversation_store = AsyncMock()
+    mock_metadata = MagicMock()
+    mock_metadata.title = 'User Set Title'  # User-set title
+    mock_metadata.user_set_title = True  # User has manually set the title
+    mock_conversation_store.get_metadata.return_value = mock_metadata
+
+    # Create the conversation manager
+    manager = StandaloneConversationManager(
+        sio=sio,
+        config=OpenHandsConfig(),
+        file_store=file_store,
+        server_config=server_config,
+        monitoring_listener=MonitoringListener(),
+    )
+
+    # Mock the _get_conversation_store method
+    manager._get_conversation_store = AsyncMock(return_value=mock_conversation_store)
+
+    # Mock the auto_generate_title function
+    with patch(
+        'openhands.server.conversation_manager.standalone_conversation_manager.auto_generate_title',
+        AsyncMock(return_value='Generated Title'),
+    ):
+        # Call the method
+        await manager._update_conversation_for_event(
+            user_id, conversation_id, settings, llm_registry
+        )
+
+        # Verify the title was NOT changed (preserved user-set title)
+        assert mock_metadata.title == 'User Set Title'
+
+        # Verify the socket.io emit was NOT called for title update
+        sio.emit.assert_not_called()
