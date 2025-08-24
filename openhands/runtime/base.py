@@ -10,7 +10,7 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import Any, Callable, cast
 from zipfile import ZipFile
 
 import httpx
@@ -239,6 +239,68 @@ class Runtime(FileEditRuntimeMixin):
         self.runtime_status = runtime_status
         if self.status_callback:
             self.status_callback(level, runtime_status, msg)
+
+    # MCP-compatible tool spec
+    # We keep a minimal subset: name, description, inputSchema
+    def get_tools(self) -> list[dict[str, Any]]:
+        """Return runtime tools in MCP Tool format.
+
+        Shape (subset of MCP Tool):
+        {
+            "name": str,
+            "description": str,
+            "inputSchema": {JSON Schema dict}
+        }
+        """
+        return [
+            {
+                'name': 'execute_bash',
+                'description': 'Run a shell command inside the runtime',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {'type': 'string'},
+                        'timeout': {
+                            'type': 'number',
+                            'description': 'Seconds',
+                        },
+                    },
+                    'required': ['command'],
+                    'additionalProperties': False,
+                },
+            },
+            {
+                'name': 'file_read',
+                'description': 'Read a text file from the runtime workspace',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'path': {'type': 'string'},
+                        'view_range': {
+                            'type': 'array',
+                            'items': {'type': 'integer'},
+                            'minItems': 2,
+                            'maxItems': 2,
+                        },
+                    },
+                    'required': ['path'],
+                    'additionalProperties': False,
+                },
+            },
+            {
+                'name': 'file_write',
+                'description': 'Write text to a file in the runtime workspace (overwrites)',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'path': {'type': 'string'},
+                        'content': {'type': 'string'},
+                    },
+                    'required': ['path', 'content'],
+                    'additionalProperties': False,
+                },
+            },
+        ]
 
     # ====================================================================
 

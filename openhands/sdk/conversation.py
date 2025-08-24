@@ -6,7 +6,7 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from openhands.core.config import OpenHandsConfig
 from openhands.events.action import CmdRunAction, FileReadAction, FileWriteAction
@@ -322,14 +322,44 @@ class Conversation:
                 return ToolResult(status='error', error=obs.content)
             return ToolResult(status='ok', output=None)
 
-        # Create working copies with handlers bound
+        # Create working copies with handlers bound. Pull baseline tools from runtime in MCP format
+        # and convert to SDK Tool objects.
         self.tools: list[Tool] = []
-        for base in [
-            runtime_execute_bash_tool,
-            runtime_file_read_tool,
-            runtime_file_write_tool,
-        ]:
-            tool = Tool(**base.model_dump())
+        try:
+            mcp_tools = self.runtime.get_tools()  # type: ignore[attr-defined]
+        except Exception:
+            mcp_tools = []
+        # Fallback to built-in list if runtime doesn't provide any
+        if not mcp_tools:
+            mcp_tools = [
+                {
+                    'name': 'execute_bash',
+                    'description': 'Run a shell command inside the runtime',
+                    'input_schema': runtime_execute_bash_tool.input_schema,
+                },
+                {
+                    'name': 'file_read',
+                    'description': 'Read a text file from the runtime workspace',
+                    'input_schema': runtime_file_read_tool.input_schema,
+                },
+                {
+                    'name': 'file_write',
+                    'description': 'Write text to a file in the runtime workspace (overwrites)',
+                    'input_schema': runtime_file_write_tool.input_schema,
+                },
+            ]
+        for spec in mcp_tools:
+            name: str = str(spec.get('name') or '')
+            description: str = str(spec.get('description') or '')
+            input_schema: dict[str, Any] = cast(
+                dict[str, Any],
+                spec.get('inputSchema') or spec.get('input_schema') or {},
+            )
+            tool = Tool(
+                name=name,
+                description=description,
+                input_schema=input_schema,
+            )
             if tool.name == 'execute_bash':
                 tool.handler = run_bash
             elif tool.name == 'file_read':
