@@ -293,10 +293,16 @@ class ConversationMemory:
                 action.tool_call_metadata = None
             if role not in ('user', 'system', 'assistant', 'tool'):
                 raise ValueError(f'Invalid role: {role}')
+
+            # Ensure assistant messages have non-empty content (required by some LLM providers like Mistral)
+            thought_text = action.thought or ''
+            if role == 'assistant' and not thought_text.strip():
+                thought_text = 'Task completed.'
+
             return [
                 Message(
                     role=role,  # type: ignore[arg-type]
-                    content=[TextContent(text=action.thought)],
+                    content=[TextContent(text=thought_text)],
                 )
             ]
         elif isinstance(action, MessageAction):
