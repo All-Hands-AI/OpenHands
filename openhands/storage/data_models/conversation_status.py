@@ -1,15 +1,13 @@
-from enum import Enum
+"""
+This class is similar to the RuntimeStatus defined in the runtime api. (When this class was defined
+a `RuntimeStatus` class already existed in OpenHands which serves a completely different purpose) Some of
+the status definitions do not match up:
 
-# TODO: I think this class should be deprecated and replaced with `RuntimeStatus` - the values for which are
-# defined in the runtime api:
-# * running: currently RUNNING
-# * stopped currently ARCHIVED
-# * paused: currently STOPPED
-# * error: currently ERROR
-# * starting: currently STARTING
-#
-# Unifying these two would simplify the codebase - particularly related to what `STOPPED` actually means.
-# Calling this `RuntimeStatus` is more descriptive of what this actually means too.
+STOPPED/paused - the runtime is not running but may be restarted
+ARCHIVED/stopped - the runtime is not running and will not restart due to deleted files.
+"""
+
+from enum import Enum
 
 
 class ConversationStatus(Enum):
