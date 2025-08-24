@@ -30,8 +30,8 @@ async def get_remote_runtime_config(
     Currently, this is the session ID and runtime ID (if available).
     """
     runtime = conversation.runtime
-    runtime_id = runtime.runtime_id if hasattr(runtime, 'runtime_id') else None
-    session_id = runtime.sid if hasattr(runtime, 'sid') else None
+    runtime_id = getattr(runtime, 'runtime_id', None) if runtime else None
+    session_id = getattr(runtime, 'sid', None) if runtime else None
     return JSONResponse(
         content={
             'runtime_id': runtime_id,
@@ -55,6 +55,11 @@ async def get_vscode_url(
         JSONResponse: A JSON response indicating the success of the operation.
     """
     try:
+        if not conversation.runtime:
+            return JSONResponse(
+                status_code=status.HTTP_404_NOT_FOUND,
+                content={'vscode_url': None, 'error': 'Runtime not yet initialized'},
+            )
         runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
@@ -87,6 +92,11 @@ async def get_hosts(
         JSONResponse: A JSON response indicating the success of the operation.
     """
     try:
+        if not conversation.runtime:
+            return JSONResponse(
+                status_code=404,
+                content={'hosts': None, 'error': 'Runtime not yet initialized'},
+            )
         runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime hosts: {runtime.web_hosts}')

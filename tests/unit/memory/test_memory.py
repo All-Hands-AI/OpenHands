@@ -28,7 +28,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.server.session.agent_session import AgentSession
+from openhands.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 from openhands.utils.prompt import (
     ConversationInstructions,
@@ -637,9 +637,7 @@ async def test_conversation_instructions_plumbed_to_memory(
 
     # Patch AgentController
     with (
-        patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
-        ),
+        patch('openhands.session.agent_session.AgentController', SpyAgentController),
     ):
         await session.start(
             runtime_name='test-runtime',

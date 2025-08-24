@@ -3,6 +3,26 @@ from pathlib import Path
 
 __package_name__ = 'openhands_ai'
 
+"""
+Package bootstrap to prefer in-repo source tree during tests.
+
+CI uses PYTHONPATH=/openhands/code which can shadow new modules added in the
+working tree (e.g. openhands/conversation). This makes the package a
+namespace-like package by prepending the current repo path to __path__ so
+subpackages import from here first.
+"""
+try:
+    pkg_dir = Path(__file__).resolve().parent
+    repo_root = pkg_dir.parent
+    src_path = str(repo_root / 'openhands')
+    if os.path.isdir(src_path):
+        p = globals().get('__path__')
+        if isinstance(p, list) and src_path not in p:
+            p.insert(0, src_path)
+except Exception:
+    # Non-fatal: fall back to whatever is on sys.path
+    pass
+
 
 def get_version():
     # Try getting the version from pyproject.toml
