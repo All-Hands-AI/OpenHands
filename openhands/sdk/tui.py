@@ -14,11 +14,6 @@ from openhands.storage.local import LocalFileStore
 
 from .conversation import Agent, Conversation
 from .llm import LLM, LLMConfig
-from .tool import (
-    runtime_execute_bash_tool,
-    runtime_file_read_tool,
-    runtime_file_write_tool,
-)
 from .types import SDKEvent
 
 
@@ -91,9 +86,10 @@ def run_headless(conversation: Conversation, prompt: str | None) -> int:
             )
     except Exception:
         pass
-    conversation.start()
+    # If a prompt is provided, enqueue it before starting the loop
     if prompt:
         conversation.send_message(prompt)
+    conversation.start()
     # Wait for completion or error
     while True:
         st = conversation.status().value
@@ -199,13 +195,10 @@ def main(argv: list[str] | None = None) -> int:
         api_key = input('api_key: ').strip()
 
     llm = LLM(LLMConfig(model=model, api_key=api_key))
+    # Do not pass runtime tools here to avoid duplicates; Conversation will attach runtime-backed tools
     agent = Agent(
         llm=llm,
-        tools=[
-            runtime_execute_bash_tool,
-            runtime_file_read_tool,
-            runtime_file_write_tool,
-        ],
+        tools=[],
     )
 
     # Prepare FileConversationStore for metadata if needed

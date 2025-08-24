@@ -368,8 +368,12 @@ class Conversation:
                 ConversationStatus.ERROR,
             }:
                 break
-            if not self.messages or self.messages[-1]['role'] == 'assistant':
-                # Wait for user input
+            # Only proceed when the last message requires an assistant turn.
+            # Skip if there are no messages, or if the last message is system/assistant.
+            if not self.messages or self.messages[-1]['role'] in {
+                'system',
+                'assistant',
+            }:
                 time.sleep(0.1)
                 continue
 
@@ -395,7 +399,10 @@ class Conversation:
             content = msg.get('content')
 
             if tool_calls:
-                # Execute each tool synchronously
+                # Build assistant tool_calls message first (OpenAI-style), so providers like Anthropic
+                # receive a prior tool_use block via LiteLLM translation.
+                assistant_tool_calls = []
+                parsed_calls = []
                 for tc in tool_calls:
                     name = tc['function']['name']
                     args_str = tc['function'].get('arguments') or '{}'
@@ -404,6 +411,27 @@ class Conversation:
                     except Exception:
                         args = {}
                     tool_call_id = tc.get('id') or str(uuid.uuid4())
+                    assistant_tool_calls.append(
+                        {
+                            'id': tool_call_id,
+                            'type': 'function',
+                            'function': {
+                                'name': name,
+                                'arguments': json.dumps(args),
+                            },
+                        }
+                    )
+                    parsed_calls.append((tool_call_id, name, args))
+                # Append the assistant tool_calls turn before any tool_result
+                self.messages.append(
+                    {
+                        'role': 'assistant',
+                        'content': '',
+                        'tool_calls': assistant_tool_calls,
+                    }
+                )
+                # Emit tool_call events and execute each synchronously
+                for tool_call_id, name, args in parsed_calls:
                     self._emit(
                         SDKEvent(
                             type='tool_call',
