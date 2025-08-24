@@ -1,6 +1,6 @@
 """
 This class is similar to the RuntimeStatus defined in the runtime api. (When this class was defined
-a `RuntimeStatus` class already existed in OpenHands which serves a completely different purpose) Some of
+a RuntimeStatus class already existed in OpenHands which serves a completely different purpose) Some of
 the status definitions do not match up:
 
 STOPPED/paused - the runtime is not running but may be restarted
@@ -11,7 +11,7 @@ from enum import Enum
 
 
 class ConversationStatus(Enum):
-    # The runtime is starting
+    # The conversation is starting
     STARTING = 'STARTING'
     # The conversation is running - the agent may be working or idle
     RUNNING = 'RUNNING'
@@ -19,5 +19,5 @@ class ConversationStatus(Enum):
     STOPPED = 'STOPPED'
     # The conversation has been archived and cannot be restarted.
     ARCHIVED = 'ARCHIVED'
-    # Something has gone wrong with the conversation
+    # Something has gone wrong with the conversation (The runtime rather than the agent)
     ERROR = 'ERROR'
