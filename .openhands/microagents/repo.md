@@ -234,5 +234,3 @@ To add a new LLM model to OpenHands, you need to update multiple files across bo
 - Models appear in CLI provider selection based on the verified arrays
 - The `organize_models_and_providers` function groups models by provider
 - Default model selection prioritizes verified models for each provider
-
-
