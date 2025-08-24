@@ -138,6 +138,37 @@ MVP vs Next
   - MCP tool registry management and UI affordances
   - Timeouts, cancellation, and better error recovery paths
 
+
+Runtime
+- get_tools() → list of MCP-like tools provided by the runtime only (no SDK fallback):
+  - Each tool: { name: str, description: str, inputSchema: dict, outputSchema?: dict }
+  - Built-in minimal set: execute_bash, file_read, file_write
+- execute_tool(name: str, arguments: dict) -> Observation
+  - Local dispatch:
+    - execute_bash → run(CmdRunAction(command, timeout?))
+    - file_read → read(FileReadAction(path, view_range?))
+    - file_write → write(FileWriteAction(path, content))
+  - Unknown name → ErrorObservation("Unknown tool: <name>")
+- call_tool_mcp(MCPAction) remains available for external MCP servers (unchanged)
+
+SDK
+- sdk.Tool (MCP-aligned fields)
+  - name: str
+  - description: Optional[str]
+  - inputSchema: dict (JSON Schema)
+  - outputSchema: Optional[dict]
+  - to_param(): returns OpenAI function param-compatible shape for LiteLLM
+- Conversation
+  - Do not define fallback tools and do not bind handlers
+  - tools = runtime.get_tools() only (MCP format)
+  - For LLM: convert each runtime tool to sdk.Tool and then to_param()
+  - On tool_call: runtime.execute_tool(name, args) → Observation
+    - Map Observation → SDK ToolResult for logs
+    - Build provider-agnostic tool_result message; keep Anthropic sequencing fix (assistant tool_calls before tool_result)
+- Provider compatibility/diagnostics
+  - Keep: enqueue user first; gate LLM on user/tool; exact payload logs; JSONL persistence; exit codes; no duplicate tools
+- Optional flag: --tool-choice=required to force tool use on first turn
+
 References
 - Issue #10577 (Minimal Python SDK)
 - Issue #10585 (Tool-centric, MCP-friendly)
