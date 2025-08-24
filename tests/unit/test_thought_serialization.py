@@ -55,6 +55,17 @@ def test_thought_deserialization_from_dict_legacy_thought_key():
     assert a.thought.reasoning_content is None
 
 
+def test_thought_deserialization_without_thought_but_with_top_level_rc():
+    d = {
+        'action': 'run',
+        'args': {'command': 'echo 1', 'reasoning_content': 'only-rc'},
+    }
+    a = event_from_dict(d)
+    assert isinstance(a.thought, Thought)
+    assert a.thought.text == ''
+    assert a.thought.reasoning_content == 'only-rc'
+
+
 def test_thought_backwards_compat_direct_init_with_str():
     # Direct construction with a string should still work via __str__ accessors elsewhere
     a = CmdRunAction(command='echo 1', thought='plain')  # type: ignore[arg-type]
