@@ -1,5 +1,4 @@
-"""
-E2E: Settings configuration test (GitHub token)
+"""E2E: Settings configuration test (GitHub token).
 
 This test navigates to OpenHands, configures the LLM API key if prompted,
 then ensures the GitHub token is set in Settings → Integrations and that the
@@ -12,8 +11,8 @@ from playwright.sync_api import Page, expect
 
 
 def test_github_token_configuration(page: Page, base_url: str):
-    """
-    Test the GitHub token configuration flow:
+    """Test the GitHub token configuration flow.
+
     1. Navigate to OpenHands
     2. Configure LLM API key if needed
     3. Check if GitHub token is already configured
