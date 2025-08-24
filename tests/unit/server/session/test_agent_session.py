@@ -16,7 +16,7 @@ from openhands.runtime.impl.action_execution.action_execution_client import (
     ActionExecutionClient,
 )
 from openhands.server.services.conversation_stats import ConversationStats
-from openhands.server.session.agent_session import AgentSession
+from openhands.session.agent_session import AgentSession
 from openhands.storage.memory import InMemoryFileStore
 
 # We'll use the DeprecatedState class from the main codebase
@@ -124,18 +124,16 @@ async def test_agent_session_start_with_no_state(
 
     # Patch AgentController and State.restore_from_session to fail; patch Memory in AgentSession
     with (
+        patch('openhands.session.agent_session.AgentController', SpyAgentController),
         patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
-        ),
-        patch(
-            'openhands.server.session.agent_session.EventStream',
+            'openhands.session.agent_session.EventStream',
             return_value=mock_event_stream,
         ),
         patch(
             'openhands.controller.state.state.State.restore_from_session',
             side_effect=Exception('No state found'),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch('openhands.session.agent_session.Memory', return_value=memory),
     ):
         await session.start(
             runtime_name='test-runtime',
@@ -225,18 +223,16 @@ async def test_agent_session_start_with_restored_state(
 
     # Patch AgentController and State.restore_from_session to succeed, patch Memory in AgentSession
     with (
+        patch('openhands.session.agent_session.AgentController', SpyAgentController),
         patch(
-            'openhands.server.session.agent_session.AgentController', SpyAgentController
-        ),
-        patch(
-            'openhands.server.session.agent_session.EventStream',
+            'openhands.session.agent_session.EventStream',
             return_value=mock_event_stream,
         ),
         patch(
             'openhands.controller.state.state.State.restore_from_session',
             return_value=mock_restored_state,
         ),
-        patch('openhands.server.session.agent_session.Memory', mock_memory),
+        patch('openhands.session.agent_session.Memory', mock_memory),
     ):
         await session.start(
             runtime_name='test-runtime',
@@ -307,14 +303,14 @@ async def test_metrics_centralization_via_conversation_stats(
     # Patch necessary components
     with (
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            'openhands.session.agent_session.EventStream',
             return_value=mock_event_stream,
         ),
         patch(
             'openhands.controller.state.state.State.restore_from_session',
             side_effect=Exception('No state found'),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch('openhands.session.agent_session.Memory', return_value=memory),
     ):
         await session.start(
             runtime_name='test-runtime',
@@ -401,14 +397,14 @@ async def test_budget_control_flag_syncs_with_metrics(
     # Patch necessary components
     with (
         patch(
-            'openhands.server.session.agent_session.EventStream',
+            'openhands.session.agent_session.EventStream',
             return_value=mock_event_stream,
         ),
         patch(
             'openhands.controller.state.state.State.restore_from_session',
             side_effect=Exception('No state found'),
         ),
-        patch('openhands.server.session.agent_session.Memory', return_value=memory),
+        patch('openhands.session.agent_session.Memory', return_value=memory),
     ):
         # Start the session with a budget limit
         await session.start(
