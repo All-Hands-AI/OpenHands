@@ -99,20 +99,7 @@ def _convert_pydantic_to_dict(obj: BaseModel | dict) -> dict:
 
 def event_to_dict(event: 'Event') -> dict:
     props = asdict(event)
-    # Normalize Thought representation to a single canonical wire format
-    # Always emit a dict-shaped thought: {"text": str, "reasoning_content": str|null}
-    if 'thought' in props:
-        t = props['thought']
-        if isinstance(t, dict):
-            text = t.get('text') or t.get('thought') or ''
-            rc = t.get('reasoning_content')
-            props['thought'] = {'text': text, 'reasoning_content': rc}
-        else:
-            # Strings or any other legacy types become canonical dict
-            props['thought'] = {
-                'text': str(t) if t is not None else '',
-                'reasoning_content': None,
-            }
+
     d = {}
     for key in TOP_KEYS:
         if hasattr(event, key) and getattr(event, key) is not None:
@@ -140,7 +127,22 @@ def event_to_dict(event: 'Event') -> dict:
     # Remove task_completed from serialization when it's None (backward compatibility)
     if 'task_completed' in props and props['task_completed'] is None:
         props.pop('task_completed')
+
     if 'action' in d:
+        # Normalize Thought representation strictly at the action args boundary
+        # Always emit a dict-shaped thought: {"text": str, "reasoning_content": str|null}
+        t = props.get('thought', None)
+        if t is not None:
+            if isinstance(t, dict):
+                text = t.get('text') or t.get('thought') or ''
+                rc = t.get('reasoning_content')
+                props['thought'] = {'text': text, 'reasoning_content': rc}
+            elif isinstance(t, str):
+                props['thought'] = {'text': t, 'reasoning_content': None}
+            else:
+                # Any other legacy/unknown shape: coerce to safe string
+                props['thought'] = {'text': str(t), 'reasoning_content': None}
+
         # Handle security_risk for actions - include it in args
         if 'security_risk' in props:
             props['security_risk'] = props['security_risk'].value

@@ -136,10 +136,9 @@ def action_from_dict(action: dict) -> Action:
             args['thought'] = Thought(text=text, reasoning_content=reasoning_content)
         elif isinstance(t, str):
             args['thought'] = Thought(text=t, reasoning_content=rc)
-        elif isinstance(t, Thought):
-            if rc is not None:
-                t.reasoning_content = rc
-        # else assume already a Thought-like instance
+        # Inputs to action_from_dict come from wire (JSON→dict), so t will be dict or str.
+        # Thought instances should not appear here; if they do, they are out-of-band.
+        # We intentionally do not handle object instances to keep deserialization strict.
     elif rc is not None:
         # No text thought provided, but reasoning content exists
         args['thought'] = Thought(text='', reasoning_content=rc)
