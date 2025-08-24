@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import Any, Callable, cast
 
 from openhands.core.config import OpenHandsConfig
-from openhands.events.action import CmdRunAction, FileReadAction, FileWriteAction
 from openhands.events.observation import (
     CmdOutputObservation,
     ErrorObservation,
@@ -24,12 +23,7 @@ from openhands.storage.conversation.file_conversation_store import FileConversat
 
 from .llm import LLM
 from .persistence import append_event_jsonl
-from .tool import (
-    Tool,
-    runtime_execute_bash_tool,
-    runtime_file_read_tool,
-    runtime_file_write_tool,
-)
+from .tool import Tool
 from .types import ConversationStatus, SDKEvent, ToolResult
 
 
@@ -96,8 +90,28 @@ class Conversation:
         )
         self.runtime = runtime or _default_runtime(self._event_stream)
         self._thread: threading.Thread | None = None
-        # Attach handlers to runtime-backed tools
-        self._attach_runtime_handlers()
+        # Build tools from runtime.get_tools() (MCP format); no SDK fallbacks or handler binding
+        self.tools: list[Tool] = []
+        try:
+            mcp_tools: list[dict[str, Any]] = self.runtime.get_tools()  # type: ignore[attr-defined]
+        except Exception:
+            mcp_tools = []
+        for spec in mcp_tools:
+            name = str(spec.get('name') or '')
+            description = str(spec.get('description') or '')
+            input_schema = cast(dict[str, Any], spec.get('inputSchema') or {})
+            output_schema = cast(dict[str, Any] | None, spec.get('outputSchema'))
+            self.tools.append(
+                Tool(
+                    name=name,
+                    description=description,
+                    inputSchema=input_schema,
+                    outputSchema=output_schema,
+                    handler=None,  # No handler binding here; runtime executes tools
+                )
+            )
+        # Also append any user-supplied tools on the agent
+        self.tools.extend(self.agent.tools)
         # Load and persist system_message at loop start for reproducibility
         from .system_prompt_loader import load_codeact_system_prompt
 
@@ -281,94 +295,7 @@ class Conversation:
         # Wake loop by setting status to RUNNING
         self.status_value = ConversationStatus.RUNNING
 
-    def _attach_runtime_handlers(self) -> None:
-        def run_bash(payload: dict) -> ToolResult:
-            cmd = payload['command']
-            timeout = payload.get('timeout')
-            action = CmdRunAction(command=cmd)
-            if timeout:
-                action.set_hard_timeout(float(timeout))
-            obs = self.runtime.run(action)  # type: ignore[arg-type]
-            if isinstance(obs, CmdOutputObservation):
-                return ToolResult(
-                    status='ok',
-                    output={'stdout': obs.content, 'exit_code': obs.exit_code},
-                )
-            if isinstance(obs, ErrorObservation):
-                return ToolResult(status='error', error=obs.content)
-            return ToolResult(status='ok', output=None)
-
-        def file_read(payload: dict) -> ToolResult:
-            path = payload['path']
-            view_range = payload.get('view_range')
-            action = FileReadAction(path=path, view_range=view_range)
-            obs = self.runtime.read(action)  # type: ignore[arg-type]
-            if isinstance(obs, FileReadObservation):
-                return ToolResult(
-                    status='ok', output={'path': path, 'content': obs.content}
-                )
-            if isinstance(obs, ErrorObservation):
-                return ToolResult(status='error', error=obs.content)
-            return ToolResult(status='ok', output=None)
-
-        def file_write(payload: dict) -> ToolResult:
-            path = payload['path']
-            content = payload['content']
-            action = FileWriteAction(path=path, content=content)
-            obs = self.runtime.write(action)  # type: ignore[arg-type]
-            if isinstance(obs, FileWriteObservation):
-                return ToolResult(status='ok', output={'path': path})
-            if isinstance(obs, ErrorObservation):
-                return ToolResult(status='error', error=obs.content)
-            return ToolResult(status='ok', output=None)
-
-        # Create working copies with handlers bound. Pull baseline tools from runtime in MCP format
-        # and convert to SDK Tool objects.
-        self.tools: list[Tool] = []
-        try:
-            mcp_tools = self.runtime.get_tools()  # type: ignore[attr-defined]
-        except Exception:
-            mcp_tools = []
-        # Fallback to built-in list if runtime doesn't provide any
-        if not mcp_tools:
-            mcp_tools = [
-                {
-                    'name': 'execute_bash',
-                    'description': 'Run a shell command inside the runtime',
-                    'input_schema': runtime_execute_bash_tool.input_schema,
-                },
-                {
-                    'name': 'file_read',
-                    'description': 'Read a text file from the runtime workspace',
-                    'input_schema': runtime_file_read_tool.input_schema,
-                },
-                {
-                    'name': 'file_write',
-                    'description': 'Write text to a file in the runtime workspace (overwrites)',
-                    'input_schema': runtime_file_write_tool.input_schema,
-                },
-            ]
-        for spec in mcp_tools:
-            name: str = str(spec.get('name') or '')
-            description: str = str(spec.get('description') or '')
-            input_schema: dict[str, Any] = cast(
-                dict[str, Any],
-                spec.get('inputSchema') or spec.get('input_schema') or {},
-            )
-            tool = Tool(
-                name=name,
-                description=description,
-                input_schema=input_schema,
-            )
-            if tool.name == 'execute_bash':
-                tool.handler = run_bash
-            elif tool.name == 'file_read':
-                tool.handler = file_read
-            elif tool.name == 'file_write':
-                tool.handler = file_write
-            self.tools.append(tool)
-        # Include user-provided tools afterwards
-        self.tools.extend(self.agent.tools)
+    # removed: SDK no longer binds handlers or provides fallback tools
 
     def _run_loop(self) -> None:
         # Build initial system prompt
@@ -475,16 +402,33 @@ class Conversation:
                         )
                     )
 
-                    handler = next(
-                        (t.handler for t in self.tools if t.name == name and t.handler),
-                        None,
-                    )
-                    if handler is None:
+                    # Delegate execution to runtime; no SDK-bound handlers
+                    try:
+                        obs = self.runtime.execute_tool(name, args)  # type: ignore[attr-defined]
+                    except Exception as e:
+                        obs = ErrorObservation(str(e))
+
+                    if isinstance(obs, CmdOutputObservation):
                         result = ToolResult(
-                            status='error', error=f'Unknown tool: {name}'
+                            status='ok',
+                            output={
+                                'stdout': obs.content,
+                                'exit_code': obs.exit_code,
+                            },
                         )
+                    elif isinstance(obs, FileReadObservation):
+                        result = ToolResult(
+                            status='ok',
+                            output={'path': args.get('path'), 'content': obs.content},
+                        )
+                    elif isinstance(obs, FileWriteObservation):
+                        result = ToolResult(
+                            status='ok', output={'path': args.get('path')}
+                        )
+                    elif isinstance(obs, ErrorObservation):
+                        result = ToolResult(status='error', error=obs.content)
                     else:
-                        result = handler(args)
+                        result = ToolResult(status='ok', output=None)
 
                     self._emit(
                         SDKEvent(
