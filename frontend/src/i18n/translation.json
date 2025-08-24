@@ -1551,12 +1551,6 @@
     "de": "Speicherkondensation aktivieren",
     "uk": "Увімкнути конденсацію пам'яті"
   },
-  "SETTINGS$LANGUAGE": {
-    "en": "Language",
-    "ja": "言語",
-    "zh-CN": "语言",
-    "zh-TW": "語言"
-  },
   "SETTINGS$CONDENSER_MAX_SIZE": {
     "en": "Memory condenser max history size",
     "ja": "メモリ凝縮の最大履歴サイズ",
