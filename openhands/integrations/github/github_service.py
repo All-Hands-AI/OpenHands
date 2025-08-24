@@ -248,6 +248,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 else OwnerType.USER
             ),
             link_header=link_header,
+            main_branch=repo.get('default_branch'),
         )
 
     async def get_paginated_repos(
@@ -614,6 +615,36 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 break
 
         return all_branches
+
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> list[Branch]:
+        """Get branches for a repository with pagination"""
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
+
+        params = {'per_page': str(per_page), 'page': str(page)}
+        response, headers = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            # Extract the last commit date if available
+            last_push_date = None
+            if branch_data.get('commit') and branch_data['commit'].get('commit'):
+                commit_info = branch_data['commit']['commit']
+                if commit_info.get('committer') and commit_info['committer'].get(
+                    'date'
+                ):
+                    last_push_date = commit_info['committer']['date']
+
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('sha', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=last_push_date,
+            )
+            branches.append(branch)
+
+        return branches
 
     async def create_pr(
         self,

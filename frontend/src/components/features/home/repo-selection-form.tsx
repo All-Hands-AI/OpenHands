@@ -87,18 +87,29 @@ export function RepositorySelectionForm({
     );
   };
 
-  // Effect to auto-select main/master branch when branches are loaded
+  // Effect to auto-select default branch when branches are loaded
   React.useEffect(() => {
     if (branches?.length) {
-      // Look for main or master branch
-      const defaultBranch = branches.find(
-        (branch) => branch.name === "main" || branch.name === "master",
-      );
+      let defaultBranch: Branch | undefined;
 
-      // If found, select it, otherwise select the first branch
+      // First, try to use the repository's main_branch if available
+      if (selectedRepository?.main_branch) {
+        defaultBranch = branches.find(
+          (branch) => branch.name === selectedRepository.main_branch,
+        );
+      }
+
+      // If not found, fallback to looking for main or master branch
+      if (!defaultBranch) {
+        defaultBranch = branches.find(
+          (branch) => branch.name === "main" || branch.name === "master",
+        );
+      }
+
+      // If still not found, select the first branch
       setSelectedBranch(defaultBranch || branches[0]);
     }
-  }, [branches]);
+  }, [branches, selectedRepository?.main_branch]);
 
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {

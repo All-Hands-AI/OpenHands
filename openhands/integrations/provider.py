@@ -428,13 +428,19 @@ class ProviderHandler:
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(
-        self, repository: str, specified_provider: ProviderType | None = None
+        self,
+        repository: str,
+        specified_provider: ProviderType | None = None,
+        page: int = 1,
+        per_page: int = 30,
     ) -> list[Branch]:
         """Get branches for a repository
 
         Args:
             repository: The repository name
             specified_provider: Optional provider type to use
+            page: Page number for pagination (default: 1)
+            per_page: Number of branches per page (default: 30)
 
         Returns:
             A list of branches for the repository
@@ -444,7 +450,9 @@ class ProviderHandler:
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
-                branches = await service.get_branches(repository)
+                branches = await service.get_paginated_branches(
+                    repository, page, per_page
+                )
                 return branches
             except Exception as e:
                 logger.warning(
@@ -454,7 +462,9 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                branches = await service.get_branches(repository)
+                branches = await service.get_paginated_branches(
+                    repository, page, per_page
+                )
                 all_branches.extend(branches)
                 # If we found branches, no need to check other providers
                 if all_branches:
@@ -462,22 +472,7 @@ class ProviderHandler:
             except Exception as e:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
 
-        # Sort branches by last push date (newest first)
-        all_branches.sort(
-            key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True
-        )
-
-        # Move main/master branch to the top if it exists
-        main_branches = []
-        other_branches = []
-
-        for branch in all_branches:
-            if branch.name.lower() in ['main', 'master']:
-                main_branches.append(branch)
-            else:
-                other_branches.append(branch)
-
-        return main_branches + other_branches
+        return all_branches
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository using the appropriate service.

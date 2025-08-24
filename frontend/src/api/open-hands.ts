@@ -567,9 +567,13 @@ class OpenHands {
     };
   }
 
-  static async getRepositoryBranches(repository: string): Promise<Branch[]> {
+  static async getRepositoryBranches(
+    repository: string,
+    page: number = 1,
+    perPage: number = 30,
+  ): Promise<Branch[]> {
     const { data } = await openHands.get<Branch[]>(
-      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}`,
+      `/api/user/repository/branches?repository=${encodeURIComponent(repository)}&page=${page}&per_page=${perPage}`,
     );
 
     return data;

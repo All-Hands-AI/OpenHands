@@ -241,6 +241,8 @@ async def get_suggested_tasks(
 @app.get('/repository/branches', response_model=list[Branch])
 async def get_repository_branches(
     repository: str,
+    page: int = 1,
+    per_page: int = 30,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
@@ -249,6 +251,8 @@ async def get_repository_branches(
 
     Args:
         repository: The repository name in the format 'owner/repo'
+        page: Page number for pagination (default: 1)
+        per_page: Number of branches per page (default: 30)
 
     Returns:
         A list of branches for the repository
@@ -258,7 +262,9 @@ async def get_repository_branches(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            branches: list[Branch] = await client.get_branches(repository)
+            branches: list[Branch] = await client.get_branches(
+                repository, page=page, per_page=per_page
+            )
             return branches
 
         except AuthenticationError as e:

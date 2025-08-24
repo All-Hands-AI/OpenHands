@@ -545,6 +545,41 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         return branches
 
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> list[Branch]:
+        """Get branches for a repository with pagination."""
+        # Extract owner and repo from the repository string (e.g., "owner/repo")
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        owner = parts[-2]
+        repo = parts[-1]
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
+
+        params = {
+            'pagelen': per_page,
+            'page': page,
+            'sort': '-target.date',  # Sort by most recent commit date, descending
+        }
+
+        response, _ = await self._make_request(url, params)
+
+        branches = []
+        for branch in response.get('values', []):
+            branches.append(
+                Branch(
+                    name=branch.get('name', ''),
+                    commit_sha=branch.get('target', {}).get('hash', ''),
+                    protected=False,  # Bitbucket doesn't expose this in the API
+                    last_push_date=branch.get('target', {}).get('date', None),
+                )
+            )
+
+        return branches
+
     async def create_pr(
         self,
         repo_name: str,
