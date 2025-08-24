@@ -73,6 +73,7 @@
                       "pages": [
                         "usage/llms/openhands-llms",
                         "usage/llms/azure-llms",
+                        "usage/llms/cerebras",
                         "usage/llms/google-llms",
                         "usage/llms/groq",
                         "usage/llms/local-llms",
