@@ -169,6 +169,7 @@ swebench = { git = "https://github.com/ryanhoangt/SWE-bench.git", rev = "fix-mod
 
 [tool.poetry.scripts]
 openhands = "openhands.cli.entry:main"
+openhands-sdk = "openhands.sdk.tui:main"
 
 [tool.poetry.group.testgeneval.dependencies]
 fuzzywuzzy = "^0.18.0"

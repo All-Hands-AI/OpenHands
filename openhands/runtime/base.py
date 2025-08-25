@@ -10,7 +10,7 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import Any, Callable, cast
 from zipfile import ZipFile
 
 import httpx
@@ -239,6 +239,97 @@ class Runtime(FileEditRuntimeMixin):
         self.runtime_status = runtime_status
         if self.status_callback:
             self.status_callback(level, runtime_status, msg)
+
+    # Centralized tool execution for SDK: maps tool name to local runtime actions.
+    # For external MCP servers, use call_tool_mcp(MCPAction).
+    def execute_tool(self, name: str, arguments: dict[str, Any]) -> Observation:
+        name = str(name)
+        try:
+            if name == 'execute_bash':
+                cmd = str(arguments.get('command', ''))
+                timeout = arguments.get('timeout')
+                action = CmdRunAction(command=cmd)
+                if timeout is not None:
+                    try:
+                        action.set_hard_timeout(float(timeout))
+                    except Exception:
+                        pass
+                return self.run(action)
+            if name == 'file_read':
+                path = str(arguments.get('path', ''))
+                view_range = arguments.get('view_range')
+                fr_action = FileReadAction(path=path, view_range=view_range)
+                return self.read(fr_action)
+            if name == 'file_write':
+                path = str(arguments.get('path', ''))
+                content = str(arguments.get('content', ''))
+                fw_action = FileWriteAction(path=path, content=content)
+                return self.write(fw_action)
+        except Exception as e:
+            return ErrorObservation(str(e))
+        return ErrorObservation(f'Unknown tool: {name}')
+
+    # MCP-compatible tool spec
+    # We keep a minimal subset: name, description, inputSchema
+    def get_tools(self) -> list[dict[str, Any]]:
+        """Return runtime tools in MCP Tool format.
+
+        Shape (subset of MCP Tool):
+        {
+            "name": str,
+            "description": str,
+            "inputSchema": {JSON Schema dict}
+        }
+        """
+        return [
+            {
+                'name': 'execute_bash',
+                'description': 'Run a shell command inside the runtime',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'command': {'type': 'string'},
+                        'timeout': {
+                            'type': 'number',
+                            'description': 'Seconds',
+                        },
+                    },
+                    'required': ['command'],
+                    'additionalProperties': False,
+                },
+            },
+            {
+                'name': 'file_read',
+                'description': 'Read a text file from the runtime workspace',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'path': {'type': 'string'},
+                        'view_range': {
+                            'type': 'array',
+                            'items': {'type': 'integer'},
+                            'minItems': 2,
+                            'maxItems': 2,
+                        },
+                    },
+                    'required': ['path'],
+                    'additionalProperties': False,
+                },
+            },
+            {
+                'name': 'file_write',
+                'description': 'Write text to a file in the runtime workspace (overwrites)',
+                'inputSchema': {
+                    'type': 'object',
+                    'properties': {
+                        'path': {'type': 'string'},
+                        'content': {'type': 'string'},
+                    },
+                    'required': ['path', 'content'],
+                    'additionalProperties': False,
+                },
+            },
+        ]
 
     # ====================================================================
 
