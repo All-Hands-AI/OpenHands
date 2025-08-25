@@ -5,7 +5,6 @@ import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
-import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitProviderDropdown } from "#/components/common/git-provider-dropdown";
 import {
   setPersonalRepositories,
@@ -21,13 +20,13 @@ import { getGitProviderMicroagentManagementCustomStyles } from "#/components/com
 
 interface MicroagentManagementSidebarProps {
   isSmallerScreen?: boolean;
+  providers: Provider[];
 }
 
 export function MicroagentManagementSidebar({
   isSmallerScreen = false,
+  providers,
 }: MicroagentManagementSidebarProps) {
-  const { providers } = useUserProviders();
-
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(
     providers.length > 0 ? providers[0] : null,
   );
