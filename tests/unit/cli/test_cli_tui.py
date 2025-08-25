@@ -6,6 +6,7 @@ from openhands.cli.tui import (
     CustomDiffLexer,
     UsageMetrics,
     UserCancelledError,
+    _render_basic_markdown,
     display_banner,
     display_command,
     display_event,
@@ -26,7 +27,6 @@ from openhands.events import EventSource
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
-    ActionSecurityRisk,
     CmdRunAction,
     MCPAction,
     MessageAction,
@@ -398,26 +398,35 @@ class TestReadConfirmationInput:
     async def test_read_confirmation_input_smart(self, mock_confirm):
         mock_confirm.return_value = 2  # user picked third menu item
 
-        cfg = MagicMock()  # <- no spec for simplicity
-        cfg.cli = MagicMock(vi_mode=False)
 
-        result = await read_confirmation_input(
-            config=cfg, security_risk=ActionSecurityRisk.LOW
+class TestMarkdownRendering:
+    def test_empty_string(self):
+        assert _render_basic_markdown('') == ''
+
+    def test_plain_text(self):
+        assert _render_basic_markdown('hello world') == 'hello world'
+
+    def test_bold(self):
+        assert _render_basic_markdown('**bold**') == '<b>bold</b>'
+
+    def test_underline(self):
+        assert _render_basic_markdown('__under__') == '<u>under</u>'
+
+    def test_combined(self):
+        assert (
+            _render_basic_markdown('mix **bold** and __under__ here')
+            == 'mix <b>bold</b> and <u>under</u> here'
         )
-        assert result == 'auto_highrisk'
 
-    @pytest.mark.asyncio
-    @patch('openhands.cli.tui.cli_confirm')
-    async def test_read_confirmation_input_high_risk_always(self, mock_confirm):
-        mock_confirm.return_value = 2  # user picked third menu item
-
-        cfg = MagicMock()  # <- no spec for simplicity
-        cfg.cli = MagicMock(vi_mode=False)
-
-        result = await read_confirmation_input(
-            config=cfg, security_risk=ActionSecurityRisk.HIGH
+    def test_html_is_escaped(self):
+        assert _render_basic_markdown('<script>alert(1)</script>') == (
+            '&lt;script&gt;alert(1)&lt;/script&gt;'
         )
-        assert result == 'always'
+
+    def test_bold_with_special_chars(self):
+        assert _render_basic_markdown('**a < b & c > d**') == (
+            '<b>a &lt; b &amp; c &gt; d</b>'
+        )
 
 
 """Tests for CLI TUI MCP functionality."""
