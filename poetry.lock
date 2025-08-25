@@ -10224,7 +10224,7 @@ optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 aiofiles = ">=23.0.0"
@@ -10247,8 +10247,10 @@ uvicorn = ">=0.24.0"
 dev = ["black (>=22.0.0)", "isort (>=5.0.0)", "mypy (>=1.0.0)", "pre-commit (>=3.6.0)", "pytest (>=7.0.0)", "pytest-cov (>=6.2.1)", "ruff (>=0.3.0)"]
 
 [package.source]
-type = "directory"
-url = "../ToM-SWE"
+type = "git"
+url = "https://github.com/all-hands-ai/ToM-SWE.git"
+reference = "feat/improve_prompts"
+resolved_reference = "40d7b7c0a7c7d5125abba89d1795e08b3ff66e5b"
 
 [[package]]
 name = "toml"
@@ -12028,4 +12030,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "ffaeba24dfe0663f137614c0a8e80cadd5460ea6638b26f741374cd6af30fb9d"
+content-hash = "1acc5fcf8d2d280784be81d4e0ec84c19a72e4b70e004952f8a1ae3d9c167f7c"
