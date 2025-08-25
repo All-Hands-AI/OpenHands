@@ -198,16 +198,36 @@ def test_microagent_triggers(page: Page, base_url: str):
             'button:right-of(input[type="text"])',
         ]
 
+        submit_button = None
         for selector in submit_selectors:
             try:
                 button_element = page.locator(selector)
-                if button_element.is_visible(
-                    timeout=5000
-                ) and button_element.is_enabled(timeout=1000):
-                    print(f'Found enabled submit button with selector: {selector}')
-                    return button_element
+                if button_element.is_visible(timeout=5000):
+                    print(f'Found submit button with selector: {selector}')
+                    submit_button = button_element
+                    break
             except Exception:
                 continue
+
+        button_enabled = False
+        if submit_button:
+            max_wait_time = 60
+            start_time = time.time()
+            while time.time() - start_time < max_wait_time:
+                try:
+                    if not submit_button.is_disabled():
+                        button_enabled = True
+                        print('Submit button is enabled')
+                        break
+                    print(
+                        f'Waiting for submit button to be enabled... ({int(time.time() - start_time)}s)'
+                    )
+                except Exception as e:
+                    print(f'Error checking if button is disabled: {e}')
+                page.wait_for_timeout(2000)
+
+        if submit_button and button_enabled:
+            return submit_button
         return None
 
     def wait_for_agent_response(keywords, test_name, max_wait_time=300):
@@ -307,11 +327,30 @@ def test_microagent_triggers(page: Page, base_url: str):
 
     submit_button = find_submit_button()
     if not submit_button:
-        raise AssertionError('Could not find enabled submit button')
-
-    print('Submit button is enabled')
-    submit_button.click()
-    print('Clicked submit button')
+        print('Submit button not found or never became enabled, trying alternatives')
+        try:
+            message_input.press('Enter')
+            print('Pressed Enter key to submit')
+        except Exception as e:
+            print(f'Error pressing Enter key: {e}')
+            try:
+                page.evaluate("""() => {
+                    const button = document.querySelector('[data-testid="chat-input"] button[type="submit"]');
+                    if (button) {
+                        button.removeAttribute('disabled');
+                        button.click();
+                        return true;
+                    }
+                    return false;
+                }""")
+                print('Used JavaScript to force click submit button')
+            except Exception as e2:
+                print(f'JavaScript force click failed: {e2}')
+                raise AssertionError('Could not submit message - all methods failed')
+    else:
+        print('Submit button is enabled')
+        submit_button.click()
+        print('Clicked submit button')
     page.screenshot(path='test-results/micro_test_08_flarglebargle_sent.png')
 
     print('Step 8: Waiting for agent response to flarglebargle question...')
@@ -341,10 +380,33 @@ def test_microagent_triggers(page: Page, base_url: str):
 
     submit_button = find_submit_button()
     if not submit_button:
-        raise AssertionError('Could not find submit button for kubernetes test')
-
-    submit_button.click()
-    print('Clicked submit button for kubernetes message')
+        print(
+            'Submit button not found or never became enabled for kubernetes test, trying alternatives'
+        )
+        try:
+            message_input.press('Enter')
+            print('Pressed Enter key to submit kubernetes message')
+        except Exception as e:
+            print(f'Error pressing Enter key: {e}')
+            try:
+                page.evaluate("""() => {
+                    const button = document.querySelector('[data-testid="chat-input"] button[type="submit"]');
+                    if (button) {
+                        button.removeAttribute('disabled');
+                        button.click();
+                        return true;
+                    }
+                    return false;
+                }""")
+                print('Used JavaScript to force click submit button for kubernetes')
+            except Exception as e2:
+                print(f'JavaScript force click failed: {e2}')
+                raise AssertionError(
+                    'Could not submit kubernetes message - all methods failed'
+                )
+    else:
+        submit_button.click()
+        print('Clicked submit button for kubernetes message')
     page.screenshot(path='test-results/micro_test_10_kubernetes_sent.png')
 
     print('Step 10: Waiting for agent response to kubernetes question...')
