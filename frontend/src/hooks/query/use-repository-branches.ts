@@ -8,7 +8,8 @@ export const useRepositoryBranches = (repository: string | null) =>
     queryFn: async () => {
       if (!repository) return [];
       const response = await OpenHands.getRepositoryBranches(repository);
-      return response.branches;
+      // Ensure we return an array even if the response is malformed
+      return Array.isArray(response.branches) ? response.branches : [];
     },
     enabled: !!repository,
     staleTime: 1000 * 60 * 5, // 5 minutes
