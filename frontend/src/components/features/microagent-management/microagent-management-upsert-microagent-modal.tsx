@@ -76,17 +76,15 @@ export function MicroagentManagementUpsertMicroagentModal({
     isError: isBranchesError,
   } = useRepositoryBranches(selectedRepository?.full_name || null);
 
-  const branchesItems = Array.isArray(branches)
-    ? branches.map((branch) => ({
-        key: branch.name,
-        label: branch.name,
-      }))
-    : [];
+  const branchesItems = branches?.map((branch) => ({
+    key: branch.name,
+    label: branch.name,
+  }));
 
   // Auto-select main or master branch if it exists.
   useEffect(() => {
     if (
-      Array.isArray(branches) &&
+      branches &&
       branches.length > 0 &&
       !selectedBranch &&
       !isLoadingBranches

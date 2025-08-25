@@ -1294,15 +1294,9 @@ describe("MicroagentManagement", () => {
   // Add microagent integration tests
   describe("Add microagent functionality", () => {
     beforeEach(() => {
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
-        branches: [
-          { name: "main", commit_sha: "abc123", protected: false },
-        ],
-        has_next_page: false,
-        current_page: 1,
-        per_page: 30,
-        total_count: 1,
-      });
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+        { name: "main", commit_sha: "abc123", protected: false },
+      ]);
     });
 
     it("should render add microagent button", async () => {
@@ -1988,15 +1982,9 @@ describe("MicroagentManagement", () => {
     };
 
     beforeEach(() => {
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({
-        branches: [
-          { name: "main", commit_sha: "abc123", protected: false },
-        ],
-        has_next_page: false,
-        current_page: 1,
-        per_page: 30,
-        total_count: 1,
-      });
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+        { name: "main", commit_sha: "abc123", protected: false },
+      ]);
     });
 
     it("should render update microagent modal when updateMicroagentModalVisible is true", async () => {
@@ -2549,16 +2537,10 @@ describe("MicroagentManagement", () => {
       // Mock branch API
       const branchesSpy = vi
         .spyOn(OpenHands, "getRepositoryBranches")
-        .mockResolvedValue({
-          branches: [
-            { name: "main", commit_sha: "abc123", protected: false },
-            { name: "develop", commit_sha: "def456", protected: false },
-          ],
-          has_next_page: false,
-          current_page: 1,
-          per_page: 30,
-          total_count: 2,
-        });
+        .mockResolvedValue([
+          { name: "main", commit_sha: "abc123", protected: false },
+          { name: "develop", commit_sha: "def456", protected: false },
+        ]);
 
       // Mock other APIs
       const getRepositoryMicroagentsSpy = vi.spyOn(
