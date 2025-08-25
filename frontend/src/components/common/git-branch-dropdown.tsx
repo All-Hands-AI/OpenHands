@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useRepositoryBranchesPaginated } from "../../hooks/query/use-repository-branches";
 import { useSearchBranches } from "../../hooks/query/use-search-branches";
 import { useDebounce } from "../../hooks/use-debounce";
@@ -71,6 +71,19 @@ export function GitBranchDropdown({
     () => options.find((option) => option.value === value) || null,
     [options, value],
   );
+
+  // Auto-select default branch when no branch is selected and no search is active
+  useEffect(() => {
+    if (
+      defaultBranch &&
+      !value &&
+      !debouncedSearch &&
+      options.length > 0 &&
+      options.some((option) => option.value === defaultBranch)
+    ) {
+      onChange?.(defaultBranch);
+    }
+  }, [defaultBranch, value, debouncedSearch, options, onChange]);
 
   const handleChange = (option: SelectOption | null) => {
     onChange?.(option?.value || null);
