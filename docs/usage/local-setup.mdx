@@ -45,6 +45,13 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
   1. [Install WSL](https://learn.microsoft.com/en-us/windows/wsl/install).
   2. Run `wsl --version` in powershell and confirm `Default Version: 2`.
 
+  **Ubuntu (Linux Distribution)**
+
+  1. Install Ubuntu: `wsl --install -d Ubuntu` in PowerShell as Administrator.
+  2. Restart computer when prompted.
+  3. Open Ubuntu from Start menu to complete setup.
+  4. Verify installation: `wsl --list` should show Ubuntu.
+
   **Docker Desktop**
 
   1. [Install Docker Desktop on Windows](https://docs.docker.com/desktop/setup/install/windows-install).
@@ -53,7 +60,7 @@ A system with a modern processor and a minimum of **4GB RAM** is recommended to 
   - Resources > WSL Integration: `Enable integration with my default WSL distro` is enabled.
 
   <Note>
-  The docker command below to start the app must be run inside the WSL terminal.
+  The docker command below to start the app must be run inside the WSL terminal. Use `wsl -d Ubuntu` in PowerShell or search "Ubuntu" in the Start menu to access the Ubuntu terminal.
   </Note>
 
   **Alternative: Windows without WSL**
