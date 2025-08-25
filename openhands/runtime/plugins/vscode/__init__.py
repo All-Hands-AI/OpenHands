@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import Action
@@ -26,7 +27,7 @@ class VSCodePlugin(Plugin):
     vscode_connection_token: Optional[str] = None
     gateway_process: asyncio.subprocess.Process
 
-    async def initialize(self, username: str) -> None:
+    async def initialize(self, username: str, runtime_id: str | None = None) -> None:
         # Check if we're on Windows - VSCode plugin is not supported on Windows
         if os.name == 'nt' or sys.platform == 'win32':
             self.vscode_port = None
@@ -63,11 +64,30 @@ class VSCodePlugin(Plugin):
             )
             return
         workspace_path = os.getenv('WORKSPACE_MOUNT_PATH_IN_SANDBOX', '/workspace')
+        # Compute base path for OpenVSCode Server when running behind a path-based router
+        base_path_flag = ''
+        # Allow explicit override via environment
+        explicit_base = os.getenv('OPENVSCODE_SERVER_BASE_PATH')
+        if explicit_base:
+            explicit_base = (
+                explicit_base if explicit_base.startswith('/') else f'/{explicit_base}'
+            )
+            base_path_flag = f' --server-base-path {explicit_base.rstrip("/")}'
+        else:
+            # If runtime_id passed explicitly (preferred), use it
+            runtime_url = os.getenv('RUNTIME_URL', '')
+            if runtime_url and runtime_id:
+                parsed = urlparse(runtime_url)
+                path = parsed.path or '/'
+                path_mode = path.startswith(f'/{runtime_id}')
+                if path_mode:
+                    base_path_flag = f' --server-base-path /{runtime_id}/vscode'
+
         cmd = (
             f"su - {username} -s /bin/bash << 'EOF'\n"
             f'sudo chown -R {username}:{username} /openhands/.openvscode-server\n'
             f'cd {workspace_path}\n'
-            f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust\n'
+            f'exec /openhands/.openvscode-server/bin/openvscode-server --host 0.0.0.0 --connection-token {self.vscode_connection_token} --port {self.vscode_port} --disable-workspace-trust{base_path_flag}\n'
             'EOF'
         )
 
