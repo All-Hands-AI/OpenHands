@@ -75,12 +75,9 @@ describe("TerminalStreamService", () => {
       mockEventSource.onmessage({
         data: JSON.stringify({
           content: "Hello, world!",
-          metadata: {
-            command: "echo Hello, world!",
-            is_complete: false,
-            timestamp: Date.now(),
-            command_id: 123,
-          },
+          command: "echo Hello, world!",
+          isComplete: false,
+          commandId: 123,
         }),
       });
     }
@@ -108,12 +105,9 @@ describe("TerminalStreamService", () => {
             mockEventSource.onmessage({
                 data: JSON.stringify({
                     content: "Hello, world!",
-                    metadata: {
-                        command: "echo Hello, world!",
-                        is_complete: true,
-                        timestamp: Date.now(),
-                        command_id: 123,
-                    },
+                    command: "echo Hello, world!",
+                    isComplete: true,
+                    commandId: 123,
                 }),
             });
         }

@@ -1,6 +1,6 @@
 import { appendOutput } from "#/state/command-slice";
 import store from "#/store";
-import { processTerminalOutput } from "#/utils/terminal-output-processor";
+import { parseTerminalOutput } from "#/utils/parse-terminal-output";
 
 interface TerminalStreamChunk {
   content: string;
@@ -49,12 +49,12 @@ export class TerminalStreamService {
           const data = JSON.parse(event.data) as TerminalStreamChunk;
           this.handleStreamChunk(data);
         } catch (error) {
-          // console.error("Error parsing terminal stream data:", error);
+          console.error("Error parsing terminal stream data:", error);
         }
       };
 
-      this.eventSource.onerror = () => {
-        // console.error("Terminal stream error:", error);
+      this.eventSource.onerror = (error) => {
+        console.error("Terminal stream error:", error);
         this.isConnected = false;
         this.eventSource?.close();
         this.eventSource = null;
@@ -69,7 +69,7 @@ export class TerminalStreamService {
         }
       };
     } catch (error) {
-      // console.error("Failed to connect to terminal stream:", error);
+      console.error("Failed to connect to terminal stream:", error);
     }
   }
 
@@ -92,8 +92,10 @@ export class TerminalStreamService {
       this.currentCommandId = commandId || null;
     }
 
-    // Process the output with unified processing
-    const processedOutput = processTerminalOutput(content);
+    // Process the output
+    const processedOutput = parseTerminalOutput(
+      content.replaceAll("\n", "\r\n"),
+    );
 
     // Handle completion
     if (isComplete) {

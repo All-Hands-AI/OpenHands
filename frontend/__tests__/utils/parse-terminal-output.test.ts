@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { parseTerminalOutput, processTerminalOutput } from "../../src/utils/terminal-output-processor";
+import { parseTerminalOutput } from "../../src/utils/parse-terminal-output";
 
 describe("parseTerminalOutput", () => {
   it("should parse the command, env, and symbol", () => {
@@ -22,19 +22,5 @@ describe("parseTerminalOutput", () => {
     const raw = "web_scraper.py";
     const parsed = parseTerminalOutput(raw);
     expect(parsed).toBe("web_scraper.py");
-  });
-});
-
-describe("processTerminalOutput", () => {
-  it("should process terminal output with line ending conversion", () => {
-    const raw = "hello\nworld";
-    const processed = processTerminalOutput(raw);
-    expect(processed).toBe("hello\r\nworld");
-  });
-
-  it("should remove Python interpreter info", () => {
-    const raw = "output\n[Python Interpreter: /path/to/python]";
-    const processed = processTerminalOutput(raw);
-    expect(processed).toBe("output");
   });
 });
