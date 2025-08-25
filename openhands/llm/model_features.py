@@ -136,9 +136,7 @@ EMPTY_REASONING_RESPONSE_PATTERNS: list[str] = [
 
 def may_return_empty_reasoning(model: str) -> bool:
     matched = model_matches(model, EMPTY_REASONING_RESPONSE_PATTERNS)
-
     return matched
-
 
 def get_features(model: str) -> ModelFeatures:
     return ModelFeatures(

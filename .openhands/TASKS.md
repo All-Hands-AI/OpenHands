@@ -1,9 +1,9 @@
 # Task List
 
 1. 🔄 Fetch latest main and merge into working branch
-Need to commit local changes before merge
-2. ⏳ Remove temporary debug prints and finalize logic
-Clean function_calling.py and model_features.py; keep centralized may_return_empty_reasoning usage
+Committed local changes; ready to merge origin/main
+2. ✅ Remove temporary debug prints and finalize logic
+Cleaned up debug prints in model_features and function_calling; centralized logic retained
 3. ⏳ Run focused unit tests for Grok empty reasoning behavior
 Ensure tests pass locally (may need PYTHONPATH override)
 4. ⏳ Run pre-commit hooks for backend

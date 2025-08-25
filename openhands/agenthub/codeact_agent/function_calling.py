@@ -81,12 +81,6 @@ def response_to_actions(
     if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
         thought = ''
-    # debug tracing for tests
-    try:
-        print("[TRACE] model:", getattr(response, 'model', None), "has_tool_calls:", bool(getattr(choice.message, 'tool_calls', None)), "content:", repr(getattr(choice.message, 'content', None)))
-    except Exception:
-        pass
-
         if isinstance(assistant_msg.content, str):
             thought = assistant_msg.content
         elif isinstance(assistant_msg.content, list):
