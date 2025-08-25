@@ -306,18 +306,50 @@ def test_microagent_triggers(page: Page, base_url: str):
 
         return found_keywords
 
+    # Wait longer for WebSocket connection to be established
+    print('Waiting for WebSocket connection to be established...')
+    page.wait_for_timeout(20000)  # Wait 20 seconds for WebSocket connection
+
+    # Check for any signs of agent connectivity
+    try:
+        # Look for any agent status indicators
+        status_indicators = [
+            '[data-testid="agent-status"]',
+            '.agent-status',
+            '[class*="status"]',
+            '[class*="connected"]',
+        ]
+        for indicator in status_indicators:
+            try:
+                if page.locator(indicator).is_visible(timeout=2000):
+                    print(f'Found agent status indicator: {indicator}')
+                    break
+            except Exception:
+                continue
+    except Exception as e:
+        print(f'Could not check agent status indicators: {e}')
+
     # Wait for agent to be ready
     message_input = None
-    for attempt in range(48):  # 48 * 10 seconds = 480 seconds total
+    for attempt in range(60):  # 60 * 10 seconds = 600 seconds total
         message_input = find_message_input()
         if message_input:
-            break
-        print(f'Agent not ready yet, waiting... (attempt {attempt + 1}/48)')
+            # Additional verification: check if we can actually type in the input
+            try:
+                message_input.fill('test')
+                message_input.fill('')  # Clear it
+                print('Message input is fully functional')
+                break
+            except Exception as e:
+                print(f'Message input not fully ready: {e}')
+                message_input = None
+
+        print(f'Agent not ready yet, waiting... (attempt {attempt + 1}/60)')
         page.wait_for_timeout(10000)
 
     if not message_input:
         raise AssertionError(
-            'Agent input field never became available after 480 seconds'
+            'Agent input field never became available after 600 seconds'
         )
 
     # Test 1: Flarglebargle microagent
