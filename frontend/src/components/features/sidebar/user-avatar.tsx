@@ -35,7 +35,7 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
           className="text-[#9099AC]"
         />
       )}
-      {isLoading && <Spinner size="small" />}
+      {isLoading && <Spinner size="small" data-testid="loading-spinner" />}
     </TooltipButton>
   );
 }
