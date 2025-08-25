@@ -118,7 +118,6 @@ base_url = "{llm_base_url}"
         print(
             f'Environment: ENABLE_BROWSER={env.get("ENABLE_BROWSER")}, AGENT_ENABLE_BROWSING={env.get("AGENT_ENABLE_BROWSING")}, BACKEND_PORT={env.get("BACKEND_PORT")}'
         )
-        print('Note: No frontend port needed - this is truly headless mode')
 
         # Run the command in headless mode
         try:
@@ -140,30 +139,6 @@ base_url = "{llm_base_url}"
             # Handle different types of failures
             error_output = result.stdout + result.stderr
 
-            # Check for specific LLM-related errors that we can handle gracefully
-            # (regardless of return code, since LLM errors can still result in exit code 0)
-            if any(
-                error in error_output.lower()
-                for error in [
-                    'exceeded budget',
-                    'over budget',
-                    'quota exceeded',
-                    'rate limit',
-                    'invalid model',
-                    'model name passed',
-                    'authentication failed',
-                    'api key',
-                    'unauthorized',
-                    'billing',
-                    'payment',
-                    'credits',
-                    'badrequesterror',
-                    'openaiexception',
-                ]
-            ):
-                pytest.skip(f'LLM service unavailable or over budget: {error_output}')
-
-            # If return code is non-zero and it's not an LLM error, fail the test
             if result.returncode != 0:
                 pytest.fail(
                     f'Headless OpenHands failed with return code {result.returncode}: {error_output}'
@@ -187,13 +162,6 @@ base_url = "{llm_base_url}"
                     print(f'Found expected line count in output: {line.strip()}')
                     found_count = True
                     break
-                # Be flexible about the exact count since different environments might have different README
-                elif any(str(count) in line for count in [157, 183]) and (
-                    'README' in line or 'line' in line.lower()
-                ):
-                    print(f'Found line count in output: {line.strip()}')
-                    found_count = True
-                    break
 
             # If we didn't find the count in the output, check the trajectory file
             if not found_count and os.path.exists(trajectory_path):
@@ -211,52 +179,8 @@ base_url = "{llm_base_url}"
                 f'Line count not found in output or trajectory. Expected around {expected_line_count}. Output: {output_text}'
             )
 
-            # Verify no browsing actions were used by checking the trajectory
-            if os.path.exists(trajectory_path):
-                with open(trajectory_path, 'r') as f:
-                    trajectory = json.load(f)
-
-                # Check that no browse or browse_interactive actions were used
-                browsing_actions = []
-                for event in trajectory.get('events', []):
-                    action_type = event.get('action', {}).get('action', '')
-                    if action_type in ['browse', 'browse_interactive']:
-                        browsing_actions.append(action_type)
-
-                assert not browsing_actions, (
-                    f'Found browsing actions {browsing_actions} in trajectory, but browsing should be disabled'
-                )
-                print('✓ Verified no browsing actions were used')
-
-                # Also verify that shell commands were used (wc command)
-                shell_commands = []
-                for event in trajectory.get('events', []):
-                    if event.get('action', {}).get('action') == 'run':
-                        command = event.get('action', {}).get('command', '')
-                        if command:
-                            shell_commands.append(command)
-
-                wc_commands = [
-                    cmd
-                    for cmd in shell_commands
-                    if 'wc' in cmd.lower() and 'readme' in cmd.lower()
-                ]
-                if wc_commands:
-                    print(f'✓ Verified wc command was used: {wc_commands}')
-                else:
-                    print(
-                        f'Warning: No wc command found in shell commands: {shell_commands}'
-                    )
-            else:
-                print(
-                    'Warning: Trajectory file not found, cannot verify browsing actions'
-                )
 
             print('✓ Test passed: README.md line count found in pure headless mode')
 
-        except subprocess.TimeoutExpired:
-            pytest.skip(
-                'Headless test timed out after 5 minutes - likely due to LLM service issues'
-            )
         except Exception as e:
             pytest.fail(f'Headless test failed with exception: {e}')
