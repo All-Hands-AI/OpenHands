@@ -38,14 +38,16 @@ class FileConversationStore(ConversationStore):
         path = self.get_conversation_metadata_filename(conversation_id)
         json_str = await call_sync_from_async(self.file_store.read, path)
 
-        # Validate the JSON
-        json_obj = json.loads(json_str)
+        # Validate the JSON defensively. If missing/invalid, behave as not found.
+        try:
+            json_obj = json.loads(json_str)
+        except Exception:
+            raise FileNotFoundError(path)
         if 'created_at' not in json_obj:
             raise FileNotFoundError(path)
 
         # Remove github_user_id if it exists
-        if 'github_user_id' in json_obj:
-            json_obj.pop('github_user_id')
+        json_obj.pop('github_user_id', None)
 
         result = conversation_metadata_type_adapter.validate_python(json_obj)
         return result
