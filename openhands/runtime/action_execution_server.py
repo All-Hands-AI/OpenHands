@@ -835,7 +835,13 @@ if __name__ == '__main__':
     async def authenticate_requests(request: Request, call_next):
         if request.url.path != '/alive' and request.url.path != '/server_info':
             try:
-                verify_api_key(request.headers.get('X-Session-API-Key'))
+                # For streaming endpoints, allow API key via query parameter
+                # since EventSource doesn't support custom headers
+                api_key = request.headers.get('X-Session-API-Key')
+                if not api_key and request.url.path == '/terminal-stream':
+                    api_key = request.query_params.get('api_key')
+
+                verify_api_key(api_key)
             except HTTPException as e:
                 return JSONResponse(
                     status_code=e.status_code, content={'detail': e.detail}

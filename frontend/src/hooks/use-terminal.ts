@@ -59,7 +59,8 @@ export const useTerminal = ({
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
   const streamInitialized = React.useRef<boolean>(false);
-  const { url: actionExecutionServerUrl } = useActionExecutionServerUrl();
+  const { url: actionExecutionServerUrl, sessionApiKey } =
+    useActionExecutionServerUrl();
 
   const createTerminal = () =>
     new Terminal({
@@ -130,6 +131,7 @@ export const useTerminal = ({
       try {
         const streamService = getTerminalStreamService(
           actionExecutionServerUrl,
+          sessionApiKey,
         );
         streamService.connect();
         streamInitialized.current = true;
@@ -149,7 +151,7 @@ export const useTerminal = ({
         }
       }
     };
-  }, [disabled, actionExecutionServerUrl]);
+  }, [disabled, actionExecutionServerUrl, sessionApiKey]);
 
   // Initialize terminal and handle cleanup
   React.useEffect(() => {

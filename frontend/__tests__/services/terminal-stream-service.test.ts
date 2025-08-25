@@ -62,6 +62,16 @@ describe("TerminalStreamService", () => {
     expect(mockEventSource.url).toBe("http://localhost:8000/terminal-stream");
   });
 
+  it("should connect to the terminal stream with session API key", () => {
+    // Create service with session API key
+    const serviceWithApiKey = new TerminalStreamService("http://localhost:8000", "test-api-key");
+    serviceWithApiKey.connect();
+
+    expect(mockEventSource.url).toBe("http://localhost:8000/terminal-stream?api_key=test-api-key");
+
+    serviceWithApiKey.disconnect();
+  });
+
   it("should handle partial stream chunks", () => {
     service.connect();
 

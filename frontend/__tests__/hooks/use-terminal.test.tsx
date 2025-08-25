@@ -29,6 +29,7 @@ vi.mock("#/services/terminal-stream-service", () => ({
 vi.mock("#/hooks/query/use-action-execution-server-url", () => ({
     useActionExecutionServerUrl: () => ({
       url: "http://localhost:8000",
+      sessionApiKey: "test-api-key",
     }),
   }));
 

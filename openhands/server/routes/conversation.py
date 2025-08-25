@@ -274,15 +274,16 @@ async def get_microagents(
 async def get_action_execution_server_url(
     conversation: ServerConversation = Depends(get_conversation),
 ):
-    """Get the action execution server URL.
+    """Get the action execution server URL and session API key.
 
-    This endpoint allows getting the action execution server URL.
+    This endpoint allows getting the action execution server URL and the session API key
+    needed for authentication with the streaming endpoints.
 
     Args:
-        request (Request): The incoming FastAPI request object.
+        conversation (ServerConversation): The conversation object.
 
     Returns:
-        JSONResponse: A JSON response indicating the success of the operation.
+        JSONResponse: A JSON response with URL and session_api_key.
     """
     try:
         runtime: Runtime = conversation.runtime
@@ -290,9 +291,20 @@ async def get_action_execution_server_url(
         logger.debug(
             f'Runtime action execution server URL: {runtime.action_execution_server_url}'
         )
+
+        # Get session API key from runtime if available
+        session_api_key = None
+        if hasattr(runtime, 'session_api_key'):
+            session_api_key = runtime.session_api_key
+        elif hasattr(runtime, 'session') and hasattr(runtime.session, 'headers'):
+            session_api_key = runtime.session.headers.get('X-Session-API-Key')
+
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={'url': runtime.action_execution_server_url},
+            content={
+                'url': runtime.action_execution_server_url,
+                'session_api_key': session_api_key,
+            },
         )
     except Exception as e:
         logger.error(f'Error getting action execution server URL: {e}')
@@ -300,6 +312,7 @@ async def get_action_execution_server_url(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content={
                 'url': None,
+                'session_api_key': None,
                 'error': f'Error getting action execution server URL: {e}',
             },
         )

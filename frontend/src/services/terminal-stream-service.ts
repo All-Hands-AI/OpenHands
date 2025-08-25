@@ -27,7 +27,10 @@ export class TerminalStreamService {
   // Track current command for first chunk detection
   private currentCommandId: number | null = null;
 
-  constructor(private baseUrl: string) {}
+  constructor(
+    private baseUrl: string,
+    private sessionApiKey: string | null = null,
+  ) {}
 
   connect(): void {
     if (this.eventSource) {
@@ -35,7 +38,13 @@ export class TerminalStreamService {
     }
 
     try {
-      const url = `${this.baseUrl}/terminal-stream`;
+      // Build URL with API key as query parameter if available
+      let url = `${this.baseUrl}/terminal-stream`;
+      if (this.sessionApiKey) {
+        const urlParams = new URLSearchParams({ api_key: this.sessionApiKey });
+        url = `${url}?${urlParams.toString()}`;
+      }
+
       this.eventSource = new EventSource(url);
 
       this.eventSource.onopen = () => {
@@ -143,9 +152,10 @@ let terminalStreamService: TerminalStreamService | null = null;
 
 export function getTerminalStreamService(
   baseUrl?: string,
+  sessionApiKey?: string | null,
 ): TerminalStreamService {
   if (!terminalStreamService && baseUrl) {
-    terminalStreamService = new TerminalStreamService(baseUrl);
+    terminalStreamService = new TerminalStreamService(baseUrl, sessionApiKey);
   }
 
   if (!terminalStreamService) {
