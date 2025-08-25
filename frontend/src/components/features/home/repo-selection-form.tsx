@@ -119,7 +119,7 @@ export function RepositorySelectionForm({
   const renderBranchSelector = () => (
     <GitBranchDropdown
       repositoryName={selectedRepository?.full_name}
-      defaultBranch={selectedRepository?.main_branch}
+      defaultBranch={selectedRepository?.default_branch}
       value={selectedBranch?.name || null}
       placeholder="Select branch..."
       className="max-w-[500px]"

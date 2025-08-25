@@ -85,12 +85,14 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     full_name: "octocat/hello-world",
     git_provider: "github",
     is_public: true,
+    default_branch: "main",
   },
   {
     id: "2",
     full_name: "octocat/earth",
     git_provider: "github",
     is_public: true,
+    default_branch: "main",
   },
 ];
 
