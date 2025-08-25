@@ -33,6 +33,7 @@ interface ConversationSubscriptionsContextType {
     sessionApiKey: string | null;
     providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
     baseUrl: string;
+    socketPath?: string;
     onEvent?: (event: unknown, conversationId: string) => void;
   }) => void;
   unsubscribeFromConversation: (conversationId: string) => void;
@@ -136,10 +137,17 @@ export function ConversationSubscriptionsProvider({
       sessionApiKey: string | null;
       providersSet: ("github" | "gitlab" | "bitbucket" | "enterprise_sso")[];
       baseUrl: string;
+      socketPath?: string;
       onEvent?: (event: unknown, conversationId: string) => void;
     }) => {
-      const { conversationId, sessionApiKey, providersSet, baseUrl, onEvent } =
-        options;
+      const {
+        conversationId,
+        sessionApiKey,
+        providersSet,
+        baseUrl,
+        socketPath,
+        onEvent,
+      } = options;
 
       // If already subscribed, don't create a new subscription
       if (conversationSockets[conversationId]) {
@@ -196,6 +204,7 @@ export function ConversationSubscriptionsProvider({
         // Create socket connection
         const socket = io(baseUrl, {
           transports: ["websocket"],
+          path: socketPath ?? "/socket.io",
           query: {
             conversation_id: conversationId,
             session_api_key: sessionApiKey,
