@@ -198,18 +198,12 @@ class ProviderHandler:
 
         if selected_provider:
             if not page or not per_page:
-                logger.error('Failed to provider params for paginating repos')
-                return []
+                raise ValueError('Failed to provider params for paginating repos')
 
             service = self._get_service(selected_provider)
-            try:
-                return await service.get_paginated_repos(
-                    page, per_page, sort, installation_id
-                )
-            except Exception as e:
-                logger.warning(f'Error fetching repos from {selected_provider}: {e}')
-
-            return []
+            return await service.get_paginated_repos(
+                page, per_page, sort, installation_id
+            )
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
@@ -246,17 +240,10 @@ class ProviderHandler:
         if selected_provider:
             service = self._get_service(selected_provider)
             public = self._is_repository_url(query, selected_provider)
-            try:
-                user_repos = await service.search_repositories(
-                    query, per_page, sort, order, public
-                )
-                return self._deduplicate_repositories(user_repos)
-            except Exception as e:
-                logger.warning(
-                    f'Error searching repos from select provider {selected_provider}: {e}'
-                )
-
-            return []
+            user_repos = await service.search_repositories(
+                query, per_page, sort, order, public
+            )
+            return self._deduplicate_repositories(user_repos)
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
