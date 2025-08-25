@@ -155,7 +155,7 @@ export function getTerminalStreamService(
   return terminalStreamService;
 }
 
-export function isTerminalStreamingEnabled(): boolean {
+export function isTerminalStreamingInitialized(): boolean {
   try {
     const service = getTerminalStreamService();
     return service.isStreamConnected();
