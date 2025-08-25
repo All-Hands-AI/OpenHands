@@ -1,7 +1,9 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Provider } from "../../types/settings";
 import { useGitRepositories } from "../../hooks/query/use-git-repositories";
+import { useSearchRepositories } from "../../hooks/query/use-search-repositories";
+import { useDebounce } from "../../hooks/use-debounce";
 import OpenHands from "../../api/open-hands";
 import { GitRepository } from "../../types/git";
 import {
@@ -19,10 +21,6 @@ export interface GitRepositoryDropdownProps {
   onChange?: (repository?: GitRepository) => void;
 }
 
-interface SearchCache {
-  [key: string]: GitRepository[];
-}
-
 export function GitRepositoryDropdown({
   provider,
   value,
@@ -33,6 +31,20 @@ export function GitRepositoryDropdown({
   onChange,
 }: GitRepositoryDropdownProps) {
   const { t } = useTranslation();
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearchInput = useDebounce(searchInput, 300);
+
+  // Process search input to handle URLs
+  const processedSearchInput = useMemo(() => {
+    if (debouncedSearchInput.startsWith("https://")) {
+      const match = debouncedSearchInput.match(
+        /https:\/\/[^/]+\/([^/]+\/[^/]+)/,
+      );
+      return match ? match[1] : debouncedSearchInput;
+    }
+    return debouncedSearchInput;
+  }, [debouncedSearchInput]);
+
   const {
     data,
     fetchNextPage,
@@ -44,6 +56,10 @@ export function GitRepositoryDropdown({
     provider,
     enabled: !disabled,
   });
+
+  // Search query for processed input (handles URLs)
+  const { data: searchData, isLoading: isSearchLoading } =
+    useSearchRepositories(processedSearchInput, provider);
 
   const allOptions: AsyncSelectOption[] = useMemo(
     () =>
@@ -58,75 +74,83 @@ export function GitRepositoryDropdown({
     [data],
   );
 
-  // Keep track of search results
-  const searchCache = useRef<SearchCache>({});
+  const searchOptions: AsyncSelectOption[] = useMemo(
+    () =>
+      searchData
+        ? searchData.map((repo) => ({
+            value: repo.id,
+            label: repo.full_name,
+          }))
+        : [],
+    [searchData],
+  );
 
   const selectedOption = useMemo(() => {
     // First check in loaded pages
     const option = allOptions.find((opt) => opt.value === value);
     if (option) return option;
 
-    // If not found, check in search cache
-    const repo = Object.values(searchCache.current)
-      .flat()
-      .find((r) => r.id === value);
-
-    if (repo) {
-      return {
-        value: repo.id,
-        label: repo.full_name,
-      };
-    }
+    // If not found, check in search results
+    const searchOption = searchOptions.find((opt) => opt.value === value);
+    if (searchOption) return searchOption;
 
     return null;
-  }, [allOptions, value]);
+  }, [allOptions, searchOptions, value]);
 
   const loadOptions = useCallback(
     async (inputValue: string): Promise<AsyncSelectOption[]> => {
+      // Update search input to trigger debounced search
+      setSearchInput(inputValue);
+
       // If empty input, show all loaded options
       if (!inputValue.trim()) {
         return allOptions;
       }
 
-      // If it looks like a URL, extract the repo name and search
+      // For very short inputs, do local filtering
+      if (inputValue.length < 2) {
+        return allOptions.filter((option) =>
+          option.label.toLowerCase().includes(inputValue.toLowerCase()),
+        );
+      }
+
+      // Handle URL inputs by performing direct search
       if (inputValue.startsWith("https://")) {
         const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
         if (match) {
           const repoName = match[1];
-          const searchResults = await OpenHands.searchGitRepositories(
-            repoName,
-            3,
-          );
-          // Cache the search results
-          searchCache.current[repoName] = searchResults;
-          return searchResults.map((repo) => ({
-            value: repo.id,
-            label: repo.full_name,
-          }));
+          try {
+            // Perform direct search for URL-based inputs
+            const repositories = await OpenHands.searchGitRepositories(
+              repoName,
+              3,
+              provider,
+            );
+            return repositories.map((repo) => ({
+              value: repo.full_name,
+              label: repo.full_name,
+              data: repo,
+            }));
+          } catch (error) {
+            // Fall back to local filtering if search fails
+            return allOptions.filter((option) =>
+              option.label.toLowerCase().includes(repoName.toLowerCase()),
+            );
+          }
         }
       }
 
-      // For any other input, search via API
-      if (inputValue.length >= 2) {
-        // Only search if at least 2 characters
-        const searchResults = await OpenHands.searchGitRepositories(
-          inputValue,
-          10,
-        );
-        // Cache the search results
-        searchCache.current[inputValue] = searchResults;
-        return searchResults.map((repo) => ({
-          value: repo.id,
-          label: repo.full_name,
-        }));
+      // For regular text inputs, use hook-based search results if available
+      if (searchOptions.length > 0 && processedSearchInput === inputValue) {
+        return searchOptions;
       }
 
-      // For very short inputs, do local filtering
+      // Fallback to local filtering while search is loading
       return allOptions.filter((option) =>
         option.label.toLowerCase().includes(inputValue.toLowerCase()),
       );
     },
-    [allOptions],
+    [allOptions, searchOptions, processedSearchInput, provider],
   );
 
   const handleChange = (option: AsyncSelectOption | null) => {
@@ -142,9 +166,7 @@ export function GitRepositoryDropdown({
 
     // If not found, check in search results
     if (!repo) {
-      repo = Object.values(searchCache.current)
-        .flat()
-        .find((r) => r.id === option.value);
+      repo = searchData?.find((r) => r.id === option.value);
     }
 
     onChange?.(repo);
@@ -167,7 +189,7 @@ export function GitRepositoryDropdown({
         errorMessage={errorMessage}
         disabled={disabled}
         isClearable={false}
-        isLoading={isLoading || isLoading || isFetchingNextPage}
+        isLoading={isLoading || isFetchingNextPage || isSearchLoading}
         cacheOptions
         defaultOptions={allOptions}
         onChange={handleChange}
