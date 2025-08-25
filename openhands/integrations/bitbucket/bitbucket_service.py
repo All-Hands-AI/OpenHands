@@ -356,6 +356,9 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         Returns:
             A list of Repository objects
         """
+
+        print('reached with params', page, per_page, sort, installation_id, query)
+
         if not installation_id:
             return []
 
@@ -387,7 +390,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         if query:
             params['q'] = f'name~"{query}"'
 
-        response, headers = await self._make_request(workspace_repos_url, params)
+        response, _ = await self._make_request(workspace_repos_url, params)
 
         # Extract repositories from the response
         repos = response.get('values', [])
@@ -416,7 +419,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             self._parse_repository(repo, link_header=formatted_link_header)
             for repo in repos
         ]
-
+        print('repositories', repositories)
         return repositories
 
     async def get_all_repositories(

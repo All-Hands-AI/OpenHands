@@ -80,6 +80,7 @@ async def get_user_repositories(
         )
 
         try:
+            print('fetching repos', sort, selected_provider, page, per_page, installation_id)
             return await client.get_repositories(
                 sort,
                 server_config.app_mode,

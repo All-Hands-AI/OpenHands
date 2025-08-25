@@ -200,6 +200,7 @@ class ProviderHandler:
             if not page or not per_page:
                 raise ValueError('Failed to provider params for paginating repos')
 
+            print('fetching paginated repos', selected_provider, page, per_page)
             service = self._get_service(selected_provider)
             return await service.get_paginated_repos(
                 page, per_page, sort, installation_id
