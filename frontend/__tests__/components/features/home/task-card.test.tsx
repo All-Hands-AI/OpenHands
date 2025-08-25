@@ -73,7 +73,7 @@ describe("TaskCard", () => {
         OpenHands,
         "retrieveUserGitRepositories",
       );
-      retrieveUserGitRepositoriesSpy.mockResolvedValue(MOCK_RESPOSITORIES);
+      retrieveUserGitRepositoriesSpy.mockResolvedValue({ data: MOCK_RESPOSITORIES, nextPage: null });
     });
 
     it("should call create conversation with suggest task trigger and selected suggested task", async () => {

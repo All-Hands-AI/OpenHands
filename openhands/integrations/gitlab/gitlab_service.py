@@ -1,4 +1,5 @@
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
@@ -7,6 +8,7 @@ from pydantic import SecretStr
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
+    Comment,
     GitService,
     OwnerType,
     ProviderType,
@@ -71,9 +73,7 @@ class GitLabService(BaseGitService, GitService):
         return ProviderType.GITLAB.value
 
     async def _get_gitlab_headers(self) -> dict[str, Any]:
-        """
-        Retrieve the GitLab Token to construct the headers
-        """
+        """Retrieve the GitLab Token to construct the headers"""
         if not self.token:
             latest_token = await self.get_latest_token()
             if latest_token:
@@ -173,8 +173,7 @@ class GitLabService(BaseGitService, GitService):
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any] | None = None
     ) -> Any:
-        """
-        Execute a GraphQL query against the GitLab GraphQL API
+        """Execute a GraphQL query against the GitLab GraphQL API
 
         Args:
             query: The GraphQL query string
@@ -241,38 +240,123 @@ class GitLabService(BaseGitService, GitService):
             company=response.get('organization'),
         )
 
+    def _parse_repository(
+        self, repo: dict, link_header: str | None = None
+    ) -> Repository:
+        """Parse a GitLab API project response into a Repository object.
+
+        Args:
+            repo: Project data from GitLab API
+            link_header: Optional link header for pagination
+
+        Returns:
+            Repository object
+        """
+        return Repository(
+            id=str(repo.get('id')),  # type: ignore[arg-type]
+            full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
+            stargazers_count=repo.get('star_count'),
+            git_provider=ProviderType.GITLAB,
+            is_public=repo.get('visibility') == 'public',
+            owner_type=(
+                OwnerType.ORGANIZATION
+                if repo.get('namespace', {}).get('kind') == 'group'
+                else OwnerType.USER
+            ),
+            link_header=link_header,
+        )
+
+    def _parse_gitlab_url(self, url: str) -> str | None:
+        """Parse a GitLab URL to extract the repository path.
+
+        Expected format: https://{domain}/{group}/{possibly_subgroup}/{repo}
+        Returns the full path from group onwards (e.g., 'group/subgroup/repo' or 'group/repo')
+        """
+        try:
+            # Remove protocol and domain
+            if '://' in url:
+                url = url.split('://', 1)[1]
+            if '/' in url:
+                path = url.split('/', 1)[1]
+            else:
+                return None
+
+            # Clean up the path
+            path = path.strip('/')
+            if not path:
+                return None
+
+            # Split the path and remove empty parts
+            path_parts = [part for part in path.split('/') if part]
+
+            # We need at least 2 parts: group/repo
+            if len(path_parts) < 2:
+                return None
+
+            # Join all parts to form the full repository path
+            return '/'.join(path_parts)
+
+        except Exception:
+            return None
+
     async def search_repositories(
-        self, query: str, per_page: int = 30, sort: str = 'updated', order: str = 'desc'
+        self,
+        query: str,
+        per_page: int = 30,
+        sort: str = 'updated',
+        order: str = 'desc',
+        public: bool = False,
+    ) -> list[Repository]:
+        if public:
+            # When public=True, query is a GitLab URL that we need to parse
+            repo_path = self._parse_gitlab_url(query)
+            if not repo_path:
+                return []  # Invalid URL format
+
+            repository = await self.get_repository_details_from_repo_name(repo_path)
+            return [repository]
+
+        return await self.get_paginated_repos(1, per_page, sort, None, query)
+
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
+        order_by = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name',
+        }.get(sort, 'last_activity_at')
+
         params = {
-            'search': query,
-            'per_page': per_page,
-            'order_by': 'last_activity_at',
-            'sort': order,
-            'visibility': 'public',
+            'page': str(page),
+            'per_page': str(per_page),
+            'order_by': order_by,
+            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+            'membership': True,  # Include projects user is a member of
         }
 
-        response, _ = await self._make_request(url, params)
-        repos = [
-            Repository(
-                id=str(repo.get('id')),
-                full_name=repo.get('path_with_namespace'),
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=True,
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in response
-        ]
+        if query:
+            params['search'] = query
+            params['search_namespaces'] = True
 
+        response, headers = await self._make_request(url, params)
+
+        next_link: str = headers.get('Link', '')
+        repos = [
+            self._parse_repository(repo, link_header=next_link) for repo in response
+        ]
         return repos
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
         all_repos: list[dict] = []
@@ -310,21 +394,7 @@ class GitLabService(BaseGitService, GitService):
 
         # Trim to MAX_REPOS if needed and convert to Repository objects
         all_repos = all_repos[:MAX_REPOS]
-        return [
-            Repository(
-                id=str(repo.get('id')),  # type: ignore[arg-type]
-                full_name=repo.get('path_with_namespace'),  # type: ignore[arg-type]
-                stargazers_count=repo.get('star_count'),
-                git_provider=ProviderType.GITLAB,
-                is_public=repo.get('visibility') == 'public',
-                owner_type=(
-                    OwnerType.ORGANIZATION
-                    if repo.get('namespace', {}).get('kind') == 'group'
-                    else OwnerType.USER
-                ),
-            )
-            for repo in all_repos
-        ]
+        return [self._parse_repository(repo) for repo in all_repos]
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -466,18 +536,7 @@ class GitLabService(BaseGitService, GitService):
         url = f'{self.BASE_URL}/projects/{encoded_name}'
         repo, _ = await self._make_request(url)
 
-        return Repository(
-            id=str(repo.get('id')),
-            full_name=repo.get('path_with_namespace'),
-            stargazers_count=repo.get('star_count'),
-            git_provider=ProviderType.GITLAB,
-            is_public=repo.get('visibility') == 'public',
-            owner_type=(
-                OwnerType.ORGANIZATION
-                if repo.get('namespace', {}).get('kind') == 'group'
-                else OwnerType.USER
-            ),
-        )
+        return self._parse_repository(repo)
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
@@ -526,8 +585,7 @@ class GitLabService(BaseGitService, GitService):
         description: str | None = None,
         labels: list[str] | None = None,
     ) -> str:
-        """
-        Creates a merge request in GitLab
+        """Creates a merge request in GitLab
 
         Args:
             id: The ID or URL-encoded path of the project
@@ -541,7 +599,6 @@ class GitLabService(BaseGitService, GitService):
             - MR URL when successful
             - Error message when unsuccessful
         """
-
         # Convert string ID to URL-encoded path if needed
         project_id = str(id).replace('/', '%2F') if isinstance(id, str) else id
         url = f'{self.BASE_URL}/projects/{project_id}/merge_requests'
@@ -617,6 +674,80 @@ class GitLabService(BaseGitService, GitService):
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
+
+    async def get_issue_comments(
+        self, project_id: str, issue_iid: int, limit: int = 100
+    ) -> list[Comment]:
+        """Get the last n comments for a specific issue.
+
+        Args:
+            project_id: The GitLab project ID (can be numeric ID or URL-encoded path)
+            issue_iid: The issue internal ID (iid) in GitLab
+            limit: Maximum number of comments to retrieve (default: 100)
+
+        Returns:
+            List of Comment objects, ordered by creation date (newest first)
+
+        Raises:
+            UnknownException: If the request fails or the issue is not found
+        """
+        # URL-encode the project_id if it contains special characters
+        if '/' in str(project_id):
+            encoded_project_id = str(project_id).replace('/', '%2F')
+        else:
+            encoded_project_id = str(project_id)
+
+        url = f'{self.BASE_URL}/projects/{encoded_project_id}/issues/{issue_iid}/notes'
+
+        all_comments: list[Comment] = []
+        page = 1
+        per_page = min(limit, 100)  # GitLab API max per_page is 100
+
+        while len(all_comments) < limit:
+            # Get comments with pagination, ordered by creation date descending
+            params = {
+                'per_page': per_page,
+                'page': page,
+                'order_by': 'created_at',
+                'sort': 'desc',  # Get newest comments first
+            }
+
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more comments
+                break
+
+            # Filter out system comments and convert to Comment objects
+            for comment_data in response:
+                if len(all_comments) >= limit:
+                    break
+
+                # Skip system-generated comments unless explicitly requested
+                if comment_data.get('system', False):
+                    continue
+
+                comment = Comment(
+                    id=comment_data['id'],
+                    body=comment_data['body'],
+                    author=comment_data.get('author', {}).get('username', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment_data['created_at'].replace('Z', '+00:00')
+                    ),
+                    updated_at=datetime.fromisoformat(
+                        comment_data['updated_at'].replace('Z', '+00:00')
+                    ),
+                    system=comment_data.get('system', False),
+                )
+                all_comments.append(comment)
+
+            # Check if we have more pages
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header or len(all_comments) >= limit:
+                break
+
+            page += 1
+
+        return all_comments
 
 
 gitlab_service_cls = os.environ.get(

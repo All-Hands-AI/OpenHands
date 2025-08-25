@@ -104,6 +104,24 @@ export const formatTimestamp = (timestamp: string) =>
     second: "2-digit",
   });
 
+export const shouldUseInstallationRepos = (
+  provider: Provider,
+  app_mode: "saas" | "oss" | undefined,
+) => {
+  if (!provider) return false;
+
+  switch (provider) {
+    case "bitbucket":
+      return true;
+    case "gitlab":
+      return false;
+    case "github":
+      return app_mode === "saas";
+    default:
+      return false;
+  }
+};
+
 export const getGitProviderBaseUrl = (gitProvider: Provider): string => {
   switch (gitProvider) {
     case "github":

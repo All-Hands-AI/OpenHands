@@ -81,6 +81,7 @@ export default function MainApp() {
   const gitHubAuthUrl = useGitHubAuthUrl({
     appMode: config.data?.APP_MODE || null,
     gitHubClientId: config.data?.GITHUB_CLIENT_ID || null,
+    authUrl: config.data?.AUTH_URL,
   });
 
   // When on TOS page, we don't use the GitHub auth URL
@@ -202,16 +203,17 @@ export default function MainApp() {
     >
       <Sidebar />
 
-      <div
-        id="root-outlet"
-        className="h-[calc(100%-50px)] md:h-full w-full relative overflow-auto"
-      >
+      <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
         {config.data?.MAINTENANCE && (
-          <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
+          <div className="flex-shrink-0">
+            <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
+          </div>
         )}
-        <EmailVerificationGuard>
-          <Outlet />
-        </EmailVerificationGuard>
+        <div id="root-outlet" className="flex-1 relative overflow-auto">
+          <EmailVerificationGuard>
+            <Outlet />
+          </EmailVerificationGuard>
+        </div>
       </div>
 
       {renderAuthModal && (
@@ -219,6 +221,7 @@ export default function MainApp() {
           githubAuthUrl={effectiveGitHubAuthUrl}
           appMode={config.data?.APP_MODE}
           providersConfigured={config.data?.PROVIDERS_CONFIGURED}
+          authUrl={config.data?.AUTH_URL}
         />
       )}
       {renderReAuthModal && <ReauthModal />}

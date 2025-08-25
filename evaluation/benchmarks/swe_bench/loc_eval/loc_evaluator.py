@@ -16,8 +16,7 @@ from openhands.core.logger import openhands_logger as logger
 
 class LocEvaluator:
     def __init__(self, args):
-        """
-        Localization evaluation.
+        """Localization evaluation.
 
         Args:
             args: all main arguments
@@ -76,8 +75,7 @@ class LocEvaluator:
         self.task_resolved = False
 
     def _init_dir(self, directory_path):
-        """
-        Check if a directory exists and create it if it doesn't.
+        """Check if a directory exists and create it if it doesn't.
 
         Args:
             directory_path (str): Path to the directory to check/create
@@ -207,8 +205,7 @@ class LocEvaluator:
         self._compute_avg_over_all()
 
     def _write_to_json(self, data, file_name):
-        """
-        Writes the current object data to a JSON file.
+        """Writes the current object data to a JSON file.
 
         Returns:
             bool: True if writing was successful, False otherwise.
@@ -225,8 +222,7 @@ class LocEvaluator:
             return False
 
     def read_from_json(self, file_path):
-        """
-        Reads data from a JSON file and loads it into the current object.
+        """Reads data from a JSON file and loads it into the current object.
 
         Returns:
             dict: The loaded JSON data, or an empty dict if the file doesn't exist
@@ -253,8 +249,7 @@ class LocEvaluator:
             return {}
 
     def read_from_jsonl(self, file_path):
-        """
-        Reads data from a JSON file and loads it into the current object.
+        """Reads data from a JSON file and loads it into the current object.
 
         Returns:
             dict: The loaded JSON data, or an empty dict if the file doesn't exist
@@ -294,8 +289,7 @@ class LocEvaluator:
             history_idx += 1
 
     def _parse_string_to_dict(self, dict_string) -> dict:
-        """
-        Convert a string representation of a dictionary to an actual dictionary.
+        """Convert a string representation of a dictionary to an actual dictionary.
 
         Args:
             dict_string (str): String representation of a dictionary
@@ -328,8 +322,7 @@ class LocEvaluator:
         return None
 
     def _parse_value_from_args(self, argument_str: str, key: str) -> str:
-        """
-        Parse a specific key's value from argument string.
+        """Parse a specific key's value from argument string.
 
         Args:
             argument_str (str): The argument string containing key-value pairs
@@ -407,8 +400,7 @@ class LocEvaluator:
             return ''
 
     def _parse_path_from_args(self, argument_str: str) -> str:
-        """
-        Parse path from argument string.
+        """Parse path from argument string.
 
         Args:
             argument_str (str): The argument string containing path information
@@ -419,8 +411,7 @@ class LocEvaluator:
         return self._parse_value_from_args(argument_str, 'path')
 
     def _parse_func_names_from_str(self, code_patch) -> list:
-        """
-        Parse function names from the new_str code patch.
+        """Parse function names from the new_str code patch.
 
         Args:
             code_patch: Either a string (argument string) or already extracted new_str code
@@ -801,8 +792,7 @@ class LocEvaluator:
 
 
 def swe_data_loader(args):
-    """
-    Loading SWE-Bench data.
+    """Loading SWE-Bench data.
 
     Args:
         args: Main arguments.
@@ -834,8 +824,7 @@ def swe_data_loader(args):
 
 
 def infer_data_loader(args):
-    """
-    Load instance IDs.
+    """Load instance IDs.
 
     Args:
         args: Main arguments.
@@ -868,8 +857,7 @@ def infer_data_loader(args):
 
 
 def infer_cost_calculator(args):
-    """
-    Calculate total and average costs from metric JSON files with detailed output.
+    """Calculate total and average costs from metric JSON files with detailed output.
 
     Args:
         args: Main arguments.

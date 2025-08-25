@@ -28,7 +28,7 @@ description: Complete guide for setting up Linear integration with OpenHands Clo
 
 1. **Access API Settings**
    - Log in as the service account
-   - Go to **Settings** > **API**
+   - Go to **Settings** > **Security & access**
 
 2. **Create Personal API Key**
    - Click **Create new key**
@@ -82,6 +82,14 @@ description: Complete guide for setting up Linear integration with OpenHands Clo
          - **Service Account API Key**: The API key from Step 2 above
          - Ensure **Active** toggle is enabled
 
+<Note>
+Workspace name is the identifier after the host name when accessing a resource in Linear.
+
+Eg: https://linear.app/allhands/issue/OH-37
+
+Here the workspace name is **allhands**.
+</Note>
+
 3. **Complete OAuth Flow**
    - You'll be redirected to Linear to complete OAuth verification
    - Grant the necessary permissions to verify your workspace access. If you have access to multiple workspaces, select the correct one that you initially provided
@@ -105,15 +113,15 @@ description: Complete guide for setting up Linear integration with OpenHands Clo
 
 <AccordionGroup>
 <Accordion title="Workspace link flow">
-![workspace-link.png](/static/img/workspace-link.png)
+![workspace-link.png](/static/img/linear-user-link.png)
 </Accordion>
 
 <Accordion title="Workspace Configure flow">
-![workspace-link.png](/static/img/workspace-configure.png)
+![workspace-link.png](/static/img/linear-admin-configure.png)
 </Accordion>
 
 <Accordion title="Edit view as a user">
-![workspace-link.png](/static/img/workspace-user-edit.png)
+![workspace-link.png](/static/img/linear-admin-edit.png)
 </Accordion>
 
 <Accordion title="Edit view as the workspace creator">

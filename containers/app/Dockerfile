@@ -21,7 +21,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
 RUN apt-get update -y \
-    && apt-get install -y curl make git build-essential \
+    && apt-get install -y curl make git build-essential jq gettext \
     && python3 -m pip install poetry --break-system-packages
 
 COPY pyproject.toml poetry.lock ./
@@ -58,8 +58,8 @@ RUN sed -i 's/^UID_MIN.*/UID_MIN 499/' /etc/login.defs
 # Default is 60000, but we've seen up to 200000
 RUN sed -i 's/^UID_MAX.*/UID_MAX 1000000/' /etc/login.defs
 
-RUN groupadd app
-RUN useradd -l -m -u $OPENHANDS_USER_ID -s /bin/bash openhands && \
+RUN groupadd --gid $OPENHANDS_USER_ID app
+RUN useradd -l -m -u $OPENHANDS_USER_ID --gid $OPENHANDS_USER_ID -s /bin/bash openhands && \
     usermod -aG app openhands && \
     usermod -aG sudo openhands && \
     echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
