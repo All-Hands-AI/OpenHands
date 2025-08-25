@@ -42,7 +42,7 @@ def main():
         sys.exit(0)
 
     if args.command == 'serve':
-        launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
+        launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu, port=args.port)
     elif args.command == 'cli' or args.command is None:
         run_cli_command(args)
     else:

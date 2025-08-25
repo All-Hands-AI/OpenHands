@@ -84,9 +84,15 @@ uvx --python 3.12 --from openhands-ai openhands serve --gpu
 
 # Or with current directory mounted
 uvx --python 3.12 --from openhands-ai openhands serve --mount-cwd
+
+# Or with a custom port (default is 3000)
+uvx --python 3.12 --from openhands-ai openhands serve --port 4242
+
+# Or combine multiple options
+uvx --python 3.12 --from openhands-ai openhands serve --mount-cwd --gpu --port 4242
 ```
 
-This will automatically handle Docker requirements checking, image pulling, and launching the GUI server. The `--gpu` flag enables GPU support via nvidia-docker, and `--mount-cwd` mounts your current directory into the container.
+This will automatically handle Docker requirements checking, image pulling, and launching the GUI server. The `--gpu` flag enables GPU support via nvidia-docker, `--mount-cwd` mounts your current directory into the container, and `--port` allows you to specify a custom port (default is 3000).
 
 <Accordion title="Alternative: Traditional pip installation">
 
@@ -98,6 +104,9 @@ pip install openhands-ai
 
 # Launch the GUI server
 openhands serve
+
+# Or with a custom port
+openhands serve --port 4242
 ```
 
 Note that you'll still need `uv` installed for the default MCP servers to work properly.
@@ -126,7 +135,7 @@ docker run -it --rm --pull=always \
 
 > **Note**: If you used OpenHands before version 0.44, you may want to run `mv ~/.openhands-state ~/.openhands` to migrate your conversation history to the new location.
 
-You'll find OpenHands running at http://localhost:3000!
+You'll find OpenHands running at http://localhost:3000 (or your custom port if specified)!
 
 ### Setup
 

@@ -184,6 +184,12 @@ def get_cli_parser() -> argparse.ArgumentParser:
         action='store_true',
         default=False,
     )
+    serve_parser.add_argument(
+        '--port',
+        help='Port to run the OpenHands GUI server on (default: 3000)',
+        type=int,
+        default=3000,
+    )
 
     # Add 'cli' subcommand - import all the existing CLI arguments
     cli_parser = subparsers.add_parser(

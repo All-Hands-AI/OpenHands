@@ -73,12 +73,15 @@ def ensure_config_dir_exists() -> Path:
     return config_dir
 
 
-def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
+def launch_gui_server(
+    mount_cwd: bool = False, gpu: bool = False, port: int = 3000
+) -> None:
     """Launch the OpenHands GUI server using Docker.
 
     Args:
         mount_cwd: If True, mount the current working directory into the container.
         gpu: If True, enable GPU support by mounting all GPUs into the container via nvidia-docker.
+        port: Port to run the OpenHands GUI server on (default: 3000).
     """
     print_formatted_text(
         HTML('<ansiblue>🚀 Launching OpenHands GUI server...</ansiblue>')
@@ -124,7 +127,7 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
         HTML('<ansigreen>✅ Starting OpenHands GUI server...</ansigreen>')
     )
     print_formatted_text(
-        HTML('<grey>The server will be available at: http://localhost:3000</grey>')
+        HTML(f'<grey>The server will be available at: http://localhost:{port}</grey>')
     )
     print_formatted_text(HTML('<grey>Press Ctrl+C to stop the server.</grey>'))
     print_formatted_text('')
@@ -191,7 +194,7 @@ def launch_gui_server(mount_cwd: bool = False, gpu: bool = False) -> None:
     docker_cmd.extend(
         [
             '-p',
-            '3000:3000',
+            f'{port}:3000',
             '--add-host',
             'host.docker.internal:host-gateway',
             '--name',
