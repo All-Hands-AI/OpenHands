@@ -5,6 +5,9 @@ This test verifies that microagents are triggered correctly via the UI.
 It follows the same patterns as test_conversation_start.py.
 
 Tests microagent activation by sending trigger words and checking agent responses.
+
+NOTE: E2E test failures may indicate infrastructure issues (agent not responding)
+rather than microagent code issues. Check if basic conversation tests also fail.
 """
 
 import os
