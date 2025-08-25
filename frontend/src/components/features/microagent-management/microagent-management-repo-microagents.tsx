@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Spinner } from "@heroui/react";
@@ -8,6 +9,8 @@ import { useSearchConversations } from "#/hooks/query/use-search-conversations";
 import { GitRepository } from "#/types/git";
 import { RootState } from "#/store";
 import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
+import { cn } from "#/utils/utils";
+import { I18nKey } from "#/i18n/declaration";
 
 interface MicroagentManagementRepoMicroagentsProps {
   repository: GitRepository;
@@ -21,6 +24,8 @@ export function MicroagentManagementRepoMicroagents({
   );
 
   const dispatch = useDispatch();
+
+  const { t } = useTranslation();
 
   const { full_name: repositoryName } = repository;
 
@@ -103,34 +108,47 @@ export function MicroagentManagementRepoMicroagents({
   const numberOfMicroagents = microagents?.length || 0;
   const numberOfConversations = conversations?.length || 0;
   const totalItems = numberOfMicroagents + numberOfConversations;
+  const hasMicroagents = numberOfMicroagents > 0;
+  const hasConversations = numberOfConversations > 0;
 
   return (
     <div>
       {totalItems === 0 && (
         <MicroagentManagementLearnThisRepo repository={repository} />
       )}
-
       {/* Render microagents */}
-      {numberOfMicroagents > 0 &&
-        microagents?.map((microagent) => (
-          <div key={microagent.name} className="pb-4 last:pb-0">
-            <MicroagentManagementMicroagentCard
-              microagent={microagent}
-              repository={repository}
-            />
-          </div>
-        ))}
+      {hasMicroagents && (
+        <div className="flex flex-col">
+          <span className="text-md text-white font-medium leading-5 mb-4">
+            {t(I18nKey.MICROAGENT_MANAGEMENT$EXISTING_MICROAGENTS)}
+          </span>
+          {microagents?.map((microagent) => (
+            <div key={microagent.name} className="pb-4 last:pb-0">
+              <MicroagentManagementMicroagentCard
+                microagent={microagent}
+                repository={repository}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Render conversations */}
-      {numberOfConversations > 0 &&
-        conversations?.map((conversation) => (
-          <div key={conversation.conversation_id} className="pb-4 last:pb-0">
-            <MicroagentManagementMicroagentCard
-              conversation={conversation}
-              repository={repository}
-            />
-          </div>
-        ))}
+      {hasConversations && (
+        <div className={cn("flex flex-col", hasMicroagents && "mt-4")}>
+          <span className="text-md text-white font-medium leading-5 mb-4">
+            {t(I18nKey.MICROAGENT_MANAGEMENT$OPEN_MICROAGENT_PULL_REQUESTS)}
+          </span>
+          {conversations?.map((conversation) => (
+            <div key={conversation.conversation_id} className="pb-4 last:pb-0">
+              <MicroagentManagementMicroagentCard
+                conversation={conversation}
+                repository={repository}
+              />
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -27,6 +27,7 @@ export const MOCK_DEFAULT_USER_SETTINGS: ApiSettings | PostApiSettings = {
     DEFAULT_SETTINGS.REMOTE_RUNTIME_RESOURCE_FACTOR,
   provider_tokens_set: {},
   enable_default_condenser: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
+  condenser_max_size: DEFAULT_SETTINGS.CONDENSER_MAX_SIZE,
   enable_sound_notifications: DEFAULT_SETTINGS.ENABLE_SOUND_NOTIFICATIONS,
   enable_proactive_conversation_starters:
     DEFAULT_SETTINGS.ENABLE_PROACTIVE_CONVERSATION_STARTERS,
@@ -198,7 +199,14 @@ export const handlers = [
     const body = await request.json();
 
     if (body) {
-      MOCK_USER_PREFERENCES.settings = MOCK_DEFAULT_USER_SETTINGS;
+      const current = MOCK_USER_PREFERENCES.settings || {
+        ...MOCK_DEFAULT_USER_SETTINGS,
+      };
+      // Persist new values over current/mock defaults
+      MOCK_USER_PREFERENCES.settings = {
+        ...current,
+        ...(body as Partial<ApiSettings>),
+      };
       return HttpResponse.json(null, { status: 200 });
     }
 
