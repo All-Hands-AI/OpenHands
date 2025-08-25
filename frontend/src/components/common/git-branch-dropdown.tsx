@@ -40,17 +40,17 @@ export function GitBranchDropdown({
       return searchResults.map((b) => ({ value: b.name, label: b.name }));
     }
     if (!data?.pages) return [];
-    
+
     const allBranches = data.pages.flatMap((page) => page.branches);
     const branchOptions = allBranches.map((branch) => ({
       value: branch.name,
       label: branch.name,
     }));
-    
+
     // When not searching, prioritize the default branch by moving it to the front
     if (defaultBranch && !debouncedSearch) {
       const defaultBranchIndex = branchOptions.findIndex(
-        (option) => option.value === defaultBranch
+        (option) => option.value === defaultBranch,
       );
       if (defaultBranchIndex > 0) {
         const defaultBranchOption = branchOptions[defaultBranchIndex];
@@ -58,7 +58,7 @@ export function GitBranchDropdown({
         branchOptions.unshift(defaultBranchOption);
       }
     }
-    
+
     return branchOptions;
   }, [data, debouncedSearch, searchResults, defaultBranch]);
 
@@ -72,7 +72,7 @@ export function GitBranchDropdown({
     [options, value],
   );
 
-  // Auto-select default branch when no branch is selected and no search is active
+  // Auto-select default branch when branches are loaded and no branch is selected
   useEffect(() => {
     if (
       defaultBranch &&
