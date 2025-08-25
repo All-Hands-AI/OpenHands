@@ -42,12 +42,13 @@ _DUMMY_PAGE = _CachePage(None, 1, -1)
 
 @dataclass
 class EventStore(EventStoreABC):
-    """A stored list of events backing a conversation"""
+    """A stored list of events backing a conversation."""
 
     sid: str
     file_store: FileStore
     user_id: str | None
     cache_size: int = 25
+    use_cache: bool = False  # EventStore doesn't write cache files, so disable cache reading by default
     _cur_id: int | None = None  # Private field to cache the calculated value
 
     @property
@@ -90,14 +91,14 @@ class EventStore(EventStoreABC):
         filter: EventFilter | None = None,
         limit: int | None = None,
     ) -> Iterable[Event]:
-        """Retrieve events from the event stream, optionally filtering out events of a given type
-        and events marked as hidden.
+        """Retrieve events from the event stream, optionally filtering out events of a given type and events marked as hidden.
 
         Args:
             start_id: The ID of the first event to retrieve. Defaults to 0.
             end_id: The ID of the last event to retrieve. Defaults to the last event in the stream.
             reverse: Whether to retrieve events in reverse order. Defaults to False.
             filter: EventFilter to use
+            limit: Maximum number of events to retrieve. Defaults to None (no limit).
 
         Yields:
             Events from the stream that match the criteria.
@@ -170,6 +171,9 @@ class EventStore(EventStoreABC):
         return page
 
     def _load_cache_page_for_index(self, index: int) -> _CachePage:
+        if not self.use_cache:
+            # Return a dummy page with no events, forcing fallback to individual event reading
+            return _DUMMY_PAGE
         offset = index % self.cache_size
         index -= offset
         return self._load_cache_page(index, index + self.cache_size)
