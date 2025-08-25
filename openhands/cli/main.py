@@ -1,3 +1,5 @@
+import openhands.cli.suppress_warnings  # noqa: F401  # isort: skip
+
 import asyncio
 import logging
 import os
@@ -8,7 +10,6 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.shortcuts import clear
 
 import openhands.agenthub  # noqa F401 (we import this to get the agents registered)
-import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.commands import (
     check_folder_security_agreement,
     handle_commands,
@@ -66,6 +67,7 @@ from openhands.core.setup import (
 )
 from openhands.events import EventSource, EventStreamSubscriber
 from openhands.events.action import (
+    ActionSecurityRisk,
     ChangeAgentStateAction,
     MessageAction,
 )
@@ -83,6 +85,7 @@ from openhands.microagent.microagent import BaseMicroagent
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
 from openhands.storage.settings.file_settings_store import FileSettingsStore
+from openhands.utils.utils import create_registry_and_conversation_stats
 
 
 async def cleanup_session(
@@ -138,6 +141,9 @@ async def run_session(
     is_loaded = asyncio.Event()
     is_paused = asyncio.Event()  # Event to track agent pause requests
     always_confirm_mode = False  # Flag to enable always confirm mode
+    auto_highrisk_confirm_mode = (
+        False  # Flag to enable auto_highrisk confirm mode (only ask for HIGH risk)
+    )
 
     # Show runtime initialization message
     display_runtime_initialization_message(config.runtime)
@@ -147,9 +153,16 @@ async def run_session(
         None, display_initialization_animation, 'Initializing...', is_loaded
     )
 
-    agent = create_agent(config)
+    llm_registry, conversation_stats, config = create_registry_and_conversation_stats(
+        config,
+        sid,
+        None,
+    )
+
+    agent = create_agent(config, llm_registry)
     runtime = create_runtime(
         config,
+        llm_registry,
         sid=sid,
         headless_mode=True,
         agent=agent,
@@ -161,7 +174,9 @@ async def run_session(
 
     runtime.subscribe_to_shell_stream(stream_to_console)
 
-    controller, initial_state = create_controller(agent, runtime, config)
+    controller, initial_state = create_controller(
+        agent, runtime, config, conversation_stats
+    )
 
     event_stream = runtime.event_stream
 
@@ -197,7 +212,11 @@ async def run_session(
                 return
 
     async def on_event_async(event: Event) -> None:
-        nonlocal reload_microagents, is_paused, always_confirm_mode
+        nonlocal \
+            reload_microagents, \
+            is_paused, \
+            always_confirm_mode, \
+            auto_highrisk_confirm_mode
         display_event(event, config)
         update_usage_metrics(event, usage_metrics)
 
@@ -236,8 +255,26 @@ async def run_session(
                     )
                     return
 
-                confirmation_status = await read_confirmation_input(config)
-                if confirmation_status in ('yes', 'always'):
+                # Check if auto_highrisk confirm mode is enabled and action is low/medium risk
+                pending_action = controller._pending_action
+                security_risk = ActionSecurityRisk.LOW
+                if pending_action and hasattr(pending_action, 'security_risk'):
+                    security_risk = pending_action.security_risk
+                if (
+                    auto_highrisk_confirm_mode
+                    and security_risk != ActionSecurityRisk.HIGH
+                ):
+                    event_stream.add_event(
+                        ChangeAgentStateAction(AgentState.USER_CONFIRMED),
+                        EventSource.USER,
+                    )
+                    return
+
+                # Get the pending action to show risk information
+                confirmation_status = await read_confirmation_input(
+                    config, security_risk=security_risk
+                )
+                if confirmation_status in ('yes', 'always', 'auto_highrisk'):
                     event_stream.add_event(
                         ChangeAgentStateAction(AgentState.USER_CONFIRMED),
                         EventSource.USER,
@@ -255,9 +292,11 @@ async def run_session(
                         )
                     )
 
-                # Set the always_confirm_mode flag if the user wants to always confirm
+                # Set the confirmation mode flags based on user choice
                 if confirmation_status == 'always':
                     always_confirm_mode = True
+                elif confirmation_status == 'auto_highrisk':
+                    auto_highrisk_confirm_mode = True
 
             if event.agent_state == AgentState.PAUSED:
                 is_paused.clear()  # Revert the event state before prompting for user input
@@ -360,12 +399,12 @@ async def run_session(
             # Check if it's an authentication error
             if 'ERROR_LLM_AUTHENTICATION' in error_message:
                 # Start with base authentication error message
-                initial_message = 'Authentication error with the LLM provider. Please check your API key.'
+                welcome_message = 'Authentication error with the LLM provider. Please check your API key.'
 
                 # Add OpenHands-specific guidance if using an OpenHands model
                 llm_config = config.get_llm_config()
                 if llm_config.model.startswith('openhands/'):
-                    initial_message += " If you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
+                    welcome_message += "\nIf you're using OpenHands models, get a new API key from https://app.all-hands.dev/settings/api-keys"
             else:
                 # For other errors, use the standard message
                 initial_message = (
@@ -634,6 +673,10 @@ async def main_with_loop(loop: asyncio.AbstractEventLoop, args) -> None:
         if not config.workspace_base:
             config.workspace_base = os.getcwd()
         config.security.confirmation_mode = True
+        config.security.security_analyzer = 'llm'
+        agent_config = config.get_agent_config(config.default_agent)
+        agent_config.cli_mode = True
+        config.set_agent_config(agent_config)
 
         # Need to finalize config again after setting runtime to 'cli'
         # This ensures Jupyter plugin is disabled for CLI runtime

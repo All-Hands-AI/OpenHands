@@ -1,4 +1,3 @@
-import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
@@ -18,7 +17,7 @@ import {
   Orientation,
   ResizablePanel,
 } from "#/components/layout/resizable-panel";
-import Security from "#/components/shared/modals/security/security";
+
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useSettings } from "#/hooks/query/use-settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -83,12 +82,6 @@ function AppContent() {
     };
   }, []);
 
-  const {
-    isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
-    onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
-
   function renderMain() {
     if (width <= 1024) {
       return (
@@ -106,7 +99,7 @@ function AppContent() {
       <ResizablePanel
         orientation={Orientation.HORIZONTAL}
         className="grow h-full min-h-0 min-w-0"
-        initialSize={500}
+        initialSize={564}
         firstClassName="rounded-xl overflow-hidden border border-neutral-600 bg-base-secondary"
         secondClassName="flex flex-col overflow-hidden"
         firstChild={<ChatInterface />}
@@ -122,17 +115,7 @@ function AppContent() {
           <div data-testid="app-route" className="flex flex-col h-full gap-3">
             <div className="flex h-full overflow-auto">{renderMain()}</div>
 
-            <Controls
-              setSecurityOpen={onSecurityModalOpen}
-              showSecurityLock={!!settings?.SECURITY_ANALYZER}
-            />
-            {settings && (
-              <Security
-                isOpen={securityModalIsOpen}
-                onOpenChange={onSecurityModalOpenChange}
-                securityAnalyzer={settings.SECURITY_ANALYZER}
-              />
-            )}
+            <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
           </div>
         </EventHandler>
       </ConversationSubscriptionsProvider>

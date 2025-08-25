@@ -8,6 +8,8 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import QuestionCircleIcon from "#/icons/question-circle.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
 import { HelpLink } from "#/components/features/settings/help-link";
@@ -36,8 +38,6 @@ function LlmSettingsScreen() {
   const { data: config } = useConfig();
 
   const [view, setView] = React.useState<"basic" | "advanced">("basic");
-  const [securityAnalyzerInputIsVisible, setSecurityAnalyzerInputIsVisible] =
-    React.useState(false);
 
   const [dirtyInputs, setDirtyInputs] = React.useState({
     model: false,
@@ -54,6 +54,19 @@ function LlmSettingsScreen() {
   const [currentSelectedModel, setCurrentSelectedModel] = React.useState<
     string | null
   >(null);
+
+  // Track confirmation mode state to control security analyzer visibility
+  const [confirmationModeEnabled, setConfirmationModeEnabled] = React.useState(
+    settings?.CONFIRMATION_MODE ?? DEFAULT_SETTINGS.CONFIRMATION_MODE,
+  );
+
+  // Track selected security analyzer for form submission
+  const [selectedSecurityAnalyzer, setSelectedSecurityAnalyzer] =
+    React.useState(
+      settings?.SECURITY_ANALYZER === null
+        ? "none"
+        : (settings?.SECURITY_ANALYZER ?? DEFAULT_SETTINGS.SECURITY_ANALYZER),
+    );
 
   const modelsAndProviders = organizeModelsAndProviders(
     resources?.models || [],
@@ -74,7 +87,6 @@ function LlmSettingsScreen() {
     };
 
     const userSettingsIsAdvanced = determineWhetherToToggleAdvancedSettings();
-    if (settings) setSecurityAnalyzerInputIsVisible(settings.CONFIRMATION_MODE);
 
     if (userSettingsIsAdvanced) setView("advanced");
     else setView("basic");
@@ -86,6 +98,20 @@ function LlmSettingsScreen() {
       setCurrentSelectedModel(settings.LLM_MODEL);
     }
   }, [settings?.LLM_MODEL]);
+
+  // Update confirmation mode state when settings change
+  React.useEffect(() => {
+    if (settings?.CONFIRMATION_MODE !== undefined) {
+      setConfirmationModeEnabled(settings.CONFIRMATION_MODE);
+    }
+  }, [settings?.CONFIRMATION_MODE]);
+
+  // Update selected security analyzer state when settings change
+  React.useEffect(() => {
+    if (settings?.SECURITY_ANALYZER !== undefined) {
+      setSelectedSecurityAnalyzer(settings.SECURITY_ANALYZER || "none");
+    }
+  }, [settings?.SECURITY_ANALYZER]);
 
   const handleSuccessfulMutation = () => {
     displaySuccessToast(t(I18nKey.SETTINGS$SAVED_WARNING));
@@ -114,6 +140,11 @@ function LlmSettingsScreen() {
     const model = formData.get("llm-model-input")?.toString();
     const apiKey = formData.get("llm-api-key-input")?.toString();
     const searchApiKey = formData.get("search-api-key-input")?.toString();
+    const confirmationMode =
+      formData.get("enable-confirmation-mode-switch")?.toString() === "on";
+    const securityAnalyzer = formData
+      .get("security-analyzer-input")
+      ?.toString();
 
     const fullLlmModel = provider && model && `${provider}/${model}`;
 
@@ -122,12 +153,15 @@ function LlmSettingsScreen() {
         LLM_MODEL: fullLlmModel,
         llm_api_key: apiKey || null,
         SEARCH_API_KEY: searchApiKey || "",
+        CONFIRMATION_MODE: confirmationMode,
+        SECURITY_ANALYZER:
+          securityAnalyzer === "none"
+            ? null
+            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
 
         // reset advanced settings
         LLM_BASE_URL: DEFAULT_SETTINGS.LLM_BASE_URL,
         AGENT: DEFAULT_SETTINGS.AGENT,
-        CONFIRMATION_MODE: DEFAULT_SETTINGS.CONFIRMATION_MODE,
-        SECURITY_ANALYZER: DEFAULT_SETTINGS.SECURITY_ANALYZER,
         ENABLE_DEFAULT_CONDENSER: DEFAULT_SETTINGS.ENABLE_DEFAULT_CONDENSER,
       },
       {
@@ -160,7 +194,10 @@ function LlmSettingsScreen() {
         AGENT: agent,
         CONFIRMATION_MODE: confirmationMode,
         ENABLE_DEFAULT_CONDENSER: enableDefaultCondenser,
-        SECURITY_ANALYZER: confirmationMode ? securityAnalyzer : undefined,
+        SECURITY_ANALYZER:
+          securityAnalyzer === "none"
+            ? null
+            : securityAnalyzer || DEFAULT_SETTINGS.SECURITY_ANALYZER,
       },
       {
         onSuccess: handleSuccessfulMutation,
@@ -175,7 +212,6 @@ function LlmSettingsScreen() {
   };
 
   const handleToggleAdvancedSettings = (isToggled: boolean) => {
-    setSecurityAnalyzerInputIsVisible(!!settings?.CONFIRMATION_MODE);
     setView(isToggled ? "advanced" : "basic");
     setDirtyInputs({
       model: false,
@@ -246,12 +282,21 @@ function LlmSettingsScreen() {
   };
 
   const handleConfirmationModeIsDirty = (isToggled: boolean) => {
-    setSecurityAnalyzerInputIsVisible(isToggled);
     const confirmationModeIsDirty = isToggled !== settings?.CONFIRMATION_MODE;
     setDirtyInputs((prev) => ({
       ...prev,
       confirmationMode: confirmationModeIsDirty,
     }));
+    setConfirmationModeEnabled(isToggled);
+
+    // When confirmation mode is enabled, set default security analyzer to "llm" if not already set
+    if (isToggled && !selectedSecurityAnalyzer) {
+      setSelectedSecurityAnalyzer(DEFAULT_SETTINGS.SECURITY_ANALYZER);
+      setDirtyInputs((prev) => ({
+        ...prev,
+        securityAnalyzer: true,
+      }));
+    }
   };
 
   const handleEnableDefaultCondenserIsDirty = (isToggled: boolean) => {
@@ -273,6 +318,47 @@ function LlmSettingsScreen() {
   };
 
   const formIsDirty = Object.values(dirtyInputs).some((isDirty) => isDirty);
+
+  const getSecurityAnalyzerOptions = () => {
+    const analyzers = resources?.securityAnalyzers || [];
+    const orderedItems = [];
+
+    // Add LLM analyzer first
+    if (analyzers.includes("llm")) {
+      orderedItems.push({
+        key: "llm",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT),
+      });
+    }
+
+    // Add None option second
+    orderedItems.push({
+      key: "none",
+      label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_NONE),
+    });
+
+    // Add Invariant analyzer third
+    if (analyzers.includes("invariant")) {
+      orderedItems.push({
+        key: "invariant",
+        label: t(I18nKey.SETTINGS$SECURITY_ANALYZER_INVARIANT),
+      });
+    }
+
+    // Add any other analyzers that might exist
+    analyzers.forEach((analyzer) => {
+      if (!["llm", "invariant", "none"].includes(analyzer)) {
+        // For unknown analyzers, use the analyzer name as fallback
+        // In the future, add specific i18n keys for new analyzers
+        orderedItems.push({
+          key: analyzer,
+          label: analyzer, // TODO: Add i18n support for new analyzers
+        });
+      }
+    });
+
+    return orderedItems;
+  };
 
   if (!settings || isFetching) return <LlmSettingsInputsSkeleton />;
 
@@ -452,7 +538,7 @@ function LlmSettingsScreen() {
                 items={
                   resources?.agents.map((agent) => ({
                     key: agent,
-                    label: agent,
+                    label: agent, // TODO: Add i18n support for agent names
                   })) || []
                 }
                 defaultSelectedKey={settings.AGENT}
@@ -487,39 +573,67 @@ function LlmSettingsScreen() {
               >
                 {t(I18nKey.SETTINGS$ENABLE_MEMORY_CONDENSATION)}
               </SettingsSwitch>
+            </div>
+          )}
 
-              <SettingsSwitch
-                testId="enable-confirmation-mode-switch"
-                name="enable-confirmation-mode-switch"
-                onToggle={handleConfirmationModeIsDirty}
-                defaultIsToggled={settings.CONFIRMATION_MODE}
-                isBeta
-              >
-                {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              </SettingsSwitch>
+          {/* Confirmation mode and security analyzer - always visible */}
+          <div className="flex items-center gap-2">
+            <SettingsSwitch
+              testId="enable-confirmation-mode-switch"
+              name="enable-confirmation-mode-switch"
+              onToggle={handleConfirmationModeIsDirty}
+              defaultIsToggled={settings.CONFIRMATION_MODE}
+              isBeta
+            >
+              {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+            </SettingsSwitch>
+            <TooltipButton
+              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+              ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
+              className="text-[#9099AC] hover:text-white cursor-help"
+            >
+              <QuestionCircleIcon width={16} height={16} />
+            </TooltipButton>
+          </div>
 
-              {securityAnalyzerInputIsVisible && (
+          {confirmationModeEnabled && (
+            <>
+              <div className="w-full max-w-[680px]">
                 <SettingsDropdownInput
                   testId="security-analyzer-input"
-                  name="security-analyzer-input"
+                  name="security-analyzer-display"
                   label={t(I18nKey.SETTINGS$SECURITY_ANALYZER)}
-                  items={
-                    resources?.securityAnalyzers.map((analyzer) => ({
-                      key: analyzer,
-                      label: analyzer,
-                    })) || []
-                  }
+                  items={getSecurityAnalyzerOptions()}
                   placeholder={t(
                     I18nKey.SETTINGS$SECURITY_ANALYZER_PLACEHOLDER,
                   )}
-                  defaultSelectedKey={settings.SECURITY_ANALYZER}
-                  isClearable
-                  showOptionalTag
-                  onInputChange={handleSecurityAnalyzerIsDirty}
-                  wrapperClassName="w-full max-w-[680px]"
+                  selectedKey={selectedSecurityAnalyzer || "none"}
+                  isClearable={false}
+                  onSelectionChange={(key) => {
+                    const newValue = key?.toString() || "";
+                    setSelectedSecurityAnalyzer(newValue);
+                    handleSecurityAnalyzerIsDirty(newValue);
+                  }}
+                  onInputChange={(value) => {
+                    // Handle when input is cleared
+                    if (!value) {
+                      setSelectedSecurityAnalyzer("");
+                      handleSecurityAnalyzerIsDirty("");
+                    }
+                  }}
+                  wrapperClassName="w-full"
                 />
-              )}
-            </div>
+                {/* Hidden input to store the actual key value for form submission */}
+                <input
+                  type="hidden"
+                  name="security-analyzer-input"
+                  value={selectedSecurityAnalyzer || ""}
+                />
+              </div>
+              <p className="text-xs text-tertiary-alt max-w-[680px]">
+                {t(I18nKey.SETTINGS$SECURITY_ANALYZER_DESCRIPTION)}
+              </p>
+            </>
           )}
         </div>
 
