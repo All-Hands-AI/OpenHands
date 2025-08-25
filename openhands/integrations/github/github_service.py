@@ -664,6 +664,10 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         self, repository: str, query: str, per_page: int = 30
     ) -> list[Branch]:
         """Search branches by name using GitHub GraphQL with a partial query."""
+        # Require a non-empty query
+        if not query:
+            return []
+
         # Clamp per_page to GitHub GraphQL limits
         per_page = min(max(per_page, 1), 100)
 
