@@ -9,6 +9,13 @@ on:
     branches:
       - main
   pull_request:
+    paths:
+      - 'openhands/**'
+      - 'tests/**'
+      - 'evaluation/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/py-tests.yml'
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
