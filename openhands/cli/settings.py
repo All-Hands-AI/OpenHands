@@ -233,6 +233,15 @@ def _get_initial_model_index(
 async def modify_llm_settings_basic(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> bool:
+    """Modify LLM settings for basic usage.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -492,6 +501,15 @@ async def modify_llm_settings_basic(
 async def modify_llm_settings_advanced(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> bool:
+    """Modify LLM settings for advanced usage.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
     llm_config = config.get_llm_config()
 
@@ -624,7 +642,15 @@ async def modify_llm_settings_advanced(
 async def modify_search_api_settings(
     config: OpenHandsConfig, settings_store: FileSettingsStore
 ) -> bool:
-    """Modify search API settings."""
+    """Modify search API settings.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
 
     search_api_key = None
