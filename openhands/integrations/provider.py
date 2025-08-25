@@ -20,10 +20,10 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
-    Branch,
     GitService,
     InstallationsService,
     MicroagentParseError,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     ResourceNotFoundError,
@@ -433,7 +433,7 @@ class ProviderHandler:
         specified_provider: ProviderType | None = None,
         page: int = 1,
         per_page: int = 30,
-    ) -> list[Branch]:
+    ) -> PaginatedBranchesResponse:
         """Get branches for a repository
 
         Args:
@@ -443,17 +443,12 @@ class ProviderHandler:
             per_page: Number of branches per page (default: 30)
 
         Returns:
-            A list of branches for the repository
+            A paginated response with branches for the repository
         """
-        all_branches: list[Branch] = []
-
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
-                branches = await service.get_paginated_branches(
-                    repository, page, per_page
-                )
-                return branches
+                return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(
                     f'Error fetching branches from {specified_provider}: {e}'
@@ -462,17 +457,18 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                branches = await service.get_paginated_branches(
-                    repository, page, per_page
-                )
-                all_branches.extend(branches)
-                # If we found branches, no need to check other providers
-                if all_branches:
-                    break
+                return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
 
-        return all_branches
+        # Return empty response if no provider worked
+        return PaginatedBranchesResponse(
+            branches=[],
+            has_next_page=False,
+            current_page=page,
+            per_page=per_page,
+            total_count=0,
+        )
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository using the appropriate service.

@@ -13,6 +13,7 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -547,7 +548,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
     async def get_paginated_branches(
         self, repository: str, page: int = 1, per_page: int = 30
-    ) -> list[Branch]:
+    ) -> PaginatedBranchesResponse:
         """Get branches for a repository with pagination."""
         # Extract owner and repo from the repository string (e.g., "owner/repo")
         parts = repository.split('/')
@@ -578,7 +579,17 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
                 )
             )
 
-        return branches
+        # Bitbucket provides pagination info in the response
+        has_next_page = response.get('next') is not None
+        total_count = response.get('size')  # Total number of items
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=total_count,
+        )
 
     async def create_pr(
         self,

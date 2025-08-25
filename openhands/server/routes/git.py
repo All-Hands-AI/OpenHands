@@ -12,7 +12,7 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
-    Branch,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     SuggestedTask,
@@ -238,7 +238,7 @@ async def get_suggested_tasks(
     )
 
 
-@app.get('/repository/branches', response_model=list[Branch])
+@app.get('/repository/branches', response_model=PaginatedBranchesResponse)
 async def get_repository_branches(
     repository: str,
     page: int = 1,
@@ -246,7 +246,7 @@ async def get_repository_branches(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
-) -> list[Branch] | JSONResponse:
+) -> PaginatedBranchesResponse | JSONResponse:
     """Get branches for a repository.
 
     Args:
@@ -255,17 +255,17 @@ async def get_repository_branches(
         per_page: Number of branches per page (default: 30)
 
     Returns:
-        A list of branches for the repository
+        A paginated response with branches for the repository
     """
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            branches: list[Branch] = await client.get_branches(
+            branches_response: PaginatedBranchesResponse = await client.get_branches(
                 repository, page=page, per_page=per_page
             )
-            return branches
+            return branches_response
 
         except AuthenticationError as e:
             return JSONResponse(

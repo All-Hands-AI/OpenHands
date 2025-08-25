@@ -21,7 +21,7 @@ import {
 } from "./open-hands.types";
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
-import { GitUser, GitRepository, Branch } from "#/types/git";
+import { GitUser, GitRepository, PaginatedBranchesResponse } from "#/types/git";
 import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { RepositoryMicroagent } from "#/types/microagent-management";
@@ -571,8 +571,8 @@ class OpenHands {
     repository: string,
     page: number = 1,
     perPage: number = 30,
-  ): Promise<Branch[]> {
-    const { data } = await openHands.get<Branch[]>(
+  ): Promise<PaginatedBranchesResponse> {
+    const { data } = await openHands.get<PaginatedBranchesResponse>(
       `/api/user/repository/branches?repository=${encodeURIComponent(repository)}&page=${page}&per_page=${perPage}`,
     );
 

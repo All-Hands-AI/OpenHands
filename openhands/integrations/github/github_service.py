@@ -18,6 +18,7 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -618,7 +619,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
     async def get_paginated_branches(
         self, repository: str, page: int = 1, per_page: int = 30
-    ) -> list[Branch]:
+    ) -> PaginatedBranchesResponse:
         """Get branches for a repository with pagination"""
         url = f'{self.BASE_URL}/repos/{repository}/branches'
 
@@ -644,7 +645,19 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             )
             branches.append(branch)
 
-        return branches
+        # Parse Link header to determine if there's a next page
+        has_next_page = False
+        if 'Link' in headers:
+            link_header = headers['Link']
+            has_next_page = 'rel="next"' in link_header
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=None,  # GitHub doesn't provide total count in branch API
+        )
 
     async def create_pr(
         self,

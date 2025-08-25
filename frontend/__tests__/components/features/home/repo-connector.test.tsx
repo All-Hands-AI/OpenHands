@@ -134,10 +134,10 @@ describe("RepoConnector", () => {
     expect(launchButton).toBeDisabled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
       { name: "main", commit_sha: "123", protected: false },
       { name: "develop", commit_sha: "456", protected: false },
-    ]);
+    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -244,10 +244,10 @@ describe("RepoConnector", () => {
     expect(createConversationSpy).not.toHaveBeenCalled();
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
       { name: "main", commit_sha: "123", protected: false },
       { name: "develop", commit_sha: "456", protected: false },
-    ]);
+    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
 
     // First select the provider
     const providerDropdown = await waitFor(() =>
@@ -298,10 +298,10 @@ describe("RepoConnector", () => {
     });
 
     // Mock the repository branches API call
-    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+    vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
       { name: "main", commit_sha: "123", protected: false },
       { name: "develop", commit_sha: "456", protected: false },
-    ]);
+    ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
 
     renderRepoConnector();
 

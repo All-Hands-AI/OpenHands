@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { useRepositoryBranches } from "../../hooks/query/use-repository-branches";
-import { ReactSelectDropdown, SelectOption } from "./react-select-dropdown";
+import { useRepositoryBranchesPaginated } from "../../hooks/query/use-repository-branches";
+import { InfiniteScrollSelect, SelectOption } from "./infinite-scroll-select";
 
 export interface GitBranchDropdownProps {
   repositoryName?: string | null;
@@ -21,20 +21,23 @@ export function GitBranchDropdown({
   disabled = false,
   onChange,
 }: GitBranchDropdownProps) {
-  const { data: branches, isLoading } = useRepositoryBranches(
-    repositoryName || null,
-  );
+  const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
+    useRepositoryBranchesPaginated(repositoryName || null);
 
-  const options: SelectOption[] = useMemo(
-    () =>
-      branches?.map((branch) => ({
+  const options: SelectOption[] = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap((page) =>
+      page.branches.map((branch) => ({
         value: branch.name,
         label: branch.name,
-      })) || [],
-    [branches],
-  );
+      })),
+    );
+  }, [data]);
 
-  const hasNoBranches = !isLoading && branches && branches.length === 0;
+  const hasNoBranches =
+    !isLoading &&
+    data?.pages &&
+    data.pages.every((page) => page.branches.length === 0);
 
   const selectedOption = useMemo(
     () => options.find((option) => option.value === value) || null,
@@ -45,6 +48,12 @@ export function GitBranchDropdown({
     onChange?.(option?.value || null);
   };
 
+  const handleLoadMore = () => {
+    if (hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
   const isDisabled = disabled || !repositoryName || isLoading || hasNoBranches;
 
   const displayPlaceholder = hasNoBranches ? "No branches found" : placeholder;
@@ -53,7 +62,7 @@ export function GitBranchDropdown({
     : errorMessage;
 
   return (
-    <ReactSelectDropdown
+    <InfiniteScrollSelect
       options={options}
       value={selectedOption}
       placeholder={displayPlaceholder}
@@ -63,6 +72,8 @@ export function GitBranchDropdown({
       isClearable={false}
       isSearchable
       isLoading={isLoading}
+      hasNextPage={hasNextPage}
+      onLoadMore={handleLoadMore}
       onChange={handleChange}
     />
   );
