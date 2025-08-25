@@ -18,6 +18,7 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -248,6 +249,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 else OwnerType.USER
             ),
             link_header=link_header,
+            main_branch=repo.get('default_branch'),
         )
 
     async def get_paginated_repos(
@@ -614,6 +616,82 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 break
 
         return all_branches
+
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
+
+        params = {'per_page': str(per_page), 'page': str(page)}
+        response, headers = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            # Extract the last commit date if available
+            last_push_date = None
+            if branch_data.get('commit') and branch_data['commit'].get('commit'):
+                commit_info = branch_data['commit']['commit']
+                if commit_info.get('committer') and commit_info['committer'].get(
+                    'date'
+                ):
+                    last_push_date = commit_info['committer']['date']
+
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('sha', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=last_push_date,
+            )
+            branches.append(branch)
+
+        # Parse Link header to determine if there's a next page
+        has_next_page = False
+        if 'Link' in headers:
+            link_header = headers['Link']
+            has_next_page = 'rel="next"' in link_header
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=None,  # GitHub doesn't provide total count in branch API
+        )
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches by name, filtering client-side as GitHub doesn't support search here."""
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
+        params = {'per_page': str(min(max(per_page, 1), 100))}
+        response, _ = await self._make_request(url, params)
+
+        q = (query or '').lower()
+        branches: list[Branch] = []
+        for branch_data in response:
+            name = branch_data.get('name', '')
+            if q and q not in name.lower():
+                continue
+
+            last_push_date = None
+            if branch_data.get('commit') and branch_data['commit'].get('commit'):
+                commit_info = branch_data['commit']['commit']
+                if commit_info.get('committer') and commit_info['committer'].get(
+                    'date'
+                ):
+                    last_push_date = commit_info['committer']['date']
+
+            branches.append(
+                Branch(
+                    name=name,
+                    commit_sha=branch_data.get('commit', {}).get('sha', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=last_push_date,
+                )
+            )
+
+        return branches[:per_page]
 
     async def create_pr(
         self,

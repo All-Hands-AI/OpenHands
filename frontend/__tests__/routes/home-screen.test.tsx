@@ -140,10 +140,10 @@ describe("HomeScreen", () => {
         await screen.findAllByTestId("task-launch-button");
 
       // Mock the repository branches API call
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
-      ]);
+      ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
 
       // Select a repository to enable the repo launch button
       await selectRepository("octocat/hello-world");
