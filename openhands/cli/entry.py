@@ -7,6 +7,9 @@ import sys
 import openhands
 import openhands.cli.suppress_warnings  # noqa: F401
 from openhands.cli.fast_help import handle_fast_commands
+from openhands.utils.laminar import maybe_init_laminar
+
+maybe_init_laminar()
 
 
 def main():
