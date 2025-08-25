@@ -23,7 +23,6 @@ from evaluation.utils.shared import (
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     get_metrics,
-    get_metrics,
     get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
@@ -72,11 +71,6 @@ def get_config(
         metadata=metadata,
         sandbox_config=sandbox_config,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
     )
     config.set_llm_config(
         update_llm_config_for_completions_logging(
