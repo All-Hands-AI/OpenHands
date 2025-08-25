@@ -28,7 +28,6 @@ from openhands.integrations.provider import (
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
-    AuthenticationError,
     CreateMicroagent,
     ProviderType,
     SuggestedTask,
@@ -63,7 +62,7 @@ from openhands.server.user_auth import (
 )
 from openhands.server.user_auth.user_auth import AuthType
 from openhands.server.utils import get_conversation as get_conversation_metadata
-from openhands.server.utils import get_conversation_store
+from openhands.server.utils import get_conversation_store, validate_conversation_id
 from openhands.storage.conversation.conversation_store import ConversationStore
 from openhands.storage.data_models.conversation_metadata import (
     ConversationMetadata,
@@ -210,16 +209,6 @@ async def new_conversation(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    except AuthenticationError as e:
-        return JSONResponse(
-            content={
-                'status': 'error',
-                'message': str(e),
-                'msg_id': RuntimeStatus.GIT_PROVIDER_AUTHENTICATION_ERROR.value,
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
 
 @app.get('/conversations')
 async def search_conversations(
@@ -297,7 +286,7 @@ async def search_conversations(
 
 @app.get('/conversations/{conversation_id}')
 async def get_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> ConversationInfo | None:
     try:
@@ -319,7 +308,7 @@ async def get_conversation(
 
 @app.delete('/conversations/{conversation_id}')
 async def delete_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
 ) -> bool:
     conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
@@ -338,8 +327,8 @@ async def delete_conversation(
 
 @app.get('/conversations/{conversation_id}/remember-prompt')
 async def get_prompt(
-    conversation_id: str,
     event_id: int,
+    conversation_id: str = Depends(validate_conversation_id),
     user_settings: SettingsStore = Depends(get_user_settings_store),
     metadata: ConversationMetadata = Depends(get_conversation_metadata),
 ):
@@ -440,8 +429,8 @@ async def _get_conversation_info(
 
 @app.post('/conversations/{conversation_id}/start')
 async def start_conversation(
-    conversation_id: str,
     providers_set: ProvidersSetModel,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
     settings: Settings = Depends(get_user_settings),
     conversation_store: ConversationStore = Depends(get_conversation_store),
@@ -501,7 +490,7 @@ async def start_conversation(
 
 @app.post('/conversations/{conversation_id}/stop')
 async def stop_conversation(
-    conversation_id: str,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str = Depends(get_user_id),
 ) -> ConversationResponse:
     """Stop an agent loop for a conversation.
@@ -606,8 +595,8 @@ class UpdateConversationRequest(BaseModel):
 
 @app.patch('/conversations/{conversation_id}')
 async def update_conversation(
-    conversation_id: str,
     data: UpdateConversationRequest,
+    conversation_id: str = Depends(validate_conversation_id),
     user_id: str | None = Depends(get_user_id),
     conversation_store: ConversationStore = Depends(get_conversation_store),
 ) -> bool:
@@ -714,7 +703,8 @@ async def update_conversation(
 
 @app.post('/conversations/{conversation_id}/exp-config')
 def add_experiment_config_for_conversation(
-    conversation_id: str, exp_config: ExperimentConfig
+    exp_config: ExperimentConfig,
+    conversation_id: str = Depends(validate_conversation_id),
 ) -> bool:
     exp_config_filepath = get_experiment_config_filename(conversation_id)
     exists = False

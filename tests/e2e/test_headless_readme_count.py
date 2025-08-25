@@ -5,7 +5,6 @@ This test verifies that OpenHands can count lines in README.md in pure headless 
 without any web interface or browser actions, as requested in issue #10371.
 """
 
-import json
 import os
 import subprocess
 import tempfile
@@ -178,7 +177,6 @@ base_url = "{llm_base_url}"
             assert found_count, (
                 f'Line count not found in output or trajectory. Expected around {expected_line_count}. Output: {output_text}'
             )
-
 
             print('✓ Test passed: README.md line count found in pure headless mode')
 
