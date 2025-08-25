@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import Select from "react-select";
+import Select, { StylesConfig } from "react-select";
 import { cn } from "#/utils/utils";
 import { SelectOptionBase, getCustomStyles } from "./react-select-styles";
 
@@ -17,6 +17,8 @@ export interface ReactSelectDropdownProps {
   isSearchable?: boolean;
   isLoading?: boolean;
   onChange?: (option: SelectOption | null) => void;
+  classNamePrefix?: string;
+  styles?: StylesConfig<SelectOption, false>;
 }
 
 export function ReactSelectDropdown({
@@ -31,6 +33,8 @@ export function ReactSelectDropdown({
   isSearchable = true,
   isLoading = false,
   onChange,
+  classNamePrefix,
+  styles,
 }: ReactSelectDropdownProps) {
   const customStyles = useMemo(() => getCustomStyles<SelectOption>(), []);
 
@@ -46,8 +50,9 @@ export function ReactSelectDropdown({
         isSearchable={isSearchable}
         isLoading={isLoading}
         onChange={onChange}
-        styles={customStyles}
+        styles={styles || customStyles}
         className="w-full"
+        classNamePrefix={classNamePrefix}
       />
       {errorMessage && (
         <p className="text-red-500 text-sm mt-1">{errorMessage}</p>
