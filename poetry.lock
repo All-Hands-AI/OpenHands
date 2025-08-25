@@ -5230,22 +5230,6 @@ files = [
 cobble = ">=0.1.3,<0.2"
 
 [[package]]
-name = "markdown"
-version = "3.8.2"
-description = "Python implementation of John Gruber's Markdown."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "markdown-3.8.2-py3-none-any.whl", hash = "sha256:5c83764dbd4e00bdd94d85a19b8d55ccca20fe35b2e678a1422b380324dd5f24"},
-    {file = "markdown-3.8.2.tar.gz", hash = "sha256:247b9a70dd12e27f67431ce62523e675b866d254f900c4fe75ce3dda62237c45"},
-]
-
-[package.extras]
-docs = ["mdx_gh_links (>=0.2)", "mkdocs (>=1.6)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
-testing = ["coverage", "pyyaml"]
-
-[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -6558,14 +6542,14 @@ pydantic = ">=1.8"
 
 [[package]]
 name = "openhands-aci"
-version = "0.3.1"
+version = "0.3.2"
 description = "An Agent-Computer Interface (ACI) designed for software development agents OpenHands."
 optional = false
 python-versions = "<4.0,>=3.12"
 groups = ["main"]
 files = [
-    {file = "openhands_aci-0.3.1-py3-none-any.whl", hash = "sha256:d1d9d5379388bc0119c6722b8dacf63f7c747788ac5b6c26263601b2001d11c3"},
-    {file = "openhands_aci-0.3.1.tar.gz", hash = "sha256:125c4773b3fd2729ec0c74d005095dad21aa0f7a1e8733e5f33f3f71466f6df9"},
+    {file = "openhands_aci-0.3.2-py3-none-any.whl", hash = "sha256:a3ff6fe3dd50124598b8bc3aff8d9742d6e75f933f7e7635a9d0b37d45eb826e"},
+    {file = "openhands_aci-0.3.2.tar.gz", hash = "sha256:df7b64df6acb70b45b23e88c13508e7af8f27725bed30c3e88691a0f3d1f7a44"},
 ]
 
 [package.dependencies]
@@ -10547,18 +10531,6 @@ files = [
 markers = {main = "extra == \"third-party-runtimes\""}
 
 [[package]]
-name = "types-markdown"
-version = "3.8.0.20250809"
-description = "Typing stubs for Markdown"
-optional = false
-python-versions = ">=3.9"
-groups = ["dev"]
-files = [
-    {file = "types_markdown-3.8.0.20250809-py3-none-any.whl", hash = "sha256:3f34a38c2259a3158e90ab0cb058cd8f4fdd3d75e2a0b335cb57f25dc2bc77d3"},
-    {file = "types_markdown-3.8.0.20250809.tar.gz", hash = "sha256:fa619e735878a244332a4bbe16bcfc44e49ff6264c2696056278f0642cdfa223"},
-]
-
-[[package]]
 name = "types-python-dateutil"
 version = "2.9.0.20250516"
 description = "Typing stubs for python-dateutil"
@@ -11878,4 +11850,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "6dacf40441269b9e00d5d37c2dc034c725d77c2eb88118c0a36bf54d76d076ec"
+content-hash = "a0ae2cee596dde71f89c06e9669efda58ee8f8f019fad3dbe9df068005c32904"
