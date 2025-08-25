@@ -144,6 +144,7 @@ class FileEditObservation(Observation):
         Returns:
             A string containing the formatted diff visualization.
         """
+
         # Use cached diff if available
         if self._diff_cache is not None:
             return self._diff_cache
