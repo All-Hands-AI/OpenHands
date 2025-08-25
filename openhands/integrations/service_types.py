@@ -18,6 +18,7 @@ class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
     BITBUCKET = 'bitbucket'
+    ENTERPRISE_SSO = 'enterprise_sso'
 
 
 class TaskType(str, Enum):
@@ -137,6 +138,15 @@ class Repository(BaseModel):
         None  # Whether the repository is owned by a user or organization
     )
     main_branch: str | None = None  # The main/default branch of the repository
+
+
+class Comment(BaseModel):
+    id: int
+    body: str
+    author: str
+    created_at: datetime
+    updated_at: datetime
+    system: bool = False  # Whether this is a system-generated comment
 
 
 class AuthenticationError(ValueError):
@@ -433,6 +443,12 @@ class BaseGitService(ABC):
         return microagents
 
 
+class InstallationsService(Protocol):
+    async def get_installations(self) -> list[str]:
+        """Get installations for the service; repos live underneath these installations"""
+        ...
+
+
 class GitService(Protocol):
     """Protocol defining the interface for Git service providers"""
 
@@ -457,17 +473,26 @@ class GitService(Protocol):
         ...
 
     async def search_repositories(
-        self,
-        query: str,
-        per_page: int,
-        sort: str,
-        order: str,
+        self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
-        """Search for repositories"""
+        """Search for public repositories"""
         ...
 
-    async def get_repositories(self, sort: str, app_mode: AppMode) -> list[Repository]:
+    async def get_all_repositories(
+        self, sort: str, app_mode: AppMode
+    ) -> list[Repository]:
         """Get repositories for the authenticated user"""
+        ...
+
+    async def get_paginated_repos(
+        self,
+        page: int,
+        per_page: int,
+        sort: str,
+        installation_id: str | None,
+        query: str | None = None,
+    ) -> list[Repository]:
+        """Get a page of repositories for the authenticated user"""
         ...
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:

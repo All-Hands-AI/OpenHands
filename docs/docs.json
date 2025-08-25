@@ -71,6 +71,7 @@
                     {
                       "group": "Providers",
                       "pages": [
+                        "usage/llms/openhands-llms",
                         "usage/llms/azure-llms",
                         "usage/llms/google-llms",
                         "usage/llms/groq",
@@ -78,7 +79,6 @@
                         "usage/llms/litellm-proxy",
                         "usage/llms/moonshot",
                         "usage/llms/openai-llms",
-                        "usage/llms/openhands-llms",
                         "usage/llms/openrouter"
                       ]
                     }

@@ -16,8 +16,7 @@ class RetryMixin:
     """Mixin class for retry logic."""
 
     def retry_decorator(self, **kwargs: Any) -> Callable:
-        """
-        Create a LLM retry decorator with customizable parameters. This is used for 429 errors, and a few other exceptions in LLM classes.
+        """Create a LLM retry decorator with customizable parameters. This is used for 429 errors, and a few other exceptions in LLM classes.
 
         Args:
             **kwargs: Keyword arguments to override default retry behavior.

@@ -25,12 +25,16 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     ENABLE_SOUND_NOTIFICATIONS: apiSettings.enable_sound_notifications,
     ENABLE_PROACTIVE_CONVERSATION_STARTERS:
       apiSettings.enable_proactive_conversation_starters,
+    ENABLE_SOLVABILITY_ANALYSIS: apiSettings.enable_solvability_analysis,
     USER_CONSENTS_TO_ANALYTICS: apiSettings.user_consents_to_analytics,
     SEARCH_API_KEY: apiSettings.search_api_key || "",
     MAX_BUDGET_PER_TASK: apiSettings.max_budget_per_task,
     EMAIL: apiSettings.email || "",
     EMAIL_VERIFIED: apiSettings.email_verified,
     MCP_CONFIG: apiSettings.mcp_config,
+    GIT_USER_NAME: apiSettings.git_user_name || DEFAULT_SETTINGS.GIT_USER_NAME,
+    GIT_USER_EMAIL:
+      apiSettings.git_user_email || DEFAULT_SETTINGS.GIT_USER_EMAIL,
     IS_NEW_USER: false,
   };
 };

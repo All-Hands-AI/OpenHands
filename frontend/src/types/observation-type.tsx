@@ -40,6 +40,9 @@ enum ObservationType {
 
   // A no-op observation
   NULL = "null",
+
+  // Result of a task tracking operation
+  TASK_TRACKING = "task_tracking",
 }
 
 export default ObservationType;

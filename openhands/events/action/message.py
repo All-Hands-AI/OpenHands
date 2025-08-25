@@ -13,7 +13,7 @@ class MessageAction(Action):
     image_urls: list[str] | None = None
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
@@ -42,8 +42,7 @@ class MessageAction(Action):
 
 @dataclass
 class SystemMessageAction(Action):
-    """
-    Action that represents a system message for an agent, including the system prompt
+    """Action that represents a system message for an agent, including the system prompt
     and available tools. This should be the first message in the event stream.
     """
 

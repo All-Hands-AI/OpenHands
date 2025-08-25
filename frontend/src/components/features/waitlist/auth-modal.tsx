@@ -15,12 +15,14 @@ import { Provider } from "#/types/settings";
 interface AuthModalProps {
   githubAuthUrl: string | null;
   appMode?: GetConfigResponse["APP_MODE"] | null;
+  authUrl?: GetConfigResponse["AUTH_URL"];
   providersConfigured?: Provider[];
 }
 
 export function AuthModal({
   githubAuthUrl,
   appMode,
+  authUrl,
   providersConfigured,
 }: AuthModalProps) {
   const { t } = useTranslation();
@@ -28,11 +30,19 @@ export function AuthModal({
   const gitlabAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "gitlab",
+    authUrl,
   });
 
   const bitbucketAuthUrl = useAuthUrl({
     appMode: appMode || null,
     identityProvider: "bitbucket",
+    authUrl,
+  });
+
+  const enterpriseSsoUrl = useAuthUrl({
+    appMode: appMode || null,
+    identityProvider: "enterprise_sso",
+    authUrl,
   });
 
   const handleGitHubAuth = () => {
@@ -56,6 +66,13 @@ export function AuthModal({
     }
   };
 
+  const handleEnterpriseSsoAuth = () => {
+    if (enterpriseSsoUrl) {
+      // Always start the OIDC flow, let the backend handle TOS check
+      window.location.href = enterpriseSsoUrl;
+    }
+  };
+
   // Only show buttons if providers are configured and include the specific provider
   const showGithub =
     providersConfigured &&
@@ -69,6 +86,10 @@ export function AuthModal({
     providersConfigured &&
     providersConfigured.length > 0 &&
     providersConfigured.includes("bitbucket");
+  const showEnterpriseSso =
+    providersConfigured &&
+    providersConfigured.length > 0 &&
+    providersConfigured.includes("enterprise_sso");
 
   // Check if no providers are configured
   const noProvidersConfigured =
@@ -124,6 +145,17 @@ export function AuthModal({
                   startContent={<BitbucketLogo width={20} height={20} />}
                 >
                   {t(I18nKey.BITBUCKET$CONNECT_TO_BITBUCKET)}
+                </BrandButton>
+              )}
+
+              {showEnterpriseSso && (
+                <BrandButton
+                  type="button"
+                  variant="primary"
+                  onClick={handleEnterpriseSsoAuth}
+                  className="w-full"
+                >
+                  {t(I18nKey.ENTERPRISE_SSO$CONNECT_TO_ENTERPRISE_SSO)}
                 </BrandButton>
               )}
             </>

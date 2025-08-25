@@ -56,8 +56,7 @@ def download_latest_vsix_from_github() -> str | None:
 
 
 def attempt_vscode_extension_install():
-    """
-    Checks if running in a supported editor and attempts to install the OpenHands companion extension.
+    """Checks if running in a supported editor and attempts to install the OpenHands companion extension.
     This is a best-effort, one-time attempt.
     """
     # 1. Check if we are in a supported editor environment
@@ -132,8 +131,7 @@ def attempt_vscode_extension_install():
 
 
 def _mark_installation_successful(flag_file: pathlib.Path, editor_name: str) -> None:
-    """
-    Mark the extension installation as successful by creating the flag file.
+    """Mark the extension installation as successful by creating the flag file.
 
     Args:
         flag_file: Path to the flag file to create
@@ -147,8 +145,7 @@ def _mark_installation_successful(flag_file: pathlib.Path, editor_name: str) -> 
 
 
 def _is_extension_installed(editor_command: str, extension_id: str) -> bool:
-    """
-    Check if the OpenHands extension is already installed.
+    """Check if the OpenHands extension is already installed.
 
     Args:
         editor_command: The command to run the editor (e.g., 'code', 'windsurf')
@@ -174,8 +171,7 @@ def _is_extension_installed(editor_command: str, extension_id: str) -> bool:
 
 
 def _attempt_github_install(editor_command: str, editor_name: str) -> bool:
-    """
-    Attempt to install the extension from GitHub Releases.
+    """Attempt to install the extension from GitHub Releases.
 
     Downloads the latest VSIX file from GitHub releases and attempts to install it.
     Ensures proper cleanup of temporary files.
@@ -227,8 +223,7 @@ def _attempt_github_install(editor_command: str, editor_name: str) -> bool:
 
 
 def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
-    """
-    Attempt to install the extension from the bundled VSIX file.
+    """Attempt to install the extension from the bundled VSIX file.
 
     Uses the VSIX file packaged with the OpenHands installation.
 
@@ -280,8 +275,7 @@ def _attempt_bundled_install(editor_command: str, editor_name: str) -> bool:
 def _attempt_marketplace_install(
     editor_command: str, editor_name: str, extension_id: str
 ) -> bool:
-    """
-    Attempt to install the extension from the marketplace.
+    """Attempt to install the extension from the marketplace.
 
     This method is currently unused as the OpenHands extension is not yet published
     to the VS Code/Windsurf marketplace. It's kept here for future use when the
