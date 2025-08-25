@@ -520,3 +520,15 @@ class GitService(Protocol):
             MicroagentContentResponse with parsed content and triggers
         """
         ...
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request/merge request
+
+        Args:
+            repository: Repository name in format specific to the provider
+            pr_number: The pull request/merge request number
+
+        Returns:
+            Raw API response from the git provider
+        """
+        ...
