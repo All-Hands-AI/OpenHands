@@ -7,11 +7,10 @@ import { ConversationCard } from "../conversation-panel/conversation-card";
 import { Provider } from "#/types/settings";
 
 interface ControlsProps {
-  setSecurityOpen: (isOpen: boolean) => void;
   showSecurityLock: boolean;
 }
 
-export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
+export function Controls({ showSecurityLock }: ControlsProps) {
   const { data: conversation } = useActiveConversation();
   const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
 
@@ -21,9 +20,7 @@ export function Controls({ setSecurityOpen, showSecurityLock }: ControlsProps) {
         <AgentControlBar />
         <AgentStatusBar />
 
-        {showSecurityLock && (
-          <SecurityLock onClick={() => setSecurityOpen(true)} />
-        )}
+        {showSecurityLock && <SecurityLock />}
       </div>
 
       <ConversationCard
