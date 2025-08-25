@@ -5200,7 +5200,7 @@
     "uk": "STDOUT/STDERR"
   },
   "BUTTON$STOP": {
-    "en": "Stop",
+    "en": "Pause",
     "ja": "停止",
     "zh-CN": "停止",
     "zh-TW": "停止",
@@ -5376,7 +5376,7 @@
     "uk": "Підтвердити видалення"
   },
   "CONVERSATION$CONFIRM_STOP": {
-    "en": "Confirm Stop",
+    "en": "Confirm Pause",
     "ja": "停止の確認",
     "zh-CN": "确认停止",
     "zh-TW": "確認停止",
@@ -5392,7 +5392,7 @@
     "uk": "Підтвердити зупинку"
   },
   "CONVERSATION$STOP_WARNING": {
-    "en": "Are you sure you want to stop this conversation?",
+    "en": "Are you sure you want to pause this conversation?",
     "ja": "この会話を停止してもよろしいですか？",
     "zh-CN": "您确定要停止此对话吗？",
     "zh-TW": "您確定要停止此對話嗎？",
