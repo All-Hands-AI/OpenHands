@@ -1,4 +1,6 @@
 import { ConversationStatus } from "#/types/conversation-status";
+import ArchivedIcon from "./state-indicators/archived.svg?react";
+import ErrorIcon from "./state-indicators/error.svg?react";
 import RunningIcon from "./state-indicators/running.svg?react";
 import StartingIcon from "./state-indicators/starting.svg?react";
 import StoppedIcon from "./state-indicators/stopped.svg?react";
@@ -9,6 +11,8 @@ const CONVERSATION_STATUS_INDICATORS: Record<ConversationStatus, SVGIcon> = {
   STOPPED: StoppedIcon,
   RUNNING: RunningIcon,
   STARTING: StartingIcon,
+  ARCHIVED: ArchivedIcon,
+  ERROR: ErrorIcon,
 };
 
 interface ConversationStateIndicatorProps {
