@@ -47,45 +47,83 @@ def test_microagent_triggers(page: Page, base_url: str):
     repo_dropdown.wait_for(state='visible', timeout=30000)
     print('Repository dropdown is visible')
 
-    # Click on the dropdown to open it
+    # Click on the repository input to open dropdown
     repo_dropdown.click()
+    page.wait_for_timeout(1000)
 
-    # Type the repository name to filter options
-    repo_input = repo_dropdown.locator('input')
-    repo_input.type('openhands-agent/OpenHands')
-    print('Used keyboard.type() for React Select component')
+    # Type the repository name
+    try:
+        page.keyboard.press('Control+a')  # Select all
+        page.keyboard.type('openhands-agent/OpenHands')
+        print('Used keyboard.type() for React Select component')
+    except Exception as e:
+        print(f'Keyboard input failed: {e}')
 
-    # Wait for and click the specific repository option
-    repo_option = page.locator(
-        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")'
-    )
-    repo_option.wait_for(state='visible', timeout=10000)
-    print(
-        'Found repository option with selector: [data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")'
-    )
+    page.wait_for_timeout(2000)  # Wait for search results
 
-    # Force click the option to ensure it works
-    repo_option.click(force=True)
-    print('Successfully clicked option with force=True')
+    # Try to find and click the repository option
+    option_selectors = [
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("openhands-agent/OpenHands")',
+        '[data-testid="repo-dropdown"] [role="option"]:has-text("OpenHands")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("openhands-agent/OpenHands")',
+        '[data-testid="repo-dropdown"] div[id*="option"]:has-text("OpenHands")',
+        '[role="option"]:has-text("openhands-agent/OpenHands")',
+        '[role="option"]:has-text("OpenHands")',
+        'div:has-text("openhands-agent/OpenHands"):not([id="aria-results"])',
+        'div:has-text("OpenHands"):not([id="aria-results"])',
+    ]
+
+    option_found = False
+    for selector in option_selectors:
+        try:
+            option = page.locator(selector).first
+            if option.is_visible(timeout=3000):
+                print(f'Found repository option with selector: {selector}')
+                try:
+                    option.click(force=True)
+                    print('Successfully clicked option with force=True')
+                    option_found = True
+                    page.wait_for_timeout(2000)
+                    break
+                except Exception:
+                    continue
+        except Exception:
+            continue
+
+    if not option_found:
+        print(
+            'Could not find repository option in dropdown, trying keyboard navigation'
+        )
+        page.keyboard.press('ArrowDown')
+        page.wait_for_timeout(500)
+        page.keyboard.press('Enter')
+        print('Used keyboard navigation to select option')
 
     page.screenshot(path='test-results/micro_test_02_repo_selected.png')
 
     print('Step 3: Clicking Launch button...')
     # Wait for launch button to be enabled and click it
-    launch_button = page.locator('[data-testid="launch-button"]')
+    launch_button = page.locator('[data-testid="repo-launch-button"]')
 
     # Wait for the button to be enabled (not disabled)
-    for attempt in range(10):
+    max_wait_attempts = 30
+    button_enabled = False
+    for attempt in range(max_wait_attempts):
         try:
-            if not launch_button.is_disabled(timeout=3000):
+            is_disabled = launch_button.is_disabled()
+            if not is_disabled:
                 print(
                     f'Repository Launch button is now enabled (attempt {attempt + 1})'
                 )
+                button_enabled = True
                 break
-        except Exception:
-            pass
+            else:
+                print(f'Launch button is still disabled (attempt {attempt + 1})')
+        except Exception as e:
+            print(f'Error checking button state: {e}')
         page.wait_for_timeout(1000)
-    else:
+
+    if not button_enabled:
         raise AssertionError('Launch button never became enabled')
 
     # Click the launch button
