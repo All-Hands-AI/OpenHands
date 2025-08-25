@@ -1,5 +1,9 @@
 import React, { useMemo, useRef, useCallback } from "react";
-import Select, { components, MenuListProps } from "react-select";
+import Select, {
+  components,
+  MenuListProps,
+  InputActionMeta,
+} from "react-select";
 import { cn } from "#/utils/utils";
 import { SelectOptionBase, getCustomStyles } from "./react-select-styles";
 
@@ -19,7 +23,7 @@ export interface InfiniteScrollSelectProps {
   hasNextPage?: boolean;
   onLoadMore?: () => void;
   onChange?: (option: SelectOption | null) => void;
-  onInputChange?: (inputValue: string) => void;
+  onInputChange?: (inputValue: string, actionMeta?: InputActionMeta) => void;
 }
 
 function MenuList({
@@ -91,7 +95,13 @@ export function InfiniteScrollSelect({
         isSearchable={isSearchable}
         isLoading={isLoading}
         onChange={onChange}
-        onInputChange={(newValue) => onInputChange?.(newValue)}
+        onInputChange={(newValue, meta) => {
+          // Ignore resets triggered by menu close or input blur
+          if (meta.action === "input-blur" || meta.action === "menu-close")
+            return newValue;
+          onInputChange?.(newValue, meta);
+          return newValue;
+        }}
         styles={customStyles}
         className="w-full"
         components={{ MenuList }}

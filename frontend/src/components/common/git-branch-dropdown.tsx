@@ -83,10 +83,10 @@ export function GitBranchDropdown({
       isClearable={false}
       isSearchable
       isLoading={isLoading || isSearchLoading}
-      hasNextPage={hasNextPage}
+      hasNextPage={search ? false : hasNextPage}
       onLoadMore={handleLoadMore}
       onChange={handleChange}
-      onInputChange={setSearch}
+      onInputChange={(val) => setSearch(val)}
     />
   );
 }
