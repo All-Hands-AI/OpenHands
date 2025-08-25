@@ -9,27 +9,20 @@ const contextMenuVariants = cva(
       size: {
         compact: "py-1 px-1",
         default: "py-[6px] px-1",
-        wide: "py-2 px-2",
       },
       layout: {
         vertical: "flex flex-col gap-2",
-        horizontal: "flex flex-row gap-2",
       },
       position: {
         top: "bottom-full",
         bottom: "top-full",
-        left: "right-full",
-        right: "left-full",
       },
       spacing: {
-        tight: "mt-1",
         default: "mt-2",
-        loose: "mt-3",
       },
       alignment: {
         left: "left-0",
         right: "right-0",
-        center: "left-1/2 transform -translate-x-1/2",
       },
     },
     defaultVariants: {

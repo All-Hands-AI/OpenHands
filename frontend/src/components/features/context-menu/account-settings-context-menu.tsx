@@ -101,7 +101,6 @@ export function AccountSettingsContextMenu({
     <ContextMenu
       testId="account-settings-context-menu"
       ref={ref}
-      position="bottom"
       alignment="right"
       className="md:right-full md:left-full md:mt-0 md:bottom-0 ml-2 z-10 w-fit"
     >
