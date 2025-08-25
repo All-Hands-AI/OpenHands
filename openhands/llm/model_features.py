@@ -130,11 +130,14 @@ SUPPORTS_STOP_WORDS_FALSE_PATTERNS: list[str] = [
 # Use provider-qualified patterns to avoid false positives
 EMPTY_REASONING_RESPONSE_PATTERNS: list[str] = [
     'xai/grok-4*',
+    '*/xai/grok-4*',
 ]
 
 
 def may_return_empty_reasoning(model: str) -> bool:
-    return model_matches(model, EMPTY_REASONING_RESPONSE_PATTERNS)
+    matched = model_matches(model, EMPTY_REASONING_RESPONSE_PATTERNS)
+
+    return matched
 
 
 def get_features(model: str) -> ModelFeatures:

@@ -81,6 +81,12 @@ def response_to_actions(
     if hasattr(assistant_msg, 'tool_calls') and assistant_msg.tool_calls:
         # Check if there's assistant_msg.content. If so, add it to the thought
         thought = ''
+    # debug tracing for tests
+    try:
+        print("[TRACE] model:", getattr(response, 'model', None), "has_tool_calls:", bool(getattr(choice.message, 'tool_calls', None)), "content:", repr(getattr(choice.message, 'content', None)))
+    except Exception:
+        pass
+
         if isinstance(assistant_msg.content, str):
             thought = assistant_msg.content
         elif isinstance(assistant_msg.content, list):
@@ -299,18 +305,20 @@ def response_to_actions(
         # Check if this is a model that may return empty responses while reasoning
         model_name = str(getattr(response, 'model', ''))
         is_reasoning_model = may_return_empty_reasoning(model_name)
+        try:
+            with open('/tmp/fc_debug.txt', 'a') as _f:
+                _f.write(f"{model_name}|{repr(content)}|{is_reasoning_model}|{wait_for_response}\n")
+        except Exception:
+            pass
+
 
         # Grok-4 can send the number of reasoning tokens, but NOT the reasoning content, nor content
         # Ref: https://github.com/All-Hands-AI/OpenHands/pull/9809
         # Don't wait for response if content is empty and it's Grok
         # This prevents getting stuck when Grok models return empty content while thinking
-        wait_for_response = True
-        if is_reasoning_model and not content:
-            wait_for_response = False
-        elif content:
-            wait_for_response = True
-        else:  # For non-reasoning models with empty content, still wait (original behavior)
-            wait_for_response = True
+        # For certain reasoning models (e.g., Grok-4), the API may emit empty content
+        # while thinking. In that case, don't wait for more assistant content.
+        wait_for_response = not (is_reasoning_model and not content)
 
         actions.append(
             MessageAction(
