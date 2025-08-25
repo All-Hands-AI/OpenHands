@@ -282,3 +282,27 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     },
   }),
 };
+
+// Custom styles for the git-provider-dropdown in the microagent-management page.
+export const getGitProviderMicroagentManagementCustomStyles = <
+  T extends SelectOptionBase,
+>(): StylesConfig<T, false> => ({
+  ...getCustomStyles<T>(),
+  control: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isDisabled ? "#363636" : "#454545", // darker tertiary when disabled
+    border: "1px solid #717888",
+    borderRadius: "0.125rem",
+    minHeight: "2.5rem",
+    padding: "0 0.5rem",
+    boxShadow: "none",
+    opacity: state.isDisabled ? 0.6 : 1,
+    cursor: state.isDisabled ? "not-allowed" : "pointer",
+    "&:hover": {
+      borderColor: "#717888",
+    },
+    "& .git-provider-dropdown__value-container": {
+      padding: "2px 0",
+    },
+  }),
+});

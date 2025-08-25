@@ -201,8 +201,14 @@ class LocalRuntime(ActionExecutionClient):
 
         # If there is an API key in the environment we use this in requests to the runtime
         session_api_key = os.getenv('SESSION_API_KEY')
+        self._session_api_key: str | None = None
         if session_api_key:
             self.session.headers['X-Session-API-Key'] = session_api_key
+            self._session_api_key = session_api_key
+
+    @property
+    def session_api_key(self) -> str | None:
+        return self._session_api_key
 
     @property
     def action_execution_server_url(self) -> str:
