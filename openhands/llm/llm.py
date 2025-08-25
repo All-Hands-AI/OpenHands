@@ -94,13 +94,23 @@ MODELS_WITHOUT_STOP_WORDS = [
     'o1',
     'o1-2024-12-17',
     'o4-mini',
+    'chatgpt-5',
+    'gpt-5',
+    'gpt-4.1',
+    'o3',
 ]
 
 FORMATTED_MODELS = ['llama-4-maverick-17b-128e-instruct']
 
-MODELS_USING_MAX_COMPLETION_TOKENS = ['o4-mini']
+MODELS_USING_MAX_COMPLETION_TOKENS = ['o4-mini', 'chatgpt-5', 'gpt-5', 'gpt-4.1', 'o3']
 
-MODELS_WITH_TEMPERATURE_DEFAULT_AS_1 = ['o4-mini']
+MODELS_WITH_TEMPERATURE_DEFAULT_AS_1 = [
+    'o4-mini',
+    'chatgpt-5',
+    'gpt-5',
+    'gpt-4.1',
+    'o3',
+]
 
 
 class LLM(RetryMixin, DebugMixin):
@@ -168,34 +178,7 @@ class LLM(RetryMixin, DebugMixin):
             self.tokenizer = None
 
         # set up the completion function
-        kwargs: dict[str, Any] = {
-            'temperature': self.config.temperature,
-            'max_tokens': self.config.max_output_tokens,
-        }
-        if (
-            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
-            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
-        ):
-            kwargs['reasoning_effort'] = self.config.reasoning_effort
-            kwargs.pop(
-                'temperature'
-            )  # temperature is not supported for reasoning models
-        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
-        if self.config.model.startswith('azure'):
-            kwargs['max_tokens'] = self.config.max_output_tokens
-            kwargs.pop('max_completion_tokens')
-
-        if self.config.model in MODELS_USING_MAX_COMPLETION_TOKENS:
-            kwargs['max_completion_tokens'] = self.config.max_output_tokens
-            kwargs.pop('max_tokens')
-
-        if self.config.model in MODELS_WITH_TEMPERATURE_DEFAULT_AS_1:
-            kwargs['temperature'] = 1
-
-        if self.config.model.startswith('bedrock/converse'):
-            kwargs['aws_access_key_id'] = os.getenv('AWS_ACCESS_KEY_ID')
-            kwargs['aws_secret_access_key'] = os.getenv('AWS_SECRET_ACCESS_KEY')
-            kwargs['aws_region_name'] = os.getenv('AWS_REGION_NAME')
+        kwargs = self.get_litellm_kwargs()
 
         self._completion = partial(
             litellm_completion,
@@ -435,6 +418,43 @@ class LLM(RetryMixin, DebugMixin):
         Check the complete documentation at https://litellm.vercel.app/docs/completion
         """
         return self._completion
+
+    def get_litellm_kwargs(self) -> dict[str, Any]:
+        kwargs: dict[str, Any] = {
+            'temperature': self.config.temperature,
+            'max_tokens': self.config.max_output_tokens,
+        }
+        if (
+            self.config.model.lower() in REASONING_EFFORT_SUPPORTED_MODELS
+            or self.config.model.split('/')[-1] in REASONING_EFFORT_SUPPORTED_MODELS
+        ):
+            kwargs['reasoning_effort'] = self.config.reasoning_effort
+            kwargs.pop(
+                'temperature'
+            )  # temperature is not supported for reasoning models
+        # Azure issue: https://github.com/All-Hands-AI/OpenHands/issues/6777
+        if self.config.model.startswith('azure'):
+            kwargs['max_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_completion_tokens')
+
+        if (
+            self.config.model in MODELS_USING_MAX_COMPLETION_TOKENS
+            or self.config.model.split('/')[-1] in MODELS_USING_MAX_COMPLETION_TOKENS
+        ):
+            kwargs['max_completion_tokens'] = self.config.max_output_tokens
+            kwargs.pop('max_tokens')
+
+        if (
+            self.config.model in MODELS_WITH_TEMPERATURE_DEFAULT_AS_1
+            or self.config.model.split('/')[-1] in MODELS_WITH_TEMPERATURE_DEFAULT_AS_1
+        ):
+            kwargs['temperature'] = 1
+
+        if self.config.model.startswith('bedrock/converse'):
+            kwargs['aws_access_key_id'] = os.getenv('AWS_ACCESS_KEY_ID')
+            kwargs['aws_secret_access_key'] = os.getenv('AWS_SECRET_ACCESS_KEY')
+            kwargs['aws_region_name'] = os.getenv('AWS_REGION_NAME')
+        return kwargs
 
     @workflow(name='init_model_info')
     def init_model_info(self) -> None:
