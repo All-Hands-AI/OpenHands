@@ -297,16 +297,15 @@ async def add_mcp_tools_to_agent(
                     getattr(runtime.config, 'search_api_key', None) is not None
                 )
                 if has_search_key and stdio_server.name == 'fetch':
-                    logger.info(
-                        'Search API key detected; skipping default fetch MCP tool to prefer search engine'
-                    )
+                    # Do not log the presence of the fetch stdio server when search is configured
                     continue
                 # Check if this stdio server is already in the config
                 if stdio_server not in extra_stdio_servers:
                     extra_stdio_servers.append(stdio_server)
-                    logger.warning(
-                        f'Added microagent stdio server: {stdio_server.name}'
-                    )
+                    if stdio_server.name != 'fetch':
+                        logger.warning(
+                            f'Added microagent stdio server: {stdio_server.name}'
+                        )
 
     # Add the runtime as another MCP server
     updated_mcp_config = runtime.get_mcp_config(extra_stdio_servers)
