@@ -793,6 +793,78 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             )
         return comments
 
+    async def get_pr_review_thread_comments(
+        self, repo_name: str, pr_number: int, thread_id: int
+    ) -> list:
+        """Get comments from a review thread in a PR given the thread_id.
+
+        A thread consists of a root comment and all its replies. The thread_id
+        should be the ID of the root comment in the thread.
+
+        Args:
+            repo_name: Repository name in format 'owner/repo'
+            pr_number: The pull request number
+            thread_id: The ID of the root comment in the thread
+
+        Returns:
+            List of Comment objects ordered by creation date (root comment first, then replies)
+        """
+        from openhands.integrations.service_types import Comment
+
+        # Get all review comments for the PR
+        url = f'{self.BASE_URL}/repos/{repo_name}/pulls/{pr_number}/comments'
+        response, _ = await self._make_request(url)
+
+        # Find the root comment and all replies in the thread
+        thread_comments = []
+        root_comment = None
+
+        # First, find the root comment
+        for comment in response:
+            if comment.get('id') == thread_id:
+                root_comment = comment
+                break
+
+        if not root_comment:
+            # If thread_id doesn't exist, return empty list
+            return []
+
+        # Add the root comment to the thread
+        thread_comments.append(root_comment)
+
+        # Find all replies to this thread (comments with in_reply_to_id pointing to thread_id)
+        replies = []
+        for comment in response:
+            if comment.get('in_reply_to_id') == thread_id:
+                replies.append(comment)
+
+        # Sort replies by creation date
+        replies.sort(key=lambda x: x.get('created_at', ''))
+        thread_comments.extend(replies)
+
+        # Convert to Comment objects
+        comments: list[Comment] = []
+        for comment in thread_comments:
+            comments.append(
+                Comment(
+                    id=comment.get('id', 0),
+                    body=comment.get('body', ''),
+                    author=comment.get('user', {}).get('login', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment.get('created_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('created_at')
+                    else datetime.fromtimestamp(0),
+                    updated_at=datetime.fromisoformat(
+                        comment.get('updated_at', '').replace('Z', '+00:00')
+                    )
+                    if comment.get('updated_at')
+                    else datetime.fromtimestamp(0),
+                    system=False,
+                )
+            )
+        return comments
+
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
