@@ -58,7 +58,7 @@ class MultimodalRouter(BaseRouter):
             route_to_primary = True
 
         if route_to_primary:
-            logger.warning('Routing to the primary model...')
+            logger.info('Routing to the primary model...')
             self.active_llm = self.llm
         else:
             self.active_llm = self.secondary_llm

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from openhands.core.config.llm_config import LLMConfig
 
@@ -14,7 +14,7 @@ class ModelRoutingConfig(BaseModel):
     router_name: str = Field(default='noop_router')
     llms_for_routing: dict[str, LLMConfig] = Field(default_factory=dict)
 
-    model_config = {'extra': 'forbid'}
+    model_config = ConfigDict(extra='forbid')
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'ModelRoutingConfig']:

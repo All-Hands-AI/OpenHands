@@ -219,7 +219,7 @@ correct_num = 5
 api_key = ""
 model = "gpt-4o"
 
-# Example routing LLM configuration for multi-modal model routing
+# Example routing LLM configuration for multimodal model routing
 # Uncomment and configure to enable model routing with a secondary model
 #[llm.secondary_model]
 #model = "kimi-k2"
