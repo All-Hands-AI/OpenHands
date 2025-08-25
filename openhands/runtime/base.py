@@ -733,6 +733,7 @@ fi
                     self.provider_handler.get_authenticated_git_url,
                     GENERAL_TIMEOUT,
                     org_openhands_repo,
+                    True,  # optional=True for org-level microagents
                 )
             except AuthenticationError as e:
                 self.log(

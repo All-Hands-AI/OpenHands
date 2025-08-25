@@ -403,7 +403,10 @@ class ProviderHandler:
         return f'{provider.value}_token'.lower()
 
     async def verify_repo_provider(
-        self, repository: str, specified_provider: ProviderType | None = None
+        self,
+        repository: str,
+        specified_provider: ProviderType | None = None,
+        optional: bool = False,
     ) -> Repository:
         errors = []
 
@@ -422,7 +425,9 @@ class ProviderHandler:
                 errors.append(f'{provider.value}: {str(e)}')
 
         # Log all accumulated errors before raising AuthenticationError
-        logger.error(
+        # Use debug level for optional repositories to avoid noise in logs
+        log_level = logger.debug if optional else logger.error
+        log_level(
             f'Failed to access repository {repository} with all available providers. Errors: {"; ".join(errors)}'
         )
         raise AuthenticationError(f'Unable to access repo {repository}')
@@ -577,17 +582,20 @@ class ProviderHandler:
             f'Microagent file {file_path} not found in {repository}'
         )
 
-    async def get_authenticated_git_url(self, repo_name: str) -> str:
+    async def get_authenticated_git_url(
+        self, repo_name: str, optional: bool = False
+    ) -> str:
         """Get an authenticated git URL for a repository.
 
         Args:
             repo_name: Repository name (owner/repo)
+            optional: If True, treat repository access as optional (for org-level microagents)
 
         Returns:
             Authenticated git URL if credentials are available, otherwise regular HTTPS URL
         """
         try:
-            repository = await self.verify_repo_provider(repo_name)
+            repository = await self.verify_repo_provider(repo_name, optional=optional)
         except AuthenticationError:
             raise Exception('Git provider authentication issue when getting remote URL')
 
