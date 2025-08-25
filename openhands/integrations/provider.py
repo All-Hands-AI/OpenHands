@@ -737,13 +737,11 @@ class ProviderHandler:
 
             # Provider-specific logic based on actual API response structures
             if git_provider == ProviderType.GITHUB:
-                return self._check_github_pr_status(pr_details, repository, pr_number)
+                return self._is_github_pr_open(pr_details, repository, pr_number)
             elif git_provider == ProviderType.GITLAB:
-                return self._check_gitlab_pr_status(pr_details, repository, pr_number)
+                return self._is_gitlab_pr_open(pr_details, repository, pr_number)
             elif git_provider == ProviderType.BITBUCKET:
-                return self._check_bitbucket_pr_status(
-                    pr_details, repository, pr_number
-                )
+                return self._is_bitbucket_pr_open(pr_details, repository, pr_number)
 
             # If we can't determine the state, assume it's active (safer default)
             logger.warning(
@@ -760,7 +758,7 @@ class ProviderHandler:
             # If we can't determine the PR status, include the conversation to be safe
             return True
 
-    def _check_github_pr_status(
+    def _is_github_pr_open(
         self, pr_details: dict, repository: str, pr_number: int
     ) -> bool:
         """Check GitHub PR status based on API response structure.
@@ -788,7 +786,7 @@ class ProviderHandler:
         )
         return True
 
-    def _check_gitlab_pr_status(
+    def _is_gitlab_pr_open(
         self, pr_details: dict, repository: str, pr_number: int
     ) -> bool:
         """Check GitLab merge request status based on API response structure.
@@ -816,7 +814,7 @@ class ProviderHandler:
         )
         return True
 
-    def _check_bitbucket_pr_status(
+    def _is_bitbucket_pr_open(
         self, pr_details: dict, repository: str, pr_number: int
     ) -> bool:
         """Check Bitbucket pull request status based on API response structure.
