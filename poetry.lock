@@ -5254,22 +5254,6 @@ files = [
 cobble = ">=0.1.3,<0.2"
 
 [[package]]
-name = "markdown"
-version = "3.8.2"
-description = "Python implementation of John Gruber's Markdown."
-optional = false
-python-versions = ">=3.9"
-groups = ["main"]
-files = [
-    {file = "markdown-3.8.2-py3-none-any.whl", hash = "sha256:5c83764dbd4e00bdd94d85a19b8d55ccca20fe35b2e678a1422b380324dd5f24"},
-    {file = "markdown-3.8.2.tar.gz", hash = "sha256:247b9a70dd12e27f67431ce62523e675b866d254f900c4fe75ce3dda62237c45"},
-]
-
-[package.extras]
-docs = ["mdx_gh_links (>=0.2)", "mkdocs (>=1.6)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
-testing = ["coverage", "pyyaml"]
-
-[[package]]
 name = "markdown-it-py"
 version = "3.0.0"
 description = "Python port of markdown-it. Markdown parsing, done right!"
@@ -10699,18 +10683,6 @@ files = [
 markers = {main = "extra == \"third-party-runtimes\""}
 
 [[package]]
-name = "types-markdown"
-version = "3.8.0.20250809"
-description = "Typing stubs for Markdown"
-optional = false
-python-versions = ">=3.9"
-groups = ["dev"]
-files = [
-    {file = "types_markdown-3.8.0.20250809-py3-none-any.whl", hash = "sha256:3f34a38c2259a3158e90ab0cb058cd8f4fdd3d75e2a0b335cb57f25dc2bc77d3"},
-    {file = "types_markdown-3.8.0.20250809.tar.gz", hash = "sha256:fa619e735878a244332a4bbe16bcfc44e49ff6264c2696056278f0642cdfa223"},
-]
-
-[[package]]
 name = "types-python-dateutil"
 version = "2.9.0.20250516"
 description = "Typing stubs for python-dateutil"
@@ -12030,4 +12002,4 @@ third-party-runtimes = ["daytona", "e2b", "modal", "runloop-api-client"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12,<3.14"
-content-hash = "1acc5fcf8d2d280784be81d4e0ec84c19a72e4b70e004952f8a1ae3d9c167f7c"
+content-hash = "a0ae2cee596dde71f89c06e9669efda58ee8f8f019fad3dbe9df068005c32904"

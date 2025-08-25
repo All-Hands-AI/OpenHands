@@ -5,15 +5,16 @@
 import asyncio
 import contextlib
 import datetime
+import html
 import json
 import logging
+import re
 import sys
 import threading
 import time
 from contextlib import contextmanager
 from typing import Generator
 
-import markdown  # type: ignore
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -321,8 +322,8 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
         print_formatted_text('')
 
         try:
-            # Convert markdown to HTML for all messages
-            html_content = convert_markdown_to_html(message)
+            # Render only basic markdown (bold/underline), escaping any HTML
+            html_content = _render_basic_markdown(message)
 
             if is_agent_message:
                 # Use prompt_toolkit's HTML renderer with the agent color
@@ -343,38 +344,27 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
                 print_formatted_text(message)
 
 
-def convert_markdown_to_html(text: str) -> str:
-    """Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+def _render_basic_markdown(text: str | None) -> str | None:
+    """Render a very small subset of markdown directly to prompt_toolkit HTML.
 
-    Args:
-        text: Markdown text to convert
+    Supported:
+    - Bold: **text** -> <b>text</b>
+    - Underline: __text__ -> <u>text</u>
 
-    Returns:
-        HTML formatted text with custom styling for headers and bullet points
+    Any existing HTML in input is escaped to avoid injection into the renderer.
+    If input is None, return None.
     """
-    if not text:
-        return text
+    if text is None:
+        return None
+    if text == '':
+        return ''
 
-    # Use the markdown library to convert markdown to HTML
-    # Enable the 'extra' extension for tables, fenced code, etc.
-    html = markdown.markdown(text, extensions=['extra'])
-
-    # Customize headers
-    for i in range(1, 7):
-        # Get the appropriate number of # characters for this heading level
-        prefix = '#' * i + ' '
-
-        # Replace <h1> with the prefix and bold text
-        html = html.replace(f'<h{i}>', f'<b>{prefix}')
-        html = html.replace(f'</h{i}>', '</b>\n')
-
-    # Customize bullet points to use dashes instead of dots with compact spacing
-    html = html.replace('<ul>', '')
-    html = html.replace('</ul>', '')
-    html = html.replace('<li>', '- ')
-    html = html.replace('</li>', '')
-
-    return html
+    safe = html.escape(text)
+    # Bold: greedy within a line, non-overlapping
+    safe = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe)
+    # Underline: double underscore
+    safe = re.sub(r'__(.+?)__', r'<u>\1</u>', safe)
+    return safe
 
 
 def display_error(error: str) -> None:
@@ -1168,7 +1158,7 @@ def display_instruction_improvement(
 
     try:
         # Convert markdown to HTML and display with proper formatting
-        html_content = convert_markdown_to_html(text)
+        html_content = _render_basic_markdown(text)
 
         # Use HTML rendering in the TextArea for rich markdown display
         container = Frame(
