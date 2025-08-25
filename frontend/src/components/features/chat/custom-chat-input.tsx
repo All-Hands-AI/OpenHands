@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useState } from "react";
+import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -10,11 +11,11 @@ import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
+import { RootState } from "#/store";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
   showButton?: boolean;
-  value?: string;
   conversationStatus?: ConversationStatus | null;
   onSubmit: (message: string) => void;
   onStop?: () => void;
@@ -28,7 +29,6 @@ export interface CustomChatInputProps {
 export function CustomChatInput({
   disabled = false,
   showButton = true,
-  value = "",
   conversationStatus = null,
   onSubmit,
   onStop,
@@ -39,6 +39,10 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+
+  const { messageToSend } = useSelector(
+    (state: RootState) => state.conversation,
+  );
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
@@ -70,7 +74,7 @@ export function CustomChatInput({
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 450,
-    value,
+    value: messageToSend ?? undefined,
   });
 
   // Function to add files and notify parent
