@@ -585,7 +585,7 @@ class LocalRuntime(ActionExecutionClient):
 
     def _create_url(self, prefix: str, port: int) -> str:
         runtime_url = self.runtime_url
-        logger.info(f'runtime_url is {runtime_url}')
+        logger.debug(f'runtime_url is {runtime_url}')
         if 'localhost' in runtime_url:
             url = f'{self.runtime_url}:{self._vscode_port}'
         else:
@@ -597,7 +597,7 @@ class LocalRuntime(ActionExecutionClient):
                 url = f'{scheme}://{netloc}/{runtime_id}/{prefix}'
             else:
                 url = f'{scheme}://{prefix}-{netloc}'
-        logger.info(f'_create_url url is {url}')
+        logger.debug(f'_create_url url is {url}')
         return url
 
     @property

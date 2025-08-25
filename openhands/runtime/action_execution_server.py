@@ -17,7 +17,6 @@ import time
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
 from zipfile import ZipFile
 
 import puremagic
@@ -793,12 +792,8 @@ if __name__ == '__main__':
         response = await call_next(request)
         return response
 
-    @app.get('/{prefix:path}/server_info')
     @app.get('/server_info')
-    async def get_server_info(prefix: Optional[str] = None):
-        if prefix:
-            logger.info(f'/server_info called with prefix {prefix}')
-
+    async def get_server_info():
         assert client is not None
         current_time = time.time()
         uptime = current_time - client.start_time
@@ -812,14 +807,8 @@ if __name__ == '__main__':
         logger.info('Server info endpoint response: %s', response)
         return response
 
-    @app.post('/{prefix:path}/execute_action')
     @app.post('/execute_action')
-    async def execute_action(
-        action_request: ActionRequest, prefix: Optional[str] = None
-    ):
-        if prefix:
-            logger.info(f'/execute_action called with prefix {prefix}')
-
+    async def execute_action(action_request: ActionRequest):
         assert client is not None
         try:
             action = event_from_dict(action_request.action)
@@ -837,12 +826,8 @@ if __name__ == '__main__':
         finally:
             update_last_execution_time()
 
-    @app.post('/{prefix:path}/update_mcp_server')
     @app.post('/update_mcp_server')
-    async def update_mcp_server(request: Request, prefix: Optional[str] = None):
-        if prefix:
-            logger.info(f'/update_mcp_server called with prefix {prefix}')
-
+    async def update_mcp_server(request: Request):
         # Check if we're on Windows
         is_windows = sys.platform == 'win32'
 
@@ -894,17 +879,12 @@ if __name__ == '__main__':
             },
         )
 
-    @app.post('/{prefix:path}/upload_file')
     @app.post('/upload_file')
     async def upload_file(
         file: UploadFile,
         destination: str = '/',
         recursive: bool = False,
-        prefix: Optional[str] = None,
     ):
-        if prefix:
-            logger.info(f'/upload_file called with prefix {prefix}')
-
         assert client is not None
 
         try:
@@ -955,12 +935,8 @@ if __name__ == '__main__':
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get('/{prefix:path}/download_files')
     @app.get('/download_files')
-    def download_file(path: str, prefix: Optional[str] = None):
-        if prefix:
-            logger.info(f'/download_files called with prefix {prefix}')
-
+    def download_file(path: str):
         logger.debug('Downloading files')
         try:
             if not os.path.isabs(path):
@@ -989,12 +965,8 @@ if __name__ == '__main__':
         except Exception as e:
             raise HTTPException(status_code=500, detail=str(e))
 
-    @app.get('/{prefix:path}/alive')
     @app.get('/alive')
-    async def alive(prefix: Optional[str] = None):
-        if prefix:
-            logger.info(f'/alive called with prefix {prefix}')
-
+    async def alive():
         if client is None or not client.initialized:
             return {'status': 'not initialized'}
         return {'status': 'ok'}
@@ -1003,12 +975,8 @@ if __name__ == '__main__':
     # VSCode-specific operations
     # ================================
 
-    @app.get('/{prefix:path}/vscode/connection_token')
     @app.get('/vscode/connection_token')
-    async def get_vscode_connection_token(prefix: Optional[str] = None):
-        if prefix:
-            logger.info(f'/vscode/connection_token called with prefix {prefix}')
-
+    async def get_vscode_connection_token():
         assert client is not None
         if 'vscode' in client.plugins:
             plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
@@ -1020,9 +988,8 @@ if __name__ == '__main__':
     # File-specific operations for UI
     # ================================
 
-    @app.post('/{prefix:path}/list_files')
     @app.post('/list_files')
-    async def list_files(request: Request, prefix: Optional[str] = None):
+    async def list_files(request: Request):
         """List files in the specified path.
 
         This function retrieves a list of files from the agent's runtime file store,
@@ -1043,9 +1010,6 @@ if __name__ == '__main__':
         Raises:
             HTTPException: If there's an error listing the files.
         """
-        if prefix:
-            logger.info(f'/list_files called with prefix {prefix}')
-
         assert client is not None
 
         # get request as dict

@@ -9,7 +9,6 @@ from openhands.events.serialization.event import event_to_dict
 from openhands.memory.memory import Memory
 from openhands.microagent.types import InputMetadata
 from openhands.runtime.base import Runtime
-from openhands.runtime.impl.remote.remote_runtime import RemoteRuntime
 from openhands.server.dependencies import get_dependencies
 from openhands.server.session.conversation import ServerConversation
 from openhands.server.shared import conversation_manager, file_store
@@ -59,10 +58,6 @@ async def get_vscode_url(
         runtime: Runtime = conversation.runtime
         logger.debug(f'Runtime type: {type(runtime)}')
         logger.debug(f'Runtime VSCode URL: {runtime.vscode_url}')
-        if type(runtime) is RemoteRuntime:
-            logger.info(f'runtime_url: {runtime.action_execution_server_url}')
-        else:
-            logger.info(f'runtime type is {type(runtime)}')
         return JSONResponse(
             status_code=status.HTTP_200_OK, content={'vscode_url': runtime.vscode_url}
         )

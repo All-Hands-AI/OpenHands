@@ -380,19 +380,18 @@ class RemoteRuntime(ActionExecutionClient):
         if not token:
             return None
         assert self.runtime_url is not None and self.runtime_id is not None
-        self.log('info', f'runtime_url: {self.runtime_url}')
+        self.log('debug', f'runtime_url: {self.runtime_url}')
         parsed = urlparse(self.runtime_url)
         scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
         # Path mode if runtime_url path starts with /{id}
-        self.log('info', f'vscode_url: {path}')
         path_mode = path.startswith(f'/{self.runtime_id}')
         if path_mode:
-            base = f'{scheme}://{netloc}'
-            vscode_url = f'{base}/{self.runtime_id}/vscode?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
+            vscode_url = f'{scheme}://{netloc}/{self.runtime_id}/vscode?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         else:
             vscode_url = f'{scheme}://vscode-{netloc}/?tkn={token}&folder={self.config.workspace_mount_path_in_sandbox}'
         self.log(
-            'info', f'runtime_url: {self.runtime_url} means VSCode URL: {vscode_url}'
+            'debug',
+            f'VSCode URL: {vscode_url}',
         )
         return vscode_url
 
