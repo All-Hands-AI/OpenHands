@@ -10,6 +10,14 @@ from openhands.utils.async_utils import call_sync_from_async
 
 
 class ServerConversation:
+    """Attachable conversation facade used by the web server.
+
+    This object can either attach to an existing runtime for a given conversation
+    (identified by `sid`, a.k.a. conversation_id) or create a lightweight
+    connection to stream events. It does not own the agent lifecycle like
+    AgentSession; it simply provides a way to subscribe/relay events.
+    """
+
     sid: str
     file_store: FileStore
     event_stream: EventStream
