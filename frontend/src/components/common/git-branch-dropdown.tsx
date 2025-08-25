@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useRepositoryBranchesPaginated } from "../../hooks/query/use-repository-branches";
 import { useSearchBranches } from "../../hooks/query/use-search-branches";
+import { useDebounce } from "../../hooks/use-debounce";
 import { InfiniteScrollSelect, SelectOption } from "./infinite-scroll-select";
 
 export interface GitBranchDropdownProps {
@@ -23,16 +24,17 @@ export function GitBranchDropdown({
   onChange,
 }: GitBranchDropdownProps) {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const { data, isLoading, hasNextPage, fetchNextPage, isFetchingNextPage } =
     useRepositoryBranchesPaginated(repositoryName || null);
   const { data: searchResults, isLoading: isSearchLoading } = useSearchBranches(
     repositoryName || null,
-    search,
+    debouncedSearch,
     30,
   );
 
   const options: SelectOption[] = useMemo(() => {
-    if (search && searchResults) {
+    if (debouncedSearch && searchResults) {
       return searchResults.map((b) => ({ value: b.name, label: b.name }));
     }
     if (!data?.pages) return [];
@@ -42,7 +44,7 @@ export function GitBranchDropdown({
         label: branch.name,
       })),
     );
-  }, [data, search, searchResults]);
+  }, [data, debouncedSearch, searchResults]);
 
   const hasNoBranches =
     !isLoading &&
@@ -65,7 +67,10 @@ export function GitBranchDropdown({
   };
 
   const isDisabled =
-    disabled || !repositoryName || (isLoading && !search) || hasNoBranches;
+    disabled ||
+    !repositoryName ||
+    (isLoading && !debouncedSearch) ||
+    hasNoBranches;
 
   const displayPlaceholder = hasNoBranches ? "No branches found" : placeholder;
   const displayErrorMessage = hasNoBranches
@@ -83,7 +88,7 @@ export function GitBranchDropdown({
       isClearable={false}
       isSearchable
       isLoading={isLoading || isSearchLoading}
-      hasNextPage={search ? false : hasNextPage}
+      hasNextPage={debouncedSearch ? false : hasNextPage}
       onLoadMore={handleLoadMore}
       onChange={handleChange}
       onInputChange={(val) => setSearch(val)}
