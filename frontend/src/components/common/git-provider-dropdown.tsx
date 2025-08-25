@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { StylesConfig } from "react-select";
 import { Provider } from "../../types/settings";
 import { ReactSelectDropdown, SelectOption } from "./react-select-dropdown";
 
@@ -11,6 +12,8 @@ export interface GitProviderDropdownProps {
   disabled?: boolean;
   isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
+  classNamePrefix?: string;
+  styles?: StylesConfig<SelectOption, false>;
 }
 
 export function GitProviderDropdown({
@@ -22,6 +25,8 @@ export function GitProviderDropdown({
   disabled = false,
   isLoading = false,
   onChange,
+  classNamePrefix,
+  styles,
 }: GitProviderDropdownProps) {
   const options: SelectOption[] = useMemo(
     () =>
@@ -53,6 +58,8 @@ export function GitProviderDropdown({
       isSearchable={false}
       isLoading={isLoading}
       onChange={handleChange}
+      classNamePrefix={classNamePrefix}
+      styles={styles}
     />
   );
 }
