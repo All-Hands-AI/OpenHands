@@ -32,6 +32,7 @@ import {
 } from "#/utils/custom-toast-handlers";
 import { getFirstPRUrl } from "#/utils/parse-pr-url";
 import { I18nKey } from "#/i18n/declaration";
+import { useUserProviders } from "#/hooks/use-user-providers";
 
 // Handle error events
 const isErrorEvent = (evt: unknown): evt is { error: true; message: string } =>
@@ -106,6 +107,8 @@ export function MicroagentManagementContent() {
     selectedRepository,
     learnThisRepoModalVisible,
   } = useSelector((state: RootState) => state.microagentManagement);
+
+  const { providers } = useUserProviders();
 
   const { t } = useTranslation();
 
@@ -313,11 +316,18 @@ export function MicroagentManagementContent() {
     </>
   );
 
+  const providersAreSet = providers.length > 0;
+
   if (width < 1024) {
     return (
       <div className="w-full h-full flex flex-col gap-6">
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] max-h-[494px] min-h-[494px]">
-          <MicroagentManagementSidebar isSmallerScreen />
+          {providersAreSet && (
+            <MicroagentManagementSidebar
+              isSmallerScreen
+              providers={providers}
+            />
+          )}
         </div>
         <div className="w-full rounded-lg border border-[#525252] bg-[#24272E] flex-1 min-h-[494px]">
           <MicroagentManagementMain />
@@ -329,7 +339,7 @@ export function MicroagentManagementContent() {
 
   return (
     <div className="w-full h-full flex rounded-lg border border-[#525252] bg-[#24272E] overflow-hidden">
-      <MicroagentManagementSidebar />
+      {providersAreSet && <MicroagentManagementSidebar providers={providers} />}
       <div className="flex-1">
         <MicroagentManagementMain />
       </div>
