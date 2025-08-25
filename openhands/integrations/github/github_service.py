@@ -672,6 +672,21 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Return the HTML URL of the created PR
         return response['html_url']
 
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The pull request number
+
+        Returns:
+            Raw GitHub API response for the pull request
+        """
+        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}'
+        pr_data, _ = await self._make_request(url)
+
+        return pr_data
+
     async def get_microagent_content(
         self, repository: str, file_path: str
     ) -> MicroagentContentResponse:

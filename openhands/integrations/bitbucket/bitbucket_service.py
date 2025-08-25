@@ -593,6 +593,21 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
 
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The pull request number
+
+        Returns:
+            Raw Bitbucket API response for the pull request
+        """
+        url = f'{self.BASE_URL}/repositories/{repository}/pullrequests/{pr_number}'
+        pr_data, _ = await self._make_request(url)
+
+        return pr_data
+
     async def get_microagent_content(
         self, repository: str, file_path: str
     ) -> MicroagentContentResponse:

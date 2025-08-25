@@ -626,6 +626,22 @@ class GitLabService(BaseGitService, GitService):
 
         return response['web_url']
 
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific merge request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The merge request number (iid)
+
+        Returns:
+            Raw GitLab API response for the merge request
+        """
+        project_id = self._extract_project_id(repository)
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}'
+        mr_data, _ = await self._make_request(url)
+
+        return mr_data
+
     def _extract_project_id(self, repository: str) -> str:
         """Extract project_id from repository name for GitLab API calls.
 

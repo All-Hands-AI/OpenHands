@@ -228,6 +228,7 @@ async def search_conversations(
     selected_repository: str | None = None,
     conversation_trigger: ConversationTrigger | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
@@ -260,6 +261,23 @@ async def search_conversations(
             and conversation.trigger != conversation_trigger
         ):
             continue
+
+        # Special filtering for microagent_management conversations
+        if (
+            conversation_trigger == ConversationTrigger.MICROAGENT_MANAGEMENT
+            and conversation.pr_number
+            and conversation.selected_repository
+            and conversation.git_provider
+        ):
+            # Check if the last PR is closed/merged
+            provider_handler = ProviderHandler(provider_tokens)
+            if not await provider_handler._is_pr_active(
+                conversation.selected_repository,
+                conversation.pr_number[-1],  # Get the last PR number
+                conversation.git_provider,
+            ):
+                # Skip this conversation if the PR is closed/merged
+                continue
 
         filtered_results.append(conversation)
 
