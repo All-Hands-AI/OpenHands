@@ -575,9 +575,8 @@ class LocalRuntime(ActionExecutionClient):
 
         # TODO: This could be removed if we had a straightforward variable containing the RUNTIME_URL in the K8 env.
         runtime_url_pattern = os.getenv('RUNTIME_URL_PATTERN')
-        hostname = os.getenv('HOSTNAME')
-        if runtime_url_pattern and hostname:
-            runtime_id = hostname.split('-')[1]
+        runtime_id = os.getenv('RUNTIME_ID')
+        if runtime_url_pattern and runtime_id:
             runtime_url = runtime_url_pattern.format(runtime_id=runtime_id)
             return runtime_url
 
@@ -586,12 +585,19 @@ class LocalRuntime(ActionExecutionClient):
 
     def _create_url(self, prefix: str, port: int) -> str:
         runtime_url = self.runtime_url
+        logger.debug(f'runtime_url is {runtime_url}')
         if 'localhost' in runtime_url:
             url = f'{self.runtime_url}:{self._vscode_port}'
         else:
-            # Similar to remote runtime...
-            parsed_url = urlparse(runtime_url)
-            url = f'{parsed_url.scheme}://{prefix}-{parsed_url.netloc}'
+            runtime_id = os.getenv('RUNTIME_ID')
+            parsed = urlparse(self.runtime_url)
+            scheme, netloc, path = parsed.scheme, parsed.netloc, parsed.path or '/'
+            path_mode = path.startswith(f'/{runtime_id}') if runtime_id else False
+            if path_mode:
+                url = f'{scheme}://{netloc}/{runtime_id}/{prefix}'
+            else:
+                url = f'{scheme}://{prefix}-{netloc}'
+        logger.debug(f'_create_url url is {url}')
         return url
 
     @property
