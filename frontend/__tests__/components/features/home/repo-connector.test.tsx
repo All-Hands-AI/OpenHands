@@ -54,14 +54,12 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     full_name: "rbren/polaris",
     git_provider: "github",
     is_public: true,
-    default_branch: "main",
   },
   {
     id: "2",
     full_name: "All-Hands-AI/OpenHands",
     git_provider: "github",
     is_public: true,
-    default_branch: "main",
   },
 ];
 

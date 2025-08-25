@@ -39,7 +39,7 @@ interface GitRepository {
   link_header?: string;
   pushed_at?: string;
   owner_type?: "user" | "organization";
-  default_branch: string;
+  main_branch?: string;
 }
 
 interface GitHubCommit {

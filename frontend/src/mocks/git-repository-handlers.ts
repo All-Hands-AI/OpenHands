@@ -17,7 +17,6 @@ const generateMockRepositories = (
       Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000,
     ).toISOString(), // Last 90 days
     owner_type: Math.random() > 0.7 ? "organization" : "user", // 30% chance of being organization
-    default_branch: "main",
   }));
 
 // Mock repositories for each provider

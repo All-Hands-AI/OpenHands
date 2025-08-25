@@ -72,27 +72,27 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
-        # Get repository details to get the default branch
+        # Get repository details to get the main branch
         repo_details = await self.get_repository_details_from_repo_name(repository)
-        if not repo_details.default_branch:
+        if not repo_details.main_branch:
             raise ResourceNotFoundError(
-                f'Default branch not found for repository {repository}. '
+                f'Main branch not found for repository {repository}. '
                 f'This repository may be empty or have no default branch configured.'
             )
-        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.default_branch}/.cursorrules'
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/.cursorrules'
 
     async def _get_microagents_directory_url(
         self, repository: str, microagents_path: str
     ) -> str:
         """Get the URL for checking microagents directory."""
-        # Get repository details to get the default branch
+        # Get repository details to get the main branch
         repo_details = await self.get_repository_details_from_repo_name(repository)
-        if not repo_details.default_branch:
+        if not repo_details.main_branch:
             raise ResourceNotFoundError(
-                f'Default branch not found for repository {repository}. '
+                f'Main branch not found for repository {repository}. '
                 f'This repository may be empty or have no default branch configured.'
             )
-        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.default_branch}/{microagents_path}'
+        return f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{microagents_path}'
 
     def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
         """Get parameters for the microagents directory request. Return None if no parameters needed."""
@@ -211,7 +211,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         is_public = not repo.get('is_private', True)
         owner_type = OwnerType.ORGANIZATION
-        default_branch = repo.get('mainbranch', {}).get('name') or 'main'
+        main_branch = repo.get('mainbranch', {}).get('name')
 
         return Repository(
             id=repo_id,
@@ -222,7 +222,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             pushed_at=repo.get('updated_on'),
             owner_type=owner_type,
             link_header=link_header,
-            default_branch=default_branch,
+            main_branch=main_branch,
         )
 
     async def search_repositories(
@@ -689,18 +689,18 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Step 1: Get repository details using existing method
         repo_details = await self.get_repository_details_from_repo_name(repository)
 
-        if not repo_details.default_branch:
+        if not repo_details.main_branch:
             logger.warning(
-                f'No default branch found in repository info for {repository}. '
+                f'No main branch found in repository info for {repository}. '
                 f'Repository response: mainbranch field missing'
             )
             raise ResourceNotFoundError(
-                f'Default branch not found for repository {repository}. '
+                f'Main branch not found for repository {repository}. '
                 f'This repository may be empty or have no default branch configured.'
             )
 
-        # Step 2: Get file content using the default branch
-        file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.default_branch}/{file_path}'
+        # Step 2: Get file content using the main branch
+        file_url = f'{self.BASE_URL}/repositories/{repository}/src/{repo_details.main_branch}/{file_path}'
         response, _ = await self._make_request(file_url)
 
         # Parse the content to extract triggers from frontmatter

@@ -132,14 +132,12 @@ describe("RepositorySelectionForm", () => {
         full_name: "user/repo1",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
       {
         id: "2",
         full_name: "user/repo2",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
     ];
     mockUseGitRepositories.mockReturnValue({
@@ -184,14 +182,12 @@ describe("RepositorySelectionForm", () => {
         full_name: "user/repo1",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
       {
         id: "2",
         full_name: "user/repo2",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
     ];
 
@@ -201,7 +197,6 @@ describe("RepositorySelectionForm", () => {
         full_name: "kubernetes/kubernetes",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
     ];
 
@@ -257,7 +252,6 @@ describe("RepositorySelectionForm", () => {
         full_name: "kubernetes/kubernetes",
         git_provider: "github",
         is_public: true,
-        default_branch: "main",
       },
     ];
 

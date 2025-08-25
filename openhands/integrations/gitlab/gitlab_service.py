@@ -265,7 +265,7 @@ class GitLabService(BaseGitService, GitService):
                 else OwnerType.USER
             ),
             link_header=link_header,
-            default_branch=repo.get('default_branch') or 'main',
+            main_branch=repo.get('default_branch'),
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:

@@ -145,7 +145,7 @@ class Repository(BaseModel):
     owner_type: OwnerType | None = (
         None  # Whether the repository is owned by a user or organization
     )
-    default_branch: str  # The main/default branch of the repository
+    main_branch: str | None = None  # The main/default branch of the repository
 
 
 class Comment(BaseModel):

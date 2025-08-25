@@ -250,7 +250,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
                 else OwnerType.USER
             ),
             link_header=link_header,
-            default_branch=repo.get('default_branch') or 'main',
+            main_branch=repo.get('default_branch'),
         )
 
     async def get_paginated_repos(
