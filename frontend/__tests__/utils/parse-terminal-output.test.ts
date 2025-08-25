@@ -37,13 +37,4 @@ describe("processTerminalOutput", () => {
     const processed = processTerminalOutput(raw);
     expect(processed).toBe("output");
   });
-
-  it("should remove command prefix on first chunk", () => {
-    const raw = "echo hello\nhello";
-    const processed = processTerminalOutput(raw, {
-      isFirstChunk: true,
-      removeCommandPrefix: "echo hello"
-    });
-    expect(processed).toBe("hello");
-  });
 });

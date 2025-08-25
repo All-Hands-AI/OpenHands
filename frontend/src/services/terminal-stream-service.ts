@@ -82,7 +82,7 @@ export class TerminalStreamService {
   }
 
   private handleStreamChunk(data: TerminalStreamChunk): void {
-    const { content, command, isComplete, commandId, isTimeout } = data;
+    const { content, isComplete, commandId, isTimeout } = data;
 
     // Check if this is a new command
     const isNewCommand = this.currentCommandId !== commandId;
@@ -93,10 +93,7 @@ export class TerminalStreamService {
     }
 
     // Process the output with unified processing
-    const processedOutput = processTerminalOutput(content, {
-      isFirstChunk,
-      removeCommandPrefix: isFirstChunk ? command : undefined,
-    });
+    const processedOutput = processTerminalOutput(content);
 
     // Handle completion
     if (isComplete) {
@@ -154,4 +151,13 @@ export function getTerminalStreamService(
   }
 
   return terminalStreamService;
+}
+
+export function isTerminalStreamingEnabled(): boolean {
+  try {
+    const service = getTerminalStreamService();
+    return service.isStreamConnected();
+  } catch {
+    return false;
+  }
 }

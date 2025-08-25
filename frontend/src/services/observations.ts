@@ -5,11 +5,18 @@ import { ObservationMessage } from "#/types/message";
 import { appendOutput } from "#/state/command-slice";
 import { appendJupyterOutput } from "#/state/jupyter-slice";
 import ObservationType from "#/types/observation-type";
+import { isTerminalStreamingEnabled } from "#/services/terminal-stream-service";
 
 export function handleObservationMessage(message: ObservationMessage) {
   switch (message.observation) {
     case ObservationType.RUN: {
       if (message.extras.hidden) break;
+
+      // Skip RUN observations when terminal streaming is enabled to prevent duplicates
+      if (isTerminalStreamingEnabled()) {
+        break;
+      }
+
       let { content } = message;
 
       if (content.length > 5000) {
