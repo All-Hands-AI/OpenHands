@@ -12,6 +12,8 @@ from evaluation.utils.shared import (
     codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
+    get_metrics,
+    get_openhands_config_for_eval,
     make_metadata,
     prepare_dataset,
     reset_logger_for_multiprocessing,
@@ -42,15 +44,10 @@ def get_config(
 ) -> OpenHandsConfig:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         runtime='docker',
-        max_iterations=metadata.max_iterations,
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
     config.set_llm_config(metadata.llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
@@ -108,7 +105,7 @@ def process_instance(
     # attempt to parse model_answer
     ast_eval_fn = instance['ast_eval']
     correct, hallucination = ast_eval_fn(instance_id, model_answer_raw)
-    metrics = state.metrics.get() if state.metrics else None
+    metrics = get_metrics(state)
     logger.info(
         f'Final message: {model_answer_raw} | Correctness: {correct} | Hallucination: {hallucination}'
     )
