@@ -141,12 +141,26 @@ class Settings(BaseModel):
     def merge_with_config_settings(self) -> 'Settings':
         """Merge config.toml settings with stored settings.
 
-        Config.toml takes priority for MCP settings, but they are merged rather than replaced.
+        Config.toml settings are used as defaults only when stored settings are None.
+        For MCP settings, they are merged rather than replaced.
         This method can be used by both server mode and CLI mode.
         """
         # Get config.toml settings
         config_settings = Settings.from_config()
-        if not config_settings or not config_settings.mcp_config:
+        if not config_settings:
+            return self
+
+        # Use config.toml settings as defaults only when stored settings are None
+        mergeable_fields = ['llm_model', 'llm_api_key', 'llm_base_url']
+
+        for field_name in mergeable_fields:
+            stored_value = getattr(self, field_name)
+            config_value = getattr(config_settings, field_name)
+            if stored_value is None and config_value is not None:
+                setattr(self, field_name, config_value)
+
+        # Handle MCP config merging (special case - merge rather than replace)
+        if not config_settings.mcp_config:
             return self
 
         # If stored settings don't have MCP config, use config.toml MCP config

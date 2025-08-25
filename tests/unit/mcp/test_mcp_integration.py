@@ -106,10 +106,23 @@ async def test_user_auth_no_stored_settings():
     mock_settings_store = AsyncMock(spec=FileSettingsStore)
     mock_settings_store.load.return_value = None
 
+    # Mock config settings that would be created as defaults
+    config_settings = Settings(
+        language='en',
+        agent='CodeActAgent',
+        llm_model='gpt-4',
+        mcp_config=MCPConfig(sse_servers=[], stdio_servers=[], shttp_servers=[])
+    )
+
     with patch.object(
         user_auth, 'get_user_settings_store', return_value=mock_settings_store
     ):
-        settings = await user_auth.get_user_settings()
+        with patch.object(Settings, 'from_config', return_value=config_settings):
+            settings = await user_auth.get_user_settings()
 
-    # Should return None when no settings are stored
-    assert settings is None
+    # Should return default settings from config.toml when no settings are stored
+    assert settings is not None
+    assert settings.language == 'en'
+    assert settings.agent == 'CodeActAgent'
+    assert settings.llm_model == 'gpt-4'
+    assert settings.mcp_config is not None

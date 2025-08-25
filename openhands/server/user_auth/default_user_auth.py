@@ -53,7 +53,12 @@ class DefaultUserAuth(UserAuth):
         settings_store = await self.get_user_settings_store()
         settings = await settings_store.load()
 
-        # Merge config.toml settings with stored settings
+        # If no stored settings exist, create default settings from config.toml
+        if not settings:
+            from openhands.storage.data_models.settings import Settings
+            settings = Settings.from_config()
+
+        # Merge config.toml settings with stored settings (if any exist)
         if settings:
             settings = settings.merge_with_config_settings()
 
