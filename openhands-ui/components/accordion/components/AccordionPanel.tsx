@@ -1,10 +1,10 @@
 import type { PropsWithChildren } from "react";
-import type { HTMLProps } from "../../../shared/types";
+import type { BaseProps, HTMLProps } from "../../../shared/types";
 import { cn } from "../../../shared/utils/cn";
 
 export type AccordionPanelProps = Omit<HTMLProps<"div">, "aria-expanded"> & {
   expanded: boolean;
-};
+} & BaseProps;
 
 export const AccordionPanel = ({
   className,

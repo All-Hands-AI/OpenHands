@@ -28,8 +28,7 @@ class LocalizationInfo:
     hunks_per_file: dict[str, int]  # File -> number of hunks
 
     def to_dict(self) -> dict[str, Any]:
-        """
-        Convert LocalizationInfo to a dictionary for JSON serialization.
+        """Convert LocalizationInfo to a dictionary for JSON serialization.
 
         Returns:
             Dictionary representation of the localization information
@@ -58,8 +57,7 @@ class LocalizationInfo:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'LocalizationInfo':
-        """
-        Create LocalizationInfo from a dictionary (for loading from JSON).
+        """Create LocalizationInfo from a dictionary (for loading from JSON).
 
         Args:
             data: Dictionary containing localization information
@@ -91,8 +89,7 @@ class LocalizationInfo:
 
 
 class LocMeta:
-    """
-    SWE-Bench dataset loader and ground-truth localization parser.
+    """SWE-Bench dataset loader and ground-truth localization parser.
 
     This class handles loading SWE-Bench datasets and extracting ground-truth
     localization information from patches for code localization evaluation.
@@ -104,8 +101,7 @@ class LocMeta:
         dataset_name: str = 'princeton-nlp/SWE-bench_Verified',
         split: str = 'test',
     ):
-        """
-        Initialize LocMeta with a SWE-Bench dataset.
+        """Initialize LocMeta with a SWE-Bench dataset.
 
         Args:
             dataset_name: HuggingFace dataset name (e.g., "princeton-nlp/SWE-bench_Verified")
@@ -124,8 +120,7 @@ class LocMeta:
         self._init_swe_dataset()
 
     def _init_swe_dataset(self) -> None:
-        """
-        Load and initialize the SWE-Bench dataset from HuggingFace.
+        """Load and initialize the SWE-Bench dataset from HuggingFace.
         Converts to pandas DataFrame for easy manipulation.
         """
         try:
@@ -150,8 +145,7 @@ class LocMeta:
             raise
 
     def get_instance_by_id(self, instance_id: str) -> pd.Series:
-        """
-        Retrieve a specific instance by its ID.
+        """Retrieve a specific instance by its ID.
 
         Args:
             instance_id: The instance identifier
@@ -169,8 +163,7 @@ class LocMeta:
         return self.df.iloc[idx]
 
     def parse_instance_loc(self, instance: Union[pd.Series, str]) -> LocalizationInfo:
-        """
-        Parse ground-truth localization information from a SWE-Bench instance.
+        """Parse ground-truth localization information from a SWE-Bench instance.
 
         Args:
             instance: Either a pandas Series with instance data or an instance_id string
@@ -218,8 +211,7 @@ class LocMeta:
     def _parse_file_patch_lines(
         self, file_patch: str
     ) -> tuple[list[tuple[int, int]], int, int]:
-        """
-        Parse line ranges and count changes from a single file patch.
+        """Parse line ranges and count changes from a single file patch.
 
         Args:
             file_patch: Patch content for a single file
@@ -253,8 +245,7 @@ class LocMeta:
     def _parse_code_structures_from_patch(
         self, file_patch: str, file_path: str
     ) -> tuple[list[str], list[str]]:
-        """
-        Extract function and class names from patch context (fallback method).
+        """Extract function and class names from patch context (fallback method).
 
         Args:
             file_patch: Patch content for a single file
@@ -311,8 +302,7 @@ class LocMeta:
     def _parse_patch_localization(
         self, patch_content: str, instance_id: str
     ) -> LocalizationInfo:
-        """
-        Parse localization information from a git patch (improved method).
+        """Parse localization information from a git patch (improved method).
 
         Args:
             patch_content: The git patch content
@@ -390,8 +380,7 @@ class LocMeta:
     def _extract_code_structures_from_patch(
         self, file_patch: str, file_path: str
     ) -> tuple[list[str], list[str]]:
-        """
-        Extract function and class names from patch context and content.
+        """Extract function and class names from patch context and content.
 
         Args:
             file_patch: Patch content for a single file
@@ -519,8 +508,7 @@ class LocMeta:
     def _parse_patch_localization_with_runtime(
         self, patch_content: str, instance_id: str, runtime: Runtime
     ) -> LocalizationInfo:
-        """
-        Parse localization information from a git patch using OpenHands runtime.
+        """Parse localization information from a git patch using OpenHands runtime.
         This is the superior method when runtime is available.
 
         Args:
@@ -596,8 +584,7 @@ class LocMeta:
     def parse_instance_loc_with_runtime(
         self, instance: Union[pd.Series, str], runtime: Runtime = None
     ) -> LocalizationInfo:
-        """
-        Parse ground-truth localization information using OpenHands runtime.
+        """Parse ground-truth localization information using OpenHands runtime.
 
         Args:
             instance: Either a pandas Series with instance data or an instance_id string
@@ -634,8 +621,7 @@ class LocMeta:
     def _analyze_source_code_with_runtime(
         self, runtime: Runtime, file_path: str, affected_lines: list[int]
     ) -> tuple[list[str], list[str], dict[int, str], dict[int, str]]:
-        """
-        Analyze source code using OpenHands runtime to find functions and classes.
+        """Analyze source code using OpenHands runtime to find functions and classes.
 
         Args:
             runtime: OpenHands runtime object
@@ -695,8 +681,7 @@ class LocMeta:
     def _parse_cython_content_with_line_mapping(
         self, content: str, affected_lines: list[int]
     ) -> tuple[list[str], list[str], dict[int, str], dict[int, str]]:
-        """
-        Parse Cython content to extract functions and classes with line mapping.
+        """Parse Cython content to extract functions and classes with line mapping.
         Since Cython files can't be parsed with Python's AST, we use regex-based parsing.
 
         Args:
@@ -828,8 +813,7 @@ class LocMeta:
     def _parse_python_content_with_line_mapping(
         self, content: str, affected_lines: list[int]
     ) -> tuple[list[str], list[str], dict[int, str], dict[int, str]]:
-        """
-        Parse Python content to extract functions and classes with accurate line mapping.
+        """Parse Python content to extract functions and classes with accurate line mapping.
 
         Args:
             content: Python source code content
@@ -914,8 +898,7 @@ class LocMeta:
     def _parse_python_content(
         self, content: str, affected_lines: list[int]
     ) -> tuple[list[str], list[str], dict[int, str], dict[int, str]]:
-        """
-        Parse Python content to extract functions and classes.
+        """Parse Python content to extract functions and classes.
 
         Args:
             content: Python source code content
@@ -989,8 +972,7 @@ class LocMeta:
             return [], [], {}, {}
 
     def _split_patch_by_files(self, patch_content: str) -> dict[str, str]:
-        """
-        Split a multi-file patch into individual file patches.
+        """Split a multi-file patch into individual file patches.
 
         Args:
             patch_content: Complete patch content
@@ -1049,8 +1031,7 @@ class LocMeta:
     def _empty_localization_info(
         self, instance_id: str = 'unknown'
     ) -> LocalizationInfo:
-        """
-        Return an empty LocalizationInfo object.
+        """Return an empty LocalizationInfo object.
 
         Args:
             instance_id: Instance identifier
@@ -1072,8 +1053,7 @@ class LocMeta:
         )
 
     def get_dataset_statistics(self) -> dict[str, Any]:
-        """
-        Get statistics about the loaded dataset.
+        """Get statistics about the loaded dataset.
 
         Returns:
             Dictionary containing dataset statistics
@@ -1095,8 +1075,7 @@ class LocMeta:
         return stats
 
     def get_instances_by_repo(self, repo_name: str) -> pd.DataFrame:
-        """
-        Get all instances for a specific repository.
+        """Get all instances for a specific repository.
 
         Args:
             repo_name: Repository name (e.g., "django/django")

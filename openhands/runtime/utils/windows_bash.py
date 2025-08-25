@@ -1,5 +1,4 @@
-"""
-This module provides a Windows-specific implementation for running commands
+"""This module provides a Windows-specific implementation for running commands
 in a PowerShell session using the pythonnet library to interact with the .NET
 PowerShell SDK directly. This aims to provide a more robust and integrated
 way to manage PowerShell processes compared to using temporary script files.
@@ -95,8 +94,7 @@ except Exception as e:
 
 
 class WindowsPowershellSession:
-    """
-    Manages a persistent PowerShell session using the .NET SDK via pythonnet.
+    """Manages a persistent PowerShell session using the .NET SDK via pythonnet.
 
     Allows executing commands within a single runspace, preserving state
     (variables, current directory) between calls.
@@ -110,8 +108,7 @@ class WindowsPowershellSession:
         no_change_timeout_seconds: int = 30,
         max_memory_mb: int | None = None,
     ):
-        """
-        Initializes the PowerShell session.
+        """Initializes the PowerShell session.
 
         Args:
             work_dir: The starting working directory for the session.
@@ -388,9 +385,7 @@ class WindowsPowershellSession:
     def _check_active_job(
         self, timeout_seconds: int
     ) -> CmdOutputObservation | ErrorObservation:
-        """
-        Checks the active job for new output and status, waiting up to timeout_seconds.
-        """
+        """Checks the active job for new output and status, waiting up to timeout_seconds."""
         with self._job_lock:
             if not self.active_job:
                 return ErrorObservation(
@@ -649,8 +644,7 @@ class WindowsPowershellSession:
         return self._cwd
 
     def execute(self, action: CmdRunAction) -> CmdOutputObservation | ErrorObservation:
-        """
-        Executes a command, potentially as a PowerShell background job for long-running tasks.
+        """Executes a command, potentially as a PowerShell background job for long-running tasks.
         Aligned with bash.py behavior regarding command execution and messages.
 
         Args:
@@ -861,9 +855,7 @@ class WindowsPowershellSession:
                             f'\n[Your command "{command}" is NOT executed. '
                             f'The previous command is still running - You CANNOT send new commands until the previous command is completed. '
                             'By setting `is_input` to `true`, you can interact with the current process: '
-                            "You may wait longer to see additional output of the previous command by sending empty command '', "
-                            'send other commands to interact with the current process, '
-                            'or send keys ("C-c", "C-z", "C-d") to interrupt/kill the previous command before sending your new command.]'
+                            f'{TIMEOUT_MESSAGE_TEMPLATE}]'
                         )
 
                         return CmdOutputObservation(

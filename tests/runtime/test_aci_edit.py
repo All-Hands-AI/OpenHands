@@ -38,7 +38,9 @@ def test_view_file(temp_dir, runtime_cls, run_as_openhands):
 
 
 def test_view_directory(temp_dir, runtime_cls, run_as_openhands):
-    runtime, config = _load_runtime(temp_dir, runtime_cls, run_as_openhands)
+    runtime, config = _load_runtime(
+        temp_dir, runtime_cls, run_as_openhands, enable_browser=True
+    )
     try:
         # Create test file
         test_file = os.path.join(config.workspace_mount_path_in_sandbox, 'test.txt')

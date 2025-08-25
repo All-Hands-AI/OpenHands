@@ -21,7 +21,7 @@ from openhands.events.observation.agent import (
 from openhands.events.serialization import event_to_dict
 from openhands.integrations.service_types import ProviderType
 from openhands.server.services.conversation_service import (
-    setup_init_convo_settings,
+    setup_init_conversation_settings,
 )
 from openhands.server.shared import (
     conversation_manager,
@@ -117,7 +117,7 @@ async def connect(connection_id: str, environ: dict) -> None:
             f'Finished replaying event stream for conversation {conversation_id}'
         )
 
-        conversation_init_data = await setup_init_convo_settings(
+        conversation_init_data = await setup_init_conversation_settings(
             user_id, conversation_id, providers_set
         )
 

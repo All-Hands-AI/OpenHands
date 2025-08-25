@@ -66,8 +66,7 @@ class KubernetesConfig(BaseModel):
 
     @classmethod
     def from_toml_section(cls, data: dict) -> dict[str, 'KubernetesConfig']:
-        """
-        Create a mapping of KubernetesConfig instances from a toml dictionary representing the [kubernetes] section.
+        """Create a mapping of KubernetesConfig instances from a toml dictionary representing the [kubernetes] section.
 
         The configuration is built from all keys in data.
 

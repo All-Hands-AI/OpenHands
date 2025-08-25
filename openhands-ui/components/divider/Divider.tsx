@@ -1,4 +1,4 @@
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 
 export type DividerProps = Omit<
@@ -6,11 +6,12 @@ export type DividerProps = Omit<
   "role" | "aria-orientation"
 > & {
   type?: "horizontal" | "vertical";
-};
+} & BaseProps;
 
 export const Divider = ({
   type = "horizontal",
   className,
+  testId,
   ...props
 }: DividerProps) => {
   return (
@@ -23,6 +24,7 @@ export const Divider = ({
       )}
       role="separator"
       aria-orientation={type}
+      data-testid={testId}
     />
   );
 };

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import "./index.css";
 
@@ -15,7 +15,11 @@ export type IndeterminateSpinnerProps = BaseSpinnerProps & {
   value?: never;
 };
 
-export type SpinnerProps = DeterminateSpinnerProps | IndeterminateSpinnerProps;
+export type SpinnerProps = (
+  | DeterminateSpinnerProps
+  | IndeterminateSpinnerProps
+) &
+  BaseProps;
 
 const SIZE = 48;
 const STROKE_WIDTH = 6;
@@ -26,6 +30,7 @@ export const Spinner = ({
   value = 10,
   determinate = false,
   className,
+  testId,
   ...props
 }: SpinnerProps) => {
   const offset = useMemo(
@@ -34,7 +39,13 @@ export const Spinner = ({
   );
 
   return (
-    <svg width={SIZE} height={SIZE} className={className} {...props}>
+    <svg
+      data-testid={testId}
+      width={SIZE}
+      height={SIZE}
+      className={className}
+      {...props}
+    >
       <circle
         cx={SIZE / 2}
         cy={SIZE / 2}

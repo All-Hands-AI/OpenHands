@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { SecretsService } from "#/api/secrets-service";
-import { useUserProviders } from "../use-user-providers";
 import { useConfig } from "./use-config";
+import { useIsAuthed } from "#/hooks/query/use-is-authed";
 
 export const useGetSecrets = () => {
   const { data: config } = useConfig();
-  const { providers } = useUserProviders();
+  const { data: isAuthed } = useIsAuthed();
 
   const isOss = config?.APP_MODE === "oss";
 
   return useQuery({
     queryKey: ["secrets"],
     queryFn: SecretsService.getSecrets,
-    enabled: isOss || providers.length > 0,
+    enabled: isOss || isAuthed, // Enable regardless of providers
   });
 };

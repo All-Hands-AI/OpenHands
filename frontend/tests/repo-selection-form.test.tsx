@@ -43,7 +43,7 @@ describe("RepositorySelectionForm", () => {
     });
 
     (useCreateConversation as any).mockReturnValue({
-      mutate: vi.fn(),
+      mutate: vi.fn(() => (useIsCreatingConversation as any).mockReturnValue(true)),
       isPending: false,
       isSuccess: false,
     });

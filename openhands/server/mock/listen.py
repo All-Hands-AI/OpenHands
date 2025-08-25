@@ -54,7 +54,8 @@ def refresh_files() -> list[str]:
 
 @app.get('/api/options/config')
 def get_config() -> dict[str, str]:
-    return {'APP_MODE': 'oss'}
+    # return {'APP_MODE': 'oss'}
+    return {'APP_MODE': 'saas'}
 
 
 @app.get('/api/options/security-analyzers')

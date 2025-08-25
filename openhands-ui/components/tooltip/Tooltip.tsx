@@ -17,6 +17,7 @@ import {
 } from "@floating-ui/react";
 import { useRef, useState, type PropsWithChildren } from "react";
 import { Typography } from "../typography/Typography";
+import type { BaseProps } from "../../shared/types";
 
 type ControlledTooltipProps = {
   open: boolean;
@@ -33,10 +34,9 @@ type TooltipTriggerType = "click" | "hover";
 type BaseTooltipProps = {
   text: string;
   withArrow?: boolean;
-  className?: string;
   placement?: UseFloatingOptions["placement"];
   trigger?: TooltipTriggerType;
-};
+} & BaseProps;
 
 export type TooltipProps = BaseTooltipProps &
   (ControlledTooltipProps | UncontrolledTooltipProps);
@@ -50,6 +50,7 @@ export const Tooltip = ({
   open,
   setOpen: setOpenProp,
   trigger = "hover",
+  testId,
 }: PropsWithChildren<TooltipProps>) => {
   const [localOpen, setLocalOpen] = useState(false);
   const arrowRef = useRef(null);
@@ -95,6 +96,7 @@ export const Tooltip = ({
         ref={refs.setReference}
         {...getReferenceProps()}
         className={className}
+        data-testid={testId}
       >
         {children}
       </button>

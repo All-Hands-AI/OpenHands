@@ -9,29 +9,35 @@ interface TrajectoryActionsProps {
   onPositiveFeedback: () => void;
   onNegativeFeedback: () => void;
   onExportTrajectory: () => void;
+  isSaasMode?: boolean;
 }
 
 export function TrajectoryActions({
   onPositiveFeedback,
   onNegativeFeedback,
   onExportTrajectory,
+  isSaasMode = false,
 }: TrajectoryActionsProps) {
   const { t } = useTranslation();
 
   return (
     <div data-testid="feedback-actions" className="flex gap-1">
-      <TrajectoryActionButton
-        testId="positive-feedback"
-        onClick={onPositiveFeedback}
-        icon={<ThumbsUpIcon width={15} height={15} />}
-        tooltip={t(I18nKey.BUTTON$MARK_HELPFUL)}
-      />
-      <TrajectoryActionButton
-        testId="negative-feedback"
-        onClick={onNegativeFeedback}
-        icon={<ThumbDownIcon width={15} height={15} />}
-        tooltip={t(I18nKey.BUTTON$MARK_NOT_HELPFUL)}
-      />
+      {!isSaasMode && (
+        <>
+          <TrajectoryActionButton
+            testId="positive-feedback"
+            onClick={onPositiveFeedback}
+            icon={<ThumbsUpIcon width={15} height={15} />}
+            tooltip={t(I18nKey.BUTTON$MARK_HELPFUL)}
+          />
+          <TrajectoryActionButton
+            testId="negative-feedback"
+            onClick={onNegativeFeedback}
+            icon={<ThumbDownIcon width={15} height={15} />}
+            tooltip={t(I18nKey.BUTTON$MARK_NOT_HELPFUL)}
+          />
+        </>
+      )}
       <TrajectoryActionButton
         testId="export-trajectory"
         onClick={onExportTrajectory}

@@ -4,6 +4,10 @@
 
 import asyncio
 import contextlib
+import datetime
+import html
+import json
+import re
 import sys
 import threading
 import time
@@ -20,23 +24,32 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
+from openhands.cli.pt_style import (
+    COLOR_AGENT_BLUE,
+    COLOR_GOLD,
+    COLOR_GREY,
+    get_cli_style,
+)
 from openhands.core.config import OpenHandsConfig
 from openhands.core.schema import AgentState
 from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     ChangeAgentStateAction,
     CmdRunAction,
+    MCPAction,
     MessageAction,
+    TaskTrackingAction,
 )
 from openhands.events.event import Event
 from openhands.events.observation import (
@@ -45,8 +58,11 @@ from openhands.events.observation import (
     ErrorObservation,
     FileEditObservation,
     FileReadObservation,
+    MCPObservation,
+    TaskTrackingObservation,
 )
 from openhands.llm.metrics import Metrics
+from openhands.mcp.error_collector import mcp_error_collector
 
 ENABLE_STREAMING = False  # FIXME: this doesn't work
 
@@ -58,15 +74,7 @@ recent_thoughts: list[str] = []
 MAX_RECENT_THOUGHTS = 5
 
 # Color and styling constants
-COLOR_GOLD = '#FFD700'
-COLOR_GREY = '#808080'
-DEFAULT_STYLE = Style.from_dict(
-    {
-        'gold': COLOR_GOLD,
-        'grey': COLOR_GREY,
-        'prompt': f'{COLOR_GOLD} bold',
-    }
-)
+DEFAULT_STYLE = get_cli_style()
 
 COMMANDS = {
     '/exit': 'Exit the application',
@@ -76,6 +84,7 @@ COMMANDS = {
     '/new': 'Create a new conversation',
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
+    '/mcp': 'Manage MCP server configuration and view errors',
 }
 
 print_lock = threading.Lock()
@@ -162,6 +171,7 @@ def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
+
     if message:
         print_formatted_text(
             HTML(f'{message} <grey>Type /help for help</grey>'),
@@ -186,14 +196,61 @@ def display_initial_user_prompt(prompt: str) -> None:
     )
 
 
+def display_mcp_errors() -> None:
+    """Display collected MCP errors."""
+    errors = mcp_error_collector.get_errors()
+
+    if not errors:
+        print_formatted_text(HTML('<ansigreen>✓ No MCP errors detected</ansigreen>\n'))
+        return
+
+    print_formatted_text(
+        HTML(
+            f'<ansired>✗ {len(errors)} MCP error(s) detected during startup:</ansired>\n'
+        )
+    )
+
+    for i, error in enumerate(errors, 1):
+        # Format timestamp
+        timestamp = datetime.datetime.fromtimestamp(error.timestamp).strftime(
+            '%H:%M:%S'
+        )
+
+        # Create error display text
+        error_text = (
+            f'[{timestamp}] {error.server_type.upper()} Server: {error.server_name}\n'
+        )
+        error_text += f'Error: {error.error_message}\n'
+        if error.exception_details:
+            error_text += f'Details: {error.exception_details}'
+
+        container = Frame(
+            TextArea(
+                text=error_text,
+                read_only=True,
+                style='ansired',
+                wrap_lines=True,
+            ),
+            title=f'MCP Error #{i}',
+            style='ansired',
+        )
+        print_container(container)
+        print_formatted_text('')  # Add spacing between errors
+
+
 # Prompt output display functions
-def display_thought_if_new(thought: str) -> None:
-    """Display a thought only if it hasn't been displayed recently."""
+def display_thought_if_new(thought: str, is_agent_message: bool = False) -> None:
+    """Display a thought only if it hasn't been displayed recently.
+
+    Args:
+        thought: The thought to display
+        is_agent_message: If True, apply agent styling and markdown rendering
+    """
     global recent_thoughts
     if thought and thought.strip():
         # Check if this thought was recently displayed
         if thought not in recent_thoughts:
-            display_message(thought)
+            display_message(thought, is_agent_message=is_agent_message)
             recent_thoughts.append(thought)
             # Keep only the most recent thoughts
             if len(recent_thoughts) > MAX_RECENT_THOUGHTS:
@@ -206,7 +263,7 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
         if isinstance(event, CmdRunAction):
             # For CmdRunAction, display thought first, then command
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
 
             # Only display the command if it's not already confirmed
             # Commands are always shown when AWAITING_CONFIRMATION, so we don't need to show them again when CONFIRMED
@@ -215,34 +272,95 @@ def display_event(event: Event, config: OpenHandsConfig) -> None:
 
             if event.confirmation_state == ActionConfirmationStatus.CONFIRMED:
                 initialize_streaming_output()
+        elif isinstance(event, MCPAction):
+            display_mcp_action(event)
+        elif isinstance(event, TaskTrackingAction):
+            display_task_tracking_action(event)
         elif isinstance(event, Action):
             # For other actions, display thoughts normally
             if hasattr(event, 'thought') and event.thought:
-                display_message(event.thought)
+                display_thought_if_new(event.thought)
             if hasattr(event, 'final_thought') and event.final_thought:
-                display_message(event.final_thought)
+                # Display final thoughts with agent styling
+                display_message(event.final_thought, is_agent_message=True)
 
         if isinstance(event, MessageAction):
             if event.source == EventSource.AGENT:
-                # Check if this message content is a duplicate thought
-                display_thought_if_new(event.content)
+                # Display agent messages with styling and markdown rendering
+                display_thought_if_new(event.content, is_agent_message=True)
         elif isinstance(event, CmdOutputObservation):
             display_command_output(event.content)
         elif isinstance(event, FileEditObservation):
             display_file_edit(event)
         elif isinstance(event, FileReadObservation):
             display_file_read(event)
+        elif isinstance(event, MCPObservation):
+            display_mcp_observation(event)
+        elif isinstance(event, TaskTrackingObservation):
+            display_task_tracking_observation(event)
         elif isinstance(event, AgentStateChangedObservation):
             display_agent_state_change_message(event.agent_state)
         elif isinstance(event, ErrorObservation):
             display_error(event.content)
 
 
-def display_message(message: str) -> None:
+def display_message(message: str, is_agent_message: bool = False) -> None:
+    """Display a message in the terminal with markdown rendering.
+
+    Args:
+        message: The message to display
+        is_agent_message: If True, apply agent styling (blue color)
+    """
     message = message.strip()
 
     if message:
-        print_formatted_text(f'\n{message}')
+        # Add spacing before the message
+        print_formatted_text('')
+
+        try:
+            # Render only basic markdown (bold/underline), escaping any HTML
+            html_content = _render_basic_markdown(message)
+
+            if is_agent_message:
+                # Use prompt_toolkit's HTML renderer with the agent color
+                print_formatted_text(
+                    HTML(f'<style fg="{COLOR_AGENT_BLUE}">{html_content}</style>')
+                )
+            else:
+                # Regular message display with HTML rendering but default color
+                print_formatted_text(HTML(html_content))
+        except Exception as e:
+            # If HTML rendering fails, fall back to plain text
+            print(f'Warning: HTML rendering failed: {str(e)}', file=sys.stderr)
+            if is_agent_message:
+                print_formatted_text(
+                    FormattedText([('fg:' + COLOR_AGENT_BLUE, message)])
+                )
+            else:
+                print_formatted_text(message)
+
+
+def _render_basic_markdown(text: str | None) -> str | None:
+    """Render a very small subset of markdown directly to prompt_toolkit HTML.
+
+    Supported:
+    - Bold: **text** -> <b>text</b>
+    - Underline: __text__ -> <u>text</u>
+
+    Any existing HTML in input is escaped to avoid injection into the renderer.
+    If input is None, return None.
+    """
+    if text is None:
+        return None
+    if text == '':
+        return ''
+
+    safe = html.escape(text)
+    # Bold: greedy within a line, non-overlapping
+    safe = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe)
+    # Underline: double underscore
+    safe = re.sub(r'__(.+?)__', r'<u>\1</u>', safe)
+    return safe
 
 
 def display_error(error: str) -> None:
@@ -264,9 +382,12 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
+    # Create simple command frame
+    command_text = f'$ {event.command}'
+
     container = Frame(
         TextArea(
-            text=f'$ {event.command}',
+            text=command_text,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
@@ -331,6 +452,134 @@ def display_file_read(event: FileReadObservation) -> None:
             wrap_lines=True,
         ),
         title='File Read',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_action(event: MCPAction) -> None:
+    """Display an MCP action in the CLI."""
+    # Format the arguments for display
+    args_text = ''
+    if event.arguments:
+        try:
+            args_text = json.dumps(event.arguments, indent=2)
+        except (TypeError, ValueError):
+            args_text = str(event.arguments)
+
+    # Create the display text
+    display_text = f'Tool: {event.name}'
+    if args_text:
+        display_text += f'\n\nArguments:\n{args_text}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansiblue',
+            wrap_lines=True,
+        ),
+        title='MCP Tool Call',
+        style='ansiblue',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_mcp_observation(event: MCPObservation) -> None:
+    """Display an MCP observation in the CLI."""
+    # Format the content for display
+    content = event.content.strip() if event.content else 'No output'
+
+    # Add tool name and arguments info if available
+    display_text = content
+    if event.name:
+        header = f'Tool: {event.name}'
+        if event.arguments:
+            try:
+                args_text = json.dumps(event.arguments, indent=2)
+                header += f'\nArguments: {args_text}'
+            except (TypeError, ValueError):
+                header += f'\nArguments: {event.arguments}'
+        display_text = f'{header}\n\nResult:\n{content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='MCP Tool Result',
+        style=f'fg:{COLOR_GREY}',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_action(event: TaskTrackingAction) -> None:
+    """Display a TaskTracking action in the CLI."""
+    # Display thought first if present
+    if hasattr(event, 'thought') and event.thought:
+        display_message(event.thought)
+
+    # Format the command and task list for display
+    display_text = f'Command: {event.command}'
+
+    if event.command == 'plan':
+        if event.task_list:
+            display_text += f'\n\nTask List ({len(event.task_list)} items):'
+            for i, task in enumerate(event.task_list, 1):
+                status = task.get('status', 'unknown')
+                title = task.get('title', 'Untitled task')
+                task_id = task.get('id', f'task-{i}')
+                notes = task.get('notes', '')
+
+                # Add status indicator with color
+                status_indicator = {
+                    'todo': '⏳',
+                    'in_progress': '🔄',
+                    'done': '✅',
+                }.get(status, '❓')
+
+                display_text += f'\n  {i}. {status_indicator} [{status.upper()}] {title} (ID: {task_id})'
+                if notes:
+                    display_text += f'\n     Notes: {notes}'
+        else:
+            display_text += '\n\nTask List: Empty'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style='ansigreen',
+            wrap_lines=True,
+        ),
+        title='Task Tracking Action',
+        style='ansigreen',
+    )
+    print_formatted_text('')
+    print_container(container)
+
+
+def display_task_tracking_observation(event: TaskTrackingObservation) -> None:
+    """Display a TaskTracking observation in the CLI."""
+    # Format the content and task list for display
+    content = (
+        event.content.strip() if event.content else 'Task tracking operation completed'
+    )
+
+    display_text = f'Result: {content}'
+
+    container = Frame(
+        TextArea(
+            text=display_text,
+            read_only=True,
+            style=COLOR_GREY,
+            wrap_lines=True,
+        ),
+        title='Task Tracking Result',
         style=f'fg:{COLOR_GREY}',
     )
     print_formatted_text('')
@@ -587,36 +836,35 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+async def read_confirmation_input(
+    config: OpenHandsConfig, security_risk: ActionSecurityRisk
+) -> str:
     try:
-        prompt_session = create_prompt_session(config)
+        if security_risk == ActionSecurityRisk.HIGH:
+            question = 'HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
+            choices = [
+                'Yes, proceed (HIGH RISK - Use with caution)',
+                'No (and allow to enter instructions)',
+                "Always proceed (don't ask again - NOT RECOMMENDED)",
+            ]
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
+        else:
+            question = 'Choose an option:'
+            choices = [
+                'Yes, proceed',
+                'No (and allow to enter instructions)',
+                'Auto-confirm action with LOW/MEDIUM risk, ask for HIGH risk',
+                "Always proceed (don't ask again)",
+            ]
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'auto_highrisk', 3: 'always'}
 
-        while True:
-            with patch_stdout():
-                print_formatted_text('')
-                confirmation: str = await prompt_session.prompt_async(
-                    HTML('<gold>Proceed with action? (y)es/(n)o/(a)lways > </gold>'),
-                )
+        # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
+        index = await asyncio.to_thread(
+            cli_confirm, config, question, choices, 0, security_risk
+        )
 
-                confirmation = (
-                    '' if confirmation is None else confirmation.strip().lower()
-                )
+        return choice_mapping.get(index, 'no')
 
-                if confirmation in ['y', 'yes']:
-                    return 'yes'
-                elif confirmation in ['n', 'no']:
-                    return 'no'
-                elif confirmation in ['a', 'always']:
-                    return 'always'
-                else:
-                    # Display error message for invalid input
-                    print_formatted_text('')
-                    print_formatted_text(
-                        HTML(
-                            '<ansired>Invalid input. Please enter (y)es, (n)o, or (a)lways.</ansired>'
-                        )
-                    )
-                    # Continue the loop to re-prompt
     except (KeyboardInterrupt, EOFError):
         return 'no'
 
@@ -673,6 +921,8 @@ def cli_confirm(
     config: OpenHandsConfig,
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
+    initial_selection: int = 0,
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -680,11 +930,18 @@ def cli_confirm(
     """
     if choices is None:
         choices = ['Yes', 'No']
-    selected = [0]  # Using list to allow modification in closure
+    selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
+        # Use red styling for HIGH risk questions
+        question_style = (
+            'class:risk-high'
+            if security_risk == ActionSecurityRisk.HIGH
+            else 'class:question'
+        )
+
         return [
-            ('class:question', f'{question}\n\n'),
+            (question_style, f'{question}\n\n'),
         ] + [
             (
                 'class:selected' if i == selected[0] else 'class:unselected',
@@ -719,24 +976,33 @@ def cli_confirm(
     def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
-    style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
-
-    layout = Layout(
-        HSplit(
-            [
-                Window(
-                    FormattedTextControl(get_choice_text),
-                    always_hide_cursor=True,
-                )
-            ]
-        )
+    # Create layout with risk-based styling - full width but limited height
+    content_window = Window(
+        FormattedTextControl(get_choice_text),
+        always_hide_cursor=True,
+        height=Dimension(max=8),  # Limit height to prevent screen takeover
     )
+
+    # Add frame for HIGH risk commands
+    if security_risk == ActionSecurityRisk.HIGH:
+        layout = Layout(
+            HSplit(
+                [
+                    Frame(
+                        content_window,
+                        title='HIGH RISK',
+                        style='fg:#FF0000 bold',  # Red color for HIGH risk
+                    )
+                ]
+            )
+        )
+    else:
+        layout = Layout(HSplit([content_window]))
 
     app = Application(
         layout=layout,
         key_bindings=kb,
-        style=style,
-        mouse_support=True,
+        style=DEFAULT_STYLE,
         full_screen=False,
     )
 

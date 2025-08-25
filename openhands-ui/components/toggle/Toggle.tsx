@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { HTMLProps } from "../../shared/types";
+import type { BaseProps, HTMLProps } from "../../shared/types";
 import { cn } from "../../shared/utils/cn";
 import { Typography } from "../typography/Typography";
 import { invariant } from "../../shared/utils/invariant";
@@ -11,7 +11,8 @@ type ToggleTextProps =
 export type ToggleProps = HTMLProps<"input"> & {
   label?: React.ReactNode;
   labelClassName?: string;
-} & ToggleTextProps;
+} & ToggleTextProps &
+  BaseProps;
 
 export const Toggle = ({
   className,
@@ -23,6 +24,7 @@ export const Toggle = ({
   onChange,
   onText,
   offText,
+  testId,
   ...props
 }: ToggleProps) => {
   invariant(
@@ -49,6 +51,7 @@ export const Toggle = ({
           onChange={onChange}
           disabled={disabled}
           className="sr-only peer"
+          data-testid={testId}
           {...props}
         />
         <div
@@ -95,7 +98,7 @@ export const Toggle = ({
         <Typography.Text
           fontSize="xxs"
           fontWeight={500}
-          className={cn("mr-5", disabled && "opacity-50")}
+          className={cn("mr-3", disabled && "opacity-50")}
         >
           {checked ? onText : offText}
         </Typography.Text>
@@ -104,7 +107,7 @@ export const Toggle = ({
         <Typography.Text
           fontSize="xxs"
           fontWeight={500}
-          className={cn(labelClassName, disabled && "opacity-50")}
+          className={cn("ml-2", disabled && "opacity-50", labelClassName)}
         >
           {label}
         </Typography.Text>

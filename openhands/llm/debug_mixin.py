@@ -1,4 +1,8 @@
+from logging import DEBUG
 from typing import Any
+
+from litellm import ChatCompletionMessageToolCall
+from litellm.types.utils import ModelResponse
 
 from openhands.core.logger import llm_prompt_logger, llm_response_logger
 from openhands.core.logger import openhands_logger as logger
@@ -8,6 +12,9 @@ MESSAGE_SEPARATOR = '\n\n----------\n\n'
 
 class DebugMixin:
     def log_prompt(self, messages: list[dict[str, Any]] | dict[str, Any]) -> None:
+        if not logger.isEnabledFor(DEBUG):
+            # Don't use memory building message string if not logging.
+            return
         if not messages:
             logger.debug('No completion messages!')
             return
@@ -24,7 +31,20 @@ class DebugMixin:
         else:
             logger.debug('No completion messages!')
 
-    def log_response(self, message_back: str) -> None:
+    def log_response(self, resp: ModelResponse) -> None:
+        if not logger.isEnabledFor(DEBUG):
+            # Don't use memory building message string if not logging.
+            return
+        message_back: str = resp['choices'][0]['message']['content'] or ''
+        tool_calls: list[ChatCompletionMessageToolCall] = resp['choices'][0][
+            'message'
+        ].get('tool_calls', [])
+        if tool_calls:
+            for tool_call in tool_calls:
+                fn_name = tool_call.function.name
+                fn_args = tool_call.function.arguments
+                message_back += f'\nFunction call: {fn_name}({fn_args})'
+
         if message_back:
             llm_response_logger.debug(message_back)
 
