@@ -138,6 +138,7 @@ def may_return_empty_reasoning(model: str) -> bool:
     matched = model_matches(model, EMPTY_REASONING_RESPONSE_PATTERNS)
     return matched
 
+
 def get_features(model: str) -> ModelFeatures:
     return ModelFeatures(
         supports_function_calling=model_matches(model, FUNCTION_CALLING_PATTERNS),

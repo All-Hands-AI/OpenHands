@@ -299,14 +299,7 @@ def response_to_actions(
         # Check if this is a model that may return empty responses while reasoning
         model_name = str(getattr(response, 'model', ''))
         is_reasoning_model = may_return_empty_reasoning(model_name)
-        try:
-            with open('/tmp/fc_debug.txt', 'a') as _f:
-                _f.write(f"{model_name}|{repr(content)}|{is_reasoning_model}|{wait_for_response}\n")
-        except Exception:
-            pass
 
-
-        # Grok-4 can send the number of reasoning tokens, but NOT the reasoning content, nor content
         # Ref: https://github.com/All-Hands-AI/OpenHands/pull/9809
         # Don't wait for response if content is empty and it's Grok
         # This prevents getting stuck when Grok models return empty content while thinking

@@ -160,6 +160,14 @@ def test_headless_parser_help_message(capsys):
     option_count = help_output.count('  -')
     assert option_count == 15, f'Expected 15 options, found {option_count}'
 
+
+def test_evaluation_parser_help_message(capsys):
+    parser = get_evaluation_parser()
+    with pytest.raises(SystemExit):
+        parser.parse_args(['--help'])
+    captured = capsys.readouterr()
+    help_output = captured.out
+    print(help_output)
     expected_elements = [
         'usage:',
         'Run OpenHands in evaluation mode',
@@ -185,42 +193,11 @@ def test_headless_parser_help_message(capsys):
         '--selected-repo SELECTED_REPO',
         '--log-level LOG_LEVEL',
     ]
-        parser.parse_args(['--help'])
-    captured = capsys.readouterr()
-    help_output = captured.out
-    print(help_output)
-    expected_elements = [
-        'usage:',
-        'Run OpenHands in evaluation mode',
-        'options:',
-        '-v, --version',
-        '-h, --help',
-        '-d DIRECTORY, --directory DIRECTORY',
-        '-t TASK, --task TASK',
-        '-f FILE, --file FILE',
-        '-c AGENT_CLS, --agent-cls AGENT_CLS',
-        '-i MAX_ITERATIONS, --max-iterations MAX_ITERATIONS',
-        '-b MAX_BUDGET_PER_TASK, --max-budget-per-task MAX_BUDGET_PER_TASK',
-        '--eval-output-dir EVAL_OUTPUT_DIR',
-        '--eval-n-limit EVAL_N_LIMIT',
-        '--eval-num-workers EVAL_NUM_WORKERS',
-        '--eval-note EVAL_NOTE',
-        '--eval-ids EVAL_IDS',
-        '-l, --llm-config LLM_CONFIG',
-        '--agent-config AGENT_CONFIG',
-        '-n, --name NAME',
-        '--config-file CONFIG_FILE',
-        '--no-auto-continue',
-        '--selected-repo SELECTED_REPO',
-        '--log-level LOG_LEVEL',
-    ]
 
     for element in expected_elements:
         assert element in help_output, f"Expected '{element}' to be in the help message"
 
     option_count = help_output.count('  -')
-=======
->>>>>>> origin/main
     assert option_count == 20, f'Expected 20 options, found {option_count}'
 
 
