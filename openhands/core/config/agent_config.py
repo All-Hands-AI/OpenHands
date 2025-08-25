@@ -59,11 +59,11 @@ class AgentConfig(BaseModel):
     )
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
-    
+
     # Tom agent integration settings (only used by TomCodeActAgent)
     enable_tom_integration: bool = Field(default=True)
     """Whether to enable Tom agent integration for personalized guidance"""
-    tom_enable_rag: bool = Field(default=False) 
+    tom_enable_rag: bool = Field(default=False)
     """Whether to enable RAG (Retrieval Augmented Generation) in Tom agent"""
     tom_min_instruction_length: int = Field(default=5)
     """Minimum instruction length to trigger Tom improvement"""

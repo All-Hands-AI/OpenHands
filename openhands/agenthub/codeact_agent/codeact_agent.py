@@ -200,7 +200,6 @@ class CodeActAgent(Agent):
         logger.debug(
             f'Processing {len(condensed_history)} events from a total of {len(state.history)} events'
         )
-
         initial_user_message = self._get_initial_user_message(state.history)
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
@@ -212,6 +211,7 @@ class CodeActAgent(Agent):
                 model_name=self.llm.config.model, agent_name=self.name
             )
         }
+        # import rich; rich.print(params['messages'])
         response = self.llm.completion(**params)
         logger.debug(f'Response from LLM: {response}')
         actions = self.response_to_actions(response)

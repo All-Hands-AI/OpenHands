@@ -97,3 +97,6 @@ class ActionType(str, Enum):
 
     TASK_TRACKING = 'task_tracking'
     """Views or updates the task list for task management."""
+
+    IMPROVE_INSTRUCTION = 'improve_instruction'
+    """Improves user instructions using Tom agent."""

@@ -31,6 +31,7 @@ from openhands.events.observation.observation import Observation
 from openhands.events.observation.reject import UserRejectObservation
 from openhands.events.observation.success import SuccessObservation
 from openhands.events.observation.task_tracking import TaskTrackingObservation
+from openhands.events.observation.tom import ImproveInstructionObservation
 
 observations = (
     NullObservation,
@@ -51,6 +52,7 @@ observations = (
     MCPObservation,
     FileDownloadObservation,
     TaskTrackingObservation,
+    ImproveInstructionObservation,
 )
 
 OBSERVATION_TYPE_TO_CLASS = {

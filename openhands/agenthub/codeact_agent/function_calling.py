@@ -13,6 +13,7 @@ from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CondensationRequestTool,
     FinishTool,
+    ImproveInstructionTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
@@ -35,6 +36,7 @@ from openhands.events.action import (
     CmdRunAction,
     FileEditAction,
     FileReadAction,
+    ImproveInstructionAction,
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
@@ -267,6 +269,12 @@ def response_to_actions(
                     command=arguments['command'],
                     task_list=arguments.get('task_list', []),
                 )
+
+            # ================================================
+            # ImproveInstructionAction
+            # ================================================
+            elif tool_call.function.name == ImproveInstructionTool['function']['name']:
+                action = ImproveInstructionAction(content=arguments.get('reason', ''))
 
             # ================================================
             # MCPAction (MCP)

@@ -3,7 +3,6 @@
 # CLI Settings are handled separately in cli_settings.py
 
 import asyncio
-import re
 import contextlib
 import datetime
 import json
@@ -88,6 +87,7 @@ COMMANDS = {
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
     '/sleeptime': 'Run Tom sleeptime computation to process recent sessions',
+    '/tom_improve_instruction': 'Improve the instruction for the current task',
 }
 
 print_lock = threading.Lock()
@@ -530,6 +530,8 @@ def display_mcp_observation(event: MCPObservation) -> None:
     )
     print_formatted_text('')
     print_container(container)
+
+
 def display_task_tracking_action(event: TaskTrackingAction) -> None:
     """Display a TaskTracking action in the CLI."""
     # Display thought first if present
@@ -778,6 +780,7 @@ def display_agent_state_change_message(agent_state: str) -> None:
     elif agent_state == AgentState.AWAITING_USER_INPUT:
         print_formatted_text('')
         print_formatted_text(HTML('<gold>Agent is waiting for your input...</gold>'))
+
 
 # Common input functions
 class CommandCompleter(Completer):
@@ -1054,38 +1057,35 @@ def display_tom_thinking_step(message: str) -> None:
     # Determine color and styling based on emoji/content
     if message.startswith('🎯'):
         color = COLOR_GOLD
-        prefix = "Tom Analysis"
+        prefix = 'Tom Analysis'
     elif message.startswith('⏱️') or 'time' in message.lower():
         color = COLOR_GREY
-        prefix = "Tom Performance"
+        prefix = 'Tom Performance'
     elif message.startswith('🔍'):
         color = '#32CD32'  # Lime green for search results
-        prefix = "Action Parameters/Results"
+        prefix = 'Action Parameters/Results'
     elif message.startswith('🧠'):
         color = '#9370DB'  # Medium purple for reasoning
-        prefix = "Tom Reasoning"
+        prefix = 'Tom Reasoning'
     elif message.startswith('⚡'):
         color = '#FF6347'  # Tomato red for actions
-        prefix = "Tom Action"
+        prefix = 'Tom Action'
     elif message.startswith('✅'):
         color = '#00FF7F'  # Spring green for completion
-        prefix = "Tom Complete"
+        prefix = 'Tom Complete'
     elif message.startswith('🔄'):
         color = COLOR_AGENT_BLUE
-        prefix = "Tom Progress"
+        prefix = 'Tom Progress'
     elif message.startswith('📁') or message.startswith('📊'):
         color = COLOR_GREY
-        prefix = "Tom Data"
+        prefix = 'Tom Data'
     else:
         color = COLOR_AGENT_BLUE
-        prefix = "Tom"
+        prefix = 'Tom'
 
     # Display with consistent formatting using FormattedText for better color support
     print_formatted_text(
-        FormattedText([
-            ('fg:' + color, f'[{prefix}] '),
-            ('', message)
-        ])
+        FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
     )
 
 
@@ -1110,7 +1110,7 @@ class TomMessageFilter(logging.Filter):
     def filter(self, record):
         message = record.getMessage()
         # Suppress messages that contain "Tom:" to avoid duplicates
-        return not ("Tom:" in message or record.levelno == CLI_DISPLAY_LEVEL)
+        return not ('Tom:' in message or record.levelno == CLI_DISPLAY_LEVEL)
 
 
 @contextmanager
@@ -1137,7 +1137,9 @@ def capture_tom_thinking():
             oh_logger.removeFilter(tom_filter)
 
 
-def display_instruction_improvement(improved_instruction: str) -> dict:
+def display_instruction_improvement(
+    original_instruction: str, improved_instruction: str
+) -> dict:
     """Display improved instruction and get user choice with tri-state response.
 
     Args:
@@ -1157,7 +1159,7 @@ def display_instruction_improvement(improved_instruction: str) -> dict:
     text = improved_instruction.strip()
 
     # Look for the ToM Agent Analysis marker and extract content after it
-    marker = "*****************ToM Agent Analysis Start Here*****************"
+    marker = '*****************ToM Agent Analysis Start Here*****************'
     if marker in text:
         # Split on the marker and take everything after it
         parts = text.split(marker, 1)
@@ -1180,7 +1182,7 @@ def display_instruction_improvement(improved_instruction: str) -> dict:
             title='Instruction Proposal',
             style=f'fg:{COLOR_GREY}',
         )
-    except Exception as e:
+    except Exception:
         # Fallback to plain text if HTML rendering fails
         container = Frame(
             TextArea(
@@ -1203,7 +1205,7 @@ def display_instruction_improvement(improved_instruction: str) -> dict:
         config,
         'How would you like to proceed with this improved instruction?',
         ['Accept', 'Almost right, let me modify it', 'Reject'],
-        initial_selection=0
+        initial_selection=0,
     )
 
     # Return structured response instead of boolean
@@ -1211,12 +1213,22 @@ def display_instruction_improvement(improved_instruction: str) -> dict:
         return {'action': 'accept', 'value': 1, 'instruction': improved_instruction}
     elif choice == 1:
         # Return enhanced instruction that tells LLM to ask for modification
-        enhanced_instruction = f"""Tom suggested this improvement to my instruction:
+        enhanced_instruction = f"""Tom suggested this improvement to user's instruction:
 
 {improved_instruction}
 
-However, I indicated this needs modification. Please ask me how I'd like to modify Tom's suggestion and wait for my input before proceeding."""
+However, user indicated this needs modification. So given [Modification Request], ask the user: 'How would you like to modify Tom's suggestion?'"""
 
-        return {'action': 'modify', 'value': 0.5, 'instruction': enhanced_instruction, 'skip_next_tom': True}
+        return {
+            'action': 'modify',
+            'value': 0.5,
+            'instruction': enhanced_instruction,
+            'skip_next_tom': True,
+        }
     else:
-        return {'action': 'reject', 'value': 0, 'instruction': None}
+        original_instruction = original_instruction.replace(
+            '\tom_improve_instruction', 'Guess what I want to do next'
+        )
+        enhanced_instruction = f"User rejected ToM agent's suggestion. Please proceed with user's original instruction (and not ask ToM agent for help this round): {original_instruction}"
+
+        return {'action': 'reject', 'value': 0, 'instruction': enhanced_instruction}
