@@ -186,8 +186,7 @@ jobs:
           poetry run python -m pytest \
             test_settings.py::test_github_token_configuration \
             test_conversation.py::test_conversation_start \
-            test_microagents.py::test_microagent_flarglebargle \
-            test_microagents.py::test_microagent_kubernetes \
+            test_microagents.py::test_microagent_triggers \
             test_browsing_catchphrase.py::test_browsing_catchphrase \
             -v --no-header --capture=no --timeout=900
 
