@@ -72,18 +72,12 @@ export function GitBranchDropdown({
     [options, value],
   );
 
-  // Auto-select default branch when branches are loaded and no branch is selected
+  // Auto-select default branch when no branch is selected and no search is active
   useEffect(() => {
-    if (
-      defaultBranch &&
-      !value &&
-      !debouncedSearch &&
-      options.length > 0 &&
-      options.some((option) => option.value === defaultBranch)
-    ) {
+    if (defaultBranch && !value && !debouncedSearch) {
       onChange?.(defaultBranch);
     }
-  }, [defaultBranch, value, debouncedSearch, options, onChange]);
+  }, [defaultBranch, value, debouncedSearch, onChange]);
 
   const handleChange = (option: SelectOption | null) => {
     onChange?.(option?.value || null);
