@@ -329,7 +329,12 @@ class ActionExecutor:
 
     async def _init_plugin(self, plugin: Plugin):
         assert self.bash_session is not None
-        await plugin.initialize(self.username)
+        # VSCode plugin needs runtime_id for path-based routing when using Gateway API
+        if isinstance(plugin, VSCodePlugin):
+            runtime_id = os.environ.get('RUNTIME_ID')
+            await plugin.initialize(self.username, runtime_id=runtime_id)
+        else:
+            await plugin.initialize(self.username)
         self.plugins[plugin.name] = plugin
         logger.debug(f'Initializing plugin: {plugin.name}')
 
