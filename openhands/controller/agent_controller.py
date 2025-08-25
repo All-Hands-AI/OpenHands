@@ -193,6 +193,8 @@ class AgentController:
         # replay-related
         self._replay_manager = ReplayManager(replay_events)
 
+        self.confirmation_mode = confirmation_mode
+
         # security analyzer for direct access
         self.security_analyzer = security_analyzer
 
@@ -231,13 +233,13 @@ class AgentController:
                 if hasattr(action, 'security_risk'):
                     action.security_risk = ActionSecurityRisk.UNKNOWN
         else:
-            # When no security analyzer is configured, treat all actions as HIGH risk
+            # When no security analyzer is configured, treat all actions as UNKNOWN risk
             # This is a fail-safe approach that ensures confirmation is required
             logger.debug(
-                f'No security analyzer configured, setting HIGH risk for action: {action}'
+                f'No security analyzer configured, setting UNKNOWN risk for action: {action}'
             )
             if hasattr(action, 'security_risk'):
-                action.security_risk = ActionSecurityRisk.HIGH
+                action.security_risk = ActionSecurityRisk.UNKNOWN
 
     def _add_system_message(self):
         for event in self.event_stream.search_events(start_id=self.state.start_id):
@@ -928,6 +930,12 @@ class AgentController:
                     action, 'security_risk', ActionSecurityRisk.UNKNOWN
                 )
 
+                is_high_security_risk = security_risk == ActionSecurityRisk.HIGH
+                is_ask_for_every_action = (
+                    security_risk == ActionSecurityRisk.UNKNOWN
+                    and not self.security_analyzer
+                )
+
                 # If security_risk is HIGH, requires confirmation
                 # UNLESS it is CLI which will handle action risks it itself
                 if self.agent.config.cli_mode:
@@ -938,7 +946,9 @@ class AgentController:
                         ActionConfirmationStatus.AWAITING_CONFIRMATION
                     )
                 # Only HIGH security risk actions require confirmation
-                elif security_risk == ActionSecurityRisk.HIGH:
+                elif (
+                    is_high_security_risk or is_ask_for_every_action
+                ) and self.confirmation_mode:
                     logger.debug(
                         f'[non-CLI mode] Detected HIGH security risk in action: {action}. Ask for confirmation'
                     )
