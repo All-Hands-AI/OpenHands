@@ -14,6 +14,7 @@ interface ConversationData {
   conversationId: string;
   sessionApiKey: string | null;
   baseUrl: string;
+  socketPath: string;
   onEventCallback?: (event: unknown, conversationId: string) => void;
 }
 
@@ -83,6 +84,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
           sessionApiKey,
           providersSet: providers,
           baseUrl,
+          socketPath: conversationData.socketPath,
           onEvent: conversationData.onEventCallback,
         });
 
@@ -152,12 +154,18 @@ export const useCreateConversationAndSubscribeMultiple = () => {
 
             // Only handle immediate post-creation tasks here
             let baseUrl = "";
+            let socketPath: string;
             if (data?.url && !data.url.startsWith("/")) {
-              baseUrl = new URL(data.url).host;
+              const u = new URL(data.url);
+              baseUrl = u.host;
+              const pathBeforeApi =
+                u.pathname.split("/api/conversations")[0] || "/";
+              socketPath = `${pathBeforeApi.replace(/\/$/, "")}/socket.io`;
             } else {
               baseUrl =
                 (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
                 window?.location.host;
+              socketPath = "/socket.io";
             }
 
             // Store conversation data for polling and eventual subscription
@@ -167,6 +175,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
                 conversationId: data.conversation_id,
                 sessionApiKey: data.session_api_key,
                 baseUrl,
+                socketPath,
                 onEventCallback,
               },
             }));
