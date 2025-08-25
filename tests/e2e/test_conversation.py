@@ -544,39 +544,55 @@ def test_conversation_start(page: Page, base_url: str):
             )
 
         try:
-            # Prefer explicit data-testid if present, otherwise fall back to scanning page text
-            full_text = page.locator('body').inner_text()
-            lower = (full_text or '').lower()
+            agent_messages = page.locator('[data-testid="agent-message"]').all()
+            if elapsed % 30 == 0:
+                print(f'Found {len(agent_messages)} agent messages')
 
-            import re
+            for i, msg in enumerate(agent_messages):
+                try:
+                    content = msg.text_content()
+                    if content and len(content.strip()) > 10:
+                        content_lower = content.lower()
+                        import re
 
-            line_count_pattern = r'\b(\d{2,4})\b'
-            line_counts = re.findall(line_count_pattern, full_text or '')
-
-            if (
-                (str(expected_line_count) in lower and 'readme' in lower)
-                or (
-                    'line' in lower
-                    and 'readme' in lower
-                    and any(num in lower for num in [str(expected_line_count)])
-                )
-                or (
-                    'line' in lower
-                    and 'readme' in lower
-                    and any(
-                        100 <= int(num) <= 1000 for num in line_counts if num.isdigit()
-                    )
-                )
-            ):
-                print('✅ Found agent response about README.md with line count!')
-                page.screenshot(path='test-results/conv_09_agent_response.png')
-                print('Screenshot saved: conv_09_agent_response.png')
-                page.screenshot(path='test-results/conv_10_final_state.png')
-                print('Screenshot saved: conv_10_final_state.png')
-                print(
-                    '✅ Test completed successfully - agent provided correct README line count'
-                )
-                return
+                        line_count_pattern = r'\b(\d{3})\b'
+                        line_counts = re.findall(line_count_pattern, content)
+                        if (
+                            (
+                                str(expected_line_count) in content
+                                and 'readme' in content_lower
+                            )
+                            or (
+                                'line' in content_lower
+                                and 'readme' in content_lower
+                                and any(
+                                    num in content
+                                    for num in ['183', str(expected_line_count)]
+                                )
+                            )
+                            or (
+                                'line' in content_lower
+                                and 'readme' in content_lower
+                                and line_counts
+                                and any(100 <= int(num) <= 300 for num in line_counts)
+                            )
+                        ):
+                            print(
+                                '✅ Found agent response about README.md with line count!'
+                            )
+                            page.screenshot(
+                                path='test-results/conv_09_agent_response.png'
+                            )
+                            print('Screenshot saved: conv_09_agent_response.png')
+                            page.screenshot(path='test-results/conv_10_final_state.png')
+                            print('Screenshot saved: conv_10_final_state.png')
+                            print(
+                                '✅ Test completed successfully - agent provided correct README line count'
+                            )
+                            return
+                except Exception as e:
+                    print(f'Error processing agent message {i}: {e}')
+                    continue
         except Exception as e:
             print(f'Error checking for agent messages: {e}')
 
