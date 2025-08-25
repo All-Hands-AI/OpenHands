@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
 import { I18nKey } from "#/i18n/declaration";
@@ -60,11 +60,8 @@ export function ConversationNameContextMenu({
     <ContextMenu
       ref={ref}
       testId="conversation-name-context-menu"
-      className={cn(
-        "flex flex-col gap-2 left-0 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1",
-        position === "top" && "bottom-full",
-        position === "bottom" && "top-full",
-      )}
+      position={position}
+      alignment="left"
     >
       {onRename && (
         <ContextMenuListItem

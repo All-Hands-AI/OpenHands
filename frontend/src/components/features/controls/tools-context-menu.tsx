@@ -4,7 +4,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { cn } from "#/utils/utils";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
 import { I18nKey } from "#/i18n/declaration";
@@ -48,7 +48,9 @@ export function ToolsContextMenu({
     <ContextMenu
       ref={ref}
       testId="tools-context-menu"
-      className="flex flex-col gap-2 left-[-16px] absolute mb-2 z-50 text-white bg-tertiary rounded-[6px] py-[6px] px-1 bottom-full overflow-visible"
+      position="top"
+      alignment="left"
+      className="left-[-16px] mb-2 bottom-full overflow-visible"
     >
       {/* Git Tools */}
       {showGitTools && (
