@@ -21,7 +21,6 @@ import { processFiles, processImages } from "#/utils/file-processing";
 interface InteractiveChatBoxProps {
   onSubmit: (message: string, images: File[], files: File[]) => void;
   onStop: () => void;
-  value?: string;
   isWaitingForUserInput: boolean;
   hasSubstantiveAgentActions: boolean;
   optimisticUserMessage: boolean;
@@ -30,7 +29,6 @@ interface InteractiveChatBoxProps {
 export function InteractiveChatBox({
   onSubmit,
   onStop,
-  value,
   isWaitingForUserInput,
   hasSubstantiveAgentActions,
   optimisticUserMessage,
@@ -160,7 +158,6 @@ export function InteractiveChatBox({
         onSubmit={handleSubmit}
         onStop={onStop}
         onFilesPaste={handleUpload}
-        value={value}
         conversationStatus={conversation?.status || null}
       />
       <div className="mt-4">
