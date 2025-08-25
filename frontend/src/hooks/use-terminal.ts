@@ -27,26 +27,16 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
 };
 
-const renderCommand = (
-  command: Command,
-  terminal: Terminal,
-  isUserInput: boolean = false,
-) => {
+const renderCommand = (command: Command, terminal: Terminal) => {
   // Skip completion indicator when replaying commands
   if (
     command.type === "output" &&
     !command.isPartial &&
     command.content === TerminalStreamService.END_OF_OUTPUT_INDICATOR
   )
-    return;
+    return; // Skip completion indicator when replaying commands
 
-  const { content, type } = command;
-
-  // Skip rendering user input commands that come from the event stream
-  // as they've already been displayed in the terminal as the user typed
-  if (type === "input" && isUserInput) {
-    return;
-  }
+  const { content } = command;
 
   terminal.writeln(
     parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
@@ -177,7 +167,7 @@ export const useTerminal = ({
           }
           // Don't pass isUserInput=true here because we're initializing the terminal
           // and need to show all previous commands
-          renderCommand(commands[i], terminal.current, false);
+          renderCommand(commands[i], terminal.current);
         }
         lastCommandIndex.current = commands.length;
       }
@@ -198,10 +188,14 @@ export const useTerminal = ({
       let lastCommand;
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
         lastCommand = commands[i];
-        // Pass true for isUserInput to skip rendering user input commands
-        // that have already been displayed as the user typed
-        // The renderCommand function will also skip completion indicators
-        renderCommand(commands[i], terminal.current, true);
+        // Skip the output indicating completion
+        if (
+          commands[i].type !== "output" ||
+          commands[i].isPartial ||
+          commands[i].content !== TerminalStreamService.END_OF_OUTPUT_INDICATOR
+        ) {
+          renderCommand(commands[i], terminal.current);
+        }
       }
       lastCommandIndex.current = commands.length;
 
