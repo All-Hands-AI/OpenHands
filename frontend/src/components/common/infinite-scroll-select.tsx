@@ -19,6 +19,7 @@ export interface InfiniteScrollSelectProps {
   hasNextPage?: boolean;
   onLoadMore?: () => void;
   onChange?: (option: SelectOption | null) => void;
+  onInputChange?: (inputValue: string) => void;
 }
 
 function MenuList({
@@ -74,6 +75,7 @@ export function InfiniteScrollSelect({
   hasNextPage = false,
   onLoadMore,
   onChange,
+  onInputChange,
 }: InfiniteScrollSelectProps) {
   const customStyles = useMemo(() => getCustomStyles<SelectOption>(), []);
 
@@ -89,6 +91,7 @@ export function InfiniteScrollSelect({
         isSearchable={isSearchable}
         isLoading={isLoading}
         onChange={onChange}
+        onInputChange={(newValue) => onInputChange?.(newValue)}
         styles={customStyles}
         className="w-full"
         components={{ MenuList }}

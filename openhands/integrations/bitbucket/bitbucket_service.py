@@ -591,6 +591,38 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             total_count=total_count,
         )
 
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches by name using Bitbucket API with `q` param."""
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        owner = parts[-2]
+        repo = parts[-1]
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
+        # Bitbucket filtering: name ~ "query"
+        params = {
+            'pagelen': per_page,
+            'q': f'name~"{query}"',
+            'sort': '-target.date',
+        }
+        response, _ = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch in response.get('values', []):
+            branches.append(
+                Branch(
+                    name=branch.get('name', ''),
+                    commit_sha=branch.get('target', {}).get('hash', ''),
+                    protected=False,
+                    last_push_date=branch.get('target', {}).get('date', None),
+                )
+            )
+        return branches
+
     async def create_pr(
         self,
         repo_name: str,

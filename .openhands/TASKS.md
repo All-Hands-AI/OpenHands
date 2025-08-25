@@ -9,5 +9,3 @@
 4. ✅ Update API types to include pagination metadata
 
 5. ✅ Test the complete pagination implementation
-
-

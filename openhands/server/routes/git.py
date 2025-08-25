@@ -12,6 +12,7 @@ from openhands.integrations.provider import (
 )
 from openhands.integrations.service_types import (
     AuthenticationError,
+    Branch,
     PaginatedBranchesResponse,
     ProviderType,
     Repository,
@@ -177,6 +178,49 @@ async def search_repositories(
                 selected_provider, query, per_page, sort, order
             )
             return repos
+
+        except AuthenticationError as e:
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        except UnknownException as e:
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    logger.info(
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+    )
+    return JSONResponse(
+        content='Git provider token required.',
+        status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
+@app.get('/search/branches', response_model=list[Branch])
+async def search_branches(
+    repository: str,
+    query: str,
+    per_page: int = 30,
+    selected_provider: ProviderType | None = None,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+) -> list[Branch] | JSONResponse:
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+        )
+        try:
+            branches: list[Branch] = await client.search_branches(
+                selected_provider, repository, query, per_page
+            )
+            return branches
 
         except AuthenticationError as e:
             return JSONResponse(

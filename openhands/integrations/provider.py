@@ -20,6 +20,7 @@ from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
 from openhands.integrations.service_types import (
     AuthenticationError,
+    Branch,
     GitService,
     InstallationsService,
     MicroagentParseError,
@@ -234,6 +235,33 @@ class ProviderHandler:
                 logger.warning(f'Error fetching repos from {provider}: {e}')
 
         return tasks
+
+    async def search_branches(
+        self,
+        selected_provider: ProviderType | None,
+        repository: str,
+        query: str,
+        per_page: int = 30,
+    ) -> list[Branch]:
+        """Search for branches within a repository using the appropriate provider service."""
+        if selected_provider:
+            service = self._get_service(selected_provider)
+            try:
+                return await service.search_branches(repository, query, per_page)
+            except Exception as e:
+                logger.warning(
+                    f'Error searching branches from selected provider {selected_provider}: {e}'
+                )
+                return []
+
+        # If provider not specified, determine provider by verifying repository access
+        try:
+            repo_details = await self.verify_repo_provider(repository)
+            service = self._get_service(repo_details.git_provider)
+            return await service.search_branches(repository, query, per_page)
+        except Exception as e:
+            logger.warning(f'Error searching branches for {repository}: {e}')
+            return []
 
     async def search_repositories(
         self,
