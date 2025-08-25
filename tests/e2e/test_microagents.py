@@ -3,6 +3,8 @@ E2E: Microagent trigger tests (flarglebargle, kubernetes)
 
 This test verifies that microagents are triggered correctly via the UI.
 It follows the same patterns as test_conversation_start.py.
+
+Tests microagent activation by sending trigger words and checking agent responses.
 """
 
 import os
