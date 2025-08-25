@@ -47,19 +47,14 @@ export function GitBranchDropdown({
       label: branch.name,
     }));
 
-    // When not searching, prioritize the default branch by moving it to the front
-    if (defaultBranch && !debouncedSearch) {
-      const defaultBranchIndex = branchOptions.findIndex(
-        (option) => option.value === defaultBranch,
-      );
-      if (defaultBranchIndex > 0) {
-        const defaultBranchOption = branchOptions[defaultBranchIndex];
-        branchOptions.splice(defaultBranchIndex, 1);
-        branchOptions.unshift(defaultBranchOption);
-      }
-    }
+    onChange?.(defaultBranch || null);
 
-    return branchOptions;
+    return defaultBranch
+      ? [
+          { value: defaultBranch, label: defaultBranch },
+          ...branchOptions.filter((opt) => opt.value !== defaultBranch),
+        ]
+      : branchOptions;
   }, [data, debouncedSearch, searchResults, defaultBranch]);
 
   const hasNoBranches =
@@ -71,13 +66,6 @@ export function GitBranchDropdown({
     () => options.find((option) => option.value === value) || null,
     [options, value],
   );
-
-  // Auto-select default branch when no branch is selected and no search is active
-  useEffect(() => {
-    if (defaultBranch && !value && !debouncedSearch) {
-      onChange?.(defaultBranch);
-    }
-  }, [defaultBranch, value, debouncedSearch, onChange]);
 
   const handleChange = (option: SelectOption | null) => {
     onChange?.(option?.value || null);
