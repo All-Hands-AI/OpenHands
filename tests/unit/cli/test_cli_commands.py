@@ -4,8 +4,12 @@ import pytest
 from prompt_toolkit.formatted_text import HTML
 
 from openhands.cli.commands import (
+    display_conversation_page,
     display_mcp_servers,
+    get_conversation_folders_by_time,
+    get_initial_user_message,
     handle_commands,
+    handle_conv_command,
     handle_exit_command,
     handle_help_command,
     handle_init_command,
@@ -14,6 +18,8 @@ from openhands.cli.commands import (
     handle_resume_command,
     handle_settings_command,
     handle_status_command,
+    truncate_message,
+    view_conversation_details,
 )
 from openhands.cli.tui import UsageMetrics
 from openhands.core.config import OpenHandsConfig
@@ -156,6 +162,20 @@ class TestHandleCommands:
         )
 
         mock_handle_mcp.assert_called_once_with(mock_dependencies['config'])
+        assert close_repl is False
+        assert reload_microagents is False
+        assert new_session is False
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.handle_conv_command')
+    async def test_handle_conversations_command(
+        self, mock_handle_conv, mock_dependencies
+    ):
+        close_repl, reload_microagents, new_session, _ = await handle_commands(
+            '/conversations', **mock_dependencies
+        )
+
+        mock_handle_conv.assert_called_once_with(mock_dependencies['config'])
         assert close_repl is False
         assert reload_microagents is False
         assert new_session is False
@@ -635,3 +655,165 @@ class TestMCPErrorHandling:
         handle_mcp_errors_command()
 
         mock_display_errors.assert_called_once()
+
+
+class TestConversationCommands:
+    """Test conversation history commands."""
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.get_conversation_folders_by_time')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_handle_conv_command_no_conversations(
+        self, mock_print, mock_get_folders
+    ):
+        """Test handle_conv_command with no conversations found."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_get_folders.return_value = []
+
+        await handle_conv_command(config)
+
+        mock_get_folders.assert_called_once_with(config)
+        # Check that the function was called with the expected message
+        calls = [call.args[0] for call in mock_print.call_args_list]
+        assert any('No conversations found' in str(call) for call in calls)
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.get_conversation_folders_by_time')
+    @patch('openhands.cli.commands.display_conversation_page')
+    @patch('openhands.cli.commands.cli_confirm')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_handle_conv_command_with_conversations(
+        self, mock_print, mock_cli_confirm, mock_display_page, mock_get_folders
+    ):
+        """Test handle_conv_command with conversations and go back action."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_get_folders.return_value = [
+            ('conv-1', 1640995200.0),
+            ('conv-2', 1640995100.0),
+        ]
+        mock_cli_confirm.return_value = 1  # Go back (assuming it's the last option)
+
+        await handle_conv_command(config)
+
+        mock_get_folders.assert_called_once_with(config)
+        mock_display_page.assert_called_once()
+        mock_cli_confirm.assert_called_once()
+
+    def test_get_conversation_folders_by_time_success(self):
+        """Test get_conversation_folders_by_time with successful folder retrieval."""
+        # This is more of an integration test - we'll just test that the function
+        # handles the case where no sessions directory exists gracefully
+        config = MagicMock(spec=OpenHandsConfig)
+        config.file_store = 'local'
+        config.file_store_path = '/nonexistent/path'
+
+        result = get_conversation_folders_by_time(config)
+
+        # Since the path doesn't exist, it should return an empty list
+        assert result == []
+
+    @patch('openhands.storage.get_file_store')
+    def test_get_conversation_folders_by_time_no_sessions(self, mock_get_file_store):
+        """Test get_conversation_folders_by_time with no sessions directory."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_get_file_store.side_effect = Exception('No sessions')
+
+        result = get_conversation_folders_by_time(config)
+
+        assert result == []
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.get_initial_user_message')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_display_conversation_page(self, mock_print, mock_get_message):
+        """Test display_conversation_page with conversation data."""
+        config = MagicMock(spec=OpenHandsConfig)
+        conversations = [('conv-1', 1640995200.0), ('conv-2', 1640995100.0)]
+        mock_get_message.side_effect = ['Hello world', 'Fix this bug']
+
+        await display_conversation_page(config, conversations, 1)
+
+        assert mock_get_message.call_count == 2
+        assert mock_print.call_count >= 3  # Header + 2 conversations
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.collect_input')
+    @patch('openhands.cli.commands.get_user_messages_from_conversation')
+    @patch('openhands.cli.commands.print_formatted_text')
+    async def test_view_conversation_details_success(
+        self, mock_print, mock_get_messages, mock_collect_input
+    ):
+        """Test view_conversation_details with successful data retrieval."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_collect_input.return_value = 'conv-123'
+        mock_get_messages.return_value = [
+            ('2023-01-01T10:00:00Z', 'Hello'),
+            ('2023-01-01T10:05:00Z', 'How are you?'),
+        ]
+
+        await view_conversation_details(config)
+
+        mock_collect_input.assert_called_once_with(config, 'Enter conversation ID:')
+        mock_get_messages.assert_called_once_with(config, 'conv-123')
+        assert mock_print.call_count >= 3  # Header + 2 messages
+
+    @pytest.mark.asyncio
+    @patch('openhands.cli.commands.collect_input')
+    async def test_view_conversation_details_cancelled(self, mock_collect_input):
+        """Test view_conversation_details when user cancels input."""
+        config = MagicMock(spec=OpenHandsConfig)
+        mock_collect_input.return_value = None  # User cancelled
+
+        await view_conversation_details(config)
+
+        mock_collect_input.assert_called_once_with(config, 'Enter conversation ID:')
+
+    @pytest.mark.asyncio
+    async def test_get_initial_user_message_success(self):
+        """Test get_initial_user_message with successful message retrieval."""
+        config = MagicMock(spec=OpenHandsConfig)
+        config.file_store = 'local'
+        config.file_store_path = '/tmp/test'
+        conversation_id = 'conv-123'
+
+        result = await get_initial_user_message(config, conversation_id)
+
+        # Since we don't have actual conversation data, it should return the error message
+        assert result in ['No initial message found', 'Error loading message']
+
+    @pytest.mark.asyncio
+    @patch('openhands.storage.get_file_store')
+    async def test_get_initial_user_message_error(self, mock_get_file_store):
+        """Test get_initial_user_message with error handling."""
+        config = MagicMock(spec=OpenHandsConfig)
+        conversation_id = 'conv-123'
+
+        mock_get_file_store.side_effect = Exception('File not found')
+
+        result = await get_initial_user_message(config, conversation_id)
+
+        assert result == 'Error loading message'
+
+    def test_truncate_message_short(self):
+        """Test truncate_message with short message."""
+        message = 'Hello world'
+        result = truncate_message(message, 100)
+        assert result == 'Hello world'
+
+    def test_truncate_message_long(self):
+        """Test truncate_message with long message."""
+        message = 'This is a very long message that should be truncated'
+        result = truncate_message(message, 20)
+        assert result == 'This is a very long ...'
+        assert len(result) == 23  # 20 + '...'
+
+    def test_truncate_message_with_newlines(self):
+        """Test truncate_message with newlines."""
+        message = 'Hello\nworld\rtest'
+        result = truncate_message(message, 100)
+        assert result == 'Hello↵world↵test'
+
+        # Test with truncation and newlines
+        message = 'Hello\nworld\nthis is a long message'
+        result = truncate_message(message, 15)
+        assert result == 'Hello↵world↵thi...'

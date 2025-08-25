@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Spinner } from "@heroui/react";
+import { Spinner } from "#/components/shared/spinner";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
@@ -86,7 +86,7 @@ export function MicroagentManagementRepoMicroagents({
   if (isLoading) {
     return (
       <div className="pb-4 flex justify-center">
-        <Spinner size="sm" data-testid="loading-spinner" />
+        <Spinner size="small" data-testid="loading-spinner" />
       </div>
     );
   }

@@ -1,6 +1,8 @@
 import asyncio
 import os
 import sys
+import threading
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +19,7 @@ from openhands.cli.settings import (
     modify_llm_settings_basic,
     modify_search_api_settings,
 )
+from openhands.cli.spinner import show_loading_spinner
 from openhands.cli.tui import (
     COLOR_GREY,
     UsageMetrics,
@@ -50,6 +53,9 @@ from openhands.events.action import (
     MessageAction,
 )
 from openhands.events.stream import EventStream
+from openhands.storage import get_file_store
+from openhands.storage.conversation.file_conversation_store import FileConversationStore
+from openhands.storage.local import LocalFileStore
 from openhands.storage.settings.file_settings_store import FileSettingsStore
 
 
@@ -165,6 +171,8 @@ async def handle_commands(
         )
     elif command == '/mcp':
         await handle_mcp_command(config)
+    elif command == '/conversations':
+        await handle_conv_command(config)
     else:
         close_repl = True
         action = MessageAction(content=command)
@@ -882,3 +890,291 @@ async def remove_mcp_server(config: OpenHandsConfig) -> None:
             restart_cli()
     else:
         print_formatted_text(f'Failed to remove {server_type} server "{identifier}".')
+
+
+async def handle_conv_command(config: OpenHandsConfig) -> None:
+    """Handle the /conversations command to view conversation history."""
+    # Show loading animation while getting conversations
+    stop_event = threading.Event()
+    spinner_thread = threading.Thread(target=show_loading_spinner, args=(stop_event,))
+    spinner_thread.start()
+
+    try:
+        # Get conversation folders sorted by creation time
+        conversation_folders = get_conversation_folders_by_time(config)
+    finally:
+        # Stop the spinner
+        stop_event.set()
+        spinner_thread.join()
+
+    if not conversation_folders:
+        print_formatted_text(HTML('<ansired>No conversations found.</ansired>'))
+        return
+
+    # Start with first page
+    current_page = 0
+    page_size = 10
+
+    while True:
+        # Display current page of conversations
+        start_idx = current_page * page_size
+        end_idx = start_idx + page_size
+        page_conversations = conversation_folders[start_idx:end_idx]
+
+        if not page_conversations:
+            print_formatted_text(HTML('<ansired>No more conversations.</ansired>'))
+            current_page = max(0, current_page - 1)
+            continue
+
+        # Display conversations for current page
+        await display_conversation_page(config, page_conversations, current_page + 1)
+
+        # Show navigation options
+        options = []
+        if current_page > 0:
+            options.append('Previous page')
+        if end_idx < len(conversation_folders):
+            options.append('Next page')
+        options.extend(
+            [
+                'View conversation details',
+                'Go back',
+            ]
+        )
+
+        action = cli_confirm(
+            config,
+            f'Conversation History (Page {current_page + 1})',
+            options,
+        )
+
+        if 'Next page' in options and action == options.index('Next page'):
+            current_page += 1
+        elif 'Previous page' in options and action == options.index('Previous page'):
+            current_page -= 1
+        elif action == options.index('View conversation details'):
+            await view_conversation_details(config)
+        else:  # Go back
+            break
+
+
+def get_conversation_folders_by_time(
+    config: OpenHandsConfig,
+) -> list[tuple[str, float]]:
+    """Get conversation folders sorted by creation time (most recent first)."""
+    try:
+        # Get the sessions directory path
+        file_store = get_file_store(config.file_store, config.file_store_path)
+
+        # Only works with LocalFileStore that has a root attribute
+        if not isinstance(file_store, LocalFileStore):
+            return []
+
+        sessions_path = Path(file_store.root) / 'sessions'
+
+        if not sessions_path.exists():
+            return []
+
+        # Get all conversation folders with their creation times
+        conversation_folders = []
+        for folder in sessions_path.iterdir():
+            if folder.is_dir():
+                try:
+                    # Use folder creation time (or modification time as fallback)
+                    creation_time = folder.stat().st_ctime
+                    conversation_folders.append((folder.name, creation_time))
+                except OSError:
+                    continue
+
+        # Sort by creation time (most recent first)
+        conversation_folders.sort(key=lambda x: x[1], reverse=True)
+        return conversation_folders
+
+    except Exception:
+        return []
+
+
+async def display_conversation_page(
+    config: OpenHandsConfig, conversations: list[tuple[str, float]], page_num: int
+) -> None:
+    """Display a page of conversations with their details."""
+    print_formatted_text(f'Recent Conversations (Page {page_num}):')
+    print()
+
+    for i, (conversation_id, creation_time) in enumerate(conversations, 1):
+        # Get initial user message
+        initial_message = await get_initial_user_message(config, conversation_id)
+        if initial_message:
+            truncated_message = truncate_message(initial_message, 100)
+        else:
+            truncated_message = '[No user message found]'
+
+        # Format creation time
+        created_time = datetime.fromtimestamp(creation_time).isoformat()
+
+        print_formatted_text(
+            HTML(
+                f'<ansigreen>{i}.</ansigreen> '
+                f'<ansiyellow>[{conversation_id}]</ansiyellow> '
+                f'<ansiwhite>[Created: {created_time}]</ansiwhite>\n'
+                f'   Initial message: {truncated_message}\n'
+            )
+        )
+
+
+async def list_conversations(
+    config: OpenHandsConfig, page_id: str | None = None
+) -> None:
+    """List recent conversations with pagination."""
+    try:
+        conversation_store = await FileConversationStore.get_instance(config, None)
+        result = await conversation_store.search(page_id=page_id, limit=10)
+
+        if not result.results:
+            print_formatted_text('No conversations found.')
+            return
+
+        print_formatted_text('\n📋 Recent Conversations:')
+        print_formatted_text('=' * 80)
+
+        for i, conv in enumerate(result.results, 1):
+            # Get initial user message
+            initial_message = await get_initial_user_message(
+                config, conv.conversation_id
+            )
+            truncated_message = truncate_message(initial_message, 100)
+
+            created_at = conv.created_at or 'Unknown'
+            print_formatted_text(
+                f'{i:2d}. [{conv.conversation_id}] [{created_at}] '
+                f'Initial user message: {truncated_message}'
+            )
+
+        print_formatted_text('=' * 80)
+
+        # Handle pagination
+        if result.next_page_id:
+            action = cli_confirm(
+                config,
+                'More conversations available',
+                ['Next page', 'Previous page', 'Go back'],
+            )
+            if action == 0:  # Next page
+                await list_conversations(config, result.next_page_id)
+            elif action == 1:  # Previous page (simplified - just go back to first page)
+                await list_conversations(config, None)
+
+    except Exception as e:
+        print_formatted_text(f'❌ Error listing conversations: {e}')
+
+
+async def view_conversation_details(config: OpenHandsConfig) -> None:
+    """View details of a specific conversation."""
+    conversation_id = await collect_input(config, 'Enter conversation ID:')
+    if not conversation_id:
+        return
+
+    try:
+        # Get all user messages from the conversation
+        user_messages = await get_user_messages_from_conversation(
+            config, conversation_id
+        )
+
+        if not user_messages:
+            print_formatted_text(
+                f'No user messages found in conversation {conversation_id}'
+            )
+            return
+
+        print_formatted_text(f'\n💬 User Messages in Conversation {conversation_id}:')
+        print_formatted_text('=' * 80)
+
+        for i, message in enumerate(user_messages, 1):
+            timestamp = message.get('timestamp', 'Unknown')
+            content = message.get('content', '')
+            # Replace newlines with visual symbols for better display
+            content = content.replace('\n', '↵').replace('\r', '↵')
+            print_formatted_text(f'{i:2d}. [{timestamp}] {content}')
+
+        print_formatted_text('=' * 80)
+
+    except Exception as e:
+        print_formatted_text(f'❌ Error viewing conversation details: {e}')
+
+
+async def get_initial_user_message(
+    config: OpenHandsConfig, conversation_id: str
+) -> str:
+    """Get the initial user message from a conversation."""
+    try:
+        from openhands.events import EventSource
+        from openhands.events.action.message import MessageAction
+        from openhands.events.event_store import EventStore
+        from openhands.storage import get_file_store
+
+        file_store = get_file_store(
+            file_store_type=config.file_store,
+            file_store_path=config.file_store_path,
+        )
+
+        event_store = EventStore(
+            sid=conversation_id,
+            file_store=file_store,
+            user_id=None,
+        )
+
+        # Search for the first user message
+        for event in event_store.search_events(start_id=0, limit=50):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                return event.content
+
+        return 'No initial message found'
+    except Exception:
+        return 'Error loading message'
+
+
+async def get_user_messages_from_conversation(
+    config: OpenHandsConfig, conversation_id: str
+) -> list[dict]:
+    """Get all user messages from a conversation."""
+    try:
+        from openhands.events import EventSource
+        from openhands.events.action.message import MessageAction
+        from openhands.events.event_store import EventStore
+        from openhands.storage import get_file_store
+
+        file_store = get_file_store(
+            file_store_type=config.file_store,
+            file_store_path=config.file_store_path,
+        )
+
+        event_store = EventStore(
+            sid=conversation_id,
+            file_store=file_store,
+            user_id=None,
+        )
+
+        user_messages = []
+        for event in event_store.search_events(start_id=0):
+            if isinstance(event, MessageAction) and event.source == EventSource.USER:
+                user_messages.append(
+                    {
+                        'timestamp': event.timestamp if event.timestamp else 'Unknown',
+                        'content': event.content,
+                    }
+                )
+
+        return user_messages
+    except Exception as e:
+        print_formatted_text(f'Error loading messages: {e}')
+        return []
+
+
+def truncate_message(message: str, max_length: int) -> str:
+    """Truncate a message to a maximum length and replace newlines with visual symbols."""
+    # Replace actual newlines with visual newline symbols
+    message = message.replace('\n', '↵').replace('\r', '↵')
+
+    if len(message) <= max_length:
+        return message
+    return message[:max_length] + '...'
