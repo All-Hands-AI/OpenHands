@@ -9,6 +9,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.queries import (
+    search_branches_graphql_query,
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
 )
@@ -662,36 +663,58 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
     async def search_branches(
         self, repository: str, query: str, per_page: int = 30
     ) -> list[Branch]:
-        """Search branches by name, filtering client-side as GitHub doesn't support search here."""
-        url = f'{self.BASE_URL}/repos/{repository}/branches'
-        params = {'per_page': str(min(max(per_page, 1), 100))}
-        response, _ = await self._make_request(url, params)
+        """Search branches by name using GitHub GraphQL with a partial query."""
+        # Clamp per_page to GitHub GraphQL limits
+        per_page = min(max(per_page, 1), 100)
 
-        q = (query or '').lower()
+        # Extract owner and repo name from the repository string
+        parts = repository.split('/')
+        if len(parts) < 2:
+            return []
+        owner, name = parts[-2], parts[-1]
+
+        variables = {
+            'owner': owner,
+            'name': name,
+            'query': query or '',
+            'perPage': per_page,
+        }
+
+        try:
+            result = await self.execute_graphql_query(
+                search_branches_graphql_query, variables
+            )
+        except Exception:
+            # Fallback to empty result on any GraphQL error
+            return []
+
+        repo = result.get('data', {}).get('repository')
+        if not repo or not repo.get('refs'):
+            return []
+
         branches: list[Branch] = []
-        for branch_data in response:
-            name = branch_data.get('name', '')
-            if q and q not in name.lower():
-                continue
-
+        for node in repo['refs'].get('nodes', []):
+            bname = node.get('name') or ''
+            target = node.get('target') or {}
+            typename = target.get('__typename')
+            commit_sha = ''
             last_push_date = None
-            if branch_data.get('commit') and branch_data['commit'].get('commit'):
-                commit_info = branch_data['commit']['commit']
-                if commit_info.get('committer') and commit_info['committer'].get(
-                    'date'
-                ):
-                    last_push_date = commit_info['committer']['date']
+            if typename == 'Commit':
+                commit_sha = target.get('oid', '') or ''
+                last_push_date = target.get('committedDate')
+
+            protected = node.get('branchProtectionRule') is not None
 
             branches.append(
                 Branch(
-                    name=name,
-                    commit_sha=branch_data.get('commit', {}).get('sha', ''),
-                    protected=branch_data.get('protected', False),
+                    name=bname,
+                    commit_sha=commit_sha,
+                    protected=protected,
                     last_push_date=last_push_date,
                 )
             )
 
-        return branches[:per_page]
+        return branches
 
     async def create_pr(
         self,
