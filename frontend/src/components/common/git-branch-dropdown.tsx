@@ -6,6 +6,7 @@ import { InfiniteScrollSelect, SelectOption } from "./infinite-scroll-select";
 
 export interface GitBranchDropdownProps {
   repositoryName?: string | null;
+  defaultBranch?: string | null;
   value?: string | null;
   placeholder?: string;
   className?: string;
@@ -16,6 +17,7 @@ export interface GitBranchDropdownProps {
 
 export function GitBranchDropdown({
   repositoryName,
+  defaultBranch,
   value,
   placeholder = "Select branch...",
   className,
@@ -38,13 +40,27 @@ export function GitBranchDropdown({
       return searchResults.map((b) => ({ value: b.name, label: b.name }));
     }
     if (!data?.pages) return [];
-    return data.pages.flatMap((page) =>
-      page.branches.map((branch) => ({
-        value: branch.name,
-        label: branch.name,
-      })),
-    );
-  }, [data, debouncedSearch, searchResults]);
+    
+    const allBranches = data.pages.flatMap((page) => page.branches);
+    const branchOptions = allBranches.map((branch) => ({
+      value: branch.name,
+      label: branch.name,
+    }));
+    
+    // When not searching, prioritize the default branch by moving it to the front
+    if (defaultBranch && !debouncedSearch) {
+      const defaultBranchIndex = branchOptions.findIndex(
+        (option) => option.value === defaultBranch
+      );
+      if (defaultBranchIndex > 0) {
+        const defaultBranchOption = branchOptions[defaultBranchIndex];
+        branchOptions.splice(defaultBranchIndex, 1);
+        branchOptions.unshift(defaultBranchOption);
+      }
+    }
+    
+    return branchOptions;
+  }, [data, debouncedSearch, searchResults, defaultBranch]);
 
   const hasNoBranches =
     !isLoading &&
