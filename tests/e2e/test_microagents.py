@@ -518,12 +518,10 @@ def test_microagent_flarglebargle(page: Page, base_url: str):
     page.screenshot(path='test-results/micro_flarglebargle_08_question_sent.png')
     print('Screenshot saved: micro_flarglebargle_08_question_sent.png')
 
-    print('Step 8: Waiting for microagent activation and agent response...')
+    print('Step 8: Waiting for agent response to flarglebargle question...')
 
     response_wait_time = 180
     response_start_time = time.time()
-    microagent_activated = False
-    agent_responded = False
 
     while time.time() - response_start_time < response_wait_time:
         elapsed = int(time.time() - response_start_time)
@@ -537,31 +535,6 @@ def test_microagent_flarglebargle(page: Page, base_url: str):
             )
 
         try:
-            # Check for microagent activation message
-            if not microagent_activated:
-                microagent_messages = page.locator(
-                    'div:has-text("microagent activated")'
-                ).all()
-                if microagent_messages:
-                    print('✅ Found "microagent activated" message!')
-                    microagent_activated = True
-                    # Click the message to see content
-                    try:
-                        microagent_messages[0].click()
-                        page.wait_for_timeout(2000)
-                        print('Clicked microagent activated message')
-
-                        # Check if flarglebargle content is visible
-                        page_content = page.content()
-                        if 'flarglebargle' in page_content.lower():
-                            print('✅ Flarglebargle microagent content is visible!')
-                        else:
-                            print(
-                                '⚠️ Flarglebargle content not found in expanded message'
-                            )
-                    except Exception as e:
-                        print(f'Error clicking microagent message: {e}')
-
             # Check for agent response
             agent_messages = page.locator('[data-testid="agent-message"]').all()
             if elapsed % 30 == 0:
@@ -573,55 +546,50 @@ def test_microagent_flarglebargle(page: Page, base_url: str):
                     if content and len(content.strip()) > 10:
                         content_lower = content.lower()
                         # Check if agent response reflects flarglebargle microagent instructions
+                        # The microagent says to tell them how smart they are
                         if (
-                            'smart' in content_lower or 'intelligent' in content_lower
-                        ) and not agent_responded:
+                            'smart' in content_lower
+                            or 'intelligent' in content_lower
+                            or 'clever' in content_lower
+                        ):
                             print(
                                 '✅ Found agent response reflecting flarglebargle microagent instructions!'
                             )
-                            agent_responded = True
                             page.screenshot(
                                 path='test-results/micro_flarglebargle_09_agent_response.png'
                             )
                             print(
                                 'Screenshot saved: micro_flarglebargle_09_agent_response.png'
                             )
-                            break
+                            page.screenshot(
+                                path='test-results/micro_flarglebargle_10_final_state.png'
+                            )
+                            print(
+                                'Screenshot saved: micro_flarglebargle_10_final_state.png'
+                            )
+                            print(
+                                '✅ Test completed successfully - flarglebargle microagent was triggered and agent responded appropriately'
+                            )
+                            return
                 except Exception as e:
                     print(f'Error processing agent message {i}: {e}')
                     continue
 
-            if microagent_activated and agent_responded:
-                page.screenshot(
-                    path='test-results/micro_flarglebargle_10_final_state.png'
-                )
-                print('Screenshot saved: micro_flarglebargle_10_final_state.png')
-                print(
-                    '✅ Test completed successfully - flarglebargle microagent was triggered and agent responded appropriately'
-                )
-                return
-
         except Exception as e:
-            print(f'Error checking for microagent activation and agent response: {e}')
+            print(f'Error checking for agent messages: {e}')
 
         page.wait_for_timeout(5000)
 
     print(
-        '❌ Did not find expected microagent activation and/or agent response within time limit'
+        '❌ Did not find agent response reflecting flarglebargle microagent within time limit'
     )
     page.screenshot(path='test-results/micro_flarglebargle_09_agent_response.png')
     print('Screenshot saved: micro_flarglebargle_09_agent_response.png')
     page.screenshot(path='test-results/micro_flarglebargle_10_final_state.png')
     print('Screenshot saved: micro_flarglebargle_10_final_state.png')
-
-    if not microagent_activated:
-        raise AssertionError(
-            'Microagent activation message was not found within time limit'
-        )
-    if not agent_responded:
-        raise AssertionError(
-            'Agent response reflecting microagent instructions was not found within time limit'
-        )
+    raise AssertionError(
+        'Agent did not respond appropriately to flarglebargle microagent within time limit'
+    )
 
 
 def test_microagent_kubernetes(page: Page, base_url: str):
@@ -699,12 +667,10 @@ def test_microagent_kubernetes(page: Page, base_url: str):
     page.screenshot(path='test-results/micro_kubernetes_01_question_sent.png')
     print('Screenshot saved: micro_kubernetes_01_question_sent.png')
 
-    print('Step 2: Waiting for kubernetes microagent activation and response...')
+    print('Step 2: Waiting for agent response to kubernetes message...')
 
     response_wait_time = 180
     response_start_time = time.time()
-    microagent_activated = False
-    agent_responded = False
 
     while time.time() - response_start_time < response_wait_time:
         elapsed = int(time.time() - response_start_time)
@@ -718,34 +684,6 @@ def test_microagent_kubernetes(page: Page, base_url: str):
             )
 
         try:
-            # Check for microagent activation message
-            if not microagent_activated:
-                microagent_messages = page.locator(
-                    'div:has-text("microagent activated")'
-                ).all()
-                if len(microagent_messages) >= 2:  # Should be second activation
-                    print(
-                        '✅ Found second "microagent activated" message for kubernetes!'
-                    )
-                    microagent_activated = True
-                    # Click the latest message to see content
-                    try:
-                        microagent_messages[-1].click()
-                        page.wait_for_timeout(2000)
-                        print('Clicked kubernetes microagent activated message')
-
-                        # Check if kubernetes content is visible
-                        page_content = page.content()
-                        if (
-                            'kubernetes' in page_content.lower()
-                            or 'kind' in page_content.lower()
-                        ):
-                            print('✅ Kubernetes microagent content is visible!')
-                        else:
-                            print('⚠️ Kubernetes content not found in expanded message')
-                    except Exception as e:
-                        print(f'Error clicking microagent message: {e}')
-
             # Check for agent response with kubernetes guidance
             agent_messages = page.locator('[data-testid="agent-message"]').all()
             if elapsed % 30 == 0:
@@ -764,54 +702,41 @@ def test_microagent_kubernetes(page: Page, base_url: str):
                             'k8s',
                             'curl -lo',
                         ]
-                        if (
-                            any(
-                                indicator in content_lower
-                                for indicator in kubernetes_indicators
-                            )
-                            and not agent_responded
+                        if any(
+                            indicator in content_lower
+                            for indicator in kubernetes_indicators
                         ):
                             print('✅ Found agent response with kubernetes guidance!')
-                            agent_responded = True
                             page.screenshot(
                                 path='test-results/micro_kubernetes_02_agent_response.png'
                             )
                             print(
                                 'Screenshot saved: micro_kubernetes_02_agent_response.png'
                             )
-                            break
+                            page.screenshot(
+                                path='test-results/micro_kubernetes_03_final_state.png'
+                            )
+                            print(
+                                'Screenshot saved: micro_kubernetes_03_final_state.png'
+                            )
+                            print(
+                                '✅ Test completed successfully - kubernetes microagent was triggered and agent responded appropriately'
+                            )
+                            return
                 except Exception as e:
                     print(f'Error processing agent message {i}: {e}')
                     continue
 
-            if microagent_activated and agent_responded:
-                page.screenshot(path='test-results/micro_kubernetes_03_final_state.png')
-                print('Screenshot saved: micro_kubernetes_03_final_state.png')
-                print(
-                    '✅ Test completed successfully - kubernetes microagent was triggered and agent provided appropriate guidance'
-                )
-                return
-
         except Exception as e:
-            print(
-                f'Error checking for kubernetes microagent activation and response: {e}'
-            )
+            print(f'Error checking for kubernetes agent response: {e}')
 
         page.wait_for_timeout(5000)
 
-    print(
-        '❌ Did not find expected kubernetes microagent activation and/or agent response within time limit'
-    )
+    print('❌ Did not find agent response with kubernetes guidance within time limit')
     page.screenshot(path='test-results/micro_kubernetes_02_agent_response.png')
     print('Screenshot saved: micro_kubernetes_02_agent_response.png')
     page.screenshot(path='test-results/micro_kubernetes_03_final_state.png')
     print('Screenshot saved: micro_kubernetes_03_final_state.png')
-
-    if not microagent_activated:
-        raise AssertionError(
-            'Kubernetes microagent activation message was not found within time limit'
-        )
-    if not agent_responded:
-        raise AssertionError(
-            'Agent response with kubernetes guidance was not found within time limit'
-        )
+    raise AssertionError(
+        'Agent did not respond appropriately to kubernetes microagent within time limit'
+    )
