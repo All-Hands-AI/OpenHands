@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional
@@ -318,6 +319,19 @@ class TomCodeActAgent(CodeActAgent):
             return
 
         # Collect session data using existing logic from sleeptime.py
+        # TEMPORARY: copy sessions to user's modeling dir under raw_sessions dir
+        raw_sessions_dir = (
+            Path(self.file_store.get_full_path(get_usermodeling_dir(user_id)))  # type: ignore
+            / 'raw_sessions'
+        )
+        raw_sessions_dir.mkdir(parents=True, exist_ok=True)
+
+        for session_id in unprocessed:
+            shutil.copytree(
+                Path(self.file_store.get_full_path(CONVERSATION_BASE_DIR)) / session_id,  # type: ignore
+                raw_sessions_dir / session_id,
+            )
+
         sessions_data = self._get_sessions_data(unprocessed, self.file_store)
         # limite to 30 latest sessions (end_time)
         sessions_data_limited = sorted(
