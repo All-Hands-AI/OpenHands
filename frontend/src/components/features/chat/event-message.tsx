@@ -257,9 +257,6 @@ export function EventMessage({
             ? getObservationResult(event)
             : undefined
         }
-        initiallyExpanded={
-          isOpenHandsObservation(event) && event.observation === "recall"
-        }
       />
 
       {shouldShowConfirmationButtons && <ConfirmationButtons />}
