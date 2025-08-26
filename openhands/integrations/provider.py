@@ -183,6 +183,7 @@ class ProviderHandler:
                 )
 
                 print('token response', resp)
+                print('token resp', resp.text)
 
             data = TokenResponse.model_validate_json(resp.text)
             return SecretStr(data.token)
