@@ -772,12 +772,9 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Collect all comments in the thread by traversing the reply chain
         all_comments = []
         current_comment_id: str | None = comment_id
-        visited_ids = set()  # Prevent infinite loops
 
         # Traverse up the reply chain to collect all comments
-        while current_comment_id and current_comment_id not in visited_ids:
-            visited_ids.add(current_comment_id)
-
+        while current_comment_id:
             # Make GraphQL request to get current comment and its replyTo
             variables = {'commentId': current_comment_id}
             data = await self.execute_graphql_query(
@@ -792,27 +789,13 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             # Add current comment to the list
             all_comments.append(comment_node)
 
-            # Move to the parent comment (replyTo)
+            # Move to the parent comment (replyTo) - will be None when we reach root
             reply_to = comment_node.get('replyTo')
-            if reply_to:
-                current_comment_id = reply_to.get('id')
-                # Also add the replyTo comment to our list
-                all_comments.append(reply_to)
-            else:
-                current_comment_id = None
-
-        # Remove duplicates while preserving order (in case replyTo was added multiple times)
-        seen_ids = set()
-        unique_comments = []
-        for comment in all_comments:
-            comment_id = comment.get('id')
-            if comment_id and comment_id not in seen_ids:
-                seen_ids.add(comment_id)
-                unique_comments.append(comment)
+            current_comment_id = reply_to.get('id') if reply_to else None
 
         # Convert to Comment objects and sort by creation date
         comments: list[Comment] = []
-        for comment in unique_comments:
+        for comment in all_comments:
             comments.append(
                 Comment(
                     id=comment.get('databaseId', 0) or 0,
