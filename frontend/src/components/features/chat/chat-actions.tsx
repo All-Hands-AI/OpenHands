@@ -5,7 +5,7 @@ import BlockDrawerLeftIcon from "#/icons/block-drawer-left.svg?react";
 import PlayIcon from "#/icons/play-solid.svg?react";
 import {
   setIsRightPanelShown,
-  setMessageToSend,
+  setSubmittedMessage,
 } from "#/state/conversation-slice";
 import { RootState } from "#/store";
 import { cn } from "#/utils/utils";
@@ -34,7 +34,7 @@ export function ChatActions() {
     if (activeHost) {
       onTabChange("served");
     } else {
-      dispatch(setMessageToSend(RUN_SERVER_SUGGESTION));
+      dispatch(setSubmittedMessage(RUN_SERVER_SUGGESTION));
     }
   }, [activeHost]);
 

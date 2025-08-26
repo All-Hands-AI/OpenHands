@@ -13,6 +13,7 @@ interface ConversationState {
   loadingImages: string[]; // Image names currently being processed
   messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
+  submittedMessage: string | null;
 }
 
 export const conversationSlice = createSlice({
@@ -27,6 +28,7 @@ export const conversationSlice = createSlice({
     loadingImages: [],
     messageToSend: null,
     shouldShownAgentLoading: false,
+    submittedMessage: null,
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
@@ -90,6 +92,9 @@ export const conversationSlice = createSlice({
         timestamp: Date.now(),
       };
     },
+    setSubmittedMessage: (state, action) => {
+      state.submittedMessage = action.payload;
+    },
   },
 });
 
@@ -109,6 +114,7 @@ export const {
   removeImageLoading,
   clearAllLoading,
   setMessageToSend,
+  setSubmittedMessage,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

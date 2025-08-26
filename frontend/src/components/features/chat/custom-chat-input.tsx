@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useRef, useCallback, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -12,6 +12,7 @@ import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
 import { RootState } from "#/store";
+import { setSubmittedMessage } from "#/state/conversation-slice";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
@@ -40,13 +41,24 @@ export function CustomChatInput({
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const { messageToSend } = useSelector(
+  const { messageToSend, submittedMessage } = useSelector(
     (state: RootState) => state.conversation,
   );
+
+  const dispatch = useDispatch();
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
   const isDisabled = disabled || isConversationStopped;
+
+  // Listen to submittedMessage state changes
+  useEffect(() => {
+    if (!submittedMessage || disabled) {
+      return;
+    }
+    onSubmit(submittedMessage);
+    dispatch(setSubmittedMessage(null));
+  }, [submittedMessage, disabled, onSubmit, dispatch]);
 
   const { t } = useTranslation();
 
