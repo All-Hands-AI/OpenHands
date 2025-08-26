@@ -119,7 +119,7 @@ class LLMRegistry:
     def initialize_router(self, agent_config: AgentConfig) -> None:
         """Initialize the router for model routing based on agent configuration."""
         # Import here to avoid circular imports
-        from openhands.router.base import BaseRouter
+        from openhands.router import BaseRouter
 
         logger.info(f'Initializing router: {agent_config.model_routing.router_name}')
         self.router = BaseRouter.from_config(

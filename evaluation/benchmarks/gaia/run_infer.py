@@ -284,7 +284,6 @@ Here is the task:
         'ground_truth': instance['Final answer'],
     }
     metrics = get_metrics(state)
-    metrics = get_metrics(state)
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here

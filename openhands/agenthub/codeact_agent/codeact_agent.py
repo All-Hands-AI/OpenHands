@@ -217,6 +217,7 @@ class CodeActAgent(Agent):
         active_llm = self.llm_registry.get_active_llm()
         logger.debug(f'Active LLM set to: {active_llm.config.model}')
 
+        # Recompute messages after active LLM is set
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
             'messages': active_llm.format_messages_for_llm(messages),
