@@ -171,6 +171,8 @@ class Runtime(FileEditRuntimeMixin):
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_id=user_id,
             external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=sid,
         )
         raw_env_vars: dict[str, str] = call_async_from_sync(
             self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
@@ -323,9 +325,6 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
         """Refresh runtime provider tokens when agent attemps to run action with provider token"""
-        if not self.user_id:
-            return
-
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
