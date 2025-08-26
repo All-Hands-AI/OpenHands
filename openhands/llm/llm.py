@@ -344,7 +344,12 @@ class LLM(RetryMixin, DebugMixin):
             self.log_response(resp)
 
             # post-process the response first to calculate cost
-            cost = self._post_completion(resp)
+            cost, stats = self._post_completion(resp)
+
+            # Add stats to the response's hidden params
+            if '_hidden_params' not in resp:
+                resp['_hidden_params'] = {}
+            resp['_hidden_params']['stats'] = stats
 
             # log for evals or other scripts that need the raw completion
             if self.config.log_completions:
@@ -547,10 +552,10 @@ class LLM(RetryMixin, DebugMixin):
         """
         return self._function_calling_active
 
-    def _post_completion(self, response: ModelResponse) -> float:
+    def _post_completion(self, response: ModelResponse) -> tuple[float, str]:
         """Post-process the completion response.
 
-        Logs the cost and usage stats of the completion call.
+        Logs the cost and usage stats of the completion call and returns them.
         """
         try:
             cur_cost = self._completion_cost(response)
@@ -599,7 +604,12 @@ class LLM(RetryMixin, DebugMixin):
                 else 0
             )
             if cache_hit_tokens:
-                stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens) + '\n'
+                stats += 'Input tokens (cache hit): ' + str(cache_hit_tokens)
+                if prompt_tokens > 0:
+                    ratio = cache_hit_tokens / prompt_tokens * 100
+                    stats += f' ({ratio:.1f}%)\n'
+                else:
+                    stats += '\n'
 
             # For Anthropic, the cache writes have a different cost than regular input tokens
             # but litellm doesn't separate them in the usage stats
@@ -628,9 +638,9 @@ class LLM(RetryMixin, DebugMixin):
 
         # log the stats
         if stats:
-            logger.debug(stats)
+            logger.info(stats)
 
-        return cur_cost
+        return cur_cost, stats
 
     def get_token_count(self, messages: list[dict] | list[Message]) -> int:
         """Get the number of tokens in a list of messages. Use dicts for better token counting.
