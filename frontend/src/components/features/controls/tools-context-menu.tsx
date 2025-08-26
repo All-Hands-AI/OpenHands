@@ -67,7 +67,7 @@ export function ToolsContextMenu({
               className={CONTEXT_MENU_ICON_TEXT_CLASSNAME}
             />
           </ContextMenuListItem>
-          <div className="absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px]">
+          <div className="absolute left-full top-[-6px] z-60 opacity-0 invisible pointer-events-none group-hover/git:opacity-100 group-hover/git:visible group-hover/git:pointer-events-auto hover:opacity-100 hover:visible hover:pointer-events-auto transition-all duration-200 ml-[1px] visible opacity-100">
             <GitToolsSubmenu onClose={onClose} />
           </div>
         </div>

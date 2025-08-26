@@ -21,7 +21,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
 const contextMenuListItemClassName =
-  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px] !w-auto whitespace-nowrap";
+  "cursor-pointer p-0 h-auto hover:bg-transparent !w-auto whitespace-nowrap";
 interface GitToolsSubmenuProps {
   onClose: () => void;
 }
