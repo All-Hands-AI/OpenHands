@@ -4,13 +4,13 @@ import { Provider } from "#/types/settings";
 import { GitRepository } from "#/types/git";
 import { useDebounce } from "#/hooks/use-debounce";
 import { cn } from "#/utils/utils";
-import { LoadingSpinner } from "./loading-spinner";
-import { ClearButton } from "./clear-button";
-import { ToggleButton } from "./toggle-button";
-import { DropdownMenu } from "./dropdown-menu";
-import { ErrorMessage } from "./error-message";
+import { LoadingSpinner } from "../shared/loading-spinner";
+import { ClearButton } from "../shared/clear-button";
+import { ToggleButton } from "../shared/toggle-button";
+import { ErrorMessage } from "../shared/error-message";
 import { useUrlSearch } from "./use-url-search";
 import { useRepositoryData } from "./use-repository-data";
+import { DropdownMenu } from "./dropdown-menu";
 
 export interface GitRepoDropdownProps {
   provider: Provider;
@@ -193,7 +193,7 @@ export function GitRepoDropdown({
         </div>
 
         {isLoadingState && (
-          <LoadingSpinner selectedRepository={selectedRepository} />
+          <LoadingSpinner hasSelection={!!selectedRepository} />
         )}
       </div>
 

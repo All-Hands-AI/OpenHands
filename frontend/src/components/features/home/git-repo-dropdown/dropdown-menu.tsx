@@ -2,8 +2,8 @@ import React from "react";
 import { cn } from "#/utils/utils";
 import { GitRepository } from "#/types/git";
 import { RepositoryItem } from "./repository-item";
-import { EmptyState } from "./empty-state";
-import { LoadingMoreState } from "./loading-more-state";
+import { EmptyState } from "../shared/empty-state";
+import { LoadingMoreState } from "../shared/loading-more-state";
 
 interface DropdownMenuProps {
   isOpen: boolean;
