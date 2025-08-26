@@ -593,7 +593,7 @@ function LlmSettingsScreen() {
                   testId="condenser-max-size-input"
                   name="condenser-max-size-input"
                   type="number"
-                  min={10}
+                  min={20}
                   step={1}
                   label={t(I18nKey.SETTINGS$CONDENSER_MAX_SIZE)}
                   defaultValue={(
