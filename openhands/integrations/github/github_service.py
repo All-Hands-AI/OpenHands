@@ -699,9 +699,9 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(file_content, file_path)
 
-    async def get_issue_comments(
-        self, repository: str, issue_number: int, discussion_id: str | None = None
-    ) -> list:
+    async def get_issue_or_pr_comments(
+        self, repository: str, issue_number: int, max_comments: int = 10
+    ) -> list[Comment]:
         """Get comments for an issue.
 
         Args:
@@ -712,33 +712,30 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         Returns:
             List of Comment objects ordered by creation date
         """
-
         url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'
-        response, _ = await self._make_request(url)
+        page = 1
+        all_comments: list[dict] = []
 
-        comments: list[Comment] = []
-        for comment in response:
-            comments.append(
-                Comment(
-                    id=comment.get('id', 0),
-                    body=comment.get('body', ''),
-                    author=comment.get('user', {}).get('login', 'unknown'),
-                    created_at=datetime.fromisoformat(
-                        comment.get('created_at', '').replace('Z', '+00:00')
-                    )
-                    if comment.get('created_at')
-                    else datetime.fromtimestamp(0),
-                    updated_at=datetime.fromisoformat(
-                        comment.get('updated_at', '').replace('Z', '+00:00')
-                    )
-                    if comment.get('updated_at')
-                    else datetime.fromtimestamp(0),
-                    system=False,  # GitHub doesn't have system comments in the same way
-                )
-            )
-        return comments
+        while len(all_comments) < max_comments:
+            params = {
+                'per_page': 10,
+                'sort': 'created',
+                'direction': 'asc',
+                'page': page,
+            }
+            response, headers = await self._make_request(url, params=params)
+            all_comments.extend(response or [])
 
-    async def get_issue_title_and_body(
+            # Parse the Link header for rel="next"
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header:
+                break
+
+            page += 1
+
+        return self._process_raw_comments(all_comments)
+
+    async def get_issue_or_pr_title_and_body(
         self, repository: str, issue_number: int
     ) -> tuple[str, str]:
         """Get the title and body of an issue.
@@ -757,8 +754,11 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         return title, body
 
     async def get_review_thread_comments(
-        self, comment_id: str, repository: str, pr_number: int
-    ) -> list:
+        self,
+        comment_id: str,
+        repository: str,
+        pr_number: int,
+    ) -> list[Comment]:
         """Get all comments in a review thread starting from a specific comment.
 
         Uses GraphQL to traverse the reply chain from the given comment up to the root
@@ -871,14 +871,24 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         return self._process_raw_comments(all_thread_comments)
 
-    def _process_raw_comments(self, comments_data: list) -> list[Comment]:
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
+    def _process_raw_comments(
+        self, comments_data: list, max_comments: int = 10
+    ) -> list[Comment]:
         """Convert raw comment data to Comment objects."""
         comments: list[Comment] = []
         for comment in comments_data:
             comments.append(
                 Comment(
                     id=comment.get('databaseId') or comment.get('id', 'unknown'),
-                    body=comment.get('body', ''),
+                    body=self._truncate_comment(comment.get('body', '')),
                     author=comment.get('author', {}).get('login', 'unknown')
                     if comment.get('author')
                     else 'unknown',
@@ -898,7 +908,7 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         # Sort comments by creation date to maintain chronological order
         comments.sort(key=lambda c: c.created_at)
-        return comments
+        return comments[-max_comments:]
 
 
 github_service_cls = os.environ.get(
