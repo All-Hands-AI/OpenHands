@@ -790,32 +790,48 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             root_comment_id = reply_to_id
 
         # Step 3: Get all review threads and find the one containing our root comment
-        threads_variables: dict[str, Any] = {}
         owner, repo = repository.split('/')
-        threads_variables['owner'] = owner
-        threads_variables['repo'] = repo
-        threads_variables['number'] = pr_number
-        threads_data = await self.execute_graphql_query(
-            get_review_threads_graphql_query, threads_variables
-        )
-
-        review_threads = (
-            threads_data.get('data', {})
-            .get('repository', {})
-            .get('pullRequest', {})
-            .get('reviewThreads', {})
-            .get('nodes', [])
-        )
-
         thread_id = None
-        for thread in review_threads:
-            first_comments = thread.get('comments', {}).get('nodes', [])
-            for first_comment in first_comments:
-                if first_comment.get('id') == root_comment_id:
-                    thread_id = thread.get('id')
+        after_cursor = None
+        has_next_page = True
+
+        while has_next_page and not thread_id:
+            threads_variables: dict[str, Any] = {
+                'owner': owner,
+                'repo': repo,
+                'number': pr_number,
+                'first': 50,
+            }
+            if after_cursor:
+                threads_variables['after'] = after_cursor
+
+            threads_data = await self.execute_graphql_query(
+                get_review_threads_graphql_query, threads_variables
+            )
+
+            review_threads_data = (
+                threads_data.get('data', {})
+                .get('repository', {})
+                .get('pullRequest', {})
+                .get('reviewThreads', {})
+            )
+
+            review_threads = review_threads_data.get('nodes', [])
+            page_info = review_threads_data.get('pageInfo', {})
+
+            # Search for the thread containing our root comment
+            for thread in review_threads:
+                first_comments = thread.get('comments', {}).get('nodes', [])
+                for first_comment in first_comments:
+                    if first_comment.get('id') == root_comment_id:
+                        thread_id = thread.get('id')
+                        break
+                if thread_id:
                     break
-            if thread_id:
-                break
+
+            # Update pagination variables
+            has_next_page = page_info.get('hasNextPage', False)
+            after_cursor = page_info.get('endCursor')
 
         if not thread_id:
             # Fallback: return just the comments we found during traversal

@@ -72,10 +72,10 @@ get_thread_from_comment_graphql_query = """
 """
 
 get_review_threads_graphql_query = """
-query($owner: String!, $repo: String!, $number: Int!) {
+query($owner: String!, $repo: String!, $number: Int!, $first: Int = 50, $after: String) {
   repository(owner: $owner, name: $repo) {
     pullRequest(number: $number) {
-      reviewThreads(first: 10) {
+      reviewThreads(first: $first, after: $after) {
         nodes {
           id
           path
@@ -90,6 +90,10 @@ query($owner: String!, $repo: String!, $number: Int!) {
               }
             }
           }
+        }
+        pageInfo {
+          hasNextPage
+          endCursor
         }
       }
     }
