@@ -71,3 +71,28 @@ pr_review_thread_comments_graphql_query = """
         }
     }
 """
+
+get_thread_from_comment_graphql_query = """
+    query GetThreadFromComment($commentId: ID!) {
+        node(id: $commentId) {
+            ... on PullRequestReviewComment {
+                id
+                body
+                author {
+                    login
+                }
+                createdAt
+                updatedAt
+                replyTo {
+                    id
+                    body
+                    author {
+                        login
+                    }
+                    createdAt
+                    updatedAt
+                }
+            }
+        }
+    }
+"""

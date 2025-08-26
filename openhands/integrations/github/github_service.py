@@ -9,6 +9,7 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.queries import (
+    get_thread_from_comment_graphql_query,
     pr_review_thread_comments_graphql_query,
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
@@ -754,44 +755,87 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         body = response.get('body') or ''
         return title, body
 
-    async def get_review_thread_comments(
-        self, repository: str, pr_number: int, review_id: int
-    ) -> list:
-        """Get comments from a review thread by review ID.
+    async def get_review_thread_comments(self, comment_id: str) -> list:
+        """Get all comments in a review thread starting from a specific comment.
+
+        Uses GraphQL to traverse the reply chain from the given comment up to the root
+        comment, then returns all comments in the thread.
 
         Args:
-            repository: Repository name in format 'owner/repo'
-            pr_number: The pull request number
-            review_id: The review ID
+            comment_id: The GraphQL node ID of any comment in the thread
 
         Returns:
-            List of Comment objects ordered as returned by the API
+            List of Comment objects representing the entire thread
         """
         from openhands.integrations.service_types import Comment
 
-        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}/reviews/{review_id}/comments'
-        response, _ = await self._make_request(url)
+        # Collect all comments in the thread by traversing the reply chain
+        all_comments = []
+        current_comment_id: str | None = comment_id
+        visited_ids = set()  # Prevent infinite loops
 
+        # Traverse up the reply chain to collect all comments
+        while current_comment_id and current_comment_id not in visited_ids:
+            visited_ids.add(current_comment_id)
+
+            # Make GraphQL request to get current comment and its replyTo
+            variables = {'commentId': current_comment_id}
+            data = await self.execute_graphql_query(
+                get_thread_from_comment_graphql_query, variables
+            )
+
+            # Extract comment data
+            comment_node = data.get('data', {}).get('node')
+            if not comment_node:
+                break
+
+            # Add current comment to the list
+            all_comments.append(comment_node)
+
+            # Move to the parent comment (replyTo)
+            reply_to = comment_node.get('replyTo')
+            if reply_to:
+                current_comment_id = reply_to.get('id')
+                # Also add the replyTo comment to our list
+                all_comments.append(reply_to)
+            else:
+                current_comment_id = None
+
+        # Remove duplicates while preserving order (in case replyTo was added multiple times)
+        seen_ids = set()
+        unique_comments = []
+        for comment in all_comments:
+            comment_id = comment.get('id')
+            if comment_id and comment_id not in seen_ids:
+                seen_ids.add(comment_id)
+                unique_comments.append(comment)
+
+        # Convert to Comment objects and sort by creation date
         comments: list[Comment] = []
-        for comment in response:
+        for comment in unique_comments:
             comments.append(
                 Comment(
-                    id=comment.get('id', 0),
+                    id=comment.get('databaseId', 0) or 0,
                     body=comment.get('body', ''),
-                    author=comment.get('user', {}).get('login', 'unknown'),
+                    author=comment.get('author', {}).get('login', 'unknown')
+                    if comment.get('author')
+                    else 'unknown',
                     created_at=datetime.fromisoformat(
-                        comment.get('created_at', '').replace('Z', '+00:00')
+                        comment.get('createdAt', '').replace('Z', '+00:00')
                     )
-                    if comment.get('created_at')
+                    if comment.get('createdAt')
                     else datetime.fromtimestamp(0),
                     updated_at=datetime.fromisoformat(
-                        comment.get('updated_at', '').replace('Z', '+00:00')
+                        comment.get('updatedAt', '').replace('Z', '+00:00')
                     )
-                    if comment.get('updated_at')
+                    if comment.get('updatedAt')
                     else datetime.fromtimestamp(0),
                     system=False,
                 )
             )
+
+        # Sort comments by creation date to maintain chronological order
+        comments.sort(key=lambda c: c.created_at)
         return comments
 
     async def get_pr_review_thread_comments(
