@@ -9,6 +9,8 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.queries import (
+    get_review_threads_graphql_query,
+    get_thread_comments_graphql_query,
     get_thread_from_comment_graphql_query,
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
@@ -754,49 +756,139 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         body = response.get('body') or ''
         return title, body
 
-    async def get_review_thread_comments(self, comment_id: str) -> list:
+    async def get_review_thread_comments(
+        self, comment_id: str, owner: str, repo: str, pr_number: int
+    ) -> list:
         """Get all comments in a review thread starting from a specific comment.
 
         Uses GraphQL to traverse the reply chain from the given comment up to the root
-        comment, then returns all comments in the thread.
+        comment, then finds the review thread and returns all comments in the thread.
 
         Args:
             comment_id: The GraphQL node ID of any comment in the thread
+            owner: Repository owner
+            repo: Repository name
+            pr_number: Pull request number
 
         Returns:
             List of Comment objects representing the entire thread
         """
 
-        # Collect all comments in the thread by traversing the reply chain
-        all_comments = []
-        current_comment_id: str | None = comment_id
+        # Step 1: Use existing GraphQL query to get the comment and check for replyTo
+        variables = {'commentId': comment_id}
+        data = await self.execute_graphql_query(
+            get_thread_from_comment_graphql_query, variables
+        )
 
-        # Traverse up the reply chain to collect all comments
-        while current_comment_id:
-            # Make GraphQL request to get current comment and its replyTo
-            variables = {'commentId': current_comment_id}
+        comment_node = data.get('data', {}).get('node')
+        if not comment_node:
+            return []
+
+        # Step 2: If replyTo exists, traverse to the root comment
+        root_comment_id = comment_id
+        current_comment = comment_node
+
+        while current_comment and current_comment.get('replyTo'):
+            reply_to_id = current_comment['replyTo']['id']
+            variables = {'commentId': reply_to_id}
             data = await self.execute_graphql_query(
                 get_thread_from_comment_graphql_query, variables
             )
 
-            # Extract comment data
-            comment_node = data.get('data', {}).get('node')
-            if not comment_node:
+            current_comment = data.get('data', {}).get('node')
+            if current_comment:
+                root_comment_id = reply_to_id
+
+        # Step 3: Get all review threads and find the one containing our root comment
+        threads_variables: dict[str, Any] = {}
+        threads_variables['owner'] = owner
+        threads_variables['repo'] = repo
+        threads_variables['number'] = pr_number
+        threads_data = await self.execute_graphql_query(
+            get_review_threads_graphql_query, threads_variables
+        )
+
+        review_threads = (
+            threads_data.get('data', {})
+            .get('repository', {})
+            .get('pullRequest', {})
+            .get('reviewThreads', {})
+            .get('nodes', [])
+        )
+
+        thread_id = None
+        for thread in review_threads:
+            first_comments = thread.get('comments', {}).get('nodes', [])
+            for first_comment in first_comments:
+                if first_comment.get('id') == root_comment_id:
+                    thread_id = thread.get('id')
+                    break
+            if thread_id:
                 break
 
-            # Add current comment to the list
-            all_comments.append(comment_node)
+        if not thread_id:
+            # Fallback: return just the comments we found during traversal
+            logger.warning(
+                f'Could not find review thread for comment {comment_id}, returning traversed comments'
+            )
+            all_comments = []
+            current_comment_id: str | None = comment_id
 
-            # Move to the parent comment (replyTo) - will be None when we reach root
-            reply_to = comment_node.get('replyTo')
-            current_comment_id = reply_to.get('id') if reply_to else None
+            # Traverse up the reply chain to collect all comments
+            while current_comment_id:
+                variables = {'commentId': current_comment_id}
+                data = await self.execute_graphql_query(
+                    get_thread_from_comment_graphql_query, variables
+                )
 
-        # Convert to Comment objects and sort by creation date
+                comment_node = data.get('data', {}).get('node')
+                if not comment_node:
+                    break
+
+                all_comments.append(comment_node)
+                reply_to = comment_node.get('replyTo')
+                current_comment_id = reply_to.get('id') if reply_to else None
+
+            return self._convert_comments_to_objects(all_comments)
+
+        # Step 4: Get all comments from the review thread using the thread ID
+        all_thread_comments = []
+        after_cursor = None
+        has_next_page = True
+
+        while has_next_page:
+            comments_variables: dict[str, Any] = {}
+            comments_variables['threadId'] = thread_id
+            comments_variables['page'] = 50
+            if after_cursor:
+                comments_variables['after'] = after_cursor
+
+            thread_comments_data = await self.execute_graphql_query(
+                get_thread_comments_graphql_query, comments_variables
+            )
+
+            thread_node = thread_comments_data.get('data', {}).get('node')
+            if not thread_node:
+                break
+
+            comments_data = thread_node.get('comments', {})
+            comments_nodes = comments_data.get('nodes', [])
+            page_info = comments_data.get('pageInfo', {})
+
+            all_thread_comments.extend(comments_nodes)
+
+            has_next_page = page_info.get('hasNextPage', False)
+            after_cursor = page_info.get('endCursor')
+
+        return self._convert_comments_to_objects(all_thread_comments)
+
+    def _convert_comments_to_objects(self, comments_data: list) -> list[Comment]:
+        """Convert raw comment data to Comment objects."""
         comments: list[Comment] = []
-        for comment in all_comments:
+        for comment in comments_data:
             comments.append(
                 Comment(
-                    id=comment.get('databaseId', 0) or 0,
+                    id=comment.get('databaseId') or comment.get('id', 'unknown'),
                     body=comment.get('body', ''),
                     author=comment.get('author', {}).get('login', 'unknown')
                     if comment.get('author')

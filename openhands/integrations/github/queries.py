@@ -70,3 +70,51 @@ get_thread_from_comment_graphql_query = """
         }
     }
 """
+
+get_review_threads_graphql_query = """
+query($owner: String!, $repo: String!, $number: Int!) {
+  repository(owner: $owner, name: $repo) {
+    pullRequest(number: $number) {
+      reviewThreads(first: 10) {
+        nodes {
+          id
+          path
+          isResolved
+          comments(first: 1) {
+            nodes {
+              id
+              databaseId
+              body
+              author {
+                login
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+get_thread_comments_graphql_query = """
+query ($threadId: ID!, $page: Int = 50, $after: String) {
+  node(id: $threadId) {
+    ... on PullRequestReviewThread {
+      id
+      path
+      isResolved
+      comments(first: $page, after: $after) {
+        nodes {
+          id
+          databaseId
+          body
+          author { login }
+          createdAt
+        }
+        pageInfo { hasNextPage endCursor }
+      }
+    }
+  }
+}
+"""
