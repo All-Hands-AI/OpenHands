@@ -43,10 +43,12 @@ export type Settings = {
   LLM_API_KEY_SET: boolean;
   SEARCH_API_KEY_SET: boolean;
   CONFIRMATION_MODE: boolean;
-  SECURITY_ANALYZER: string;
+  SECURITY_ANALYZER: string | null;
   REMOTE_RUNTIME_RESOURCE_FACTOR: number | null;
   PROVIDER_TOKENS_SET: Partial<Record<Provider, string | null>>;
   ENABLE_DEFAULT_CONDENSER: boolean;
+  // Maximum number of events before the condenser runs
+  CONDENSER_MAX_SIZE: number | null;
   ENABLE_SOUND_NOTIFICATIONS: boolean;
   ENABLE_PROACTIVE_CONVERSATION_STARTERS: boolean;
   ENABLE_SOLVABILITY_ANALYSIS: boolean;
@@ -70,9 +72,11 @@ export type ApiSettings = {
   llm_api_key_set: boolean;
   search_api_key_set: boolean;
   confirmation_mode: boolean;
-  security_analyzer: string;
+  security_analyzer: string | null;
   remote_runtime_resource_factor: number | null;
   enable_default_condenser: boolean;
+  // Max size for condenser in backend settings
+  condenser_max_size: number | null;
   enable_sound_notifications: boolean;
   enable_proactive_conversation_starters: boolean;
   enable_solvability_analysis: boolean;
