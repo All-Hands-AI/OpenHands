@@ -8176,20 +8176,20 @@
     "uk": "Підключено"
   },
   "BROWSER$NO_PAGE_LOADED": {
-    "en": "No page loaded.",
+    "en": "No page loaded",
     "ja": "ブラウザは空です",
     "zh-CN": "页面未加载",
-    "zh-TW": "未載入任何頁面。",
-    "de": "Keine Seite geladen.",
-    "ko-KR": "페이지가 로드되지 않았습니다.",
-    "no": "Ingen side lastet.",
-    "it": "Nessuna pagina caricata.",
-    "pt": "Nenhuma página carregada.",
-    "es": "Ninguna página cargada.",
-    "ar": "لم يتم تحميل أي صفحة.",
-    "fr": "Aucune page chargée.",
-    "tr": "Sayfa yüklenmedi.",
-    "uk": "Сторінка не завантажена."
+    "zh-TW": "未載入任何頁面",
+    "de": "Keine Seite geladen",
+    "ko-KR": "페이지가 로드되지 않았습니다",
+    "no": "Ingen side lastet",
+    "it": "Nessuna pagina caricata",
+    "pt": "Nenhuma página carregada",
+    "es": "Ninguna página cargada",
+    "ar": "لم يتم تحميل أي صفحة",
+    "fr": "Aucune page chargée",
+    "tr": "Sayfa yüklenmedi",
+    "uk": "Сторінка не завантажена"
   },
   "USER$AVATAR_PLACEHOLDER": {
     "en": "user avatar placeholder",

@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Suggestions } from "#/components/features/suggestions/suggestions";
 import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
 import { SUGGESTIONS } from "#/utils/suggestions";
+import { RootState } from "#/store";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -10,6 +12,14 @@ interface ChatSuggestionsProps {
 
 export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   const { t } = useTranslation();
+  const shouldHideSuggestions = useSelector(
+    (state: RootState) => state.conversation.shouldHideSuggestions,
+  );
+
+  // Don't render if suggestions should be hidden
+  if (shouldHideSuggestions) {
+    return null;
+  }
 
   return (
     <div
