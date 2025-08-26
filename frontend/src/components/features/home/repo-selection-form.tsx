@@ -11,6 +11,7 @@ import { Provider } from "#/types/settings";
 import { GitProviderDropdown } from "../../common/git-provider-dropdown";
 import { GitRepositoryDropdown } from "../../common/git-repository-dropdown";
 import { GitBranchDropdown } from "../../common/git-branch-dropdown";
+import { GitRepoDropdown } from "./git-repo-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -104,7 +105,7 @@ export function RepositorySelectionForm({
     };
 
     return (
-      <GitRepositoryDropdown
+      <GitRepoDropdown
         provider={selectedProvider || providers[0]}
         value={selectedRepository?.id || null}
         placeholder="Search repositories..."
