@@ -1,6 +1,6 @@
 {
   "name": "openhands-frontend",
-  "version": "0.53.0",
+  "version": "0.54.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -26,6 +26,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.4.0",
     "axios": "^1.11.0",
+    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "eslint-config-airbnb-typescript": "^18.0.0",
@@ -118,7 +119,7 @@
     "eslint-plugin-prettier": "^5.5.4",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "eslint-plugin-unused-imports": "^4.1.4",
+    "eslint-plugin-unused-imports": "^4.2.0",
     "husky": "^9.1.7",
     "jsdom": "^26.1.0",
     "lint-staged": "^16.1.4",

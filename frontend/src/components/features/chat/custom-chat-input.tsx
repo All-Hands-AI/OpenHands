@@ -1,6 +1,6 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { useDispatch } from "react-redux";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
 import { AgentStatus } from "#/components/features/controls/agent-status";
@@ -13,11 +13,11 @@ import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
 import { setShouldHideSuggestions } from "#/state/conversation-slice";
 import { CHAT_INPUT } from "#/utils/constants";
+import { RootState } from "#/store";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
   showButton?: boolean;
-  value?: string;
   conversationStatus?: ConversationStatus | null;
   onSubmit: (message: string) => void;
   onStop?: () => void;
@@ -31,7 +31,6 @@ export interface CustomChatInputProps {
 export function CustomChatInput({
   disabled = false,
   showButton = true,
-  value = "",
   conversationStatus = null,
   onSubmit,
   onStop,
@@ -43,6 +42,10 @@ export function CustomChatInput({
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
   const dispatch = useDispatch();
+
+  const { messageToSend } = useSelector(
+    (state: RootState) => state.conversation,
+  );
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
@@ -84,8 +87,8 @@ export function CustomChatInput({
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 450,
-    value,
     onHeightChange: handleHeightChange,
+    value: messageToSend ?? undefined,
   });
 
   // Cleanup: reset suggestions visibility when component unmounts
@@ -325,7 +328,7 @@ export function CustomChatInput({
       {/* Chat Input Component */}
       <div
         ref={chatContainerRef}
-        className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full"
+        className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}

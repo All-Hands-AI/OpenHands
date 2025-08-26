@@ -1,4 +1,3 @@
-import { useDisclosure } from "@heroui/react";
 import React from "react";
 import { useNavigate } from "react-router";
 import { useDispatch } from "react-redux";
@@ -13,7 +12,6 @@ import { WsClientProvider } from "#/context/ws-client-provider";
 import { EventHandler } from "../wrapper/event-handler";
 import { useConversationConfig } from "#/hooks/query/use-conversation-config";
 
-import Security from "#/components/shared/modals/security/security";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
 import { useSettings } from "#/hooks/query/use-settings";
 import { displayErrorToast } from "#/utils/custom-toast-handlers";
@@ -69,12 +67,6 @@ function AppContent() {
     dispatch(clearJupyter());
   });
 
-  const {
-    isOpen: securityModalIsOpen,
-    onOpen: onSecurityModalOpen,
-    onOpenChange: onSecurityModalOpenChange,
-  } = useDisclosure();
-
   return (
     <ConversationTabProvider>
       <WsClientProvider conversationId={conversationId}>
@@ -92,17 +84,7 @@ function AppContent() {
                 <ConversationMain />
               </div>
 
-              <Controls
-                setSecurityOpen={onSecurityModalOpen}
-                showSecurityLock={!!settings?.SECURITY_ANALYZER}
-              />
-              {settings && (
-                <Security
-                  isOpen={securityModalIsOpen}
-                  onOpenChange={onSecurityModalOpenChange}
-                  securityAnalyzer={settings.SECURITY_ANALYZER}
-                />
-              )}
+              <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
             </div>
           </EventHandler>
         </ConversationSubscriptionsProvider>

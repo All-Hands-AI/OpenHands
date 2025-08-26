@@ -60,9 +60,6 @@ export function ChatInterface() {
   const { data: config } = useConfig();
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-  const { messageToSend } = useSelector(
-    (state: RootState) => state.conversation,
-  );
 
   const [feedbackPolarity, setFeedbackPolarity] = React.useState<
     "positive" | "negative"
@@ -243,7 +240,6 @@ export function ChatInterface() {
           <InteractiveChatBox
             onSubmit={handleSendMessage}
             onStop={handleStop}
-            value={messageToSend ?? undefined}
             isWaitingForUserInput={isWaitingForUserInput}
             hasSubstantiveAgentActions={hasSubstantiveAgentActions}
             optimisticUserMessage={!!optimisticUserMessage}

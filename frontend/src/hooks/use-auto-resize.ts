@@ -1,10 +1,11 @@
 import { useCallback, useEffect, RefObject } from "react";
+import { IMessageToSend } from "#/state/conversation-slice";
 
 interface UseAutoResizeOptions {
   minHeight?: number;
   maxHeight?: number;
-  value?: string;
   onHeightChange?: (height: number) => void; // New callback for height changes
+  value?: IMessageToSend;
 }
 
 interface UseAutoResizeReturn {
@@ -60,7 +61,7 @@ export const useAutoResize = (
   useEffect(() => {
     const element = elementRef.current;
     if (element && value !== undefined) {
-      element.textContent = value;
+      element.textContent = value.text;
       autoResize();
     }
   }, [value, autoResize]);
