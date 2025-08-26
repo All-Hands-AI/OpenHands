@@ -13,6 +13,7 @@ interface ConversationState {
   loadingImages: string[]; // Image names currently being processed
   messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
+  submittedMessage: string | null;
   shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
 }
 
@@ -28,6 +29,7 @@ export const conversationSlice = createSlice({
     loadingImages: [],
     messageToSend: null,
     shouldShownAgentLoading: false,
+    submittedMessage: null,
     shouldHideSuggestions: false, // Initialize to false
   } as ConversationState,
   reducers: {
@@ -95,6 +97,9 @@ export const conversationSlice = createSlice({
         timestamp: Date.now(),
       };
     },
+    setSubmittedMessage: (state, action) => {
+      state.submittedMessage = action.payload;
+    },
   },
 });
 
@@ -115,6 +120,7 @@ export const {
   removeImageLoading,
   clearAllLoading,
   setMessageToSend,
+  setSubmittedMessage,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

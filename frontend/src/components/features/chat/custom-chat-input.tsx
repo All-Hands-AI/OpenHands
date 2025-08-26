@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useState, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -11,7 +11,10 @@ import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
-import { setShouldHideSuggestions } from "#/state/conversation-slice";
+import {
+  setShouldHideSuggestions,
+  setSubmittedMessage,
+} from "#/state/conversation-slice";
 import { CHAT_INPUT } from "#/utils/constants";
 import { RootState } from "#/store";
 
@@ -41,15 +44,25 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
-  const dispatch = useDispatch();
 
-  const { messageToSend } = useSelector(
+  const { messageToSend, submittedMessage } = useSelector(
     (state: RootState) => state.conversation,
   );
+
+  const dispatch = useDispatch();
 
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
   const isDisabled = disabled || isConversationStopped;
+
+  // Listen to submittedMessage state changes
+  useEffect(() => {
+    if (!submittedMessage || disabled) {
+      return;
+    }
+    onSubmit(submittedMessage);
+    dispatch(setSubmittedMessage(null));
+  }, [submittedMessage, disabled, onSubmit, dispatch]);
 
   const { t } = useTranslation();
 
