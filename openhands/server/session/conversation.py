@@ -5,7 +5,6 @@ from openhands.events.stream import EventStream
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime import get_runtime_cls
 from openhands.runtime.base import Runtime
-from openhands.security import SecurityAnalyzer, options
 from openhands.storage.files import FileStore
 from openhands.utils.async_utils import call_sync_from_async
 
@@ -36,11 +35,6 @@ class ServerConversation:
             event_stream = EventStream(sid, file_store, user_id)
         self.event_stream = event_stream
 
-        if config.security.security_analyzer:
-            self.security_analyzer = options.SecurityAnalyzers.get(
-                config.security.security_analyzer, SecurityAnalyzer
-            )(self.event_stream)
-
         if runtime:
             self._attach_to_existing = True
         else:
@@ -54,6 +48,11 @@ class ServerConversation:
                 headless_mode=False,
             )
         self.runtime = runtime
+
+    @property
+    def security_analyzer(self):
+        """Access security analyzer through runtime."""
+        return self.runtime.security_analyzer
 
     async def connect(self) -> None:
         if not self._attach_to_existing:
