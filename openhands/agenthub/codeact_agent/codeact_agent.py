@@ -209,7 +209,7 @@ class CodeActAgent(Agent):
         messages_for_routing_decision = self._get_messages(
             condensed_history, initial_user_message
         )
-        self.llm_registry.set_active_llm_for_routing(
+        self.llm_registry.configure_active_llm(
             messages_for_routing_decision, condensed_history
         )
 

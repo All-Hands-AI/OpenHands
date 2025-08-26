@@ -116,6 +116,11 @@ class LLMRegistry:
     def get_active_llm(self) -> LLM:
         return self.active_agent_llm
 
+    def _set_active_llm(self, service_id) -> None:
+        if service_id not in self.service_to_llm:
+            raise ValueError(f'Unrecognized service ID: {service_id}')
+        self.active_agent_llm = self.service_to_llm[service_id]
+
     def initialize_router(self, agent_config: AgentConfig) -> None:
         """Initialize the router for model routing based on agent configuration."""
         # Import here to avoid circular imports
@@ -127,13 +132,13 @@ class LLMRegistry:
             agent_config=agent_config,
         )
 
-    def set_active_llm_for_routing(
+    def configure_active_llm(
         self, messages: list[Message], events: list[Event]
     ) -> None:
         """Set the active LLM based on routing decisions."""
         if self.router:
-            self.router.set_active_llm(messages, events)
-            self.active_agent_llm = self.router.active_llm
+            selected_service_id = self.router.get_active_llm(messages, events)
+            self._set_active_llm(selected_service_id)
 
     def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:
         self.subscriber = callback

@@ -27,7 +27,7 @@ class MultimodalRouter(BaseRouter):
         self.secondary_llm = self.llms_for_routing[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 
-    def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
+    def get_active_llm(self, messages: list[Message], events: list[Event]) -> str:
         route_to_primary = False
         # Handle multimodal input
         for event in events:
@@ -59,9 +59,9 @@ class MultimodalRouter(BaseRouter):
 
         if route_to_primary:
             logger.info('Routing to the primary model...')
-            self.active_llm = self.llm
+            return 'agent'
         else:
-            self.active_llm = self.secondary_llm
+            return f'llm_for_routing.{self.SECONDARY_MODEL_CONFIG_NAME}'
 
     def _validate_model_routing_config(self, llms_for_routing: dict[str, LLM]):
         if self.SECONDARY_MODEL_CONFIG_NAME not in llms_for_routing:

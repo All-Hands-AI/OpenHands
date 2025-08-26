@@ -6,9 +6,9 @@ from openhands.router.base import ROUTER_REGISTRY, BaseRouter
 class NoOpRouter(BaseRouter):
     ROUTER_NAME = 'noop_router'
 
-    def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
+    def get_active_llm(self, messages: list[Message], events: list[Event]) -> str:
         """No-op router does not change the active LLM."""
-        pass
+        return 'agent'
 
 
 # Register the router

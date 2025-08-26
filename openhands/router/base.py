@@ -26,12 +26,9 @@ class BaseRouter(ABC):
             for config_name, llm_config in llms_for_routing_config.items()
         }
 
-        # The active LLM for the current turn
-        self.active_llm = llm_registry.get_llm_from_agent_config('agent', agent_config)
-
     @abstractmethod
-    def set_active_llm(self, messages: list[Message], events: list[Event]) -> None:
-        """Configure the active LLM for the current turn based on the messages and events."""
+    def get_active_llm(self, messages: list[Message], events: list[Event]) -> str:
+        """Select and return the service id corresponding to the active LLM for the current turn based on the messages and events."""
         pass
 
     def __getattr__(self, name):
