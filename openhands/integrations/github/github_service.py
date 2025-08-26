@@ -10,7 +10,6 @@ from pydantic import SecretStr
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.queries import (
     get_thread_from_comment_graphql_query,
-    pr_review_thread_comments_graphql_query,
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
 )
@@ -819,111 +818,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         # Sort comments by creation date to maintain chronological order
         comments.sort(key=lambda c: c.created_at)
-        return comments
-
-    async def get_pr_review_thread_comments(
-        self, repo_name: str, pr_number: int, thread_id: str
-    ) -> list:
-        """Get comments from a review thread in a PR given the thread_id.
-
-        Uses GitHub's GraphQL API to fetch review threads and filter for the specific thread.
-        A review thread is a discussion thread within a PR review.
-
-        Args:
-            repo_name: Repository name in format 'owner/repo'
-            pr_number: The pull request number
-            thread_id: The GraphQL node ID of the review thread
-
-        Returns:
-            List of Comment objects ordered by creation date
-        """
-        from openhands.integrations.service_types import Comment
-
-        # Parse owner and repo from repo_name
-        try:
-            owner, name = repo_name.split('/', 1)
-        except ValueError:
-            raise ValueError(
-                f"Invalid repo_name format: {repo_name}. Expected 'owner/repo'"
-            )
-
-        # Prepare GraphQL query variables
-        variables = {'owner': owner, 'name': name, 'number': pr_number}
-
-        # Make GraphQL request
-        graphql_url = 'https://api.github.com/graphql'
-        headers = await self._get_github_headers()
-        headers['Content-Type'] = 'application/json'
-
-        payload = {
-            'query': pr_review_thread_comments_graphql_query,
-            'variables': variables,
-        }
-
-        async with httpx.AsyncClient() as client:
-            response = await client.post(graphql_url, headers=headers, json=payload)
-            response.raise_for_status()
-            data = response.json()
-
-        # Check for GraphQL errors
-        if 'errors' in data:
-            raise Exception(f'GraphQL errors: {data["errors"]}')
-
-        # Extract review threads
-        pull_request = data.get('data', {}).get('repository', {}).get('pullRequest')
-        if not pull_request:
-            return []
-
-        review_threads = pull_request.get('reviewThreads', {}).get('nodes', [])
-
-        # Find the specific thread by ID
-        target_thread = None
-        for thread in review_threads:
-            if thread.get('id') == thread_id:
-                target_thread = thread
-                break
-
-        if not target_thread:
-            # Thread not found, return empty list
-            return []
-
-        # Extract comments from the thread
-        thread_comments = target_thread.get('comments', {}).get('nodes', [])
-
-        # Convert to Comment objects
-        comments: list[Comment] = []
-        for comment in thread_comments:
-            # Use databaseId if available, otherwise use the GraphQL id
-            comment_id = comment.get('databaseId', 0)
-            if not comment_id and comment.get('id'):
-                # Try to extract numeric ID from GraphQL node ID if needed
-                try:
-                    # GraphQL IDs are base64 encoded, but we'll use databaseId when available
-                    comment_id = comment.get('databaseId', 0)
-                except Exception:
-                    comment_id = 0
-
-            comments.append(
-                Comment(
-                    id=comment_id,
-                    body=comment.get('body', ''),
-                    author=comment.get('author', {}).get('login', 'unknown')
-                    if comment.get('author')
-                    else 'unknown',
-                    created_at=datetime.fromisoformat(
-                        comment.get('createdAt', '').replace('Z', '+00:00')
-                    )
-                    if comment.get('createdAt')
-                    else datetime.fromtimestamp(0),
-                    updated_at=datetime.fromisoformat(
-                        comment.get('updatedAt', '').replace('Z', '+00:00')
-                    )
-                    if comment.get('updatedAt')
-                    else datetime.fromtimestamp(0),
-                    system=False,
-                )
-            )
-
         return comments
 
 

@@ -46,32 +46,6 @@ suggested_task_issue_graphql_query = """
     }
 """
 
-pr_review_thread_comments_graphql_query = """
-    query GetPRReviewThreadComments($owner: String!, $name: String!, $number: Int!) {
-        repository(owner: $owner, name: $name) {
-            pullRequest(number: $number) {
-                reviewThreads(first: 100) {
-                    nodes {
-                        id
-                        comments(first: 100) {
-                            nodes {
-                                id
-                                databaseId
-                                body
-                                author {
-                                    login
-                                }
-                                createdAt
-                                updatedAt
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-"""
-
 get_thread_from_comment_graphql_query = """
     query GetThreadFromComment($commentId: ID!) {
         node(id: $commentId) {
