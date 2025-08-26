@@ -16,6 +16,7 @@ from openhands.integrations.github.queries import (
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
+    Comment,
     GitService,
     InstallationsService,
     OwnerType,
@@ -709,7 +710,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         Returns:
             List of Comment objects ordered by creation date
         """
-        from openhands.integrations.service_types import Comment
 
         url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'
         response, _ = await self._make_request(url)
@@ -766,7 +766,6 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         Returns:
             List of Comment objects representing the entire thread
         """
-        from openhands.integrations.service_types import Comment
 
         # Collect all comments in the thread by traversing the reply chain
         all_comments = []
