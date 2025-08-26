@@ -458,7 +458,7 @@ def test_sandbox_volumes(monkeypatch, default_config):
     assert default_config.workspace_base is None
     assert default_config.workspace_mount_path is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace/project'
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
     )  # Default value
 
 
@@ -477,7 +477,7 @@ def test_sandbox_volumes_with_mode(monkeypatch, default_config):
     assert default_config.workspace_base is None
     assert default_config.workspace_mount_path is None
     assert (
-        default_config.workspace_mount_path_in_sandbox == '/workspace/project'
+        default_config.workspace_mount_path_in_sandbox == '/workspace'
     )  # Default value
 
 
