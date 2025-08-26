@@ -785,9 +785,9 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
         # Step 2: If replyTo exists, traverse to the root comment
         root_comment_id = comment_id
-        reply_to_id = comment_node['replyTo']['id']
-        if reply_to_id:
-            root_comment_id = reply_to_id
+        reply_to = comment_node.get('replyTo')
+        if reply_to:
+            root_comment_id = reply_to['id']
 
         # Step 3: Get all review threads and find the one containing our root comment
         owner, repo = repository.split('/')
