@@ -1,5 +1,5 @@
-import React, { useRef, useCallback, useState } from "react";
-import { useSelector } from "react-redux";
+import React, { useRef, useCallback, useState, useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -11,6 +11,8 @@ import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
+import { setShouldHideSuggestions } from "#/state/conversation-slice";
+import { CHAT_INPUT } from "#/utils/constants";
 import { RootState } from "#/store";
 
 export interface CustomChatInputProps {
@@ -39,6 +41,7 @@ export function CustomChatInput({
   buttonClassName = "",
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
+  const dispatch = useDispatch();
 
   const { messageToSend } = useSelector(
     (state: RootState) => state.conversation,
@@ -70,12 +73,31 @@ export function CustomChatInput({
     }
   }, [isContentEmpty]);
 
-  // Use the auto-resize hook
+  // Callback to handle height changes and manage suggestions visibility
+  const handleHeightChange = useCallback(
+    (height: number) => {
+      // Hide suggestions when input height exceeds the threshold
+      const shouldHideChatSuggestions = height > CHAT_INPUT.HEIGHT_THRESHOLD;
+      dispatch(setShouldHideSuggestions(shouldHideChatSuggestions));
+    },
+    [dispatch],
+  );
+
+  // Use the auto-resize hook with height change callback
   const { autoResize } = useAutoResize(chatInputRef, {
     minHeight: 20,
     maxHeight: 450,
+    onHeightChange: handleHeightChange,
     value: messageToSend ?? undefined,
   });
+
+  // Cleanup: reset suggestions visibility when component unmounts
+  useEffect(
+    () => () => {
+      dispatch(setShouldHideSuggestions(false));
+    },
+    [dispatch],
+  );
 
   // Function to add files and notify parent
   const addFiles = useCallback(
@@ -141,8 +163,9 @@ export function CustomChatInput({
         fileInputRef.current.value = "";
       }
 
-      // Reset height
+      // Reset height and show suggestions again
       autoResize();
+      dispatch(setShouldHideSuggestions(false));
     }
   };
 
@@ -160,8 +183,9 @@ export function CustomChatInput({
       fileInputRef.current.value = "";
     }
 
-    // Reset height
+    // Reset height and show suggestions again
     autoResize();
+    dispatch(setShouldHideSuggestions(false));
   };
 
   // Handle stop button click
@@ -178,6 +202,11 @@ export function CustomChatInput({
     // Clear empty content to ensure placeholder shows
     if (chatInputRef.current) {
       clearEmptyContent();
+    }
+
+    // Check if content is empty and show suggestions if it is
+    if (isContentEmpty()) {
+      dispatch(setShouldHideSuggestions(false));
     }
 
     // Ensure cursor stays visible when content is scrollable

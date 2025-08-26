@@ -13,6 +13,7 @@ interface ConversationState {
   loadingImages: string[]; // Image names currently being processed
   messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
+  shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
 }
 
 export const conversationSlice = createSlice({
@@ -27,6 +28,7 @@ export const conversationSlice = createSlice({
     loadingImages: [],
     messageToSend: null,
     shouldShownAgentLoading: false,
+    shouldHideSuggestions: false, // Initialize to false
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
@@ -34,6 +36,9 @@ export const conversationSlice = createSlice({
     },
     setShouldShownAgentLoading: (state, action) => {
       state.shouldShownAgentLoading = action.payload;
+    },
+    setShouldHideSuggestions: (state, action) => {
+      state.shouldHideSuggestions = action.payload;
     },
     addImages: (state, action) => {
       state.images = [...state.images, ...action.payload];
@@ -96,6 +101,7 @@ export const conversationSlice = createSlice({
 export const {
   setIsRightPanelShown,
   setShouldShownAgentLoading,
+  setShouldHideSuggestions,
   addImages,
   addFiles,
   removeImage,
