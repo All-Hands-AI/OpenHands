@@ -194,8 +194,9 @@ class BashSession:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
         if self.username in ['root', 'openhands']:
-            # This starts a non-login (new) shell for the given user
-            _shell_command = f'su {self.username} -'
+            # Start a login shell for the given user without running an interactive login prompt
+            # Use 'su -c' to run bash and ensure we start inside the project's working dir (self.work_dir).
+            _shell_command = f"su {self.username} -c 'cd {self.work_dir} && /bin/bash'"
 
         # FIXME: we will introduce memory limit using sysbox-runc in coming PR
         # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
@@ -416,7 +417,7 @@ class BashSession:
         )
         metadata = CmdOutputMetadata()  # No metadata available
         metadata.suffix = (
-            f'\n[The command timed out after {timeout} seconds. '
+            f'\n[The command timed out after {float(timeout):.1f} seconds. '
             f'{TIMEOUT_MESSAGE_TEMPLATE}]'
         )
         command_output = self._get_command_output(
