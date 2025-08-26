@@ -184,6 +184,13 @@ async def store_settings(
             status_code=status.HTTP_200_OK,
             content={'message': 'Settings stored'},
         )
+    except ValueError as e:
+        # Surface validation errors to the client (e.g., condenser_max_size minimum)
+        logger.warning(f'Invalid settings: {e}')
+        return JSONResponse(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            content={'error': str(e)},
+        )
     except Exception as e:
         logger.warning(f'Something went wrong storing settings: {e}')
         return JSONResponse(
