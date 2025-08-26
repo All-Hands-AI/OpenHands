@@ -527,16 +527,17 @@ def complete_runtime(
         f'Failed to git add -A: {str(obs)}',
     )
 
-    # Remove binary files from git staging
-    action = CmdRunAction(command=remove_binary_files_from_git())
-    action.set_hard_timeout(600)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    assert_and_raise(
-        isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
-        f'Failed to remove binary files: {str(obs)}',
-    )
+    # Dennis commented out this for troubleshooting (all files got deleted)
+    # # Remove binary files from git staging
+    # action = CmdRunAction(command=remove_binary_files_from_git())
+    # action.set_hard_timeout(600)
+    # logger.info(action, extra={'msg_type': 'ACTION'})
+    # obs = runtime.run_action(action)
+    # logger.info(obs, extra={'msg_type': 'OBSERVATION'})
+    # assert_and_raise(
+    #     isinstance(obs, CmdOutputObservation) and obs.exit_code == 0,
+    #     f'Failed to remove binary files: {str(obs)}',
+    # )
 
     n_retries = 0
     git_patch = None
