@@ -31,16 +31,6 @@ OH_VERSION = f'oh_v{oh_version}'
 DEFAULT_BASE_IMAGE = 'nikolaik/python-nodejs:python3.12-nodejs22'
 
 
-def is_docker_available():
-    """Check if Docker is available and accessible."""
-    try:
-        client = docker.from_env()
-        client.ping()
-        return True
-    except Exception:
-        return False
-
-
 @pytest.fixture
 def temp_dir(tmp_path_factory: TempPathFactory) -> str:
     return str(tmp_path_factory.mktemp('test_runtime_build'))
@@ -58,12 +48,8 @@ def mock_docker_client():
 
 @pytest.fixture
 def docker_runtime_builder():
-    mock_client = MagicMock(spec=docker.DockerClient)
-    mock_client.version.return_value = {
-        'Version': '20.10.0',
-        'Components': [{'Name': 'Engine', 'Version': '20.10.0'}],
-    }  # Ensure version is >= 18.09
-    return DockerRuntimeBuilder(mock_client)
+    client = docker.from_env()
+    return DockerRuntimeBuilder(client)
 
 
 def _check_source_code_in_dir(temp_dir):
@@ -477,8 +463,6 @@ def test_output_build_progress(docker_runtime_builder):
 
 @pytest.fixture(scope='function')
 def live_docker_image():
-    if not is_docker_available():
-        pytest.skip('Docker not available')
     client = docker.from_env()
     unique_id = str(uuid.uuid4())[:8]  # Use first 8 characters of a UUID
     unique_prefix = f'test_image_{unique_id}'
@@ -541,10 +525,7 @@ def test_init(docker_runtime_builder):
     assert docker_runtime_builder.rolling_logger.log_lines == [''] * 10
 
 
-@pytest.mark.skipif(not is_docker_available(), reason='Docker not available')
-def test_build_image_from_scratch(tmp_path):
-    client = docker.from_env()
-    docker_runtime_builder = DockerRuntimeBuilder(client)
+def test_build_image_from_scratch(docker_runtime_builder, tmp_path):
     context_path = str(tmp_path)
     tags = ['test_build:latest']
 
@@ -555,6 +536,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
 """)
     built_image_name = None
     container = None
+    client = docker.from_env()
     try:
         built_image_name = docker_runtime_builder.build(
             context_path,
@@ -601,7 +583,6 @@ def _format_size_to_gb(bytes_size):
     return round(bytes_size / (1024**3), 2)
 
 
-@pytest.mark.skipif(not is_docker_available(), reason='Docker not available')
 def test_list_dangling_images():
     client = docker.from_env()
     dangling_images = client.images.list(filters={'dangling': True})
@@ -616,10 +597,7 @@ def test_list_dangling_images():
         logger.info('No dangling images found')
 
 
-@pytest.mark.skipif(not is_docker_available(), reason='Docker not available')
-def test_build_image_from_repo(tmp_path):
-    client = docker.from_env()
-    docker_runtime_builder = DockerRuntimeBuilder(client)
+def test_build_image_from_repo(docker_runtime_builder, tmp_path):
     context_path = str(tmp_path)
     tags = ['alpine:latest']
 
@@ -630,6 +608,7 @@ CMD ["sh", "-c", "echo 'Hello, World!'"]
 """)
     built_image_name = None
     container = None
+    client = docker.from_env()
     try:
         built_image_name = docker_runtime_builder.build(
             context_path,
