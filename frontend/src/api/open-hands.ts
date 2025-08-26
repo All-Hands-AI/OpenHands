@@ -726,6 +726,28 @@ class OpenHands {
     );
     return data;
   }
+
+  static async getMicroagentManagementConversations(
+    pageId?: string,
+    selectedRepository?: string,
+    limit: number = 100,
+  ): Promise<Conversation[]> {
+    const params = new URLSearchParams();
+    params.append("limit", limit.toString());
+
+    if (pageId) {
+      params.append("page_id", pageId);
+    }
+
+    if (selectedRepository) {
+      params.append("selected_repository", selectedRepository);
+    }
+
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      `/api/microagent-management/conversations?${params.toString()}`,
+    );
+    return data.results;
+  }
 }
 
 export default OpenHands;

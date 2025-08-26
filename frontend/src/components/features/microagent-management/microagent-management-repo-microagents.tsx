@@ -5,7 +5,7 @@ import { Spinner } from "@heroui/react";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
-import { useSearchConversations } from "#/hooks/query/use-search-conversations";
+import { useMicroagentManagementConversations } from "#/hooks/query/use-microagent-management-conversations";
 import { GitRepository } from "#/types/git";
 import { RootState } from "#/store";
 import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
@@ -42,10 +42,10 @@ export function MicroagentManagementRepoMicroagents({
     data: conversations,
     isLoading: isLoadingConversations,
     isError: isErrorConversations,
-  } = useSearchConversations(
-    repositoryName,
-    "microagent_management",
+  } = useMicroagentManagementConversations(
+    undefined,
     1000,
+    repositoryName,
     true,
   );
 
