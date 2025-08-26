@@ -1,9 +1,12 @@
-You are checked out to branch {{ branch_name }}, which has an open PR #{{ pr_number }}.
+You are checked out to branch {{ branch_name }}, which has an open PR #{{ pr_number }}: "{{ pr_title }}".
 A comment on the PR has been addressed to you.
 
-{% if review_thread %}
-You may find other comments in this review thread relevant:
-{% for comment in review_thread %}
+PR Body:
+{{ pr_body }}
+
+{% if comments %}
+You may find these other comments relevant:
+{% for comment in comments %}
 - @{{ comment.author }} said at {{ comment.created_at }}:
 {{ comment.body }}
 {% if not loop.last %}\n\n{% endif %}
