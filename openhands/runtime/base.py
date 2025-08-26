@@ -171,8 +171,6 @@ class Runtime(FileEditRuntimeMixin):
             or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
             external_auth_id=user_id,
             external_token_manager=True,
-            session_api_key=self.session_api_key,
-            sid=sid,
         )
         raw_env_vars: dict[str, str] = call_async_from_sync(
             self.provider_handler.get_env_vars, GENERAL_TIMEOUT, True, None, False
@@ -332,8 +330,17 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
+        provider_handler = ProviderHandler(
+            provider_tokens=self.git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=self.user_id,
+            external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=self.sid,
+        )
+
         logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
-        env_vars = await self.provider_handler.get_env_vars(
+        env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
 
@@ -342,10 +349,10 @@ class Runtime(FileEditRuntimeMixin):
 
         try:
             if self.event_stream:
-                await self.provider_handler.set_event_stream_secrets(
+                await provider_handler.set_event_stream_secrets(
                     self.event_stream, env_vars=env_vars
                 )
-            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
+            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
