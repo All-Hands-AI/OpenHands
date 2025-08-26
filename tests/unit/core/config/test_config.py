@@ -399,7 +399,10 @@ def test_security_config_from_dict():
     from openhands.core.config.security_config import SecurityConfig
 
     # Test with all fields
-    config_dict = {'confirmation_mode': True, 'security_analyzer': 'some_analyzer'}
+    config_dict = {
+        'confirmation_mode': True,
+        'security_analyzer': 'some_analyzer',
+    }
 
     security_config = SecurityConfig(**config_dict)
 
