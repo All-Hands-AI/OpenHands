@@ -732,19 +732,21 @@ class OpenHands {
     selectedRepository?: string,
     limit: number = 100,
   ): Promise<Conversation[]> {
-    const params = new URLSearchParams();
-    params.append("limit", limit.toString());
+    const params: Record<string, string | number> = {
+      limit,
+    };
 
     if (pageId) {
-      params.append("page_id", pageId);
+      params.page_id = pageId;
     }
 
     if (selectedRepository) {
-      params.append("selected_repository", selectedRepository);
+      params.selected_repository = selectedRepository;
     }
 
     const { data } = await openHands.get<ResultSet<Conversation>>(
-      `/api/microagent-management/conversations?${params.toString()}`,
+      "/api/microagent-management/conversations",
+      { params },
     );
     return data.results;
   }
