@@ -9,7 +9,7 @@ import { BrandButton } from "../settings/brand-button";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
 import { GitProviderDropdown } from "../../common/git-provider-dropdown";
-import { GitBranchDropdown } from "../../common/git-branch-dropdown";
+import { GitBranchDropdown } from "./git-branch-dropdown";
 import { GitRepoDropdown } from "./git-repo-dropdown";
 
 interface RepositorySelectionFormProps {
@@ -57,13 +57,8 @@ export function RepositorySelectionForm({
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
-  const handleBranchSelection = (branchName: string | null) => {
-    if (branchName) {
-      // Create a simple Branch object since we only need the name
-      setSelectedBranch({ name: branchName } as Branch);
-    } else {
-      setSelectedBranch(null);
-    }
+  const handleBranchSelection = (branch: Branch | null) => {
+    setSelectedBranch(branch);
   };
 
   // Render the provider dropdown
@@ -118,13 +113,13 @@ export function RepositorySelectionForm({
   // Render the branch selector
   const renderBranchSelector = () => (
     <GitBranchDropdown
-      repositoryName={selectedRepository?.full_name}
-      defaultBranch={selectedRepository?.main_branch}
-      value={selectedBranch?.name || null}
+      repository={selectedRepository?.full_name || null}
+      provider={selectedProvider || providers[0]}
+      selectedBranch={selectedBranch}
+      onBranchSelect={handleBranchSelection}
       placeholder="Select branch..."
       className="max-w-[500px]"
       disabled={!selectedRepository}
-      onChange={handleBranchSelection}
     />
   );
 
