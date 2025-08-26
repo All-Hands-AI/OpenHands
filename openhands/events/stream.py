@@ -131,7 +131,7 @@ class EventStream(EventStore):
             and callback_id in self._thread_pools[subscriber_id]
         ):
             pool = self._thread_pools[subscriber_id][callback_id]
-            pool.shutdown()
+            pool.shutdown(wait=False)
             del self._thread_pools[subscriber_id][callback_id]
 
         del self._subscribers[subscriber_id][callback_id]
