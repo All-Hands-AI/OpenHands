@@ -9,7 +9,6 @@ import { BrandButton } from "../settings/brand-button";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
 import { GitProviderDropdown } from "../../common/git-provider-dropdown";
-import { GitRepositoryDropdown } from "../../common/git-repository-dropdown";
 import { GitBranchDropdown } from "../../common/git-branch-dropdown";
 import { GitRepoDropdown } from "./git-repo-dropdown";
 
