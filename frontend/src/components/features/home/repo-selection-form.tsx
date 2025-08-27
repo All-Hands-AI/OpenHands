@@ -113,7 +113,6 @@ export function RepositorySelectionForm({
   // Render the branch selector
   const renderBranchSelector = () => {
     const defaultBranch = selectedRepository?.main_branch || null;
-    
     return (
       <GitBranchDropdown
         repository={selectedRepository?.full_name || null}

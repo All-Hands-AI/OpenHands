@@ -4,7 +4,9 @@ import { cn } from "#/utils/utils";
 interface ToggleButtonProps {
   isOpen: boolean;
   disabled: boolean;
-  getToggleButtonProps: any;
+  getToggleButtonProps: (
+    props?: Record<string, unknown>,
+  ) => Record<string, unknown>;
 }
 
 export function ToggleButton({
@@ -13,6 +15,7 @@ export function ToggleButton({
   getToggleButtonProps,
 }: ToggleButtonProps) {
   return (
+    /* eslint-disable-next-line react/jsx-props-no-spreading */
     <button
       {...getToggleButtonProps({
         disabled,

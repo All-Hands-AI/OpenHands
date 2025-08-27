@@ -9,7 +9,7 @@ import { useCombobox } from "downshift";
 import { Branch } from "#/types/git";
 import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
-import { useBranchDataWithDefault } from "./use-branch-data";
+import { useBranchData } from "#/hooks/query/use-branch-data";
 import { LoadingSpinner } from "../shared/loading-spinner";
 import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
@@ -41,21 +41,21 @@ export function GitBranchDropdown({
   const menuRef = useRef<HTMLUListElement>(null);
 
   // Process search input (debounced or filtered)
-  const processedSearchInput = useMemo(() => {
-    return inputValue.trim().length > 0 ? inputValue.trim() : "";
-  }, [inputValue]);
+  const processedSearchInput = useMemo(
+    () => (inputValue.trim().length > 0 ? inputValue.trim() : ""),
+    [inputValue],
+  );
 
   // Use the new branch data hook with default branch prioritization
   const {
     branches: filteredBranches,
-    allBranches,
     isLoading,
     isError,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
     isSearchLoading,
-  } = useBranchDataWithDefault(
+  } = useBranchData(
     repository,
     provider,
     defaultBranch || null,
@@ -176,6 +176,7 @@ export function GitBranchDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
         <input
           {...getInputProps({
             disabled: disabled || !repository,

@@ -24,7 +24,11 @@ const generateMockRepositories = (
 // Generate mock branches for a repository
 const generateMockBranches = (count: number): Branch[] =>
   Array.from({ length: count }, (_, i) => ({
-    name: i === 0 ? "main" : i === 1 ? "develop" : `feature/branch-${i}`,
+    name: (() => {
+      if (i === 0) return "main";
+      if (i === 1) return "develop";
+      return `feature/branch-${i}`;
+    })(),
     commit_sha: `abc123${i.toString().padStart(3, "0")}`,
     protected: i === 0, // main branch is protected
     last_push_date: new Date(

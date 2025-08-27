@@ -13,7 +13,7 @@ export function useUrlSearch(inputValue: string, provider: Provider) {
         const match = inputValue.match(/https:\/\/[^/]+\/([^/]+\/[^/]+)/);
         if (match) {
           const repoName = match[1];
-          console.log("URL detected, searching for:", repoName);
+
           setIsUrlSearchLoading(true);
           try {
             const repositories = await OpenHands.searchGitRepositories(
@@ -21,10 +21,9 @@ export function useUrlSearch(inputValue: string, provider: Provider) {
               3,
               provider,
             );
-            console.log("URL search results:", repositories);
+
             setUrlSearchResults(repositories);
           } catch (error) {
-            console.error("URL search failed:", error);
             setUrlSearchResults([]);
           } finally {
             setIsUrlSearchLoading(false);
