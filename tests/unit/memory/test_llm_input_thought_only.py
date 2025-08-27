@@ -1,7 +1,9 @@
+import os
+import sys
 from unittest.mock import MagicMock
 
 from openhands.core.config.agent_config import AgentConfig
-import os, sys
+
 # Ensure this repo takes precedence over any installed openhands package
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 from openhands.events.action import Thought

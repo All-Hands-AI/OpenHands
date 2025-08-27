@@ -1,12 +1,14 @@
 import os
 import sys
+
 import pytest
 
 # Ensure this repo takes precedence over any installed openhands package
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..')))
+sys.path.insert(
+    0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..'))
+)
 
 from openhands.events.action import (
-    Thought,
     AgentDelegateAction,
     AgentFinishAction,
     AgentRejectAction,
@@ -18,15 +20,16 @@ from openhands.events.action import (
     IPythonRunCellAction,
     RecallAction,
     TaskTrackingAction,
+    Thought,
 )
 from openhands.events.event import RecallType
 from openhands.events.serialization.event import event_from_dict, event_to_dict
 from openhands.io import json as oh_json
 
-
 # ---------------------------
 # event_to_dict normalization
 # ---------------------------
+
 
 def test_thought_serialization_flatten_with_reasoning():
     a = CmdRunAction(command='echo 1', thought=Thought(text='t', reasoning_content='r'))
@@ -48,6 +51,7 @@ def test_thought_serialization_flatten_with_reasoning():
 # action_from_dict handling
 # ---------------------------
 
+
 def test_thought_deserialization_from_string_plus_rc():
     d = {
         'action': 'run',
@@ -62,7 +66,10 @@ def test_thought_deserialization_from_string_plus_rc():
 def test_thought_deserialization_from_dict_text_key():
     d = {
         'action': 'run',
-        'args': {'command': 'echo 1', 'thought': {'text': 'hi', 'reasoning_content': 'rc'}},
+        'args': {
+            'command': 'echo 1',
+            'thought': {'text': 'hi', 'reasoning_content': 'rc'},
+        },
     }
     a = event_from_dict(d)
     assert isinstance(a.thought, Thought)
@@ -108,20 +115,43 @@ def test_thought_backwards_compat_direct_init_with_str():
 # Round-trip across action types
 # ---------------------------
 
+
 @pytest.mark.parametrize(
     'action',
     [
-        CmdRunAction(command='echo 1', thought=Thought(text='t', reasoning_content='r')),
-        IPythonRunCellAction(code='x=1', thought=Thought(text='t', reasoning_content='r')),
+        CmdRunAction(
+            command='echo 1', thought=Thought(text='t', reasoning_content='r')
+        ),
+        IPythonRunCellAction(
+            code='x=1', thought=Thought(text='t', reasoning_content='r')
+        ),
         FileReadAction(path='/tmp/a', thought=Thought(text='t', reasoning_content='r')),
-        FileWriteAction(path='/tmp/a', content='c', thought=Thought(text='t', reasoning_content='r')),
-        FileEditAction(path='/tmp/a', command='view', thought=Thought(text='t', reasoning_content='r')),
-        AgentFinishAction(final_thought='done', thought=Thought(text='t', reasoning_content='r')),
+        FileWriteAction(
+            path='/tmp/a', content='c', thought=Thought(text='t', reasoning_content='r')
+        ),
+        FileEditAction(
+            path='/tmp/a',
+            command='view',
+            thought=Thought(text='t', reasoning_content='r'),
+        ),
+        AgentFinishAction(
+            final_thought='done', thought=Thought(text='t', reasoning_content='r')
+        ),
         AgentRejectAction(thought=Thought(text='t', reasoning_content='r')),
-        AgentDelegateAction(agent='helper', inputs={}, thought=Thought(text='t', reasoning_content='r')),
-        ChangeAgentStateAction(agent_state='running', thought=Thought(text='t', reasoning_content='r')),
-        RecallAction(recall_type=RecallType.WORKSPACE_CONTEXT, thought=Thought(text='t', reasoning_content='r')),
-        TaskTrackingAction(task_list=[{'id': 1, 'title': 'a'}], thought=Thought(text='t', reasoning_content='r')),
+        AgentDelegateAction(
+            agent='helper', inputs={}, thought=Thought(text='t', reasoning_content='r')
+        ),
+        ChangeAgentStateAction(
+            agent_state='running', thought=Thought(text='t', reasoning_content='r')
+        ),
+        RecallAction(
+            recall_type=RecallType.WORKSPACE_CONTEXT,
+            thought=Thought(text='t', reasoning_content='r'),
+        ),
+        TaskTrackingAction(
+            task_list=[{'id': 1, 'title': 'a'}],
+            thought=Thought(text='t', reasoning_content='r'),
+        ),
     ],
 )
 def test_thought_serializes_round_trip(action):
