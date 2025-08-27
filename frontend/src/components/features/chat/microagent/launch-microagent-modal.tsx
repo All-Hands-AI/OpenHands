@@ -13,6 +13,7 @@ import { useHandleRuntimeActive } from "#/hooks/use-handle-runtime-active";
 import { LoadingMicroagentBody } from "./loading-microagent-body";
 import { LoadingMicroagentTextarea } from "./loading-microagent-textarea";
 import { useGetMicroagents } from "#/hooks/query/use-get-microagents";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface LaunchMicroagentModalProps {
   onClose: () => void;
@@ -62,19 +63,30 @@ export function LaunchMicroagentModal({
           <div className="flex items-center justify-between w-full">
             <h2 className="font-bold text-[20px] leading-6 -tracking-[0.01em] flex items-center gap-2">
               {t("MICROAGENT$ADD_TO_MICROAGENT")}
-              <a
-                href="https://docs.all-hands.dev/usage/prompting/microagents-overview#microagents-overview"
-                target="_blank"
-                rel="noopener noreferrer"
+              <TooltipButton
+                tooltip={t("MICROAGENT$ADD_TO_MEMORY")}
+                ariaLabel={t("MICROAGENT$ADD_TO_MEMORY")}
+                placement="bottom"
+                tooltipClassName="max-w-110"
               >
-                <FaCircleInfo className="text-primary" />
-              </a>
+                <a
+                  href="https://docs.all-hands.dev/usage/prompting/microagents-overview#microagents-overview"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <FaCircleInfo className="text-primary" />
+                </a>
+              </TooltipButton>
             </h2>
 
             <button type="button" onClick={onClose}>
               <CloseIcon />
             </button>
           </div>
+
+          <span className="text-sm text-[#A3A3A3] font-normal leading-5">
+            {t("MICROAGENT$DEFINITION")}
+          </span>
 
           <form
             data-testid="launch-microagent-modal"
