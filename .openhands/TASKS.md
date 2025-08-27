@@ -1,13 +1,14 @@
 # Task List
 
-1. ✅ Explore the codebase to understand the current branch dropdown implementation
-
-2. ✅ Implement search functionality that queries the search endpoint when user types
-Search functionality was already implemented using useSearchBranches hook with debounced search
-3. ✅ Implement fallback to regular branch listing when search text is removed
-Fallback functionality was already implemented - when debouncedSearch is empty, it shows paginated branches
-4. ✅ Ensure default branch is displayed first in regular dropdown (not during search)
-Added defaultBranch prop to GitBranchDropdown and logic to prioritize it in the options list when not searching
-5. 🔄 Test the implementation to ensure it works correctly without breaking existing functionality
-
-
+1. ✅ Remove font-mono from branch item
+Remove the font-mono class from branch name display
+2. ✅ Analyze branch and repo item components for commonality
+Both components are nearly identical - same structure, styling, just different props and display text
+3. ✅ Create generic dropdown item component
+Created generic DropdownItem component that accepts item type, display text function, and key function
+4. ✅ Update branch dropdown to use generic item
+Updated BranchDropdownMenu to use DropdownItem with branch-specific functions
+5. ✅ Update repository dropdown to use generic item
+Updated DropdownMenu to use DropdownItem with repository-specific functions
+6. ✅ Test the generic component implementation
+Build passes successfully, old components removed, exports cleaned up

@@ -4,7 +4,7 @@ import {
   UseComboboxGetItemPropsOptions,
 } from "downshift";
 import { GitRepository } from "#/types/git";
-import { RepositoryItem } from "./repository-item";
+import { DropdownItem } from "../shared/dropdown-item";
 import { GenericDropdownMenu, EmptyState } from "../shared";
 
 interface DropdownMenuProps {
@@ -43,13 +43,15 @@ export function DropdownMenu({
       options: UseComboboxGetItemPropsOptions<GitRepository> & Options,
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => (
-    <RepositoryItem
+    <DropdownItem
       key={repository.id}
-      repository={repository}
+      item={repository}
       index={index}
-      highlightedIndex={currentHighlightedIndex}
-      selectedItem={currentSelectedItem}
+      isHighlighted={currentHighlightedIndex === index}
+      isSelected={currentSelectedItem?.id === repository.id}
       getItemProps={currentGetItemProps}
+      getDisplayText={(repo) => repo.full_name}
+      getItemKey={(repo) => repo.id.toString()}
     />
   );
 

@@ -3,7 +3,6 @@ export { GitRepoDropdown } from "./git-repo-dropdown";
 export type { GitRepoDropdownProps } from "./git-repo-dropdown";
 
 // Repository-specific UI Components
-export { RepositoryItem } from "./repository-item";
 export { DropdownMenu } from "./dropdown-menu";
 
 // Repository-specific Custom Hooks

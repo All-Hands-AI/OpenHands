@@ -4,7 +4,7 @@ import {
   UseComboboxGetItemPropsOptions,
 } from "downshift";
 import { Branch } from "#/types/git";
-import { BranchItem } from "./branch-item";
+import { DropdownItem } from "../shared/dropdown-item";
 import { GenericDropdownMenu, EmptyState } from "../shared";
 
 export interface BranchDropdownMenuProps {
@@ -43,13 +43,15 @@ export function BranchDropdownMenu({
       options: UseComboboxGetItemPropsOptions<Branch> & Options,
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => (
-    <BranchItem
+    <DropdownItem
       key={branch.name}
-      branch={branch}
+      item={branch}
+      index={index}
       isHighlighted={currentHighlightedIndex === index}
       isSelected={currentSelectedItem?.name === branch.name}
       getItemProps={currentGetItemProps}
-      index={index}
+      getDisplayText={(branchItem) => branchItem.name}
+      getItemKey={(branchItem) => branchItem.name}
     />
   );
 
