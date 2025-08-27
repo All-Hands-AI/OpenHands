@@ -141,7 +141,7 @@ class Repository(BaseModel):
 
 
 class Comment(BaseModel):
-    id: int
+    id: str
     body: str
     author: str
     created_at: datetime
@@ -518,5 +518,29 @@ class GitService(Protocol):
 
         Returns:
             MicroagentContentResponse with parsed content and triggers
+        """
+        ...
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request/merge request
+
+        Args:
+            repository: Repository name in format specific to the provider
+            pr_number: The pull request/merge request number
+
+        Returns:
+            Raw API response from the git provider
+        """
+        ...
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
         """
         ...
