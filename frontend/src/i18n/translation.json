@@ -2095,22 +2095,6 @@
     "de": "Git-Anbieter",
     "uk": "Git-провайдер"
   },
-  "ACCOUNT_SETTINGS$TITLE": {
-    "en": "Account Settings",
-    "ja": "アカウント設定",
-    "zh-CN": "账户设置",
-    "zh-TW": "帳戶設定",
-    "ko-KR": "계정 설정",
-    "no": "Kontoinnstillinger",
-    "it": "Impostazioni account",
-    "pt": "Configurações da conta",
-    "es": "Configuración de la cuenta",
-    "ar": "إعدادات الحساب",
-    "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları",
-    "de": "Kontoeinstellungen",
-    "uk": "Налаштування облікового запису"
-  },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
     "zh-CN": "终端",
@@ -5247,6 +5231,22 @@
     "tr": "Durdur",
     "uk": "Стоп"
   },
+  "BUTTON$PAUSE": {
+    "en": "Pause",
+    "ja": "一時停止",
+    "zh-CN": "暂停",
+    "zh-TW": "暫停",
+    "ko-KR": "일시정지",
+    "fr": "Mettre en pause",
+    "es": "Pausar",
+    "de": "Pausieren",
+    "it": "Pausa",
+    "pt": "Pausar",
+    "ar": "إيقاف مؤقت",
+    "no": "Pause",
+    "tr": "Duraklat",
+    "uk": "Призупинити"
+  },
   "BUTTON$EDIT_TITLE": {
     "en": "Edit Title",
     "ja": "タイトルを編集",
@@ -5423,8 +5423,40 @@
     "de": "Stopp bestätigen",
     "uk": "Підтвердити зупинку"
   },
+  "CONVERSATION$CONFIRM_PAUSE": {
+    "en": "Confirm Pause",
+    "ja": "一時停止の確認",
+    "zh-CN": "确认暂停",
+    "zh-TW": "確認暫停",
+    "ko-KR": "일시정지 확인",
+    "no": "Bekreft pause",
+    "it": "Conferma pausa",
+    "pt": "Confirmar pausa",
+    "es": "Confirmar pausa",
+    "ar": "تأكيد الإيقاف المؤقت",
+    "fr": "Confirmer la mise en pause",
+    "tr": "Duraklatmayı Onayla",
+    "de": "Pause bestätigen",
+    "uk": "Підтвердити призупинення"
+  },
+  "CONVERSATION$PAUSE_WARNING": {
+    "en": "Are you sure you want to pause this conversation?",
+    "ja": "この会話を一時停止してもよろしいですか？",
+    "zh-CN": "您确定要暂停此对话吗？",
+    "zh-TW": "您確定要暫停此對話嗎？",
+    "ko-KR": "이 대화를 일시정지하시겠습니까?",
+    "no": "Er du sikker på at du vil pause denne samtalen?",
+    "it": "Sei sicuro di voler mettere in pausa questa conversazione?",
+    "pt": "Tem certeza de que deseja pausar esta conversa?",
+    "es": "¿Está seguro de que desea pausar esta conversación?",
+    "ar": "هل أنت متأكد أنك تريد إيقاف هذه المحادثة مؤقتًا؟",
+    "fr": "Êtes-vous sûr de vouloir mettre cette conversation en pause ?",
+    "tr": "Bu konuşmayı duraklatmak istediğinizden emin misiniz?",
+    "de": "Sind Sie sicher, dass Sie dieses Gespräch pausieren möchten?",
+    "uk": "Ви впевнені, що хочете призупинити цю розмову?"
+  },
   "CONVERSATION$STOP_WARNING": {
-    "en": "Are you sure you want to stop this conversation?",
+    "en": "Are you sure you want to pause this conversation?",
     "ja": "この会話を停止してもよろしいですか？",
     "zh-CN": "您确定要停止此对话吗？",
     "zh-TW": "您確定要停止此對話嗎？",
@@ -7615,22 +7647,6 @@
     "tr": "Ajan görevine devam et",
     "uk": "Відновити завдання агента"
   },
-  "ACTION_BUTTON$PAUSE": {
-    "en": "Pause the current task",
-    "zh-CN": "暂停",
-    "zh-TW": "暫停",
-    "ko-KR": "일시정지",
-    "ja": "一時停止",
-    "no": "Sett gjeldende oppgave på pause",
-    "ar": "إيقاف المهمة الحالية مؤقتاً",
-    "de": "Aktuelle Aufgabe pausieren",
-    "fr": "Mettre en pause la tâche actuelle",
-    "it": "Metti in pausa il compito corrente",
-    "pt": "Pausar a tarefa atual",
-    "es": "Pausar la tarea actual",
-    "tr": "Mevcut görevi duraklat",
-    "uk": "Призупинити поточне завдання"
-  },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot",
     "zh-CN": "截图",
@@ -8238,22 +8254,6 @@
     "no": "plassholder for brukeravatar",
     "tr": "Kullanıcı avatarı yer tutucusu",
     "uk": "заповнювач аватара користувача"
-  },
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Account Settings",
-    "ja": "アカウント設定",
-    "zh-CN": "账户设置",
-    "zh-TW": "帳戶設定",
-    "ko-KR": "계정 설정",
-    "no": "Kontoinnstillinger",
-    "it": "Impostazioni account",
-    "pt": "Configurações da conta",
-    "es": "Configuración de la cuenta",
-    "ar": "إعدادات الحساب",
-    "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları",
-    "de": "Kontoeinstellungen",
-    "uk": "Налаштування облікового запису"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
     "en": "Logout",
@@ -9198,38 +9198,6 @@
     "fr": "Rejoindre la liste d'attente",
     "tr": "Bekleme listesine katıl",
     "uk": "Приєднатися до списку очікування"
-  },
-  "ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS": {
-    "en": "Additional Settings",
-    "ja": "追加設定",
-    "zh-CN": "附加设置",
-    "zh-TW": "附加設定",
-    "ko-KR": "추가 설정",
-    "de": "Zusätzliche Einstellungen",
-    "no": "Ytterligere innstillinger",
-    "it": "Impostazioni aggiuntive",
-    "pt": "Configurações adicionais",
-    "es": "Configuraciones adicionales",
-    "ar": "إعدادات إضافية",
-    "fr": "Paramètres supplémentaires",
-    "tr": "Ek Ayarlar",
-    "uk": "Додаткові налаштування"
-  },
-  "ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB": {
-    "en": "Disconnect from GitHub",
-    "ja": "GitHubから切断",
-    "zh-CN": "断开与GitHub的连接",
-    "zh-TW": "中斷與GitHub的連接",
-    "ko-KR": "GitHub 연결 해제",
-    "de": "Von GitHub trennen",
-    "no": "Koble fra GitHub",
-    "it": "Disconnetti da GitHub",
-    "pt": "Desconectar do GitHub",
-    "es": "Desconectar de GitHub",
-    "ar": "قطع الاتصال من GitHub",
-    "fr": "Se déconnecter de GitHub",
-    "tr": "GitHub'dan bağlantıyı kes",
-    "uk": "Відключитися від GitHub"
   },
   "CONVERSATION$DELETE_WARNING": {
     "en": "Are you sure you want to delete this conversation? This action cannot be undone.",
