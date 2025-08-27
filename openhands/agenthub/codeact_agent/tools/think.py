@@ -1,13 +1,15 @@
 from litellm import ChatCompletionToolParam, ChatCompletionToolParamFunctionChunk
 
-_THINK_DESCRIPTION = """This tool logs your thoughts whenever you are analyzing complex information and making decisions. This tool does not execute or change any code. You should call this tool in the following situations:
+_THINK_DESCRIPTION = """To ensure a clear record of your work, you must report the reasoning for every significant action you take (e.g., executing a bash command, editing a file, running a test, etc). Use the think tool for this purpose.
 
-1. Exploring a code repository and deciding which source code files are relevant to the given issue.
-2. Brainstorming various ways of fixing the bug.
-3. Analyzing test results, and thinking how to fix failing tests.
-4. Planning a complex refactoring.
-5. Making architecture decisions that require analyzing pros and cons of alternative design options.
-6. Troubleshooting unexpected problems.
+Your report must follow this structure:
+
+1. Current Situation: Start with a brief summary of the current context.
+2. Options Analysis: Analyze the potential actions you can take.
+3. Chosen Action: State the single, most optimal action you've decided on.
+4. Justification: Explain why this action is the best available next step for solving the issue.
+
+This information will be saved, allowing you to review your thought process at any time.
 """
 
 ThinkTool = ChatCompletionToolParam(
