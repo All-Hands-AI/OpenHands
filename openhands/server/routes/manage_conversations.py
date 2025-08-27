@@ -21,6 +21,7 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.schema.research import ResearchMode
 from openhands.events.action.message import MessageAction
+from openhands.events.event_store import EventStore
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
 )
@@ -59,6 +60,7 @@ from openhands.utils.conversation_summary import (
     generate_conversation_title,
     get_default_conversation_title,
 )
+from openhands.utils.final_result_extractor import get_final_result_from_conversation
 from openhands.utils.get_user_setting import get_user_setting
 
 app = APIRouter(prefix='/api')
@@ -660,11 +662,35 @@ async def update_conversation(
 @app.get('/conversations/{conversation_id}/final-result')
 async def get_final_result(conversation_id: str, request: Request) -> str | None:
     try:
+        # First try to get from database
         conversation = await conversation_module._get_conversation_by_id(
             conversation_id
         )
-        return conversation.final_result
-    except Exception:
+        if conversation and conversation.final_result:
+            return conversation.final_result
+
+        # Get the conversation store to access event stream
+        # eventstore
+        event_store = EventStore(
+            conversation_id,
+            conversation_manager.file_store,
+            conversation.user_id,
+        )
+        # is_running = await conversation_manager.is_agent_loop_running(conversation_id)
+        # if not is_running:
+        final_result = await get_final_result_from_conversation(
+            conversation_id=conversation_id,
+            event_stream=event_store,
+            save_to_database=True,
+        )
+        logger.info(f'Final result from event store: {final_result}')
+        return final_result
+
+        # If conversation is still running, return None as there's no final result yet
+    except Exception as e:
+        logger.error(
+            f'Error getting final result for conversation {conversation_id}: {str(e)}'
+        )
         return None
 
 

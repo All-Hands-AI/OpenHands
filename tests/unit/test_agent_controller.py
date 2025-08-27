@@ -36,6 +36,9 @@ from openhands.storage.memory import InMemoryFileStore
 def patch_db_pool_instance():
     with patch('openhands.server.mem0._db_pool_instance', MagicMock()), patch(
         'openhands.core.database.db_pool', MagicMock()
+    ), patch('openhands.shared.config.file_store', 'memory'), patch(
+        'openhands.utils.final_result_extractor.save_final_result_to_database',
+        AsyncMock(return_value=True),
     ):
         yield
 
