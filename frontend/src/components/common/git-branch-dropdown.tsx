@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useRepositoryBranchesPaginated } from "../../hooks/query/use-repository-branches";
 import { useSearchBranches } from "../../hooks/query/use-search-branches";
 import { useDebounce } from "../../hooks/use-debounce";

@@ -1,19 +1,34 @@
 import React from "react";
+import {
+  UseComboboxGetMenuPropsOptions,
+  UseComboboxGetItemPropsOptions,
+} from "downshift";
 import { cn } from "#/utils/utils";
 
 export interface GenericDropdownMenuProps<T> {
   isOpen: boolean;
   filteredItems: T[];
-  isLoadingState: boolean;
   inputValue: string;
   highlightedIndex: number;
   selectedItem: T | null;
   isFetchingNextPage: boolean;
-  getMenuProps: any;
-  getItemProps: any;
+  getMenuProps: <Options>(
+    options?: UseComboboxGetMenuPropsOptions & Options,
+  ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  getItemProps: <Options>(
+    options: UseComboboxGetItemPropsOptions<T> & Options,
+  ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
   onScroll: (event: React.UIEvent<HTMLUListElement>) => void;
   menuRef: React.RefObject<HTMLUListElement | null>;
-  renderItem: (item: T, index: number, highlightedIndex: number, selectedItem: T | null, getItemProps: any) => React.ReactNode;
+  renderItem: (
+    item: T,
+    index: number,
+    highlightedIndex: number,
+    selectedItem: T | null,
+    getItemProps: <Options>(
+      options: UseComboboxGetItemPropsOptions<T> & Options,
+    ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
   renderLoadingMoreState: () => React.ReactNode;
 }
@@ -21,7 +36,6 @@ export interface GenericDropdownMenuProps<T> {
 export function GenericDropdownMenu<T>({
   isOpen,
   filteredItems,
-  isLoadingState,
   inputValue,
   highlightedIndex,
   selectedItem,
@@ -38,23 +52,28 @@ export function GenericDropdownMenu<T>({
 
   return (
     <ul
+      // eslint-disable-next-line react/jsx-props-no-spreading
       {...getMenuProps({
         ref: menuRef,
         className: cn(
-          "absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto",
-          "focus:outline-none"
+          "absolute z-10 w-full bg-[#454545] border border-[#717888] rounded-xl shadow-lg max-h-60 overflow-auto",
+          "focus:outline-none p-1",
         ),
         onScroll,
       })}
     >
-      {isLoadingState ? (
-        <li className="px-3 py-2 text-sm text-gray-500">Loading...</li>
-      ) : filteredItems.length === 0 ? (
+      {filteredItems.length === 0 ? (
         renderEmptyState(inputValue)
       ) : (
         <>
           {filteredItems.map((item, index) =>
-            renderItem(item, index, highlightedIndex, selectedItem, getItemProps)
+            renderItem(
+              item,
+              index,
+              highlightedIndex,
+              selectedItem,
+              getItemProps,
+            ),
           )}
           {isFetchingNextPage && renderLoadingMoreState()}
         </>

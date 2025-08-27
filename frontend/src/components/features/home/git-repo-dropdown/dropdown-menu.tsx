@@ -1,20 +1,25 @@
 import React from "react";
-import { cn } from "#/utils/utils";
+import {
+  UseComboboxGetMenuPropsOptions,
+  UseComboboxGetItemPropsOptions,
+} from "downshift";
 import { GitRepository } from "#/types/git";
 import { RepositoryItem } from "./repository-item";
-import { EmptyState } from "../shared/empty-state";
-import { LoadingMoreState } from "../shared/loading-more-state";
+import { GenericDropdownMenu, EmptyState, LoadingMoreState } from "../shared";
 
 interface DropdownMenuProps {
   isOpen: boolean;
   filteredRepositories: GitRepository[];
-  isLoadingState: boolean;
   inputValue: string;
   highlightedIndex: number;
   selectedItem: GitRepository | null;
   isFetchingNextPage: boolean;
-  getMenuProps: any;
-  getItemProps: any;
+  getMenuProps: <Options>(
+    options?: UseComboboxGetMenuPropsOptions & Options,
+  ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
+  getItemProps: <Options>(
+    options: UseComboboxGetItemPropsOptions<GitRepository> & Options,
+  ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
   onScroll: (event: React.UIEvent<HTMLUListElement>) => void;
   menuRef: React.RefObject<HTMLUListElement | null>;
 }
@@ -22,7 +27,6 @@ interface DropdownMenuProps {
 export function DropdownMenu({
   isOpen,
   filteredRepositories,
-  isLoadingState,
   inputValue,
   highlightedIndex,
   selectedItem,
@@ -32,39 +36,48 @@ export function DropdownMenu({
   onScroll,
   menuRef,
 }: DropdownMenuProps) {
+  const renderItem = (
+    repository: GitRepository,
+    index: number,
+    currentHighlightedIndex: number,
+    currentSelectedItem: GitRepository | null,
+    currentGetItemProps: <Options>(
+      options: UseComboboxGetItemPropsOptions<GitRepository> & Options,
+    ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
+  ) => (
+    <RepositoryItem
+      key={repository.id}
+      repository={repository}
+      index={index}
+      highlightedIndex={currentHighlightedIndex}
+      selectedItem={currentSelectedItem}
+      getItemProps={currentGetItemProps}
+    />
+  );
+
+  const renderEmptyState = (currentInputValue: string) => (
+    <EmptyState inputValue={currentInputValue} />
+  );
+
+  const renderLoadingMoreState = () => <LoadingMoreState />;
+
   return (
-    <ul
-      {...getMenuProps({
-        ref: menuRef,
-        onScroll,
-        className: cn(
-          "absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg",
-          "max-h-60 overflow-auto",
-          !isOpen && "hidden"
-        ),
-      })}
-      data-testid="git-repo-dropdown-menu"
-    >
-      {isOpen && (
-        <>
-          {filteredRepositories.length === 0 && !isLoadingState && (
-            <EmptyState inputValue={inputValue} />
-          )}
-          
-          {filteredRepositories.map((repository, index) => (
-            <RepositoryItem
-              key={repository.id}
-              repository={repository}
-              index={index}
-              highlightedIndex={highlightedIndex}
-              selectedItem={selectedItem}
-              getItemProps={getItemProps}
-            />
-          ))}
-          
-          {isFetchingNextPage && <LoadingMoreState />}
-        </>
-      )}
-    </ul>
+    <div data-testid="git-repo-dropdown-menu">
+      <GenericDropdownMenu
+        isOpen={isOpen}
+        filteredItems={filteredRepositories}
+        inputValue={inputValue}
+        highlightedIndex={highlightedIndex}
+        selectedItem={selectedItem}
+        isFetchingNextPage={isFetchingNextPage}
+        getMenuProps={getMenuProps}
+        getItemProps={getItemProps}
+        onScroll={onScroll}
+        menuRef={menuRef}
+        renderItem={renderItem}
+        renderEmptyState={renderEmptyState}
+        renderLoadingMoreState={renderLoadingMoreState}
+      />
+    </div>
   );
 }

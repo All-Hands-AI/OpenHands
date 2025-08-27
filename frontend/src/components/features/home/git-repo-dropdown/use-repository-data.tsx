@@ -10,7 +10,7 @@ export function useRepositoryData(
   processedSearchInput: string,
   urlSearchResults: GitRepository[],
   inputValue: string,
-  value?: string | null
+  value?: string | null,
 ) {
   // Fetch user repositories with pagination
   const {
@@ -30,14 +30,16 @@ export function useRepositoryData(
     useSearchRepositories(processedSearchInput, provider);
 
   // Combine all repositories from paginated data
-  const allRepositories = useMemo(() => {
-    return repoData?.pages?.flatMap((page) => page.data) || [];
-  }, [repoData]);
+  const allRepositories = useMemo(
+    () => repoData?.pages?.flatMap((page) => page.data) || [],
+    [repoData],
+  );
 
   // Find selected repository from all repositories
-  const selectedRepository = useMemo(() => {
-    return allRepositories.find((repo) => repo.id === value) || null;
-  }, [allRepositories, value]);
+  const selectedRepository = useMemo(
+    () => allRepositories.find((repo) => repo.id === value) || null,
+    [allRepositories, value],
+  );
 
   // Get repositories to display (URL search, regular search, or all repos)
   const repositories = useMemo(() => {
@@ -45,17 +47,25 @@ export function useRepositoryData(
     if (urlSearchResults.length > 0) {
       return urlSearchResults;
     }
-    
+
     // Don't use search results if input exactly matches selected repository
-    const shouldUseSearch = processedSearchInput && 
-      searchData && 
+    const shouldUseSearch =
+      processedSearchInput &&
+      searchData &&
       !(selectedRepository && inputValue === selectedRepository.full_name);
-    
+
     if (shouldUseSearch) {
       return searchData;
     }
     return allRepositories;
-  }, [urlSearchResults, processedSearchInput, searchData, allRepositories, selectedRepository, inputValue]);
+  }, [
+    urlSearchResults,
+    processedSearchInput,
+    searchData,
+    allRepositories,
+    selectedRepository,
+    inputValue,
+  ]);
 
   return {
     repositories,

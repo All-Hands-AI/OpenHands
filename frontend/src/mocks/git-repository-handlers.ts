@@ -25,9 +25,11 @@ const generateMockRepositories = (
 const generateMockBranches = (count: number): Branch[] =>
   Array.from({ length: count }, (_, i) => ({
     name: i === 0 ? "main" : i === 1 ? "develop" : `feature/branch-${i}`,
-    commit_sha: `abc123${i.toString().padStart(3, '0')}`,
+    commit_sha: `abc123${i.toString().padStart(3, "0")}`,
     protected: i === 0, // main branch is protected
-    last_push_date: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+    last_push_date: new Date(
+      Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
   }));
 
 // Generate mock microagents for a repository
@@ -35,7 +37,9 @@ const generateMockMicroagents = (count: number): RepositoryMicroagent[] =>
   Array.from({ length: count }, (_, i) => ({
     name: `microagent-${i + 1}`,
     path: `.openhands/microagents/microagent-${i + 1}.md`,
-    created_at: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+    created_at: new Date(
+      Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+    ).toISOString(),
     git_provider: "github",
   }));
 
@@ -191,7 +195,9 @@ export const GIT_REPOSITORY_HANDLERS = [
     const perPage = parseInt(url.searchParams.get("per_page") || "30", 10);
 
     if (!repository) {
-      return HttpResponse.json("Repository parameter is required", { status: 400 });
+      return HttpResponse.json("Repository parameter is required", {
+        status: 400,
+      });
     }
 
     // Calculate pagination
@@ -222,12 +228,14 @@ export const GIT_REPOSITORY_HANDLERS = [
     const perPage = parseInt(url.searchParams.get("per_page") || "30", 10);
 
     if (!repository) {
-      return HttpResponse.json("Repository parameter is required", { status: 400 });
+      return HttpResponse.json("Repository parameter is required", {
+        status: 400,
+      });
     }
 
     // Filter branches by search query
     const filteredBranches = MOCK_BRANCHES.filter((branch) =>
-      branch.name.toLowerCase().includes(query.toLowerCase())
+      branch.name.toLowerCase().includes(query.toLowerCase()),
     );
 
     // Limit results
@@ -237,39 +245,49 @@ export const GIT_REPOSITORY_HANDLERS = [
   }),
 
   // Repository microagents endpoint
-  http.get("/api/user/repository/:owner/:repo/microagents", async ({ params }) => {
-    await delay(400);
+  http.get(
+    "/api/user/repository/:owner/:repo/microagents",
+    async ({ params }) => {
+      await delay(400);
 
-    const { owner, repo } = params;
+      const { owner, repo } = params;
 
-    if (!owner || !repo) {
-      return HttpResponse.json("Owner and repo parameters are required", { status: 400 });
-    }
+      if (!owner || !repo) {
+        return HttpResponse.json("Owner and repo parameters are required", {
+          status: 400,
+        });
+      }
 
-    return HttpResponse.json(MOCK_MICROAGENTS);
-  }),
+      return HttpResponse.json(MOCK_MICROAGENTS);
+    },
+  ),
 
   // Repository microagent content endpoint
-  http.get("/api/user/repository/:owner/:repo/microagents/content", async ({ request, params }) => {
-    await delay(300);
+  http.get(
+    "/api/user/repository/:owner/:repo/microagents/content",
+    async ({ request, params }) => {
+      await delay(300);
 
-    const { owner, repo } = params;
-    const url = new URL(request.url);
-    const filePath = url.searchParams.get("file_path");
+      const { owner, repo } = params;
+      const url = new URL(request.url);
+      const filePath = url.searchParams.get("file_path");
 
-    if (!owner || !repo || !filePath) {
-      return HttpResponse.json("Owner, repo, and file_path parameters are required", { status: 400 });
-    }
+      if (!owner || !repo || !filePath) {
+        return HttpResponse.json(
+          "Owner, repo, and file_path parameters are required",
+          { status: 400 },
+        );
+      }
 
-    // Find the microagent by path
-    const microagent = MOCK_MICROAGENTS.find(m => m.path === filePath);
-    
-    if (!microagent) {
-      return HttpResponse.json("Microagent not found", { status: 404 });
-    }
+      // Find the microagent by path
+      const microagent = MOCK_MICROAGENTS.find((m) => m.path === filePath);
 
-    const response: MicroagentContentResponse = {
-      content: `# ${microagent.name}
+      if (!microagent) {
+        return HttpResponse.json("Microagent not found", { status: 404 });
+      }
+
+      const response: MicroagentContentResponse = {
+        content: `# ${microagent.name}
 
 A helpful microagent for repository tasks.
 
@@ -293,11 +311,12 @@ This microagent helps with specific tasks related to the repository.
 ---
 
 *Generated mock content for ${microagent.name}*`,
-      path: microagent.path,
-      git_provider: "github",
-      triggers: ["code review", "bug fix", "feature development"],
-    };
+        path: microagent.path,
+        git_provider: "github",
+        triggers: ["code review", "bug fix", "feature development"],
+      };
 
-    return HttpResponse.json(response);
-  }),
+      return HttpResponse.json(response);
+    },
+  ),
 ];

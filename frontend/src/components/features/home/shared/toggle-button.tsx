@@ -7,24 +7,25 @@ interface ToggleButtonProps {
   getToggleButtonProps: any;
 }
 
-export function ToggleButton({ isOpen, disabled, getToggleButtonProps }: ToggleButtonProps) {
+export function ToggleButton({
+  isOpen,
+  disabled,
+  getToggleButtonProps,
+}: ToggleButtonProps) {
   return (
     <button
       {...getToggleButtonProps({
         disabled,
         className: cn(
-          "p-1 text-gray-400 hover:text-gray-600",
-          "disabled:cursor-not-allowed"
+          "p-1 text-[#B7BDC2] hover:text-[#ECEDEE]",
+          "disabled:cursor-not-allowed disabled:opacity-60",
         ),
       })}
       type="button"
       aria-label="Toggle menu"
     >
       <svg
-        className={cn(
-          "w-4 h-4 transition-transform",
-          isOpen && "rotate-180"
-        )}
+        className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")}
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"

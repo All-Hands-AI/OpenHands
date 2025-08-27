@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { useCombobox } from "downshift";
 import { Branch } from "#/types/git";
 import { Provider } from "#/types/settings";
@@ -43,15 +49,16 @@ export function GitBranchDropdown({
     isFetchingNextPage,
   } = useBranchData(repository, provider);
 
-  const {
-    data: searchResults,
-    isLoading: isSearchLoading,
-  } = useSearchBranches(repository, inputValue, provider);
+  const { data: searchResults, isLoading: isSearchLoading } = useSearchBranches(
+    repository,
+    inputValue,
+    provider,
+  );
 
   // Flatten paginated results
   const allBranches = useMemo(() => {
     if (!branchPages?.pages) return [];
-    return branchPages.pages.flatMap(page => page.branches || []);
+    return branchPages.pages.flatMap((page) => page.branches || []);
   }, [branchPages]);
 
   // Determine which branches to display
@@ -71,28 +78,41 @@ export function GitBranchDropdown({
   }, [onBranchSelect]);
 
   // Handle branch selection
-  const handleBranchSelect = useCallback((branch: Branch | null) => {
-    onBranchSelect(branch);
-    setInputValue("");
-    setIsUserSearching(false);
-  }, [onBranchSelect]);
+  const handleBranchSelect = useCallback(
+    (branch: Branch | null) => {
+      onBranchSelect(branch);
+      setInputValue("");
+      setIsUserSearching(false);
+    },
+    [onBranchSelect],
+  );
 
   // Handle input value change
-  const handleInputValueChange = useCallback(({ inputValue: newInputValue }: { inputValue?: string }) => {
-    if (newInputValue !== undefined) {
-      setInputValue(newInputValue);
-      // Mark as user searching if they're typing something different from selected branch
-      setIsUserSearching(true);
-    }
-  }, []);
+  const handleInputValueChange = useCallback(
+    ({ inputValue: newInputValue }: { inputValue?: string }) => {
+      if (newInputValue !== undefined) {
+        setInputValue(newInputValue);
+        // Mark as user searching if they're typing something different from selected branch
+        setIsUserSearching(true);
+      }
+    },
+    [],
+  );
 
   // Handle menu scroll for infinite loading
-  const handleMenuScroll = useCallback((event: React.UIEvent<HTMLUListElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight * 1.5 && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const handleMenuScroll = useCallback(
+    (event: React.UIEvent<HTMLUListElement>) => {
+      const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+      if (
+        scrollHeight - scrollTop <= clientHeight * 1.5 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
+        fetchNextPage();
+      }
+    },
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
+  );
 
   // Downshift configuration
   const {
@@ -141,36 +161,34 @@ export function GitBranchDropdown({
             disabled: disabled || !repository,
             placeholder,
             className: cn(
-              "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-              "disabled:bg-gray-100 disabled:cursor-not-allowed",
-              "pr-10" // Space for toggle button
+              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
+              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
+              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
+              "pr-10", // Space for toggle button
             ),
           })}
           data-testid="git-branch-dropdown-input"
         />
-        
+
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {selectedBranch && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
-          
-          <ToggleButton 
-            isOpen={isOpen} 
-            disabled={disabled || !repository} 
-            getToggleButtonProps={getToggleButtonProps} 
+
+          <ToggleButton
+            isOpen={isOpen}
+            disabled={disabled || !repository}
+            getToggleButtonProps={getToggleButtonProps}
           />
         </div>
 
-        {isLoadingState && (
-          <LoadingSpinner hasSelection={!!selectedBranch} />
-        )}
+        {isLoadingState && <LoadingSpinner hasSelection={!!selectedBranch} />}
       </div>
 
       <BranchDropdownMenu
         isOpen={isOpen}
         filteredBranches={filteredBranches}
-        isLoadingState={isLoadingState}
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}

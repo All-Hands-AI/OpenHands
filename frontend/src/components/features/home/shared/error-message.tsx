@@ -6,14 +6,15 @@ interface ErrorMessageProps {
   testId?: string;
 }
 
-export function ErrorMessage({ isError, message = "Failed to load data", testId = "dropdown-error" }: ErrorMessageProps) {
+export function ErrorMessage({
+  isError,
+  message = "Failed to load data",
+  testId = "dropdown-error",
+}: ErrorMessageProps) {
   if (!isError) return null;
-  
+
   return (
-    <div
-      className="text-red-500 text-sm mt-1"
-      data-testid={testId}
-    >
+    <div className="text-red-500 text-sm mt-1" data-testid={testId}>
       {message}
     </div>
   );

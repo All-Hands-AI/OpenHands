@@ -24,35 +24,47 @@ export function BranchItem({
         index,
         item: branch,
         className: cn(
-          "px-3 py-2 cursor-pointer text-sm border-b border-gray-100 last:border-b-0",
-          "hover:bg-gray-50 focus:bg-gray-50 focus:outline-none",
+          "px-3 py-2 cursor-pointer text-sm rounded-lg mx-0.5 my-0.5",
+          "text-[#ECEDEE] focus:outline-none",
           {
-            "bg-blue-50 text-blue-700": isHighlighted,
-            "bg-blue-100 text-blue-800 font-medium": isSelected,
-          }
+            "bg-[#24272E]": isHighlighted && !isSelected,
+            "bg-[#C9B974] text-black": isSelected,
+            "hover:bg-[#24272E]": !isSelected,
+            "hover:bg-[#C9B974] hover:text-black": isSelected,
+          },
         ),
       })}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+          <span className={cn(
+            "font-mono text-xs px-2 py-1 rounded",
+            isSelected ? "bg-black/20 text-black" : "bg-[#24272E] text-[#ECEDEE]"
+          )}>
             {branch.name}
           </span>
           {branch.protected && (
-            <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+            <span className={cn(
+              "text-xs px-2 py-1 rounded",
+              isSelected ? "bg-yellow-600 text-white" : "bg-yellow-100 text-yellow-800"
+            )}>
               Protected
             </span>
           )}
         </div>
-        <div className="text-xs text-gray-500">
+        <div className={cn(
+          "text-xs",
+          isSelected ? "text-black/70" : "text-[#B7BDC2]"
+        )}>
           {branch.last_push_date && (
-            <span>
-              {new Date(branch.last_push_date).toLocaleDateString()}
-            </span>
+            <span>{new Date(branch.last_push_date).toLocaleDateString()}</span>
           )}
         </div>
       </div>
-      <div className="text-xs text-gray-400 mt-1 font-mono">
+      <div className={cn(
+        "text-xs mt-1 font-mono",
+        isSelected ? "text-black/70" : "text-[#B7BDC2]"
+      )}>
         {branch.commit_sha.substring(0, 8)}
       </div>
     </li>

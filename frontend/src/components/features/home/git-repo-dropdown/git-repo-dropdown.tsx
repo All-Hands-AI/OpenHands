@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from "react";
 import { useCombobox } from "downshift";
 import { Provider } from "#/types/settings";
 import { GitRepository } from "#/types/git";
@@ -45,12 +51,14 @@ export function GitRepoDropdown({
   }, [debouncedInputValue]);
 
   // URL search functionality
-  const { urlSearchResults, isUrlSearchLoading } = useUrlSearch(inputValue, provider);
+  const { urlSearchResults, isUrlSearchLoading } = useUrlSearch(
+    inputValue,
+    provider,
+  );
 
   // Repository data management
   const {
     repositories,
-    allRepositories,
     selectedRepository,
     fetchNextPage,
     hasNextPage,
@@ -64,7 +72,7 @@ export function GitRepoDropdown({
     processedSearchInput,
     urlSearchResults,
     inputValue,
-    value
+    value,
   );
 
   // Filter repositories based on input value
@@ -73,24 +81,32 @@ export function GitRepoDropdown({
     if (urlSearchResults.length > 0) {
       return repositories;
     }
-    
+
     // If we have a selected repository and the input matches it exactly, show all repositories
     if (selectedRepository && inputValue === selectedRepository.full_name) {
       return repositories;
     }
-    
+
     // If no input value, show all repositories
     if (!inputValue || !inputValue.trim()) {
       return repositories;
     }
-    
+
     // For URL inputs, use the processed search input for filtering
-    const filterText = inputValue.startsWith("https://") ? processedSearchInput : inputValue;
-    
+    const filterText = inputValue.startsWith("https://")
+      ? processedSearchInput
+      : inputValue;
+
     return repositories.filter((repo) =>
-      repo.full_name.toLowerCase().includes(filterText.toLowerCase())
+      repo.full_name.toLowerCase().includes(filterText.toLowerCase()),
     );
-  }, [repositories, inputValue, selectedRepository, urlSearchResults, processedSearchInput]);
+  }, [
+    repositories,
+    inputValue,
+    selectedRepository,
+    urlSearchResults,
+    processedSearchInput,
+  ]);
 
   // Handle selection
   const handleSelectionChange = useCallback(
@@ -101,7 +117,7 @@ export function GitRepoDropdown({
         setInputValue(selectedItem.full_name);
       }
     },
-    [onChange]
+    [onChange],
   );
 
   // Handle clear selection
@@ -115,7 +131,7 @@ export function GitRepoDropdown({
     ({ inputValue: newInputValue }: { inputValue?: string }) => {
       setInputValue(newInputValue || "");
     },
-    []
+    [],
   );
 
   // Handle scroll to bottom for pagination
@@ -123,12 +139,12 @@ export function GitRepoDropdown({
     (event: React.UIEvent<HTMLUListElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
-      
+
       if (isNearBottom && hasNextPage && !isFetchingNextPage && !isLoading) {
         fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage]
+    [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage],
   );
 
   const {
@@ -154,14 +170,19 @@ export function GitRepoDropdown({
 
   // Initialize input value when selectedRepository changes (but not when user is typing)
   useEffect(() => {
-    if (selectedRepository && !isOpen && inputValue !== selectedRepository.full_name) {
+    if (
+      selectedRepository &&
+      !isOpen &&
+      inputValue !== selectedRepository.full_name
+    ) {
       setInputValue(selectedRepository.full_name);
     } else if (!selectedRepository && !isOpen && inputValue) {
       setInputValue("");
     }
   }, [selectedRepository, isOpen]);
 
-  const isLoadingState = isLoading || isSearchLoading || isFetchingNextPage || isUrlSearchLoading;
+  const isLoadingState =
+    isLoading || isSearchLoading || isFetchingNextPage || isUrlSearchLoading;
 
   return (
     <div className={cn("relative", className)}>
@@ -171,24 +192,25 @@ export function GitRepoDropdown({
             disabled,
             placeholder,
             className: cn(
-              "w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm",
-              "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
-              "disabled:bg-gray-100 disabled:cursor-not-allowed",
-              "pr-10" // Space for toggle button
+              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
+              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
+              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
+              "pr-10", // Space for toggle button
             ),
           })}
           data-testid="git-repo-dropdown"
         />
-        
+
         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {selectedRepository && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
-          
-          <ToggleButton 
-            isOpen={isOpen} 
-            disabled={disabled} 
-            getToggleButtonProps={getToggleButtonProps} 
+
+          <ToggleButton
+            isOpen={isOpen}
+            disabled={disabled}
+            getToggleButtonProps={getToggleButtonProps}
           />
         </div>
 
@@ -200,7 +222,6 @@ export function GitRepoDropdown({
       <DropdownMenu
         isOpen={isOpen}
         filteredRepositories={filteredRepositories}
-        isLoadingState={isLoadingState}
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}

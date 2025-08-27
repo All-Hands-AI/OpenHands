@@ -7,7 +7,11 @@ interface ClearButtonProps {
   testId?: string;
 }
 
-export function ClearButton({ disabled, onClear, testId = "dropdown-clear" }: ClearButtonProps) {
+export function ClearButton({
+  disabled,
+  onClear,
+  testId = "dropdown-clear",
+}: ClearButtonProps) {
   return (
     <button
       onClick={(e) => {
@@ -16,8 +20,8 @@ export function ClearButton({ disabled, onClear, testId = "dropdown-clear" }: Cl
       }}
       disabled={disabled}
       className={cn(
-        "p-1 text-gray-400 hover:text-gray-600",
-        "disabled:cursor-not-allowed"
+        "p-1 text-[#B7BDC2] hover:text-[#ECEDEE]",
+        "disabled:cursor-not-allowed disabled:opacity-60",
       )}
       type="button"
       aria-label="Clear selection"

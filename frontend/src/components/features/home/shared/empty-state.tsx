@@ -7,17 +7,14 @@ interface EmptyStateProps {
   testId?: string;
 }
 
-export function EmptyState({ 
-  inputValue, 
+export function EmptyState({
+  inputValue,
   searchMessage = "No items found",
   emptyMessage = "No items available",
-  testId = "dropdown-empty"
+  testId = "dropdown-empty",
 }: EmptyStateProps) {
   return (
-    <li
-      className="px-3 py-2 text-gray-500 text-sm"
-      data-testid={testId}
-    >
+    <li className="px-3 py-2 text-[#B7BDC2] text-sm rounded-lg mx-0.5 my-0.5" data-testid={testId}>
       {inputValue ? searchMessage : emptyMessage}
     </li>
   );
