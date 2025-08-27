@@ -1,6 +1,5 @@
 import { CSSProperties } from "react";
-import { ToastOptions } from "react-hot-toast";
-import { toasterMessages } from "@openhands/ui";
+import toast, { ToastOptions } from "react-hot-toast";
 import { calculateToastDuration } from "./toast-duration";
 
 const TOAST_STYLE: CSSProperties = {
@@ -15,21 +14,12 @@ export const TOAST_OPTIONS: ToastOptions = {
   style: TOAST_STYLE,
 };
 
-export const displayErrorToast = (message: string) => {
-  const duration = calculateToastDuration(message, 5_000);
-  toasterMessages.error(message, { duration, position: "top-right" });
+export const displayErrorToast = (error: string) => {
+  const duration = calculateToastDuration(error, 4000);
+  toast.error(error, { ...TOAST_OPTIONS, duration });
 };
 
 export const displaySuccessToast = (message: string) => {
-  const duration = calculateToastDuration(message, 5_000);
-  toasterMessages.success(message, { duration, position: "top-right" });
-};
-
-export const displayWarningToast = (message: string) => {
-  const duration = calculateToastDuration(message, 4_000);
-  toasterMessages.warning(message, { duration, position: "top-right" });
-};
-export const displayInfoToast = (message: string) => {
-  const duration = calculateToastDuration(message, 4_000);
-  toasterMessages.info(message, { duration, position: "top-right" });
+  const duration = calculateToastDuration(message, 5000);
+  toast.success(message, { ...TOAST_OPTIONS, duration });
 };
