@@ -786,66 +786,265 @@ class GitLabService(BaseGitService, GitService):
         return title, body
 
     async def get_review_thread_comments(
-        self, thread_id: str, limit: int = 100
+        self,
+        comment_id: str,
+        repository: str,
+        pr_number: int,
     ) -> list[Comment]:
-        """Get comments from a review thread (discussion) by its ID.
+        """Get all comments in a review thread starting from a specific comment.
+
+        In GitLab, review threads are called "discussions". This method finds the discussion
+        that contains the given comment and returns all comments in that discussion.
 
         Args:
-            thread_id: The global GraphQL ID or REST discussion ID of the review thread
-            limit: Maximum number of comments to retrieve (default: 100)
+            comment_id: The ID of any comment in the thread (note ID)
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            pr_number: Merge request number (iid)
 
         Returns:
-            List of Comment objects ordered as returned by the API
+            List of Comment objects representing the entire thread
         """
-        # Prefer GraphQL so we only need the thread/discussion ID
-        query = """
-        query($id: ID!, $first: Int!) {
-          node(id: $id) {
-            ... on Discussion {
-              notes(first: $first) {
-                nodes {
-                  id
-                  body
-                  system
-                  author { username }
-                  createdAt
-                  updatedAt
-                }
-              }
-            }
-          }
-        }
-        """
-        data = await self.execute_graphql_query(
-            query, {'id': thread_id, 'first': min(limit, 100)}
-        )
-        discussion = data.get('node') if data else None
-        if not discussion or not discussion.get('notes'):
-            return []
+        project_id = self._extract_project_id(repository)
 
-        comments: list[Comment] = []
-        for note in discussion['notes'].get('nodes', []):
-            comments.append(
-                Comment(
-                    id=int(note.get('id').split('/')[-1])
-                    if isinstance(note.get('id'), str) and note.get('id')
-                    else 0,
-                    body=note.get('body', ''),
+        # First, get all discussions for the merge request
+        discussions_url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}/discussions'
+
+        try:
+            discussions_response, _ = await self._make_request(discussions_url)
+
+            # Find the discussion that contains our comment
+            target_discussion_id = None
+            for discussion in discussions_response:
+                notes = discussion.get('notes', [])
+                for note in notes:
+                    if str(note.get('id')) == str(comment_id):
+                        target_discussion_id = discussion.get('id')
+                        break
+                if target_discussion_id:
+                    break
+
+            if not target_discussion_id:
+                # Comment not found in any discussion, return empty list
+                logger.warning(
+                    f'Comment {comment_id} not found in any discussion for MR {pr_number}'
+                )
+                return []
+
+            # Get all comments from the target discussion
+            discussion_url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}/discussions/{target_discussion_id}'
+            discussion_response, _ = await self._make_request(discussion_url)
+
+            notes = discussion_response.get('notes', [])
+            comments: list[Comment] = []
+
+            for note in notes:
+                # Skip system-generated comments
+                if note.get('system', False):
+                    continue
+
+                comment = Comment(
+                    id=str(note.get('id', 'unknown')),
+                    body=self._truncate_comment(note.get('body', '')),
                     author=note.get('author', {}).get('username', 'unknown'),
                     created_at=datetime.fromisoformat(
-                        note.get('createdAt', '').replace('Z', '+00:00')
+                        note.get('created_at', '').replace('Z', '+00:00')
                     )
-                    if note.get('createdAt')
+                    if note.get('created_at')
                     else datetime.fromtimestamp(0),
                     updated_at=datetime.fromisoformat(
-                        note.get('updatedAt', '').replace('Z', '+00:00')
+                        note.get('updated_at', '').replace('Z', '+00:00')
                     )
-                    if note.get('updatedAt')
+                    if note.get('updated_at')
                     else datetime.fromtimestamp(0),
-                    system=bool(note.get('system', False)),
+                    system=note.get('system', False),
                 )
+                comments.append(comment)
+
+            # Sort comments by creation date to maintain chronological order
+            comments.sort(key=lambda c: c.created_at)
+            return comments
+
+        except Exception as e:
+            logger.warning(
+                f'Failed to get review thread comments for comment {comment_id}: {e}'
             )
-        return comments
+            return []
+
+    async def get_issue_or_pr_title_and_body(
+        self, repository: str, issue_number: int, is_pr: bool | None = None
+    ) -> tuple[str, str]:
+        """Get the title and body of an issue or merge request.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            issue_number: The issue/MR IID within the project
+            is_pr: If True, treat as merge request; if False, treat as issue;
+                   if None, try issue first then merge request (default behavior)
+
+        Returns:
+            A tuple of (title, body)
+        """
+        project_id = self._extract_project_id(repository)
+
+        if is_pr is True:
+            # Explicitly fetch as merge request
+            try:
+                url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}'
+                response, _ = await self._make_request(url)
+                title = response.get('title') or ''
+                body = response.get('description') or ''
+                return title, body
+            except Exception:
+                return '', ''
+        elif is_pr is False:
+            # Explicitly fetch as issue
+            try:
+                url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
+                response, _ = await self._make_request(url)
+                title = response.get('title') or ''
+                body = response.get('description') or ''
+                return title, body
+            except Exception:
+                return '', ''
+        else:
+            # Default behavior: try as issue first, then as merge request
+            try:
+                url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
+                response, _ = await self._make_request(url)
+                title = response.get('title') or ''
+                body = response.get('description') or ''
+                return title, body
+            except Exception:
+                # If issue not found, try as merge request
+                try:
+                    url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}'
+                    response, _ = await self._make_request(url)
+                    title = response.get('title') or ''
+                    body = response.get('description') or ''
+                    return title, body
+                except Exception:
+                    # If neither found, return empty strings
+                    return '', ''
+
+    async def get_issue_or_pr_comments(
+        self,
+        repository: str,
+        issue_number: int,
+        max_comments: int = 10,
+        is_pr: bool | None = None,
+    ) -> list[Comment]:
+        """Get comments for an issue or merge request.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            issue_number: The issue/MR IID within the project
+            max_comments: Maximum number of comments to retrieve
+            is_pr: If True, treat as merge request; if False, treat as issue;
+                   if None, try issue first then merge request (default behavior)
+
+        Returns:
+            List of Comment objects ordered by creation date
+        """
+        project_id = self._extract_project_id(repository)
+
+        if is_pr is True:
+            # Explicitly fetch merge request comments
+            try:
+                url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/notes'
+                return await self._fetch_comments_from_url(url, max_comments)
+            except Exception:
+                return []
+        elif is_pr is False:
+            # Explicitly fetch issue comments
+            try:
+                url = (
+                    f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+                )
+                return await self._fetch_comments_from_url(url, max_comments)
+            except Exception:
+                return []
+        else:
+            # Default behavior: try as issue first, then as merge request
+            try:
+                url = (
+                    f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+                )
+                return await self._fetch_comments_from_url(url, max_comments)
+            except Exception:
+                # If issue not found, try as merge request
+                try:
+                    url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/notes'
+                    return await self._fetch_comments_from_url(url, max_comments)
+                except Exception:
+                    # If neither found, return empty list
+                    return []
+
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
+    async def _fetch_comments_from_url(
+        self, url: str, max_comments: int
+    ) -> list[Comment]:
+        """Helper method to fetch comments from a given URL with pagination."""
+        all_comments: list[Comment] = []
+        page = 1
+        per_page = min(max_comments, 100)  # GitLab API max per_page is 100
+
+        while len(all_comments) < max_comments:
+            params = {
+                'per_page': per_page,
+                'page': page,
+                'order_by': 'created_at',
+                'sort': 'asc',  # Get oldest comments first to match GitHub behavior
+            }
+
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more comments
+                break
+
+            # Filter out system comments and convert to Comment objects
+            for comment_data in response:
+                if len(all_comments) >= max_comments:
+                    break
+
+                # Skip system-generated comments
+                if comment_data.get('system', False):
+                    continue
+
+                comment = Comment(
+                    id=str(comment_data.get('id', 'unknown')),
+                    body=self._truncate_comment(comment_data.get('body', '')),
+                    author=comment_data.get('author', {}).get('username', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment_data.get('created_at', '').replace('Z', '+00:00')
+                    )
+                    if comment_data.get('created_at')
+                    else datetime.fromtimestamp(0),
+                    updated_at=datetime.fromisoformat(
+                        comment_data.get('updated_at', '').replace('Z', '+00:00')
+                    )
+                    if comment_data.get('updated_at')
+                    else datetime.fromtimestamp(0),
+                    system=comment_data.get('system', False),
+                )
+                all_comments.append(comment)
+
+            # Check if we have more pages
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header or len(all_comments) >= max_comments:
+                break
+
+            page += 1
+
+        # Sort comments by creation date and return the most recent ones
+        all_comments.sort(key=lambda c: c.created_at)
+        return all_comments[-max_comments:]
 
     async def is_pr_open(self, repository: str, pr_number: int) -> bool:
         """Check if a GitLab merge request is still active (not closed/merged).
