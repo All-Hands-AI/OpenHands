@@ -1568,20 +1568,20 @@
     "uk": "Максимальний розмір історії конденсатора пам'яті"
   },
   "SETTINGS$CONDENSER_MAX_SIZE_TOOLTIP": {
-    "en": "After this many events, the condenser will summarize history. Minimum 10.",
-    "ja": "このイベント数を超えると、凝縮器が履歴を要約します。最小 10。",
-    "zh-CN": "达到此事件数量后，凝缩器将汇总历史。最小 10。",
-    "zh-TW": "超過此事件數後，凝縮器會摘要歷史。最小 10。",
-    "ko-KR": "이 이벤트 수 이후 응축기가 기록을 요약합니다. 최소 10.",
-    "no": "Etter så mange hendelser vil kondenseren oppsummere historikken. Minimum 10.",
-    "it": "Dopo questo numero di eventi, il condensatore riassumerà la cronologia. Minimo 10.",
-    "pt": "Após esse número de eventos, o condensador irá resumir o histórico. Mínimo 10.",
-    "es": "Después de este número de eventos, el condensador resumirá el historial. Mínimo 10.",
-    "ar": "بعد هذا العدد من الأحداث، سيقوم المكثف بتلخيص السجل. الحد الأدنى 10.",
-    "fr": "Après ce nombre d'événements, le condenseur résumera l'historique. Minimum 10.",
-    "tr": "Bu kadar olaydan sonra yoğunlaştırıcı geçmişi özetler. En az 10.",
-    "de": "Nach so vielen Ereignissen fasst der Kondensator die Historie zusammen. Minimum 10.",
-    "uk": "Після цієї кількості подій конденсатор узагальнить історію. Мінімум 10."
+    "en": "After this many events, the condenser will summarize history. Minimum 20.",
+    "ja": "このイベント数を超えると、凝縮器が履歴を要約します。最小 20。",
+    "zh-CN": "达到此事件数量后，凝缩器将汇总历史。最小 20。",
+    "zh-TW": "超過此事件數後，凝縮器會摘要歷史。最小 20。",
+    "ko-KR": "이 이벤트 수 이후 응축기가 기록을 요약합니다. 최소 20.",
+    "no": "Etter så mange hendelser vil kondenseren oppsummere historikken. Minimum 20.",
+    "it": "Dopo questo numero di eventi, il condensatore riassumerà la cronologia. Minimo 20.",
+    "pt": "Após esse número de eventos, o condensador irá resumir o histórico. Mínimo 20.",
+    "es": "Después de este número de eventos, el condensador resumirá el historial. Mínimo 20.",
+    "ar": "بعد هذا العدد من الأحداث، سيقوم المكثف بتلخيص السجل. الحد الأدنى 20.",
+    "fr": "Après ce nombre d'événements, le condenseur résumera l'historique. Minimum 20.",
+    "tr": "Bu kadar olaydan sonra yoğunlaştırıcı geçmişi özetler. En az 20.",
+    "de": "Nach so vielen Ereignissen fasst der Kondensator die Historie zusammen. Minimum 20.",
+    "uk": "Після цієї кількості подій конденсатор узагальнить історію. Мінімум 20."
   },
   "SETTINGS$LANGUAGE": {
     "en": "Language",
@@ -2094,22 +2094,6 @@
     "tr": "Git Sağlayıcısı",
     "de": "Git-Anbieter",
     "uk": "Git-провайдер"
-  },
-  "ACCOUNT_SETTINGS$TITLE": {
-    "en": "Account Settings",
-    "ja": "アカウント設定",
-    "zh-CN": "账户设置",
-    "zh-TW": "帳戶設定",
-    "ko-KR": "계정 설정",
-    "no": "Kontoinnstillinger",
-    "it": "Impostazioni account",
-    "pt": "Configurações da conta",
-    "es": "Configuración de la cuenta",
-    "ar": "إعدادات الحساب",
-    "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları",
-    "de": "Kontoeinstellungen",
-    "uk": "Налаштування облікового запису"
   },
   "WORKSPACE$TERMINAL_TAB_LABEL": {
     "en": "Terminal",
@@ -7663,22 +7647,6 @@
     "tr": "Ajan görevine devam et",
     "uk": "Відновити завдання агента"
   },
-  "ACTION_BUTTON$PAUSE": {
-    "en": "Pause the current task",
-    "zh-CN": "暂停",
-    "zh-TW": "暫停",
-    "ko-KR": "일시정지",
-    "ja": "一時停止",
-    "no": "Sett gjeldende oppgave på pause",
-    "ar": "إيقاف المهمة الحالية مؤقتاً",
-    "de": "Aktuelle Aufgabe pausieren",
-    "fr": "Mettre en pause la tâche actuelle",
-    "it": "Metti in pausa il compito corrente",
-    "pt": "Pausar a tarefa atual",
-    "es": "Pausar la tarea actual",
-    "tr": "Mevcut görevi duraklat",
-    "uk": "Призупинити поточне завдання"
-  },
   "BROWSER$SCREENSHOT_ALT": {
     "en": "Browser Screenshot",
     "zh-CN": "截图",
@@ -8286,22 +8254,6 @@
     "no": "plassholder for brukeravatar",
     "tr": "Kullanıcı avatarı yer tutucusu",
     "uk": "заповнювач аватара користувача"
-  },
-  "ACCOUNT_SETTINGS$SETTINGS": {
-    "en": "Account Settings",
-    "ja": "アカウント設定",
-    "zh-CN": "账户设置",
-    "zh-TW": "帳戶設定",
-    "ko-KR": "계정 설정",
-    "no": "Kontoinnstillinger",
-    "it": "Impostazioni account",
-    "pt": "Configurações da conta",
-    "es": "Configuración de la cuenta",
-    "ar": "إعدادات الحساب",
-    "fr": "Paramètres du compte",
-    "tr": "Hesap ayarları",
-    "de": "Kontoeinstellungen",
-    "uk": "Налаштування облікового запису"
   },
   "ACCOUNT_SETTINGS$LOGOUT": {
     "en": "Logout",
@@ -9246,38 +9198,6 @@
     "fr": "Rejoindre la liste d'attente",
     "tr": "Bekleme listesine katıl",
     "uk": "Приєднатися до списку очікування"
-  },
-  "ACCOUNT_SETTINGS$ADDITIONAL_SETTINGS": {
-    "en": "Additional Settings",
-    "ja": "追加設定",
-    "zh-CN": "附加设置",
-    "zh-TW": "附加設定",
-    "ko-KR": "추가 설정",
-    "de": "Zusätzliche Einstellungen",
-    "no": "Ytterligere innstillinger",
-    "it": "Impostazioni aggiuntive",
-    "pt": "Configurações adicionais",
-    "es": "Configuraciones adicionales",
-    "ar": "إعدادات إضافية",
-    "fr": "Paramètres supplémentaires",
-    "tr": "Ek Ayarlar",
-    "uk": "Додаткові налаштування"
-  },
-  "ACCOUNT_SETTINGS$DISCONNECT_FROM_GITHUB": {
-    "en": "Disconnect from GitHub",
-    "ja": "GitHubから切断",
-    "zh-CN": "断开与GitHub的连接",
-    "zh-TW": "中斷與GitHub的連接",
-    "ko-KR": "GitHub 연결 해제",
-    "de": "Von GitHub trennen",
-    "no": "Koble fra GitHub",
-    "it": "Disconnetti da GitHub",
-    "pt": "Desconectar do GitHub",
-    "es": "Desconectar de GitHub",
-    "ar": "قطع الاتصال من GitHub",
-    "fr": "Se déconnecter de GitHub",
-    "tr": "GitHub'dan bağlantıyı kes",
-    "uk": "Відключитися від GitHub"
   },
   "CONVERSATION$DELETE_WARNING": {
     "en": "Are you sure you want to delete this conversation? This action cannot be undone.",
