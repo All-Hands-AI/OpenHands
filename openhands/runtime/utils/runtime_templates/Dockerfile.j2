@@ -308,19 +308,24 @@ COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openh
 # Ensure openhands user/group and base dirs exist even when not building from scratch
 USER root
 RUN \
-    # Ensure group exists (prefer GID 1000 if available)
-    if ! getent group openhands >/dev/null 2>&1; then \
-        if getent group 1000 >/dev/null 2>&1; then groupadd openhands; else groupadd -g 1000 openhands; fi; \
-    fi && \
-    # Ensure user exists (prefer UID 1000 if available)
-    if ! id -u openhands >/dev/null 2>&1; then \
-        if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g openhands openhands; else useradd -u 1000 -g openhands -m -s /bin/bash openhands; fi; \
-    fi && \
-    # Ensure home and required directories exist before later steps
+    # Remove existing user/group by name or UID/GID 1000
+    if getent passwd openhands >/dev/null 2>&1; then userdel -r -f openhands || true; fi && \
+    if getent passwd 1000 >/dev/null 2>&1; then userdel -r -f "$(getent passwd 1000 | cut -d: -f1)" || true; fi && \
+    if getent group openhands >/dev/null 2>&1; then groupdel openhands || true; fi && \
+    if getent group 1000 >/dev/null 2>&1; then groupdel "$(getent group 1000 | cut -d: -f1)" || true; fi && \
+    \
+    # Recreate group with GID 1000
+    groupadd -g 1000 openhands && \
+    \
+    # Recreate user with UID 1000
+    useradd -u 1000 -g openhands -m -s /bin/bash openhands && \
+    \
+    # Ensure home and required directories exist
     mkdir -p /home/openhands && \
     mkdir -p /openhands && \
     mkdir -p $(dirname ${OPENVSCODE_SERVER_ROOT}) && \
-    # Ensure ownership is correct for all OpenHands paths
+    \
+    # Ensure ownership is correct
     chown -R openhands:openhands /home/openhands || true && \
     chown -R openhands:openhands /openhands || true
 
