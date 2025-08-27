@@ -647,7 +647,6 @@ class ActionExecutor:
 
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
-
     parser = argparse.ArgumentParser()
     parser.add_argument('port', type=int, help='Port to listen on')
     parser.add_argument('--working-dir', type=str, help='Working directory')
