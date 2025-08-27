@@ -57,8 +57,6 @@ export function DropdownMenu({
     <EmptyState inputValue={currentInputValue} />
   );
 
-
-
   return (
     <div data-testid="git-repo-dropdown-menu">
       <GenericDropdownMenu

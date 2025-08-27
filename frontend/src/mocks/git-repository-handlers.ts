@@ -205,7 +205,6 @@ export const GIT_REPOSITORY_HANDLERS = [
     const endIndex = startIndex + perPage;
     const paginatedBranches = MOCK_BRANCHES.slice(startIndex, endIndex);
     const hasNextPage = endIndex < MOCK_BRANCHES.length;
-    const totalPages = Math.ceil(MOCK_BRANCHES.length / perPage);
 
     const response: PaginatedBranchesResponse = {
       branches: paginatedBranches,

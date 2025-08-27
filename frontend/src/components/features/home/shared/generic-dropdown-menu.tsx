@@ -58,19 +58,17 @@ export function GenericDropdownMenu<T>({
         onScroll,
       })}
     >
-      {filteredItems.length === 0 ? (
-        renderEmptyState(inputValue)
-      ) : (
-        filteredItems.map((item, index) =>
-          renderItem(
-            item,
-            index,
-            highlightedIndex,
-            selectedItem,
-            getItemProps,
-          ),
-        )
-      )}
+      {filteredItems.length === 0
+        ? renderEmptyState(inputValue)
+        : filteredItems.map((item, index) =>
+            renderItem(
+              item,
+              index,
+              highlightedIndex,
+              selectedItem,
+              getItemProps,
+            ),
+          )}
     </ul>
   );
 }

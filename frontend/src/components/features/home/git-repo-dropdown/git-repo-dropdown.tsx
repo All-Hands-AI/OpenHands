@@ -150,19 +150,17 @@ export function GitRepoDropdown({
   const {
     isOpen,
     getToggleButtonProps,
-    getLabelProps,
     getMenuProps,
     getInputProps,
     highlightedIndex,
     getItemProps,
     selectedItem,
-    reset,
   } = useCombobox({
     items: filteredRepositories,
     itemToString: (item) => item?.full_name || "",
     selectedItem: selectedRepository,
-    onSelectedItemChange: ({ selectedItem }) => {
-      handleSelectionChange(selectedItem);
+    onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
+      handleSelectionChange(newSelectedItem);
     },
     onInputValueChange: handleInputValueChange,
     inputValue,

@@ -64,8 +64,6 @@ export function BranchDropdownMenu({
     </li>
   );
 
-
-
   return (
     <div data-testid="git-branch-dropdown-menu">
       <GenericDropdownMenu
