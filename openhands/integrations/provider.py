@@ -182,9 +182,7 @@ class ProviderHandler:
                     params={'provider': provider.value, 'sid': self.sid},
                 )
 
-                print('token response', resp)
-                print('token resp', resp.text)
-
+            resp.raise_for_status()
             data = TokenResponse.model_validate_json(resp.text)
             return SecretStr(data.token)
 
