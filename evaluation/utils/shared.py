@@ -117,10 +117,7 @@ def codeact_user_response(
         else ''
     )
     msg = (
-        'Please continue working on the task on whatever approach you think is suitable.\n'
-        'When you think you have solved the question, please use the finish tool and include your final answer in the message parameter of the finish tool.\n'
-        f'{encaps_str}'
-        'IMPORTANT: YOU SHOULD NEVER ASK FOR HUMAN HELP.\n'
+        'Please continue fixing this issue independently. You should never ask the user for help! Once the issue is fixed and verified, use the `finish` tool to submit your results.\n'
     )
 
     if state.history:
