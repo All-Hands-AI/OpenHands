@@ -84,6 +84,7 @@ FUNCTION_CALLING_PATTERNS: list[str] = [
     'kimi-k2-instruct',
     'qwen3-coder*',
     'qwen3-coder-480b-a35b-instruct',
+    'deepseek-chat',
 ]
 
 REASONING_EFFORT_PATTERNS: list[str] = [
@@ -98,9 +99,7 @@ REASONING_EFFORT_PATTERNS: list[str] = [
     'o4-mini-2025-04-16',
     'gemini-2.5-flash',
     'gemini-2.5-pro',
-    'gpt-5',
-    'gpt-5-2025-08-07',
-    'gpt-5-mini-2025-08-07',
+    'gpt-5*',
     # DeepSeek reasoning family
     'deepseek-r1-0528*',
 ]
