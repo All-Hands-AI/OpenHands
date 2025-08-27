@@ -363,26 +363,28 @@ class TomCodeActAgent(CodeActAgent):
                 )
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.submit(run_sleeptime_compute)
+            future = executor.submit(run_sleeptime_compute)
+            try:
+                future.result()  # Wait for completion and get any exception
 
-        # Update processing history for successfully processed sessions
-        current_timestamp = datetime.now().isoformat()
-        for session_info in sessions_to_process:
-            processing_history[str(session_info['session_id'])] = {
-                'processed_at': current_timestamp,
-                'last_event_id': session_info['current_event_id'],
-            }
+                # Only update processing history on success
+                current_timestamp = datetime.now().isoformat()
+                for session_info in sessions_to_process:
+                    processing_history[str(session_info['session_id'])] = {
+                        'processed_at': current_timestamp,
+                        'last_event_id': session_info['current_event_id'],
+                    }
 
-        # Save updated history
-        try:
-            self.save_processing_history(user_id, processing_history)
-            logger.info(
-                f'📝 Tom: Updated processing history for {len(sessions_to_process)} sessions'
-            )
-        except Exception as e:
-            logger.error(f'❌ Tom: Failed to update processing history: {e}')
+                self.save_processing_history(user_id, processing_history)
+                logger.info(
+                    f'📝 Tom: Updated processing history for {len(sessions_to_process)} sessions'
+                )
+                logger.info('✅ Tom: Sleeptime compute completed successfully')
 
-        logger.info('✅ Tom: Sleeptime compute completed successfully')
+            except Exception as e:
+                logger.error(f'❌ Tom: Sleeptime compute failed: {e}')
+                logger.info('⚠️ Tom: Processing history not updated due to failure')
+                return
 
     def get_session_last_event_id(self, session_id: str) -> int:
         """Get the highest numbered event file in a session's events directory."""
