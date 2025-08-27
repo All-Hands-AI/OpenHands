@@ -728,20 +728,17 @@ class OpenHands {
   }
 
   static async getMicroagentManagementConversations(
+    selectedRepository: string,
     pageId?: string,
-    selectedRepository?: string,
     limit: number = 100,
   ): Promise<Conversation[]> {
     const params: Record<string, string | number> = {
       limit,
+      selected_repository: selectedRepository,
     };
 
     if (pageId) {
       params.page_id = pageId;
-    }
-
-    if (selectedRepository) {
-      params.selected_repository = selectedRepository;
     }
 
     const { data } = await openHands.get<ResultSet<Conversation>>(

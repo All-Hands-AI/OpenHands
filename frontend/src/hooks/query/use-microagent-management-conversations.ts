@@ -17,8 +17,8 @@ export const useMicroagentManagementConversations = (
     ],
     queryFn: () =>
       OpenHands.getMicroagentManagementConversations(
-        pageId,
         selectedRepository,
+        pageId,
         limit,
       ),
     enabled: !!selectedRepository,
