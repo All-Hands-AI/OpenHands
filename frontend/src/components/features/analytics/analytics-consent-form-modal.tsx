@@ -1,6 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { Checkbox } from "@openhands/ui";
-import { useState } from "react";
 import {
   BaseModalTitle,
   BaseModalDescription,
@@ -21,7 +19,6 @@ export function AnalyticsConsentFormModal({
 }: AnalyticsConsentFormModalProps) {
   const { t } = useTranslation();
   const { mutate: saveUserSettings } = useSaveSettings();
-  const [checked, setChecked] = useState(true);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -51,13 +48,11 @@ export function AnalyticsConsentFormModal({
           <BaseModalDescription>
             {t(I18nKey.ANALYTICS$DESCRIPTION)}
           </BaseModalDescription>
-          <Checkbox
-            checked={checked}
-            className="flex gap-2 items-center self-start"
-            name="analytics"
-            onChange={(e) => setChecked(e.target.checked)}
-            label={t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
-          />
+
+          <label className="flex gap-2 items-center self-start text-sm">
+            <input name="analytics" type="checkbox" defaultChecked />
+            {t(I18nKey.ANALYTICS$SEND_ANONYMOUS_DATA)}
+          </label>
 
           <BrandButton
             testId="confirm-preferences"
