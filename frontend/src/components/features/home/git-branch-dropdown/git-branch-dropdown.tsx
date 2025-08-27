@@ -176,8 +176,8 @@ export function GitBranchDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
         <input
+          // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
             disabled: disabled || !repository,
             placeholder,

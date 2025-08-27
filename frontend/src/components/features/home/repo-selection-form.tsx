@@ -93,6 +93,7 @@ export function RepositorySelectionForm({
         onRepoSelection(repository);
         setSelectedRepository(repository);
       } else {
+        onRepoSelection(null); // Notify parent component that repo was cleared
         setSelectedRepository(null);
         setSelectedBranch(null);
       }

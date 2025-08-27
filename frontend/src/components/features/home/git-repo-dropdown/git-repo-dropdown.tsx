@@ -185,8 +185,8 @@ export function GitRepoDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
-        {/* eslint-disable-next-line react/jsx-props-no-spreading */}
         <input
+          // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
             disabled,
             placeholder,
