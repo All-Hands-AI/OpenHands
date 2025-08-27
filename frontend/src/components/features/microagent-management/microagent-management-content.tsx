@@ -277,6 +277,12 @@ export function MicroagentManagementContent() {
     const repositoryName = repository.full_name;
     const gitProvider = repository.git_provider;
 
+    const createMicroagent = {
+      repo: repositoryName,
+      git_provider: gitProvider,
+      title: formData.query,
+    };
+
     // Launch a new conversation to help the user understand the repo
     createConversationAndSubscribe({
       query: formData.query,
@@ -286,6 +292,7 @@ export function MicroagentManagementContent() {
         branch: formData.selectedBranch,
         gitProvider,
       },
+      createMicroagent,
       onSuccessCallback: () => {
         hideLearnThisRepoModal();
       },

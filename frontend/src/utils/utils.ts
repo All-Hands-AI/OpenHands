@@ -244,3 +244,31 @@ export const extractRepositoryInfo = (
 
   return { owner, repo, filePath };
 };
+
+/**
+ * Get the repository markdown creation prompt with additional PR creation instructions
+ * @param gitProvider The git provider to use for generating provider-specific text
+ * @param query Optional custom query to use instead of the default prompt
+ * @returns The complete prompt for creating repository markdown and PR instructions
+ */
+export const getRepoMdCreatePrompt = (
+  gitProvider: Provider,
+  query?: string,
+): string => {
+  const providerName = getProviderName(gitProvider);
+  const pr = getPR(gitProvider === "gitlab");
+  const prShort = getPRShort(gitProvider === "gitlab");
+
+  return `Please explore this repository. Create the file .openhands/microagents/repo.md with:
+            ${
+              query
+                ? `- ${query}`
+                : `- A description of the project
+            - An overview of the file structure
+            - Any information on how to run tests or other relevant commands
+            - Any other information that would be helpful to a brand new developer
+        Keep it short--just a few paragraphs will do.`
+            }
+
+Please push the changes to your branch on ${providerName} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
