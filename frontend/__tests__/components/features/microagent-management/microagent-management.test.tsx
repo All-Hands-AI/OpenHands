@@ -17,7 +17,7 @@ const mockUseUserProviders = vi.fn();
 const mockUseGitRepositories = vi.fn();
 const mockUseConfig = vi.fn();
 const mockUseRepositoryMicroagents = vi.fn();
-const mockUseSearchConversations = vi.fn();
+const mockUseMicroagentManagementConversations = vi.fn();
 
 vi.mock("#/hooks/use-user-providers", () => ({
   useUserProviders: () => mockUseUserProviders(),
@@ -35,8 +35,9 @@ vi.mock("#/hooks/query/use-repository-microagents", () => ({
   useRepositoryMicroagents: () => mockUseRepositoryMicroagents(),
 }));
 
-vi.mock("#/hooks/query/use-search-conversations", () => ({
-  useSearchConversations: () => mockUseSearchConversations(),
+vi.mock("#/hooks/query/use-microagent-management-conversations", () => ({
+  useMicroagentManagementConversations: () =>
+    mockUseMicroagentManagementConversations(),
 }));
 
 describe("MicroagentManagement", () => {
@@ -212,7 +213,7 @@ describe("MicroagentManagement", () => {
       isError: false,
     });
 
-    mockUseSearchConversations.mockReturnValue({
+    mockUseMicroagentManagementConversations.mockReturnValue({
       data: mockConversations,
       isLoading: false,
       isError: false,
@@ -859,8 +860,8 @@ describe("MicroagentManagement", () => {
   });
 
   // Search conversations functionality tests
-  describe("Search conversations functionality", () => {
-    it("should call searchConversations API when repository is expanded", async () => {
+  describe("Microagent management conversations functionality", () => {
+    it("should call useMicroagentManagementConversations API when repository is expanded", async () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
@@ -876,7 +877,7 @@ describe("MicroagentManagement", () => {
       // Wait for both microagents and conversations to be fetched
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
     });
 
@@ -896,7 +897,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that microagents are displayed
@@ -921,7 +922,7 @@ describe("MicroagentManagement", () => {
         isLoading: true,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: undefined,
         isLoading: true,
         isError: false,
@@ -958,7 +959,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that loading spinner is not displayed
@@ -983,7 +984,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that microagent file paths are displayed for microagents
@@ -1013,7 +1014,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [],
         isLoading: false,
         isError: false,
@@ -1033,7 +1034,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that the learn this repo component is displayed
@@ -1050,7 +1051,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [...mockConversations],
         isLoading: false,
         isError: false,
@@ -1070,7 +1071,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that conversations are displayed
@@ -1093,7 +1094,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [],
         isLoading: false,
         isError: false,
@@ -1113,7 +1114,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that microagents are displayed
@@ -1131,7 +1132,7 @@ describe("MicroagentManagement", () => {
 
     it("should handle error when fetching conversations", async () => {
       const user = userEvent.setup();
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: undefined,
         isLoading: false,
         isError: true,
@@ -1150,7 +1151,7 @@ describe("MicroagentManagement", () => {
 
       // Wait for the error to be handled
       await waitFor(() => {
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that the learn this repo component is displayed (since conversations failed)
@@ -1195,7 +1196,7 @@ describe("MicroagentManagement", () => {
       expect(learnThisRepo).toBeInTheDocument();
     });
 
-    it("should call searchConversations with correct parameters", async () => {
+    it("should call useMicroagentManagementConversations with correct parameters", async () => {
       const user = userEvent.setup();
       renderMicroagentManagement();
 
@@ -1208,9 +1209,9 @@ describe("MicroagentManagement", () => {
       const repoAccordion = screen.getByTestId("repository-name-tooltip");
       await user.click(repoAccordion);
 
-      // Wait for searchConversations to be called
+      // Wait for useMicroagentManagementConversations to be called
       await waitFor(() => {
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
     });
 
@@ -1230,7 +1231,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to complete
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that conversations display correct information
@@ -1257,7 +1258,7 @@ describe("MicroagentManagement", () => {
       // Wait for both queries to be called for first repo
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Check that both microagents and conversations are displayed
@@ -2391,7 +2392,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [],
         isLoading: false,
         isError: false,
@@ -2411,7 +2412,7 @@ describe("MicroagentManagement", () => {
       // Wait for microagents and conversations to be fetched
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Verify the learn this repo trigger is displayed when no microagents exist
@@ -2436,7 +2437,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [],
         isLoading: false,
         isError: false,
@@ -2491,7 +2492,7 @@ describe("MicroagentManagement", () => {
         isLoading: false,
         isError: false,
       });
-      mockUseSearchConversations.mockReturnValue({
+      mockUseMicroagentManagementConversations.mockReturnValue({
         data: [],
         isLoading: false,
         isError: false,
@@ -2508,7 +2509,7 @@ describe("MicroagentManagement", () => {
 
       await waitFor(() => {
         expect(mockUseRepositoryMicroagents).toHaveBeenCalled();
-        expect(mockUseSearchConversations).toHaveBeenCalled();
+        expect(mockUseMicroagentManagementConversations).toHaveBeenCalled();
       });
 
       // Should NOT show the learn this repo trigger when microagents exist

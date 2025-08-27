@@ -129,7 +129,7 @@ export function ConversationCardContextMenu({
 
       {onStop && (
         <ContextMenuListItem testId="stop-button" onClick={onStop}>
-          <ContextMenuIconText icon={Power} text={t(I18nKey.BUTTON$STOP)} />
+          <ContextMenuIconText icon={Power} text={t(I18nKey.BUTTON$PAUSE)} />
         </ContextMenuListItem>
       )}
 
