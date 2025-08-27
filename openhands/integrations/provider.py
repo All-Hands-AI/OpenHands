@@ -179,14 +179,14 @@ class ProviderHandler:
                     headers={
                         'X-Session-API-Key': self.session_api_key,
                     },
-                    params={'provider': provider, 'sid': self.sid},
+                    params={'provider': provider.value, 'sid': self.sid},
                 )
 
                 print('token response', resp)
                 print('token resp', resp.text)
 
             data = TokenResponse.model_validate_json(resp.text)
-            return SecretStr(data.token)
+            return data.token
 
         except Exception as e:
             logger.warning(f'Failed to fetch latest token for provider {provider}: {e}')
