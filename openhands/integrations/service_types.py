@@ -141,7 +141,7 @@ class Repository(BaseModel):
 
 
 class Comment(BaseModel):
-    id: int
+    id: str
     body: str
     author: str
     created_at: datetime
