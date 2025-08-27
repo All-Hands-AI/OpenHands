@@ -614,29 +614,6 @@ class ProviderHandler:
 
         return remote_url
 
-    async def _get_pr_details_from_specified_provider(
-        self, repository: str, pr_number: int, specified_provider: ProviderType
-    ) -> dict:
-        """Get PR details from a specified provider.
-
-        Args:
-            repository: Repository name in format 'owner/repo'
-            pr_number: The pull request/merge request number
-            specified_provider: The specific provider type to use
-
-        Returns:
-            Raw API response from the specified git provider
-
-        Raises:
-            AuthenticationError: If authentication fails
-        """
-        try:
-            service = self._get_service(specified_provider)
-            return await service.get_pr_details(repository, pr_number)
-        except Exception as e:
-            logger.warning(f'Error fetching PR details from {specified_provider}: {e}')
-            raise
-
     async def is_pr_open(
         self, repository: str, pr_number: int, git_provider: ProviderType
     ) -> bool:

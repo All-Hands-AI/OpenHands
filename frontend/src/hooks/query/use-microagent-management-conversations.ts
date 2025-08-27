@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import OpenHands from "#/api/open-hands";
 
 export const useMicroagentManagementConversations = (
+  selectedRepository: string,
   pageId?: string,
   limit: number = 100,
-  selectedRepository?: string,
   cacheDisabled: boolean = false,
 ) =>
   useQuery({
@@ -21,6 +21,7 @@ export const useMicroagentManagementConversations = (
         selectedRepository,
         limit,
       ),
+    enabled: !!selectedRepository,
     staleTime: cacheDisabled ? 0 : 1000 * 60 * 5, // 5 minutes
     gcTime: cacheDisabled ? 0 : 1000 * 60 * 15, // 15 minutes
   });

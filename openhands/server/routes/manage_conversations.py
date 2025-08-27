@@ -79,7 +79,9 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
-def _filter_conversations_by_age(conversations: list, max_age_seconds: int) -> list:
+def _filter_conversations_by_age(
+    conversations: list[ConversationMetadata], max_age_seconds: int
+) -> list:
     """Filter conversations by age, removing those older than max_age_seconds.
 
     Args:
@@ -771,9 +773,9 @@ def add_experiment_config_for_conversation(
 
 @app.get('/microagent-management/conversations')
 async def get_microagent_management_conversations(
+    selected_repository: str,
     page_id: str | None = None,
     limit: int = 20,
-    selected_repository: str | None = None,
     conversation_store: ConversationStore = Depends(get_conversation_store),
     provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
 ) -> ConversationInfoResultSet:
@@ -807,10 +809,7 @@ async def get_microagent_management_conversations(
             continue
 
         # Apply repository filter if specified
-        if (
-            selected_repository is not None
-            and conversation.selected_repository != selected_repository
-        ):
+        if conversation.selected_repository != selected_repository:
             continue
 
         if (

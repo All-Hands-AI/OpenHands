@@ -43,9 +43,9 @@ export function MicroagentManagementRepoMicroagents({
     isLoading: isLoadingConversations,
     isError: isErrorConversations,
   } = useMicroagentManagementConversations(
+    repositoryName,
     undefined,
     1000,
-    repositoryName,
     true,
   );
 
