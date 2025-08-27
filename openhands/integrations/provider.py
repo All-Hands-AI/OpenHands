@@ -186,7 +186,7 @@ class ProviderHandler:
                 print('token resp', resp.text)
 
             data = TokenResponse.model_validate_json(resp.text)
-            return data.token
+            return SecretStr(data.token)
 
         except Exception as e:
             logger.warning(f'Failed to fetch latest token for provider {provider}: {e}')

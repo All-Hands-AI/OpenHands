@@ -15,7 +15,7 @@ from openhands.server.types import AppMode
 
 
 class TokenResponse(BaseModel):
-    token: SecretStr
+    token: str
 
 
 class ProviderType(Enum):
