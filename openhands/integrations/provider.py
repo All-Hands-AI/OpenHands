@@ -613,3 +613,30 @@ class ProviderHandler:
             remote_url = f'https://{domain}/{repo_name}.git'
 
         return remote_url
+
+    async def is_pr_open(
+        self, repository: str, pr_number: int, git_provider: ProviderType
+    ) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        This method checks the PR status using the provider's service method.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+            git_provider: The Git provider type for this repository
+
+        Returns:
+            True if PR is active (open), False if closed/merged, True if can't determine
+        """
+        try:
+            service = self._get_service(git_provider)
+            return await service.is_pr_open(repository, pr_number)
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine PR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the PR status, include the conversation to be safe
+            return True
