@@ -76,9 +76,10 @@ export function MicroagentManagementLearnThisRepoModal({
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const finalQuery =
-      query.trim() ||
-      getRepoMdCreatePrompt(selectedRepository?.git_provider || "github");
+    const finalQuery = getRepoMdCreatePrompt(
+      selectedRepository?.git_provider || "github",
+      query.trim(),
+    );
 
     onConfirm({
       query: finalQuery,
@@ -87,9 +88,10 @@ export function MicroagentManagementLearnThisRepoModal({
   };
 
   const handleConfirm = () => {
-    const finalQuery =
-      query.trim() ||
-      getRepoMdCreatePrompt(selectedRepository?.git_provider || "github");
+    const finalQuery = getRepoMdCreatePrompt(
+      selectedRepository?.git_provider || "github",
+      query.trim(),
+    );
 
     onConfirm({
       query: finalQuery,
