@@ -10,7 +10,7 @@ import tempfile
 from abc import abstractmethod
 from pathlib import Path
 from types import MappingProxyType
-from typing import Callable, cast
+from typing import TYPE_CHECKING, Callable, Optional, cast
 from zipfile import ZipFile
 
 import httpx
@@ -74,6 +74,9 @@ from openhands.utils.async_utils import (
     call_async_from_sync,
     call_sync_from_async,
 )
+
+if TYPE_CHECKING:
+    from openhands.server.session.agent_session import ConversationStats
 
 
 def _default_env_vars(sandbox_config: SandboxConfig) -> dict[str, str]:
@@ -191,6 +194,7 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
+        self.conversation_stats: Optional['ConversationStats'] = None
 
         # Initialize security analyzer
         self.security_analyzer = None
@@ -202,6 +206,10 @@ class Runtime(FileEditRuntimeMixin):
             logger.debug(
                 f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
             )
+
+    def set_conversation_stats(self, conversation_stats: 'ConversationStats'):
+        """Sets the conversation stats object for the runtime."""
+        self.conversation_stats = conversation_stats
 
     @property
     def runtime_initialized(self) -> bool:
@@ -384,6 +392,13 @@ class Runtime(FileEditRuntimeMixin):
 
         observation._cause = event.id  # type: ignore[attr-defined]
         observation.tool_call_metadata = event.tool_call_metadata
+
+        # Append performance metrics in ONE place, with FRESH data
+        if self.conversation_stats:
+            metrics = self.conversation_stats.get_combined_metrics()
+            metrics_msg = metrics.get_performance_metrics()
+            if metrics_msg:
+                observation.content += metrics_msg
 
         # this might be unnecessary, since source should be set by the event stream when we're here
         source = event.source if event.source else EventSource.AGENT
@@ -886,9 +901,10 @@ fi
         If the action is not runnable in any runtime, a NullObservation is returned.
         If the action is not supported by the current runtime, an ErrorObservation is returned.
         """
+        observation: Observation = NullObservation('')
         if not action.runnable:
             if isinstance(action, AgentThinkAction):
-                return AgentThinkObservation('Your thought has been logged.')
+                observation = AgentThinkObservation('Your thought has been logged.')
             elif isinstance(action, TaskTrackingAction):
                 # Get the session-specific task file path
                 conversation_dir = get_conversation_dir(
@@ -909,13 +925,13 @@ fi
 
                     try:
                         self.event_stream.file_store.write(task_file_path, content)
-                        return TaskTrackingObservation(
+                        observation = TaskTrackingObservation(
                             content=f'Task list has been updated with {len(action.task_list)} items. Stored in session directory: {task_file_path}',
                             command=action.command,
                             task_list=action.task_list,
                         )
                     except Exception as e:
-                        return ErrorObservation(
+                        observation = ErrorObservation(
                             f'Failed to write task list to session directory {task_file_path}: {str(e)}'
                         )
 
@@ -923,46 +939,50 @@ fi
                     # Read the TASKS.md file from the session directory
                     try:
                         content = self.event_stream.file_store.read(task_file_path)
-                        return TaskTrackingObservation(
+                        observation = TaskTrackingObservation(
                             content=content,
                             command=action.command,
                             task_list=[],  # Empty for view command
                         )
                     except FileNotFoundError:
-                        return TaskTrackingObservation(
+                        observation = TaskTrackingObservation(
                             command=action.command,
                             task_list=[],
                             content='No task list found. Use the "plan" command to create one.',
                         )
                     except Exception as e:
-                        return TaskTrackingObservation(
+                        observation = TaskTrackingObservation(
                             command=action.command,
                             task_list=[],
                             content=f'Failed to read the task list from session directory {task_file_path}. Error: {str(e)}',
                         )
-
-            return NullObservation('')
-        if (
+                else:
+                    observation = NullObservation('')
+            else:
+                observation = NullObservation('')
+        elif (
             hasattr(action, 'confirmation_state')
             and action.confirmation_state
             == ActionConfirmationStatus.AWAITING_CONFIRMATION
         ):
-            return NullObservation('')
-        action_type = action.action  # type: ignore[attr-defined]
-        if action_type not in ACTION_TYPE_TO_CLASS:
-            return ErrorObservation(f'Action {action_type} does not exist.')
-        if not hasattr(self, action_type):
-            return ErrorObservation(
-                f'Action {action_type} is not supported in the current runtime.'
-            )
-        if (
-            getattr(action, 'confirmation_state', None)
-            == ActionConfirmationStatus.REJECTED
-        ):
-            return UserRejectObservation(
-                'Action has been rejected by the user! Waiting for further user input.'
-            )
-        observation = getattr(self, action_type)(action)
+            observation = NullObservation('')
+        else:
+            action_type = action.action  # type: ignore[attr-defined]
+            if action_type not in ACTION_TYPE_TO_CLASS:
+                observation = ErrorObservation(f'Action {action_type} does not exist.')
+            elif not hasattr(self, action_type):
+                observation = ErrorObservation(
+                    f'Action {action_type} is not supported in the current runtime.'
+                )
+            elif (
+                getattr(action, 'confirmation_state', None)
+                == ActionConfirmationStatus.REJECTED
+            ):
+                observation = UserRejectObservation(
+                    'Action has been rejected by the user! Waiting for further user input.'
+                )
+            else:
+                observation = getattr(self, action_type)(action)
         return observation
 
     # ====================================================================

@@ -14,6 +14,7 @@ from openhands.core.exceptions import AgentRuntimeUnavailableError
 from openhands.core.logger import OpenHandsLoggerAdapter
 from openhands.core.schema.agent import AgentState
 from openhands.events.action import ChangeAgentStateAction, MessageAction
+from openhands.events.action import Action
 from openhands.events.event import Event, EventSource
 from openhands.events.stream import EventStream
 from openhands.integrations.provider import (
@@ -321,6 +322,7 @@ class AgentSession:
 
         self.logger.debug(f'Initializing runtime `{runtime_name}` now...')
         runtime_cls = get_runtime_cls(runtime_name)
+        metrics = self.conversation_stats.get_combined_metrics()
         if runtime_cls == RemoteRuntime:
             # If provider tokens is passed in custom secrets, then remove provider from provider tokens
             # We prioritize provider tokens set in custom secrets
@@ -371,6 +373,9 @@ class AgentSession:
                     'error', RuntimeStatus.ERROR_RUNTIME_DISCONNECTED, str(e)
                 )
             return False
+
+        # Set conversation_stats AFTER runtime is connected to avoid deadlocks
+        self.runtime.set_conversation_stats(self.conversation_stats)
 
         await self.runtime.clone_or_init_repo(
             git_provider_tokens, selected_repository, selected_branch
