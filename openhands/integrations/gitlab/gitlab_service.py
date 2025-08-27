@@ -727,7 +727,7 @@ class GitLabService(BaseGitService, GitService):
                     continue
 
                 comment = Comment(
-                    id=comment_data['id'],
+                    id=str(comment_data['id']),
                     body=comment_data['body'],
                     author=comment_data.get('author', {}).get('username', 'unknown'),
                     created_at=datetime.fromisoformat(

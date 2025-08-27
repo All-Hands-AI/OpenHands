@@ -885,13 +885,18 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         """Convert raw comment data to Comment objects."""
         comments: list[Comment] = []
         for comment in comments_data:
+            author = 'unknown'
+
+            if comment.get('author'):
+                author = comment.get('author', {}).get('login', 'unknown')
+            elif comment.get('user'):
+                author = comment.get('user', {}).get('login', 'unknown')
+
             comments.append(
                 Comment(
-                    id=comment.get('databaseId') or comment.get('id', 'unknown'),
+                    id=str(comment.get('id', 'unknown')),
                     body=self._truncate_comment(comment.get('body', '')),
-                    author=comment.get('author', {}).get('login', 'unknown')
-                    if comment.get('author')
-                    else 'unknown',
+                    author=author,
                     created_at=datetime.fromisoformat(
                         comment.get('createdAt', '').replace('Z', '+00:00')
                     )
