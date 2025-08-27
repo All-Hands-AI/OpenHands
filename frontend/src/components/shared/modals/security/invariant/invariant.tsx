@@ -13,6 +13,7 @@ import {
 } from "#/state/security-analyzer-slice";
 import { useScrollToBottom } from "#/hooks/use-scroll-to-bottom";
 import { I18nKey } from "#/i18n/declaration";
+import toast from "#/utils/toast";
 import InvariantLogoIcon from "./assets/logo";
 import { getFormattedDateTime } from "#/utils/gget-formatted-datetime";
 import { downloadJSON } from "#/utils/download-json";
@@ -20,7 +21,6 @@ import InvariantService from "#/api/invariant-service";
 import { useGetPolicy } from "#/hooks/query/use-get-policy";
 import { useGetRiskSeverity } from "#/hooks/query/use-get-risk-severity";
 import { useGetTraces } from "#/hooks/query/use-get-traces";
-import { displayInfoToast } from "#/utils/custom-toast-handlers";
 
 type SectionType = "logs" | "policy" | "settings";
 
@@ -50,7 +50,7 @@ function SecurityInvariant() {
 
   const { refetch: exportTraces } = useGetTraces({
     onSuccess: (traces) => {
-      displayInfoToast(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$TRACE_EXPORTED_MESSAGE));
 
       const filename = `openhands-trace-${getFormattedDateTime()}.json`;
       downloadJSON(traces, filename);
@@ -61,7 +61,7 @@ function SecurityInvariant() {
     mutationFn: (variables: { policy: string }) =>
       InvariantService.updatePolicy(variables.policy),
     onSuccess: () => {
-      displayInfoToast(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$POLICY_UPDATED_MESSAGE));
     },
   });
 
@@ -69,7 +69,7 @@ function SecurityInvariant() {
     mutationFn: (variables: { riskSeverity: number }) =>
       InvariantService.updateRiskSeverity(variables.riskSeverity),
     onSuccess: () => {
-      displayInfoToast(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
+      toast.info(t(I18nKey.INVARIANT$SETTINGS_UPDATED_MESSAGE));
     },
   });
 
