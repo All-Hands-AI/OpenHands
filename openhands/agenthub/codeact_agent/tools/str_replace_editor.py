@@ -81,11 +81,11 @@ def create_str_replace_editor_tool(
                         'items': {'type': 'integer'},
                         'type': 'array',
                     },
-                    'security_risk': {
-                        'type': 'string',
-                        'description': SECURITY_RISK_DESC,
-                        'enum': RISK_LEVELS,
-                    },
+                    # 'security_risk': {
+                    #     'type': 'string',
+                    #     'description': SECURITY_RISK_DESC,
+                    #     'enum': RISK_LEVELS,
+                    # },
                 },
                 'required': ['command', 'path', 'security_risk'],
             },

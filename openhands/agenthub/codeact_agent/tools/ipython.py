@@ -22,11 +22,11 @@ IPythonTool = ChatCompletionToolParam(
                     'type': 'string',
                     'description': 'The Python code to execute. Supports magic commands like %pip.',
                 },
-                'security_risk': {
-                    'type': 'string',
-                    'description': SECURITY_RISK_DESC,
-                    'enum': RISK_LEVELS,
-                },
+                # 'security_risk': {
+                #     'type': 'string',
+                #     'description': SECURITY_RISK_DESC,
+                #     'enum': RISK_LEVELS,
+                # },
             },
             'required': ['code', 'security_risk'],
         },

@@ -159,11 +159,11 @@ BrowserTool = ChatCompletionToolParam(
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
                 },
-                'security_risk': {
-                    'type': 'string',
-                    'description': SECURITY_RISK_DESC,
-                    'enum': RISK_LEVELS,
-                },
+                # 'security_risk': {
+                #     'type': 'string',
+                #     'description': SECURITY_RISK_DESC,
+                #     'enum': RISK_LEVELS,
+                # },
             },
             'required': ['code', 'security_risk'],
         },
