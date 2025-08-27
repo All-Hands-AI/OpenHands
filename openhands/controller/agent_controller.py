@@ -895,8 +895,10 @@ class AgentController:
                     'contextwindowexceedederror' in error_str
                     or 'prompt is too long' in error_str
                     or 'input length and `max_tokens` exceed context limit' in error_str
-                    or 'please reduce the length of either one'
-                    in error_str  # For OpenRouter context window errors
+                    or 'please reduce the length of either one' in error_str
+                    or 'the request exceeds the available context size' in error_str
+                    or 'context length exceeded' in error_str
+                    # For OpenRouter context window errors
                     or (
                         'sambanovaexception' in error_str
                         and 'maximum context length' in error_str
