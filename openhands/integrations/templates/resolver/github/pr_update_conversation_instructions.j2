@@ -1,10 +1,11 @@
 You are checked out to branch {{ branch_name }}, which has an open PR #{{ pr_number }}: "{{ pr_title }}".
 A comment on the PR has been addressed to you.
 
-PR Body:
+# PR Description
 {{ pr_body }}
 
 {% if comments %}
+# Previous Comments
 You may find these other comments relevant:
 {% for comment in comments %}
 - @{{ comment.author }} said at {{ comment.created_at }}:
