@@ -14,7 +14,7 @@ import { REPO_SUGGESTIONS } from "#/utils/suggestions/repo-suggestions";
 import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
 const contextMenuListItemClassName =
-  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px] !w-auto whitespace-nowrap";
+  "cursor-pointer p-0 h-auto hover:bg-transparent !w-auto whitespace-nowrap";
 
 interface MacrosSubmenuProps {
   onClose: () => void;
