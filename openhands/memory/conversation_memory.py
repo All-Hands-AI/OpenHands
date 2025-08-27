@@ -497,7 +497,7 @@ class ConversationMemory:
                             0
                         ].text += '\n\nNote: No visual information (screenshot or set of marks) is available for this webpage. The agent should rely on the text content above.'  # type: ignore[union-attr]
 
-                message = Message(role='user', content=content)
+            message = Message(role='user', content=content)
         elif isinstance(obs, AgentDelegateObservation):
             text = truncate_content(
                 obs.outputs.get('content', obs.content),
