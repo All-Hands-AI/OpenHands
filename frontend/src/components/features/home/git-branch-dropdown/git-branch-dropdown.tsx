@@ -9,7 +9,7 @@ import { useCombobox } from "downshift";
 import { Branch } from "#/types/git";
 import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
-import { useBranchData, useSearchBranches } from "./use-branch-data";
+import { useBranchDataWithDefault } from "./use-branch-data";
 import { LoadingSpinner } from "../shared/loading-spinner";
 import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
@@ -21,6 +21,7 @@ export interface GitBranchDropdownProps {
   provider: Provider;
   selectedBranch: Branch | null;
   onBranchSelect: (branch: Branch | null) => void;
+  defaultBranch?: string | null;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -31,49 +32,43 @@ export function GitBranchDropdown({
   provider,
   selectedBranch,
   onBranchSelect,
+  defaultBranch,
   placeholder = "Select branch...",
   disabled = false,
   className,
 }: GitBranchDropdownProps) {
   const [inputValue, setInputValue] = useState("");
-  const [isUserSearching, setIsUserSearching] = useState(false);
   const menuRef = useRef<HTMLUListElement>(null);
 
-  // Use branch data hooks
+  // Process search input (debounced or filtered)
+  const processedSearchInput = useMemo(() => {
+    return inputValue.trim().length > 0 ? inputValue.trim() : "";
+  }, [inputValue]);
+
+  // Use the new branch data hook with default branch prioritization
   const {
-    data: branchPages,
+    branches: filteredBranches,
+    allBranches,
     isLoading,
-    error,
+    isError,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useBranchData(repository, provider);
-
-  const { data: searchResults, isLoading: isSearchLoading } = useSearchBranches(
+    isSearchLoading,
+  } = useBranchDataWithDefault(
     repository,
-    inputValue,
     provider,
+    defaultBranch || null,
+    processedSearchInput,
+    inputValue,
+    selectedBranch,
   );
 
-  // Flatten paginated results
-  const allBranches = useMemo(() => {
-    if (!branchPages?.pages) return [];
-    return branchPages.pages.flatMap((page) => page.branches || []);
-  }, [branchPages]);
-
-  // Determine which branches to display
-  const filteredBranches = useMemo(() => {
-    // Only show search results if user is actively searching (not just displaying selected value)
-    if (isUserSearching && inputValue.trim() && searchResults) {
-      return searchResults || [];
-    }
-    return allBranches;
-  }, [isUserSearching, inputValue, searchResults, allBranches]);
+  const error = isError ? new Error("Failed to load branches") : null;
 
   // Handle clear
   const handleClear = useCallback(() => {
     setInputValue("");
-    setIsUserSearching(false);
     onBranchSelect(null);
   }, [onBranchSelect]);
 
@@ -82,7 +77,6 @@ export function GitBranchDropdown({
     (branch: Branch | null) => {
       onBranchSelect(branch);
       setInputValue("");
-      setIsUserSearching(false);
     },
     [onBranchSelect],
   );
@@ -92,8 +86,6 @@ export function GitBranchDropdown({
     ({ inputValue: newInputValue }: { inputValue?: string }) => {
       if (newInputValue !== undefined) {
         setInputValue(newInputValue);
-        // Mark as user searching if they're typing something different from selected branch
-        setIsUserSearching(true);
       }
     },
     [],
@@ -132,22 +124,50 @@ export function GitBranchDropdown({
     },
     onInputValueChange: handleInputValueChange,
     onIsOpenChange: ({ isOpen: newIsOpen }) => {
-      // When dropdown opens, reset search state so all branches are shown
-      if (newIsOpen && !isUserSearching) {
-        setIsUserSearching(false);
+      // When dropdown opens, clear input to show all branches (like repository dropdown)
+      if (newIsOpen) {
+        setInputValue("");
       }
     },
     inputValue,
   });
 
+  // Auto-select default branch when branches are loaded and no branch is selected
+  useEffect(() => {
+    if (
+      defaultBranch &&
+      !selectedBranch &&
+      filteredBranches.length > 0 &&
+      !isLoading
+    ) {
+      // Since our hook prioritizes the default branch, it should be first in the list
+      const defaultBranchObj = filteredBranches.find(
+        (branch) => branch.name === defaultBranch,
+      );
+
+      if (defaultBranchObj) {
+        onBranchSelect(defaultBranchObj);
+      }
+    }
+  }, [
+    defaultBranch,
+    selectedBranch,
+    filteredBranches,
+    onBranchSelect,
+    isLoading,
+  ]);
+
+  // Reset input when repository changes
+  useEffect(() => {
+    setInputValue("");
+  }, [repository]);
+
   // Initialize input value when selectedBranch changes (but not when user is typing)
   useEffect(() => {
     if (selectedBranch && !isOpen && inputValue !== selectedBranch.name) {
       setInputValue(selectedBranch.name);
-      setIsUserSearching(false); // Not searching when displaying selected value
     } else if (!selectedBranch && !isOpen && inputValue) {
       setInputValue("");
-      setIsUserSearching(false);
     }
   }, [selectedBranch, isOpen, inputValue]);
 

@@ -57,9 +57,9 @@ export function RepositorySelectionForm({
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
-  const handleBranchSelection = (branch: Branch | null) => {
+  const handleBranchSelection = React.useCallback((branch: Branch | null) => {
     setSelectedBranch(branch);
-  };
+  }, []);
 
   // Render the provider dropdown
   const renderProviderSelector = () => {
@@ -111,17 +111,22 @@ export function RepositorySelectionForm({
   };
 
   // Render the branch selector
-  const renderBranchSelector = () => (
-    <GitBranchDropdown
-      repository={selectedRepository?.full_name || null}
-      provider={selectedProvider || providers[0]}
-      selectedBranch={selectedBranch}
-      onBranchSelect={handleBranchSelection}
-      placeholder="Select branch..."
-      className="max-w-[500px]"
-      disabled={!selectedRepository}
-    />
-  );
+  const renderBranchSelector = () => {
+    const defaultBranch = selectedRepository?.main_branch || null;
+    
+    return (
+      <GitBranchDropdown
+        repository={selectedRepository?.full_name || null}
+        provider={selectedProvider || providers[0]}
+        selectedBranch={selectedBranch}
+        onBranchSelect={handleBranchSelection}
+        defaultBranch={defaultBranch}
+        placeholder="Select branch..."
+        className="max-w-[500px]"
+        disabled={!selectedRepository}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
