@@ -1,5 +1,3 @@
-import traceback
-
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement
@@ -67,9 +65,5 @@ def get_action_execution_server_startup_command(
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')
     logger.debug(f'get_action_execution_server_startup_command: {base_cmd}')
-    logger.debug(
-        'get_action_execution_server_startup_command stack:\n%s',
-        ''.join(traceback.format_stack()),
-    )
 
     return base_cmd
