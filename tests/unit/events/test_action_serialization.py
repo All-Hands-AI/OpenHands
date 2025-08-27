@@ -76,7 +76,7 @@ def test_agent_finish_action_serialization_deserialization():
         'action': 'finish',
         'args': {
             'outputs': {},
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'final_thought': '',
         },
     }
@@ -89,7 +89,7 @@ def test_agent_finish_action_legacy_task_completed_serialization():
         'action': 'finish',
         'args': {
             'outputs': {},
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'final_thought': 'Task completed',
             'task_completed': 'true',  # This should be ignored during deserialization
         },
@@ -110,7 +110,7 @@ def test_agent_finish_action_legacy_task_completed_serialization():
 def test_agent_reject_action_serialization_deserialization():
     original_action_dict = {
         'action': 'reject',
-        'args': {'outputs': {}, 'thought': ''},
+        'args': {'outputs': {}, 'thought': {'text': '', 'reasoning_content': None}},
     }
     serialization_deserialization(original_action_dict, AgentRejectAction)
 
@@ -122,7 +122,7 @@ def test_cmd_run_action_serialization_deserialization():
             'blocking': False,
             'command': 'echo "Hello world"',
             'is_input': False,
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'hidden': False,
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
             'is_static': False,
@@ -137,7 +137,7 @@ def test_browse_url_action_serialization_deserialization():
     original_action_dict = {
         'action': 'browse',
         'args': {
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'url': 'https://www.example.com',
             'return_axtree': False,
             'security_risk': -1,
@@ -150,7 +150,7 @@ def test_browse_interactive_action_serialization_deserialization():
     original_action_dict = {
         'action': 'browse_interactive',
         'args': {
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'browser_actions': 'goto("https://www.example.com")',
             'browsergym_send_msg_to_user': '',
             'return_axtree': False,
@@ -167,7 +167,7 @@ def test_file_read_action_serialization_deserialization():
             'path': '/path/to/file.txt',
             'start': 0,
             'end': -1,
-            'thought': 'None',
+            'thought': {'text': 'None', 'reasoning_content': None},
             'impl_source': 'default',
             'view_range': None,
             'security_risk': -1,
@@ -184,7 +184,7 @@ def test_file_write_action_serialization_deserialization():
             'content': 'Hello world',
             'start': 0,
             'end': 1,
-            'thought': 'None',
+            'thought': {'text': 'None', 'reasoning_content': None},
             'security_risk': -1,
         },
     }
@@ -204,7 +204,7 @@ def test_file_edit_action_aci_serialization_deserialization():
             'content': '',
             'start': 1,
             'end': -1,
-            'thought': 'Replacing text',
+            'thought': {'text': 'Replacing text', 'reasoning_content': None},
             'impl_source': 'oh_aci',
             'security_risk': -1,
         },
@@ -225,7 +225,7 @@ def test_file_edit_action_llm_serialization_deserialization():
             'content': 'Updated content',
             'start': 1,
             'end': 10,
-            'thought': 'Updating file content',
+            'thought': {'text': 'Updating file content', 'reasoning_content': None},
             'impl_source': 'llm_based_edit',
             'security_risk': -1,
         },
@@ -239,7 +239,7 @@ def test_cmd_run_action_legacy_serialization():
         'args': {
             'blocking': False,
             'command': 'echo "Hello world"',
-            'thought': '',
+            'thought': {'text': '', 'reasoning_content': None},
             'hidden': False,
             'confirmation_state': ActionConfirmationStatus.CONFIRMED,
             'keep_prompt': False,  # will be treated as no-op
@@ -259,7 +259,7 @@ def test_cmd_run_action_legacy_serialization():
     )
     assert event_dict['args']['blocking'] is False
     assert event_dict['args']['command'] == 'echo "Hello world"'
-    assert event_dict['args']['thought'] == ''
+    assert event_dict['args']['thought'] == {'text': '', 'reasoning_content': None}
     assert event_dict['args']['is_input'] is False
 
 
@@ -271,7 +271,7 @@ def test_file_llm_based_edit_action_legacy_serialization():
             'content': 'dummy content',
             'start': 1,
             'end': -1,
-            'thought': 'Replacing text',
+            'thought': {'text': 'Replacing text', 'reasoning_content': None},
             'impl_source': 'oh_aci',
             'translated_ipython_code': None,
         },
@@ -304,7 +304,10 @@ def test_file_llm_based_edit_action_legacy_serialization():
     # Common arguments
     assert event_dict['args']['path'] == '/path/to/file.txt'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert event_dict['args']['thought'] == 'Replacing text'
+    assert event_dict['args']['thought'] == {
+        'text': 'Replacing text',
+        'reasoning_content': None,
+    }
 
     # OH_ACI arguments
     assert event_dict['args']['command'] == ''
@@ -363,10 +366,10 @@ def test_file_ohaci_edit_action_legacy_serialization():
     # Common arguments
     assert event_dict['args']['path'] == '/workspace/game_2048.py'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert (
-        event_dict['args']['thought']
-        == "I'll help you create a simple 2048 game in Python. I'll use the str_replace_editor to create the file."
-    )
+    assert event_dict['args']['thought'] == {
+        'text': "I'll help you create a simple 2048 game in Python. I'll use the str_replace_editor to create the file.",
+        'reasoning_content': None,
+    }
 
     # OH_ACI arguments
     assert event_dict['args']['command'] == 'create'
@@ -386,7 +389,10 @@ def test_agent_microagent_action_serialization_deserialization():
         'action': 'recall',
         'args': {
             'query': 'What is the capital of France?',
-            'thought': 'I need to find information about France',
+            'thought': {
+                'text': 'I need to find information about France',
+                'reasoning_content': None,
+            },
             'recall_type': 'knowledge',
         },
     }
@@ -400,7 +406,7 @@ def test_file_read_action_legacy_serialization():
             'path': '/workspace/test.txt',
             'start': 0,
             'end': -1,
-            'thought': 'Reading the file contents',
+            'thought': {'text': 'Reading the file contents', 'reasoning_content': None},
             'impl_source': 'oh_aci',
             'translated_ipython_code': "print(file_editor(**{'command': 'view', 'path': '/workspace/test.txt'}))",
         },
@@ -432,7 +438,10 @@ def test_file_read_action_legacy_serialization():
     # Common arguments in serialized form
     assert event_dict['args']['path'] == '/workspace/test.txt'
     assert event_dict['args']['impl_source'] == 'oh_aci'
-    assert event_dict['args']['thought'] == 'Reading the file contents'
+    assert event_dict['args']['thought'] == {
+        'text': 'Reading the file contents',
+        'reasoning_content': None,
+    }
 
     # Read-specific arguments in serialized form
     assert event_dict['args']['start'] == 0

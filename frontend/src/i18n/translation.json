@@ -13023,6 +13023,22 @@
     "de": "Etwas ist schiefgelaufen. Versuchen Sie, den Microagenten erneut zu starten.",
     "uk": "Щось пішло не так. Спробуйте ініціювати мікроагента ще раз."
   },
+  "ACTION_MESSAGE$REASONING": {
+    "en": "Reasoning",
+    "ja": "推論",
+    "zh-CN": "推理",
+    "zh-TW": "推理",
+    "ko-KR": "추론",
+    "no": "Resonnement",
+    "ar": "التفكير",
+    "de": "Begründung",
+    "fr": "Raisonnement",
+    "it": "Ragionamento",
+    "pt": "Raciocínio",
+    "es": "Razonamiento",
+    "tr": "Akıl Yürütme",
+    "uk": "Міркування"
+  },
   "MICROAGENT$STATUS_WAITING": {
     "en": "Waiting for runtime to start...",
     "ja": "ランタイムの開始を待機中...",
