@@ -5,7 +5,7 @@ import {
 } from "downshift";
 import { Branch } from "#/types/git";
 import { BranchItem } from "./branch-item";
-import { GenericDropdownMenu, EmptyState, LoadingMoreState } from "../shared";
+import { GenericDropdownMenu, EmptyState } from "../shared";
 
 export interface BranchDropdownMenuProps {
   isOpen: boolean;
@@ -13,7 +13,6 @@ export interface BranchDropdownMenuProps {
   inputValue: string;
   highlightedIndex: number;
   selectedItem: Branch | null;
-  isFetchingNextPage: boolean;
   getMenuProps: <Options>(
     options?: UseComboboxGetMenuPropsOptions & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -30,7 +29,6 @@ export function BranchDropdownMenu({
   inputValue,
   highlightedIndex,
   selectedItem,
-  isFetchingNextPage,
   getMenuProps,
   getItemProps,
   onScroll,
@@ -66,11 +64,7 @@ export function BranchDropdownMenu({
     </li>
   );
 
-  const renderLoadingMoreState = () => (
-    <li className="px-3 py-2">
-      <LoadingMoreState message="Loading more branches..." />
-    </li>
-  );
+
 
   return (
     <div data-testid="git-branch-dropdown-menu">
@@ -80,14 +74,12 @@ export function BranchDropdownMenu({
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}
-        isFetchingNextPage={isFetchingNextPage}
         getMenuProps={getMenuProps}
         getItemProps={getItemProps}
         onScroll={onScroll}
         menuRef={menuRef}
         renderItem={renderItem}
         renderEmptyState={renderEmptyState}
-        renderLoadingMoreState={renderLoadingMoreState}
       />
     </div>
   );

@@ -140,11 +140,11 @@ export function GitRepoDropdown({
       const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
 
-      if (isNearBottom && hasNextPage && !isFetchingNextPage && !isLoading) {
+      if (isNearBottom && hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
       }
     },
-    [hasNextPage, isFetchingNextPage, isLoading, fetchNextPage],
+    [hasNextPage, isFetchingNextPage, fetchNextPage],
   );
 
   const {
@@ -225,7 +225,6 @@ export function GitRepoDropdown({
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}
-        isFetchingNextPage={isFetchingNextPage}
         getMenuProps={getMenuProps}
         getItemProps={getItemProps}
         onScroll={handleMenuScroll}

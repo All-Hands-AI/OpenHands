@@ -5,7 +5,7 @@ import {
 } from "downshift";
 import { GitRepository } from "#/types/git";
 import { RepositoryItem } from "./repository-item";
-import { GenericDropdownMenu, EmptyState, LoadingMoreState } from "../shared";
+import { GenericDropdownMenu, EmptyState } from "../shared";
 
 interface DropdownMenuProps {
   isOpen: boolean;
@@ -13,7 +13,6 @@ interface DropdownMenuProps {
   inputValue: string;
   highlightedIndex: number;
   selectedItem: GitRepository | null;
-  isFetchingNextPage: boolean;
   getMenuProps: <Options>(
     options?: UseComboboxGetMenuPropsOptions & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -30,7 +29,6 @@ export function DropdownMenu({
   inputValue,
   highlightedIndex,
   selectedItem,
-  isFetchingNextPage,
   getMenuProps,
   getItemProps,
   onScroll,
@@ -59,7 +57,7 @@ export function DropdownMenu({
     <EmptyState inputValue={currentInputValue} />
   );
 
-  const renderLoadingMoreState = () => <LoadingMoreState />;
+
 
   return (
     <div data-testid="git-repo-dropdown-menu">
@@ -69,14 +67,12 @@ export function DropdownMenu({
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}
-        isFetchingNextPage={isFetchingNextPage}
         getMenuProps={getMenuProps}
         getItemProps={getItemProps}
         onScroll={onScroll}
         menuRef={menuRef}
         renderItem={renderItem}
         renderEmptyState={renderEmptyState}
-        renderLoadingMoreState={renderLoadingMoreState}
       />
     </div>
   );

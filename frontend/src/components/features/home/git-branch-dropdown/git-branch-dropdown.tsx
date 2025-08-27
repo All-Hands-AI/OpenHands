@@ -192,7 +192,6 @@ export function GitBranchDropdown({
         inputValue={inputValue}
         highlightedIndex={highlightedIndex}
         selectedItem={selectedItem}
-        isFetchingNextPage={isFetchingNextPage}
         getMenuProps={getMenuProps}
         getItemProps={getItemProps}
         onScroll={handleMenuScroll}

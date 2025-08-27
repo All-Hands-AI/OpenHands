@@ -11,7 +11,6 @@ export interface GenericDropdownMenuProps<T> {
   inputValue: string;
   highlightedIndex: number;
   selectedItem: T | null;
-  isFetchingNextPage: boolean;
   getMenuProps: <Options>(
     options?: UseComboboxGetMenuPropsOptions & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -30,7 +29,6 @@ export interface GenericDropdownMenuProps<T> {
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
-  renderLoadingMoreState: () => React.ReactNode;
 }
 
 export function GenericDropdownMenu<T>({
@@ -39,14 +37,12 @@ export function GenericDropdownMenu<T>({
   inputValue,
   highlightedIndex,
   selectedItem,
-  isFetchingNextPage,
   getMenuProps,
   getItemProps,
   onScroll,
   menuRef,
   renderItem,
   renderEmptyState,
-  renderLoadingMoreState,
 }: GenericDropdownMenuProps<T>) {
   if (!isOpen) return null;
 
@@ -65,18 +61,15 @@ export function GenericDropdownMenu<T>({
       {filteredItems.length === 0 ? (
         renderEmptyState(inputValue)
       ) : (
-        <>
-          {filteredItems.map((item, index) =>
-            renderItem(
-              item,
-              index,
-              highlightedIndex,
-              selectedItem,
-              getItemProps,
-            ),
-          )}
-          {isFetchingNextPage && renderLoadingMoreState()}
-        </>
+        filteredItems.map((item, index) =>
+          renderItem(
+            item,
+            index,
+            highlightedIndex,
+            selectedItem,
+            getItemProps,
+          ),
+        )
       )}
     </ul>
   );
