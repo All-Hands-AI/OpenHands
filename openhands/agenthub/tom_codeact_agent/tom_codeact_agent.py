@@ -78,11 +78,11 @@ class TomCodeActAgent(CodeActAgent):
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
             enable_rag=config.tom_enable_rag,
-            llm_model=llm_registry.config.llms['llm'].model,
-            api_key=llm_registry.config.llms['llm'].api_key.get_secret_value()
-            if llm_registry.config.llms['llm'].api_key
+            llm_model=self.llm.config.model,
+            api_key=self.llm.config.api_key.get_secret_value()
+            if self.llm.config.api_key
             else None,
-            api_base=llm_registry.config.llms['llm'].base_url,
+            api_base=self.llm.config.base_url,
             skip_memory_collection=config.skip_memory_collection,
         )
         self._last_processed_user_message_id: Optional[int] = None
