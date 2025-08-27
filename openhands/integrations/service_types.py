@@ -14,6 +14,10 @@ from openhands.microagent.types import MicroagentContentResponse, MicroagentResp
 from openhands.server.types import AppMode
 
 
+class TokenResponse(BaseModel):
+    token: str
+
+
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
