@@ -1,4 +1,5 @@
 from openhands.core.config import OpenHandsConfig
+from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement
 
 DEFAULT_PYTHON_PREFIX = [
@@ -23,6 +24,9 @@ def get_action_execution_server_startup_command(
     python_executable: str = 'python',
 ) -> list[str]:
     sandbox_config = app_config.sandbox
+    logger.debug(f'app_config {vars(app_config)}')
+    logger.debug(f'sandbox_config {vars(sandbox_config)}')
+    logger.debug(f'override_user_id {override_user_id}')
 
     # Plugin args
     plugin_args = []
@@ -39,9 +43,7 @@ def get_action_execution_server_startup_command(
     username = override_username or (
         'openhands' if app_config.run_as_openhands else 'root'
     )
-    user_id = override_user_id or (
-        sandbox_config.user_id if app_config.run_as_openhands else 0
-    )
+    user_id = override_user_id or (1000 if app_config.run_as_openhands else 0)
 
     base_cmd = [
         *python_prefix,
@@ -62,5 +64,6 @@ def get_action_execution_server_startup_command(
 
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')
+    logger.debug(f'get_action_execution_server_startup_command: {base_cmd}')
 
     return base_cmd

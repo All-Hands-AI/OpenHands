@@ -67,6 +67,8 @@ from openhands.runtime.plugins import (
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils.edit import FileEditRuntimeMixin
 from openhands.runtime.utils.git_handler import CommandResult, GitHandler
+from openhands.security import SecurityAnalyzer, options
+from openhands.storage.locations import get_conversation_dir
 from openhands.utils.async_utils import (
     GENERAL_TIMEOUT,
     call_async_from_sync,
@@ -121,6 +123,7 @@ class Runtime(FileEditRuntimeMixin):
     status_callback: Callable[[str, RuntimeStatus, str], None] | None
     runtime_status: RuntimeStatus | None
     _runtime_initialized: bool = False
+    security_analyzer: 'SecurityAnalyzer | None' = None
 
     def __init__(
         self,
@@ -188,6 +191,17 @@ class Runtime(FileEditRuntimeMixin):
         self.user_id = user_id
         self.git_provider_tokens = git_provider_tokens
         self.runtime_status = None
+
+        # Initialize security analyzer
+        self.security_analyzer = None
+        if self.config.security.security_analyzer:
+            analyzer_cls = options.SecurityAnalyzers.get(
+                self.config.security.security_analyzer, SecurityAnalyzer
+            )
+            self.security_analyzer = analyzer_cls()
+            logger.debug(
+                f'Security analyzer {analyzer_cls.__name__} initialized for runtime {self.sid}'
+            )
 
     @property
     def runtime_initialized(self) -> bool:
@@ -309,9 +323,6 @@ class Runtime(FileEditRuntimeMixin):
 
     async def _export_latest_git_provider_tokens(self, event: Action) -> None:
         """Refresh runtime provider tokens when agent attemps to run action with provider token"""
-        if not self.user_id:
-            return
-
         providers_called = ProviderHandler.check_cmd_action_for_provider_token_ref(
             event
         )
@@ -319,8 +330,17 @@ class Runtime(FileEditRuntimeMixin):
         if not providers_called:
             return
 
+        provider_handler = ProviderHandler(
+            provider_tokens=self.git_provider_tokens
+            or cast(PROVIDER_TOKEN_TYPE, MappingProxyType({})),
+            external_auth_id=self.user_id,
+            external_token_manager=True,
+            session_api_key=self.session_api_key,
+            sid=self.sid,
+        )
+
         logger.info(f'Fetching latest provider tokens for runtime: {self.sid}')
-        env_vars = await self.provider_handler.get_env_vars(
+        env_vars = await provider_handler.get_env_vars(
             providers=providers_called, expose_secrets=False, get_latest=True
         )
 
@@ -329,10 +349,10 @@ class Runtime(FileEditRuntimeMixin):
 
         try:
             if self.event_stream:
-                await self.provider_handler.set_event_stream_secrets(
+                await provider_handler.set_event_stream_secrets(
                     self.event_stream, env_vars=env_vars
                 )
-            self.add_env_vars(self.provider_handler.expose_env_vars(env_vars))
+            self.add_env_vars(provider_handler.expose_env_vars(env_vars))
         except Exception as e:
             logger.warning(
                 f'Failed export latest github token to runtime: {self.sid}, {e}'
@@ -876,8 +896,14 @@ fi
             if isinstance(action, AgentThinkAction):
                 return AgentThinkObservation('Your thought has been logged.')
             elif isinstance(action, TaskTrackingAction):
-                # If `command` is `plan`, write the serialized task list to the file TASKS.md under `.openhands/`
+                # Get the session-specific task file path
+                conversation_dir = get_conversation_dir(
+                    self.sid, self.event_stream.user_id
+                )
+                task_file_path = f'{conversation_dir}TASKS.md'
+
                 if action.command == 'plan':
+                    # Write the serialized task list to the session directory
                     content = '# Task List\n\n'
                     for i, task in enumerate(action.task_list, 1):
                         status_icon = {
@@ -886,33 +912,39 @@ fi
                             'done': '✅',
                         }.get(task.get('status', 'todo'), '⏳')
                         content += f'{i}. {status_icon} {task.get("title", "")}\n{task.get("notes", "")}\n'
-                    write_obs = self.write(
-                        FileWriteAction(path='.openhands/TASKS.md', content=content)
-                    )
-                    if isinstance(write_obs, ErrorObservation):
+
+                    try:
+                        self.event_stream.file_store.write(task_file_path, content)
+                        return TaskTrackingObservation(
+                            content=f'Task list has been updated with {len(action.task_list)} items. Stored in session directory: {task_file_path}',
+                            command=action.command,
+                            task_list=action.task_list,
+                        )
+                    except Exception as e:
                         return ErrorObservation(
-                            f'Failed to write task list to .openhands/TASKS.md: {write_obs.content}'
+                            f'Failed to write task list to session directory {task_file_path}: {str(e)}'
                         )
 
-                    return TaskTrackingObservation(
-                        content=f'Task list has been updated with {len(action.task_list)} items.',
-                        command=action.command,
-                        task_list=action.task_list,
-                    )
                 elif action.command == 'view':
-                    # If `command` is `view`, read the TASKS.md file and return its content
-                    read_obs = self.read(FileReadAction(path='.openhands/TASKS.md'))
-                    if isinstance(read_obs, FileReadObservation):
+                    # Read the TASKS.md file from the session directory
+                    try:
+                        content = self.event_stream.file_store.read(task_file_path)
                         return TaskTrackingObservation(
-                            content=read_obs.content,
+                            content=content,
                             command=action.command,
                             task_list=[],  # Empty for view command
                         )
-                    else:
-                        return TaskTrackingObservation(  # Return observation if error occurs because file might not exist yet
+                    except FileNotFoundError:
+                        return TaskTrackingObservation(
                             command=action.command,
                             task_list=[],
-                            content=f'Failed to read the task list. Error: {read_obs.content}',
+                            content='No task list found. Use the "plan" command to create one.',
+                        )
+                    except Exception as e:
+                        return TaskTrackingObservation(
+                            command=action.command,
+                            task_list=[],
+                            content=f'Failed to read the task list from session directory {task_file_path}. Error: {str(e)}',
                         )
 
             return NullObservation('')
@@ -1115,6 +1147,27 @@ fi
     def get_git_diff(self, file_path: str, cwd: str) -> dict[str, str]:
         self.git_handler.set_cwd(cwd)
         return self.git_handler.get_git_diff(file_path)
+
+    def get_workspace_branch(self, primary_repo_path: str | None = None) -> str | None:
+        """
+        Get the current branch of the workspace.
+
+        Args:
+            primary_repo_path: Path to the primary repository within the workspace.
+                              If None, uses the workspace root.
+
+        Returns:
+            str | None: The current branch name, or None if not a git repository or error occurs.
+        """
+        if primary_repo_path:
+            # Use the primary repository path
+            git_cwd = str(self.workspace_root / primary_repo_path)
+        else:
+            # Use the workspace root
+            git_cwd = str(self.workspace_root)
+
+        self.git_handler.set_cwd(git_cwd)
+        return self.git_handler.get_current_branch()
 
     @property
     def additional_agent_instructions(self) -> str:

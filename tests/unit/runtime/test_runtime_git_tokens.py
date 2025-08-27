@@ -1,5 +1,5 @@
 from types import MappingProxyType
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pydantic import SecretStr
@@ -213,22 +213,28 @@ async def test_export_latest_git_provider_tokens_multiple_refs(temp_dir):
 
 
 @pytest.mark.asyncio
-async def test_export_latest_git_provider_tokens_token_update(runtime):
+async def test_export_latest_git_provider_tokens_token_update(runtime, monkeypatch):
     """Test that token updates are handled correctly"""
     # First export with initial token
     cmd = CmdRunAction(command='echo $GITHUB_TOKEN')
     await runtime._export_latest_git_provider_tokens(cmd)
 
-    # Update the token
+    # Ensure refresh-token flow is enabled in ProviderHandler
+    monkeypatch.setenv('WEB_HOST', 'example.com')
+
+    # Simulate that provider handler will now fetch a new token from refresh endpoint
     new_token = 'new_test_token'
-    runtime.provider_handler._provider_tokens = MappingProxyType(
-        {ProviderType.GITHUB: ProviderToken(token=SecretStr(new_token))}
-    )
 
-    # Export again with updated token
-    await runtime._export_latest_git_provider_tokens(cmd)
+    # Patch ProviderHandler._get_latest_provider_token to return new SecretStr
+    with patch.object(
+        ProviderHandler,
+        '_get_latest_provider_token',
+        new=AsyncMock(return_value=SecretStr(new_token)),
+    ):
+        # Export again with updated token – runtime should fetch latest and update EventStream secrets
+        await runtime._export_latest_git_provider_tokens(cmd)
 
-    # Verify that the new token was exported
+    # Verify that the new token was exported to the event stream
     assert runtime.event_stream.secrets == {'github_token': new_token}
 
 

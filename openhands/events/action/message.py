@@ -13,7 +13,7 @@ class MessageAction(Action):
     image_urls: list[str] | None = None
     wait_for_response: bool = False
     action: str = ActionType.MESSAGE
-    security_risk: ActionSecurityRisk | None = None
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN
 
     @property
     def message(self) -> str:
