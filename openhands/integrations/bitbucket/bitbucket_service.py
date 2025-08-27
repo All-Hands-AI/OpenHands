@@ -643,6 +643,40 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
 
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a Bitbucket pull request is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (OPEN), False if closed/merged
+        """
+        try:
+            pr_details = await self.get_pr_details(repository, pr_number)
+
+            # Bitbucket API response structure
+            # https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-pull-request-id-get
+            if 'state' in pr_details:
+                # Bitbucket state values: OPEN, MERGED, DECLINED, SUPERSEDED
+                return pr_details['state'] == 'OPEN'
+
+            # If we can't determine the state, assume it's active (safer default)
+            logger.warning(
+                f'Could not determine Bitbucket PR status for {repository}#{pr_number}. '
+                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine Bitbucket PR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the PR status, include the conversation to be safe
+            return True
+
 
 bitbucket_service_cls = os.environ.get(
     'OPENHANDS_BITBUCKET_SERVICE_CLS',

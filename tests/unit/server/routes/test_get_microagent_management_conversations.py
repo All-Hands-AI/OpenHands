@@ -62,7 +62,7 @@ async def test_get_microagent_management_conversations_success():
 
     # Mock provider handler
     mock_provider_handler = MagicMock(spec=ProviderHandler)
-    mock_provider_handler._is_pr_active = AsyncMock(return_value=True)
+    mock_provider_handler.is_pr_open = AsyncMock(return_value=True)
 
     with (
         patch(
@@ -99,7 +99,7 @@ async def test_get_microagent_management_conversations_success():
         mock_conversation_store.search.assert_called_once_with(page_id, limit)
 
         # Verify provider handler was created with correct tokens
-        mock_provider_handler._is_pr_active.assert_called()
+        mock_provider_handler.is_pr_open.assert_called()
 
 
 @pytest.mark.asyncio
@@ -180,7 +180,7 @@ async def test_get_microagent_management_conversations_filter_by_repository():
 
     # Mock provider handler
     mock_provider_handler = MagicMock(spec=ProviderHandler)
-    mock_provider_handler._is_pr_active = AsyncMock(return_value=True)
+    mock_provider_handler.is_pr_open = AsyncMock(return_value=True)
 
     with (
         patch(
@@ -252,7 +252,7 @@ async def test_get_microagent_management_conversations_filter_by_trigger():
 
     # Mock provider handler
     mock_provider_handler = MagicMock(spec=ProviderHandler)
-    mock_provider_handler._is_pr_active = AsyncMock(return_value=True)
+    mock_provider_handler.is_pr_open = AsyncMock(return_value=True)
 
     with (
         patch(
@@ -323,7 +323,7 @@ async def test_get_microagent_management_conversations_filter_inactive_pr():
 
     # Mock provider handler with one active and one inactive PR
     mock_provider_handler = MagicMock(spec=ProviderHandler)
-    mock_provider_handler._is_pr_active = AsyncMock(side_effect=[True, False])
+    mock_provider_handler.is_pr_open = AsyncMock(side_effect=[True, False])
 
     with (
         patch(
@@ -353,7 +353,7 @@ async def test_get_microagent_management_conversations_filter_inactive_pr():
         assert result.results[0].conversation_id == 'conv_1'
 
         # Verify provider handler was called for both PRs
-        assert mock_provider_handler._is_pr_active.call_count == 2
+        assert mock_provider_handler.is_pr_open.call_count == 2
 
 
 @pytest.mark.asyncio
@@ -414,7 +414,7 @@ async def test_get_microagent_management_conversations_no_pr_number():
         assert result.results[0].conversation_id == 'conv_1'
 
         # Verify provider handler was not called (no PR to check)
-        mock_provider_handler._is_pr_active.assert_not_called()
+        mock_provider_handler.is_pr_open.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -475,7 +475,7 @@ async def test_get_microagent_management_conversations_no_repository():
         assert result.results[0].conversation_id == 'conv_1'
 
         # Verify provider handler was not called (no repository for PR check)
-        mock_provider_handler._is_pr_active.assert_not_called()
+        mock_provider_handler.is_pr_open.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -520,7 +520,7 @@ async def test_get_microagent_management_conversations_age_filter():
 
     # Mock provider handler
     mock_provider_handler = MagicMock(spec=ProviderHandler)
-    mock_provider_handler._is_pr_active = AsyncMock(return_value=True)
+    mock_provider_handler.is_pr_open = AsyncMock(return_value=True)
 
     with (
         patch(

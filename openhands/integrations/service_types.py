@@ -532,3 +532,15 @@ class GitService(Protocol):
             Raw API response from the git provider
         """
         ...
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
+        """
+        ...

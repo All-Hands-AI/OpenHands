@@ -614,32 +614,6 @@ class ProviderHandler:
 
         return remote_url
 
-    async def get_pr_details(
-        self,
-        repository: str,
-        pr_number: int,
-        specified_provider: ProviderType | None = None,
-    ) -> dict:
-        """Get detailed information about a specific pull request/merge request
-
-        Args:
-            repository: Repository name in format 'owner/repo'
-            pr_number: The pull request/merge request number
-            specified_provider: Optional provider type to use
-
-        Returns:
-            Raw API response from the git provider
-
-        Raises:
-            AuthenticationError: If authentication fails
-        """
-        if specified_provider:
-            return await self._get_pr_details_from_specified_provider(
-                repository, pr_number, specified_provider
-            )
-
-        return await self._get_pr_details_from_all_providers(repository, pr_number)
-
     async def _get_pr_details_from_specified_provider(
         self, repository: str, pr_number: int, specified_provider: ProviderType
     ) -> dict:
@@ -663,53 +637,12 @@ class ProviderHandler:
             logger.warning(f'Error fetching PR details from {specified_provider}: {e}')
             raise
 
-    async def _get_pr_details_from_all_providers(
-        self, repository: str, pr_number: int
-    ) -> dict:
-        """Get PR details by trying all available providers in order.
-
-        Args:
-            repository: Repository name in format 'owner/repo'
-            pr_number: The pull request/merge request number
-
-        Returns:
-            Raw API response from the first successful git provider
-
-        Raises:
-            AuthenticationError: If all providers fail
-        """
-        # Try all available providers in order
-        errors = []
-        for provider in self.provider_tokens:
-            try:
-                service = self._get_service(provider)
-                result = await service.get_pr_details(repository, pr_number)
-                if result:
-                    return result
-            except Exception as e:
-                errors.append(f'{provider.value}: {str(e)}')
-                logger.warning(
-                    f'Error fetching PR details from {provider} for {repository}#{pr_number}: {e}'
-                )
-
-        # If all providers failed, raise an error
-        if errors:
-            logger.error(
-                f'Failed to fetch PR details for {repository}#{pr_number} with all available providers. Errors: {"; ".join(errors)}'
-            )
-            raise AuthenticationError(
-                f'Unable to fetch PR details for {repository}#{pr_number}'
-            )
-
-        raise AuthenticationError(f'PR #{pr_number} not found in {repository}')
-
-    async def _is_pr_active(
+    async def is_pr_open(
         self, repository: str, pr_number: int, git_provider: ProviderType
     ) -> bool:
         """Check if a PR is still active (not closed/merged).
 
-        This method checks the PR status using provider-specific logic based on
-        the actual API response structures from GitHub, GitLab, and Bitbucket.
+        This method checks the PR status using the provider's service method.
 
         Args:
             repository: Repository name in format 'owner/repo'
@@ -720,22 +653,8 @@ class ProviderHandler:
             True if PR is active (open), False if closed/merged, True if can't determine
         """
         try:
-            pr_details = await self.get_pr_details(repository, pr_number, git_provider)
-
-            # Provider-specific logic based on actual API response structures
-            if git_provider == ProviderType.GITHUB:
-                return self._is_github_pr_open(pr_details, repository, pr_number)
-            elif git_provider == ProviderType.GITLAB:
-                return self._is_gitlab_pr_open(pr_details, repository, pr_number)
-            elif git_provider == ProviderType.BITBUCKET:
-                return self._is_bitbucket_pr_open(pr_details, repository, pr_number)
-
-            # If we can't determine the state, assume it's active (safer default)
-            logger.warning(
-                f'Could not determine PR status for {repository}#{pr_number} on {git_provider}. '
-                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
-            )
-            return True
+            service = self._get_service(git_provider)
+            return await service.is_pr_open(repository, pr_number)
 
         except Exception as e:
             logger.warning(
@@ -744,85 +663,3 @@ class ProviderHandler:
             )
             # If we can't determine the PR status, include the conversation to be safe
             return True
-
-    def _is_github_pr_open(
-        self, pr_details: dict, repository: str, pr_number: int
-    ) -> bool:
-        """Check GitHub PR status based on API response structure.
-
-        Args:
-            pr_details: Raw GitHub API response for the PR
-            repository: Repository name for logging
-            pr_number: PR number for logging
-
-        Returns:
-            True if PR is active (open), False if closed/merged
-        """
-        # GitHub API response structure
-        # https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request
-        if 'state' in pr_details:
-            return pr_details['state'] == 'open'
-        elif 'merged' in pr_details and 'closed_at' in pr_details:
-            # Check if PR is merged or closed
-            return not (pr_details['merged'] or pr_details['closed_at'])
-
-        # If we can't determine the state, assume it's active (safer default)
-        logger.warning(
-            f'Could not determine GitHub PR status for {repository}#{pr_number}. '
-            f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
-        )
-        return True
-
-    def _is_gitlab_pr_open(
-        self, pr_details: dict, repository: str, pr_number: int
-    ) -> bool:
-        """Check GitLab merge request status based on API response structure.
-
-        Args:
-            pr_details: Raw GitLab API response for the MR
-            repository: Repository name for logging
-            pr_number: MR number for logging
-
-        Returns:
-            True if MR is active (opened), False if closed/merged
-        """
-        # GitLab API response structure
-        # https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
-        if 'state' in pr_details:
-            return pr_details['state'] == 'opened'
-        elif 'merged_at' in pr_details and 'closed_at' in pr_details:
-            # Check if MR is merged or closed
-            return not (pr_details['merged_at'] or pr_details['closed_at'])
-
-        # If we can't determine the state, assume it's active (safer default)
-        logger.warning(
-            f'Could not determine GitLab MR status for {repository}#{pr_number}. '
-            f'Response keys: {list(pr_details.keys())}. Assuming MR is active.'
-        )
-        return True
-
-    def _is_bitbucket_pr_open(
-        self, pr_details: dict, repository: str, pr_number: int
-    ) -> bool:
-        """Check Bitbucket pull request status based on API response structure.
-
-        Args:
-            pr_details: Raw Bitbucket API response for the PR
-            repository: Repository name for logging
-            pr_number: PR number for logging
-
-        Returns:
-            True if PR is active (OPEN), False if closed/merged
-        """
-        # Bitbucket API response structure
-        # https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-pull-request-id-get
-        if 'state' in pr_details:
-            # Bitbucket state values: OPEN, MERGED, DECLINED, SUPERSEDED
-            return pr_details['state'] == 'OPEN'
-
-        # If we can't determine the state, assume it's active (safer default)
-        logger.warning(
-            f'Could not determine Bitbucket PR status for {repository}#{pr_number}. '
-            f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
-        )
-        return True

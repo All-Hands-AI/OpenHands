@@ -818,7 +818,7 @@ async def get_microagent_management_conversations(
             and len(conversation.pr_number) > 0
             and conversation.selected_repository
             and conversation.git_provider
-            and not await provider_handler._is_pr_active(
+            and not await provider_handler.is_pr_open(
                 conversation.selected_repository,
                 conversation.pr_number[-1],  # Get the last PR number
                 conversation.git_provider,

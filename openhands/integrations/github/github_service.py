@@ -710,6 +710,42 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(file_content, file_path)
 
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a GitHub PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
+        """
+        try:
+            pr_details = await self.get_pr_details(repository, pr_number)
+
+            # GitHub API response structure
+            # https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request
+            if 'state' in pr_details:
+                return pr_details['state'] == 'open'
+            elif 'merged' in pr_details and 'closed_at' in pr_details:
+                # Check if PR is merged or closed
+                return not (pr_details['merged'] or pr_details['closed_at'])
+
+            # If we can't determine the state, assume it's active (safer default)
+            logger.warning(
+                f'Could not determine GitHub PR status for {repository}#{pr_number}. '
+                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine GitHub PR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the PR status, include the conversation to be safe
+            return True
+
 
 github_service_cls = os.environ.get(
     'OPENHANDS_GITHUB_SERVICE_CLS',
