@@ -551,28 +551,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         return branches
 
-    async def get_branch(self, repository: str, branch_name: str) -> Branch:
-        """Get information about a specific branch in the repository.
-
-        Args:
-            repository: Repository name in format 'workspace/repo_slug'
-            branch_name: Name of the branch to get
-
-        Returns:
-            Branch object with branch information
-        """
-        owner, repo = self._extract_owner_and_repo(repository)
-
-        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches/{branch_name}'
-        response, _ = await self._make_request(url)
-
-        return Branch(
-            name=response.get('name', ''),
-            commit_sha=response.get('target', {}).get('hash', ''),
-            protected=False,  # Bitbucket doesn't expose this in the API
-            last_push_date=response.get('target', {}).get('date', None),
-        )
-
     async def create_pr(
         self,
         repo_name: str,
