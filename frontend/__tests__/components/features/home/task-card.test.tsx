@@ -61,7 +61,7 @@ describe("TaskCard", () => {
 
     renderTaskCard();
 
-    const launchButton = screen.getByTestId("task-launch-button");
+    const launchButton = screen.getByTestId("task-card");
     await userEvent.click(launchButton);
 
     expect(createConversationSpy).toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe("TaskCard", () => {
 
       renderTaskCard(MOCK_TASK_1);
 
-      const launchButton = screen.getByTestId("task-launch-button");
+      const launchButton = screen.getByTestId("task-card");
       await userEvent.click(launchButton);
 
       expect(createConversationSpy).toHaveBeenCalledWith(
@@ -108,7 +108,7 @@ describe("TaskCard", () => {
   it("should disable the launch button and update text content when creating a conversation", async () => {
     renderTaskCard();
 
-    const launchButton = screen.getByTestId("task-launch-button");
+    const launchButton = screen.getByTestId("task-card");
     await userEvent.click(launchButton);
 
     expect(launchButton).toHaveTextContent(/Loading/i);
@@ -133,7 +133,7 @@ describe("TaskCard", () => {
 
     renderTaskCard();
 
-    const launchButton = screen.getByTestId("task-launch-button");
+    const launchButton = screen.getByTestId("task-card");
     await userEvent.click(launchButton);
 
     // Wait for navigation to the conversation page

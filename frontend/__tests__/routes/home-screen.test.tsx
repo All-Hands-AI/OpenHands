@@ -237,8 +237,7 @@ describe("HomeScreen", () => {
         "launch-new-conversation-button",
       );
       let repoLaunchButton = await screen.findByTestId("repo-launch-button");
-      let tasksLaunchButtons =
-        await screen.findAllByTestId("task-launch-button");
+      let tasksLaunchButtons = await screen.findAllByTestId("task-card");
 
       // Mock the repository branches API call
       vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
@@ -260,7 +259,7 @@ describe("HomeScreen", () => {
 
       headerLaunchButton = screen.getByTestId("launch-new-conversation-button");
       repoLaunchButton = screen.getByTestId("repo-launch-button");
-      tasksLaunchButtons = await screen.findAllByTestId("task-launch-button");
+      tasksLaunchButtons = await screen.findAllByTestId("task-card");
 
       return {
         headerLaunchButton,
@@ -285,8 +284,7 @@ describe("HomeScreen", () => {
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
 
-      const tasksLaunchButtonsAfter =
-        await screen.findAllByTestId("task-launch-button");
+      const tasksLaunchButtonsAfter = await screen.findAllByTestId("task-card");
 
       // All other buttons should be disabled when the header button is clicked
       await userEvent.click(headerLaunchButton);
@@ -305,8 +303,7 @@ describe("HomeScreen", () => {
       const { headerLaunchButton, repoLaunchButton } =
         await setupLaunchButtons();
 
-      const tasksLaunchButtonsAfter =
-        await screen.findAllByTestId("task-launch-button");
+      const tasksLaunchButtonsAfter = await screen.findAllByTestId("task-card");
 
       // All other buttons should be disabled when the repo button is clicked
       await userEvent.click(repoLaunchButton);
@@ -325,8 +322,7 @@ describe("HomeScreen", () => {
       const { headerLaunchButton, repoLaunchButton, tasksLaunchButtons } =
         await setupLaunchButtons();
 
-      const tasksLaunchButtonsAfter =
-        await screen.findAllByTestId("task-launch-button");
+      const tasksLaunchButtonsAfter = await screen.findAllByTestId("task-card");
 
       // All other buttons should be disabled when the task button is clicked
       await userEvent.click(tasksLaunchButtons[0]);
