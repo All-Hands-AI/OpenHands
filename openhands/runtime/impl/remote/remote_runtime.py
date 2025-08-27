@@ -76,6 +76,7 @@ class RemoteRuntime(ActionExecutionClient):
             user_id,
             git_provider_tokens,
         )
+        logger.debug(f'RemoteRuntime.init user_id {user_id}')
         if self.config.sandbox.api_key is None:
             raise ValueError(
                 'API key is required to use the remote runtime. '
