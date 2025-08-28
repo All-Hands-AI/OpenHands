@@ -30,15 +30,36 @@ export function useBranchData(
     provider,
   );
 
-  // Search for default branch specifically if it's not in the loaded branches
-  const { data: defaultBranchData, isLoading: isDefaultBranchLoading } =
-    useSearchBranches(repository, defaultBranch || "", 30, provider);
-
   // Combine all branches from paginated data
   const allBranches = useMemo(
     () => branchData?.pages?.flatMap((page) => page.branches) || [],
     [branchData],
   );
+
+  // Check if default branch is in the loaded branches
+  const defaultBranchInLoaded = useMemo(
+    () =>
+      defaultBranch
+        ? allBranches.find((branch) => branch.name === defaultBranch)
+        : null,
+    [allBranches, defaultBranch],
+  );
+
+  // Only search for default branch if it's not already in the loaded branches
+  // and we have loaded some branches (to avoid searching immediately on mount)
+  const shouldSearchDefaultBranch =
+    defaultBranch &&
+    !defaultBranchInLoaded &&
+    allBranches.length > 0 &&
+    !processedSearchInput; // Don't search for default branch when user is searching
+
+  const { data: defaultBranchData, isLoading: isDefaultBranchLoading } =
+    useSearchBranches(
+      repository,
+      shouldSearchDefaultBranch ? defaultBranch : "",
+      30,
+      provider,
+    );
 
   // Get branches to display with default branch prioritized
   const branches = useMemo(() => {
@@ -52,10 +73,10 @@ export function useBranchData(
 
     // If we have a default branch, ensure it's at the top of the list
     if (defaultBranch) {
-      // First check if it's already in the current branches
-      let defaultBranchObj = branchesToUse.find(
-        (branch) => branch.name === defaultBranch,
-      );
+      // Use the already computed defaultBranchInLoaded or check in current branches
+      let defaultBranchObj = shouldUseSearch
+        ? branchesToUse.find((branch) => branch.name === defaultBranch)
+        : defaultBranchInLoaded;
 
       // If not found in current branches, check if we have it from the default branch search
       if (
@@ -88,6 +109,7 @@ export function useBranchData(
     selectedBranch,
     inputValue,
     defaultBranch,
+    defaultBranchInLoaded,
     defaultBranchData,
   ]);
 

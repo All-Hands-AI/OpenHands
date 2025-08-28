@@ -5,7 +5,7 @@ import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
-import { GitProviderDropdown } from "#/components/common/git-provider-dropdown";
+import { GitProviderDropdown } from "#/components/features/home/git-provider-dropdown";
 import {
   setPersonalRepositories,
   setOrganizationRepositories,
@@ -16,7 +16,6 @@ import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { I18nKey } from "#/i18n/declaration";
-import { getGitProviderMicroagentManagementCustomStyles } from "#/components/common/react-select-styles";
 
 interface MicroagentManagementSidebarProps {
   isSmallerScreen?: boolean;
@@ -123,8 +122,6 @@ export function MicroagentManagementSidebar({
             placeholder="Select Provider"
             onChange={handleProviderChange}
             className="w-full"
-            classNamePrefix="git-provider-dropdown"
-            styles={getGitProviderMicroagentManagementCustomStyles()}
           />
         </div>
       )}

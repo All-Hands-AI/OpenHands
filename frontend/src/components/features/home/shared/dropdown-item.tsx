@@ -21,7 +21,6 @@ export function DropdownItem<T>({
   getItemKey,
 }: DropdownItemProps<T>) {
   const itemProps = getItemProps({
-    key: getItemKey(item),
     index,
     item,
     className: cn(
@@ -38,7 +37,7 @@ export function DropdownItem<T>({
 
   return (
     // eslint-disable-next-line react/jsx-props-no-spreading
-    <li {...itemProps}>
+    <li key={getItemKey(item)} {...itemProps}>
       <span className="font-medium">{getDisplayText(item)}</span>
     </li>
   );

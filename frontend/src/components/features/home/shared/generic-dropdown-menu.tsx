@@ -17,8 +17,8 @@ export interface GenericDropdownMenuProps<T> {
   getItemProps: <Options>(
     options: UseComboboxGetItemPropsOptions<T> & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onScroll: (event: React.UIEvent<HTMLUListElement>) => void;
-  menuRef: React.RefObject<HTMLUListElement | null>;
+  onScroll?: (event: React.UIEvent<HTMLUListElement>) => void;
+  menuRef?: React.RefObject<HTMLUListElement | null>;
   renderItem: (
     item: T,
     index: number,

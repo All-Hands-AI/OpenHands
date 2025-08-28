@@ -37,10 +37,10 @@ const selectRepository = async (repoName: string) => {
 
   // First select the provider
   const providerDropdown = await waitFor(() =>
-    screen.getByText("Select Provider"),
+    screen.getByTestId("git-provider-dropdown"),
   );
   await userEvent.click(providerDropdown);
-  await userEvent.click(screen.getByText("Github"));
+  await userEvent.click(screen.getByText("GitHub"));
 
   // Then select the repository
   const repoInput = within(repoConnector).getByTestId("git-repo-dropdown");

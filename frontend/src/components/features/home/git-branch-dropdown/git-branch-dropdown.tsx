@@ -8,6 +8,7 @@ import React, {
 import { useCombobox } from "downshift";
 import { Branch } from "#/types/git";
 import { Provider } from "#/types/settings";
+import { useDebounce } from "#/hooks/use-debounce";
 import { cn } from "#/utils/utils";
 import { useBranchData } from "#/hooks/query/use-branch-data";
 import { LoadingSpinner } from "../shared/loading-spinner";
@@ -39,12 +40,14 @@ export function GitBranchDropdown({
 }: GitBranchDropdownProps) {
   const [inputValue, setInputValue] = useState("");
   const [userManuallyCleared, setUserManuallyCleared] = useState(false);
+  const debouncedInputValue = useDebounce(inputValue, 300);
   const menuRef = useRef<HTMLUListElement>(null);
 
-  // Process search input (debounced or filtered)
+  // Process search input (debounced and filtered)
   const processedSearchInput = useMemo(
-    () => (inputValue.trim().length > 0 ? inputValue.trim() : ""),
-    [inputValue],
+    () =>
+      debouncedInputValue.trim().length > 0 ? debouncedInputValue.trim() : "",
+    [debouncedInputValue],
   );
 
   // Use the new branch data hook with default branch prioritization

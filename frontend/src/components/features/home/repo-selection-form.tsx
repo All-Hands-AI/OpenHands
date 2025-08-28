@@ -8,7 +8,7 @@ import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
-import { GitProviderDropdown } from "../../common/git-provider-dropdown";
+import { GitProviderDropdown } from "./git-provider-dropdown";
 import { GitBranchDropdown } from "./git-branch-dropdown";
 import { GitRepoDropdown } from "./git-repo-dropdown";
 
