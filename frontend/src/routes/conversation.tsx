@@ -21,7 +21,7 @@ import OpenHands from "#/api/open-hands";
 import { useIsAuthed } from "#/hooks/query/use-is-authed";
 import { ConversationSubscriptionsProvider } from "#/context/conversation-subscriptions-provider";
 import { useUserProviders } from "#/hooks/use-user-providers";
-import { ChatActions } from "#/components/features/chat/chat-actions";
+
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 import { Controls } from "#/components/features/controls/controls";
@@ -78,8 +78,6 @@ function AppContent() {
             <div className="flex items-center justify-between gap-4.5">
               <ConversationName />
               <ConversationTabs />
-              <div className="h-full w-0.25 bg-[#525252]" />
-              <ChatActions />
             </div>
 
             <div className="flex h-full overflow-auto">
