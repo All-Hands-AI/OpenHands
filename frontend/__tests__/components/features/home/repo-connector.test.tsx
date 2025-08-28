@@ -151,7 +151,7 @@ describe("RepoConnector", () => {
     const repoInput = await waitFor(() =>
       screen.getByTestId("git-repo-dropdown"),
     );
-    
+
     await userEvent.click(repoInput);
 
     // Wait for the options to be loaded and displayed
@@ -275,7 +275,7 @@ describe("RepoConnector", () => {
     const repoInput = await waitFor(() =>
       within(repoConnector).getByTestId("git-repo-dropdown"),
     );
-    
+
     await userEvent.click(repoInput);
 
     // Wait for the options to be loaded and displayed
@@ -336,7 +336,7 @@ describe("RepoConnector", () => {
     const repoInput = await waitFor(() =>
       screen.getByTestId("git-repo-dropdown"),
     );
-    
+
     await userEvent.click(repoInput);
 
     // Wait for the options to be loaded and displayed
