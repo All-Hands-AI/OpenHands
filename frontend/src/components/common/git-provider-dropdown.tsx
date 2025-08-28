@@ -15,8 +15,8 @@ export interface GitProviderDropdownProps {
   disabled?: boolean;
   isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
-  styles?: StylesConfig<SelectOption, false>;
   classNamePrefix?: string;
+  styles?: StylesConfig<SelectOption, false>;
 }
 
 /* eslint-disable react/no-unstable-nested-components */
@@ -30,8 +30,8 @@ export function GitProviderDropdown({
   disabled = false,
   isLoading = false,
   onChange,
-  styles,
   classNamePrefix,
+  styles,
 }: GitProviderDropdownProps) {
   const options: SelectOption[] = useMemo(
     () =>

@@ -20,13 +20,13 @@ export interface ReactSelectDropdownProps {
   isSearchable?: boolean;
   isLoading?: boolean;
   onChange?: (option: SelectOption | null) => void;
-  styles?: StylesConfig<SelectOption, false>;
   components?: SelectComponentsConfig<
     SelectOption,
     false,
     GroupBase<SelectOption>
   >;
   classNamePrefix?: string;
+  styles?: StylesConfig<SelectOption, false>;
 }
 
 export function ReactSelectDropdown({
@@ -64,6 +64,7 @@ export function ReactSelectDropdown({
         components={{
           ...components,
         }}
+        className="w-full"
         classNamePrefix={classNamePrefix}
       />
       {errorMessage && (

@@ -37,7 +37,7 @@ export function GitControlBarPrButton({
       onClick={handlePrClick}
       disabled={!isButtonEnabled}
       className={cn(
-        "flex flex-row gap-[11px] items-center justify-center px-2 py-1 rounded-[100px] w-[126px] h-7",
+        "flex flex-row gap-[11px] items-center justify-center px-2 py-1 rounded-[100px] w-[126px] min-w-[126px] h-7",
         isButtonEnabled
           ? "bg-[#25272D] hover:bg-[#525662] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",

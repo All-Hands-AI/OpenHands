@@ -1,19 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { toasterMessages } from "@openhands/ui";
+import toast from "react-hot-toast";
 import {
   displaySuccessToast,
   displayErrorToast,
-  displayWarningToast,
-  displayInfoToast,
 } from "../custom-toast-handlers";
 
 // Mock react-hot-toast
-vi.mock("@openhands/ui", () => ({
-  toasterMessages: {
+vi.mock("react-hot-toast", () => ({
+  default: {
     success: vi.fn(),
     error: vi.fn(),
-    warning: vi.fn(),
-    info: vi.fn(),
   },
 }));
 
@@ -23,59 +19,86 @@ describe("custom-toast-handlers", () => {
   });
 
   describe("displaySuccessToast", () => {
-    it("should call toasterMessages.success", () => {
+    it("should call toast.success with calculated duration for short message", () => {
       const shortMessage = "Settings saved";
       displaySuccessToast(shortMessage);
 
-      expect(toasterMessages.success).toHaveBeenCalledWith(
+      expect(toast.success).toHaveBeenCalledWith(
         shortMessage,
         expect.objectContaining({
-          duration: 5_000,
+          duration: 5000, // Should use minimum duration of 5000ms
           position: "top-right",
+          style: expect.any(Object),
         }),
       );
     });
-  });
-  describe("displayInfoToast", () => {
-    it("should call toasterMessages.info", () => {
-      const shortMessage = "Settings saved";
-      displayInfoToast(shortMessage);
 
-      expect(toasterMessages.info).toHaveBeenCalledWith(
-        shortMessage,
-        expect.objectContaining({
-          duration: 4_000,
-          position: "top-right",
-        }),
-      );
-    });
-  });
-  describe("displayWarningToast", () => {
-    it("should call toasterMessages.warning", () => {
-      const shortMessage = "Settings saved";
-      displayWarningToast(shortMessage);
+    it("should call toast.success with longer duration for long message", () => {
+      const longMessage =
+        "Settings saved. For old conversations, you will need to stop and restart the conversation to see the changes.";
+      displaySuccessToast(longMessage);
 
-      expect(toasterMessages.warning).toHaveBeenCalledWith(
-        shortMessage,
+      expect(toast.success).toHaveBeenCalledWith(
+        longMessage,
         expect.objectContaining({
-          duration: 4_000,
+          duration: expect.any(Number),
           position: "top-right",
+          style: expect.any(Object),
         }),
       );
+
+      // Get the actual duration that was passed
+      const callArgs = (
+        toast.success as unknown as { mock: { calls: unknown[][] } }
+      ).mock.calls[0][1] as { duration: number };
+      const actualDuration = callArgs.duration;
+
+      // For a long message, duration should be more than the minimum 5000ms
+      expect(actualDuration).toBeGreaterThan(5000);
+      // But should not exceed the maximum 10000ms
+      expect(actualDuration).toBeLessThanOrEqual(10000);
     });
   });
+
   describe("displayErrorToast", () => {
-    it("should call toasterMessages.error", () => {
-      const shortMessage = "Settings saved";
+    it("should call toast.error with calculated duration for short message", () => {
+      const shortMessage = "Error occurred";
       displayErrorToast(shortMessage);
 
-      expect(toasterMessages.error).toHaveBeenCalledWith(
+      expect(toast.error).toHaveBeenCalledWith(
         shortMessage,
         expect.objectContaining({
-          duration: 5_000,
+          duration: 4000, // Should use minimum duration of 4000ms for errors
           position: "top-right",
+          style: expect.any(Object),
         }),
       );
+    });
+
+    it("should call toast.error with longer duration for long error message", () => {
+      const longMessage =
+        "A very long error message that should take more time to read and understand what went wrong with the operation.";
+      displayErrorToast(longMessage);
+
+      expect(toast.error).toHaveBeenCalledWith(
+        longMessage,
+        expect.objectContaining({
+          duration: expect.any(Number),
+          position: "top-right",
+          style: expect.any(Object),
+        }),
+      );
+
+      // Get the actual duration that was passed
+      const callArgs = (
+        toast.error as unknown as { mock: { calls: unknown[][] } }
+      ).mock.calls[0][1] as { duration: number };
+      const actualDuration = callArgs.duration;
+
+      // For a long message, duration should be more than the minimum 4000ms
+      expect(actualDuration).toBeGreaterThan(4000);
+      // But should not exceed the maximum 10000ms
+      expect(actualDuration).toBeLessThanOrEqual(10000);
     });
   });
 });

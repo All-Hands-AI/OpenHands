@@ -35,7 +35,7 @@ export function GitControlBarPullButton({
       onClick={handlePullClick}
       disabled={!isButtonEnabled}
       className={cn(
-        "flex flex-row gap-1 items-center justify-center px-0.5 py-1 rounded-[100px] w-[76px]",
+        "flex flex-row gap-1 items-center justify-center px-0.5 py-1 rounded-[100px] w-[76px] min-w-[76px]",
         isButtonEnabled
           ? "bg-[#25272D] hover:bg-[#525662] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed",

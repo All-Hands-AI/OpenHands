@@ -35,7 +35,7 @@ export function JupyterEditor({ maxWidth }: JupyterEditorProps) {
         <div className="flex-1 h-full flex flex-col" style={{ maxWidth }}>
           <div
             data-testid="jupyter-container"
-            className="flex-1 overflow-y-auto fast-smooth-scroll"
+            className="flex-1 overflow-y-auto fast-smooth-scroll custom-scrollbar-always"
             ref={jupyterRef}
             onScroll={(e) => onChatBodyScroll(e.currentTarget)}
           >

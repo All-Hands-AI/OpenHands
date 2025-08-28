@@ -1,6 +1,5 @@
 import asyncio
 import time
-from copy import deepcopy
 from logging import LoggerAdapter
 
 import socketio
@@ -28,9 +27,10 @@ from openhands.events.observation.agent import RecallObservation
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.serialization import event_from_dict, event_to_dict
 from openhands.events.stream import EventStreamSubscriber
-from openhands.llm.llm import LLM
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.constants import ROOM_KEY
+from openhands.server.services.conversation_stats import ConversationStats
 from openhands.server.session.agent_session import AgentSession
 from openhands.server.session.conversation_init_data import ConversationInitData
 from openhands.storage.data_models.settings import Settings
@@ -45,6 +45,7 @@ class Session:
     agent_session: AgentSession
     loop: asyncio.AbstractEventLoop
     config: OpenHandsConfig
+    llm_registry: LLMRegistry
     file_store: FileStore
     user_id: str | None
     logger: LoggerAdapter
@@ -53,6 +54,8 @@ class Session:
         self,
         sid: str,
         config: OpenHandsConfig,
+        llm_registry: LLMRegistry,
+        conversation_stats: ConversationStats,
         file_store: FileStore,
         sio: socketio.AsyncServer | None,
         user_id: str | None = None,
@@ -62,17 +65,21 @@ class Session:
         self.last_active_ts = int(time.time())
         self.file_store = file_store
         self.logger = OpenHandsLoggerAdapter(extra={'session_id': sid})
+        self.llm_registry = llm_registry
+        self.conversation_stats = conversation_stats
         self.agent_session = AgentSession(
             sid,
             file_store,
+            llm_registry=self.llm_registry,
+            conversation_stats=conversation_stats,
             status_callback=self.queue_status_message,
             user_id=user_id,
         )
         self.agent_session.event_stream.subscribe(
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
-        # Copying this means that when we update variables they are not applied to the shared global configuration!
-        self.config = deepcopy(config)
+        self.config = config
+
         # Lazy import to avoid circular dependency
         from openhands.experiments.experiment_manager import ExperimentManagerImpl
 
@@ -81,6 +88,12 @@ class Session:
         )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
+
+        self._publish_queue: asyncio.Queue = asyncio.Queue()
+        self._monitor_publish_queue_task: asyncio.Task = self.loop.create_task(
+            self._monitor_publish_queue()
+        )
+        self._wait_websocket_initial_complete: bool = True
 
     async def close(self) -> None:
         if self.sio:
@@ -93,6 +106,7 @@ class Session:
             )
         self.is_alive = False
         await self.agent_session.close()
+        self._monitor_publish_queue_task.cancel()
 
     async def initialize_agent(
         self,
@@ -111,7 +125,9 @@ class Session:
             else settings.confirmation_mode
         )
         self.config.security.security_analyzer = (
-            settings.security_analyzer or self.config.security.security_analyzer
+            self.config.security.security_analyzer
+            if settings.security_analyzer is None
+            else settings.security_analyzer
         )
         self.config.sandbox.base_container_image = (
             settings.sandbox_base_container_image
@@ -140,13 +156,6 @@ class Session:
             else self.config.max_budget_per_task
         )
 
-        # This is a shallow copy of the default LLM config, so changes here will
-        # persist if we retrieve the default LLM config again when constructing
-        # the agent
-        default_llm_config = self.config.get_llm_config()
-        default_llm_config.model = settings.llm_model or ''
-        default_llm_config.api_key = settings.llm_api_key
-        default_llm_config.base_url = settings.llm_base_url
         self.config.search_api_key = settings.search_api_key
         if settings.sandbox_api_key:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
@@ -181,10 +190,9 @@ class Session:
         )
 
         # TODO: override other LLM config & agent config groups (#2075)
-
-        llm = self._create_llm(agent_cls)
         agent_config = self.config.get_agent_config(agent_cls)
-
+        agent_name = agent_cls if agent_cls is not None else 'agent'
+        llm_config = self.config.get_llm_config_from_agent(agent_name)
         if settings.enable_default_condenser:
             # Default condenser chains three condensers together:
             # 1. a conversation window condenser that handles explicit
@@ -195,12 +203,15 @@ class Session:
             # The order matters: with the browser output first, the summarizer
             # will only see the most recent browser output, which should keep
             # the summarization cost down.
+            max_events_for_condenser = settings.condenser_max_size or 120
             default_condenser_config = CondenserPipelineConfig(
                 condensers=[
                     ConversationWindowCondenserConfig(),
                     BrowserOutputCondenserConfig(attention_window=2),
                     LLMSummarizingCondenserConfig(
-                        llm_config=llm.config, keep_first=4, max_size=120
+                        llm_config=llm_config,
+                        keep_first=4,
+                        max_size=max_events_for_condenser,
                     ),
                 ]
             )
@@ -208,12 +219,14 @@ class Session:
             self.logger.info(
                 f'Enabling pipeline condenser with:'
                 f' browser_output_masking(attention_window=2), '
-                f' llm(model="{llm.config.model}", '
-                f' base_url="{llm.config.base_url}", '
-                f' keep_first=4, max_size=80)'
+                f' llm(model="{llm_config.model}", '
+                f' base_url="{llm_config.base_url}", '
+                f' keep_first=4, max_size={max_events_for_condenser})'
             )
             agent_config.condenser = default_condenser_config
-        agent = Agent.get_cls(agent_cls)(llm, agent_config)
+        agent = Agent.get_cls(agent_cls)(agent_config, self.llm_registry)
+
+        self.llm_registry.retry_listner = self._notify_on_llm_retry
 
         git_provider_tokens = None
         selected_repository = None
@@ -268,14 +281,6 @@ class Session:
                 f'Failed to create agent session: {e.__class__.__name__}'
             )
             return
-
-    def _create_llm(self, agent_cls: str | None) -> LLM:
-        """Initialize LLM, extracted for testing."""
-        agent_name = agent_cls if agent_cls is not None else 'agent'
-        return LLM(
-            config=self.config.get_llm_config_from_agent(agent_name),
-            retry_listener=self._notify_on_llm_retry,
-        )
 
     def _notify_on_llm_retry(self, retries: int, max: int) -> None:
         self.queue_status_message(
@@ -343,17 +348,44 @@ class Session:
         self.agent_session.event_stream.add_event(event, EventSource.USER)
 
     async def send(self, data: dict[str, object]) -> None:
-        if asyncio.get_running_loop() != self.loop:
-            self.loop.create_task(self._send(data))
+        self._publish_queue.put_nowait(data)
+
+    async def _monitor_publish_queue(self):
+        try:
+            while True:
+                data: dict = await self._publish_queue.get()
+                await self._send(data)
+        except asyncio.CancelledError:
             return
-        await self._send(data)
 
     async def _send(self, data: dict[str, object]) -> bool:
         try:
             if not self.is_alive:
                 return False
+
+            _start_time = time.time()
+            _waiting_times = 1
+
             if self.sio:
+                # Wait once during initialization to avoid event push failures during websocket connection intervals
+                while self._wait_websocket_initial_complete and (
+                    time.time() - _start_time < 2
+                ):
+                    if bool(
+                        self.sio.manager.rooms.get('/', {}).get(
+                            ROOM_KEY.format(sid=self.sid)
+                        )
+                    ):
+                        break
+                    self.logger.warning(
+                        f'There is no listening client in the current room,'
+                        f' waiting for the {_waiting_times}th attempt: {self.sid}'
+                    )
+                    _waiting_times += 1
+                    await asyncio.sleep(0.1)
+                self._wait_websocket_initial_complete = False
                 await self.sio.emit('oh_event', data, to=ROOM_KEY.format(sid=self.sid))
+
             await asyncio.sleep(0.001)  # This flushes the data to the client
             self.last_active_ts = int(time.time())
             return True

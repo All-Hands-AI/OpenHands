@@ -1,12 +1,15 @@
 import os
+from datetime import datetime
 from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
+    Comment,
     GitService,
     OwnerType,
     ProviderType,
@@ -624,6 +627,22 @@ class GitLabService(BaseGitService, GitService):
 
         return response['web_url']
 
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific merge request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The merge request number (iid)
+
+        Returns:
+            Raw GitLab API response for the merge request
+        """
+        project_id = self._extract_project_id(repository)
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}'
+        mr_data, _ = await self._make_request(url)
+
+        return mr_data
+
     def _extract_project_id(self, repository: str) -> str:
         """Extract project_id from repository name for GitLab API calls.
 
@@ -672,6 +691,116 @@ class GitLabService(BaseGitService, GitService):
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
+
+    async def get_issue_comments(
+        self, project_id: str, issue_iid: int, limit: int = 100
+    ) -> list[Comment]:
+        """Get the last n comments for a specific issue.
+
+        Args:
+            project_id: The GitLab project ID (can be numeric ID or URL-encoded path)
+            issue_iid: The issue internal ID (iid) in GitLab
+            limit: Maximum number of comments to retrieve (default: 100)
+
+        Returns:
+            List of Comment objects, ordered by creation date (newest first)
+
+        Raises:
+            UnknownException: If the request fails or the issue is not found
+        """
+        # URL-encode the project_id if it contains special characters
+        if '/' in str(project_id):
+            encoded_project_id = str(project_id).replace('/', '%2F')
+        else:
+            encoded_project_id = str(project_id)
+
+        url = f'{self.BASE_URL}/projects/{encoded_project_id}/issues/{issue_iid}/notes'
+
+        all_comments: list[Comment] = []
+        page = 1
+        per_page = min(limit, 100)  # GitLab API max per_page is 100
+
+        while len(all_comments) < limit:
+            # Get comments with pagination, ordered by creation date descending
+            params = {
+                'per_page': per_page,
+                'page': page,
+                'order_by': 'created_at',
+                'sort': 'desc',  # Get newest comments first
+            }
+
+            response, headers = await self._make_request(url, params)
+
+            if not response:  # No more comments
+                break
+
+            # Filter out system comments and convert to Comment objects
+            for comment_data in response:
+                if len(all_comments) >= limit:
+                    break
+
+                # Skip system-generated comments unless explicitly requested
+                if comment_data.get('system', False):
+                    continue
+
+                comment = Comment(
+                    id=str(comment_data['id']),
+                    body=comment_data['body'],
+                    author=comment_data.get('author', {}).get('username', 'unknown'),
+                    created_at=datetime.fromisoformat(
+                        comment_data['created_at'].replace('Z', '+00:00')
+                    ),
+                    updated_at=datetime.fromisoformat(
+                        comment_data['updated_at'].replace('Z', '+00:00')
+                    ),
+                    system=comment_data.get('system', False),
+                )
+                all_comments.append(comment)
+
+            # Check if we have more pages
+            link_header = headers.get('Link', '')
+            if 'rel="next"' not in link_header or len(all_comments) >= limit:
+                break
+
+            page += 1
+
+        return all_comments
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a GitLab merge request is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The merge request number (iid)
+
+        Returns:
+            True if MR is active (opened), False if closed/merged
+        """
+        try:
+            mr_details = await self.get_pr_details(repository, pr_number)
+
+            # GitLab API response structure
+            # https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
+            if 'state' in mr_details:
+                return mr_details['state'] == 'opened'
+            elif 'merged_at' in mr_details and 'closed_at' in mr_details:
+                # Check if MR is merged or closed
+                return not (mr_details['merged_at'] or mr_details['closed_at'])
+
+            # If we can't determine the state, assume it's active (safer default)
+            logger.warning(
+                f'Could not determine GitLab MR status for {repository}#{pr_number}. '
+                f'Response keys: {list(mr_details.keys())}. Assuming MR is active.'
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine GitLab MR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the MR status, include the conversation to be safe
+            return True
 
 
 gitlab_service_cls = os.environ.get(

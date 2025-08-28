@@ -32,6 +32,7 @@ from evaluation.utils.shared import (
     codeact_user_response,
     get_default_sandbox_config_for_eval,
     get_metrics,
+    get_openhands_config_for_eval,
     is_fatal_evaluation_error,
     make_metadata,
     prepare_dataset,
@@ -108,7 +109,9 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
     llm_model = metadata.llm_config.model
 
     # Determine the template file based on mode and LLM
-    if mode.startswith('swt'):
+    if metadata.instruction_template_name:
+        template_name = metadata.instruction_template_name
+    elif mode.startswith('swt'):
         template_name = 'swt.j2'
     elif mode == 'swe':
         if 'gpt-4.1' in llm_model:
@@ -122,6 +125,7 @@ def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageActio
         logger.error(f'Unexpected evaluation mode: {mode}. Falling back to default.')
         template_name = 'swe_default.j2'
 
+    logger.debug(f'Using instruction template file: {template_name}')
     # Set up Jinja2 environment
     # Assuming templates are in 'evaluation/benchmarks/swe_bench/prompts' relative to this script
     prompts_dir = os.path.join(os.path.dirname(__file__), 'prompts')
@@ -224,16 +228,11 @@ def get_config(
         instance_id=instance['instance_id'],
     )
 
-    config = OpenHandsConfig(
-        default_agent=metadata.agent_class,
-        run_as_openhands=False,
-        max_iterations=metadata.max_iterations,
+    config = get_openhands_config_for_eval(
+        metadata=metadata,
         enable_browser=RUN_WITH_BROWSING,
         runtime=os.environ.get('RUNTIME', 'docker'),
-        sandbox=sandbox_config,
-        # do not mount workspace
-        workspace_base=None,
-        workspace_mount_path=None,
+        sandbox_config=sandbox_config,
     )
 
     config.set_llm_config(

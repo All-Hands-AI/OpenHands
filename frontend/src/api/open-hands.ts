@@ -22,7 +22,7 @@ import {
 import { openHands } from "./open-hands-axios";
 import { ApiSettings, PostApiSettings, Provider } from "#/types/settings";
 import { GitUser, GitRepository, Branch } from "#/types/git";
-import { SuggestedTask } from "#/components/features/home/tasks/task.types";
+import { SuggestedTask } from "#/utils/types";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
@@ -725,6 +725,27 @@ class OpenHands {
       `/api/user/installations?provider=${provider}`,
     );
     return data;
+  }
+
+  static async getMicroagentManagementConversations(
+    selectedRepository: string,
+    pageId?: string,
+    limit: number = 100,
+  ): Promise<Conversation[]> {
+    const params: Record<string, string | number> = {
+      limit,
+      selected_repository: selectedRepository,
+    };
+
+    if (pageId) {
+      params.page_id = pageId;
+    }
+
+    const { data } = await openHands.get<ResultSet<Conversation>>(
+      "/api/microagent-management/conversations",
+      { params },
+    );
+    return data.results;
   }
 }
 

@@ -14,6 +14,10 @@ from openhands.microagent.types import MicroagentContentResponse, MicroagentResp
 from openhands.server.types import AppMode
 
 
+class TokenResponse(BaseModel):
+    token: str
+
+
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
@@ -138,6 +142,15 @@ class Repository(BaseModel):
         None  # Whether the repository is owned by a user or organization
     )
     main_branch: str | None = None  # The main/default branch of the repository
+
+
+class Comment(BaseModel):
+    id: str
+    body: str
+    author: str
+    created_at: datetime
+    updated_at: datetime
+    system: bool = False  # Whether this is a system-generated comment
 
 
 class AuthenticationError(ValueError):
@@ -509,5 +522,29 @@ class GitService(Protocol):
 
         Returns:
             MicroagentContentResponse with parsed content and triggers
+        """
+        ...
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request/merge request
+
+        Args:
+            repository: Repository name in format specific to the provider
+            pr_number: The pull request/merge request number
+
+        Returns:
+            Raw API response from the git provider
+        """
+        ...
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
         """
         ...

@@ -67,7 +67,7 @@ function GitChanges() {
   ]);
 
   return (
-    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center">
+    <main className="h-full overflow-y-scroll px-4 py-3 gap-3 flex flex-col items-center custom-scrollbar-always">
       {!isSuccess || !gitChanges.length ? (
         <div className="relative flex h-full w-full items-center">
           <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">

@@ -186,7 +186,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     backgroundColor: "#454545",
     borderRadius: "0.25rem",
     boxShadow: "none",
-    padding: "0 0.75rem",
+    padding: "0 0.5rem 0 0.75rem",
     height: "42px",
     "> div:first-child": {
       transform: "translateY(-1px)",
@@ -205,6 +205,11 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       padding: "0 0.5rem",
       transform: "translateY(-1px)",
       paddingLeft: "0.25rem",
+      "& .repo-branch-dropdown__input": {
+        color: "#A3A3A3 !important",
+        fontSize: "0.875rem !important",
+        fontWeight: "400 !important",
+      },
     },
     "& .repo-branch-dropdown__indicators-container": {
       height: "42px",
@@ -216,7 +221,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     "& .repo-branch-dropdown__indicators": {
       transform: "translateY(-1px)",
       height: "42px",
-      padding: "0 0.5rem",
+      padding: "0",
       "& > div": {
         padding: "0",
       },
@@ -238,6 +243,27 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       background: "#454545",
       borderRadius: "0.375rem",
       padding: "0.375rem 0.25rem",
+      /* WebKit browsers (Chrome, Safari, Edge) */
+      "&::-webkit-scrollbar": {
+        width: "6px",
+        height: "6px",
+      },
+
+      "&::-webkit-scrollbar-track": {
+        background: "transparent",
+      },
+
+      "&::-webkit-scrollbar-thumb": {
+        background: "rgba(208, 217, 250, 0.3)",
+        borderRadius: "3px",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      },
+
+      /* Firefox */
+      "&": {
+        scrollbarWidth: "thin",
+        scrollbarColor: "rgba(208, 217, 250, 0.3) transparent",
+      },
     },
     "& .repo-branch-dropdown__option": {
       color: "#fff",
@@ -248,6 +274,7 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
       padding: "0.5rem",
       display: "flex",
       alignItems: "center",
+      overflowWrap: "anywhere",
       "&:hover": {
         cursor: "pointer",
         backgroundColor: "#5C5D62",
@@ -255,3 +282,27 @@ export const repoBranchDropdownStyles: StylesConfig<SelectOption, false> = {
     },
   }),
 };
+
+// Custom styles for the git-provider-dropdown in the microagent-management page.
+export const getGitProviderMicroagentManagementCustomStyles = <
+  T extends SelectOptionBase,
+>(): StylesConfig<T, false> => ({
+  ...getCustomStyles<T>(),
+  control: (provided, state) => ({
+    ...provided,
+    backgroundColor: state.isDisabled ? "#363636" : "#454545", // darker tertiary when disabled
+    border: "1px solid #717888",
+    borderRadius: "0.125rem",
+    minHeight: "2.5rem",
+    padding: "0 0.5rem",
+    boxShadow: "none",
+    opacity: state.isDisabled ? 0.6 : 1,
+    cursor: state.isDisabled ? "not-allowed" : "pointer",
+    "&:hover": {
+      borderColor: "#717888",
+    },
+    "& .git-provider-dropdown__value-container": {
+      padding: "2px 0",
+    },
+  }),
+});

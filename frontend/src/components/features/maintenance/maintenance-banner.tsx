@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
-import { isBefore } from "date-fns";
+import { isAfter, isBefore } from "date-fns";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { FaTriangleExclamation } from "react-icons/fa6";
 import CloseIcon from "#/icons/close.svg?react";
@@ -72,6 +72,12 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
       : isBefore(new Date(dismissedAt), new Date(startTime));
   }, [dismissedAt, startTime]);
 
+  // Only show close button if maintenance has started
+  const isMaintenanceStarted = useMemo(
+    () => isAfter(new Date(), new Date(localTime)),
+    [localTime],
+  );
+
   if (!isBannerVisible) {
     return null;
   }
@@ -95,16 +101,18 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
         </div>
       </div>
 
-      <button
-        type="button"
-        data-testid="dismiss-button"
-        onClick={() => setDismissedAt(localTime)}
-        className={cn(
-          "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
-        )}
-      >
-        <CloseIcon />
-      </button>
+      {isMaintenanceStarted && (
+        <button
+          type="button"
+          data-testid="dismiss-button"
+          onClick={() => setDismissedAt(localTime)}
+          className={cn(
+            "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
+          )}
+        >
+          <CloseIcon />
+        </button>
+      )}
     </div>
   );
 }

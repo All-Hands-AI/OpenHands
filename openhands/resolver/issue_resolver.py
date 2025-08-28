@@ -28,6 +28,7 @@ from openhands.events.observation import (
 )
 from openhands.events.stream import EventStreamSubscriber
 from openhands.integrations.service_types import ProviderType
+from openhands.llm.llm_registry import LLMRegistry
 from openhands.resolver.interfaces.issue import Issue
 from openhands.resolver.interfaces.issue_definitions import (
     ServiceContextIssue,
@@ -412,7 +413,8 @@ class IssueResolver:
             shutil.rmtree(self.workspace_base)
         shutil.copytree(os.path.join(self.output_dir, 'repo'), self.workspace_base)
 
-        runtime = create_runtime(self.app_config)
+        llm_registry = LLMRegistry(self.app_config)
+        runtime = create_runtime(self.app_config, llm_registry)
         await runtime.connect()
 
         def on_event(evt: Event) -> None:

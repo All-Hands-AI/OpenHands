@@ -11,6 +11,7 @@ import statusReducer from "./state/status-slice";
 import metricsReducer from "./state/metrics-slice";
 import microagentManagementReducer from "./state/microagent-management-slice";
 import conversationReducer from "./state/conversation-slice";
+import eventMessageReducer from "./state/event-message-slice";
 
 export const rootReducer = combineReducers({
   fileState: fileStateReducer,
@@ -25,6 +26,7 @@ export const rootReducer = combineReducers({
   metrics: metricsReducer,
   microagentManagement: microagentManagementReducer,
   conversation: conversationReducer,
+  eventMessage: eventMessageReducer,
 });
 
 const store = configureStore({
