@@ -120,7 +120,7 @@ class ConversationStats:
         for service_id, m in conversation_stats.restored_metrics.items():
             merged[service_id] = m
 
-        # Commit merged view: single dict, no restored left
+        # Commit merged view
         self.service_to_metrics = merged
         self.save_metrics()
         logger.info(
