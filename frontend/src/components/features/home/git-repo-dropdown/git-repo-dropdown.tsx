@@ -138,11 +138,15 @@ export function GitRepoDropdown({
     [],
   );
 
+  // Track if user is at bottom to bridge pagination across installations
+  const wasAtBottomRef = useRef(false);
+
   // Handle scroll to bottom for pagination
   const handleMenuScroll = useCallback(
     (event: React.UIEvent<HTMLUListElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
+      wasAtBottomRef.current = isNearBottom;
 
       if (isNearBottom && hasNextPage && !isFetchingNextPage) {
         fetchNextPage();
@@ -169,6 +173,30 @@ export function GitRepoDropdown({
     onInputValueChange: handleInputValueChange,
     inputValue,
   });
+
+  // Auto-load next pages when at or near bottom, especially when switching installations
+  useEffect(() => {
+    if (!isOpen) return;
+    const el = menuRef.current;
+    if (!el) return;
+
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 10;
+    const notScrollable = el.scrollHeight <= el.clientHeight + 10;
+
+    if (
+      (wasAtBottomRef.current || nearBottom || notScrollable) &&
+      hasNextPage &&
+      !isFetchingNextPage
+    ) {
+      fetchNextPage();
+    }
+  }, [
+    isOpen,
+    filteredRepositories,
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  ]);
 
   // Sync localSelectedItem with external value prop
   useEffect(() => {
