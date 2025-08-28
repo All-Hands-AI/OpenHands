@@ -1,3 +1,5 @@
+import traceback
+
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement
@@ -23,10 +25,14 @@ def get_action_execution_server_startup_command(
     main_module: str = DEFAULT_MAIN_MODULE,
     python_executable: str = 'python',
 ) -> list[str]:
+    logger.info(
+        'get_action_execution_server_startup_command stack:\n%s',
+        ''.join(traceback.format_stack()),
+    )
     sandbox_config = app_config.sandbox
-    logger.debug(f'app_config {vars(app_config)}')
-    logger.debug(f'sandbox_config {vars(sandbox_config)}')
-    logger.debug(f'override_user_id {override_user_id}')
+    logger.info(f'app_config {vars(app_config)}')
+    logger.info(f'sandbox_config {vars(sandbox_config)}')
+    logger.info(f'override_user_id {override_user_id}')
 
     # Plugin args
     plugin_args = []
@@ -64,6 +70,6 @@ def get_action_execution_server_startup_command(
 
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')
-    logger.debug(f'get_action_execution_server_startup_command: {base_cmd}')
+    logger.info(f'get_action_execution_server_startup_command: {base_cmd}')
 
     return base_cmd
