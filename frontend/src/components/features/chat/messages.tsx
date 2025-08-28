@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { createPortal } from "react-dom";
 import { OpenHandsAction } from "#/types/core/actions";
 import { OpenHandsObservation } from "#/types/core/observations";
@@ -61,6 +62,8 @@ export const Messages: React.FC<MessagesProps> = React.memo(
     const [microagentStatuses, setMicroagentStatuses] = React.useState<
       EventMicroagentStatus[]
     >([]);
+
+    const { t } = useTranslation();
 
     const actionHasObservationPair = React.useCallback(
       (event: OpenHandsAction | OpenHandsObservation): boolean => {
@@ -243,6 +246,7 @@ export const Messages: React.FC<MessagesProps> = React.memo(
                         setSelectedEventId(message.id);
                         setShowLaunchMicroagentModal(true);
                       },
+                      tooltip: t("MICROAGENT$ADD_TO_MEMORY"),
                     },
                   ]
                 : undefined
