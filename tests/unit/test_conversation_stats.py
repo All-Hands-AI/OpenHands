@@ -488,3 +488,97 @@ def test_save_and_restore_workflow(mock_file_store):
         assert llm.metrics.accumulated_cost == 0.05
         assert llm.metrics.accumulated_token_usage.prompt_tokens == 100
         assert llm.metrics.accumulated_token_usage.completion_tokens == 50
+
+
+def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
+    """Merging two ConversationStats with no overlapping service IDs flattens
+    both active and restored metrics into self.service_to_metrics and saves them.
+    """
+    stats_a = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+    )
+    stats_b = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+    )
+
+    # Self active + restored
+    m_a_active = Metrics(model_name='model-a')
+    m_a_active.add_cost(0.1)
+    m_a_restored = Metrics(model_name='model-a')
+    m_a_restored.add_cost(0.2)
+    stats_a.service_to_metrics['a-active'] = m_a_active
+    stats_a.restored_metrics = {'a-restored': m_a_restored}
+
+    # Other active + restored
+    m_b_active = Metrics(model_name='model-b')
+    m_b_active.add_cost(0.3)
+    m_b_restored = Metrics(model_name='model-b')
+    m_b_restored.add_cost(0.4)
+    stats_b.service_to_metrics['b-active'] = m_b_active
+    stats_b.restored_metrics = {'b-restored': m_b_restored}
+
+    # Merge B into A
+    stats_a.merge(stats_b)
+
+    # All keys from both sides (active + restored) should be in A's active dict now
+    assert set(stats_a.service_to_metrics.keys()) == {
+        'a-active',
+        'a-restored',
+        'b-active',
+        'b-restored',
+    }
+
+    # The exact Metrics objects should be present (no copies)
+    assert stats_a.service_to_metrics['a-active'] is m_a_active
+    assert stats_a.service_to_metrics['a-restored'] is m_a_restored
+    assert stats_a.service_to_metrics['b-active'] is m_b_active
+    assert stats_a.service_to_metrics['b-restored'] is m_b_restored
+
+    # Merge triggers a save; confirm the saved blob decodes to expected keys
+    encoded = mock_file_store.read(stats_a.metrics_path)
+    pickled = base64.b64decode(encoded)
+    restored_dict = pickle.loads(pickled)
+    assert set(restored_dict.keys()) == {
+        'a-active',
+        'a-restored',
+        'b-active',
+        'b-restored',
+    }
+
+
+@pytest.mark.parametrize(
+    'self_side,other_side',
+    [
+        ('active', 'active'),
+        ('restored', 'active'),
+        ('active', 'restored'),
+        ('restored', 'restored'),
+    ],
+)
+def test_merge_conversation_stats_raises_on_duplicate_service_id(
+    mock_file_store, self_side, other_side
+):
+    stats_a = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+    )
+    stats_b = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+    )
+
+    # Place the same service id on the specified sides
+    dupe_id = 'dupe-service'
+    m1 = Metrics(model_name='m')
+    m2 = Metrics(model_name='m')
+
+    if self_side == 'active':
+        stats_a.service_to_metrics[dupe_id] = m1
+    else:
+        stats_a.restored_metrics[dupe_id] = m1
+
+    if other_side == 'active':
+        stats_b.service_to_metrics[dupe_id] = m2
+    else:
+        stats_b.restored_metrics[dupe_id] = m2
+
+    with pytest.raises(ValueError, match='Duplicate service IDs'):
+        stats_a.merge(stats_b)
