@@ -689,7 +689,8 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             result = await self.execute_graphql_query(
                 search_branches_graphql_query, variables
             )
-        except Exception:
+        except Exception as e:
+            logger.warning(f'Failed to search for branches: {e}')
             # Fallback to empty result on any GraphQL error
             return []
 

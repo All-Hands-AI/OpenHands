@@ -63,7 +63,6 @@ search_branches_graphql_query = """
             ) {
                 nodes {
                     name
-                    branchProtectionRule { id }
                     target {
                         __typename
                         ... on Commit {
