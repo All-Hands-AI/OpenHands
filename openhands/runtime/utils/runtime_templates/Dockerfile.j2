@@ -207,11 +207,11 @@ RUN \
     # Set proper permissions for shared access
     chmod -R 755 /opt/playwright-browsers && \
     # Create cache directories and symlinks for both users
-    mkdir -p /home/openhands/.cache && \
+    mkdir -p /home/cbutkus/.cache && \
     mkdir -p /root/.cache && \
-    ln -sf /opt/playwright-browsers /home/openhands/.cache/ms-playwright && \
+    ln -sf /opt/playwright-browsers /home/cbutkus/.cache/ms-playwright && \
     ln -sf /opt/playwright-browsers /root/.cache/ms-playwright && \
-    chown -h cbutkus:cbutkus /home/openhands/.cache/ms-playwright && \
+    chown -h cbutkus:cbutkus /home/cbutkus/.cache/ms-playwright && \
     # Set environment variable for all users
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment && \
     {% endif %}
@@ -317,11 +317,11 @@ RUN \
         if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g cbutkus cbutkus; else useradd -u 1000 -g cbutkus -m -s /bin/bash cbutkus; fi; \
     fi && \
     # Ensure home and required directories exist before later steps
-    mkdir -p /home/openhands && \
+    mkdir -p /home/cbutkus && \
     mkdir -p /openhands && \
     mkdir -p $(dirname ${OPENVSCODE_SERVER_ROOT}) && \
     # Ensure ownership is correct for all OpenHands paths
-    chown -R cbutkus:cbutkus /home/openhands || true && \
+    chown -R cbutkus:cbutkus /home/cbutkus || true && \
     chown -R cbutkus:cbutkus /openhands || true
 
 {{ setup_vscode_server() }}
@@ -357,8 +357,8 @@ RUN {{ extra_deps }}
 USER root
 RUN \
     # Set up environment for openhands user
-    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/openhands/.bashrc && \
-    echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
-    echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
-    echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
-    chown cbutkus:cbutkus /home/openhands/.bashrc
+    echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:/openhands/micromamba/bin:$PATH"' >> /home/cbutkus/.bashrc && \
+    echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/cbutkus/.bashrc && \
+    echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/cbutkus/.bashrc && \
+    echo 'micromamba activate openhands 2>/dev/null || true' >> /home/cbutkus/.bashrc && \
+    chown cbutkus:cbutkus /home/cbutkus/.bashrc
