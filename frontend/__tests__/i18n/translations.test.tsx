@@ -10,7 +10,7 @@ describe("Translations", () => {
     i18n.changeLanguage("en");
     renderWithProviders(
       <MemoryRouter>
-        <AccountSettingsContextMenu onLogout={() => {}} onClose={() => {}} />
+        <AccountSettingsContextMenu onLogout={() => {}} />
       </MemoryRouter>,
     );
     expect(
@@ -47,7 +47,6 @@ describe("Translations", () => {
 
       await i18n.changeLanguage("zh-CN");
       expect(i18n.language).toBe("zh-CN");
-
     } finally {
       // Restore the original language
       await i18n.changeLanguage(originalLanguage);

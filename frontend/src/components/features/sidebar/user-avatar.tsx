@@ -4,23 +4,19 @@ import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import ProfileIcon from "#/icons/profile.svg?react";
 import { cn } from "#/utils/utils";
 import { Avatar } from "./avatar";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface UserAvatarProps {
-  onClick: () => void;
   avatarUrl?: string;
   isLoading?: boolean;
 }
 
-export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
+export function UserAvatar({ avatarUrl, isLoading }: UserAvatarProps) {
   const { t } = useTranslation();
 
   return (
-    <TooltipButton
-      testId="user-avatar"
-      tooltip={t(I18nKey.USER$ACCOUNT_SETTINGS)}
-      ariaLabel={t(I18nKey.USER$ACCOUNT_SETTINGS)}
-      onClick={onClick}
+    <button
+      type="button"
+      data-testid="user-avatar"
       className={cn(
         "w-8 h-8 rounded-full flex items-center justify-center cursor-pointer",
         isLoading && "bg-transparent",
@@ -36,6 +32,6 @@ export function UserAvatar({ onClick, avatarUrl, isLoading }: UserAvatarProps) {
         />
       )}
       {isLoading && <LoadingSpinner size="small" />}
-    </TooltipButton>
+    </button>
   );
 }

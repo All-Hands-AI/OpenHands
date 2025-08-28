@@ -3,7 +3,6 @@ import { Link } from "react-router";
 import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
 import { ContextMenuSeparator } from "./context-menu-separator";
-import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
 import CreditCardIcon from "#/icons/credit-card.svg?react";
@@ -17,7 +16,6 @@ import UserIcon from "#/icons/user.svg?react";
 
 interface AccountSettingsContextMenuProps {
   onLogout: () => void;
-  onClose: () => void;
 }
 
 const SAAS_NAV_ITEMS = [
@@ -83,33 +81,22 @@ const OSS_NAV_ITEMS = [
 
 export function AccountSettingsContextMenu({
   onLogout,
-  onClose,
 }: AccountSettingsContextMenuProps) {
-  const ref = useClickOutsideElement<HTMLUListElement>(onClose);
   const { t } = useTranslation();
   const { data: config } = useConfig();
 
   const isSaas = config?.APP_MODE === "saas";
   const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
 
-  const handleNavigationClick = () => {
-    onClose();
-    // The Link component will handle the actual navigation
-  };
-
   return (
     <ContextMenu
       testId="account-settings-context-menu"
-      ref={ref}
       alignment="right"
-      className="md:right-full md:left-full md:mt-0 md:bottom-0 ml-2 z-10 w-fit"
+      className="mt-0 md:right-full md:left-full md:bottom-0 ml-0 z-10 w-fit"
     >
       {navItems.map(({ to, text, icon }) => (
         <Link key={to} to={to} className="text-decoration-none">
-          <ContextMenuListItem
-            onClick={() => handleNavigationClick()}
-            className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded h-[30px]"
-          >
+          <ContextMenuListItem className="flex items-center gap-2 p-2 hover:bg-[#5C5D62] rounded h-[30px]">
             {icon}
             <span className="text-white text-sm">{t(text)}</span>
           </ContextMenuListItem>

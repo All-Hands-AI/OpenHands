@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, test, vi } from "vitest";
 import { AccountSettingsContextMenu } from "#/components/features/context-menu/account-settings-context-menu";
@@ -9,7 +9,6 @@ describe("AccountSettingsContextMenu", () => {
   const user = userEvent.setup();
   const onClickAccountSettingsMock = vi.fn();
   const onLogoutMock = vi.fn();
-  const onCloseMock = vi.fn();
 
   // Create a wrapper with MemoryRouter and renderWithProviders
   const renderWithRouter = (ui: React.ReactElement) => {
@@ -19,16 +18,10 @@ describe("AccountSettingsContextMenu", () => {
   afterEach(() => {
     onClickAccountSettingsMock.mockClear();
     onLogoutMock.mockClear();
-    onCloseMock.mockClear();
   });
 
   it("should always render the right options", () => {
-    renderWithRouter(
-      <AccountSettingsContextMenu
-        onLogout={onLogoutMock}
-        onClose={onCloseMock}
-      />,
-    );
+    renderWithRouter(<AccountSettingsContextMenu onLogout={onLogoutMock} />);
 
     expect(
       screen.getByTestId("account-settings-context-menu"),
@@ -37,12 +30,7 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   it("should call onLogout when the logout option is clicked", async () => {
-    renderWithRouter(
-      <AccountSettingsContextMenu
-        onLogout={onLogoutMock}
-        onClose={onCloseMock}
-      />,
-    );
+    renderWithRouter(<AccountSettingsContextMenu onLogout={onLogoutMock} />);
 
     const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
@@ -51,31 +39,11 @@ describe("AccountSettingsContextMenu", () => {
   });
 
   test("logout button is always enabled", async () => {
-    renderWithRouter(
-      <AccountSettingsContextMenu
-        onLogout={onLogoutMock}
-        onClose={onCloseMock}
-      />,
-    );
+    renderWithRouter(<AccountSettingsContextMenu onLogout={onLogoutMock} />);
 
     const logoutOption = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
     await user.click(logoutOption);
 
     expect(onLogoutMock).toHaveBeenCalledOnce();
-  });
-
-  it("should call onClose when clicking outside of the element", async () => {
-    renderWithRouter(
-      <AccountSettingsContextMenu
-        onLogout={onLogoutMock}
-        onClose={onCloseMock}
-      />,
-    );
-
-    const accountSettingsButton = screen.getByText("ACCOUNT_SETTINGS$LOGOUT");
-    await user.click(accountSettingsButton);
-    await user.click(document.body);
-
-    expect(onCloseMock).toHaveBeenCalledOnce();
   });
 });
