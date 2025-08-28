@@ -9,6 +9,9 @@ from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.queries import (
+    get_review_threads_graphql_query,
+    get_thread_comments_graphql_query,
+    get_thread_from_comment_graphql_query,
     search_branches_graphql_query,
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
