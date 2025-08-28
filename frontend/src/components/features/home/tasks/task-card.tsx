@@ -61,7 +61,11 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 flex items-center gap-3 last:border-b-0">
+    <button
+      type="button"
+      className="py-3 flex items-center gap-3 cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2"
+      onClick={handleLaunchConversation}
+    >
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
       <div className="w-full flex flex-col gap-1">
@@ -83,6 +87,6 @@ export function TaskCard({ task }: TaskCardProps) {
         {!isPending && t("HOME$LAUNCH")}
         {isPending && t("HOME$LOADING")}
       </button>
-    </li>
+    </button>
   );
 }
