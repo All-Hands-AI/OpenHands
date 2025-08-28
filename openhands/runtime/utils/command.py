@@ -1,3 +1,4 @@
+import os
 import traceback
 
 from openhands.core.config import OpenHandsConfig
@@ -13,6 +14,9 @@ DEFAULT_PYTHON_PREFIX = [
     'run',
 ]
 DEFAULT_MAIN_MODULE = 'openhands.runtime.action_execution_server'
+
+RUNTIME_USERNAME = os.getenv('RUNTIME_USERNAME')
+RUNTIME_UID = os.getenv('RUNTIME_UID')
 
 
 def get_action_execution_server_startup_command(
@@ -32,7 +36,10 @@ def get_action_execution_server_startup_command(
     sandbox_config = app_config.sandbox
     logger.info(f'app_config {vars(app_config)}')
     logger.info(f'sandbox_config {vars(sandbox_config)}')
-    logger.info(f'override_user_id {override_user_id}')
+    logger.info(f'RUNTIME_USERNAME {RUNTIME_USERNAME}, RUNTIME_UID {RUNTIME_UID}')
+    logger.info(
+        f'override_username {override_username}, override_user_id {override_user_id}'
+    )
 
     # Plugin args
     plugin_args = []
@@ -46,10 +53,15 @@ def get_action_execution_server_startup_command(
             '--browsergym-eval-env'
         ] + sandbox_config.browsergym_eval_env.split(' ')
 
-    username = override_username or (
-        'openhands' if app_config.run_as_openhands else 'root'
+    username = (
+        override_username
+        or RUNTIME_USERNAME
+        or ('openhands' if app_config.run_as_openhands else 'root')
     )
-    user_id = override_user_id or (1000 if app_config.run_as_openhands else 0)
+    user_id = (
+        override_user_id or RUNTIME_UID or (1000 if app_config.run_as_openhands else 0)
+    )
+    logger.info(f'username {username}, user_id {user_id}')
 
     base_cmd = [
         *python_prefix,
