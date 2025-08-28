@@ -17,8 +17,7 @@ import { setIsRightPanelShown } from "#/state/conversation-slice";
 import { RootState } from "#/store";
 
 export function ConversationTabs() {
-  const [{ selectedTab, terminalOpen }, { onTabChange, onTerminalChange }] =
-    useConversationTabs();
+  const [{ selectedTab }, { onTabChange }] = useConversationTabs();
 
   const isTabClicked = useRef<boolean>(false);
 
@@ -36,7 +35,6 @@ export function ConversationTabs() {
       } else {
         // Reset state when panel is hidden
         onTabChange(null);
-        onTerminalChange(false);
       }
 
       // Reset the click flag after handling the change
@@ -54,20 +52,8 @@ export function ConversationTabs() {
     dispatch(setIsRightPanelShown(true));
   };
 
-  const onTerminalSelected = () => {
-    onTerminalChange((prev) => !prev);
-    if (!selectedTab) {
-      onTabChange("editor");
-    }
-  };
-
-  const onTabSelected = (
-    tab: ConversationTab | null,
-    isTerminal: boolean = false,
-  ) => {
-    if (isTerminal) {
-      onTerminalSelected();
-    } else if (tab) {
+  const onTabSelected = (tab: ConversationTab | null) => {
+    if (tab) {
       onTabChange(tab);
     }
     showActionPanel();
@@ -89,11 +75,10 @@ export function ConversationTabs() {
       tooltipContent: <VSCodeTooltipContent />,
       tooltipAriaLabel: t(I18nKey.COMMON$CODE),
     },
-
     {
-      isActive: terminalOpen,
+      isActive: selectedTab === "terminal",
       icon: TerminalIcon,
-      onClick: () => onTabSelected(null, true),
+      onClick: () => onTabSelected("terminal"),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
     },

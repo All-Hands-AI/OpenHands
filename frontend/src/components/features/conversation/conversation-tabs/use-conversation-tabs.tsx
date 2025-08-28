@@ -1,8 +1,6 @@
 import {
   createContext,
-  Dispatch,
   PropsWithChildren,
-  SetStateAction,
   useContext,
   useMemo,
   useState,
@@ -13,18 +11,15 @@ export type ConversationTab =
   | "browser"
   | "jupyter"
   | "served"
-  | "vscode";
-
-export type TerminalTab = "terminal";
+  | "vscode"
+  | "terminal";
 
 type ConversationTabsContext = [
   {
     selectedTab: ConversationTab | null;
-    terminalOpen: boolean;
   },
   {
     onTabChange(value: ConversationTab | null): void;
-    onTerminalChange: Dispatch<SetStateAction<boolean>>;
   },
 ];
 export const ConversationTabContext = createContext<
@@ -33,14 +28,10 @@ export const ConversationTabContext = createContext<
 
 export function ConversationTabProvider({ children }: PropsWithChildren) {
   const [selectedTab, onTabChange] = useState<ConversationTab | null>("editor");
-  const [terminalOpen, onTerminalChange] = useState<boolean>(false);
 
   const state = useMemo<ConversationTabsContext>(
-    () => [
-      { selectedTab, terminalOpen },
-      { onTabChange, onTerminalChange },
-    ],
-    [selectedTab, terminalOpen],
+    () => [{ selectedTab }, { onTabChange }],
+    [selectedTab],
   );
 
   return (

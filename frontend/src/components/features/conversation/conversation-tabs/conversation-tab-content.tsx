@@ -5,6 +5,7 @@ import { useConversationTabs } from "./use-conversation-tabs";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { RootState } from "#/store";
 import { ConversationLoading } from "../conversation-loading";
+import Terminal from "../../terminal/terminal";
 
 // Lazy load all tab components
 const EditorTab = lazy(() => import("#/routes/changes-tab"));
@@ -26,6 +27,7 @@ export function ConversationTabContent() {
   const isJupyterActive = selectedTab === "jupyter";
   const isServedActive = selectedTab === "served";
   const isVSCodeActive = selectedTab === "vscode";
+  const isTerminalActive = selectedTab === "terminal";
 
   if (shouldShownAgentLoading) {
     return <ConversationLoading />;
@@ -35,7 +37,6 @@ export function ConversationTabContent() {
     <div
       className={cn(
         "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full w-full",
-        "h-full w-full",
       )}
     >
       <div className="overflow-hidden flex-grow rounded-b-xl">
@@ -50,29 +51,52 @@ export function ConversationTabContent() {
               }
             >
               <div
-                className={`absolute inset-0 ${isEditorActive ? "block" : "hidden"}`}
+                className={cn(
+                  "absolute inset-0",
+                  isEditorActive ? "block" : "hidden",
+                )}
               >
                 <EditorTab />
               </div>
               <div
-                className={`absolute inset-0 ${isBrowserActive ? "block" : "hidden"}`}
+                className={cn(
+                  "absolute inset-0",
+                  isBrowserActive ? "block" : "hidden",
+                )}
               >
                 <BrowserTab />
               </div>
               <div
-                className={`absolute inset-0 ${isJupyterActive ? "block" : "hidden"}`}
+                className={cn(
+                  "absolute inset-0",
+                  isJupyterActive ? "block" : "hidden",
+                )}
               >
                 <JupyterTab />
               </div>
               <div
-                className={`absolute inset-0 ${isServedActive ? "block" : "hidden"}`}
+                className={cn(
+                  "absolute inset-0",
+                  isServedActive ? "block" : "hidden",
+                )}
               >
                 <ServedTab />
               </div>
               <div
-                className={`absolute inset-0 ${isVSCodeActive ? "block" : "hidden"}`}
+                className={cn(
+                  "absolute inset-0",
+                  isVSCodeActive ? "block" : "hidden",
+                )}
               >
                 <VSCodeTab />
+              </div>
+              <div
+                className={cn(
+                  "absolute inset-0",
+                  isTerminalActive ? "block" : "hidden",
+                )}
+              >
+                <Terminal />
               </div>
             </Suspense>
           </div>
