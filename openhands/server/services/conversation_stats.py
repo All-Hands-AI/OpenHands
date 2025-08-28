@@ -105,28 +105,12 @@ class ConversationStats:
         if dupes:
             raise ValueError(f'Duplicate service IDs across stats: {sorted(dupes)}')
 
-        # Start from self's current active metrics
-        merged: dict[str, Metrics] = dict(self.service_to_metrics)
-
-        # Add any restored metrics from self that aren't in active (flattening into one dict)
-        for service_id, m in self.restored_metrics.items():
-            merged[service_id] = m
-
-        # Add all of other's active metrics
-        for service_id, m in conversation_stats.service_to_metrics.items():
-            merged[service_id] = m
-
-        # Add all of other's restored metrics
-        for service_id, m in conversation_stats.restored_metrics.items():
-            merged[service_id] = m
-
-        # Commit merged view
-        self.service_to_metrics = merged
+        self.restored_metrics.update(conversation_stats.restored_metrics)
+        self.service_to_metrics.update(conversation_stats.service_to_metrics)
         self.save_metrics()
         logger.info(
             'Merged conversation stats',
             extra={
                 'conversation_id': self.conversation_id,
-                'merged_count': len(merged),
             },
         )
