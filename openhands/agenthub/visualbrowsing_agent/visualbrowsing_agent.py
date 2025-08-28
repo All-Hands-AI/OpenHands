@@ -301,10 +301,8 @@ You are an agent trying to solve a web task based on the content of the page and
         messages.append(Message(role='system', content=[TextContent(text=system_msg)]))
         messages.append(Message(role='user', content=human_prompt))
 
-        flat_messages = self.llm.format_messages_for_llm(messages)
-
         response = self.llm.completion(
-            messages=flat_messages,
+            messages=messages,
             temperature=0.0,
             stop=[')```', ')\n```'],
         )
