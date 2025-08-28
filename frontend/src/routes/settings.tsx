@@ -8,7 +8,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { useSettings } from "#/hooks/query/use-settings";
+import { useSubscriptionSccess } from "#/hooks/query/use-subscription_access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -64,13 +64,13 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { data: settings } = useSettings();
+  const { data: subscriptionAccess } = useSubscriptionSccess();
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
   const navItems = [];
   if (isSaas) {
-    if (settings?.ENABLE_LLM_OPTIONS) {
+    if (subscriptionAccess) {
       navItems.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
     }
     navItems.push(...SAAS_NAV_ITEMS);

@@ -38,8 +38,6 @@ const getSettingsQueryFn = async (): Promise<Settings> => {
     GIT_USER_EMAIL:
       apiSettings.git_user_email || DEFAULT_SETTINGS.GIT_USER_EMAIL,
     IS_NEW_USER: false,
-    ENABLE_LLM_OPTIONS:
-      apiSettings.enable_llm_options || DEFAULT_SETTINGS.ENABLE_LLM_OPTIONS,
   };
 };
 

@@ -33,7 +33,6 @@ class GETSettingsModel(Settings):
     )
     llm_api_key_set: bool
     search_api_key_set: bool = False
-    enable_llm_options: bool = True
 
     model_config = ConfigDict(use_enum_values=True)
 
