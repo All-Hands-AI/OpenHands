@@ -1,5 +1,5 @@
 import copy
-from typing import TYPE_CHECKING, Any, Callable
+from typing import Any, Callable
 from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict
@@ -8,11 +8,7 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
-from openhands.core.message import Message
 from openhands.llm.llm import LLM
-
-if TYPE_CHECKING:
-    from openhands.router.base import BaseRouter
 
 
 class RegistryEvent(BaseModel):
@@ -45,9 +41,6 @@ class LLMRegistry:
         agent_name = selected_agent_cls if selected_agent_cls is not None else 'agent'
         llm_config = self.config.get_llm_config_from_agent(agent_name)
         self.active_agent_llm: LLM = self.get_llm('agent', llm_config)
-
-        # Router for model routing
-        self.router: 'BaseRouter' | None = None
 
     def _create_new_llm(
         self, service_id: str, config: LLMConfig, with_listener: bool = True
@@ -115,27 +108,24 @@ class LLMRegistry:
     def get_active_llm(self) -> LLM:
         return self.active_agent_llm
 
-    def _set_active_llm(self, service_id) -> None:
-        if service_id not in self.service_to_llm:
-            raise ValueError(f'Unrecognized service ID: {service_id}')
-        self.active_agent_llm = self.service_to_llm[service_id]
-
-    def initialize_router(self, agent_config: AgentConfig) -> None:
-        """Initialize the router for model routing based on agent configuration."""
+    def get_router(self, agent_config: AgentConfig) -> 'LLM':
+        """
+        Get a router instance that inherits from LLM.
+        """
         # Import here to avoid circular imports
-        from openhands.router import BaseRouter
+        from openhands.llm.router import RouterLLM
 
-        logger.info(f'Initializing router: {agent_config.model_routing.router_name}')
-        self.router = BaseRouter.from_config(
-            llm_registry=self,
+        router_name = agent_config.model_routing.router_name
+
+        if router_name == 'noop_router':
+            # Return the main LLM directly (no routing)
+            return self.get_llm_from_agent_config('agent', agent_config)
+
+        return RouterLLM.from_config(
             agent_config=agent_config,
+            llm_registry=self,
+            retry_listener=self.retry_listner,
         )
-
-    def configure_active_llm(self, messages: list[Message]) -> None:
-        """Set the active LLM based on routing decisions."""
-        if self.router:
-            selected_service_id = self.router.get_active_llm(messages)
-            self._set_active_llm(selected_service_id)
 
     def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:
         self.subscriber = callback

@@ -5,10 +5,10 @@ from openhands.events.action import MessageAction
 from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
-from openhands.router.base import ROUTER_REGISTRY, BaseRouter
+from openhands.llm.router.base import ROUTER_LLM_REGISTRY, RouterLLM
 
 
-class MultimodalRouter(BaseRouter):
+class MultimodalRouter(RouterLLM):
     SECONDARY_MODEL_CONFIG_NAME = 'secondary_model'
     ROUTER_NAME = 'multimodal_router'
 
@@ -16,38 +16,40 @@ class MultimodalRouter(BaseRouter):
         self,
         agent_config: AgentConfig,
         llm_registry: LLMRegistry,
+        **kwargs,
     ):
-        super().__init__(agent_config, llm_registry)
+        super().__init__(agent_config, llm_registry, **kwargs)
 
         self._validate_model_routing_config(self.llms_for_routing)
 
-        # Primary LLM
-        self.llm = llm_registry.get_llm_from_agent_config('agent', agent_config)
-        # Secondary LLM
-        self.secondary_llm = self.llms_for_routing[self.SECONDARY_MODEL_CONFIG_NAME]
+        # States
         self.max_token_exceeded = False
 
-    def get_active_llm(self, messages: list[Message]) -> str:
+    def _select_llm(self, messages: list[Message]) -> str:
+        """Select LLM based on multimodal content and token limits."""
         route_to_primary = False
-        # Handle multimodal input
+
+        # Check for multimodal content in messages
         for message in messages:
             if message.contains_image:
-                logger.info('Image content detected. Routing to the primary model.')
+                logger.info(
+                    'Multimodal content detected in messages. Routing to the primary model.'
+                )
                 route_to_primary = True
-                break
 
         if not route_to_primary and self.max_token_exceeded:
             route_to_primary = True
 
         # Check if `messages` exceeds context window of the secondary model
         # Assuming the secondary model has a lower context window limit compared to the primary model
-        if (
-            self.secondary_llm.config.max_input_tokens
-            and self.secondary_llm.get_token_count(messages)
-            > self.secondary_llm.config.max_input_tokens
+        secondary_llm = self.available_llms.get(self.SECONDARY_MODEL_CONFIG_NAME)
+        if secondary_llm and (
+            secondary_llm.config.max_input_tokens
+            and secondary_llm.get_token_count(messages)
+            > secondary_llm.config.max_input_tokens
         ):
             logger.warning(
-                f"Messages having {self.secondary_llm.get_token_count(messages)}, exceed secondary model's max input tokens ({self.secondary_llm.config.max_input_tokens} tokens). "
+                f"Messages having {secondary_llm.get_token_count(messages)} tokens, exceed secondary model's max input tokens ({secondary_llm.config.max_input_tokens} tokens). "
                 'Routing to the primary model.'
             )
             self.max_token_exceeded = True
@@ -55,9 +57,13 @@ class MultimodalRouter(BaseRouter):
 
         if route_to_primary:
             logger.info('Routing to the primary model...')
-            return 'agent'
+            return 'primary'
         else:
-            return f'llm_for_routing.{self.SECONDARY_MODEL_CONFIG_NAME}'
+            logger.info('Routing to the secondary model...')
+            return self.SECONDARY_MODEL_CONFIG_NAME
+
+    def vision_is_active(self):
+        return self.primary_llm.vision_is_active()
 
     def _validate_model_routing_config(self, llms_for_routing: dict[str, LLM]):
         if self.SECONDARY_MODEL_CONFIG_NAME not in llms_for_routing:
@@ -67,4 +73,4 @@ class MultimodalRouter(BaseRouter):
 
 
 # Register the router
-ROUTER_REGISTRY[MultimodalRouter.ROUTER_NAME] = MultimodalRouter
+ROUTER_LLM_REGISTRY[MultimodalRouter.ROUTER_NAME] = MultimodalRouter
