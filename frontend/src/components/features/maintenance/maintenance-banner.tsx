@@ -1,7 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useMemo } from "react";
-import { isAfter, isBefore } from "date-fns";
-import { useLocalStorage } from "@uidotdev/usehooks";
+import { useMemo, useState } from "react";
 import { FaTriangleExclamation } from "react-icons/fa6";
 import CloseIcon from "#/icons/close.svg?react";
 import { cn } from "#/utils/utils";
@@ -11,11 +9,9 @@ interface MaintenanceBannerProps {
 }
 
 export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
+  const [isBannerShown, setIsBannerShown] = useState<boolean>(true);
+
   const { t } = useTranslation();
-  const [dismissedAt, setDismissedAt] = useLocalStorage<string | null>(
-    "maintenance_banner_dismissed_at",
-    null,
-  );
 
   // Convert EST timestamp to user's local timezone
   const formatMaintenanceTime = (estTimeString: string): string => {
@@ -62,20 +58,9 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
 
   const localTime = formatMaintenanceTime(startTime);
 
-  const isBannerVisible = useMemo(() => {
-    const isValid = !Number.isNaN(new Date(startTime).getTime());
-    if (!isValid) {
-      return false;
-    }
-    return !dismissedAt
-      ? true
-      : isBefore(new Date(dismissedAt), new Date(startTime));
-  }, [dismissedAt, startTime]);
-
-  // Only show close button if maintenance has started
-  const isMaintenanceStarted = useMemo(
-    () => isAfter(new Date(), new Date(localTime)),
-    [localTime],
+  const isBannerVisible = useMemo(
+    () => isBannerShown && !Number.isNaN(new Date(startTime).getTime()),
+    [isBannerShown, startTime],
   );
 
   if (!isBannerVisible) {
@@ -101,18 +86,16 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
         </div>
       </div>
 
-      {isMaintenanceStarted && (
-        <button
-          type="button"
-          data-testid="dismiss-button"
-          onClick={() => setDismissedAt(localTime)}
-          className={cn(
-            "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
-          )}
-        >
-          <CloseIcon />
-        </button>
-      )}
+      <button
+        type="button"
+        data-testid="dismiss-button"
+        onClick={() => setIsBannerShown(false)}
+        className={cn(
+          "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
+        )}
+      >
+        <CloseIcon />
+      </button>
     </div>
   );
 }

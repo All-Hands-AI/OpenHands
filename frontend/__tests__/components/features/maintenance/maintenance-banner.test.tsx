@@ -70,25 +70,7 @@ describe("MaintenanceBanner", () => {
 
     expect(banner).not.toBeInTheDocument();
   });
-  it("banner reappears after dismissing on next maintenance event(future time)", () => {
-    const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
-    const nextStartTime = "2025-01-15T10:00:00-05:00"; // EST timestamp
 
-    const { rerender } = render(<MaintenanceBanner startTime={startTime} />);
-
-    // Check if the banner is rendered
-    const banner = screen.queryByTestId("maintenance-banner");
-    const button = within(banner!).queryByTestId("dismiss-button");
-
-    act(() => {
-      fireEvent.click(button!);
-    });
-
-    expect(banner).not.toBeInTheDocument();
-    rerender(<MaintenanceBanner startTime={nextStartTime} />);
-
-    expect(screen.queryByTestId("maintenance-banner")).toBeInTheDocument();
-  });
   it("banner doesn't reappear after dismissing on next maintenance event(past time)", () => {
     const startTime = "2024-01-15T10:00:00-05:00"; // EST timestamp
     const nextStartTime = "2023-01-15T10:00:00-05:00"; // EST timestamp
