@@ -126,15 +126,22 @@ export function GitBranchDropdown({
     inputValue,
   });
 
+  // Reset branch selection when repository changes
+  useEffect(() => {
+    if (repository) {
+      onBranchSelect(null);
+    }
+  }, [repository, onBranchSelect]);
+
   // Auto-select default branch when branches are loaded and no branch is selected
   useEffect(() => {
     if (
+      repository &&
       defaultBranch &&
       !selectedBranch &&
       filteredBranches.length > 0 &&
       !isLoading
     ) {
-      // Since our hook prioritizes the default branch, it should be first in the list
       const defaultBranchObj = filteredBranches.find(
         (branch) => branch.name === defaultBranch,
       );
@@ -144,6 +151,7 @@ export function GitBranchDropdown({
       }
     }
   }, [
+    repository,
     defaultBranch,
     selectedBranch,
     filteredBranches,

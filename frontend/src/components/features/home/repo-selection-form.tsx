@@ -79,13 +79,6 @@ export function RepositorySelectionForm({
     );
   };
 
-  // Reset branch selection when repository changes
-  React.useEffect(() => {
-    // Always reset branch selection when repository changes
-    // The GitBranchDropdown will auto-select the default branch once branches are loaded
-    setSelectedBranch(null);
-  }, [selectedRepository]);
-
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {
     const handleRepoSelection = (repository?: GitRepository) => {
