@@ -2,6 +2,12 @@
 """
 WebArena evaluation script for OpenHands outputs using official WebArena evaluation harness.
 This script evaluates the results from run_infer.py using the official WebArena evaluation code.
+
+This script requires:
+1. Official WebArena repository cloned to /workspace/project/webarena
+2. WebArena environment variables properly configured
+3. Authentication files set up for WebArena sites
+4. Docker containers running for WebArena sites
 """
 
 import argparse
@@ -26,12 +32,16 @@ WEBARENA_PATH = '/workspace/project/webarena'
 sys.path.insert(0, WEBARENA_PATH)
 
 try:
-    # Import only what we need for config loading and evaluation logic
-    sys.path.insert(0, WEBARENA_PATH)
-    print('✅ WebArena repository path added successfully')
-except Exception as e:
-    print(f'❌ Failed to access WebArena repository: {e}')
+    from browser_env import ScriptBrowserEnv, create_stop_action
+    from browser_env.actions import Action
+    from browser_env.utils import StateInfo
+    from evaluation_harness import evaluator_router
+
+    print('✅ WebArena evaluation harness imported successfully')
+except ImportError as e:
+    print(f'❌ Failed to import WebArena evaluation harness: {e}')
     print('Make sure the WebArena repository is cloned to /workspace/project/webarena')
+    print('and all dependencies are installed.')
     sys.exit(1)
 
 
@@ -41,16 +51,89 @@ def load_config_file(config_path: str) -> dict[str, Any]:
         return json.load(f)
 
 
-# Removed trajectory conversion functions since we're doing post-hoc evaluation
+def convert_openhands_action_to_webarena(action_data: dict[str, Any]) -> Action:
+    """Convert OpenHands action format to WebArena action format."""
+    action_type = action_data.get('action', '')
+    args = action_data.get('args', {})
+
+    if action_type == 'browse':
+        url = args.get('url', '')
+        if url:
+            return Action(action_type='goto', coordinate=[0, 0], text=url)
+
+    elif action_type == 'click':
+        coordinate = args.get('coordinate', [0, 0])
+        return Action(action_type='click', coordinate=coordinate)
+
+    elif action_type == 'type':
+        text = args.get('text', '')
+        return Action(action_type='type', text=text, coordinate=[0, 0])
+
+    elif action_type == 'key':
+        key = args.get('key', '')
+        return Action(action_type='key', text=key, coordinate=[0, 0])
+
+    elif action_type == 'scroll':
+        coordinate = args.get('coordinate', [0, 0])
+        direction = args.get('direction', 'down')
+        return Action(action_type='scroll', coordinate=coordinate, text=direction)
+
+    elif action_type == 'finish':
+        return create_stop_action('')
+
+    # Default fallback for unknown actions
+    return Action(action_type='none', coordinate=[0, 0])
 
 
-def evaluate_with_official_webarena_logic(
+def convert_openhands_trajectory_to_webarena_format(
+    openhands_output: dict[str, Any],
+) -> list[Any]:
+    """
+    Convert OpenHands trajectory format to WebArena trajectory format.
+
+    OpenHands format: history contains pairs of [action, observation]
+    WebArena format: trajectory is a list alternating between StateInfo and Action
+    """
+    trajectory = []
+
+    # Add initial state
+    initial_state = StateInfo(
+        observation={'text': 'Initial state'}, info={'observation_metadata': {}}
+    )
+    trajectory.append(initial_state)
+
+    # Process the history
+    history = openhands_output.get('history', [])
+    for history_pair in history:
+        if len(history_pair) >= 2:
+            action_data = history_pair[0]
+            observation_data = history_pair[1]
+
+            # Convert action
+            webarena_action = convert_openhands_action_to_webarena(action_data)
+            trajectory.append(webarena_action)
+
+            # Add state info from observation
+            state_info = StateInfo(
+                observation={'text': observation_data.get('content', '')},
+                info={'observation_metadata': observation_data.get('extras', {})},
+            )
+            trajectory.append(state_info)
+
+    return trajectory
+
+
+def evaluate_with_official_webarena_harness(
     instance_data: dict[str, Any], config_file_path: str
 ) -> dict[str, Any]:
     """
-    Evaluate using WebArena evaluation logic adapted for post-hoc evaluation.
-    Since we don't have access to the live browser state, we use the final output
-    and apply WebArena's evaluation criteria.
+    Evaluate a single WebArena instance using the official evaluation harness.
+
+    This function:
+    1. Converts OpenHands trajectory to WebArena format
+    2. Sets up a browser environment
+    3. Replays the trajectory to reach the final state
+    4. Runs the official WebArena evaluator
     """
 
     instance_id = instance_data.get('instance_id', 'unknown')
@@ -60,120 +143,70 @@ def evaluate_with_official_webarena_logic(
         # Load config to understand the task
         config_data = load_config_file(config_file_path)
         intent = config_data.get('intent', '')
-        evaluator_type = config_data.get('eval', {}).get(
-            'eval_types', ['string_match']
-        )[0]
+        start_url = config_data.get('start_url', '')
 
         print(f'   Task: {intent}')
-        print(f'   Evaluator type: {evaluator_type}')
+        print(f'   Start URL: {start_url}')
 
-        # Get the final output from OpenHands
-        history = instance_data.get('history', [])
-        final_output = ''
-        if history:
-            final_pair = history[-1]
-            if len(final_pair) >= 1:
-                final_output = final_pair[0].get('args', {}).get('final_thought', '')
+        # Convert OpenHands trajectory to WebArena format
+        trajectory = convert_openhands_trajectory_to_webarena_format(instance_data)
+        print(f'   Converted trajectory with {len(trajectory)} steps')
 
-        # Apply WebArena evaluation logic based on task type
-        score = 0.0
-        evaluation_details = ''
+        # Get the evaluator for this config
+        evaluator = evaluator_router(config_file_path)
+        print(f'   Using evaluator: {type(evaluator).__name__}')
 
-        if evaluator_type == 'string_match':
-            # For string matching tasks, check if the expected answer is in the output
-            config_data.get('eval', {}).get('reference_answers', {})
+        # Create browser environment for evaluation
+        env = ScriptBrowserEnv(
+            headless=True,
+            slow_mo=0,
+            observation_type='accessibility_tree',
+            current_viewport_only=True,
+            viewport_size={'width': 1280, 'height': 720},
+        )
 
-            if instance_id == 'webarena.1':
-                # Task 1: subreddits starting with 'a'
-                # Check if comprehensive list was provided
-                if (
-                    '113' in final_output
-                    or len(
-                        [
-                            line
-                            for line in final_output.split('\n')
-                            if line.strip().startswith('a')
-                        ]
-                    )
-                    > 50
-                ):
-                    score = 1.0
-                    evaluation_details = (
-                        "Found comprehensive list of subreddits starting with 'a'"
-                    )
-                else:
-                    evaluation_details = 'Did not find comprehensive subreddit list'
+        try:
+            # Initialize the environment with the task
+            obs, info = env.reset(options={'config_file': config_file_path})
 
-            elif instance_id == 'webarena.2':
-                # Task 2: classification section
-                if 'classification' in final_output.lower() and (
-                    'wilson' in final_output.lower()
-                    or 'comprehensive' in final_output.lower()
-                ):
-                    score = 1.0
-                    evaluation_details = 'Successfully examined classification section'
-                else:
-                    evaluation_details = (
-                        'Did not properly examine classification section'
-                    )
+            # Replay the trajectory to reach the final state
+            # This is necessary because the evaluator needs the actual browser state
+            current_obs = obs
+            for i, step in enumerate(trajectory):
+                if isinstance(step, Action):
+                    try:
+                        current_obs, reward, done, info = env.step(step)
+                        if done:
+                            break
+                    except Exception as e:
+                        print(f'   Warning: Error replaying step {i}: {e}')
+                        continue
 
-            elif instance_id == 'webarena.3':
-                # Task 3: mammal classification 2005
-                if (
-                    'wilson' in final_output.lower()
-                    and 'reader' in final_output.lower()
-                ):
-                    score = 1.0
-                    evaluation_details = 'Correct answer: Wilson and Reader'
-                else:
-                    evaluation_details = (
-                        'Incorrect or missing answer for mammal classification'
-                    )
+            # Run the official evaluation
+            score = evaluator(
+                trajectory=trajectory,
+                config_file=config_file_path,
+                page=env.page,
+                client=env.page.context.new_cdp_session(env.page),
+            )
 
-            elif instance_id == 'webarena.4':
-                # Task 4: list all subreddits
-                if (
-                    'unable' in final_output.lower()
-                    or 'connection' in final_output.lower()
-                ):
-                    score = 0.0
-                    evaluation_details = 'Task failed due to connection issues'
-                else:
-                    # Check if any subreddit list was provided
-                    subreddit_count = len(
-                        [
-                            line
-                            for line in final_output.split('\n')
-                            if 'r/' in line or line.strip().startswith('a')
-                        ]
-                    )
-                    if subreddit_count > 10:
-                        score = 0.5
-                        evaluation_details = (
-                            f'Partial success: found {subreddit_count} subreddits'
-                        )
-                    else:
-                        evaluation_details = 'No significant subreddit list found'
+            result = {
+                'instance_id': instance_id,
+                'score': score,
+                'success': score == 1.0,
+                'trajectory_length': len(trajectory),
+                'evaluator': type(evaluator).__name__,
+                'evaluation_type': 'official_webarena_harness',
+                'intent': intent,
+            }
 
-        elif evaluator_type == 'program':
-            # For programmatic evaluation, we'd need to run the actual evaluator
-            # For now, fall back to string matching
-            evaluation_details = 'Program evaluation not available in post-hoc mode'
+            print(
+                f'   Result: {"✅ PASS" if score == 1.0 else "❌ FAIL"} (score: {score})'
+            )
+            return result
 
-        result = {
-            'instance_id': instance_id,
-            'score': score,
-            'success': score >= 1.0,
-            'trajectory_length': len(history),
-            'evaluator': f'WebArena_{evaluator_type}',
-            'evaluation_type': 'webarena_logic_adapted',
-            'evaluation_details': evaluation_details,
-            'intent': intent,
-        }
-
-        print(f'   Result: {"✅ PASS" if score >= 1.0 else "❌ FAIL"} (score: {score})')
-        print(f'   Details: {evaluation_details}')
-        return result
+        finally:
+            env.close()
 
     except Exception as e:
         print(f'   ❌ Error evaluating {instance_id}: {e}')
@@ -189,7 +222,7 @@ def evaluate_with_official_webarena_logic(
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Evaluate WebArena results from OpenHands run_infer.py using official WebArena evaluation harness'
+        description='Evaluate WebArena results using ONLY the official WebArena evaluation harness'
     )
     parser.add_argument(
         'output_file', type=str, help='Path to OpenHands output.jsonl file'
@@ -197,7 +230,7 @@ def main():
     parser.add_argument(
         '--results_file',
         type=str,
-        default='webarena_eval_results.json',
+        default='webarena_official_eval_results.json',
         help='Path to save evaluation results',
     )
     parser.add_argument(
@@ -209,9 +242,17 @@ def main():
 
     args = parser.parse_args()
 
-    print('🚀 Starting WebArena Evaluation with Official Evaluation Harness')
+    print('🚀 Starting WebArena Evaluation with Official WebArena Harness ONLY')
     print(f'📁 Output file: {args.output_file}')
     print(f'📁 Config directory: {args.config_dir}')
+
+    # Verify WebArena environment is properly set up
+    if not WEBARENA_BASE_URL:
+        print('❌ WEBARENA_BASE_URL environment variable not set')
+        print('Please set WEBARENA_BASE_URL to your WebArena server URL')
+        sys.exit(1)
+
+    print(f'🌐 WebArena base URL: {WEBARENA_BASE_URL}')
 
     # Load OpenHands results
     results = []
@@ -222,7 +263,7 @@ def main():
 
     print(f'📊 Found {len(results)} instances to evaluate')
 
-    # Evaluate each instance using official WebArena evaluation
+    # Evaluate each instance using ONLY official WebArena evaluation harness
     evaluation_results = []
     total_score = 0.0
 
@@ -236,7 +277,7 @@ def main():
             config_file = f'{args.config_dir}/{task_num}.json'
 
         if config_file and os.path.exists(config_file):
-            eval_result = evaluate_with_official_webarena_logic(result, config_file)
+            eval_result = evaluate_with_official_webarena_harness(result, config_file)
             evaluation_results.append(eval_result)
             total_score += eval_result.get('score', 0.0)
         else:
@@ -260,7 +301,8 @@ def main():
 
     # Save results
     final_results = {
-        'evaluation_method': 'official_webarena_harness',
+        'evaluation_method': 'official_webarena_harness_only',
+        'webarena_base_url': WEBARENA_BASE_URL,
         'total_instances': total_instances,
         'success_count': success_count,
         'success_rate': success_rate,
@@ -272,16 +314,16 @@ def main():
         json.dump(final_results, f, indent=2)
 
     # Print summary
-    print('\n' + '=' * 60)
-    print('🎯 WEBARENA EVALUATION RESULTS (Official Harness)')
-    print('=' * 60)
+    print('\n' + '=' * 70)
+    print('🎯 WEBARENA EVALUATION RESULTS (Official Harness ONLY)')
+    print('=' * 70)
     print(f'📊 Total instances: {total_instances}')
     print(f'✅ Successful: {success_count}')
     print(f'❌ Failed: {total_instances - success_count}')
     print(f'📈 Success rate: {success_rate:.2%}')
     print(f'📊 Average score: {average_score:.4f}')
     print(f'💾 Results saved to: {args.results_file}')
-    print('=' * 60)
+    print('=' * 70)
 
     # Print individual results
     print('\n📋 Individual Results:')
@@ -297,6 +339,20 @@ def main():
             print(
                 f'   {instance_id}: {status} (score: {score:.2f}) - Evaluator: {evaluator}'
             )
+
+    # Print requirements if there were errors
+    error_count = sum(1 for r in evaluation_results if r.get('error'))
+    if error_count > 0:
+        print('\n' + '⚠️' * 20)
+        print('EVALUATION ERRORS DETECTED')
+        print('⚠️' * 20)
+        print('This evaluation requires:')
+        print('1. WebArena Docker containers running and accessible')
+        print('2. Authentication files (.auth/) properly set up')
+        print('3. All WebArena dependencies installed')
+        print('4. Proper network access to WebArena sites')
+        print('\nPlease resolve these issues for accurate evaluation.')
+        print('⚠️' * 20)
 
 
 if __name__ == '__main__':
