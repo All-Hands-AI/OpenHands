@@ -6,7 +6,6 @@ import httpx
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.gitlab.queries import get_review_thread_comments_query
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -693,103 +692,18 @@ class GitLabService(BaseGitService, GitService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
 
-    async def get_issue_comments(
-        self, project_id: str, issue_iid: int, limit: int = 100
-    ) -> list[Comment]:
-        """Get the last n comments for a specific issue.
-
-        Args:
-            project_id: The GitLab project ID (can be numeric ID or URL-encoded path)
-            issue_iid: The issue internal ID (iid) in GitLab
-            limit: Maximum number of comments to retrieve (default: 100)
-
-        Returns:
-            List of Comment objects, ordered by creation date (newest first)
-
-        Raises:
-            UnknownException: If the request fails or the issue is not found
-        """
-        # URL-encode the project_id if it contains special characters
-        if '/' in str(project_id):
-            encoded_project_id = str(project_id).replace('/', '%2F')
-        else:
-            encoded_project_id = str(project_id)
-
-        url = f'{self.BASE_URL}/projects/{encoded_project_id}/issues/{issue_iid}/notes'
-
-        all_comments: list[Comment] = []
-        page = 1
-        per_page = min(limit, 100)  # GitLab API max per_page is 100
-
-        while len(all_comments) < limit:
-            # Get comments with pagination, ordered by creation date descending
-            params = {
-                'per_page': per_page,
-                'page': page,
-                'order_by': 'created_at',
-                'sort': 'desc',  # Get newest comments first
-            }
-
-            response, headers = await self._make_request(url, params)
-
-            if not response:  # No more comments
-                break
-
-            # Filter out system comments and convert to Comment objects
-            for comment_data in response:
-                if len(all_comments) >= limit:
-                    break
-
-                # Skip system-generated comments unless explicitly requested
-                if comment_data.get('system', False):
-                    continue
-
-                comment = Comment(
-                    id=str(comment_data['id']),
-                    body=comment_data['body'],
-                    author=comment_data.get('author', {}).get('username', 'unknown'),
-                    created_at=datetime.fromisoformat(
-                        comment_data['created_at'].replace('Z', '+00:00')
-                    ),
-                    updated_at=datetime.fromisoformat(
-                        comment_data['updated_at'].replace('Z', '+00:00')
-                    ),
-                    system=comment_data.get('system', False),
-                )
-                all_comments.append(comment)
-
-            # Check if we have more pages
-            link_header = headers.get('Link', '')
-            if 'rel="next"' not in link_header or len(all_comments) >= limit:
-                break
-
-            page += 1
-
-        return all_comments
-
     async def get_review_thread_comments(
-        self, thread_id: str, limit: int = 100
+        self, project_id: str, issue_iid: int, discussion_id: str
     ) -> list[Comment]:
-        """Get comments from a review thread (discussion) by its ID.
-
-        Args:
-            thread_id: The global GraphQL ID or REST discussion ID of the review thread
-            limit: Maximum number of comments to retrieve (default: 100)
-
-        Returns:
-            List of Comment objects ordered as returned by the API
-        """
-        # Prefer GraphQL so we only need the thread/discussion ID
-
-        data = await self.execute_graphql_query(
-            get_review_thread_comments_query,
-            {'id': thread_id, 'first': min(limit, 100)},
+        url = (
+            f'{self.BASE_URL}/projects/{project_id}'
+            f'/merge_requests/{issue_iid}/discussions/{discussion_id}'
         )
-        discussion = data.get('node') if data else None
-        if not discussion or not discussion.get('notes'):
-            return []
 
-        return self._process_raw_comments(discussion['notes'].get('nodes', []))
+        # Single discussion fetch; notes are returned inline.
+        response, _ = await self._make_request(url)
+        notes = response.get('notes') or []
+        return self._process_raw_comments(notes)
 
     async def get_issue_or_pr_title_and_body(
         self, project_id: str, issue_number: int, is_mr: bool = False
