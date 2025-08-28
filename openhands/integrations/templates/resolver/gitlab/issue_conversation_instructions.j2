@@ -5,10 +5,11 @@ A comment on the issue has been addressed to you.
 Your task is to fix the issue: "{{ issue_title }}".
 {% endif %}
 
-Issue Body:
+# Issue Body
 {{ issue_body }}
 
-{% if previous_comments %}
+{% if comments %}
+# Previous Comments
 For reference, here are the previous comments on the issue:
 
 {% for comment in previous_comments %}
