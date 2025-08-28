@@ -21,7 +21,7 @@ function HomeScreen() {
   return (
     <div
       data-testid="home-screen"
-      className="bg-[#26282D] h-full flex flex-col pt-[35px] overflow-y-auto rounded-xl px-[42px] pt-[42px]"
+      className="bg-transparent h-full flex flex-col pt-[35px] overflow-y-auto rounded-xl px-[42px] pt-[42px] custom-scrollbar-always"
     >
       <HomeHeader />
 

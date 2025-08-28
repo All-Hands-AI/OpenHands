@@ -27,6 +27,7 @@ import { useAuthCallback } from "#/hooks/use-auth-callback";
 import { LOCAL_STORAGE_KEYS } from "#/utils/local-storage";
 import { EmailVerificationGuard } from "#/components/features/guards/email-verification-guard";
 import { MaintenanceBanner } from "#/components/features/maintenance/maintenance-banner";
+import { cn } from "#/utils/utils";
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -199,7 +200,10 @@ export default function MainApp() {
   return (
     <div
       data-testid="root-layout"
-      className="h-screen p-3 pl-0 lg:min-w-[1024px] flex flex-col md:flex-row bg-base"
+      className={cn(
+        "h-screen lg:min-w-[1024px] flex flex-col md:flex-row bg-base",
+        pathname === "/" ? "p-0" : "p-3 pl-0",
+      )}
     >
       <Sidebar />
 
