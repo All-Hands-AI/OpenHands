@@ -78,11 +78,11 @@ class TomCodeActAgent(CodeActAgent):
         self.tom_agent = create_tom_agent(
             file_store=self.file_store,
             enable_rag=config.tom_enable_rag,
-            llm_model=llm_registry.config.llms['llm'].model,
-            api_key=llm_registry.config.llms['llm'].api_key.get_secret_value()
-            if llm_registry.config.llms['llm'].api_key
+            llm_model=self.llm.config.model,
+            api_key=self.llm.config.api_key.get_secret_value()
+            if self.llm.config.api_key
             else None,
-            api_base=llm_registry.config.llms['llm'].base_url,
+            api_base=self.llm.config.base_url,
             skip_memory_collection=config.skip_memory_collection,
         )
         self._last_processed_user_message_id: Optional[int] = None
@@ -292,33 +292,37 @@ class TomCodeActAgent(CodeActAgent):
             logger.info('📭 Tom: No sessions directory found')
             return
 
-        # Read processed sessions from tracking file
-        processed_sessions_file = (
-            Path(get_usermodeling_dir(user_id)) / 'processed_session_ids'
-        )
-        processed_sessions = set()
-        try:
-            if self.file_store.exists(str(processed_sessions_file)):  # type: ignore
-                content = self.file_store.read(str(processed_sessions_file))
-                processed_sessions = set(
-                    line.strip() for line in content.splitlines() if line.strip()
+        # Load processing history
+        processing_history = self.load_processing_history(user_id)
+
+        # Check which sessions need processing
+        sessions_to_process: list[dict[str, str | int]] = []
+        for session_id in all_sessions:
+            should_process, current_event_id = self.should_reprocess_session(
+                session_id, processing_history
+            )
+            if should_process:
+                sessions_to_process.append(
+                    {'session_id': session_id, 'current_event_id': current_event_id}
                 )
-        except Exception as e:
-            logger.warning(f'⚠️ Tom: Could not read processed sessions file: {e}')
+                logger.info(
+                    f'📋 Tom: Session {session_id} needs processing (events up to {current_event_id})'
+                )
 
-        # Find unprocessed sessions
-        unprocessed = [
-            session for session in all_sessions if session not in processed_sessions
-        ]
-        logger.info(
-            f'📊 Tom: Found {len(unprocessed)} sessions to process (out of {len(all_sessions)} total)'
-        )
-
-        if not unprocessed:
-            logger.info('📭 Tom: No unprocessed sessions found')
+        if not sessions_to_process:
+            logger.info('📭 Tom: No sessions need processing')
             return
 
+        logger.info(f'📊 Tom: Found {len(sessions_to_process)} sessions to process')
+
         # Collect session data using existing logic from sleeptime.py
+        session_ids_to_process = [str(s['session_id']) for s in sessions_to_process]
+        sessions_data = self._get_sessions_data(session_ids_to_process, self.file_store)
+        # limite to 30 latest sessions (end_time)
+        sessions_data_limited = sorted(
+            sessions_data, key=lambda x: x['end_time'], reverse=True
+        )[:30]
+
         # TEMPORARY: copy sessions to user's modeling dir under raw_sessions dir
         raw_sessions_dir = (
             Path(self.file_store.get_full_path(get_usermodeling_dir(user_id)))  # type: ignore
@@ -326,17 +330,15 @@ class TomCodeActAgent(CodeActAgent):
         )
         raw_sessions_dir.mkdir(parents=True, exist_ok=True)
 
-        for session_id in unprocessed:
+        for session_id in [session['session_id'] for session in sessions_data_limited]:
+            dest_path = raw_sessions_dir / session_id
+            # Remove existing directory if it exists to force overwrite
+            if dest_path.exists():
+                shutil.rmtree(dest_path)
             shutil.copytree(
                 Path(self.file_store.get_full_path(CONVERSATION_BASE_DIR)) / session_id,  # type: ignore
-                raw_sessions_dir / session_id,
+                dest_path,
             )
-
-        sessions_data = self._get_sessions_data(unprocessed, self.file_store)
-        # limite to 30 latest sessions (end_time)
-        sessions_data_limited = sorted(
-            sessions_data, key=lambda x: x['end_time'], reverse=True
-        )[:30]
 
         if not sessions_data_limited:
             logger.info('📭 Tom: No valid session data extracted')
@@ -361,23 +363,82 @@ class TomCodeActAgent(CodeActAgent):
                 )
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            executor.submit(run_sleeptime_compute)
-
-        # Record ALL attempted sessions as processed (both successful and failed)
-        if unprocessed:
-            processed_sessions.update(unprocessed)
-
+            future = executor.submit(run_sleeptime_compute)
             try:
-                # Write back to file
-                self.file_store.write(
-                    str(processed_sessions_file),
-                    '\n'.join(sorted(processed_sessions)) + '\n',
-                )
-                logger.info(f'📝 Tom: Marked {len(unprocessed)} sessions as processed')
-            except Exception as e:
-                logger.error(f'❌ Tom: Failed to update processed sessions file: {e}')
+                future.result()  # Wait for completion and get any exception
 
-        logger.info('✅ Tom: Sleeptime compute completed successfully')
+                # Only update processing history on success
+                current_timestamp = datetime.now().isoformat()
+                for session_info in sessions_to_process:
+                    processing_history[str(session_info['session_id'])] = {
+                        'processed_at': current_timestamp,
+                        'last_event_id': session_info['current_event_id'],
+                    }
+
+                self.save_processing_history(user_id, processing_history)
+                logger.info(
+                    f'📝 Tom: Updated processing history for {len(sessions_to_process)} sessions'
+                )
+                logger.info('✅ Tom: Sleeptime compute completed successfully')
+
+            except Exception as e:
+                logger.error(f'❌ Tom: Sleeptime compute failed: {e}')
+                logger.info('⚠️ Tom: Processing history not updated due to failure')
+                return
+
+    def get_session_last_event_id(self, session_id: str) -> int:
+        """Get the highest numbered event file in a session's events directory."""
+        events_dir = f'{CONVERSATION_BASE_DIR}/{session_id}/events'
+        if not self.file_store.exists(events_dir):  # type: ignore
+            return -1
+
+        event_files = self.file_store.list(events_dir)
+        event_numbers = []
+        for file_path in event_files:
+            filename = Path(file_path).name
+            if filename.endswith('.json'):
+                try:
+                    event_numbers.append(int(filename[:-5]))  # Remove .json
+                except ValueError:
+                    continue
+
+        return max(event_numbers) if event_numbers else -1
+
+    def load_processing_history(self, user_id: str) -> dict:
+        """Load processing history from JSON file."""
+        history_file = (
+            f'{get_usermodeling_dir(user_id)}/processed_sessions_timestamps.json'
+        )
+        if self.file_store.exists(history_file):  # type: ignore
+            try:
+                content = self.file_store.read(history_file)
+                return json.loads(content)
+            except Exception as e:
+                logger.error(f'❌ Tom: Failed to load processing history: {e}')
+                return {}
+        return {}
+
+    def save_processing_history(self, user_id: str, history: dict):
+        """Save processing history to JSON file."""
+        history_file = (
+            f'{get_usermodeling_dir(user_id)}/processed_sessions_timestamps.json'
+        )
+        self.file_store.write(history_file, json.dumps(history, indent=2))
+
+    def should_reprocess_session(
+        self, session_id: str, history: dict
+    ) -> tuple[bool, int]:
+        """Check if session should be reprocessed. Returns (should_process, current_event_id)."""
+        current_event_id = self.get_session_last_event_id(session_id)
+
+        if current_event_id == -1:  # No events directory
+            return False, -1
+
+        if session_id not in history:  # Never processed
+            return True, current_event_id
+
+        stored_event_id = history[session_id].get('last_event_id', -1)
+        return current_event_id > stored_event_id, current_event_id
 
     def _get_sessions_data(
         self, session_ids: list[str], file_store: Any
@@ -436,7 +497,6 @@ class TomCodeActAgent(CodeActAgent):
                         f'⚠️ Tom: No initial user message found for session {session_id}'
                     )
                     continue
-
                 # Process events into conversation format
                 messages = conversation_memory.process_events(
                     condensed_history=events,

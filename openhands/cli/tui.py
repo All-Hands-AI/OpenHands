@@ -1107,24 +1107,27 @@ class TomMessageFilter(logging.Filter):
 def capture_tom_thinking():
     """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
     handler = TomCliLogHandler()
-    tom_filter = TomMessageFilter()
+    TomMessageFilter()
     tom_logger = logging.getLogger('tom_swe')
     oh_logger = logging.getLogger('openhands')
 
     try:
         # Add Tom CLI handler for clean display
         tom_logger.setLevel(logging.INFO)
+        oh_logger.setLevel(logging.INFO)
         tom_logger.addHandler(handler)
-        tom_logger.propagate = False
+        oh_logger.addHandler(handler)
+        tom_logger.propagate = True
+        oh_logger.propagate = True
 
-        # Add filter to OpenHands logger to suppress Tom messages
-        oh_logger.addFilter(tom_filter)
+        # # Add filter to OpenHands logger to suppress Tom messages
+        # oh_logger.addFilter(tom_filter)
 
         yield
     finally:
         with contextlib.suppress(Exception):
             tom_logger.removeHandler(handler)
-            oh_logger.removeFilter(tom_filter)
+            # oh_logger.removeFilter(tom_filter)
 
 
 def display_instruction_improvement(
@@ -1156,33 +1159,15 @@ def display_instruction_improvement(
         if len(parts) > 1:
             text = parts[1].strip()
 
-    try:
-        # Convert markdown to HTML and display with proper formatting
-        html_content = _render_basic_markdown(text)
-
-        # Use HTML rendering in the TextArea for rich markdown display
-        container = Frame(
-            Window(
-                FormattedTextControl(
-                    HTML(html_content),
-                    wrap_lines=True,
-                ),
-                wrap_lines=True,
-            ),
-            title='Instruction Proposal',
-            style=f'fg:{COLOR_GREY}',
-        )
-    except Exception:
-        # Fallback to plain text if HTML rendering fails
-        container = Frame(
-            TextArea(
-                text=text,
-                read_only=True,
-                wrap_lines=True,
-            ),
-            title='Instruction Proposal',
-            style=f'fg:{COLOR_GREY}',
-        )
+    container = Frame(
+        TextArea(
+            text=text,
+            read_only=True,
+            wrap_lines=True,
+        ),
+        title='Instruction Proposal',
+        style='fg:ansiblue',
+    )
     print_container(container)
 
     print_formatted_text('')
