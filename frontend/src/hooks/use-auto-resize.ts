@@ -24,8 +24,8 @@ export const useAutoResize = (
   const {
     minHeight = 20,
     maxHeight = 120,
-    value,
     enableManualResize = false,
+    value,
     onGripDragStart,
     onGripDragEnd,
     onHeightChange,
@@ -182,14 +182,14 @@ export const useAutoResize = (
     const element = elementRef.current;
     if (element && value !== undefined) {
       element.textContent = value.text;
-      autoResize();
+      smartResize();
     }
-  }, [value, autoResize]);
+  }, [value, smartResize]);
 
   // Initialize auto-resize on mount
   useEffect(() => {
-    autoResize();
-  }, [autoResize]);
+    smartResize();
+  }, [smartResize]);
 
   return { autoResize, smartResize, handleGripMouseDown };
 };
