@@ -61,6 +61,7 @@ export type Settings = {
   EMAIL_VERIFIED?: boolean;
   GIT_USER_NAME?: string;
   GIT_USER_EMAIL?: string;
+  ENABLE_LLM_OPTIONS: boolean;
 };
 
 export type ApiSettings = {
@@ -93,6 +94,7 @@ export type ApiSettings = {
   email_verified?: boolean;
   git_user_name?: string;
   git_user_email?: string;
+  enable_llm_options: boolean;
 };
 
 export type PostSettings = Settings & {

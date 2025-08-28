@@ -28,6 +28,9 @@ class SettingsStore(ABC):
     async def store(self, settings: Settings) -> None:
         """Store session init data."""
 
+    async def is_llm_options_enabled(self) -> bool:
+        return True
+
     @classmethod
     @abstractmethod
     async def get_instance(

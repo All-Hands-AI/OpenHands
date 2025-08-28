@@ -8,6 +8,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
+import { useSettings } from "#/hooks/query/use-settings";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -46,6 +47,7 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
+  // We need to allow saas on the /settings path - can I put this on config?
   if (isSaas && pathname === "/settings") {
     // no llm settings in saas mode, so redirect to user settings
     return redirect("/settings/user");
@@ -62,10 +64,19 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
+  const { data: settings } = useSettings();
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
-  const navItems = isSaas ? SAAS_NAV_ITEMS : OSS_NAV_ITEMS;
+  const navItems = [];
+  if (isSaas) {
+    if (settings?.ENABLE_LLM_OPTIONS) {
+      navItems.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
+    }
+    navItems.push(...SAAS_NAV_ITEMS);
+  } else {
+    navItems.push(...OSS_NAV_ITEMS);
+  }
 
   return (
     <main

@@ -2914,6 +2914,11 @@
             "type": "boolean",
             "title": "Search Api Key Set",
             "default": false
+          },
+          "enable_llm_options": {
+            "type": "boolean",
+            "title": "Enable LLM Options",
+            "default": true
           }
         },
         "type": "object",
