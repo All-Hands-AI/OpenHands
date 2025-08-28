@@ -580,7 +580,7 @@ def test_save_metrics_preserves_restored_metrics_fix(mock_file_store):
 
 
 def test_save_metrics_throws_error_on_duplicate_service_ids(mock_file_store):
-    """Test that save_metrics throws an error if there are duplicate service IDs."""
+    """Test updated: save_metrics should NOT raise on duplicate service IDs; it should prefer service_to_metrics and proceed."""
     conversation_id = 'test-conversation-id'
     user_id = 'test-user-id'
 
@@ -600,9 +600,13 @@ def test_save_metrics_throws_error_on_duplicate_service_ids(mock_file_store):
     service_metrics.add_cost(0.05)
     stats.service_to_metrics[service_id] = service_metrics
 
-    # save_metrics should throw a ValueError due to duplicate service IDs
-    with pytest.raises(
-        ValueError,
-        match='Duplicate service IDs found between restored and service metrics',
-    ):
-        stats.save_metrics()
+    # Should not raise. Should save with service_to_metrics preferred.
+    stats.save_metrics()
+
+    # Verify the saved content prefers service_to_metrics for duplicates
+    encoded = mock_file_store.read(stats.metrics_path)
+    pickled = base64.b64decode(encoded)
+    restored = pickle.loads(pickled)
+
+    assert service_id in restored
+    assert restored[service_id].accumulated_cost == 0.05  # prefers service_to_metrics

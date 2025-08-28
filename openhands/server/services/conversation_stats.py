@@ -41,9 +41,14 @@ class ConversationStats:
                 self.service_to_metrics.keys()
             )
             if duplicate_services:
-                raise ValueError(
+                logger.error(
                     f'Duplicate service IDs found between restored and service metrics: {duplicate_services}. '
-                    'This should not happen as registered services should be removed from restored_metrics.'
+                    'This should not happen as registered services should be removed from restored_metrics. '
+                    'Proceeding by preferring service_to_metrics values for duplicates.',
+                    extra={
+                        'conversation_id': self.conversation_id,
+                        'duplicate_services': list(duplicate_services),
+                    },
                 )
 
             # Combine both restored metrics and service metrics to avoid data loss
