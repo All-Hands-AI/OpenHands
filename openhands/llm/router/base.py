@@ -13,6 +13,7 @@ if TYPE_CHECKING:
 
 ROUTER_LLM_REGISTRY: dict[str, type['RouterLLM']] = {}
 
+
 class RouterLLM(LLM):
     """
     Base class for multiple LLM acting as a unified LLM.
@@ -161,4 +162,3 @@ class RouterLLM(LLM):
                 f'Router LLM {agent_config.model_routing.router_name} not found.'
             )
         return router_cls(agent_config, llm_registry, **kwargs)
-

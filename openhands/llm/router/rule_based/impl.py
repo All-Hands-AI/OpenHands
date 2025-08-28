@@ -1,8 +1,6 @@
 from openhands.core.config import AgentConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.action import MessageAction
-from openhands.events.event import Event
 from openhands.llm.llm import LLM
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.llm.router.base import ROUTER_LLM_REGISTRY, RouterLLM
