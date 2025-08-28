@@ -13,6 +13,6 @@ export const useSubscriptionSccess = () => {
     enabled:
       !isOnTosPage &&
       config?.APP_MODE === "saas" &&
-      config?.FEATURE_FLAGS.ENABLE_BILLING,
+      config?.FEATURE_FLAGS?.ENABLE_BILLING,
   });
 };
