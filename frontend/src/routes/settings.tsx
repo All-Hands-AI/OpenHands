@@ -8,7 +8,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { useSubscriptionSccess } from "#/hooks/query/use-subscription_access";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription_access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
@@ -63,7 +63,7 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 function SettingsScreen() {
   const { t } = useTranslation();
   const { data: config } = useConfig();
-  const { data: subscriptionAccess } = useSubscriptionSccess();
+  const { data: subscriptionAccess } = useSubscriptionAccess();
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI

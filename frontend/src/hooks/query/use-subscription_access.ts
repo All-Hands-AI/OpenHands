@@ -3,7 +3,7 @@ import { useConfig } from "./use-config";
 import OpenHands from "#/api/open-hands";
 import { useIsOnTosPage } from "#/hooks/use-is-on-tos-page";
 
-export const useSubscriptionSccess = () => {
+export const useSubscriptionAccess = () => {
   const { data: config } = useConfig();
   const isOnTosPage = useIsOnTosPage();
 
@@ -13,6 +13,6 @@ export const useSubscriptionSccess = () => {
     enabled:
       !isOnTosPage &&
       config?.APP_MODE === "saas" &&
-      config?.FEATURE_FLAGS.ENABLE_BILLING,
+      config?.FEATURE_FLAGS?.ENABLE_BILLING,
   });
 };
