@@ -47,7 +47,6 @@ export const clientLoader = async ({ request }: Route.ClientLoaderArgs) => {
 
   const isSaas = config?.APP_MODE === "saas";
 
-  // We need to allow saas on the /settings path - can I put this on config?
   if (isSaas && pathname === "/settings") {
     // no llm settings in saas mode, so redirect to user settings
     return redirect("/settings/user");
