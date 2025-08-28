@@ -13087,22 +13087,6 @@
     "de": "Vorhandene Mikroagenten",
     "uk": "Існуючі мікроагенти"
   },
-  "MICROAGENT_MANAGEMENT$OPEN_MICROAGENT_PULL_REQUESTS": {
-    "en": "Open Microagent Pull Requests",
-    "ja": "未解決のマイクロエージェントのプルリクエスト",
-    "zh-CN": "未合并的微代理拉取请求",
-    "zh-TW": "未合併的微代理拉取請求",
-    "ko-KR": "오픈된 마이크로에이전트 풀 리퀘스트",
-    "no": "Åpne mikroagent-pull requests",
-    "it": "Pull request di microagent aperte",
-    "pt": "Pull requests de microagentes abertas",
-    "es": "Pull requests de microagentes abiertas",
-    "ar": "طلبات السحب المفتوحة للوكلاء الدقيقين",
-    "fr": "Pull requests de microagents ouvertes",
-    "tr": "Açık Mikroajan Pull İstekleri",
-    "de": "Offene Microagent-Pull-Requests",
-    "uk": "Відкриті pull-запити мікроагентів"
-  },
   "SETTINGS$SECURITY_ANALYZER_LLM_DEFAULT": {
     "en": "LLM Analyzer (Default)",
     "ja": "LLMアナライザー（デフォルト）",
@@ -13198,5 +13182,21 @@
     "tr": "Mikroajan Hafızasına Ekle",
     "de": "Zur Microagent-Speicher hinzufügen",
     "uk": "Додати до пам'яті мікроагента"
+  },
+  "COMMON$IN_PROGRESS": {
+    "en": "In Progress",
+    "ja": "進行中",
+    "zh-CN": "进行中",
+    "zh-TW": "進行中",
+    "ko-KR": "진행 중",
+    "no": "Pågår",
+    "it": "In corso",
+    "pt": "Em andamento",
+    "es": "En progreso",
+    "ar": "قيد التنفيذ",
+    "fr": "En cours",
+    "tr": "Devam Ediyor",
+    "de": "In Bearbeitung",
+    "uk": "В процесі"
   }
 }
