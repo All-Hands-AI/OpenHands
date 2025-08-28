@@ -38,6 +38,16 @@ On initial prompt, an error is seen with `Permission Denied` or `PermissionError
 * If mounting a local directory, ensure your `WORKSPACE_BASE` has the necessary permissions for the user running
   OpenHands.
 
+### On Linux, Getting ConnectTimeout Error
+
+**Description**
+
+When running on Linux, you might run into the error `ERROR:root:<class 'httpx.ConnectTimeout'>: timed out`.
+
+**Resolution**
+
+* Add the `--network host` to the docker run command.
+
 ### Internal Server Error. Ports are not available
 
 **Description**
