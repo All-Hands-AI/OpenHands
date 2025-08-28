@@ -27,15 +27,11 @@ class MultimodalRouter(BaseRouter):
         self.secondary_llm = self.llms_for_routing[self.SECONDARY_MODEL_CONFIG_NAME]
         self.max_token_exceeded = False
 
-    def get_active_llm(self, messages: list[Message], events: list[Event]) -> str:
+    def get_active_llm(self, messages: list[Message]) -> str:
         route_to_primary = False
         # Handle multimodal input
-        for event in events:
-            if (
-                isinstance(event, MessageAction)
-                and event.source == 'user'
-                and event.image_urls
-            ):
+        for message in messages:
+            if message.contains_image:
                 logger.info('Image content detected. Routing to the primary model.')
                 route_to_primary = True
                 break

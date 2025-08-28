@@ -210,7 +210,7 @@ class CodeActAgent(Agent):
             condensed_history, initial_user_message
         )
         self.llm_registry.configure_active_llm(
-            messages_for_routing_decision, condensed_history
+            messages_for_routing_decision
         )
 
         # Get the active LLM after routing decision

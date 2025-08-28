@@ -9,7 +9,6 @@ from openhands.core.config.llm_config import LLMConfig
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.event import Event
 from openhands.llm.llm import LLM
 
 if TYPE_CHECKING:
@@ -132,12 +131,10 @@ class LLMRegistry:
             agent_config=agent_config,
         )
 
-    def configure_active_llm(
-        self, messages: list[Message], events: list[Event]
-    ) -> None:
+    def configure_active_llm(self, messages: list[Message]) -> None:
         """Set the active LLM based on routing decisions."""
         if self.router:
-            selected_service_id = self.router.get_active_llm(messages, events)
+            selected_service_id = self.router.get_active_llm(messages)
             self._set_active_llm(selected_service_id)
 
     def subscribe(self, callback: Callable[[RegistryEvent], None]) -> None:

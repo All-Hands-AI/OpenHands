@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 
 from openhands.core.config import AgentConfig
 from openhands.core.message import Message
-from openhands.events.event import Event
 from openhands.llm.llm_registry import LLMRegistry
 
 ROUTER_REGISTRY: dict[str, type['BaseRouter']] = {}
@@ -27,8 +26,8 @@ class BaseRouter(ABC):
         }
 
     @abstractmethod
-    def get_active_llm(self, messages: list[Message], events: list[Event]) -> str:
-        """Select and return the service id corresponding to the active LLM for the current turn based on the messages and events."""
+    def get_active_llm(self, messages: list[Message]) -> str:
+        """Select and return the service id corresponding to the active LLM for the current turn based on the messages."""
         pass
 
     def __getattr__(self, name):
