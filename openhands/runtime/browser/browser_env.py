@@ -1,5 +1,4 @@
 import atexit
-import json
 import multiprocessing
 import time
 import uuid
@@ -25,10 +24,6 @@ class BrowserEnv:
         self.html_text_converter = self.get_html_text_converter()
         self.eval_mode = False
         self.eval_dir = ''
-
-        # EVAL only: browsergym_eval_env must be provided for evaluation
-        self.browsergym_eval_env = browsergym_eval_env
-        self.eval_mode = bool(browsergym_eval_env)
 
         # Initialize browser environment process
         multiprocessing.set_start_method('spawn', force=True)
@@ -67,57 +62,20 @@ class BrowserEnv:
             raise BrowserInitException('Failed to start browser environment.')
 
     def browser_process(self) -> None:
-        if self.eval_mode:
-            assert self.browsergym_eval_env is not None
-            logger.info('Initializing browser env for web browsing evaluation.')
-            if not self.browsergym_eval_env.startswith('browsergym/'):
-                self.browsergym_eval_env = 'browsergym/' + self.browsergym_eval_env
-            if 'visualwebarena' in self.browsergym_eval_env:
-                import browsergym.visualwebarena  # noqa F401 register visualwebarena tasks as gym environments
-                import nltk
-
-                nltk.download('punkt_tab')
-            elif 'webarena' in self.browsergym_eval_env:
-                import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
-            elif 'miniwob' in self.browsergym_eval_env:
-                import browsergym.miniwob  # noqa F401 register miniwob tasks as gym environments
-            else:
-                raise ValueError(
-                    f'Unsupported browsergym eval env: {self.browsergym_eval_env}'
-                )
-            env = gym.make(self.browsergym_eval_env, tags_to_mark='all', timeout=100000)
-        else:
-            env = gym.make(
-                'browsergym/openended',
-                task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
-                wait_for_user_message=False,
-                headless=True,
-                disable_env_checker=True,
-                tags_to_mark='all',
-                timeout=100000,
-                pw_context_kwargs={'accept_downloads': True},
-                pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
-            )
+        env = gym.make(
+            'browsergym/openended',
+            task_kwargs={'start_url': 'about:blank', 'goal': 'PLACEHOLDER_GOAL'},
+            wait_for_user_message=False,
+            headless=True,
+            disable_env_checker=True,
+            tags_to_mark='all',
+            timeout=100000,
+            pw_context_kwargs={'accept_downloads': True},
+            pw_chromium_kwargs={'downloads_path': '/workspace/.downloads/'},
+        )
         obs, info = env.reset()
 
         logger.info('Successfully called env.reset')
-        # EVAL ONLY: save the goal into file for evaluation
-        self.eval_goal = None
-        self.goal_image_urls = []
-        self.eval_rewards: list[float] = []
-        if self.eval_mode:
-            self.eval_goal = obs['goal']
-            if 'goal_object' in obs:
-                obs['goal_object'] = list(obs['goal_object'])
-                if len(obs['goal_object']) > 0:
-                    self.eval_goal = obs['goal_object'][0]['text']
-                for message in obs['goal_object']:
-                    if message['type'] == 'image_url':
-                        image_src = message['image_url']
-                        if isinstance(image_src, dict):
-                            image_src = image_src['url']
-                        self.goal_image_urls.append(image_src)
-            logger.debug(f'Browsing goal: {self.eval_goal}')
         logger.info('Browser env started.')
 
         while should_continue():
@@ -134,33 +92,8 @@ class BrowserEnv:
                         self.browser_side.send(('ALIVE', None))
                         continue
 
-                    # EVAL ONLY: Get evaluation info
-                    if action_data['action'] == BROWSER_EVAL_GET_GOAL_ACTION:
-                        self.browser_side.send(
-                            (
-                                unique_request_id,
-                                {
-                                    'text_content': self.eval_goal,
-                                    'image_content': self.goal_image_urls,
-                                },
-                            )
-                        )
-                        continue
-                    elif action_data['action'] == BROWSER_EVAL_GET_REWARDS_ACTION:
-                        self.browser_side.send(
-                            (
-                                unique_request_id,
-                                {'text_content': json.dumps(self.eval_rewards)},
-                            )
-                        )
-                        continue
-
                     action = action_data['action']
                     obs, reward, terminated, truncated, info = env.step(action)
-
-                    # EVAL ONLY: Save the rewards into file for evaluation
-                    if self.eval_mode:
-                        self.eval_rewards.append(reward)
 
                     # add text content of the page
                     html_str = flatten_dom_to_str(obs['dom_object'])

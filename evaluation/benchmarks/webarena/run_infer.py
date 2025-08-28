@@ -3,13 +3,12 @@ import json
 import os
 from typing import Any
 
-import browsergym.webarena  # noqa F401 register webarena tasks as gym environments
-import gymnasium as gym
 import pandas as pd
 
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
+    codeact_user_response,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     get_metrics,
@@ -23,29 +22,32 @@ from openhands.controller.state.state import State
 from openhands.core.config import (
     OpenHandsConfig,
     get_llm_config_arg,
-    parse_arguments,
 )
+from openhands.core.config.arg_utils import get_evaluation_parser
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
 from openhands.events.action import (
-    BrowseInteractiveAction,
     CmdRunAction,
     MessageAction,
 )
 from openhands.events.observation import CmdOutputObservation
 from openhands.runtime.base import Runtime
-from openhands.runtime.browser.browser_env import (
-    BROWSER_EVAL_GET_GOAL_ACTION,
-    BROWSER_EVAL_GET_REWARDS_ACTION,
-)
 from openhands.utils.async_utils import call_async_from_sync
 
-SUPPORTED_AGENT_CLS = {'BrowsingAgent'}
+SUPPORTED_AGENT_CLS = {'BrowsingAgent', 'CodeActAgent'}
+
+AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
+    'CodeActAgent': codeact_user_response,
+    'BrowsingAgent': codeact_user_response,
+}
+
+# Global variable to store task configs
+TASK_CONFIGS = {}
 
 
 def get_config(
     metadata: EvalMetadata,
-    env_id: str,
+    task_config: dict,
 ) -> OpenHandsConfig:
     base_url = os.environ.get('WEBARENA_BASE_URL', None)
     openai_api_key = os.environ.get('OPENAI_API_KEY', None)
@@ -54,7 +56,7 @@ def get_config(
 
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.base_container_image = 'python:3.12-bookworm'
-    sandbox_config.browsergym_eval_env = env_id
+    # Remove browsergym_eval_env dependency - we'll use regular browser environment
     sandbox_config.runtime_startup_env_vars = {
         'BASE_URL': base_url,
         'OPENAI_API_KEY': openai_api_key,
@@ -70,16 +72,37 @@ def get_config(
         metadata=metadata,
         runtime='docker',
         sandbox_config=sandbox_config,
+        enable_browser=True,
     )
     config.set_llm_config(metadata.llm_config)
+    # Disable vision to avoid image URL issues with OpenAI API
+    llm_config = config.get_llm_config()
+    llm_config.disable_vision = True
+    config.set_llm_config(llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
     return config
 
 
+def get_instruction(task_config: dict) -> MessageAction:
+    """Create the instruction message for the agent based on the task config."""
+    intent = task_config.get('intent', 'Complete the task')
+    start_url = task_config.get('start_url', 'about:blank')
+
+    # Create a comprehensive instruction that includes the task and starting point
+    instruction = f"""You are a web browsing agent. Your task is: {intent}
+
+Please start by navigating to: {start_url}
+
+Complete the task by interacting with the webpage as needed. Use the browser tool to navigate, click, fill forms, and perform other web interactions to accomplish the goal."""
+
+    return MessageAction(content=instruction)
+
+
 def initialize_runtime(
     runtime: Runtime,
-) -> dict:
+    task_config: dict,
+) -> None:
     """Initialize the runtime for the agent.
 
     This function is called before the runtime is used to run the agent.
@@ -93,14 +116,7 @@ def initialize_runtime(
     obs = runtime.run_action(action)
     assert obs.exit_code == 0
 
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_GOAL_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-    goal = obs.content
-
     logger.info(f'{"-" * 50} END Runtime Initialization Fn {"-" * 50}')
-    return goal
 
 
 def complete_runtime(
@@ -108,22 +124,14 @@ def complete_runtime(
 ) -> dict[str, Any]:
     """Complete the runtime for the agent.
 
-    This function is called before the runtime is used to run the agent.
-    If you need to do something in the sandbox to get the correctness metric after
-    the agent has run, modify this function.
+    This function is called after the agent has run.
+    Since we're using the official webarena evaluation, we don't need to get rewards here.
     """
     logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
-    obs: CmdOutputObservation
 
-    action = BrowseInteractiveAction(browser_actions=BROWSER_EVAL_GET_REWARDS_ACTION)
-    logger.info(action, extra={'msg_type': 'ACTION'})
-    obs = runtime.run_action(action)
-    logger.info(obs, extra={'msg_type': 'OBSERVATION'})
-
+    # No need to get rewards from browsergym - evaluation will be done separately
     logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
-    return {
-        'rewards': json.loads(obs.content),
-    }
+    return {}
 
 
 def process_instance(
@@ -131,31 +139,34 @@ def process_instance(
     metadata: EvalMetadata,
     reset_logger: bool = True,
 ):
-    env_id = instance.instance_id
-    config = get_config(metadata, env_id)
+    task_id = instance.instance_id
+    task_config = TASK_CONFIGS.get(task_id, {})
+    config = get_config(metadata, task_config)
 
     # Setup the logger properly, so you can run multi-processing to parallelize the evaluation
     if reset_logger:
         log_dir = os.path.join(metadata.eval_output_dir, 'infer_logs')
-        reset_logger_for_multiprocessing(logger, env_id, log_dir)
+        reset_logger_for_multiprocessing(logger, str(task_id), log_dir)
     else:
-        logger.info(f'Starting evaluation for instance {env_id}.')
+        logger.info(f'Starting evaluation for task {task_id}.')
 
     runtime = create_runtime(config)
     call_async_from_sync(runtime.connect)
-    task_str = initialize_runtime(runtime)
+    initialize_runtime(runtime, task_config)
+
+    # Get the proper instruction message
+    message_action = get_instruction(task_config)
 
     state: State | None = asyncio.run(
         run_controller(
             config=config,
-            initial_user_action=MessageAction(content=task_str),
+            initial_user_action=message_action,
             runtime=runtime,
+            fake_user_response_fn=AGENT_CLS_TO_FAKE_USER_RESPONSE_FN[
+                metadata.agent_class
+            ],
         )
     )
-    # ======= Attempt to evaluate the agent's environment impact =======
-
-    # If you are working on some simpler benchmark that only evaluates the final model output (e.g., in a MessageAction)
-    # You can simply get the LAST `MessageAction` from the returned `state.history` and parse it for evaluation.
 
     if state is None:
         raise ValueError('State should not be None.')
@@ -171,7 +182,6 @@ def process_instance(
 
     return_val = complete_runtime(runtime)
     logger.info(f'Return value from complete_runtime: {return_val}')
-    reward = max(return_val['rewards'])
 
     # history is now available as a stream of events, rather than list of pairs of (Action, Observation)
     # for compatibility with the existing output format, we can remake the pairs here
@@ -180,43 +190,77 @@ def process_instance(
 
     # Save the output
     output = EvalOutput(
-        instance_id=env_id,
+        instance_id=f'webarena.{task_id}',
         instruction=instruction,
         metadata=metadata,
         history=histories,
         metrics=metrics,
         error=state.last_error if state and state.last_error else None,
         test_result={
-            'reward': reward,
+            'task_config': task_config,  # Store task config for later evaluation
         },
     )
     return output
 
 
 if __name__ == '__main__':
-    args = parse_arguments()
+    parser = get_evaluation_parser()
+    args = parser.parse_args()
 
+    # Load webarena task configs
+    webarena_config_dir = '/workspace/project/webarena/config_files'
+    task_configs = []
+
+    # Load task configs from the webarena repository
+    for i in range(1, 1000):  # Assuming task IDs go from 1 to 999
+        config_file = os.path.join(webarena_config_dir, f'{i}.json')
+        if os.path.exists(config_file):
+            with open(config_file, 'r') as f:
+                task_config = json.load(f)
+                task_configs.append({'task_id': i, 'task_config': task_config})
+
+    if not task_configs:
+        # Fallback to example configs if no numbered configs found
+        example_dir = os.path.join(webarena_config_dir, 'examples')
+        if os.path.exists(example_dir):
+            for filename in os.listdir(example_dir):
+                if filename.endswith('.json'):
+                    config_file = os.path.join(example_dir, filename)
+                    with open(config_file, 'r') as f:
+                        task_config = json.load(f)
+                        task_id = task_config.get(
+                            'task_id', filename.replace('.json', '')
+                        )
+                        task_configs.append(
+                            {'task_id': task_id, 'task_config': task_config}
+                        )
+
+    if not task_configs:
+        raise ValueError(f'No task configs found in {webarena_config_dir}')
+
+    print(f'Found {len(task_configs)} task configs')
+
+    # Store task configs globally for process_instance to access
+    for task in task_configs:
+        TASK_CONFIGS[str(task['task_id'])] = task['task_config']
+
+    # Create dataset from task configs
     dataset = pd.DataFrame(
-        {
-            'instance_id': [
-                id
-                for id in gym.envs.registry.keys()
-                if id.startswith('browsergym/webarena')
-            ]
-        }
+        [{'instance_id': str(task['task_id'])} for task in task_configs]
     )
 
     llm_config = None
     if args.llm_config:
-        llm_config = get_llm_config_arg(args.llm_config)
+        llm_config = get_llm_config_arg(args.llm_config, args.config_file)
         # modify_params must be False for evaluation purpose, for reproducibility and accuracy of results
-        llm_config.modify_params = False
+        if llm_config:
+            llm_config.modify_params = False
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
     metadata = make_metadata(
         llm_config,
-        args.dataset_name,
+        'webarena',
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
