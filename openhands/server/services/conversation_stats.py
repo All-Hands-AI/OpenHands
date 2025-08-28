@@ -31,12 +31,12 @@ class ConversationStats:
         # Always attempt to restore registry if it exists
         self.maybe_restore_metrics()
 
-    def save_metrics(self, metrics: dict[str, Metrics] | None = None):
+    def save_metrics(self):
         if not self.file_store:
             return
 
         with self._save_lock:
-            pickled = pickle.dumps(metrics or self.service_to_metrics)
+            pickled = pickle.dumps(self.service_to_metrics)
             serialized_metrics = base64.b64encode(pickled).decode('utf-8')
             self.file_store.write(self.metrics_path, serialized_metrics)
             logger.info(
@@ -52,7 +52,6 @@ class ConversationStats:
             encoded = self.file_store.read(self.metrics_path)
             pickled = base64.b64decode(encoded)
             self.restored_metrics = pickle.loads(pickled)
-            self.service_to_metrics = {}
             logger.info(f'restored metrics: {self.conversation_id}')
         except FileNotFoundError:
             pass
