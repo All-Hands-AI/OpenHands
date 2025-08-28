@@ -176,7 +176,7 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
 
 {% macro install_vscode_extensions() %}
 # Install our custom extensions as openhands user
-USER openhands
+USER cbutkus
 RUN mkdir -p ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world && \
     cp -r /openhands/code/openhands/runtime/utils/vscode-extensions/hello-world/* ${OPENVSCODE_SERVER_ROOT}/extensions/openhands-hello-world/
 
@@ -244,7 +244,7 @@ RUN \
 # Install user-level dependencies as openhands user
 WORKDIR /openhands/code
 
-USER openhands
+USER cbutkus
 RUN \
     /openhands/micromamba/bin/micromamba config set changeps1 False && \
     /openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && \
@@ -349,7 +349,7 @@ RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
 
 # Install extra dependencies if specified (as openhands user)
 {% if extra_deps %}
-USER openhands
+USER cbutkus
 RUN {{ extra_deps }}
 {% endif %}
 
