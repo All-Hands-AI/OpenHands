@@ -253,6 +253,8 @@ class LLM(RetryMixin, DebugMixin):
             else:
                 messages = cast(list[dict[str, Any]], messages_list)
 
+            kwargs['messages'] = messages
+
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
             mock_fncall_tools = None

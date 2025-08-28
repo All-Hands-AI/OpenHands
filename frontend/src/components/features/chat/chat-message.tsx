@@ -9,6 +9,7 @@ import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipb
 import { anchor } from "../markdown/anchor";
 import { OpenHandsSourceType } from "#/types/core/base";
 import { paragraph } from "../markdown/paragraph";
+import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
 
 interface ChatMessageProps {
   type: OpenHandsSourceType;
@@ -16,6 +17,7 @@ interface ChatMessageProps {
   actions?: Array<{
     icon: React.ReactNode;
     onClick: () => void;
+    tooltip?: string;
   }>;
 }
 
@@ -66,17 +68,35 @@ export function ChatMessage({
           "items-center gap-1",
         )}
       >
-        {actions?.map((action, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={action.onClick}
-            className="button-base p-1 cursor-pointer"
-            aria-label={`Action ${index + 1}`}
-          >
-            {action.icon}
-          </button>
-        ))}
+        {actions?.map((action, index) =>
+          action.tooltip ? (
+            <TooltipButton
+              key={index}
+              tooltip={action.tooltip}
+              ariaLabel={action.tooltip}
+              placement="top"
+            >
+              <button
+                type="button"
+                onClick={action.onClick}
+                className="button-base p-1 cursor-pointer"
+                aria-label={`Action ${index + 1}`}
+              >
+                {action.icon}
+              </button>
+            </TooltipButton>
+          ) : (
+            <button
+              key={index}
+              type="button"
+              onClick={action.onClick}
+              className="button-base p-1 cursor-pointer"
+              aria-label={`Action ${index + 1}`}
+            >
+              {action.icon}
+            </button>
+          ),
+        )}
 
         <CopyToClipboardButton
           isHidden={!isHovering}
