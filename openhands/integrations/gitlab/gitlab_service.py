@@ -767,25 +767,6 @@ class GitLabService(BaseGitService, GitService):
 
         return all_comments
 
-    async def get_issue_title_and_body(
-        self, repository: str, issue_number: int
-    ) -> tuple[str, str]:
-        """Get the title and body of an issue.
-
-        Args:
-            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
-            issue_number: The issue IID within the project
-
-        Returns:
-            A tuple of (title, body)
-        """
-        project_id = self._extract_project_id(repository)
-        url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
-        response, _ = await self._make_request(url)
-        title = response.get('title') or ''
-        body = response.get('description') or ''
-        return title, body
-
     async def get_review_thread_comments(
         self, thread_id: str, limit: int = 100
     ) -> list[Comment]:
@@ -811,22 +792,20 @@ class GitLabService(BaseGitService, GitService):
         return self._process_raw_comments(discussion['notes'].get('nodes', []))
 
     async def get_issue_or_pr_title_and_body(
-        self, repository: str, issue_number: int, is_pr: bool = False
+        self, project_id: str, issue_number: int, is_mr: bool = False
     ) -> tuple[str, str]:
         """Get the title and body of an issue or merge request.
 
         Args:
             repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
             issue_number: The issue/MR IID within the project
-            is_pr: If True, treat as merge request; if False, treat as issue;
+            is_mr: If True, treat as merge request; if False, treat as issue;
                    if None, try issue first then merge request (default behavior)
 
         Returns:
             A tuple of (title, body)
         """
-        project_id = self._extract_project_id(repository)
-
-        if is_pr:
+        if is_mr:
             url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}'
             response, _ = await self._make_request(url)
             title = response.get('title') or ''
@@ -841,10 +820,10 @@ class GitLabService(BaseGitService, GitService):
 
     async def get_issue_or_pr_comments(
         self,
-        repository: str,
+        project_id: str,
         issue_number: int,
         max_comments: int = 10,
-        is_pr: bool = False,
+        is_mr: bool = False,
     ) -> list[Comment]:
         """Get comments for an issue or merge request.
 
@@ -858,34 +837,40 @@ class GitLabService(BaseGitService, GitService):
         Returns:
             List of Comment objects ordered by creation date
         """
-        project_id = self._extract_project_id(repository)
         all_comments: list[Comment] = []
         page = 1
         per_page = min(max_comments, 10)
 
-        if is_pr:
-            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/notes'
-        else:
-            url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+        url = (
+            f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/discussions'
+            if is_mr
+            else f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+        )
 
         while len(all_comments) < max_comments:
             params = {
                 'per_page': per_page,
                 'page': page,
                 'order_by': 'created_at',
-                'sort': 'asc',  # Get oldest comments first
+                'sort': 'asc',
             }
 
             response, headers = await self._make_request(url, params)
-
             if not response:
                 break
 
-            all_comments.extend(response)
+            if is_mr:
+                for discussions in response:
+                    # Keep root level comments
+                    all_comments.append(discussions['notes'][0])
+            else:
+                all_comments.extend(response)
 
             link_header = headers.get('Link', '')
             if 'rel="next"' not in link_header:
                 break
+
+            page += 1
 
         return self._process_raw_comments(all_comments)
 
