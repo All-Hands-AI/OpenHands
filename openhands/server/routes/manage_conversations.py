@@ -79,6 +79,85 @@ from openhands.utils.conversation_summary import get_default_conversation_title
 app = APIRouter(prefix='/api', dependencies=get_dependencies())
 
 
+def _filter_conversations_by_age(
+    conversations: list[ConversationMetadata], max_age_seconds: int
+) -> list:
+    """Filter conversations by age, removing those older than max_age_seconds.
+
+    Args:
+        conversations: List of conversations to filter
+        max_age_seconds: Maximum age in seconds for conversations to be included
+
+    Returns:
+        List of conversations that meet the age criteria
+    """
+    now = datetime.now(timezone.utc)
+    filtered_results = []
+
+    for conversation in conversations:
+        # Skip conversations without created_at or older than max_age
+        if not hasattr(conversation, 'created_at'):
+            continue
+
+        age_seconds = (
+            now - conversation.created_at.replace(tzinfo=timezone.utc)
+        ).total_seconds()
+        if age_seconds > max_age_seconds:
+            continue
+
+        filtered_results.append(conversation)
+
+    return filtered_results
+
+
+async def _build_conversation_result_set(
+    filtered_conversations: list, next_page_id: str | None
+) -> ConversationInfoResultSet:
+    """Build a ConversationInfoResultSet from filtered conversations.
+
+    This function handles the common logic of getting conversation IDs, connections,
+    agent loop info, and building the final result set.
+
+    Args:
+        filtered_conversations: List of filtered conversations
+        next_page_id: Next page ID for pagination
+
+    Returns:
+        ConversationInfoResultSet with the processed conversations
+    """
+    conversation_ids = set(
+        conversation.conversation_id for conversation in filtered_conversations
+    )
+    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info = await conversation_manager.get_agent_loop_info(
+        filter_to_sids=conversation_ids
+    )
+    agent_loop_info_by_conversation_id = {
+        info.conversation_id: info for info in agent_loop_info
+    }
+
+    result = ConversationInfoResultSet(
+        results=await wait_all(
+            _get_conversation_info(
+                conversation=conversation,
+                num_connections=sum(
+                    1
+                    for conversation_id in connection_ids_to_conversation_ids.values()
+                    if conversation_id == conversation.conversation_id
+                ),
+                agent_loop_info=agent_loop_info_by_conversation_id.get(
+                    conversation.conversation_id
+                ),
+            )
+            for conversation in filtered_conversations
+        ),
+        next_page_id=next_page_id,
+    )
+    return result
+
+
 class InitSessionRequest(BaseModel):
     repository: str | None = None
     git_provider: ProviderType | None = None
@@ -220,22 +299,14 @@ async def search_conversations(
 ) -> ConversationInfoResultSet:
     conversation_metadata_result_set = await conversation_store.search(page_id, limit)
 
-    # Apply filters at API level
-    filtered_results = []
-    now = datetime.now(timezone.utc)
-    max_age = config.conversation_max_age_seconds
+    # Apply age filter first using common function
+    filtered_results = _filter_conversations_by_age(
+        conversation_metadata_result_set.results, config.conversation_max_age_seconds
+    )
 
-    for conversation in conversation_metadata_result_set.results:
-        # Skip conversations without created_at or older than max_age
-        if not hasattr(conversation, 'created_at'):
-            continue
-
-        age_seconds = (
-            now - conversation.created_at.replace(tzinfo=timezone.utc)
-        ).total_seconds()
-        if age_seconds > max_age:
-            continue
-
+    # Apply additional filters
+    final_filtered_results = []
+    for conversation in filtered_results:
         # Apply repository filter
         if (
             selected_repository is not None
@@ -250,38 +321,11 @@ async def search_conversations(
         ):
             continue
 
-        filtered_results.append(conversation)
+        final_filtered_results.append(conversation)
 
-    conversation_ids = set(
-        conversation.conversation_id for conversation in filtered_results
+    return await _build_conversation_result_set(
+        final_filtered_results, conversation_metadata_result_set.next_page_id
     )
-    connection_ids_to_conversation_ids = await conversation_manager.get_connections(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info = await conversation_manager.get_agent_loop_info(
-        filter_to_sids=conversation_ids
-    )
-    agent_loop_info_by_conversation_id = {
-        info.conversation_id: info for info in agent_loop_info
-    }
-    result = ConversationInfoResultSet(
-        results=await wait_all(
-            _get_conversation_info(
-                conversation=conversation,
-                num_connections=sum(
-                    1
-                    for conversation_id in connection_ids_to_conversation_ids.values()
-                    if conversation_id == conversation.conversation_id
-                ),
-                agent_loop_info=agent_loop_info_by_conversation_id.get(
-                    conversation.conversation_id
-                ),
-            )
-            for conversation in filtered_results
-        ),
-        next_page_id=conversation_metadata_result_set.next_page_id,
-    )
-    return result
 
 
 @app.get('/conversations/{conversation_id}')
@@ -725,3 +769,65 @@ def add_experiment_config_for_conversation(
         return True
 
     return False
+
+
+@app.get('/microagent-management/conversations')
+async def get_microagent_management_conversations(
+    selected_repository: str,
+    page_id: str | None = None,
+    limit: int = 20,
+    conversation_store: ConversationStore = Depends(get_conversation_store),
+    provider_tokens: PROVIDER_TOKEN_TYPE = Depends(get_provider_tokens),
+) -> ConversationInfoResultSet:
+    """Get conversations for the microagent management page with pagination support.
+
+    This endpoint returns conversations with conversation_trigger = 'microagent_management'
+    and only includes conversations with active PRs. Pagination is supported.
+
+    Args:
+        page_id: Optional page ID for pagination
+        limit: Maximum number of results per page (default: 20)
+        selected_repository: Optional repository filter to limit results to a specific repository
+        conversation_store: Conversation store dependency
+        provider_tokens: Provider tokens for checking PR status
+    """
+    conversation_metadata_result_set = await conversation_store.search(page_id, limit)
+
+    # Apply age filter first using common function
+    filtered_results = _filter_conversations_by_age(
+        conversation_metadata_result_set.results, config.conversation_max_age_seconds
+    )
+
+    # Check if the last PR is active (not closed/merged)
+    provider_handler = ProviderHandler(provider_tokens)
+
+    # Apply additional filters
+    final_filtered_results = []
+    for conversation in filtered_results:
+        # Only include microagent_management conversations
+        if conversation.trigger != ConversationTrigger.MICROAGENT_MANAGEMENT:
+            continue
+
+        # Apply repository filter if specified
+        if conversation.selected_repository != selected_repository:
+            continue
+
+        if (
+            conversation.pr_number
+            and len(conversation.pr_number) > 0
+            and conversation.selected_repository
+            and conversation.git_provider
+            and not await provider_handler.is_pr_open(
+                conversation.selected_repository,
+                conversation.pr_number[-1],  # Get the last PR number
+                conversation.git_provider,
+            )
+        ):
+            # Skip this conversation if the PR is closed/merged
+            continue
+
+        final_filtered_results.append(conversation)
+
+    return await _build_conversation_result_set(
+        final_filtered_results, conversation_metadata_result_set.next_page_id
+    )
