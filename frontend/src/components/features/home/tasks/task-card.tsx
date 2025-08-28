@@ -5,6 +5,7 @@ import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation"
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { TaskIssueNumber } from "./task-issue-number";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { cn } from "#/utils/utils";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -64,7 +65,10 @@ export function TaskCard({ task }: TaskCardProps) {
     <button
       type="button"
       data-testid="task-launch-button"
-      className="py-3 flex items-center gap-3 cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2"
+      className={cn(
+        "pt-[6px] pb-3 text-left flex items-center gap-3 cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2",
+        isCreatingConversation && "cursor-not-allowed",
+      )}
       disabled={isCreatingConversation}
       onClick={handleLaunchConversation}
     >
