@@ -52,7 +52,7 @@ export function RepositorySelectionForm({
 
   // Auto-select provider if there's only one
   React.useEffect(() => {
-    if (providers.length === 1 && !selectedProvider) {
+    if (providers.length > 0 && !selectedProvider) {
       setSelectedProvider(providers[0]);
     }
   }, [providers, selectedProvider]);
