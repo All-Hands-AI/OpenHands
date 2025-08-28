@@ -110,17 +110,16 @@ class ConversationStats:
         merged: dict[str, Metrics] = dict(self.service_to_metrics)
 
         # Add any restored metrics from self that aren't in active (flattening into one dict)
-        for sid, m in self.restored_metrics.items():
-            if sid not in merged:
-                merged[sid] = m
+        for service_id, m in self.restored_metrics.items():
+            merged[service_id] = m
 
         # Add all of other's active metrics
-        for sid, m in conversation_stats.service_to_metrics.items():
-            merged[sid] = m
+        for service_id, m in conversation_stats.service_to_metrics.items():
+            merged[service_id] = m
 
         # Add all of other's restored metrics
-        for sid, m in conversation_stats.restored_metrics.items():
-            merged[sid] = m
+        for service_id, m in conversation_stats.restored_metrics.items():
+            merged[service_id] = m
 
         # Commit merged view: single dict, no restored left
         self.service_to_metrics = merged
