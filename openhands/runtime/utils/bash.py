@@ -193,9 +193,8 @@ class BashSession:
     def initialize(self) -> None:
         self.server = libtmux.Server()
         _shell_command = '/bin/bash'
-        if self.username in ['root', 'openhands']:
-            # This starts a non-login (new) shell for the given user
-            _shell_command = f'su {self.username} -'
+        # This starts a non-login (new) shell for the given user
+        _shell_command = f'su {self.username} -'
 
         # FIXME: we will introduce memory limit using sysbox-runc in coming PR
         # # otherwise, we are running as the CURRENT USER (e.g., when running LocalRuntime)
