@@ -705,7 +705,7 @@ class GitLabService(BaseGitService, GitService):
         notes = response.get('notes') or []
         return self._process_raw_comments(notes)
 
-    async def get_issue_or_pr_title_and_body(
+    async def get_issue_or_mr_title_and_body(
         self, project_id: str, issue_number: int, is_mr: bool = False
     ) -> tuple[str, str]:
         """Get the title and body of an issue or merge request.
@@ -732,7 +732,7 @@ class GitLabService(BaseGitService, GitService):
         body = response.get('description') or ''
         return title, body
 
-    async def get_issue_or_pr_comments(
+    async def get_issue_or_mr_comments(
         self,
         project_id: str,
         issue_number: int,
