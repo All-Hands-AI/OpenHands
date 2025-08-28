@@ -37,15 +37,6 @@ class VSCodePlugin(Plugin):
             )
             return
 
-        if username not in ['root', 'openhands']:
-            self.vscode_port = None
-            self.vscode_connection_token = None
-            logger.warning(
-                'VSCodePlugin is only supported for root or openhands user. '
-                'It is not yet supported for other users (i.e., when running LocalRuntime).'
-            )
-            return
-
         # Set up VSCode settings.json
         self._setup_vscode_settings()
 
