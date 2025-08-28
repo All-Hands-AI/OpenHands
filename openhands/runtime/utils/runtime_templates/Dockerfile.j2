@@ -70,12 +70,12 @@ RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
     (if getent group 1000 | grep -q ubuntu; then groupdel ubuntu; fi)
 
 # Create openhands group and user
-RUN groupadd -g 1000 openhands && \
-    useradd -u 1000 -g 1000 -m -s /bin/bash openhands && \
-    usermod -aG sudo openhands && \
-    echo 'openhands ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+RUN groupadd -g 1000 cbutkus && \
+    useradd -u 1000 -g 1000 -m -s /bin/bash cbutkus && \
+    usermod -aG sudo cbutkus && \
+    echo 'cbutkus ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
     # Set empty password for openhands user to allow passwordless su
-    passwd -d openhands && \
+    passwd -d cbutkus && \
     # Set empty password for root user as well to ensure su works in both directions
     passwd -d root && \
     # Ensure root can su to openhands without password by configuring PAM
@@ -86,7 +86,7 @@ RUN groupadd -g 1000 openhands && \
 RUN mkdir -p /openhands && \
     mkdir -p /openhands/logs && \
     mkdir -p /openhands/poetry && \
-    chown -R openhands:openhands /openhands
+    chown -R cbutkus:cbutkus /openhands
 
 
 # ================================================================
@@ -168,7 +168,7 @@ RUN if [ -z "${RELEASE_TAG}" ]; then \
     mv ${RELEASE_TAG}-linux-${arch} ${OPENVSCODE_SERVER_ROOT} && \
     cp ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/openvscode-server ${OPENVSCODE_SERVER_ROOT}/bin/remote-cli/code && \
     rm -f ${RELEASE_TAG}-linux-${arch}.tar.gz && \
-    chown -R openhands:openhands ${OPENVSCODE_SERVER_ROOT}
+    chown -R cbutkus:cbutkus ${OPENVSCODE_SERVER_ROOT}
 
 
 
@@ -211,7 +211,7 @@ RUN \
     mkdir -p /root/.cache && \
     ln -sf /opt/playwright-browsers /home/openhands/.cache/ms-playwright && \
     ln -sf /opt/playwright-browsers /root/.cache/ms-playwright && \
-    chown -h openhands:openhands /home/openhands/.cache/ms-playwright && \
+    chown -h cbutkus:cbutkus /home/openhands/.cache/ms-playwright && \
     # Set environment variable for all users
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /etc/environment && \
     {% endif %}
@@ -220,10 +220,10 @@ RUN \
     # Set permissions for shared read-only access
     chmod -R 755 /openhands/poetry && \
     chmod -R 755 /openhands/micromamba && \
-    chown -R openhands:openhands /openhands/poetry && \
+    chown -R cbutkus:cbutkus /openhands/poetry && \
     mkdir -p /openhands/workspace && chmod -R g+rws,o+rw /openhands/workspace && \
-    chown -R openhands:openhands /openhands/workspace && \
-    chown -R openhands:openhands /openhands/micromamba && \
+    chown -R cbutkus:cbutkus /openhands/workspace && \
+    chown -R cbutkus:cbutkus /openhands/micromamba && \
     # Ensure PATH includes system binaries early in startup
     echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/environment && \
     echo 'export PATH="/usr/bin:/bin:/usr/sbin:/sbin:$PATH"' >> /etc/bash.bashrc && \
@@ -271,7 +271,7 @@ RUN mkdir -p /openhands/micromamba/bin && \
     /bin/bash -c "PREFIX_LOCATION=/openhands/micromamba BIN_FOLDER=/openhands/micromamba/bin INIT_YES=no CONDA_FORGE_YES=yes $(curl -L https://micro.mamba.pm/install.sh)" && \
     /openhands/micromamba/bin/micromamba config remove channels defaults && \
     /openhands/micromamba/bin/micromamba config list && \
-    chown -R openhands:openhands /openhands/micromamba && \
+    chown -R cbutkus:cbutkus /openhands/micromamba && \
     # Create read-only shared access to micromamba for all users
     # This allows both root and openhands users to access the same packages
     # while maintaining security by keeping openhands as the owner
@@ -290,12 +290,12 @@ RUN \
     if [ -d /openhands/code ]; then rm -rf /openhands/code; fi && \
     mkdir -p /openhands/code/openhands && \
     touch /openhands/code/openhands/__init__.py && \
-    chown -R openhands:openhands /openhands/code && \
+    chown -R cbutkus:cbutkus /openhands/code && \
     # Set global git configuration to ensure proper author/committer information
     git config --global user.name "openhands" && \
     git config --global user.email "openhands@all-hands.dev"
 
-COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+COPY --chown=cbutkus:cbutkus ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 
 {{ install_dependencies_user() }}
 {{ install_dependencies_root() }}
@@ -309,20 +309,20 @@ COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openh
 USER root
 RUN \
     # Ensure group exists (prefer GID 1000 if available)
-    if ! getent group openhands >/dev/null 2>&1; then \
-        if getent group 1000 >/dev/null 2>&1; then groupadd openhands; else groupadd -g 1000 openhands; fi; \
+    if ! getent group cbutkus >/dev/null 2>&1; then \
+        if getent group 1000 >/dev/null 2>&1; then groupadd cbutkus; else groupadd -g 1000 cbutkus; fi; \
     fi && \
     # Ensure user exists (prefer UID 1000 if available)
-    if ! id -u openhands >/dev/null 2>&1; then \
-        if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g openhands openhands; else useradd -u 1000 -g openhands -m -s /bin/bash openhands; fi; \
+    if ! id -u cbutkus >/dev/null 2>&1; then \
+        if getent passwd 1000 >/dev/null 2>&1; then useradd -m -s /bin/bash -g cbutkus cbutkus; else useradd -u 1000 -g cbutkus -m -s /bin/bash cbutkus; fi; \
     fi && \
     # Ensure home and required directories exist before later steps
     mkdir -p /home/openhands && \
     mkdir -p /openhands && \
     mkdir -p $(dirname ${OPENVSCODE_SERVER_ROOT}) && \
     # Ensure ownership is correct for all OpenHands paths
-    chown -R openhands:openhands /home/openhands || true && \
-    chown -R openhands:openhands /openhands || true
+    chown -R cbutkus:cbutkus /home/openhands || true && \
+    chown -R cbutkus:cbutkus /openhands || true
 
 {{ setup_vscode_server() }}
 
@@ -330,12 +330,12 @@ RUN \
 # Copy Project source files
 # ================================================================
 RUN if [ -d /openhands/code/openhands ]; then rm -rf /openhands/code/openhands; fi
-COPY --chown=openhands:openhands ./code/pyproject.toml ./code/poetry.lock /openhands/code/
+COPY --chown=cbutkus:cbutkus ./code/pyproject.toml ./code/poetry.lock /openhands/code/
 RUN if [ -d /openhands/code/microagents ]; then rm -rf /openhands/code/microagents; fi
-COPY --chown=openhands:openhands ./code/microagents /openhands/code/microagents
-COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands
+COPY --chown=cbutkus:cbutkus ./code/microagents /openhands/code/microagents
+COPY --chown=cbutkus:cbutkus ./code/openhands /openhands/code/openhands
 RUN chmod a+rwx /openhands/code/openhands/__init__.py && \
-    chown -R openhands:openhands /openhands/code
+    chown -R cbutkus:cbutkus /openhands/code
 
 
 # ================================================================
@@ -361,4 +361,4 @@ RUN \
     echo 'export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers' >> /home/openhands/.bashrc && \
     echo 'eval "$(/openhands/micromamba/bin/micromamba shell hook --shell bash)"' >> /home/openhands/.bashrc && \
     echo 'micromamba activate openhands 2>/dev/null || true' >> /home/openhands/.bashrc && \
-    chown openhands:openhands /home/openhands/.bashrc
+    chown cbutkus:cbutkus /home/openhands/.bashrc
