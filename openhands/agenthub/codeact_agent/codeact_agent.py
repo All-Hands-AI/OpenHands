@@ -220,7 +220,7 @@ class CodeActAgent(Agent):
         # Recompute messages after active LLM is set
         messages = self._get_messages(condensed_history, initial_user_message)
         params: dict = {
-            'messages': active_llm.format_messages_for_llm(messages),
+            'messages': messages,
         }
         params['tools'] = check_tools(self.tools, active_llm.config)
         params['extra_body'] = {
