@@ -130,5 +130,3 @@ class ConversationStats:
                 'merged_count': len(merged),
             },
         )
-
-        self.maybe_restore_metrics()
