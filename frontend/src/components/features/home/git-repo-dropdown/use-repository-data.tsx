@@ -35,11 +35,19 @@ export function useRepositoryData(
     [repoData],
   );
 
-  // Find selected repository from all repositories
-  const selectedRepository = useMemo(
-    () => allRepositories.find((repo) => repo.id === value) || null,
-    [allRepositories, value],
-  );
+  // Find selected repository from all possible sources
+  const selectedRepository = useMemo(() => {
+    if (!value) return null;
+
+    // Search in all possible repository sources
+    const allPossibleRepos = [
+      ...allRepositories,
+      ...urlSearchResults,
+      ...(searchData || []),
+    ];
+
+    return allPossibleRepos.find((repo) => repo.id === value) || null;
+  }, [allRepositories, urlSearchResults, searchData, value]);
 
   // Get repositories to display (URL search, regular search, or all repos)
   const repositories = useMemo(() => {

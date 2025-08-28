@@ -36,6 +36,8 @@ export function GitRepoDropdown({
   onChange,
 }: GitRepoDropdownProps) {
   const [inputValue, setInputValue] = useState("");
+  const [localSelectedItem, setLocalSelectedItem] =
+    useState<GitRepository | null>(null);
   const debouncedInputValue = useDebounce(inputValue, 300);
   const menuRef = useRef<HTMLUListElement>(null);
 
@@ -111,6 +113,7 @@ export function GitRepoDropdown({
   // Handle selection
   const handleSelectionChange = useCallback(
     (selectedItem: GitRepository | null) => {
+      setLocalSelectedItem(selectedItem);
       onChange?.(selectedItem || undefined);
       // Update input value to show selected item
       if (selectedItem) {
@@ -122,6 +125,7 @@ export function GitRepoDropdown({
 
   // Handle clear selection
   const handleClear = useCallback(() => {
+    setLocalSelectedItem(null);
     handleSelectionChange(null);
     setInputValue("");
   }, [handleSelectionChange]);
@@ -158,7 +162,7 @@ export function GitRepoDropdown({
   } = useCombobox({
     items: filteredRepositories,
     itemToString: (item) => item?.full_name || "",
-    selectedItem: selectedRepository,
+    selectedItem: localSelectedItem,
     onSelectedItemChange: ({ selectedItem: newSelectedItem }) => {
       handleSelectionChange(newSelectedItem);
     },
@@ -166,16 +170,19 @@ export function GitRepoDropdown({
     inputValue,
   });
 
+  // Sync localSelectedItem with external value prop
+  useEffect(() => {
+    if (selectedRepository) {
+      setLocalSelectedItem(selectedRepository);
+    } else if (value === null) {
+      setLocalSelectedItem(null);
+    }
+  }, [selectedRepository, value]);
+
   // Initialize input value when selectedRepository changes (but not when user is typing)
   useEffect(() => {
-    if (
-      selectedRepository &&
-      !isOpen &&
-      inputValue !== selectedRepository.full_name
-    ) {
+    if (selectedRepository && !isOpen) {
       setInputValue(selectedRepository.full_name);
-    } else if (!selectedRepository && !isOpen && inputValue) {
-      setInputValue("");
     }
   }, [selectedRepository, isOpen]);
 
