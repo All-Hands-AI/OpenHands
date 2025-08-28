@@ -31,12 +31,12 @@ class ConversationStats:
         # Always attempt to restore registry if it exists
         self.maybe_restore_metrics()
 
-    def save_metrics(self):
+    def save_metrics(self, metrics: dict[str, Metrics] | None = None):
         if not self.file_store:
             return
 
         with self._save_lock:
-            pickled = pickle.dumps(self.service_to_metrics)
+            pickled = pickle.dumps(metrics or self.service_to_metrics)
             serialized_metrics = base64.b64encode(pickled).decode('utf-8')
             self.file_store.write(self.metrics_path, serialized_metrics)
             logger.info(
@@ -52,6 +52,7 @@ class ConversationStats:
             encoded = self.file_store.read(self.metrics_path)
             pickled = base64.b64decode(encoded)
             self.restored_metrics = pickle.loads(pickled)
+            self.service_to_metrics = {}
             logger.info(f'restored metrics: {self.conversation_id}')
         except FileNotFoundError:
             pass
@@ -78,3 +79,58 @@ class ConversationStats:
             del self.restored_metrics[service_id]
 
         self.service_to_metrics[service_id] = llm.metrics
+
+    def merge(self, conversation_stats: 'ConversationStats'):
+        """
+        Merge two ConversationStats objects.
+
+        - Take all metrics from both `restored_metrics` and `service_to_metrics`
+          for each object.
+        - If any service_id exists in BOTH objects, raise an error.
+        - Combine into a single dict on `self.service_to_metrics` and clear
+          `self.restored_metrics`.
+        - Save the merged result.
+        """
+        # All IDs present on self (both active and restored)
+        self_ids = set(self.service_to_metrics.keys()) | set(
+            self.restored_metrics.keys()
+        )
+
+        # All IDs present on the other stats (both active and restored)
+        other_ids = set(conversation_stats.service_to_metrics.keys()) | set(
+            conversation_stats.restored_metrics.keys()
+        )
+
+        # Any overlap between the two services should error out
+        dupes = self_ids & other_ids
+        if dupes:
+            raise ValueError(f'Duplicate service IDs across stats: {sorted(dupes)}')
+
+        # Start from self's current active metrics
+        merged: dict[str, Metrics] = dict(self.service_to_metrics)
+
+        # Add any restored metrics from self that aren't in active (flattening into one dict)
+        for sid, m in self.restored_metrics.items():
+            if sid not in merged:
+                merged[sid] = m
+
+        # Add all of other's active metrics
+        for sid, m in conversation_stats.service_to_metrics.items():
+            merged[sid] = m
+
+        # Add all of other's restored metrics
+        for sid, m in conversation_stats.restored_metrics.items():
+            merged[sid] = m
+
+        # Commit merged view: single dict, no restored left
+        self.service_to_metrics = merged
+        self.save_metrics()
+        logger.info(
+            'Merged conversation stats',
+            extra={
+                'conversation_id': self.conversation_id,
+                'merged_count': len(merged),
+            },
+        )
+
+        self.maybe_restore_metrics()
