@@ -63,7 +63,9 @@ export function TaskCard({ task }: TaskCardProps) {
   return (
     <button
       type="button"
+      data-testid="task-launch-button"
       className="py-3 flex items-center gap-3 cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2"
+      disabled={isCreatingConversation}
       onClick={handleLaunchConversation}
     >
       <TaskIssueNumber issueNumber={task.issue_number} href={href} />
@@ -77,16 +79,10 @@ export function TaskCard({ task }: TaskCardProps) {
         </span>
       </div>
 
-      <button
-        type="button"
-        data-testid="task-launch-button"
-        className="text-xs text-[#A3A3A3] leading-4 font-normal cursor-pointer"
-        disabled={isCreatingConversation}
-        onClick={handleLaunchConversation}
-      >
+      <div className="text-xs text-[#A3A3A3] leading-4 font-normal">
         {!isPending && t("HOME$LAUNCH")}
         {isPending && t("HOME$LOADING")}
-      </button>
+      </div>
     </button>
   );
 }
