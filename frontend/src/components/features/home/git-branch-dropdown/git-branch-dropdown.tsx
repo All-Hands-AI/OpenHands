@@ -38,6 +38,7 @@ export function GitBranchDropdown({
   className,
 }: GitBranchDropdownProps) {
   const [inputValue, setInputValue] = useState("");
+  const [userManuallyCleared, setUserManuallyCleared] = useState(false);
   const menuRef = useRef<HTMLUListElement>(null);
 
   // Process search input (debounced or filtered)
@@ -70,6 +71,7 @@ export function GitBranchDropdown({
   const handleClear = useCallback(() => {
     setInputValue("");
     onBranchSelect(null);
+    setUserManuallyCleared(true); // Mark that user manually cleared the branch
   }, [onBranchSelect]);
 
   // Handle branch selection
@@ -130,15 +132,18 @@ export function GitBranchDropdown({
   useEffect(() => {
     if (repository) {
       onBranchSelect(null);
+      setUserManuallyCleared(false); // Reset the manual clear flag when repository changes
     }
   }, [repository, onBranchSelect]);
 
   // Auto-select default branch when branches are loaded and no branch is selected
+  // But only if the user hasn't manually cleared the branch
   useEffect(() => {
     if (
       repository &&
       defaultBranch &&
       !selectedBranch &&
+      !userManuallyCleared && // Don't auto-select if user manually cleared
       filteredBranches.length > 0 &&
       !isLoading
     ) {
@@ -154,6 +159,7 @@ export function GitBranchDropdown({
     repository,
     defaultBranch,
     selectedBranch,
+    userManuallyCleared,
     filteredBranches,
     onBranchSelect,
     isLoading,
