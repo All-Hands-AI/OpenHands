@@ -1,5 +1,4 @@
 import os
-import traceback
 
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
@@ -29,10 +28,6 @@ def get_action_execution_server_startup_command(
     main_module: str = DEFAULT_MAIN_MODULE,
     python_executable: str = 'python',
 ) -> list[str]:
-    logger.info(
-        'get_action_execution_server_startup_command stack:\n%s',
-        ''.join(traceback.format_stack()),
-    )
     sandbox_config = app_config.sandbox
     logger.info(f'app_config {vars(app_config)}')
     logger.info(f'sandbox_config {vars(sandbox_config)}')
