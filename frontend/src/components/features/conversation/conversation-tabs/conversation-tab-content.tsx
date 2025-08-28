@@ -34,7 +34,7 @@ export function ConversationTabContent() {
   return (
     <div
       className={cn(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full w-full",
+        "bg-[#25272D] border border-[#525252] rounded-xl flex flex-col h-full w-full",
         "h-full w-full",
       )}
     >
