@@ -1,7 +1,6 @@
 import { lazy, Suspense } from "react";
 import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
-import { useConversationTabs } from "./use-conversation-tabs";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { RootState } from "#/store";
 import { ConversationLoading } from "../conversation-loading";
@@ -15,8 +14,9 @@ const ServedTab = lazy(() => import("#/routes/served-tab"));
 const VSCodeTab = lazy(() => import("#/routes/vscode-tab"));
 
 export function ConversationTabContent() {
-  const [{ selectedTab }] = useConversationTabs();
-
+  const selectedTab = useSelector(
+    (state: RootState) => state.conversation.selectedTab,
+  );
   const { shouldShownAgentLoading } = useSelector(
     (state: RootState) => state.conversation,
   );
@@ -36,7 +36,8 @@ export function ConversationTabContent() {
   return (
     <div
       className={cn(
-        "bg-base-secondary border border-neutral-600 rounded-xl flex flex-col h-full w-full",
+        "bg-[#25272D] border border-[#525252] rounded-xl flex flex-col h-full w-full",
+        "h-full w-full",
       )}
     >
       <div className="overflow-hidden flex-grow rounded-b-xl">

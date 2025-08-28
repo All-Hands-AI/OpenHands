@@ -8,22 +8,31 @@ import ServerIcon from "#/icons/server.svg?react";
 import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
 import { cn } from "#/utils/utils";
-import { ConversationTab, useConversationTabs } from "./use-conversation-tabs";
 import { ConversationTabNav } from "./conversation-tab-nav";
 import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { VSCodeTooltipContent } from "./vscode-tooltip-content";
-import { setIsRightPanelShown } from "#/state/conversation-slice";
+import {
+  setIsRightPanelShown,
+  setSelectedTab,
+  type ConversationTab,
+} from "#/state/conversation-slice";
 import { RootState } from "#/store";
 
 export function ConversationTabs() {
-  const [{ selectedTab }, { onTabChange }] = useConversationTabs();
-
-  const isTabClicked = useRef<boolean>(false);
-
+  const dispatch = useDispatch();
+  const selectedTab = useSelector(
+    (state: RootState) => state.conversation.selectedTab,
+  );
   const { isRightPanelShown } = useSelector(
     (state: RootState) => state.conversation,
   );
+
+  const isTabClicked = useRef<boolean>(false);
+
+  const onTabChange = (value: ConversationTab | null) => {
+    dispatch(setSelectedTab(value));
+  };
 
   useEffect(() => {
     const handlePanelVisibilityChange = () => {
@@ -42,9 +51,7 @@ export function ConversationTabs() {
     };
 
     handlePanelVisibilityChange();
-  }, [isRightPanelShown]);
-
-  const dispatch = useDispatch();
+  }, [isRightPanelShown, onTabChange]);
 
   const { t } = useTranslation();
 

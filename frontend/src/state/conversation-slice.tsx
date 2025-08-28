@@ -1,5 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export type ConversationTab =
+  | "editor"
+  | "browser"
+  | "jupyter"
+  | "served"
+  | "vscode"
+  | "terminal";
+
 export interface IMessageToSend {
   text: string;
   timestamp: number;
@@ -7,6 +15,7 @@ export interface IMessageToSend {
 
 interface ConversationState {
   isRightPanelShown: boolean;
+  selectedTab: ConversationTab | null;
   images: File[];
   files: File[];
   loadingFiles: string[]; // File names currently being processed
@@ -21,6 +30,7 @@ export const conversationSlice = createSlice({
   name: "conversation",
   initialState: {
     isRightPanelShown: true,
+    selectedTab: "editor" as ConversationTab,
     shouldStopConversation: false,
     shouldStartConversation: false,
     images: [],
@@ -35,6 +45,9 @@ export const conversationSlice = createSlice({
   reducers: {
     setIsRightPanelShown: (state, action) => {
       state.isRightPanelShown = action.payload;
+    },
+    setSelectedTab: (state, action) => {
+      state.selectedTab = action.payload;
     },
     setShouldShownAgentLoading: (state, action) => {
       state.shouldShownAgentLoading = action.payload;
@@ -100,11 +113,18 @@ export const conversationSlice = createSlice({
     setSubmittedMessage: (state, action) => {
       state.submittedMessage = action.payload;
     },
+    // Reset conversation state (useful for cleanup)
+    resetConversationState: (state) => {
+      state.selectedTab = "editor";
+      state.isRightPanelShown = true;
+      state.shouldHideSuggestions = false;
+    },
   },
 });
 
 export const {
   setIsRightPanelShown,
+  setSelectedTab,
   setShouldShownAgentLoading,
   setShouldHideSuggestions,
   addImages,
@@ -121,6 +141,7 @@ export const {
   clearAllLoading,
   setMessageToSend,
   setSubmittedMessage,
+  resetConversationState,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

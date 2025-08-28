@@ -85,42 +85,46 @@ export function GitControlBar({
           />
         </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
-          testId="git-control-bar-pull-button-tooltip"
-          shouldShowTooltip={!hasRepository}
-        >
-          <GitControlBarPullButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-          />
-        </GitControlBarTooltipWrapper>
+        {hasRepository ? (
+          <>
+            <GitControlBarTooltipWrapper
+              tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
+              testId="git-control-bar-pull-button-tooltip"
+              shouldShowTooltip={!hasRepository}
+            >
+              <GitControlBarPullButton
+                onSuggestionsClick={onSuggestionsClick}
+                isEnabled={isButtonEnabled}
+              />
+            </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
-          testId="git-control-bar-push-button-tooltip"
-          shouldShowTooltip={!hasRepository}
-        >
-          <GitControlBarPushButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-            hasRepository={hasRepository}
-            currentGitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
+            <GitControlBarTooltipWrapper
+              tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
+              testId="git-control-bar-push-button-tooltip"
+              shouldShowTooltip={!hasRepository}
+            >
+              <GitControlBarPushButton
+                onSuggestionsClick={onSuggestionsClick}
+                isEnabled={isButtonEnabled}
+                hasRepository={hasRepository}
+                currentGitProvider={gitProvider}
+              />
+            </GitControlBarTooltipWrapper>
 
-        <GitControlBarTooltipWrapper
-          tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
-          testId="git-control-bar-pr-button-tooltip"
-          shouldShowTooltip={!hasRepository}
-        >
-          <GitControlBarPrButton
-            onSuggestionsClick={onSuggestionsClick}
-            isEnabled={isButtonEnabled}
-            hasRepository={hasRepository}
-            currentGitProvider={gitProvider}
-          />
-        </GitControlBarTooltipWrapper>
+            <GitControlBarTooltipWrapper
+              tooltipMessage={t(I18nKey.COMMON$GIT_TOOLS_DISABLED_CONTENT)}
+              testId="git-control-bar-pr-button-tooltip"
+              shouldShowTooltip={!hasRepository}
+            >
+              <GitControlBarPrButton
+                onSuggestionsClick={onSuggestionsClick}
+                isEnabled={isButtonEnabled}
+                hasRepository={hasRepository}
+                currentGitProvider={gitProvider}
+              />
+            </GitControlBarTooltipWrapper>
+          </>
+        ) : null}
       </div>
 
       {/* Right Arrow */}
