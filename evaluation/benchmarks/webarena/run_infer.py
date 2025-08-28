@@ -75,10 +75,6 @@ def get_config(
         enable_browser=True,
     )
     config.set_llm_config(metadata.llm_config)
-    # Disable vision to avoid image URL issues with OpenAI API
-    llm_config = config.get_llm_config()
-    llm_config.disable_vision = True
-    config.set_llm_config(llm_config)
     agent_config = config.get_agent_config(metadata.agent_class)
     agent_config.enable_prompt_extensions = False
     return config
