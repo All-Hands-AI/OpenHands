@@ -110,8 +110,8 @@ class Settings(BaseModel):
     def validate_condenser_max_size(cls, v: int | None) -> int | None:
         if v is None:
             return v
-        if v < 10:
-            raise ValueError('condenser_max_size must be at least 10')
+        if v < 20:
+            raise ValueError('condenser_max_size must be at least 20')
         return v
 
     @field_serializer('secrets_store')

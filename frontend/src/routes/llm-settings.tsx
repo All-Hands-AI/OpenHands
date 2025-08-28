@@ -186,9 +186,13 @@ function LlmSettingsScreen() {
     const condenserMaxSizeStr = formData
       .get("condenser-max-size-input")
       ?.toString();
-    const condenserMaxSize = condenserMaxSizeStr
+    const condenserMaxSizeRaw = condenserMaxSizeStr
       ? Number.parseInt(condenserMaxSizeStr, 10)
       : undefined;
+    const condenserMaxSize =
+      condenserMaxSizeRaw !== undefined
+        ? Math.max(20, condenserMaxSizeRaw)
+        : undefined;
 
     const securityAnalyzer = formData
       .get("security-analyzer-input")
@@ -322,8 +326,9 @@ function LlmSettingsScreen() {
 
   const handleCondenserMaxSizeIsDirty = (value: string) => {
     const parsed = value ? Number.parseInt(value, 10) : undefined;
+    const bounded = parsed !== undefined ? Math.max(20, parsed) : undefined;
     const condenserMaxSizeIsDirty =
-      (parsed ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE) !==
+      (bounded ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE) !==
       (settings?.CONDENSER_MAX_SIZE ?? DEFAULT_SETTINGS.CONDENSER_MAX_SIZE);
     setDirtyInputs((prev) => ({
       ...prev,
@@ -593,7 +598,7 @@ function LlmSettingsScreen() {
                   testId="condenser-max-size-input"
                   name="condenser-max-size-input"
                   type="number"
-                  min={10}
+                  min={20}
                   step={1}
                   label={t(I18nKey.SETTINGS$CONDENSER_MAX_SIZE)}
                   defaultValue={(

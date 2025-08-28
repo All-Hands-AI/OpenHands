@@ -1568,20 +1568,20 @@
     "uk": "Максимальний розмір історії конденсатора пам'яті"
   },
   "SETTINGS$CONDENSER_MAX_SIZE_TOOLTIP": {
-    "en": "After this many events, the condenser will summarize history. Minimum 10.",
-    "ja": "このイベント数を超えると、凝縮器が履歴を要約します。最小 10。",
-    "zh-CN": "达到此事件数量后，凝缩器将汇总历史。最小 10。",
-    "zh-TW": "超過此事件數後，凝縮器會摘要歷史。最小 10。",
-    "ko-KR": "이 이벤트 수 이후 응축기가 기록을 요약합니다. 최소 10.",
-    "no": "Etter så mange hendelser vil kondenseren oppsummere historikken. Minimum 10.",
-    "it": "Dopo questo numero di eventi, il condensatore riassumerà la cronologia. Minimo 10.",
-    "pt": "Após esse número de eventos, o condensador irá resumir o histórico. Mínimo 10.",
-    "es": "Después de este número de eventos, el condensador resumirá el historial. Mínimo 10.",
-    "ar": "بعد هذا العدد من الأحداث، سيقوم المكثف بتلخيص السجل. الحد الأدنى 10.",
-    "fr": "Après ce nombre d'événements, le condenseur résumera l'historique. Minimum 10.",
-    "tr": "Bu kadar olaydan sonra yoğunlaştırıcı geçmişi özetler. En az 10.",
-    "de": "Nach so vielen Ereignissen fasst der Kondensator die Historie zusammen. Minimum 10.",
-    "uk": "Після цієї кількості подій конденсатор узагальнить історію. Мінімум 10."
+    "en": "After this many events, the condenser will summarize history. Minimum 20.",
+    "ja": "このイベント数を超えると、凝縮器が履歴を要約します。最小 20。",
+    "zh-CN": "达到此事件数量后，凝缩器将汇总历史。最小 20。",
+    "zh-TW": "超過此事件數後，凝縮器會摘要歷史。最小 20。",
+    "ko-KR": "이 이벤트 수 이후 응축기가 기록을 요약합니다. 최소 20.",
+    "no": "Etter så mange hendelser vil kondenseren oppsummere historikken. Minimum 20.",
+    "it": "Dopo questo numero di eventi, il condensatore riassumerà la cronologia. Minimo 20.",
+    "pt": "Após esse número de eventos, o condensador irá resumir o histórico. Mínimo 20.",
+    "es": "Después de este número de eventos, el condensador resumirá el historial. Mínimo 20.",
+    "ar": "بعد هذا العدد من الأحداث، سيقوم المكثف بتلخيص السجل. الحد الأدنى 20.",
+    "fr": "Après ce nombre d'événements, le condenseur résumera l'historique. Minimum 20.",
+    "tr": "Bu kadar olaydan sonra yoğunlaştırıcı geçmişi özetler. En az 20.",
+    "de": "Nach so vielen Ereignissen fasst der Kondensator die Historie zusammen. Minimum 20.",
+    "uk": "Після цієї кількості подій конденсатор узагальнить історію. Мінімум 20."
   },
   "SETTINGS$LANGUAGE": {
     "en": "Language",
@@ -13166,5 +13166,37 @@
     "tr": "Yüksek Risk",
     "de": "Hohes Risiko",
     "uk": "Високий ризик"
+  },
+  "MICROAGENT$DEFINITION": {
+    "en": "Microagents are specialized prompts that enhance OpenHands with domain-specific knowledge. They provide expert guidance, automate common tasks, and ensure consistent practices across projects.",
+    "ja": "マイクロエージェントは、OpenHandsにドメイン固有の知識を追加するための専門的なプロンプトです。専門的なガイダンスを提供し、一般的なタスクを自動化し、プロジェクト全体で一貫した実践を保証します。",
+    "zh-CN": "微代理是增强 OpenHands 领域知识的专用提示。它们提供专家指导，自动化常见任务，并确保项目中的一致实践。",
+    "zh-TW": "微代理是增強 OpenHands 領域知識的專用提示。它們提供專家指導，自動化常見任務，並確保專案中的一致實踐。",
+    "ko-KR": "마이크로에이전트는 OpenHands에 도메인별 지식을 추가하는 특화된 프롬프트입니다. 전문가의 안내를 제공하고, 일반적인 작업을 자동화하며, 프로젝트 전반에 걸쳐 일관된 관행을 보장합니다.",
+    "no": "Mikroagenter er spesialiserte prompt som forbedrer OpenHands med domenespesifikk kunnskap. De gir ekspertråd, automatiserer vanlige oppgaver og sikrer konsistente praksiser på tvers av prosjekter.",
+    "it": "I microagenti sono prompt specializzati che arricchiscono OpenHands con conoscenze specifiche di dominio. Forniscono guida esperta, automatizzano attività comuni e garantiscono pratiche coerenti tra i progetti.",
+    "pt": "Microagentes são prompts especializados que aprimoram o OpenHands com conhecimento específico de domínio. Eles fornecem orientação especializada, automatizam tarefas comuns e garantem práticas consistentes em todos os projetos.",
+    "es": "Los microagentes son prompts especializados que mejoran OpenHands con conocimientos específicos de dominio. Proporcionan orientación experta, automatizan tareas comunes y aseguran prácticas consistentes en los proyectos.",
+    "ar": "الميكرووكلاء هم مطالبات متخصصة تعزز OpenHands بمعرفة متخصصة في المجال. يقدمون إرشادات خبراء، ويؤتمتون المهام الشائعة، ويضمنون ممارسات متسقة عبر المشاريع.",
+    "fr": "Les microagents sont des invites spécialisées qui enrichissent OpenHands avec des connaissances spécifiques au domaine. Ils fournissent des conseils d'experts, automatisent les tâches courantes et garantissent des pratiques cohérentes dans les projets.",
+    "tr": "Mikro ajanlar, OpenHands'i alanına özgü bilgilerle geliştiren özel istemlerdir. Uzman rehberliği sağlar, yaygın görevleri otomatikleştirir ve projeler arasında tutarlı uygulamalar sunar.",
+    "de": "Microagents sind spezialisierte Prompts, die OpenHands mit domänenspezifischem Wissen erweitern. Sie bieten fachkundige Anleitung, automatisieren gängige Aufgaben und sorgen für konsistente Praktiken in Projekten.",
+    "uk": "Мікроагенти — це спеціалізовані підказки, які розширюють OpenHands галузевими знаннями. Вони надають експертні поради, автоматизують типові завдання та забезпечують послідовні практики у проєктах."
+  },
+  "MICROAGENT$ADD_TO_MEMORY": {
+    "en": "Add to Microagent Memory",
+    "ja": "マイクロエージェントメモリに追加",
+    "zh-CN": "添加到微代理记忆",
+    "zh-TW": "加入微代理記憶體",
+    "ko-KR": "마이크로에이전트 메모리에 추가",
+    "no": "Legg til i mikroagentminne",
+    "it": "Aggiungi alla memoria del microagente",
+    "pt": "Adicionar à Memória do Microagente",
+    "es": "Agregar a la memoria del microagente",
+    "ar": "أضف إلى ذاكرة الميكرووكيل",
+    "fr": "Ajouter à la mémoire du microagent",
+    "tr": "Mikroajan Hafızasına Ekle",
+    "de": "Zur Microagent-Speicher hinzufügen",
+    "uk": "Додати до пам'яті мікроагента"
   }
 }
