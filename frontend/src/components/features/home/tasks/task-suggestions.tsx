@@ -55,7 +55,11 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       </div>
 
       <div className="flex flex-col">
-        {isLoading && <TaskSuggestionsSkeleton />}
+        {isLoading && (
+          <div className="pl-4">
+            <TaskSuggestionsSkeleton />
+          </div>
+        )}
         {!hasSuggestedTasks && !isLoading && (
           <span className="text-xs leading-4 text-white font-medium pl-4">
             {t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}

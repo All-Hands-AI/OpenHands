@@ -1,12 +1,14 @@
 import { useCallback, useEffect, RefObject } from "react";
+import { IMessageToSend } from "#/state/conversation-slice";
 
 interface UseAutoResizeOptions {
   minHeight?: number;
   maxHeight?: number;
-  value?: string;
   enableManualResize?: boolean;
   onGripDragStart?: () => void;
   onGripDragEnd?: () => void;
+  onHeightChange?: (height: number) => void; // New callback for height changes
+  value?: IMessageToSend;
 }
 
 interface UseAutoResizeReturn {
@@ -26,7 +28,28 @@ export const useAutoResize = (
     enableManualResize = false,
     onGripDragStart,
     onGripDragEnd,
+    onHeightChange,
   } = options;
+
+  // Helper function to calculate final height and apply styles
+  const calculateAndApplyHeight = useCallback(
+    (element: HTMLElement, scrollHeight: number) => {
+      let finalHeight: number;
+
+      if (scrollHeight <= maxHeight) {
+        finalHeight = Math.max(scrollHeight, minHeight);
+        element.style.setProperty("height", `${finalHeight}px`);
+        element.style.setProperty("overflow-y", "hidden");
+      } else {
+        finalHeight = maxHeight;
+        element.style.setProperty("height", `${maxHeight}px`);
+        element.style.setProperty("overflow-y", "auto");
+      }
+
+      return finalHeight;
+    },
+    [minHeight, maxHeight],
+  );
 
   // Auto-resize functionality for contenteditable div
   const autoResize = useCallback(() => {
@@ -34,20 +57,18 @@ export const useAutoResize = (
     if (!element) return;
 
     // Reset height to auto to get the actual content height
-    element.style.height = "auto";
-    element.style.overflowY = "hidden";
+    element.style.setProperty("height", "auto");
+    element.style.setProperty("overflow-y", "hidden");
 
     // Set the height based on scroll height, with min and max constraints
     const { scrollHeight } = element;
+    const finalHeight = calculateAndApplyHeight(element, scrollHeight);
 
-    if (scrollHeight <= maxHeight) {
-      element.style.height = `${Math.max(scrollHeight, minHeight)}px`;
-      element.style.overflowY = "hidden";
-    } else {
-      element.style.height = `${maxHeight}px`;
-      element.style.overflowY = "auto";
+    // Call the height change callback if provided
+    if (onHeightChange) {
+      onHeightChange(finalHeight);
     }
-  }, [elementRef, minHeight, maxHeight]);
+  }, [elementRef, calculateAndApplyHeight, onHeightChange]);
 
   // Smart resize that respects manual height
   const smartResize = useCallback(() => {
@@ -67,28 +88,39 @@ export const useAutoResize = (
     // Restore height and determine what to do
     element.style.height = `${currentStyleHeight}px`;
 
+    let finalHeight = currentHeight;
+
     // If content fits in current height, just manage overflow
     if (contentHeight <= currentHeight) {
       element.style.overflowY = "hidden";
+      finalHeight = currentHeight;
     }
     // If content exceeds current height but is within normal auto-resize range
     else if (contentHeight <= maxHeight) {
       // Only grow if the current height is close to the content height (not manually resized much larger)
       const isManuallyOversized = currentHeight > contentHeight + 50; // 50px threshold
       if (!isManuallyOversized) {
-        element.style.height = `${Math.max(contentHeight, minHeight)}px`;
+        finalHeight = Math.max(contentHeight, minHeight);
+        element.style.height = `${finalHeight}px`;
         element.style.overflowY = "hidden";
       } else {
         // Keep manual height but show scrollbar
         element.style.overflowY = "auto";
+        finalHeight = currentHeight;
       }
     }
     // Content exceeds max height
     else {
+      finalHeight = maxHeight;
       element.style.height = `${maxHeight}px`;
       element.style.overflowY = "auto";
     }
-  }, [elementRef, minHeight, maxHeight]);
+
+    // Call the height change callback if provided
+    if (onHeightChange) {
+      onHeightChange(finalHeight);
+    }
+  }, [elementRef, minHeight, maxHeight, onHeightChange]);
 
   // Handle mouse down on grip for manual resizing
   const handleGripMouseDown = useCallback(
@@ -115,6 +147,11 @@ export const useAutoResize = (
         if (element) {
           element.style.height = `${newHeight}px`;
           element.style.overflowY = newHeight >= maxHeight ? "auto" : "hidden";
+
+          // Call the height change callback if provided
+          if (onHeightChange) {
+            onHeightChange(newHeight);
+          }
         }
       };
 
@@ -136,6 +173,7 @@ export const useAutoResize = (
       enableManualResize,
       onGripDragStart,
       onGripDragEnd,
+      onHeightChange,
     ],
   );
 
@@ -143,7 +181,7 @@ export const useAutoResize = (
   useEffect(() => {
     const element = elementRef.current;
     if (element && value !== undefined) {
-      element.textContent = value;
+      element.textContent = value.text;
       autoResize();
     }
   }, [value, autoResize]);

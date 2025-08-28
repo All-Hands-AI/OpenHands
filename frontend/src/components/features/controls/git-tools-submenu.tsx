@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useDispatch } from "react-redux";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
 import { ToolsContextMenuIconText } from "./tools-context-menu-icon-text";
 import { useActiveConversation } from "#/hooks/query/use-active-conversation";
@@ -21,7 +21,7 @@ import { I18nKey } from "#/i18n/declaration";
 import { CONTEXT_MENU_ICON_TEXT_CLASSNAME } from "#/utils/constants";
 
 const contextMenuListItemClassName =
-  "cursor-pointer p-0 h-auto hover:bg-transparent px-[6px] !w-auto whitespace-nowrap";
+  "cursor-pointer p-0 h-auto hover:bg-transparent !w-auto whitespace-nowrap";
 interface GitToolsSubmenuProps {
   onClose: () => void;
 }

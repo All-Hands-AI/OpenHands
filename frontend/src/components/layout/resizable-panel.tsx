@@ -1,12 +1,5 @@
 import React, { CSSProperties, JSX, useEffect, useRef, useState } from "react";
-import {
-  VscChevronDown,
-  VscChevronLeft,
-  VscChevronRight,
-  VscChevronUp,
-} from "react-icons/vsc";
 import { twMerge } from "tailwind-merge";
-import { IconButton } from "../shared/buttons/icon-button";
 
 export enum Orientation {
   HORIZONTAL = "horizontal",
@@ -42,7 +35,7 @@ export function ResizablePanel({
   const [dividerPosition, setDividerPosition] = useState<number | null>(null);
   const firstRef = useRef<HTMLDivElement>(null);
   const secondRef = useRef<HTMLDivElement>(null);
-  const [collapse, setCollapse] = useState<Collapse>(Collapse.SPLIT);
+  const [collapse] = useState<Collapse>(Collapse.SPLIT);
   const isHorizontal = orientation === Orientation.HORIZONTAL;
 
   useEffect(() => {
@@ -139,22 +132,6 @@ export function ResizablePanel({
     return style;
   };
 
-  const onCollapse = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.COLLAPSED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
-
-  const onExpand = () => {
-    if (collapse === Collapse.SPLIT) {
-      setCollapse(Collapse.FILLED);
-    } else {
-      setCollapse(Collapse.SPLIT);
-    }
-  };
-
   return (
     <div className={twMerge("flex", !isHorizontal && "flex-col", className)}>
       <div
@@ -167,18 +144,7 @@ export function ResizablePanel({
       <div
         className={`${isHorizontal ? "cursor-ew-resize w-3 flex-col" : "cursor-ns-resize h-3 flex-row"} shrink-0 flex justify-center items-center`}
         onMouseDown={collapse === Collapse.SPLIT ? onMouseDown : undefined}
-      >
-        <IconButton
-          icon={isHorizontal ? <VscChevronLeft /> : <VscChevronUp />}
-          ariaLabel="Collapse"
-          onClick={onCollapse}
-        />
-        <IconButton
-          icon={isHorizontal ? <VscChevronRight /> : <VscChevronDown />}
-          ariaLabel="Expand"
-          onClick={onExpand}
-        />
-      </div>
+      />
       <div
         ref={secondRef}
         className={twMerge(secondClassName, "transition-all ease-soft-spring")}

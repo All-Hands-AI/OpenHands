@@ -5,6 +5,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -626,6 +627,22 @@ class GitLabService(BaseGitService, GitService):
 
         return response['web_url']
 
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific merge request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The merge request number (iid)
+
+        Returns:
+            Raw GitLab API response for the merge request
+        """
+        project_id = self._extract_project_id(repository)
+        url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{pr_number}'
+        mr_data, _ = await self._make_request(url)
+
+        return mr_data
+
     def _extract_project_id(self, repository: str) -> str:
         """Extract project_id from repository name for GitLab API calls.
 
@@ -727,7 +744,7 @@ class GitLabService(BaseGitService, GitService):
                     continue
 
                 comment = Comment(
-                    id=comment_data['id'],
+                    id=str(comment_data['id']),
                     body=comment_data['body'],
                     author=comment_data.get('author', {}).get('username', 'unknown'),
                     created_at=datetime.fromisoformat(
@@ -748,6 +765,42 @@ class GitLabService(BaseGitService, GitService):
             page += 1
 
         return all_comments
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a GitLab merge request is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The merge request number (iid)
+
+        Returns:
+            True if MR is active (opened), False if closed/merged
+        """
+        try:
+            mr_details = await self.get_pr_details(repository, pr_number)
+
+            # GitLab API response structure
+            # https://docs.gitlab.com/ee/api/merge_requests.html#get-single-mr
+            if 'state' in mr_details:
+                return mr_details['state'] == 'opened'
+            elif 'merged_at' in mr_details and 'closed_at' in mr_details:
+                # Check if MR is merged or closed
+                return not (mr_details['merged_at'] or mr_details['closed_at'])
+
+            # If we can't determine the state, assume it's active (safer default)
+            logger.warning(
+                f'Could not determine GitLab MR status for {repository}#{pr_number}. '
+                f'Response keys: {list(mr_details.keys())}. Assuming MR is active.'
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine GitLab MR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the MR status, include the conversation to be safe
+            return True
 
 
 gitlab_service_cls = os.environ.get(

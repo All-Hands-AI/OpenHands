@@ -1,13 +1,20 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export interface IMessageToSend {
+  text: string;
+  timestamp: number;
+}
+
 interface ConversationState {
   isRightPanelShown: boolean;
   images: File[];
   files: File[];
   loadingFiles: string[]; // File names currently being processed
   loadingImages: string[]; // Image names currently being processed
-  messageToSend: string | null;
+  messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
+  submittedMessage: string | null;
+  shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
 }
 
 export const conversationSlice = createSlice({
@@ -22,6 +29,8 @@ export const conversationSlice = createSlice({
     loadingImages: [],
     messageToSend: null,
     shouldShownAgentLoading: false,
+    submittedMessage: null,
+    shouldHideSuggestions: false, // Initialize to false
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
@@ -29,6 +38,9 @@ export const conversationSlice = createSlice({
     },
     setShouldShownAgentLoading: (state, action) => {
       state.shouldShownAgentLoading = action.payload;
+    },
+    setShouldHideSuggestions: (state, action) => {
+      state.shouldHideSuggestions = action.payload;
     },
     addImages: (state, action) => {
       state.images = [...state.images, ...action.payload];
@@ -80,7 +92,13 @@ export const conversationSlice = createSlice({
       state.loadingImages = [];
     },
     setMessageToSend: (state, action) => {
-      state.messageToSend = action.payload;
+      state.messageToSend = {
+        text: action.payload,
+        timestamp: Date.now(),
+      };
+    },
+    setSubmittedMessage: (state, action) => {
+      state.submittedMessage = action.payload;
     },
   },
 });
@@ -88,6 +106,7 @@ export const conversationSlice = createSlice({
 export const {
   setIsRightPanelShown,
   setShouldShownAgentLoading,
+  setShouldHideSuggestions,
   addImages,
   addFiles,
   removeImage,
@@ -101,6 +120,7 @@ export const {
   removeImageLoading,
   clearAllLoading,
   setMessageToSend,
+  setSubmittedMessage,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

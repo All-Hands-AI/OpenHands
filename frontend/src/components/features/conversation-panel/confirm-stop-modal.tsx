@@ -23,9 +23,9 @@ export function ConfirmStopModal({
     <ModalBackdrop>
       <ModalBody className="items-start border border-tertiary">
         <div className="flex flex-col gap-2">
-          <BaseModalTitle title={t(I18nKey.CONVERSATION$CONFIRM_STOP)} />
+          <BaseModalTitle title={t(I18nKey.CONVERSATION$CONFIRM_PAUSE)} />
           <BaseModalDescription
-            description={t(I18nKey.CONVERSATION$STOP_WARNING)}
+            description={t(I18nKey.CONVERSATION$PAUSE_WARNING)}
           />
         </div>
         <div
