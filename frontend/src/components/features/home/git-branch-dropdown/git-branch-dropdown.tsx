@@ -123,12 +123,6 @@ export function GitBranchDropdown({
       handleBranchSelect(newSelectedItem || null);
     },
     onInputValueChange: handleInputValueChange,
-    onIsOpenChange: ({ isOpen: newIsOpen }) => {
-      // When dropdown opens, clear input to show all branches (like repository dropdown)
-      if (newIsOpen) {
-        setInputValue("");
-      }
-    },
     inputValue,
   });
 
