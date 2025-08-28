@@ -69,7 +69,10 @@ class LLMSummarizingCondenser(RollingCondenser):
                 forgotten_events.append(event)
 
         # Construct prompt for summarization
-        prompt = """You are maintaining a context-aware state summary for an interactive agent. You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists. If task_tracker was being used before condensation, include a TASK_TRACKING section to maintain continuity. Preserve exact task IDs and statuses.
+        prompt = """You are maintaining a context-aware state summary for an interactive agent.
+You will be given a list of events corresponding to actions taken by the agent, and the most recent previous summary if one exists.
+If the events being summarized contain ANY task-tracking, you MUST include a TASK_TRACKING section to maintain continuity.
+When referencing tasks make sure to preserve exact task IDs and statuses.
 
 Track:
 
