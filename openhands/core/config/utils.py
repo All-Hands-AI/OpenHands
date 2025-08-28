@@ -77,6 +77,17 @@ def load_from_env(
                 set_attr_from_env(field_value, prefix=field_name + '_')
 
             elif env_var_name in env_or_toml_dict:
+                # Special case: avoid overriding workspace_mount_path_in_sandbox from env
+                # when SANDBOX_VOLUMES is set without an explicit /workspace mount.
+                if (
+                    isinstance(sub_config, OpenHandsConfig)
+                    and field_name == 'workspace_mount_path_in_sandbox'
+                ):
+                    vols = env_or_toml_dict.get('SANDBOX_VOLUMES')
+                    if vols and '/workspace' not in str(vols):
+                        # Skip overriding; keep the default '/workspace'
+                        continue
+
                 # convert the env var to the correct type and set it
                 value = env_or_toml_dict[env_var_name]
 
