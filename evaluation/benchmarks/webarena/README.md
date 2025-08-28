@@ -21,6 +21,8 @@ Follow the WebArena environment setup guide carefully, and make sure the URL fie
 
 ## Run Evaluation
 
+### Step 1: Run Inference
+
 ```bash
 export WEBARENA_BASE_URL=<YOUR_SERVER_URL_HERE>
 export OPENAI_API_KEY="yourkey" # this key is required for some WebArena validators that utilize LLMs
@@ -29,11 +31,15 @@ bash evaluation/benchmarks/webarena/scripts/run_infer.sh
 
 Results will be in `evaluation/evaluation_outputs/outputs/webarena/`
 
-To calculate the success rate, run:
+### Step 2: Evaluate Results
 
-```sh
-poetry run python evaluation/benchmarks/webarena/get_success_rate.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
+To evaluate the results and calculate success rate, run:
+
+```bash
+python evaluation/benchmarks/webarena/eval_infer.py evaluation/evaluation_outputs/outputs/webarena/SOME_AGENT/EXP_NAME/output.jsonl
 ```
+
+This will generate a detailed evaluation report with individual task results and overall success metrics.
 
 ## Submit your evaluation results
 
