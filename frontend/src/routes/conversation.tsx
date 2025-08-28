@@ -6,6 +6,7 @@ import { useConversationId } from "#/hooks/use-conversation-id";
 import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
+import { resetConversationState } from "#/state/conversation-slice";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -24,7 +25,7 @@ import { ChatActions } from "#/components/features/chat/chat-actions";
 import { ConversationMain } from "#/components/features/conversation/conversation-main";
 import { ConversationName } from "#/components/features/conversation/conversation-name";
 import { Controls } from "#/components/features/controls/controls";
-import { ConversationTabProvider } from "#/components/features/conversation/conversation-tabs/use-conversation-tabs";
+
 import { ConversationTabs } from "#/components/features/conversation/conversation-tabs/conversation-tabs";
 
 function AppContent() {
@@ -60,36 +61,36 @@ function AppContent() {
   React.useEffect(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(resetConversationState());
   }, [conversationId]);
 
   useEffectOnce(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
+    dispatch(resetConversationState());
   });
 
   return (
-    <ConversationTabProvider>
-      <WsClientProvider conversationId={conversationId}>
-        <ConversationSubscriptionsProvider>
-          <EventHandler>
-            <div data-testid="app-route" className="flex flex-col h-full gap-3">
-              <div className="flex items-center justify-between gap-4.5">
-                <ConversationName />
-                <ConversationTabs />
-                <div className="h-full w-0.25 bg-[#525252]" />
-                <ChatActions />
-              </div>
-
-              <div className="flex h-full overflow-auto">
-                <ConversationMain />
-              </div>
-
-              <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
+    <WsClientProvider conversationId={conversationId}>
+      <ConversationSubscriptionsProvider>
+        <EventHandler>
+          <div data-testid="app-route" className="flex flex-col h-full gap-3">
+            <div className="flex items-center justify-between gap-4.5">
+              <ConversationName />
+              <ConversationTabs />
+              <div className="h-full w-0.25 bg-[#525252]" />
+              <ChatActions />
             </div>
-          </EventHandler>
-        </ConversationSubscriptionsProvider>
-      </WsClientProvider>
-    </ConversationTabProvider>
+
+            <div className="flex h-full overflow-auto">
+              <ConversationMain />
+            </div>
+
+            <Controls showSecurityLock={!!settings?.CONFIRMATION_MODE} />
+          </div>
+        </EventHandler>
+      </ConversationSubscriptionsProvider>
+    </WsClientProvider>
   );
 }
 
