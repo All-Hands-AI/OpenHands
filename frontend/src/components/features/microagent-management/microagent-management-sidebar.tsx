@@ -5,6 +5,7 @@ import { Spinner } from "@heroui/react";
 import { MicroagentManagementSidebarHeader } from "./microagent-management-sidebar-header";
 import { MicroagentManagementSidebarTabs } from "./microagent-management-sidebar-tabs";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
+import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
 import { GitProviderDropdown } from "#/components/features/home/git-provider-dropdown";
 import {
   setPersonalRepositories,
@@ -16,6 +17,7 @@ import { Provider } from "#/types/settings";
 import { cn } from "#/utils/utils";
 import { sanitizeQuery } from "#/utils/sanitize-query";
 import { I18nKey } from "#/i18n/declaration";
+import { useDebounce } from "#/hooks/use-debounce";
 
 interface MicroagentManagementSidebarProps {
   isSmallerScreen?: boolean;
@@ -31,16 +33,28 @@ export function MicroagentManagementSidebar({
   );
 
   const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   const dispatch = useDispatch();
 
   const { t } = useTranslation();
 
-  const { data: repositories, isLoading } = useGitRepositories({
+  // Use Git repositories hook with pagination for infinite scrolling
+  const {
+    data: repositories,
+    fetchNextPage,
+    hasNextPage,
+    isLoading,
+    isFetchingNextPage,
+  } = useGitRepositories({
     provider: selectedProvider,
-    pageSize: 200,
+    pageSize: 30, // Load 30 repositories per page
     enabled: !!selectedProvider,
   });
+
+  // Server-side search functionality
+  const { data: searchResults, isLoading: isSearchLoading } =
+    useSearchRepositories(debouncedSearchQuery, selectedProvider);
 
   // Auto-select provider if there's only one
   useEffect(() => {
@@ -54,23 +68,31 @@ export function MicroagentManagementSidebar({
     setSearchQuery("");
   };
 
-  // Filter repositories based on search query
+  // Filter repositories based on search query and available data
   const filteredRepositories = useMemo(() => {
-    if (!repositories?.pages) return null;
+    // If we have search results, use them directly (no filtering needed)
+    if (debouncedSearchQuery && searchResults && searchResults.length > 0) {
+      return searchResults;
+    }
+
+    // If no search query or no search results, use paginated repositories
+    if (!repositories?.pages) return [];
 
     // Flatten all pages to get all repositories
     const allRepositories = repositories.pages.flatMap((page) => page.data);
 
-    if (!searchQuery.trim()) {
+    // If no search query, return all repositories
+    if (!debouncedSearchQuery.trim()) {
       return allRepositories;
     }
 
-    const sanitizedQuery = sanitizeQuery(searchQuery);
+    // Fallback to client-side filtering if search didn't return results
+    const sanitizedQuery = sanitizeQuery(debouncedSearchQuery);
     return allRepositories.filter((repository: GitRepository) => {
       const sanitizedRepoName = sanitizeQuery(repository.full_name);
       return sanitizedRepoName.includes(sanitizedQuery);
     });
-  }, [repositories, searchQuery, selectedProvider]);
+  }, [repositories, debouncedSearchQuery, searchResults]);
 
   useEffect(() => {
     if (!filteredRepositories?.length) {
@@ -104,12 +126,28 @@ export function MicroagentManagementSidebar({
     dispatch(setRepositories(otherRepos));
   }, [filteredRepositories, selectedProvider, dispatch]);
 
+  // Handle scroll to bottom for pagination
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    // Only enable pagination when not searching
+    if (debouncedSearchQuery && searchResults) {
+      return;
+    }
+
+    const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
+    const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
+
+    if (isNearBottom && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  };
+
   return (
     <div
       className={cn(
         "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
         isSmallerScreen && "w-full border-none",
       )}
+      onScroll={handleScroll}
     >
       <MicroagentManagementSidebarHeader />
 
@@ -145,15 +183,29 @@ export function MicroagentManagementSidebar({
         />
       </div>
 
-      {isLoading ? (
+      {isLoading || isSearchLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">
           <Spinner size="sm" />
           <span className="text-sm text-white">
-            {t("HOME$LOADING_REPOSITORIES")}
+            {isSearchLoading
+              ? t("HOME$SEARCHING_REPOSITORIES")
+              : t("HOME$LOADING_REPOSITORIES")}
           </span>
         </div>
       ) : (
-        <MicroagentManagementSidebarTabs />
+        <>
+          <MicroagentManagementSidebarTabs />
+
+          {/* Show loading indicator for pagination (only when not searching) */}
+          {isFetchingNextPage && !debouncedSearchQuery && (
+            <div className="flex justify-center py-4">
+              <Spinner size="sm" />
+              <span className="text-sm text-white ml-2">
+                {t("HOME$LOADING_MORE_REPOSITORIES")}
+              </span>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
