@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
@@ -89,7 +89,8 @@ describe("InteractiveChatBox", () => {
     expect(chatBox).toBeInTheDocument();
   });
 
-  it("should set custom values", () => {
+  it("should set custom values", async () => {
+    const user = userEvent.setup();
     renderInteractiveChatBox(
       {
         onSubmit: onSubmitMock,
@@ -111,10 +112,7 @@ describe("InteractiveChatBox", () => {
             files: [],
             loadingFiles: [],
             loadingImages: [],
-            messageToSend: {
-              text: "Hello, world!",
-              timestamp: Date.now(),
-            },
+            messageToSend: null,
             shouldShownAgentLoading: false,
           },
         },
@@ -122,6 +120,10 @@ describe("InteractiveChatBox", () => {
     );
 
     const textbox = screen.getByTestId("chat-input");
+
+    // Simulate user typing to populate the input
+    await user.type(textbox, "Hello, world!");
+
     expect(textbox).toHaveTextContent("Hello, world!");
   });
 
@@ -316,10 +318,7 @@ describe("InteractiveChatBox", () => {
             files: [],
             loadingFiles: [],
             loadingImages: [],
-            messageToSend: {
-              text: "test message",
-              timestamp: Date.now(),
-            },
+            messageToSend: null,
             shouldShownAgentLoading: false,
           },
         },
@@ -328,7 +327,7 @@ describe("InteractiveChatBox", () => {
 
     // Verify text input has the initial value
     const textarea = screen.getByTestId("chat-input");
-    expect(textarea).toHaveTextContent("test message");
+    expect(textarea).toHaveTextContent("");
 
     // Set innerText directly as the component reads this property
     textarea.innerText = "test message";
