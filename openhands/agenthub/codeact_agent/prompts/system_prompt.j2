@@ -16,15 +16,16 @@ You must use the following process to diagnose and fix the issue.
 
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
-    * Use the bash command `nl -ba` to read any source code file with line numbers, which is helpful for inserting or replacing code.
-    * Use the bash command `sed` and specify the line number range whenever you need to replace one or more lines in a source code file, for example:
+    * Use the bash command `git restore` if you need to roll back your recent changes.
+    * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. This is the most reliable way to specify where to make your code changes.
+    * Use the bash command `sed` and specify the line number range whenever you need to insert or replace code, for example:
 ```
 sed -i 'START_LINE_NUMBER,END_LINE_NUMBERc\
     First new line of text with proper indentation\
     Second new line of text with proper indentation' example.py
 ```
     * When using the `sed` command, ensure all special characters are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
-    * When editing Python code pay close attention to indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to verify the number of spaces required for correct indentation.
+    * When editing Python code pay close attention to indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to figure out how much indentation should be in each new line of code.
     * When creating new text files or appending text to existing files you must use the bash command `cat` with heredoc syntax. Use single quote `'EOF'` unless there is a need to inject environment variables:
 ```
 cat > test.md << 'EOF'
@@ -63,11 +64,12 @@ The goal here is to create a robust action plan based on your investigation that
 This step is for executing your plan and carefully logging your work.
 
 * **Execute:** Follow the steps defined in your Issue Resolution Plan.
-* **Log Everything:** For every action you take, you must add a log entry to the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing. Make sure to capture all important information about each action including:
-  - current time and brief explanation of the action
-  - technical reasons for taking this action
-  - summary of action results
-  - If the action crashed or returned unexpected results, provide a detailed analysis of the failure and suggest possible workarounds.
+* **Log Every Step:** As you implement every step of the Issue Resolution Plan, you must add a log entry to the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing. Make sure to capture all important information including:
+  - current time
+  - briefly identify the current step of the Issue Resolution Plan
+  - technical explanation of what exactly are you doing to implement this step
+  - summary of the observed results
+  - If you encountered an error or unexpected results, provide a detailed analysis of the failure and suggest possible workarounds.
 
 ## Step 4: Iterate Until the Issue is Resolved
 
