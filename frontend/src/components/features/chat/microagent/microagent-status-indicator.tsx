@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Spinner } from "@heroui/react";
+import { Spinner } from "#/components/shared/spinner";
 import { MicroagentStatus } from "#/types/microagent-status";
 import { SuccessIndicator } from "../success-indicator";
 
@@ -40,7 +40,7 @@ export function MicroagentStatusIndicator({
       case MicroagentStatus.WAITING:
         return <Spinner size="sm" />;
       case MicroagentStatus.CREATING:
-        return <Spinner size="sm" />;
+        return <Spinner size="small" />;
       case MicroagentStatus.COMPLETED:
         return <SuccessIndicator status="success" />;
       case MicroagentStatus.ERROR:
