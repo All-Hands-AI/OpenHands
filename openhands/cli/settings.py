@@ -232,7 +232,16 @@ def _get_initial_model_index(
 
 async def modify_llm_settings_basic(
     config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
+) -> bool:
+    """Modify LLM settings for basic usage.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     model_list = get_supported_llm_models(config)
     organized_models = organize_models_and_providers(model_list)
 
@@ -448,7 +457,7 @@ async def modify_llm_settings_basic(
         KeyboardInterrupt,
         EOFError,
     ):
-        return  # Return on exception
+        return False  # Return on exception
 
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
@@ -456,7 +465,7 @@ async def modify_llm_settings_basic(
     save_settings = save_settings_confirmation(config)
 
     if not save_settings:
-        return
+        return False
 
     llm_config = config.get_llm_config()
     llm_config.model = f'{provider}{organized_models[provider]["separator"]}{model}'
@@ -486,10 +495,21 @@ async def modify_llm_settings_basic(
 
     await settings_store.store(settings)
 
+    return True
+
 
 async def modify_llm_settings_advanced(
     config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
+) -> bool:
+    """Modify LLM settings for advanced usage.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
     llm_config = config.get_llm_config()
 
@@ -563,7 +583,7 @@ async def modify_llm_settings_advanced(
         KeyboardInterrupt,
         EOFError,
     ):
-        return  # Return on exception
+        return False  # Return on exception
 
     # The try-except block above ensures we either have valid inputs or we've already returned
     # No need to check for None values here
@@ -571,7 +591,7 @@ async def modify_llm_settings_advanced(
     save_settings = save_settings_confirmation(config)
 
     if not save_settings:
-        return
+        return False
 
     llm_config = config.get_llm_config()
     llm_config.model = custom_model
@@ -616,11 +636,21 @@ async def modify_llm_settings_advanced(
 
     await settings_store.store(settings)
 
+    return True
+
 
 async def modify_search_api_settings(
     config: OpenHandsConfig, settings_store: FileSettingsStore
-) -> None:
-    """Modify search API settings."""
+) -> bool:
+    """Modify search API settings.
+
+    Args:
+        config: Configuration to modify.
+        settings_store: Target storage for the settings.
+
+    Returns:
+        True if settings were saved, False otherwise.
+    """
     session = PromptSession(key_bindings=kb_cancel(), style=get_cli_style())
 
     search_api_key = None
@@ -662,19 +692,19 @@ async def modify_search_api_settings(
         elif modify_key == 1:  # Remove API Key
             search_api_key = ''  # Empty string to remove the key
         else:  # Keep current setting
-            return
+            return False
 
     except (
         UserCancelledError,
         KeyboardInterrupt,
         EOFError,
     ):
-        return  # Return on exception
+        return False  # Return on exception
 
     save_settings = save_settings_confirmation(config)
 
     if not save_settings:
-        return
+        return False
 
     # Update config
     config.search_api_key = SecretStr(search_api_key) if search_api_key else None
@@ -687,3 +717,5 @@ async def modify_search_api_settings(
     settings.search_api_key = SecretStr(search_api_key) if search_api_key else None
 
     await settings_store.store(settings)
+
+    return True
