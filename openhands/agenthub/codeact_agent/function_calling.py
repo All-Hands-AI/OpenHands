@@ -280,21 +280,13 @@ def response_to_actions(
                             'status': task.get('status', 'todo'),
                             'notes': task.get('notes', ''),
                         }
-                    elif isinstance(task, str):
-                        # Task is a string, convert to proper dictionary format
-                        normalized_task = {
-                            'id': f'task-{i + 1}',
-                            'title': task,
-                            'status': 'todo',
-                            'notes': '',
-                        }
                     else:
                         # Unexpected format, raise validation error
                         logger.warning(
                             f'Unexpected task format in task_list: {type(task)} - {task}'
                         )
                         raise FunctionCallValidationError(
-                            f'Unexpected task format in task_list: {type(task)}. Each task should be either a string or a dictionary.'
+                            f'Unexpected task format in task_list: {type(task)}. Each task shoud be a dictionary.'
                         )
                     normalized_task_list.append(normalized_task)
 
