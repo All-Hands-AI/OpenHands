@@ -12,7 +12,7 @@ Your task is to fix the issue: "{{ issue_title }}".
 # Previous Comments
 For reference, here are the previous comments on the issue:
 
-{% for comment in previous_comments %}
+{% for comment in comments %}
 - @{{ comment.author }} said:
 {{ comment.body }}
 {% if not loop.last %}\n\n{% endif %}
