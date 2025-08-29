@@ -54,7 +54,7 @@ export function MicroagentManagementSidebar({
 
   // Server-side search functionality
   const { data: searchResults, isLoading: isSearchLoading } =
-    useSearchRepositories(debouncedSearchQuery, selectedProvider);
+    useSearchRepositories(debouncedSearchQuery, selectedProvider, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
 
   // Auto-select provider if there's only one
   useEffect(() => {
@@ -169,36 +169,42 @@ export function MicroagentManagementSidebar({
         <label htmlFor="repository-search" className="sr-only">
           {t(I18nKey.COMMON$SEARCH_REPOSITORIES)}
         </label>
-        <input
-          id="repository-search"
-          name="repository-search"
-          type="text"
-          placeholder={`${t(I18nKey.COMMON$SEARCH_REPOSITORIES)}...`}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className={cn(
-            "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
-            "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed h-10 box-shadow-none outline-none",
+        <div className="relative">
+          <input
+            id="repository-search"
+            name="repository-search"
+            type="text"
+            placeholder={`${t(I18nKey.COMMON$SEARCH_REPOSITORIES)}...`}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className={cn(
+              "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed h-10 box-shadow-none outline-none",
+              "pr-10", // Space for spinner
+            )}
+          />
+          {isSearchLoading && (
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+              <Spinner size="sm" />
+            </div>
           )}
-        />
+        </div>
       </div>
 
-      {isLoading || isSearchLoading ? (
+      {isLoading ? (
         <div className="flex flex-col items-center justify-center gap-4 flex-1">
           <Spinner size="sm" />
           <span className="text-sm text-white">
-            {isSearchLoading
-              ? t("HOME$SEARCHING_REPOSITORIES")
-              : t("HOME$LOADING_REPOSITORIES")}
+            {t("HOME$LOADING_REPOSITORIES")}
           </span>
         </div>
       ) : (
         <>
-          <MicroagentManagementSidebarTabs />
+          <MicroagentManagementSidebarTabs isSearchLoading={isSearchLoading} />
 
           {/* Show loading indicator for pagination (only when not searching) */}
           {isFetchingNextPage && !debouncedSearchQuery && (
-            <div className="flex justify-center py-4">
+            <div className="flex justify-center pt-2">
               <Spinner size="sm" />
               <span className="text-sm text-white ml-2">
                 {t("HOME$LOADING_MORE_REPOSITORIES")}
