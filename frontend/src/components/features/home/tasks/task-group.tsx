@@ -20,9 +20,11 @@ export function TaskGroup({ title, tasks }: TaskGroupProps) {
         <TaskItemTitle>{title}</TaskItemTitle>
       </div>
 
-      <ul className="text-sm">
+      <ul className="w-full text-sm">
         {tasks.map((task) => (
-          <TaskCard key={task.issue_number} task={task} />
+          <li key={task.issue_number} className="w-full">
+            <TaskCard task={task} />
+          </li>
         ))}
       </ul>
     </div>
