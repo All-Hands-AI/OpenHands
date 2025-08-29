@@ -14,6 +14,10 @@ from openhands.microagent.types import MicroagentContentResponse, MicroagentResp
 from openhands.server.types import AppMode
 
 
+class TokenResponse(BaseModel):
+    token: str
+
+
 class ProviderType(Enum):
     GITHUB = 'github'
     GITLAB = 'gitlab'
@@ -126,6 +130,14 @@ class Branch(BaseModel):
     last_push_date: str | None = None  # ISO 8601 format date string
 
 
+class PaginatedBranchesResponse(BaseModel):
+    branches: list[Branch]
+    has_next_page: bool
+    current_page: int
+    per_page: int
+    total_count: int | None = None  # Some APIs don't provide total count
+
+
 class Repository(BaseModel):
     id: str
     full_name: str
@@ -141,7 +153,7 @@ class Repository(BaseModel):
 
 
 class Comment(BaseModel):
-    id: int
+    id: str
     body: str
     author: str
     created_at: datetime
@@ -442,6 +454,14 @@ class BaseGitService(ABC):
 
         return microagents
 
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
 
 class InstallationsService(Protocol):
     async def get_installations(self) -> list[str]:
@@ -507,6 +527,16 @@ class GitService(Protocol):
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
 
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search for branches within a repository"""
+
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository"""
         ...
@@ -518,5 +548,29 @@ class GitService(Protocol):
 
         Returns:
             MicroagentContentResponse with parsed content and triggers
+        """
+        ...
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request/merge request
+
+        Args:
+            repository: Repository name in format specific to the provider
+            pr_number: The pull request/merge request number
+
+        Returns:
+            Raw API response from the git provider
+        """
+        ...
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (open), False if closed/merged
         """
         ...

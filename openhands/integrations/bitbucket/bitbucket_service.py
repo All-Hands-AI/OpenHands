@@ -13,6 +13,7 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -64,6 +65,24 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     @property
     def provider(self) -> str:
         return ProviderType.BITBUCKET.value
+
+    def _extract_owner_and_repo(self, repository: str) -> tuple[str, str]:
+        """Extract owner and repo from repository string.
+
+        Args:
+            repository: Repository name in format 'workspace/repo_slug'
+
+        Returns:
+            Tuple of (owner, repo)
+
+        Raises:
+            ValueError: If repository format is invalid
+        """
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        return parts[-2], parts[-1]
 
     async def get_latest_token(self) -> SecretStr | None:
         """Get latest working token of the user."""
@@ -495,13 +514,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         self, repository: str
     ) -> Repository:
         """Gets all repository details from repository name."""
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repository.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repository}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repository)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}'
         data, _ = await self._make_request(url)
@@ -510,13 +523,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository."""
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repository.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repository}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repository)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
 
@@ -545,6 +552,83 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         return branches
 
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination."""
+        # Extract owner and repo from the repository string (e.g., "owner/repo")
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        owner = parts[-2]
+        repo = parts[-1]
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
+
+        params = {
+            'pagelen': per_page,
+            'page': page,
+            'sort': '-target.date',  # Sort by most recent commit date, descending
+        }
+
+        response, _ = await self._make_request(url, params)
+
+        branches = []
+        for branch in response.get('values', []):
+            branches.append(
+                Branch(
+                    name=branch.get('name', ''),
+                    commit_sha=branch.get('target', {}).get('hash', ''),
+                    protected=False,  # Bitbucket doesn't expose this in the API
+                    last_push_date=branch.get('target', {}).get('date', None),
+                )
+            )
+
+        # Bitbucket provides pagination info in the response
+        has_next_page = response.get('next') is not None
+        total_count = response.get('size')  # Total number of items
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=total_count,
+        )
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches by name using Bitbucket API with `q` param."""
+        parts = repository.split('/')
+        if len(parts) < 2:
+            raise ValueError(f'Invalid repository name: {repository}')
+
+        owner = parts[-2]
+        repo = parts[-1]
+
+        url = f'{self.BASE_URL}/repositories/{owner}/{repo}/refs/branches'
+        # Bitbucket filtering: name ~ "query"
+        params = {
+            'pagelen': per_page,
+            'q': f'name~"{query}"',
+            'sort': '-target.date',
+        }
+        response, _ = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch in response.get('values', []):
+            branches.append(
+                Branch(
+                    name=branch.get('name', ''),
+                    commit_sha=branch.get('target', {}).get('hash', ''),
+                    protected=False,
+                    last_push_date=branch.get('target', {}).get('date', None),
+                )
+            )
+        return branches
+
     async def create_pr(
         self,
         repo_name: str,
@@ -567,13 +651,7 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         Returns:
             The URL of the created pull request
         """
-        # Extract owner and repo from the repository string (e.g., "owner/repo")
-        parts = repo_name.split('/')
-        if len(parts) < 2:
-            raise ValueError(f'Invalid repository name: {repo_name}')
-
-        owner = parts[-2]
-        repo = parts[-1]
+        owner, repo = self._extract_owner_and_repo(repo_name)
 
         url = f'{self.BASE_URL}/repositories/{owner}/{repo}/pullrequests'
 
@@ -592,6 +670,21 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         # Return the URL to the pull request
         return data.get('links', {}).get('html', {}).get('href', '')
+
+    async def get_pr_details(self, repository: str, pr_number: int) -> dict:
+        """Get detailed information about a specific pull request
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The pull request number
+
+        Returns:
+            Raw Bitbucket API response for the pull request
+        """
+        url = f'{self.BASE_URL}/repositories/{repository}/pullrequests/{pr_number}'
+        pr_data, _ = await self._make_request(url)
+
+        return pr_data
 
     async def get_microagent_content(
         self, repository: str, file_path: str
@@ -627,6 +720,40 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
+
+    async def is_pr_open(self, repository: str, pr_number: int) -> bool:
+        """Check if a Bitbucket pull request is still active (not closed/merged).
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+
+        Returns:
+            True if PR is active (OPEN), False if closed/merged
+        """
+        try:
+            pr_details = await self.get_pr_details(repository, pr_number)
+
+            # Bitbucket API response structure
+            # https://developer.atlassian.com/cloud/bitbucket/rest/api-group-pullrequests/#api-repositories-workspace-repo-slug-pullrequests-pull-request-id-get
+            if 'state' in pr_details:
+                # Bitbucket state values: OPEN, MERGED, DECLINED, SUPERSEDED
+                return pr_details['state'] == 'OPEN'
+
+            # If we can't determine the state, assume it's active (safer default)
+            logger.warning(
+                f'Could not determine Bitbucket PR status for {repository}#{pr_number}. '
+                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'
+            )
+            return True
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine Bitbucket PR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the PR status, include the conversation to be safe
+            return True
 
 
 bitbucket_service_cls = os.environ.get(
