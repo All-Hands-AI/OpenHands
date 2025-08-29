@@ -1,6 +1,6 @@
+from openhands.core.logger import openhands_logger as logger
 from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import RequestMethod
-from openhands.core.logger import openhands_logger as logger
 
 
 class GitHubPRsMixin(GitHubMixinBase):

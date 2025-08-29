@@ -258,3 +258,11 @@ class GitHubReposMixin(GitHubMixinBase):
         response, _ = await self._make_request(url, params)
         repo_items = response.get('items', [])
         return [self._parse_repository(repo) for repo in repo_items]
+
+    async def get_repository_details_from_repo_name(
+        self, repository: str
+    ) -> Repository:
+        url = f'{self.BASE_URL}/repos/{repository}'
+        repo, _ = await self._make_request(url)
+
+        return self._parse_repository(repo)
