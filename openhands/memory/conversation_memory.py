@@ -43,7 +43,6 @@ from openhands.events.observation.agent import (
 from openhands.events.observation.error import ErrorObservation
 from openhands.events.observation.mcp import MCPObservation
 from openhands.events.observation.observation import Observation
-from openhands.events.serialization.event import truncate_content
 from openhands.utils.prompt import (
     ConversationInstructions,
     PromptManager,
@@ -75,7 +74,6 @@ class ConversationMemory:
         self,
         condensed_history: list[Event],
         initial_user_action: MessageAction,
-        max_message_chars: int | None = None,
         vision_is_active: bool = False,
     ) -> list[Message]:
         """Process state history into a list of messages for the LLM.
@@ -84,8 +82,6 @@ class ConversationMemory:
 
         Args:
             condensed_history: The condensed history of events to convert
-            max_message_chars: The maximum number of characters in the content of an event included
-                in the prompt to the LLM. Larger observations are truncated.
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included.
             initial_user_action: The initial user message action, if available. Used to ensure the conversation starts correctly.
         """
@@ -117,7 +113,6 @@ class ConversationMemory:
                 messages_to_add = self._process_observation(
                     obs=event,
                     tool_call_id_to_message=tool_call_id_to_message,
-                    max_message_chars=max_message_chars,
                     vision_is_active=vision_is_active,
                     enable_som_visual_browsing=self.agent_config.enable_som_visual_browsing,
                     current_index=i,
@@ -345,7 +340,6 @@ class ConversationMemory:
         self,
         obs: Observation,
         tool_call_id_to_message: dict[str, Message],
-        max_message_chars: int | None = None,
         vision_is_active: bool = False,
         enable_som_visual_browsing: bool = False,
         current_index: int = 0,
@@ -369,7 +363,6 @@ class ConversationMemory:
         Args:
             obs: The observation to convert
             tool_call_id_to_message: Dictionary mapping tool call IDs to their corresponding messages (used in function calling mode)
-            max_message_chars: The maximum number of characters in the content of an observation included in the prompt to the LLM
             vision_is_active: Whether vision is active in the LLM. If True, image URLs will be included
             enable_som_visual_browsing: Whether to enable visual browsing for the SOM model
             current_index: The index of the current event in the events list (for deduplication)
@@ -390,16 +383,13 @@ class ConversationMemory:
             # we keep this truncation for backwards compatibility for a time
             if obs.tool_call_metadata is None:
                 # if it doesn't have tool call metadata, it was triggered by a user action
-                text = truncate_content(
-                    f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}',
-                    max_message_chars,
-                )
+                text = f'\nObserved result of command executed by user:\n{obs.to_agent_observation()}'
             else:
-                text = truncate_content(obs.to_agent_observation(), max_message_chars)
+                text = obs.to_agent_observation()
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, MCPObservation):
             # logger.warning(f'MCPObservation: {obs}')
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, IPythonRunCellObservation):
             text = obs.content
@@ -411,7 +401,6 @@ class ConversationMemory:
                         '![image](data:image/png;base64, ...) already displayed to user'
                     )
             text = '\n'.join(splitted)
-            text = truncate_content(text, max_message_chars)
 
             # Create message content with text
             content: list[TextContent | ImageContent] = [TextContent(text=text)]
@@ -445,7 +434,7 @@ class ConversationMemory:
 
             message = Message(role='user', content=content)
         elif isinstance(obs, FileEditObservation):
-            text = truncate_content(str(obs), max_message_chars)
+            text = str(obs)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileReadObservation):
             message = Message(
@@ -499,30 +488,27 @@ class ConversationMemory:
 
             message = Message(role='user', content=content)
         elif isinstance(obs, AgentDelegateObservation):
-            text = truncate_content(
-                obs.outputs.get('content', obs.content),
-                max_message_chars,
-            )
+            text = obs.outputs.get('content', obs.content)
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentThinkObservation):
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, TaskTrackingObservation):
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ErrorObservation):
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             text += '\n[Error occurred in processing last action]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, UserRejectObservation):
-            text = 'OBSERVATION:\n' + truncate_content(obs.content, max_message_chars)
+            text = 'OBSERVATION:\n' + obs.content
             text += '\n[Last action has been rejected by the user]'
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, AgentCondensationObservation):
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, FileDownloadObservation):
-            text = truncate_content(obs.content, max_message_chars)
+            text = obs.content
             message = Message(role='user', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)

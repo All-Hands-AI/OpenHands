@@ -106,7 +106,6 @@ def test_process_events_with_message_action(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[system_message, user_message, assistant_message],
         initial_user_action=user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -270,7 +269,6 @@ def test_ensure_initial_user_message_different_user_msg_at_index_1_and_orphaned_
     messages = conversation_memory.process_events(
         condensed_history=events,
         initial_user_action=initial_user_action,  # Provide the *correct* initial action
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -303,7 +301,6 @@ def test_process_events_with_cmd_output_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -329,7 +326,6 @@ def test_process_events_with_ipython_run_cell_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -356,7 +352,6 @@ def test_process_events_with_agent_delegate_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -376,7 +371,6 @@ def test_process_events_with_error_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -399,7 +393,6 @@ def test_process_events_with_unknown_observation(conversation_memory):
         conversation_memory.process_events(
             condensed_history=[obs],
             initial_user_action=initial_user_message,
-            max_message_chars=None,
             vision_is_active=False,
         )
 
@@ -419,7 +412,6 @@ def test_process_events_with_file_edit_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -443,7 +435,6 @@ def test_process_events_with_file_read_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -471,7 +462,6 @@ def test_process_events_with_browser_output_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -491,7 +481,6 @@ def test_process_events_with_user_reject_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -524,7 +513,6 @@ def test_process_events_with_empty_environment_info(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[empty_obs],
         initial_user_action=initial_user_message,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -559,7 +547,6 @@ def test_process_events_with_function_calling_observation(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -582,7 +569,6 @@ def test_process_events_with_message_action_with_image(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[action],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=True,
     )
 
@@ -606,7 +592,6 @@ def test_process_events_with_user_cmd_action(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[action],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -643,7 +628,6 @@ def test_process_events_with_agent_finish_action_with_tool_metadata(
     messages = conversation_memory.process_events(
         condensed_history=[action],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -690,7 +674,6 @@ def test_process_events_with_environment_microagent_observation(conversation_mem
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -749,7 +732,6 @@ def test_process_events_with_knowledge_microagent_microagent_observation(
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -796,7 +778,6 @@ def test_process_events_with_microagent_observation_extensions_disabled(
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -822,7 +803,6 @@ def test_process_events_with_empty_microagent_knowledge(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -878,7 +858,7 @@ It may or may not be relevant to the user's request.
 
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=microagent_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=microagent_observation, tool_call_id_to_message={}
     )
 
     # Verify the message was created correctly
@@ -955,7 +935,7 @@ each of which has a corresponding port:
 
     # Process the observation
     messages = conversation_memory._process_observation(
-        obs=microagent_observation, tool_call_id_to_message={}, max_message_chars=None
+        obs=microagent_observation, tool_call_id_to_message={}
     )
 
     # Verify the message was created correctly
@@ -1038,7 +1018,6 @@ def test_process_events_with_microagent_observation_deduplication(conversation_m
     messages = conversation_memory.process_events(
         condensed_history=[obs1, obs2, obs3],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1091,7 +1070,6 @@ def test_process_events_with_microagent_observation_deduplication_disabled_agent
     messages = conversation_memory.process_events(
         condensed_history=[obs1, obs2],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1119,7 +1097,6 @@ def test_process_events_with_microagent_observation_deduplication_empty(
     messages = conversation_memory.process_events(
         condensed_history=[obs],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1346,7 +1323,6 @@ def test_system_message_in_events(conversation_memory):
     messages = conversation_memory.process_events(
         condensed_history=[system_message],
         initial_user_action=initial_user_action,
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1441,7 +1417,6 @@ def test_process_events_partial_history(conversation_memory):
     messages_full = conversation_memory.process_events(
         condensed_history=list(full_history),  # Pass a copy
         initial_user_action=user_message,  # Provide the initial action
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1472,7 +1447,6 @@ def test_process_events_partial_history(conversation_memory):
     messages_partial_action_obs = conversation_memory.process_events(
         condensed_history=list(partial_history_action_obs),  # Pass a copy
         initial_user_action=user_message,  # Provide the initial action
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1502,7 +1476,6 @@ def test_process_events_partial_history(conversation_memory):
     messages_partial_obs_only = conversation_memory.process_events(
         condensed_history=list(partial_history_obs_only),  # Pass a copy
         initial_user_action=user_message,  # Provide the initial action
-        max_message_chars=None,
         vision_is_active=False,
     )
 
@@ -1539,7 +1512,6 @@ def test_process_ipython_observation_with_vision_enabled(
     messages = memory._process_observation(
         obs=obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=True,
     )
 
@@ -1570,7 +1542,6 @@ def test_process_ipython_observation_with_vision_disabled(
     messages = memory._process_observation(
         obs=obs,
         tool_call_id_to_message={},
-        max_message_chars=None,
         vision_is_active=False,
     )
 
