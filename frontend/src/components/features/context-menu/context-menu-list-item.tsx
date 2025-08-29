@@ -2,7 +2,7 @@ import { cn } from "#/utils/utils";
 
 interface ContextMenuListItemProps {
   testId?: string;
-  onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
   isDisabled?: boolean;
   className?: string;
 }

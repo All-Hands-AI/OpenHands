@@ -92,7 +92,7 @@ describe("Landing page translations", () => {
       const { t } = useTranslation();
       return (
         <div>
-          <UserAvatar />
+          <UserAvatar onClick={() => {}} />
           <div data-testid="main-content">
             <h1>{t("LANDING$TITLE")}</h1>
             <button>{t("VSCODE$OPEN")}</button>
@@ -135,6 +135,11 @@ describe("Landing page translations", () => {
     expect(screen.getByText("READMEを改善")).toBeInTheDocument();
     expect(screen.getByText("依存関係を整理")).toBeInTheDocument();
 
+    // Check user avatar tooltip
+    const userAvatar = screen.getByTestId("user-avatar");
+    userAvatar.focus();
+    expect(screen.getByText("アカウント設定")).toBeInTheDocument();
+
     // Check tab labels
     const tabs = screen.getByTestId("tabs");
     expect(tabs).toHaveTextContent("ターミナル");
@@ -155,6 +160,9 @@ describe("Landing page translations", () => {
     expect(status).toHaveTextContent("クライアントの準備を待機中");
     expect(status).toHaveTextContent("接続済み");
     expect(status).toHaveTextContent("サーバーに接続済み");
+
+    // Check account settings menu
+    expect(screen.getByText("アカウント設定")).toBeInTheDocument();
 
     // Check time-related translations
     const time = screen.getByTestId("time");
