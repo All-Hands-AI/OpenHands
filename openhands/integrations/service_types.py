@@ -130,6 +130,14 @@ class Branch(BaseModel):
     last_push_date: str | None = None  # ISO 8601 format date string
 
 
+class PaginatedBranchesResponse(BaseModel):
+    branches: list[Branch]
+    has_next_page: bool
+    current_page: int
+    per_page: int
+    total_count: int | None = None  # Some APIs don't provide total count
+
+
 class Repository(BaseModel):
     id: str
     full_name: str
@@ -446,6 +454,14 @@ class BaseGitService(ABC):
 
         return microagents
 
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
 
 class InstallationsService(Protocol):
     async def get_installations(self) -> list[str]:
@@ -510,6 +526,16 @@ class GitService(Protocol):
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
+
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search for branches within a repository"""
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository"""
