@@ -102,7 +102,7 @@ export function AccountSettingsContextMenu({
       testId="account-settings-context-menu"
       ref={ref}
       alignment="right"
-      className="md:right-full md:left-full md:mt-0 md:bottom-0 ml-2 z-10 w-fit"
+      className="mt-0 md:right-full md:left-full md:bottom-0 ml-0 z-10 w-fit"
     >
       {navItems.map(({ to, text, icon }) => (
         <Link key={to} to={to} className="text-decoration-none">

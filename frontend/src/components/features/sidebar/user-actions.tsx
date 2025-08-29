@@ -2,6 +2,7 @@ import React from "react";
 import { UserAvatar } from "./user-avatar";
 import { AccountSettingsContextMenu } from "../context-menu/account-settings-context-menu";
 import { useShouldShowUserFeatures } from "#/hooks/use-should-show-user-features";
+import { cn } from "#/utils/utils";
 
 interface UserActionsProps {
   onLogout: () => void;
@@ -22,7 +23,9 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   };
 
   const closeAccountMenu = () => {
-    setAccountContextMenuIsVisible(false);
+    if (accountContextMenuIsVisible) {
+      setAccountContextMenuIsVisible(false);
+    }
   };
 
   const handleLogout = () => {
@@ -34,18 +37,28 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   const showMenu = accountContextMenuIsVisible && shouldShowUserActions;
 
   return (
-    <div data-testid="user-actions" className="w-8 h-8 relative cursor-pointer">
+    <div
+      data-testid="user-actions"
+      className="w-8 h-8 relative cursor-pointer group"
+    >
       <UserAvatar
         avatarUrl={user?.avatar_url}
         onClick={toggleAccountMenu}
         isLoading={isLoading}
       />
 
-      {showMenu && (
-        <AccountSettingsContextMenu
-          onLogout={handleLogout}
-          onClose={closeAccountMenu}
-        />
+      {shouldShowUserActions && (
+        <div
+          className={cn(
+            "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
+            showMenu && "opacity-100 pointer-events-auto",
+          )}
+        >
+          <AccountSettingsContextMenu
+            onLogout={handleLogout}
+            onClose={closeAccountMenu}
+          />
+        </div>
       )}
     </div>
   );
