@@ -51,6 +51,7 @@ export function useRepositoryData(
   } = useGitRepositories({
     provider,
     enabled: repositoriesEnabled,
+    installations,
   });
 
   // Combine loading states
