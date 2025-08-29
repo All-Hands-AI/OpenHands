@@ -3,6 +3,7 @@ import os
 import socketio
 from dotenv import load_dotenv
 
+import openhands.agenthub  # noqa F401 - Import agents before config loading
 from openhands.core.config import load_openhands_config
 from openhands.core.config.openhands_config import OpenHandsConfig
 from openhands.server.config.server_config import ServerConfig, load_server_config

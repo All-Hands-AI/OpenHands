@@ -8,7 +8,6 @@ from openhands.core.config.agent_config import AgentConfig
 from openhands.core.config.cli_config import CLIConfig
 from openhands.core.config.config_utils import (
     DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX,
-    OH_DEFAULT_AGENT,
     OH_MAX_ITERATIONS,
     model_defaults_to_dict,
 )
@@ -63,7 +62,7 @@ class OpenHandsConfig(BaseModel):
 
     llms: dict[str, LLMConfig] = Field(default_factory=dict)
     agents: dict[str, AgentConfig] = Field(default_factory=dict)
-    default_agent: str = Field(default=OH_DEFAULT_AGENT)
+    default_agent: str = 'TomCodeActAgent'
     sandbox: SandboxConfig = Field(default_factory=SandboxConfig)
     security: SecurityConfig = Field(default_factory=SecurityConfig)
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))

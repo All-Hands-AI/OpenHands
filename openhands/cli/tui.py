@@ -7,10 +7,12 @@ import contextlib
 import datetime
 import html
 import json
+import logging
 import re
 import sys
 import threading
 import time
+from contextlib import contextmanager
 from typing import Generator
 
 from prompt_toolkit import PromptSession, print_formatted_text
@@ -85,6 +87,8 @@ COMMANDS = {
     '/settings': 'Display and modify current settings',
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
+    '/sleeptime': 'Run Tom sleeptime computation to process recent sessions',
+    '/tom_improve_instruction': 'Improve the instruction for the current task',
 }
 
 print_lock = threading.Lock()
@@ -1024,3 +1028,182 @@ class UserCancelledError(Exception):
     """Raised when the user cancels an operation via key binding."""
 
     pass
+
+
+# Tom-SWE thinking process display functionality
+CLI_DISPLAY_LEVEL = 25  # Between INFO (20) and WARNING (30)
+
+# Add the custom logging level
+logging.addLevelName(CLI_DISPLAY_LEVEL, 'CLI_DISPLAY')
+
+
+def display_tom_thinking_step(message: str) -> None:
+    """Display tom agent thinking step with proper CLI formatting."""
+    if not message or not message.strip():
+        return
+
+    message = message.strip()
+
+    # Determine color and styling based on emoji/content
+    if message.startswith('🎯'):
+        color = COLOR_GOLD
+        prefix = 'Tom Analysis'
+    elif message.startswith('⏱️') or 'time' in message.lower():
+        color = COLOR_GREY
+        prefix = 'Tom Performance'
+    elif message.startswith('🔍'):
+        color = '#32CD32'  # Lime green for search results
+        prefix = 'Action Parameters/Results'
+    elif message.startswith('🧠'):
+        color = '#9370DB'  # Medium purple for reasoning
+        prefix = 'Tom Reasoning'
+    elif message.startswith('⚡'):
+        color = '#FF6347'  # Tomato red for actions
+        prefix = 'Tom Action'
+    elif message.startswith('✅'):
+        color = '#00FF7F'  # Spring green for completion
+        prefix = 'Tom Complete'
+    elif message.startswith('🔄'):
+        color = COLOR_AGENT_BLUE
+        prefix = 'Tom Progress'
+    elif message.startswith('📁') or message.startswith('📊'):
+        color = COLOR_GREY
+        prefix = 'Tom Data'
+    else:
+        color = COLOR_AGENT_BLUE
+        prefix = 'Tom'
+
+    # Display with consistent formatting using FormattedText for better color support
+    print_formatted_text(
+        FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
+    )
+
+
+class TomCliLogHandler(logging.Handler):
+    """Simple handler for tom CLI_DISPLAY level messages only."""
+
+    def emit(self, record):
+        """Emit a log record for CLI display."""
+        message = record.getMessage()
+        try:
+            if record.levelno == CLI_DISPLAY_LEVEL:
+                # Special styling for our custom display level
+                display_tom_thinking_step(message)
+        except Exception:
+            # Don't let display errors break tom functionality
+            pass
+
+
+class TomMessageFilter(logging.Filter):
+    """Filter to suppress Tom-related messages from regular OpenHands logger."""
+
+    def filter(self, record):
+        message = record.getMessage()
+        # Suppress messages that contain "Tom:" to avoid duplicates
+        return not ('Tom:' in message or record.levelno == CLI_DISPLAY_LEVEL)
+
+
+@contextmanager
+def capture_tom_thinking():
+    """Simple context manager to show tom progress and capture CLI_DISPLAY logs."""
+    handler = TomCliLogHandler()
+    TomMessageFilter()
+    tom_logger = logging.getLogger('tom_swe')
+    oh_logger = logging.getLogger('openhands')
+
+    try:
+        # Add Tom CLI handler for clean display
+        tom_logger.setLevel(logging.INFO)
+        oh_logger.setLevel(logging.INFO)
+        tom_logger.addHandler(handler)
+        oh_logger.addHandler(handler)
+        tom_logger.propagate = True
+        oh_logger.propagate = True
+
+        # # Add filter to OpenHands logger to suppress Tom messages
+        # oh_logger.addFilter(tom_filter)
+
+        yield
+    finally:
+        with contextlib.suppress(Exception):
+            tom_logger.removeHandler(handler)
+            # oh_logger.removeFilter(tom_filter)
+
+
+def display_instruction_improvement(
+    original_instruction: str, improved_instruction: str
+) -> dict:
+    """Display improved instruction and get user choice with tri-state response.
+
+    Args:
+        improved_instruction: The improved instruction text
+
+    Returns:
+        dict: Response containing action ('accept', 'modify', 'reject'),
+              value (1, 0.5, 0), and instruction (combined text if modified)
+    """
+    from openhands.core.config import OpenHandsConfig
+
+    print_formatted_text('')
+    print_formatted_text(HTML('<gold>🎯 Tom has improved your instruction:</gold>'))
+    print_formatted_text('')
+
+    # Extract content after the ToM Agent Analysis marker
+    text = improved_instruction.strip()
+
+    # Look for the ToM Agent Analysis marker and extract content after it
+    marker = '*****************ToM Agent Analysis Start Here*****************'
+    if marker in text:
+        # Split on the marker and take everything after it
+        parts = text.split(marker, 1)
+        if len(parts) > 1:
+            text = parts[1].strip()
+
+    container = Frame(
+        TextArea(
+            text=text,
+            read_only=True,
+            wrap_lines=True,
+        ),
+        title='Instruction Proposal',
+        style='fg:ansiblue',
+    )
+    print_container(container)
+
+    print_formatted_text('')
+    print_formatted_text('')
+    print_formatted_text(HTML('<grey>Use ↑/↓ to select, then press Enter</grey>'))
+
+    # Get user choice
+    config = OpenHandsConfig()  # Create minimal config for cli_confirm
+    choice = cli_confirm(
+        config,
+        'How would you like to proceed with this improved instruction?',
+        ['Accept', 'Almost right, let me modify it', 'Reject'],
+        initial_selection=0,
+    )
+
+    # Return structured response instead of boolean
+    if choice == 0:
+        return {'action': 'accept', 'value': 1, 'instruction': improved_instruction}
+    elif choice == 1:
+        # Return enhanced instruction that tells LLM to ask for modification
+        enhanced_instruction = f"""Tom suggested this improvement to user's instruction:
+
+{improved_instruction}
+
+However, user indicated this needs modification. So given [Modification Request], ask the user: 'How would you like to modify Tom's suggestion?'"""
+
+        return {
+            'action': 'modify',
+            'value': 0.5,
+            'instruction': enhanced_instruction,
+            'skip_next_tom': True,
+        }
+    else:
+        original_instruction = original_instruction.replace(
+            '\tom_improve_instruction', 'Guess what I want to do next'
+        )
+        enhanced_instruction = f"User rejected ToM agent's suggestion. Please proceed with user's original instruction (and not ask ToM agent for help this round): {original_instruction}"
+
+        return {'action': 'reject', 'value': 0, 'instruction': enhanced_instruction}

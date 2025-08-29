@@ -285,15 +285,15 @@ def test_stress_remote_runtime_long_output_with_soft_and_hard_timeout():
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
             _top_processes = [i.strip() for i in mem_obs.content.strip().split('\n')]
+            separator = '\n- '
             logger.info(
-                f'Top 5 memory-consuming processes (iteration {i}):\n{"- " + "\n- ".join(_top_processes)}'
+                f'Top 5 memory-consuming processes (iteration {i}):\n{"- " + separator.join(_top_processes)}'
             )
             iteration_stats['top_processes'] = _top_processes
 
             # Check tmux memory usage (in KB)
-            mem_action = CmdRunAction(
-                'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | grep "/usr/bin/tmux" | grep -v grep | awk \'{print $1}\''
-            )
+            awk_cmd = 'ps aux | awk \'{printf "%8.1f MB  %s\\n", $6/1024, $0}\' | sort -nr | grep "/usr/bin/tmux" | grep -v grep | awk \'{print $1}\''
+            mem_action = CmdRunAction(awk_cmd)
             mem_obs = runtime.run_action(mem_action)
             assert mem_obs.exit_code == 0
             logger.info(

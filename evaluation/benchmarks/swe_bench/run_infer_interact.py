@@ -106,12 +106,14 @@ def get_fake_user_response(state: State) -> str:
 
 AGENT_CLS_TO_FAKE_USER_RESPONSE_FN = {
     'CodeActAgent': get_fake_user_response,
+    'TomCodeActAgent': get_fake_user_response,
 }
 
 
 def get_instruction(instance: pd.Series, metadata: EvalMetadata) -> MessageAction:
     instance_copy = instance.copy()
-    instance_copy.problem_statement = f'{instance.problem_statement}\n\nHints:\nThe user has not provided all the necessary details about the issue, and there are some hidden details that are helpful. Please ask the user specific questions using non-code commands to gather the relevant information that the user has to help you solve the issue. Ensure you have all the details you require to solve the issue.'
+    if USE_HINT_TEXT:
+        instance_copy.problem_statement = f'{instance.problem_statement}\n\nHints:\nThe user has not provided all the necessary details about the issue, and there are some hidden details that are helpful. Please ask the user specific questions using non-code commands to gather the relevant information that the user has to help you solve the issue. Ensure you have all the details you require to solve the issue.'
     return base_get_instruction(instance_copy, metadata)
 
 

@@ -60,6 +60,16 @@ class AgentConfig(BaseModel):
     extended: ExtendedConfig = Field(default_factory=lambda: ExtendedConfig({}))
     """Extended configuration for the agent."""
 
+    # Tom agent integration settings (only used by TomCodeActAgent)
+    enable_tom_integration: bool = Field(default=True)
+    """Whether to enable Tom agent integration for personalized guidance"""
+    tom_enable_rag: bool = Field(default=False)
+    """Whether to enable RAG (Retrieval Augmented Generation) in Tom agent"""
+    tom_min_instruction_length: int = Field(default=5)
+    """Minimum instruction length to trigger Tom improvement"""
+    skip_memory_collection: bool = Field(default=False)
+    """If True, skip workflow and directly predict user mental states for faster responses"""
+
     model_config = ConfigDict(extra='forbid')
 
     @property
@@ -121,10 +131,11 @@ class AgentConfig(BaseModel):
             try:
                 # Merge base config with overrides
                 merged = {**base_config.model_dump(), **overrides}
+                # Import Agent class for both paths
+                from openhands.controller.agent import Agent
+
                 if merged.get('classpath'):
                     # if an explicit classpath is given, try to load it and look up its config model class
-                    from openhands.controller.agent import Agent
-
                     try:
                         agent_cls = get_impl(Agent, merged.get('classpath'))
                         custom_config = agent_cls.config_model.model_validate(merged)

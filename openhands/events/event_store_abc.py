@@ -52,11 +52,11 @@ class EventStoreABC:
         )
 
     @abstractmethod
-    def get_event(self, id: int) -> Event:
+    def get_event(self, id: int) -> Event | None:
         """Retrieve a single event from the event stream. Raise a FileNotFoundError if there was no such event"""
 
     @abstractmethod
-    def get_latest_event(self) -> Event:
+    def get_latest_event(self) -> Event | None:
         """Get the latest event from the event stream"""
 
     @abstractmethod

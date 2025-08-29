@@ -4,7 +4,7 @@ from typing import Any, get_args, get_origin
 from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 
-OH_DEFAULT_AGENT = 'CodeActAgent'
+OH_DEFAULT_AGENT = 'TomCodeActAgent'
 OH_MAX_ITERATIONS = 500
 DEFAULT_WORKSPACE_MOUNT_PATH_IN_SANDBOX = '/workspace'
 
