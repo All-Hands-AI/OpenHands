@@ -47,18 +47,19 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
         isLoading={isLoading}
       />
 
-      <div
-        className={cn(
-          "opacity-0 pointer-events-none group-hover:pointer-events-auto",
-          shouldShowUserActions && "group-hover:opacity-100",
-          showMenu && "opacity-100 pointer-events-auto",
-        )}
-      >
-        <AccountSettingsContextMenu
-          onLogout={handleLogout}
-          onClose={closeAccountMenu}
-        />
-      </div>
+      {shouldShowUserActions && (
+        <div
+          className={cn(
+            "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto",
+            showMenu && "opacity-100 pointer-events-auto",
+          )}
+        >
+          <AccountSettingsContextMenu
+            onLogout={handleLogout}
+            onClose={closeAccountMenu}
+          />
+        </div>
+      )}
     </div>
   );
 }
