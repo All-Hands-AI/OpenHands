@@ -165,4 +165,3 @@ def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> di
 
 
 # Import from the new location to maintain backward compatibility
-from openhands.llm.llm_utils import truncate_content

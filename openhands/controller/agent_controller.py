@@ -79,7 +79,7 @@ from openhands.events.observation import (
     NullObservation,
     Observation,
 )
-from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm_utils import truncate_content
 from openhands.llm.metrics import Metrics
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.server.services.conversation_stats import ConversationStats
