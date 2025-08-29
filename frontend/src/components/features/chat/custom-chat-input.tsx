@@ -14,6 +14,8 @@ import { Tools } from "../controls/tools";
 import {
   setShouldHideSuggestions,
   setSubmittedMessage,
+  setMessageToSend,
+  setIsRightPanelShown,
 } from "#/state/conversation-slice";
 import { CHAT_INPUT } from "#/utils/constants";
 import { RootState } from "#/store";
@@ -45,7 +47,7 @@ export function CustomChatInput({
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  const { messageToSend, submittedMessage } = useSelector(
+  const { messageToSend, submittedMessage, hasRightPanelToggled } = useSelector(
     (state: RootState) => state.conversation,
   );
 
@@ -69,6 +71,16 @@ export function CustomChatInput({
   const chatInputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Save current input value when drawer state changes
+  useEffect(() => {
+    if (chatInputRef.current) {
+      const currentText = chatInputRef.current?.innerText || "";
+      // Dispatch to save current input value when drawer state changes
+      dispatch(setMessageToSend(currentText));
+      dispatch(setIsRightPanelShown(hasRightPanelToggled));
+    }
+  }, [hasRightPanelToggled, dispatch]);
 
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
