@@ -240,7 +240,6 @@ export function MicroagentManagementContent() {
       conversationInstructions,
       repository: {
         name: repositoryName,
-        branch: formData.selectedBranch,
         gitProvider,
       },
       createMicroagent,

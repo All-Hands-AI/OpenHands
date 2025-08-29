@@ -99,7 +99,8 @@ vi.mock("#/hooks/use-debounce", () => ({
   useDebounce: (value: string, _delay: number) => {
     // In real debouncing, only the final value after the delay should be returned
     // For testing, we'll return the full value once it's complete
-    if (value && value.length > 20) { // URL is long enough
+    if (value && value.length > 20) {
+      // URL is long enough
       debouncedValue = value;
       return value;
     }
@@ -117,7 +118,8 @@ vi.mock("#/hooks/query/use-git-repositories", () => ({
 }));
 
 vi.mock("#/hooks/query/use-search-repositories", () => ({
-  useSearchRepositories: (query: string, provider: string) => mockUseSearchRepositories(query, provider),
+  useSearchRepositories: (query: string, provider: string) =>
+    mockUseSearchRepositories(query, provider),
 }));
 
 const mockOnRepoSelection = vi.fn();
@@ -171,7 +173,7 @@ describe("RepositorySelectionForm", () => {
     });
 
     renderForm();
-    expect(await screen.findByTestId("repo-dropdown")).toBeInTheDocument();
+    expect(await screen.findByTestId("git-repo-dropdown")).toBeInTheDocument();
   });
 
   it("shows error message when repository fetch fails", async () => {
@@ -187,12 +189,8 @@ describe("RepositorySelectionForm", () => {
 
     renderForm();
 
-    expect(
-      await screen.findByTestId("repo-dropdown-error"),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText("HOME$FAILED_TO_LOAD_REPOSITORIES"),
-    ).toBeInTheDocument();
+    expect(await screen.findByTestId("dropdown-error")).toBeInTheDocument();
+    expect(screen.getByText("Failed to load data")).toBeInTheDocument();
   });
 
   it("should call the search repos API when searching a URL", async () => {
@@ -227,8 +225,7 @@ describe("RepositorySelectionForm", () => {
 
     renderForm();
 
-    const dropdown = await screen.findByTestId("repo-dropdown");
-    expect(dropdown).toBeInTheDocument();
+    const input = await screen.findByTestId("git-repo-dropdown");
 
     // The test should verify that typing a URL triggers the search behavior
     // Since the component uses useSearchRepositories hook, just verify the hook is set up correctly
@@ -263,8 +260,7 @@ describe("RepositorySelectionForm", () => {
 
     renderForm();
 
-    const dropdown = await screen.findByTestId("repo-dropdown");
-    expect(dropdown).toBeInTheDocument();
+    const input = await screen.findByTestId("git-repo-dropdown");
 
     // Verify that the onRepoSelection callback prop was provided
     expect(mockOnRepoSelection).toBeDefined();
