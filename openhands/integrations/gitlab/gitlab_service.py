@@ -12,6 +12,7 @@ from openhands.integrations.service_types import (
     Comment,
     GitService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -265,6 +266,7 @@ class GitLabService(BaseGitService, GitService):
                 else OwnerType.USER
             ),
             link_header=link_header,
+            main_branch=repo.get('default_branch'),
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:
@@ -576,6 +578,68 @@ class GitLabService(BaseGitService, GitService):
                 break
 
         return all_branches
+
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        params = {'per_page': str(per_page), 'page': str(page)}
+        response, headers = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('id', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=branch_data.get('commit', {}).get('committed_date'),
+            )
+            branches.append(branch)
+
+        # Parse pagination headers
+        has_next_page = False
+        total_count = None
+
+        if 'X-Next-Page' in headers and headers['X-Next-Page']:
+            has_next_page = True
+        if 'X-Total' in headers:
+            try:
+                total_count = int(headers['X-Total'])
+            except (ValueError, TypeError):
+                pass
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=total_count,
+        )
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches using GitLab API which supports `search` param."""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        params = {'per_page': str(per_page), 'search': query}
+        response, _ = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            branches.append(
+                Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+            )
+        return branches
 
     async def create_mr(
         self,

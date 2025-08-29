@@ -206,7 +206,7 @@ async def create_mr(
             labels=labels,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
@@ -272,7 +272,7 @@ async def create_bitbucket_pr(
             body=description,
         )
 
-        if conversation_id and user_id:
+        if conversation_id:
             await save_pr_metadata(user_id, conversation_id, response)
 
     except Exception as e:
