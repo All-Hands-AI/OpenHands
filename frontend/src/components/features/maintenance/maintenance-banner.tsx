@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useMemo } from "react";
-import { isBefore } from "date-fns";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { FaTriangleExclamation } from "react-icons/fa6";
 import CloseIcon from "#/icons/close.svg?react";
@@ -67,9 +66,7 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
     if (!isValid) {
       return false;
     }
-    return !dismissedAt
-      ? true
-      : isBefore(new Date(dismissedAt), new Date(startTime));
+    return dismissedAt !== localTime;
   }, [dismissedAt, startTime]);
 
   if (!isBannerVisible) {

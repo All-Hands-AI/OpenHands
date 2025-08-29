@@ -10,7 +10,7 @@ export function FileItem({ filename, onRemove }: FileItemProps) {
   return (
     <div
       data-testid="file-item"
-      className="flex flex-row gap-x-1 items-center justify-start"
+      className="flex flex-row gap-x-1 items-center justify-start py-1"
     >
       <FaFile className="h-4 w-4" />
       <code className="text-sm flex-1 text-white truncate">{filename}</code>

@@ -198,11 +198,11 @@ export function GitRepoDropdown({
             disabled,
             placeholder,
             className: cn(
-              "w-full px-3 py-2 border border-[#717888] rounded-sm shadow-sm min-h-[2.5rem]",
-              "bg-[#454545] text-[#ECEDEE] placeholder:text-[#B7BDC2] placeholder:italic",
-              "focus:outline-none focus:ring-1 focus:ring-[#717888] focus:border-[#717888]",
+              "w-full px-3 py-2 border border-[#727987] rounded-sm shadow-none h-[42px] min-h-[42px] max-h-[42px]",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3] placeholder:italic",
+              "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10", // Space for toggle button
+              "pr-10 text-sm font-normal leading-5", // Space for toggle button
             ),
           })}
           data-testid="git-repo-dropdown"

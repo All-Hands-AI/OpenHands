@@ -1,8 +1,10 @@
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import { Suggestions } from "#/components/features/suggestions/suggestions";
 import { I18nKey } from "#/i18n/declaration";
 import BuildIt from "#/icons/build-it.svg?react";
 import { SUGGESTIONS } from "#/utils/suggestions";
+import { RootState } from "#/store";
 
 interface ChatSuggestionsProps {
   onSuggestionsClick: (value: string) => void;
@@ -10,15 +12,23 @@ interface ChatSuggestionsProps {
 
 export function ChatSuggestions({ onSuggestionsClick }: ChatSuggestionsProps) {
   const { t } = useTranslation();
+  const shouldHideSuggestions = useSelector(
+    (state: RootState) => state.conversation.shouldHideSuggestions,
+  );
+
+  // Don't render if suggestions should be hidden
+  if (shouldHideSuggestions) {
+    return null;
+  }
 
   return (
     <div
       data-testid="chat-suggestions"
-      className="flex flex-col gap-6 h-full px-4 items-center justify-center"
+      className="flex flex-col h-full px-4 items-center justify-center"
     >
-      <div className="flex flex-col items-center p-4 bg-tertiary rounded-xl w-full">
-        <BuildIt width={45} height={54} />
-        <span className="font-semibold text-[20px] leading-6 -tracking-[0.01em] gap-1">
+      <div className="flex flex-col items-center p-4 rounded-xl w-full">
+        <BuildIt width={86} height={103} />
+        <span className="text-[32px] font-bold leading-5 text-white pt-4 pb-6">
           {t(I18nKey.LANDING$TITLE)}
         </span>
       </div>
