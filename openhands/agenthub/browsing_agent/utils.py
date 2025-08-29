@@ -1,24 +1,31 @@
 import collections
 import re
+from typing import Any
 from warnings import warn
 
-import yaml
+import yaml  # type: ignore[import-untyped]
 
 
-def yaml_parser(message: str) -> tuple[dict, bool, str]:
+def yaml_parser(message: str) -> tuple[dict[str, Any], bool, str]:
     """Parse a yaml message for the retry function."""
     # saves gpt-3.5 from some yaml parsing errors
     message = re.sub(r':\s*\n(?=\S|\n)', ': ', message)
 
     try:
         value = yaml.safe_load(message)
+        if not isinstance(value, dict):
+            # Normalize non-dict YAML payloads to an empty dict for downstream typing
+            value = {}
         valid = True
         retry_message = ''
     except yaml.YAMLError as e:
         warn(str(e), stacklevel=2)
         value = {}
         valid = False
-        retry_message = "Your response is not a valid yaml. Please try again and be careful to the format. Don't add any apology or comment, just the answer."
+        retry_message = (
+            'Your response is not a valid yaml. Please try again and be careful to the format. '
+            "Don't add any apology or comment, just the answer."
+        )
     return value, valid, retry_message
 
 
@@ -28,8 +35,8 @@ def _compress_chunks(
     """Compress a string by replacing redundant chunks by identifiers. Chunks are defined by the split_regex."""
     text_list = re.split(split_regex, text)
     text_list = [chunk.strip() for chunk in text_list]
-    counter = collections.Counter(text_list)
-    def_dict = {}
+    counter: collections.Counter[str] = collections.Counter(text_list)
+    def_dict: dict[str, str] = {}
     id = 0
 
     # Store items that occur more than once in a dictionary
@@ -60,7 +67,7 @@ def compress_string(text: str) -> str:
     def_dict.update(line_dict)
 
     # Create a definitions section
-    def_lines = ['<definitions>']
+    def_lines: list[str] = ['<definitions>']
     for key, value in def_dict.items():
         def_lines.append(f'{key}:\n{value}')
     def_lines.append('</definitions>')
@@ -89,7 +96,7 @@ def extract_html_tags(text: str, keys: list[str]) -> dict[str, list[str]]:
     All text and keys will be converted to lowercase before matching.
 
     """
-    content_dict = {}
+    content_dict: dict[str, list[str]] = {}
     # text = text.lower()
     # keys = set([k.lower() for k in keys])
     for key in keys:
@@ -149,7 +156,7 @@ def parse_html_tags(
     optional_keys = optional_keys or []
     all_keys = list(keys) + list(optional_keys)
     content_dict = extract_html_tags(text, all_keys)
-    retry_messages = []
+    retry_messages: list[str] = []
     result_dict: dict[str, str] = {}
 
     for key in all_keys:
