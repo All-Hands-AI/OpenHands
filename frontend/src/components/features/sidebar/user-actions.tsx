@@ -36,10 +36,6 @@ export function UserActions({ onLogout, user, isLoading }: UserActionsProps) {
   // Show the menu based on the new logic
   const showMenu = accountContextMenuIsVisible && shouldShowUserActions;
 
-  console.log("showMenu", showMenu);
-  console.log("accountContextMenuIsVisible", accountContextMenuIsVisible);
-  console.log("shouldShowUserActions", shouldShowUserActions);
-
   return (
     <div
       data-testid="user-actions"
