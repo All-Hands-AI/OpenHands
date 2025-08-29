@@ -491,8 +491,9 @@ def test_save_and_restore_workflow(mock_file_store):
 
 
 def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
-    """Merging two ConversationStats with no overlapping service IDs flattens
-    both active and restored metrics into self.service_to_metrics and saves them.
+    """Merging two ConversationStats with no overlapping service IDs combines
+    active metrics into service_to_metrics and restored metrics into restored_metrics,
+    then saves all metrics together.
     """
     stats_a = ConversationStats(
         file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
@@ -520,21 +521,26 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
     # Merge B into A
     stats_a.merge_and_save(stats_b)
 
-    # All keys from both sides (active + restored) should be in A's active dict now
+    # Active metrics from both sides should be in A's service_to_metrics
     assert set(stats_a.service_to_metrics.keys()) == {
         'a-active',
-        'a-restored',
         'b-active',
+    }
+
+    # Restored metrics from both sides should be in A's restored_metrics
+    assert set(stats_a.restored_metrics.keys()) == {
+        'a-restored',
         'b-restored',
     }
 
     # The exact Metrics objects should be present (no copies)
     assert stats_a.service_to_metrics['a-active'] is m_a_active
-    assert stats_a.service_to_metrics['a-restored'] is m_a_restored
     assert stats_a.service_to_metrics['b-active'] is m_b_active
-    assert stats_a.service_to_metrics['b-restored'] is m_b_restored
+    assert stats_a.restored_metrics['a-restored'] is m_a_restored
+    assert stats_a.restored_metrics['b-restored'] is m_b_restored
 
     # Merge triggers a save; confirm the saved blob decodes to expected keys
+    # The save_metrics method combines both service_to_metrics and restored_metrics
     encoded = mock_file_store.read(stats_a.metrics_path)
     pickled = base64.b64decode(encoded)
     restored_dict = pickle.loads(pickled)
