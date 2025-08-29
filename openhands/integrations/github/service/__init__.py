@@ -34,7 +34,6 @@ class GitHubService(
 ):
     """Assembled GitHub service class combining mixins by feature area."""
 
-    # Ensure __init__ from core mixin is available with proper signature
     def __init__(
         self,
         user_id: str | None = None,

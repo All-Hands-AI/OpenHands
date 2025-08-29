@@ -1,9 +1,8 @@
 from abc import abstractmethod
-from typing import Any
 
 from pydantic import SecretStr
 
-from openhands.integrations.service_types import BaseGitService, RequestMethod, User
+from openhands.integrations.service_types import BaseGitService, User
 
 
 class GitHubMixinBase(BaseGitService):
@@ -16,14 +15,6 @@ class GitHubMixinBase(BaseGitService):
     token: SecretStr
     refresh: bool
     external_auth_id: str | None
-
-    @abstractmethod
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]: ...
 
     @abstractmethod
     async def _get_github_headers(self) -> dict: ...
