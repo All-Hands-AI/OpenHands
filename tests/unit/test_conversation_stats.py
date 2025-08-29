@@ -491,9 +491,9 @@ def test_save_and_restore_workflow(mock_file_store):
 
 
 def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
-    """Merging two ConversationStats with no overlapping service IDs combines
-    active metrics into service_to_metrics and restored metrics into restored_metrics,
-    then saves all metrics together.
+    """Merging two ConversationStats combines only restored metrics. Active metrics
+    (service_to_metrics) are not merged; if present, an error is logged but
+    execution continues. Incoming restored metrics overwrite duplicates.
     """
     stats_a = ConversationStats(
         file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
@@ -521,10 +521,9 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
     # Merge B into A
     stats_a.merge_and_save(stats_b)
 
-    # Active metrics from both sides should be in A's service_to_metrics
+    # Active metrics should not be merged; only self's active metrics remain
     assert set(stats_a.service_to_metrics.keys()) == {
         'a-active',
-        'b-active',
     }
 
     # Restored metrics from both sides should be in A's restored_metrics
@@ -535,7 +534,6 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
 
     # The exact Metrics objects should be present (no copies)
     assert stats_a.service_to_metrics['a-active'] is m_a_active
-    assert stats_a.service_to_metrics['b-active'] is m_b_active
     assert stats_a.restored_metrics['a-restored'] is m_a_restored
     assert stats_a.restored_metrics['b-restored'] is m_b_restored
 
@@ -547,7 +545,6 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
     assert set(restored_dict.keys()) == {
         'a-active',
         'a-restored',
-        'b-active',
         'b-restored',
     }
 
@@ -561,7 +558,8 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
         ('restored', 'restored'),
     ],
 )
-def test_merge_conversation_stats_raises_on_duplicate_service_id(
+
+def test_merge_conversation_stats_duplicates_overwrite_and_log_errors(
     mock_file_store, self_side, other_side
 ):
     stats_a = ConversationStats(
@@ -588,8 +586,20 @@ def test_merge_conversation_stats_raises_on_duplicate_service_id(
     else:
         stats_b.restored_metrics[dupe_id] = m2
 
-    with pytest.raises(ValueError, match='Duplicate service IDs'):
-        stats_a.merge_and_save(stats_b)
+    # Perform merge; should not raise and should log error internally if active metrics present
+    stats_a.merge_and_save(stats_b)
+
+    # Only restored metrics are merged; duplicates are allowed with incoming overwriting
+    if other_side == 'restored':
+        assert dupe_id in stats_a.restored_metrics
+        assert stats_a.restored_metrics[dupe_id] is m2  # incoming overwrites existing
+    else:
+        # No restored metric came from incoming; existing restored stays as-is
+        if self_side == 'restored':
+            assert dupe_id in stats_a.restored_metrics
+            assert stats_a.restored_metrics[dupe_id] is m1
+        else:
+            assert dupe_id not in stats_a.restored_metrics
 
 
 def test_save_metrics_preserves_restored_metrics_fix(mock_file_store):

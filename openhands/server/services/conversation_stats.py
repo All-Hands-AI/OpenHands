@@ -104,19 +104,39 @@ class ConversationStats:
 
     def merge_and_save(self, conversation_stats: 'ConversationStats'):
         """
-        Merge two ConversationStats objects.
+        Merge restored metrics from another ConversationStats into this one.
 
-        - Drop any entries with zero accumulated_cost from both stats objects
-          before checking for duplicates
-        - Take all metrics from both `restored_metrics` and `service_to_metrics`
-          for each object.
-        - If any service_id exists in BOTH objects (after dropping zeros), raise an error.
-        - Combine into a single dict on `self.service_to_metrics` and clear
-          `self.restored_metrics`.
-        - Save the merged result.
+        Important:
+        - This method is intended to be used immediately after restoring metrics from
+          storage, before any LLM services are registered. In that state, only
+          `restored_metrics` should contain entries and `service_to_metrics` should
+          be empty. If either side has entries in `service_to_metrics`, we log an
+          error but continue execution.
+
+        Behavior:
+        - Drop entries with zero accumulated_cost from both `restored_metrics` dicts
+          (self and incoming) before merging.
+        - Merge only `restored_metrics`. For duplicate keys, the incoming
+          `conversation_stats.restored_metrics` overwrites existing entries.
+        - Do NOT merge `service_to_metrics` here.
+        - Persist results by calling save_metrics().
         """
 
-        # 1) Drop zero-cost entries from both sides before duplicate detection
+        # If either side has active service metrics, log an error but proceed
+        if self.service_to_metrics or conversation_stats.service_to_metrics:
+            logger.error(
+                'merge_and_save should be used only when service_to_metrics are empty; '
+                'found active service metrics during merge. Proceeding anyway.',
+                extra={
+                    'conversation_id': self.conversation_id,
+                    'self_service_to_metrics_keys': list(self.service_to_metrics.keys()),
+                    'incoming_service_to_metrics_keys': list(
+                        conversation_stats.service_to_metrics.keys()
+                    ),
+                },
+            )
+
+        # Drop zero-cost entries from restored metrics only
         def _drop_zero_cost(d: dict[str, Metrics]) -> None:
             to_delete = [
                 k for k, v in d.items() if getattr(v, 'accumulated_cost', 0) == 0
@@ -124,26 +144,13 @@ class ConversationStats:
             for k in to_delete:
                 del d[k]
 
-        _drop_zero_cost(self.service_to_metrics)
         _drop_zero_cost(self.restored_metrics)
-        _drop_zero_cost(conversation_stats.service_to_metrics)
         _drop_zero_cost(conversation_stats.restored_metrics)
 
-        # 2) Compute IDs and check for duplicates
-        self_ids = set(self.service_to_metrics.keys()) | set(
-            self.restored_metrics.keys()
-        )
-        other_ids = set(conversation_stats.service_to_metrics.keys()) | set(
-            conversation_stats.restored_metrics.keys()
-        )
-
-        dupes = self_ids & other_ids
-        if dupes:
-            raise ValueError(f'Duplicate service IDs across stats: {sorted(dupes)}')
-
-        # 3) Merge and save
+        # Merge restored metrics, allowing incoming to overwrite
         self.restored_metrics.update(conversation_stats.restored_metrics)
-        self.service_to_metrics.update(conversation_stats.service_to_metrics)
+
+        # Save merged state
         self.save_metrics()
         logger.info(
             'Merged conversation stats',
