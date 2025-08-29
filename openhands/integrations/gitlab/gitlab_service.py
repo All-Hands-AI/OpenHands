@@ -158,7 +158,6 @@ class GitLabService(BaseGitService, GitService):
 
                 response.raise_for_status()
                 headers = {}
-                print(response.headers)
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
@@ -614,7 +613,6 @@ class GitLabService(BaseGitService, GitService):
             except (ValueError, TypeError):
                 pass
 
-        # Parse pagination headers
         return PaginatedBranchesResponse(
             branches=branches,
             has_next_page=has_next_page,
