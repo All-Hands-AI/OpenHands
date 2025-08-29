@@ -6,10 +6,6 @@ from openhands.integrations.github.service.branches_prs import (
 )
 from openhands.integrations.github.service.core import GitHubCoreMixin
 from openhands.integrations.github.service.graphql import GitHubGraphQLMixin
-from openhands.integrations.github.service.http import GitHubHTTPMixin
-from openhands.integrations.github.service.installations import (
-    GitHubInstallationsMixin,
-)
 from openhands.integrations.github.service.microagents import GitHubMicroagentsMixin
 from openhands.integrations.github.service.repos import GitHubReposMixin
 from openhands.integrations.service_types import (
@@ -21,9 +17,7 @@ from openhands.integrations.service_types import (
 
 class GitHubService(
     GitHubCoreMixin,
-    GitHubHTTPMixin,
     GitHubReposMixin,
-    GitHubInstallationsMixin,
     GitHubBranchesMixin,
     GitHubPRsMixin,
     GitHubGraphQLMixin,
