@@ -599,10 +599,14 @@ class GitLabService(BaseGitService, GitService):
             )
             branches.append(branch)
 
+        has_next_page = False
+        if headers.get('Link', ''):
+            has_next_page = True
+
         # Parse pagination headers
         return PaginatedBranchesResponse(
             branches=branches,
-            has_next_page=bool(headers.get('Link', '')),
+            has_next_page=has_next_page,
             current_page=page,
             per_page=per_page,
             total_count=len(branches),
