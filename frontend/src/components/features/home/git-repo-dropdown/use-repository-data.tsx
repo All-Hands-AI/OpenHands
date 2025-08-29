@@ -3,6 +3,9 @@ import { Provider } from "#/types/settings";
 import { GitRepository } from "#/types/git";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
 import { useSearchRepositories } from "#/hooks/query/use-search-repositories";
+import { useAppInstallations } from "#/hooks/query/use-app-installations";
+import { useConfig } from "#/hooks/query/use-config";
+import { shouldUseInstallationRepos } from "#/utils/utils";
 
 export function useRepositoryData(
   provider: Provider,
@@ -12,18 +15,49 @@ export function useRepositoryData(
   inputValue: string,
   value?: string | null,
 ) {
+  const { data: config } = useConfig();
+  const useInstallationRepos = shouldUseInstallationRepos(
+    provider,
+    config?.APP_MODE,
+  );
+
+  // Fetch installations first if needed
+  const {
+    data: installations,
+    isSuccess: installationsLoaded,
+    isLoading: installationsLoading,
+    isError: installationsError,
+  } = useAppInstallations(provider);
+
+  // Determine if repositories query should be enabled
+  const repositoriesEnabled = useMemo(() => {
+    if (disabled) return false;
+
+    // For non-installation repos, enable immediately
+    if (!useInstallationRepos) return true;
+
+    // For installation repos, wait until installations are successfully loaded
+    return installationsLoaded && installations && installations.length > 0;
+  }, [disabled, useInstallationRepos, installationsLoaded, installations]);
+
   // Fetch user repositories with pagination
   const {
     data: repoData,
     fetchNextPage,
     hasNextPage,
-    isLoading,
+    isLoading: repoLoading,
     isFetchingNextPage,
-    isError,
+    isError: repoError,
   } = useGitRepositories({
     provider,
-    enabled: !disabled,
+    enabled: repositoriesEnabled,
   });
+
+  // Combine loading states
+  const isLoading = useInstallationRepos
+    ? installationsLoading || repoLoading
+    : repoLoading;
+  const isError = installationsError || repoError;
 
   // Search repositories when user types
   const { data: searchData, isLoading: isSearchLoading } =

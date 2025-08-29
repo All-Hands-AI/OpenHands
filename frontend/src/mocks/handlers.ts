@@ -332,4 +332,21 @@ export const handlers = [
 
     return HttpResponse.json(null, { status: 400 });
   }),
+
+  // Mock installations endpoint for testing
+  http.get("/api/user/installations", async ({ request }) => {
+    await delay(300); // Simulate network delay
+
+    const url = new URL(request.url);
+    const provider = url.searchParams.get("provider");
+
+    // Simulate 2 installations for GitHub in SaaS mode
+    if (provider === "github") {
+      const installations = ["123456", "789012"];
+      return HttpResponse.json(installations);
+    }
+
+    // Return empty array for other providers
+    return HttpResponse.json([]);
+  }),
 ];

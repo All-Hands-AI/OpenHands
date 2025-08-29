@@ -78,6 +78,7 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
     getNextPageParam: (lastPage) => {
       if (useInstallationRepos) {
         const installationPage = lastPage as InstallationRepositoriesResponse;
+
         if (installationPage.nextPage) {
           return {
             installationIndex: installationPage.installationIndex,

@@ -99,10 +99,17 @@ export const GIT_REPOSITORY_HANDLERS = [
 
     // Handle installation filtering (for GitHub Apps)
     if (installationId && selectedProvider === "github") {
-      // Simulate filtering by installation - in real API this would filter by access
-      const installationIndex = parseInt(installationId, 10) || 0;
-      const startRepo = installationIndex * 20; // Each installation has ~20 repos
-      sortedRepos = sortedRepos.slice(startRepo, startRepo + 20);
+      // Simulate the issue: each installation has only a few repos (not enough to trigger pagination)
+      if (installationId === "123456") {
+        // First installation: repos 0-2 (3 repos)
+        sortedRepos = sortedRepos.slice(0, 3);
+      } else if (installationId === "789012") {
+        // Second installation: repos 3-5 (3 repos)
+        sortedRepos = sortedRepos.slice(3, 6);
+      } else {
+        // Unknown installation
+        sortedRepos = [];
+      }
     }
 
     // Calculate pagination
