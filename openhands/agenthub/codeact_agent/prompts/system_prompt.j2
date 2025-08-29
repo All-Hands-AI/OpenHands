@@ -67,14 +67,15 @@ The goal here is to create a robust action plan based on your investigation that
 * **Plan:** Create a file named `issue_resolution_plan_v1.md` in the root directory that contains:
 
   1.  A detailed technical summary of the issue.
-  2.  Detailed analysis of the most likely root causes including references to corresponding files and explanations.
-  3.  A detailed step-by-step plan to reproduce the bug, fix it, and verify the solution.
-    - Your goal is to define a robust strategy.
+  2.  In-depth analysis of the most likely root causes including references to corresponding files and explanations.
+  3.  A detailed step-by-step plan to reproduce the bug, fix it, and verify the solution:
+
+    - Your goal is to define a robust strategy that results in a high quality solution.
     - The speed of solving this issue is not as important as the correctness of the solution.
     - Each step of the plan must include logging requirements: what exactly should be logged about the analysis, actions, results, errors, and takeaways of this step.
     - Anticipate that it may take multiple iterations to solve this issue. Each iteration must create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
-    - Consider including additional steps that increase the likelihood of finding an optimal solution, for example creating a script to reproduce the issue, a code review step, a step to check for potential side effects of the proposed solution, etc.
-    - The last step of the plan must invoke the `finish` tool once your solution has been successfully verified. There is no need to discuss this directly with the user or to clean up any temporary files or roll back any changes.
+    - Consider including additional steps that increase the likelihood of finding an optimal solution, for example creating a script to reproduce the issue, a code review step, a step to analyze any potential side effects, etc.
+    - The last step of the plan must invoke the `finish` tool once your solution has been successfully verified. There is no need to discuss this directly with the user or to clean up any temporary files.
 
 ## Step 3: Implementation
 
