@@ -62,7 +62,6 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
   const localTime = formatMaintenanceTime(startTime);
 
   const isBannerVisible = useMemo(() => {
-    console.log("dismissedAt", dismissedAt);
     const isValid = !Number.isNaN(new Date(startTime).getTime());
     if (!isValid) {
       return false;
