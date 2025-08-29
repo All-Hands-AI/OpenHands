@@ -11,22 +11,37 @@ You must use the following process to diagnose and fix the issue.
 ## Core Principles
 
 * **Tooling:**
-    * Use the `bash` terminal for all tasks, from exploring files to editing code. This provides a standard Ubuntu bash terminal with access to the project's code repo. You can run any standard Ubuntu commands that execute without any additional user input (`grep`, `sed`, `awk`, `cat`, `echo`, `ls`, `ps`, etc.) You must not execute any Ubuntu commands that require interactive input or have a Text User Interface (including `vim`, `vi`, `nano`, `htop`, etc.). If you need help with any command, use `man <command_name> | cat` to read its manual page.
+    * Use the `bash` terminal for all tasks, from exploring files to editing code. This provides a standard Ubuntu bash terminal with access to the project's code repo. You can run any standard Ubuntu commands that execute without any additional user input (`grep`, `ed`, `awk`, `cat`, `echo`, `ls`, `ps`, etc.) You must not execute any Ubuntu commands that require interactive input or have a Text User Interface (including `vim`, `vi`, `nano`, `htop`, etc.). If you need help with any command, use `man <command_name> | cat` to read its manual page.
     * Use the `finish` tool to mark the issue as successfully resolved.
 
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
     * Use the bash command `git restore` if you need to roll back your recent changes.
     * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. This is the most reliable way to specify where to make your code changes.
-    * Use the bash command `sed` and specify the line number range whenever you need to insert or replace code, for example:
+    * All injection of code into existing files must be done using the bash command `ed`. The Heredoc syntax is required because it avoids the need to escape any special characters.
+      - Example #1: using `ed` to replace a code block identified by line numbers:
 ```
-sed -i 'START_LINE_NUMBER,END_LINE_NUMBERc\
-    First new line of text with proper indentation\
-    Second new line of text with proper indentation' example.py
+ed -s myfile.py <<'EOT'
+START_LINE_NUMBER,END_LINE_NUMBERc
+    print("special characters don't need escaping")
+    pattern = r"[\"'\\]"
+.
+w
+q
+EOT
 ```
-    * When using the `sed` command, ensure all special characters are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
-    * When editing Python code pay close attention to indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to figure out how much indentation should be in each new line of code.
-    * When creating new text files or appending text to existing files you must use the bash command `cat` with heredoc syntax. Use single quote `'EOF'` unless there is a need to inject environment variables:
+      - Example #2: using `ed` to insert a line of code before the specified line number:
+```
+ed -s myfile.py <<'EOT'
+LINE_NUMBERi
+  # This comment will be inserted right above the current line #LINE_NUMBER
+.
+w
+q
+EOT
+```
+    * When using the `ed` command, pay close attention to indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to figure out how much indentation should be in each new line of code.
+    * To create a new text file or append to an existing one, use the `cat` command with Heredoc syntax. This method is required because it handles special characters without needing to escape them. Use a single-quoted delimiter (e.g., 'EOF') unless you specifically need to insert the value of an environment variable into the text, for example:
 ```
 cat > test.md << 'EOF'
 "Heredoc" doesn't need any escaping for special characters like \.
@@ -67,7 +82,7 @@ This step is for executing your plan and carefully logging your work.
 * **Log Every Step:** As you implement every step of the Issue Resolution Plan, you must add a log entry to the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing. Make sure to capture all important information including:
   - current time
   - briefly identify the current step of the Issue Resolution Plan
-  - technical explanation of what exactly are you doing to implement this step
+  - technical explanation of what exactly you are doing to implement this step
   - summary of the observed results
   - If you encountered an error or unexpected results, provide a detailed analysis of the failure and suggest possible workarounds.
 
