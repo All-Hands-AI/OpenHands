@@ -5,7 +5,7 @@ export function GuideMessage() {
 
   return (
     <div className="w-full flex items-center justify-center">
-      <div className="w-fit flex items-center justify-center gap-1 px-[15px] rounded-[12px] bg-[#454545] leading-5 text-white text-[15px] font-normal h-[38px]">
+      <div className="w-fit flex items-center justify-center gap-1 px-[15px] rounded-[12px] bg-[#454545] leading-5 text-white text-[15px] font-normal h-[38px] m-1">
         <div>
           <span className="">{t("HOME$GUIDE_MESSAGE_TITLE")} </span>
           <a

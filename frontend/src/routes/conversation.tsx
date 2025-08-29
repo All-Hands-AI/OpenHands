@@ -7,6 +7,8 @@ import { clearTerminal } from "#/state/command-slice";
 import { useEffectOnce } from "#/hooks/use-effect-once";
 import { clearJupyter } from "#/state/jupyter-slice";
 import { resetConversationState } from "#/state/conversation-slice";
+import { setCurrentAgentState } from "#/state/agent-slice";
+import { AgentState } from "#/types/agent-state";
 
 import { useBatchFeedback } from "#/hooks/query/use-batch-feedback";
 import { WsClientProvider } from "#/context/ws-client-provider";
@@ -62,12 +64,14 @@ function AppContent() {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
     dispatch(resetConversationState());
+    dispatch(setCurrentAgentState(AgentState.LOADING));
   }, [conversationId]);
 
   useEffectOnce(() => {
     dispatch(clearTerminal());
     dispatch(clearJupyter());
     dispatch(resetConversationState());
+    dispatch(setCurrentAgentState(AgentState.LOADING));
   });
 
   return (

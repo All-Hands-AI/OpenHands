@@ -66,21 +66,23 @@ export function TaskCard({ task }: TaskCardProps) {
       type="button"
       data-testid="task-launch-button"
       className={cn(
-        "pt-[6px] pb-3 text-left flex items-center gap-3 cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2",
+        "w-full pt-[6px] pb-3 text-left flex items-center justify-between cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2",
         isCreatingConversation && "cursor-not-allowed",
       )}
       disabled={isCreatingConversation}
       onClick={handleLaunchConversation}
     >
-      <TaskIssueNumber issueNumber={task.issue_number} href={href} />
+      <div className="flex items-center gap-3">
+        <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
-      <div className="w-full flex flex-col gap-1">
-        <span className="text-xs text-white leading-6 font-normal">
-          {getTaskTypeMap(t)[task.task_type]}
-        </span>
-        <span className="text-xs text-[#A3A3A3] leading-4 font-normal">
-          {task.title}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-white leading-6 font-normal">
+            {getTaskTypeMap(t)[task.task_type]}
+          </span>
+          <span className="text-xs text-[#A3A3A3] leading-4 font-normal">
+            {task.title}
+          </span>
+        </div>
       </div>
 
       <div className="text-xs text-[#A3A3A3] leading-4 font-normal">

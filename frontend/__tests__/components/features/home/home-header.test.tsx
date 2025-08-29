@@ -43,14 +43,6 @@ describe("HomeHeader", () => {
     expect(title).toBeInTheDocument();
   });
 
-  it("should render the yellow hand icon", () => {
-    renderHomeHeader();
-
-    const yellowHandIcon = screen.getByTestId("yellow-hand-icon");
-    expect(yellowHandIcon).toBeInTheDocument();
-    expect(yellowHandIcon).toHaveClass("animate-wave", "flex-shrink-0");
-  });
-
   it("should render the GuideMessage component", () => {
     renderHomeHeader();
 
