@@ -41,6 +41,10 @@ class GitHubService(
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
+    BASE_URL = 'https://api.github.com'
+    token: SecretStr = SecretStr('')
+    refresh = False
+
     def __init__(
         self,
         user_id: str | None = None,
