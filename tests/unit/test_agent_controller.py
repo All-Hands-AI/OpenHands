@@ -34,12 +34,17 @@ from openhands.storage.memory import InMemoryFileStore
 
 @pytest.fixture(autouse=True)
 def patch_db_pool_instance():
-    with patch('openhands.server.mem0._db_pool_instance', MagicMock()), patch(
-        'openhands.core.database.db_pool', MagicMock()
-    ), patch('openhands.shared.config.file_store', 'memory'), patch(
+    with patch(
+        'openhands.server.mem0._db_pool_instance', MagicMock()
+    ) as mock_db_pool, patch('openhands.core.database.db_pool', MagicMock()), patch(
+        'openhands.shared.config.file_store', 'memory'
+    ), patch(
         'openhands.utils.final_result_extractor.save_final_result_to_database',
         AsyncMock(return_value=True),
     ):
+        # Ensure the function is mocked on the db_pool_instance mock
+        mock_db_pool._add_mem0_conversation_job_direct_db = AsyncMock(return_value=True)
+
         yield
 
 

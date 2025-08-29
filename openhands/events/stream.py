@@ -9,6 +9,7 @@ from functools import partial
 from typing import Any, Callable
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.events.action.init_pyodide import InitPyodideAction
 from openhands.events.action.message import StreamingMessageAction
 from openhands.events.event import Event, EventSource
 from openhands.events.event_store import EventStore
@@ -198,7 +199,9 @@ class EventStream(EventStore):
                 self._write_page_cache = []
 
         if event.id is not None:
-            if not isinstance(event, StreamingMessageAction):
+            if not isinstance(event, StreamingMessageAction) and not isinstance(
+                event, InitPyodideAction
+            ):
                 # Write the event to the store - this can take some time
                 self.file_store.write(
                     self._get_filename_for_id(event.id, self.user_id), json.dumps(data)

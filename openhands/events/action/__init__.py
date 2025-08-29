@@ -19,6 +19,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.init_pyodide import InitPyodideAction
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction, StreamingMessageAction
 
@@ -44,4 +45,5 @@ __all__ = [
     'McpAction',
     'A2AListRemoteAgentsAction',
     'A2ASendTaskAction',
+    'InitPyodideAction',
 ]

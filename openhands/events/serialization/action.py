@@ -27,6 +27,7 @@ from openhands.events.action.files import (
     FileReadAction,
     FileWriteAction,
 )
+from openhands.events.action.init_pyodide import InitPyodideAction
 from openhands.events.action.mcp import McpAction
 from openhands.events.action.message import MessageAction, StreamingMessageAction
 
@@ -52,6 +53,7 @@ actions = (
     A2ASendTaskAction,
     StreamingMessageAction,
     KnowledgeBaseAction,
+    InitPyodideAction,
 )
 
 ACTION_TYPE_TO_CLASS = {action_class.action: action_class for action_class in actions}  # type: ignore[attr-defined]

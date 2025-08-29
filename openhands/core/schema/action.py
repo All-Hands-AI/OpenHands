@@ -10,6 +10,10 @@ class ActionType(str, Enum):
     """Represents a streaming message chunk for UI display only.
     """
 
+    INIT_PYODIDE = 'init_pyodide'
+    """Initialize the Pyodide tool so the frontend can detect it and start streaming.
+    """
+
     START = 'start'
     """Starts a new development task OR send chat from the user. Only sent by the client.
     """

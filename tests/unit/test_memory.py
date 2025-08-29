@@ -2,7 +2,7 @@ import asyncio
 import os
 import shutil
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -29,9 +29,16 @@ from openhands.storage.memory import InMemoryFileStore
 @pytest.fixture(autouse=True)
 def patch_db_pool_instance():
     """Mock database connection to avoid connection errors in tests."""
-    with patch('openhands.server.mem0._db_pool_instance', MagicMock()), patch(
-        'openhands.core.database.db_pool', MagicMock()
-    ), patch('openhands.shared.config.file_store', 'memory'):
+    with patch(
+        'openhands.server.mem0._db_pool_instance', MagicMock()
+    ) as mock_db_pool, patch('openhands.core.database.db_pool', MagicMock()), patch(
+        'openhands.shared.config.file_store', 'memory'
+    ):
+        mock_db_pool.get_connection = MagicMock(return_value=MagicMock())
+
+        # Add async mock for the function on the db pool instance
+        mock_db_pool._add_mem0_conversation_job_direct_db = AsyncMock(return_value=True)
+
         yield
 
 

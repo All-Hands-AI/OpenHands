@@ -3,7 +3,7 @@ import os
 from collections import deque
 from copy import deepcopy
 from datetime import datetime
-from typing import Any, Optional, Union, override
+from typing import Any, Dict, Optional, Union, override
 
 from httpx import request
 
@@ -22,6 +22,7 @@ from openhands.events.action import (
     AgentFinishAction,
     StreamingMessageAction,
 )
+from openhands.events.action.init_pyodide import InitPyodideAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
 from openhands.llm.llm import LLM, check_tools
@@ -139,6 +140,9 @@ class CodeActAgent(Agent):
             else None
         )
 
+        self._tool_arg_buffer: dict[str, str] = {}  # Buffer for tool arguments
+        self._tool_state: Dict[str, Dict[str, Any]] = {}
+
     @override
     def set_system_prompt(self, system_prompt: str) -> None:
         self.system_prompt = system_prompt
@@ -226,6 +230,7 @@ class CodeActAgent(Agent):
         last_chunk = None
         has_tool_calls = False  # Track if we accumulated any tool calls
         accumulated_content = ''  # Track assistant content
+        masked_pyodide = False
 
         # For streaming "finish" or "think" function message content
         streaming_function_calls: dict[str, Any] = {}  # tool_call_id -> streaming state
@@ -294,6 +299,41 @@ class CodeActAgent(Agent):
                                     streaming_function_calls,
                                     research_mode,
                                 )
+                            elif function_name == 'str_replace_editor':
+                                started, remainder = self._parse_tool_arguments(
+                                    target_id,
+                                    func_delta.arguments,
+                                    pattern='"file_text": "',
+                                )
+                                if not started:
+                                    continue
+                                self._stream_tool_input_arguments(
+                                    remainder,
+                                    research_mode,
+                                    tool_call_id=target_id,
+                                )
+                            elif (
+                                function_name == 'pyodide_execute_python_mcp_tool_call'
+                            ):
+                                if not masked_pyodide and self.event_stream is not None:
+                                    pyodide_event = InitPyodideAction(content='')
+                                    self.event_stream.add_event(
+                                        pyodide_event, EventSource.AGENT
+                                    )
+                                    masked_pyodide = True
+
+                                started, remainder = self._parse_tool_arguments(
+                                    target_id, func_delta.arguments, pattern='"code": "'
+                                )
+                                if not started:
+                                    continue
+                                self._stream_tool_input_arguments(
+                                    remainder,
+                                    research_mode,
+                                    tool_call_id=target_id,
+                                    is_tool_pyodide=True,
+                                )
+
             else:
                 if delta.content:
                     accumulated_content += delta.content
@@ -486,6 +526,60 @@ class CodeActAgent(Agent):
         # Stream thought content if we found the start
         stream_field_content('thought_start', 'thought_streamed')
 
+    def _parse_tool_arguments(
+        self, tool_call_id: str, chunk: str, pattern: str
+    ) -> tuple[bool, str]:
+        st = self._tool_state.setdefault(tool_call_id, {'found': False, 'buf': ''})
+        if st['found']:
+            return True, chunk
+
+        st['buf'] += chunk
+        idx = st['buf'].find(pattern)
+        if idx == -1:
+            keep = min(len(pattern) - 1, len(st['buf']))
+            st['buf'] = st['buf'][-keep:] if keep > 0 else ''
+            return False, ''
+
+        start = idx + len(pattern)
+        remainder = st['buf'][start:]
+        st['buf'] = ''
+        st['found'] = True
+        return True, remainder
+
+    def _stream_tool_input_arguments(
+        self,
+        arguments_chunk: str,
+        research_mode: str | None = None,
+        is_tool_pyodide: bool = False,
+        tool_call_id: str | None = None,
+    ):
+        merged = arguments_chunk
+        if tool_call_id:
+            prev = self._tool_arg_buffer.get(tool_call_id, '')
+            if prev:
+                merged = prev + arguments_chunk
+
+        trailing_backslashes = 0
+        i = len(merged) - 1
+        while i >= 0 and merged[i] == '\\':
+            trailing_backslashes += 1
+            i -= 1
+        ends_with_single_backslash = trailing_backslashes % 2 == 1
+
+        if tool_call_id and ends_with_single_backslash:
+            self._tool_arg_buffer[tool_call_id] = merged
+            return
+
+        safe_content = self._get_safe_content(merged)
+        if safe_content and research_mode != ResearchMode.FOLLOW_UP:
+            self._emit_streaming_content(
+                safe_content,
+                is_tool_input_arguments=True,
+                is_tool_pyodide=is_tool_pyodide,
+            )
+        if tool_call_id and tool_call_id in self._tool_arg_buffer:
+            del self._tool_arg_buffer[tool_call_id]
+
     def _get_safe_content(self, content: str) -> str:
         """Extract content safe to stream (avoid partial escapes)"""
         if not content:
@@ -518,7 +612,12 @@ class CodeActAgent(Agent):
                     return i
         return -1
 
-    def _emit_streaming_content(self, content: str):
+    def _emit_streaming_content(
+        self,
+        content: str,
+        is_tool_input_arguments: bool = False,
+        is_tool_pyodide: bool = False,
+    ):
         """Emit streaming content through event stream"""
         if content and self.event_stream:
             try:
@@ -526,12 +625,20 @@ class CodeActAgent(Agent):
 
                 decoded = json.loads(f'"{content}"')
                 action = StreamingMessageAction(
-                    content=decoded, wait_for_response=False, enable_process_llm=False
+                    content=decoded,
+                    wait_for_response=False,
+                    enable_process_llm=False,
+                    is_tool_input_arguments=is_tool_input_arguments,
+                    is_tool_pyodide=is_tool_pyodide,
                 )
                 self.event_stream.add_event(action, EventSource.AGENT)
             except json.JSONDecodeError:
                 action = StreamingMessageAction(
-                    content=content, wait_for_response=False, enable_process_llm=False
+                    content=content,
+                    wait_for_response=False,
+                    enable_process_llm=False,
+                    is_tool_input_arguments=is_tool_input_arguments,
+                    is_tool_pyodide=is_tool_pyodide,
                 )
                 self.event_stream.add_event(action, EventSource.AGENT)
 
