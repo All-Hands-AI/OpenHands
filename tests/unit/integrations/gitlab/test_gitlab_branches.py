@@ -25,8 +25,8 @@ async def test_get_paginated_branches_gitlab_headers_and_parsing():
     ]
 
     headers = {
-        'X-Next-Page': '3',  # indicates has next page
         'X-Total': '42',
+        'Link': '<https://gitlab.example.com/api/v4/projects/group%2Frepo/repository/branches?page=3&per_page=2>; rel="next"',  # indicates has next page
     }
 
     with patch.object(service, '_make_request', return_value=(mock_response, headers)):
