@@ -52,8 +52,8 @@ export function GenericDropdownMenu<T>({
       {...getMenuProps({
         ref: menuRef,
         className: cn(
-          "absolute z-10 w-full bg-[#454545] border border-[#717888] rounded-xl shadow-lg max-h-60 overflow-auto",
-          "focus:outline-none p-1 gap-2 flex flex-col",
+          "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none max-h-60 overflow-auto",
+          "focus:outline-none p-1 mt-1",
         ),
         onScroll,
       })}
