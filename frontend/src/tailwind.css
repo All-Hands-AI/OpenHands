@@ -110,7 +110,7 @@
 /* Custom styles for contenteditable */
 .chat-input:empty:before {
   content: attr(data-placeholder);
-  color: #A1A1A1;
+  color: #a1a1a1;
   pointer-events: none;
   font-size: 16px;
   font-weight: 400;
@@ -339,9 +339,44 @@
 }
 
 .context-menu-box-shadow {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
 }
 
 .git-external-link-icon {
-  background: linear-gradient(90deg, rgba(69, 69, 69, 0.00) 0.35%, #454545 41.39%);
+  background: linear-gradient(90deg, rgba(69, 69, 69, 0) 0.35%, #454545 41.39%);
+}
+
+@keyframes wave {
+  0% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(14deg);
+  }
+  20% {
+    transform: rotate(-8deg);
+  }
+  30% {
+    transform: rotate(14deg);
+  }
+  40% {
+    transform: rotate(-4deg);
+  }
+  50% {
+    transform: rotate(10deg);
+  }
+  60% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+.animate-wave {
+  animation: wave 2.5s ease-in-out infinite;
+  transform-origin: 70% 70%;
 }
