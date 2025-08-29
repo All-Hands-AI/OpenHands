@@ -25,6 +25,7 @@ async def test_get_paginated_branches_gitlab_headers_and_parsing():
     ]
 
     headers = {
+        'X-Total': '42',
         'Link': '<https://gitlab.example.com/api/v4/projects/group%2Frepo/repository/branches?page=3&per_page=2>; rel="next"',  # indicates has next page
     }
 
@@ -35,7 +36,7 @@ async def test_get_paginated_branches_gitlab_headers_and_parsing():
         assert res.has_next_page is True
         assert res.current_page == 2
         assert res.per_page == 2
-        assert res.total_count == 2  # Now uses len(branches) instead of header
+        assert res.total_count == 42
         assert len(res.branches) == 2
         assert res.branches[0] == Branch(
             name='main',
@@ -68,7 +69,7 @@ async def test_get_paginated_branches_gitlab_no_next_or_total():
     with patch.object(service, '_make_request', return_value=(mock_response, headers)):
         res = await service.get_paginated_branches('group/repo', page=1, per_page=1)
         assert res.has_next_page is False
-        assert res.total_count == 1  # Now uses len(branches) instead of None
+        assert res.total_count is None
         assert len(res.branches) == 1
         assert res.branches[0].name == 'fix'
 

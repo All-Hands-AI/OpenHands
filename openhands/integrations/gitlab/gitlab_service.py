@@ -158,8 +158,12 @@ class GitLabService(BaseGitService, GitService):
 
                 response.raise_for_status()
                 headers = {}
+                print(response.headers)
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
+
+                if 'X-Total' in response.headers:
+                    headers['X-Total'] = response.headers['X-Total']
 
                 content_type = response.headers.get('Content-Type', '')
                 if 'application/json' in content_type:
@@ -600,8 +604,15 @@ class GitLabService(BaseGitService, GitService):
             branches.append(branch)
 
         has_next_page = False
+        total_count = None
         if headers.get('Link', ''):
             has_next_page = True
+
+        if 'X-Total' in headers:
+            try:
+                total_count = int(headers['X-Total'])
+            except (ValueError, TypeError):
+                pass
 
         # Parse pagination headers
         return PaginatedBranchesResponse(
@@ -609,7 +620,7 @@ class GitLabService(BaseGitService, GitService):
             has_next_page=has_next_page,
             current_page=page,
             per_page=per_page,
-            total_count=len(branches),
+            total_count=total_count,
         )
 
     async def search_branches(
