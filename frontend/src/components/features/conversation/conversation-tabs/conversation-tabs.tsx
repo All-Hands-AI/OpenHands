@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import JupyterIcon from "#/icons/jupyter.svg?react";
@@ -28,8 +28,6 @@ export function ConversationTabs() {
     (state: RootState) => state.conversation,
   );
 
-  const isTabClicked = useRef<boolean>(false);
-
   const onTabChange = (value: ConversationTab | null) => {
     dispatch(setSelectedTab(value));
   };
@@ -37,34 +35,32 @@ export function ConversationTabs() {
   useEffect(() => {
     const handlePanelVisibilityChange = () => {
       if (isRightPanelShown) {
-        // Only change to editor tab if no tab was explicitly clicked
-        if (!isTabClicked.current) {
+        // If no tab is selected, default to editor tab
+        if (!selectedTab) {
           onTabChange("editor");
         }
       } else {
         // Reset state when panel is hidden
         onTabChange(null);
       }
-
-      // Reset the click flag after handling the change
-      isTabClicked.current = false;
     };
 
     handlePanelVisibilityChange();
-  }, [isRightPanelShown, onTabChange]);
+  }, [isRightPanelShown, selectedTab, onTabChange]);
 
   const { t } = useTranslation();
 
-  const showActionPanel = () => {
-    dispatch(setIsRightPanelShown(true));
-  };
-
-  const onTabSelected = (tab: ConversationTab | null) => {
-    if (tab) {
+  const onTabSelected = (tab: ConversationTab) => {
+    if (selectedTab === tab && isRightPanelShown) {
+      // If clicking the same active tab, close the drawer
+      dispatch(setIsRightPanelShown(false));
+    } else {
+      // If clicking a different tab or drawer is closed, open drawer and select tab
       onTabChange(tab);
+      if (!isRightPanelShown) {
+        dispatch(setIsRightPanelShown(true));
+      }
     }
-    showActionPanel();
-    isTabClicked.current = true;
   };
 
   const tabs = [
