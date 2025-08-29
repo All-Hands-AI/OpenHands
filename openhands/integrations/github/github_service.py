@@ -2,13 +2,14 @@ import os
 
 from pydantic import SecretStr
 
-from openhands.integrations.github.service.branches_prs import GitHubBranchesMixin
-from openhands.integrations.github.service.features import GitHubFeaturesMixin
-from openhands.integrations.github.service.identity import GitHubIdentityMixin
-from openhands.integrations.github.service.microagents import GitHubMicroagentsMixin
-from openhands.integrations.github.service.prs import GitHubPRsMixin
-from openhands.integrations.github.service.repos import GitHubReposMixin
-from openhands.integrations.github.service.resolver import GitHubResolverMixin
+from openhands.integrations.github.service import (
+    GitHubBranchesMixin,
+    GitHubFeaturesMixin,
+    GitHubMicroagentsMixin,
+    GitHubPRsMixin,
+    GitHubReposMixin,
+    GitHubResolverMixin,
+)
 from openhands.integrations.service_types import (
     BaseGitService,
     GitService,
@@ -21,7 +22,6 @@ from openhands.utils.import_utils import get_impl
 class GitHubService(
     GitHubBranchesMixin,
     GitHubFeaturesMixin,
-    GitHubIdentityMixin,
     GitHubMicroagentsMixin,
     GitHubPRsMixin,
     GitHubReposMixin,
