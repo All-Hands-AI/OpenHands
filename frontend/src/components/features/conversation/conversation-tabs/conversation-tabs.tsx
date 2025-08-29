@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import JupyterIcon from "#/icons/jupyter.svg?react";
@@ -8,70 +8,59 @@ import ServerIcon from "#/icons/server.svg?react";
 import GitChanges from "#/icons/git_changes.svg?react";
 import VSCodeIcon from "#/icons/vscode.svg?react";
 import { cn } from "#/utils/utils";
-import { ConversationTab, useConversationTabs } from "./use-conversation-tabs";
 import { ConversationTabNav } from "./conversation-tab-nav";
 import { ChatActionTooltip } from "../../chat/chat-action-tooltip";
 import { I18nKey } from "#/i18n/declaration";
 import { VSCodeTooltipContent } from "./vscode-tooltip-content";
-import { setIsRightPanelShown } from "#/state/conversation-slice";
+import {
+  setIsRightPanelShown,
+  setSelectedTab,
+  type ConversationTab,
+} from "#/state/conversation-slice";
 import { RootState } from "#/store";
 
 export function ConversationTabs() {
-  const [{ selectedTab, terminalOpen }, { onTabChange, onTerminalChange }] =
-    useConversationTabs();
-
-  const isTabClicked = useRef<boolean>(false);
-
+  const dispatch = useDispatch();
+  const selectedTab = useSelector(
+    (state: RootState) => state.conversation.selectedTab,
+  );
   const { isRightPanelShown } = useSelector(
     (state: RootState) => state.conversation,
   );
 
+  const onTabChange = (value: ConversationTab | null) => {
+    dispatch(setSelectedTab(value));
+  };
+
   useEffect(() => {
     const handlePanelVisibilityChange = () => {
       if (isRightPanelShown) {
-        // Only change to editor tab if no tab was explicitly clicked
-        if (!isTabClicked.current) {
+        // If no tab is selected, default to editor tab
+        if (!selectedTab) {
           onTabChange("editor");
         }
       } else {
         // Reset state when panel is hidden
         onTabChange(null);
-        onTerminalChange(false);
       }
-
-      // Reset the click flag after handling the change
-      isTabClicked.current = false;
     };
 
     handlePanelVisibilityChange();
-  }, [isRightPanelShown]);
-
-  const dispatch = useDispatch();
+  }, [isRightPanelShown, selectedTab, onTabChange]);
 
   const { t } = useTranslation();
 
-  const showActionPanel = () => {
-    dispatch(setIsRightPanelShown(true));
-  };
-
-  const onTerminalSelected = () => {
-    onTerminalChange((prev) => !prev);
-    if (!selectedTab) {
-      onTabChange("editor");
-    }
-  };
-
-  const onTabSelected = (
-    tab: ConversationTab | null,
-    isTerminal: boolean = false,
-  ) => {
-    if (isTerminal) {
-      onTerminalSelected();
-    } else if (tab) {
+  const onTabSelected = (tab: ConversationTab) => {
+    if (selectedTab === tab && isRightPanelShown) {
+      // If clicking the same active tab, close the drawer
+      dispatch(setIsRightPanelShown(false));
+    } else {
+      // If clicking a different tab or drawer is closed, open drawer and select tab
       onTabChange(tab);
+      if (!isRightPanelShown) {
+        dispatch(setIsRightPanelShown(true));
+      }
     }
-    showActionPanel();
-    isTabClicked.current = true;
   };
 
   const tabs = [
@@ -89,11 +78,10 @@ export function ConversationTabs() {
       tooltipContent: <VSCodeTooltipContent />,
       tooltipAriaLabel: t(I18nKey.COMMON$CODE),
     },
-
     {
-      isActive: terminalOpen,
+      isActive: selectedTab === "terminal",
       icon: TerminalIcon,
-      onClick: () => onTabSelected(null, true),
+      onClick: () => onTabSelected("terminal"),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
     },

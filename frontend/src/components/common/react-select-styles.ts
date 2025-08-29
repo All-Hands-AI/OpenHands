@@ -113,6 +113,13 @@ export const providerDropdownStyles: StylesConfig<SelectOption, false> = {
     "&:hover": {
       borderColor: "#727987",
     },
+    "& .provider-dropdown__placeholder": {
+      color: "#A3A3A3",
+      fontSize: "0.875rem",
+      fontWeight: "400",
+      lineHeight: "1.25rem",
+      paddingTop: "0.125rem",
+    },
     "& .provider-dropdown__single-value": {
       color: "#A3A3A3",
       fontSize: "0.75rem",

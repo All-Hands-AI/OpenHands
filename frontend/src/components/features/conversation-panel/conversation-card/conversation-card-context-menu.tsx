@@ -46,7 +46,7 @@ export function ConversationCardContextMenu({
   const generateSection = useCallback(
     (items: React.ReactNode[], isLast?: boolean) => {
       const filteredItems = items.filter((i) => i != null);
-      const divider = <div className="border-b-1 border-[#A3A3A3]" />;
+      const divider = <div className="border-b-1 border-[#5C5D62]" />;
 
       if (filteredItems.length > 0) {
         return !isLast ? [...filteredItems, divider] : filteredItems;
@@ -62,8 +62,6 @@ export function ConversationCardContextMenu({
       testId="context-menu"
       position={position}
       alignment="right"
-      size="compact"
-      className="p-1"
     >
       {generateSection([
         onEdit && (
