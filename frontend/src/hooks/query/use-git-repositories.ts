@@ -50,25 +50,17 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
       }
 
       if (useInstallationRepos) {
-        const { repoPage, installationIndex, _timestamp } = pageParam as {
+        const { repoPage, installationIndex, _pageCount } = pageParam as {
           installationIndex: number | null;
           repoPage: number | null;
-          _timestamp?: number;
+          _pageCount?: number;
         };
 
         if (!installations) {
           throw new Error("Missing installation list");
         }
 
-        console.log('🔧 FETCH: Requesting repos', {
-          provider,
-          installationIndex: installationIndex || 0,
-          installations: installations?.map((id, idx) => `${idx}:${id}`),
-          repoPage: repoPage || 1,
-          pageSize,
-          timestamp: _timestamp,
-        });
-        console.log('🔧 FETCH: Raw pageParam received:', pageParam);
+
 
         const result = await OpenHands.retrieveInstallationRepositories(
           provider,
@@ -78,14 +70,7 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
           pageSize,
         );
 
-        console.log('🔧 FETCH: Received repos', {
-          installationIndex: installationIndex || 0,
-          repoPage: repoPage || 1,
-          dataCount: result.data.length,
-          repos: result.data.map(r => r.full_name),
-          nextPage: result.nextPage,
-          nextInstallationIndex: result.installationIndex,
-        });
+
 
         return result;
       }
@@ -96,48 +81,36 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
         pageSize,
       );
     },
-    getNextPageParam: (lastPage) => {
+    getNextPageParam: (lastPage, allPages) => {
       if (useInstallationRepos) {
         const installationPage = lastPage as InstallationRepositoriesResponse;
 
-        console.log('🔧 PAGINATION: Determining next page', {
-          currentNextPage: installationPage.nextPage,
-          currentInstallationIndex: installationPage.installationIndex,
-          dataLength: installationPage.data.length,
-        });
 
+
+        // If there are more pages in the current installation, fetch them
         if (installationPage.nextPage) {
-          const nextParam = {
+          return {
             installationIndex: installationPage.installationIndex,
             repoPage: installationPage.nextPage,
           };
-          console.log('🔧 PAGINATION: Next page within installation', nextParam);
-          return nextParam;
         }
 
+        // If there are more installations to fetch, move to the next one
         if (installationPage.installationIndex !== null) {
           // Validate that the next installation index is within bounds
           if (installations && installationPage.installationIndex >= installations.length) {
-            console.log('🔧 PAGINATION: Installation index out of bounds, stopping', {
-              installationIndex: installationPage.installationIndex,
-              installationsLength: installations.length
-            });
             return null;
           }
 
-          const nextParam = {
+          // Create a unique pagination parameter that React Query will recognize as different
+          return {
             installationIndex: installationPage.installationIndex,
             repoPage: 1,
-            // Add a unique identifier to ensure React Query treats this as a new request
-            _timestamp: Date.now(),
+            // Use page count to ensure uniqueness instead of timestamp
+            _pageCount: allPages.length,
           };
-          console.log('🔧 PAGINATION: Moving to next installation', nextParam);
-          console.log('🔧 PAGINATION: Current installations array:', installations?.map((id, idx) => `${idx}:${id}`));
-          console.log('🔧 PAGINATION: Will fetch installation at index:', installationPage.installationIndex);
-          return nextParam;
         }
 
-        console.log('🔧 PAGINATION: No more pages');
         return null;
       }
 
