@@ -161,6 +161,9 @@ class GitLabService(BaseGitService, GitService):
                 if 'Link' in response.headers:
                     headers['Link'] = response.headers['Link']
 
+                if 'X-Total' in response.headers:
+                    headers['X-Total'] = response.headers['X-Total']
+
                 content_type = response.headers.get('Content-Type', '')
                 if 'application/json' in content_type:
                     return response.json(), headers
@@ -599,12 +602,11 @@ class GitLabService(BaseGitService, GitService):
             )
             branches.append(branch)
 
-        # Parse pagination headers
         has_next_page = False
         total_count = None
-
-        if 'X-Next-Page' in headers and headers['X-Next-Page']:
+        if headers.get('Link', ''):
             has_next_page = True
+
         if 'X-Total' in headers:
             try:
                 total_count = int(headers['X-Total'])
