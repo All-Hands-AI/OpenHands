@@ -600,23 +600,12 @@ class GitLabService(BaseGitService, GitService):
             branches.append(branch)
 
         # Parse pagination headers
-        has_next_page = False
-        total_count = None
-
-        if 'X-Next-Page' in headers and headers['X-Next-Page']:
-            has_next_page = True
-        if 'X-Total' in headers:
-            try:
-                total_count = int(headers['X-Total'])
-            except (ValueError, TypeError):
-                pass
-
         return PaginatedBranchesResponse(
             branches=branches,
-            has_next_page=has_next_page,
+            has_next_page=bool(headers.get('Link', '')),
             current_page=page,
             per_page=per_page,
-            total_count=total_count,
+            total_count=len(branches),
         )
 
     async def search_branches(
