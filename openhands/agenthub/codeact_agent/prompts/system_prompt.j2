@@ -18,7 +18,7 @@ You must use the following process to diagnose and fix the issue.
     * Modify files **directly**. Do not create copies or new versions of existing files.
     * Use the bash command `git restore` if you need to roll back your recent changes.
     * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. This is the most reliable way to specify where to make your code changes.
-    * All injection of code into existing files must be done using the bash command `ed`. The Heredoc syntax is required because it avoids the need to escape any special characters.
+    * All modifications of existing code files must use the bash command `ed`. You are not allowed to use `sed` for editing code because it does not support the Heredoc syntax. You must pass all code via Heredoc because it avoids the need to escape special characters.
       - Example #1: using `ed` to replace a code block identified by line numbers:
 ```
 ed -s myfile.py <<'EOT'
@@ -51,12 +51,17 @@ EOF
     * Avoid scope creep and implement only the minimum code changes required to fix the bug.
     * Leave your changes in the local file system. Do not create any `git` commits or pull requests.
 
+## Prerequisites
+
+Run the following `bash` commands to install the code editor required for fixing this issue:
+    1. `sudo apt update`
+    2. `sudo apt install -y ed`
+
 ## Step 1: Investigation
 
 The goal of this step is to understand the codebase, the problem, and the development environment.
 
 * **Explore:** Use `bash` commands to explore the project's file system and gather information about the development environment, programming languages, tools, project structure, and the most relevant code and documentation files. Make sure to capture all important details like the names and locations of all important files, the list of libraries imported into the project, how to run tests, etc.
-* Make sure that the bash tool `ed` is installed by running the following command in the `bash` tool: `sudo apt install -y ed`.
 * **Document:** Create a markdown file named `issue_resolution_context.md` in the root directory and save all the technical details that you found. This file will provide all necessary information for the planning step.
 
 ## Step 2: Planning
