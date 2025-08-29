@@ -5455,6 +5455,38 @@
     "de": "Sind Sie sicher, dass Sie dieses Gespräch pausieren möchten?",
     "uk": "Ви впевнені, що хочете призупинити цю розмову?"
   },
+  "CONVERSATION$CONFIRM_CLOSE_CONVERSATION": {
+    "en": "Confirm Close Conversation",
+    "ja": "会話終了の確認",
+    "zh-CN": "确认关闭对话",
+    "zh-TW": "確認關閉對話",
+    "ko-KR": "대화 종료 확인",
+    "no": "Bekreft avslutt samtale",
+    "it": "Conferma chiusura conversazione",
+    "pt": "Confirmar encerrar conversa",
+    "es": "Confirmar cerrar conversación",
+    "ar": "تأكيد إغلاق المحادثة",
+    "fr": "Confirmer la fermeture de la conversation",
+    "tr": "Konuşmayı Kapatmayı Onayla",
+    "de": "Gespräch schließen bestätigen",
+    "uk": "Підтвердити закриття розмови"
+  },
+  "CONVERSATION$CLOSE_CONVERSATION_WARNING": {
+    "en": "Are you sure you want to close this conversation and stop the runtime?",
+    "ja": "この会話を終了してランタイムを停止してもよろしいですか？",
+    "zh-CN": "您确定要关闭此对话并停止运行时吗？",
+    "zh-TW": "您確定要關閉此對話並停止執行時嗎？",
+    "ko-KR": "이 대화를 종료하고 런타임을 중지하시겠습니까?",
+    "no": "Er du sikker på at du vil avslutte denne samtalen og stoppe kjøretiden?",
+    "it": "Sei sicuro di voler chiudere questa conversazione e fermare il runtime?",
+    "pt": "Tem certeza de que deseja encerrar esta conversa e parar o runtime?",
+    "es": "¿Está seguro de que desea cerrar esta conversación y detener el runtime?",
+    "ar": "هل أنت متأكد أنك تريد إغلاق هذه المحادثة وإيقاف وقت التشغيل؟",
+    "fr": "Êtes-vous sûr de vouloir fermer cette conversation et arrêter le runtime ?",
+    "tr": "Bu konuşmayı kapatmak ve çalışma zamanını durdurmak istediğinizden emin misiniz?",
+    "de": "Sind Sie sicher, dass Sie dieses Gespräch schließen und die Laufzeit stoppen möchten?",
+    "uk": "Ви впевнені, що хочете закрити цю розмову та зупинити час виконання?"
+  },
   "CONVERSATION$STOP_WARNING": {
     "en": "Are you sure you want to pause this conversation?",
     "ja": "この会話を停止してもよろしいですか？",
@@ -13263,6 +13295,22 @@
     "tr": "Durdurmayı Onayla",
     "uk": "Підтвердити зупинку"
   },
+  "ACTION$CONFIRM_CLOSE": {
+    "en": "Confirm Close",
+    "ja": "終了を確認",
+    "zh-CN": "确认关闭",
+    "zh-TW": "確認關閉",
+    "ko-KR": "종료 확인",
+    "fr": "Confirmer la fermeture",
+    "es": "Confirmar cierre",
+    "de": "Schließen bestätigen",
+    "it": "Conferma chiusura",
+    "pt": "Confirmar fechamento",
+    "ar": "تأكيد الإغلاق",
+    "no": "Bekreft lukking",
+    "tr": "Kapatmayı Onayla",
+    "uk": "Підтвердити закриття"
+  },
   "AGENT_STATUS$AGENT_STOPPED": {
     "en": "Agent stopped",
     "ja": "エージェントが停止しました。",
@@ -13966,6 +14014,22 @@
     "tr": "Sunucuyu başlat",
     "de": "Server starten",
     "uk": "Запустити сервер"
+  },
+  "COMMON$START_CONVERSATION": {
+    "en": "Start Conversation",
+    "ja": "会話を開始",
+    "zh-CN": "开始对话",
+    "zh-TW": "開始對話",
+    "ko-KR": "대화 시작",
+    "no": "Start samtale",
+    "it": "Avvia conversazione",
+    "pt": "Iniciar conversa",
+    "es": "Iniciar conversación",
+    "ar": "بدء المحادثة",
+    "fr": "Démarrer la conversation",
+    "tr": "Sohbeti başlat",
+    "de": "Unterhaltung starten",
+    "uk": "Почати розмову"
   },
   "COMMON$STOP_SERVER": {
     "en": "Stop Server",
