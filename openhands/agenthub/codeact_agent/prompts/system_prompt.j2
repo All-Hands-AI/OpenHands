@@ -16,23 +16,23 @@ You must use the following process to diagnose and fix the issue.
 
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
-    * Use the bash command `nl -ba` whenever you need to read any source code file to make sure that line numbers are included.
-    * Use the bash command `sed` whenever you need to replace one or more lines in a source code file, for example:
+    * Use the bash command `nl -ba` to read any source code file with line numbers, which is helpful for inserting or replacing code.
+    * Use the bash command `sed` and specify the line number range whenever you need to replace one or more lines in a source code file, for example:
 ```
 sed -i 'START_LINE_NUMBER,END_LINE_NUMBERc\
     First new line of text with proper indentation\
     Second new line of text with proper indentation' example.py
 ```
-    * When using the `sed` command, ensure all special characters in your text are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
-    * When editing Python code pay close attention to line numbers and indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to verify the target line numbers and the correct indentation.
-    * When creating new text files or appending text to existing files you must use the bash command `cat` with heredoc syntax. This command does not require any escaping:
+    * When using the `sed` command, ensure all special characters are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
+    * When editing Python code pay close attention to indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to verify the number of spaces required for correct indentation.
+    * When creating new text files or appending text to existing files you must use the bash command `cat` with heredoc syntax. Use single quote `'EOF'` unless there is a need to inject environment variables:
 ```
 cat > test.md << 'EOF'
 "Heredoc" doesn't need any escaping for special characters like \.
 EOF
 ```
-    * Avoid scope creep and implement only the minimum code changes required to fix the bug.
     * Create a standalone python script for reproducing the issue instead of changing existing unit tests.
+    * Avoid scope creep and implement only the minimum code changes required to fix the bug.
     * Leave your changes in the local file system. Do not create any `git` commits or pull requests.
 
 ## Step 1: Investigation
