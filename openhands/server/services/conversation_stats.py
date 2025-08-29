@@ -129,7 +129,9 @@ class ConversationStats:
                 'found active service metrics during merge. Proceeding anyway.',
                 extra={
                     'conversation_id': self.conversation_id,
-                    'self_service_to_metrics_keys': list(self.service_to_metrics.keys()),
+                    'self_service_to_metrics_keys': list(
+                        self.service_to_metrics.keys()
+                    ),
                     'incoming_service_to_metrics_keys': list(
                         conversation_stats.service_to_metrics.keys()
                     ),

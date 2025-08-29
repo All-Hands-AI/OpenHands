@@ -558,7 +558,6 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
         ('restored', 'restored'),
     ],
 )
-
 def test_merge_conversation_stats_duplicates_overwrite_and_log_errors(
     mock_file_store, self_side, other_side
 ):
