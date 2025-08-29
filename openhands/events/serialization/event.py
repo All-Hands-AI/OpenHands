@@ -164,15 +164,5 @@ def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> di
     return d
 
 
-def truncate_content(content: str, max_chars: int | None = None) -> str:
-    """Truncate the middle of the observation content if it is too long."""
-    if max_chars is None or len(content) <= max_chars or max_chars < 0:
-        return content
-
-    # truncate the middle and include a message to the LLM about it
-    half = max_chars // 2
-    return (
-        content[:half]
-        + '\n[... Observation truncated due to length ...]\n'
-        + content[-half:]
-    )
+# Import from the new location to maintain backward compatibility
+from openhands.llm.llm_utils import truncate_content

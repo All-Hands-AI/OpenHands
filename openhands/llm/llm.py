@@ -30,7 +30,7 @@ from litellm.utils import create_pretrained_tokenizer
 from openhands.core.exceptions import LLMNoResponseError
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import Message
-from openhands.events.serialization.event import truncate_content
+from openhands.llm.llm_utils import truncate_content
 from openhands.llm.debug_mixin import DebugMixin
 from openhands.llm.fn_call_converter import (
     STOP_WORDS,

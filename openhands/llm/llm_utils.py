@@ -42,3 +42,17 @@ def check_tools(
                                 del prop['format']
         return checked_tools
     return tools
+
+
+def truncate_content(content: str, max_chars: int | None = None) -> str:
+    """Truncate the middle of the observation content if it is too long."""
+    if max_chars is None or len(content) <= max_chars or max_chars < 0:
+        return content
+
+    # truncate the middle and include a message to the LLM about it
+    half = max_chars // 2
+    return (
+        content[:half]
+        + '\n[... Observation truncated due to length ...]\n'
+        + content[-half:]
+    )
