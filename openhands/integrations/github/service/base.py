@@ -13,8 +13,7 @@ from openhands.integrations.service_types import (
 
 
 class GitHubMixinBase(BaseGitService):
-    """Type-support base for GitHub mixins to satisfy static typing.
-
+    """
     Declares common attributes and method signatures used across mixins.
     """
 
@@ -124,6 +123,3 @@ class GitHubMixinBase(BaseGitService):
             name=response.get('name'),
             email=response.get('email'),
         )
-
-    # @abstractmethod
-    # async def get_installations(self) -> list[str]: ...

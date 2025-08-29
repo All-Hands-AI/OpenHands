@@ -1,0 +1,1911 @@
+trim trailing whitespace.................................................[42mPassed[m
+fix end of files.........................................................[42mPassed[m
+check yaml...............................................................[42mPassed[m
+debug statements (python)................................................[42mPassed[m
+pyproject-fmt............................................................[42mPassed[m
+Validate pyproject.toml..................................................[42mPassed[m
+ruff.....................................................................[42mPassed[m
+ruff-format..............................................................[42mPassed[m
+mypy.....................................................................[41mFailed[m
+[2m- hook id: mypy[m
+[2m- exit code: 1[m
+
+openhands/integrations/utils.py:33: [1m[31merror:(B[m Cannot instantiate abstract class (B[m[1m"GitHubService"(B[m with abstract attribute (B[m[1m"get_repository_details_from_repo_name"(B[m  (B[m[33m[abstract](B[m
+[1m[31mFound 1 error in 1 file (checked 362 source files)(B[m
+
+pre-commit hook(s) made changes.
+If you are seeing this message in CI, reproduce locally with: `pre-commit run --all-files`.
+To run `pre-commit` as part of git workflow, use `pre-commit install`.
+All changes made by hooks:
+[1mdiff --git a/openhands/integrations/github/github_service.py b/openhands/integrations/github/github_service.py[m
+[1mindex b062bfd97..15b84a3a4 100644[m
+[1m--- a/openhands/integrations/github/github_service.py[m
+[1m+++ b/openhands/integrations/github/github_service.py[m
+[36m@@ -1,44 +1,37 @@[m
+[31m-import base64[m
+[31m-import json[m
+ import os[m
+[31m-from datetime import datetime[m
+[31m-from typing import Any[m
+ [m
+[31m-import httpx[m
+ from pydantic import SecretStr[m
+ [m
+[31m-from openhands.core.logger import openhands_logger as logger[m
+[31m-from openhands.integrations.github.queries import ([m
+[31m-    get_review_threads_graphql_query,[m
+[31m-    get_thread_comments_graphql_query,[m
+[31m-    get_thread_from_comment_graphql_query,[m
+[31m-    search_branches_graphql_query,[m
+[31m-    suggested_task_issue_graphql_query,[m
+[31m-    suggested_task_pr_graphql_query,[m
+[31m-)[m
+[32m+[m[32mfrom openhands.integrations.github.service.branches_prs import GitHubBranchesMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.features import GitHubFeaturesMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.identity import GitHubIdentityMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.microagents import GitHubMicroagentsMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.prs import GitHubPRsMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.repos import GitHubReposMixin[m
+[32m+[m[32mfrom openhands.integrations.github.service.resolver import GitHubResolverMixin[m
+ from openhands.integrations.service_types import ([m
+     BaseGitService,[m
+[31m-    Branch,[m
+[31m-    Comment,[m
+     GitService,[m
+     InstallationsService,[m
+[31m-    OwnerType,[m
+[31m-    PaginatedBranchesResponse,[m
+     ProviderType,[m
+[31m-    Repository,[m
+[31m-    RequestMethod,[m
+[31m-    SuggestedTask,[m
+[31m-    TaskType,[m
+[31m-    UnknownException,[m
+[31m-    User,[m
+ )[m
+[31m-from openhands.microagent.types import MicroagentContentResponse[m
+[31m-from openhands.server.types import AppMode[m
+ from openhands.utils.import_utils import get_impl[m
+ [m
+ [m
+[31m-class GitHubService(BaseGitService, GitService, InstallationsService):[m
+[31m-    """Default implementation of GitService for GitHub integration.[m
+[32m+[m[32mclass GitHubService([m
+[32m+[m[32m    GitHubBranchesMixin,[m
+[32m+[m[32m    GitHubFeaturesMixin,[m
+[32m+[m[32m    GitHubIdentityMixin,[m
+[32m+[m[32m    GitHubMicroagentsMixin,[m
+[32m+[m[32m    GitHubPRsMixin,[m
+[32m+[m[32m    GitHubReposMixin,[m
+[32m+[m[32m    GitHubResolverMixin,[m
+[32m+[m[32m    BaseGitService,[m
+[32m+[m[32m    GitService,[m
+[32m+[m[32m    InstallationsService,[m
+[32m+[m[32m):[m
+[32m+[m[32m    """[m
+[32m+[m[32m    Assembled GitHub service class combining mixins by feature area.[m
+ [m
+     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?[m
+     This is an extension point in OpenHands that allows applications to customize GitHub[m
+[36m@@ -50,10 +43,6 @@[m [mclass GitHubService(BaseGitService, GitService, InstallationsService):[m
+     The class is instantiated via get_impl() in openhands.server.shared.py.[m
+     """[m
+ [m
+[31m-    BASE_URL = 'https://api.github.com'[m
+[31m-    token: SecretStr = SecretStr('')[m
+[31m-    refresh = False[m
+[31m-[m
+     def __init__([m
+         self,[m
+         user_id: str | None = None,[m
+[36m@@ -62,7 +51,7 @@[m [mclass GitHubService(BaseGitService, GitService, InstallationsService):[m
+         token: SecretStr | None = None,[m
+         external_token_manager: bool = False,[m
+         base_domain: str | None = None,[m
+[31m-    ):[m
+[32m+[m[32m    ) -> None:[m
+         self.user_id = user_id[m
+         self.external_token_manager = external_token_manager[m
+ [m
+[36m@@ -79,991 +68,6 @@[m [mclass GitHubService(BaseGitService, GitService, InstallationsService):[m
+     def provider(self) -> str:[m
+         return ProviderType.GITHUB.value[m
+ [m
+[31m-    async def _get_github_headers(self) -> dict:[m
+[31m-        """Retrieve the GH Token from settings store to construct the headers."""[m
+[31m-        if not self.token:[m
+[31m-            latest_token = await self.get_latest_token()[m
+[31m-            if latest_token:[m
+[31m-                self.token = latest_token[m
+[31m-[m
+[31m-        return {[m
+[31m-            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',[m
+[31m-            'Accept': 'application/vnd.github.v3+json',[m
+[31m-        }[m
+[31m-[m
+[31m-    def _has_token_expired(self, status_code: int) -> bool:[m
+[31m-        return status_code == 401[m
+[31m-[m
+[31m-    async def get_latest_token(self) -> SecretStr | None:[m
+[31m-        return self.token[m
+[31m-[m
+[31m-    async def _get_cursorrules_url(self, repository: str) -> str:[m
+[31m-        """Get the URL for checking .cursorrules file."""[m
+[31m-        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'[m
+[31m-[m
+[31m-    async def _get_microagents_directory_url([m
+[31m-        self, repository: str, microagents_path: str[m
+[31m-    ) -> str:[m
+[31m-        """Get the URL for checking microagents directory."""[m
+[31m-        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'[m
+[31m-[m
+[31m-    def _is_valid_microagent_file(self, item: dict) -> bool:[m
+[31m-        """Check if an item represents a valid microagent file."""[m
+[31m-        return ([m
+[31m-            item['type'] == 'file'[m
+[31m-            and item['name'].endswith('.md')[m
+[31m-            and item['name'] != 'README.md'[m
+[31m-        )[m
+[31m-[m
+[31m-    def _get_file_name_from_item(self, item: dict) -> str:[m
+[31m-        """Extract file name from directory item."""[m
+[31m-        return item['name'][m
+[31m-[m
+[31m-    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:[m
+[31m-        """Extract file path from directory item."""[m
+[31m-        return f'{microagents_path}/{item["name"]}'[m
+[31m-[m
+[31m-    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:[m
+[31m-        """Get parameters for the microagents directory request. Return None if no parameters needed."""[m
+[31m-        return None[m
+[31m-[m
+[31m-    async def _make_request([m
+[31m-        self,[m
+[31m-        url: str,[m
+[31m-        params: dict | None = None,[m
+[31m-        method: RequestMethod = RequestMethod.GET,[m
+[31m-    ) -> tuple[Any, dict]:[m
+[31m-        try:[m
+[31m-            async with httpx.AsyncClient() as client:[m
+[31m-                github_headers = await self._get_github_headers()[m
+[31m-[m
+[31m-                # Make initial request[m
+[31m-                response = await self.execute_request([m
+[31m-                    client=client,[m
+[31m-                    url=url,[m
+[31m-                    headers=github_headers,[m
+[31m-                    params=params,[m
+[31m-                    method=method,[m
+[31m-                )[m
+[31m-[m
+[31m-                # Handle token refresh if needed[m
+[31m-                if self.refresh and self._has_token_expired(response.status_code):[m
+[31m-                    await self.get_latest_token()[m
+[31m-                    github_headers = await self._get_github_headers()[m
+[31m-                    response = await self.execute_request([m
+[31m-                        client=client,[m
+[31m-                        url=url,[m
+[31m-                        headers=github_headers,[m
+[31m-                        params=params,[m
+[31m-                        method=method,[m
+[31m-                    )[m
+[31m-[m
+[31m-                response.raise_for_status()[m
+[31m-                headers = {}[m
+[31m-                if 'Link' in response.headers:[m
+[31m-                    headers['Link'] = response.headers['Link'][m
+[31m-[m
+[31m-                return response.json(), headers[m
+[31m-[m
+[31m-        except httpx.HTTPStatusError as e:[m
+[31m-            raise self.handle_http_status_error(e)[m
+[31m-        except httpx.HTTPError as e:[m
+[31m-            raise self.handle_http_error(e)[m
+[31m-[m
+[31m-    async def get_user(self) -> User:[m
+[31m-        url = f'{self.BASE_URL}/user'[m
+[31m-        response, _ = await self._make_request(url)[m
+[31m-[m
+[31m-        return User([m
+[31m-            id=str(response.get('id', '')),[m
+[31m-            login=response.get('login'),[m
+[31m-            avatar_url=response.get('avatar_url'),[m
+[31m-            company=response.get('company'),[m
+[31m-            name=response.get('name'),[m
+[31m-            email=response.get('email'),[m
+[31m-        )[m
+[31m-[m
+[31m-    async def verify_access(self) -> bool:[m
+[31m-        """Verify if the token is valid by making a simple request."""[m
+[31m-        url = f'{self.BASE_URL}'[m
+[31m-        await self._make_request(url)[m
+[31m-        return True[m
+[31m-[m
+[31m-    async def _fetch_paginated_repos([m
+[31m-        self, url: str, params: dict, max_repos: int, extract_key: str | None = None[m
+[31m-    ) -> list[dict]:[m
+[31m-        """Fetch repositories with pagination support.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            url: The API endpoint URL[m
+[31m-            params: Query parameters for the request[m
+[31m-            max_repos: Maximum number of repositories to fetch[m
+[31m-            extract_key: If provided, extract repositories from this key in the response[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            List of repository dictionaries[m
+[31m-        """[m
+[31m-        repos: list[dict] = [][m
+[31m-        page = 1[m
+[31m-[m
+[31m-        while len(repos) < max_repos:[m
+[31m-            page_params = {**params, 'page': str(page)}[m
+[31m-            response, headers = await self._make_request(url, page_params)[m
+[31m-[m
+[31m-            # Extract repositories from response[m
+[31m-            page_repos = response.get(extract_key, []) if extract_key else response[m
+[31m-[m
+[31m-            if not page_repos:  # No more repositories[m
+[31m-                break[m
+[31m-[m
+[31m-            repos.extend(page_repos)[m
+[31m-            page += 1[m
+[31m-[m
+[31m-            # Check if we've reached the last page[m
+[31m-            link_header = headers.get('Link', '')[m
+[31m-            if 'rel="next"' not in link_header:[m
+[31m-                break[m
+[31m-[m
+[31m-        return repos[:max_repos]  # Trim to max_repos if needed[m
+[31m-[m
+[31m-    def parse_pushed_at_date(self, repo):[m
+[31m-        ts = repo.get('pushed_at')[m
+[31m-        return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min[m
+[31m-[m
+[31m-    def _parse_repository([m
+[31m-        self, repo: dict, link_header: str | None = None[m
+[31m-    ) -> Repository:[m
+[31m-        """Parse a GitHub API repository response into a Repository object.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repo: Repository data from GitHub API[m
+[31m-            link_header: Optional link header for pagination[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            Repository object[m
+[31m-        """[m
+[31m-        return Repository([m
+[31m-            id=str(repo.get('id')),  # type: ignore[arg-type][m
+[31m-            full_name=repo.get('full_name'),  # type: ignore[arg-type][m
+[31m-            stargazers_count=repo.get('stargazers_count'),[m
+[31m-            git_provider=ProviderType.GITHUB,[m
+[31m-            is_public=not repo.get('private', True),[m
+[31m-            owner_type=([m
+[31m-                OwnerType.ORGANIZATION[m
+[31m-                if repo.get('owner', {}).get('type') == 'Organization'[m
+[31m-                else OwnerType.USER[m
+[31m-            ),[m
+[31m-            link_header=link_header,[m
+[31m-            main_branch=repo.get('default_branch'),[m
+[31m-        )[m
+[31m-[m
+[31m-    async def get_paginated_repos([m
+[31m-        self,[m
+[31m-        page: int,[m
+[31m-        per_page: int,[m
+[31m-        sort: str,[m
+[31m-        installation_id: str | None,[m
+[31m-        query: str | None = None,[m
+[31m-    ):[m
+[31m-        params = {'page': str(page), 'per_page': str(per_page)}[m
+[31m-        if installation_id:[m
+[31m-            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'[m
+[31m-            response, headers = await self._make_request(url, params)[m
+[31m-            response = response.get('repositories', [])[m
+[31m-        else:[m
+[31m-            url = f'{self.BASE_URL}/user/repos'[m
+[31m-            params['sort'] = sort[m
+[31m-            response, headers = await self._make_request(url, params)[m
+[31m-[m
+[31m-        next_link: str = headers.get('Link', '')[m
+[31m-        return [[m
+[31m-            self._parse_repository(repo, link_header=next_link) for repo in response[m
+[31m-        ][m
+[31m-[m
+[31m-    async def get_all_repositories([m
+[31m-        self, sort: str, app_mode: AppMode[m
+[31m-    ) -> list[Repository]:[m
+[31m-        MAX_REPOS = 1000[m
+[31m-        PER_PAGE = 100  # Maximum allowed by GitHub API[m
+[31m-        all_repos: list[dict] = [][m
+[31m-[m
+[31m-        if app_mode == AppMode.SAAS:[m
+[31m-            # Get all installation IDs and fetch repos for each one[m
+[31m-            installation_ids = await self.get_installations()[m
+[31m-[m
+[31m-            # Iterate through each installation ID[m
+[31m-            for installation_id in installation_ids:[m
+[31m-                params = {'per_page': str(PER_PAGE)}[m
+[31m-                url = ([m
+[31m-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'[m
+[31m-                )[m
+[31m-[m
+[31m-                # Fetch repositories for this installation[m
+[31m-                installation_repos = await self._fetch_paginated_repos([m
+[31m-                    url, params, MAX_REPOS - len(all_repos), extract_key='repositories'[m
+[31m-                )[m
+[31m-[m
+[31m-                all_repos.extend(installation_repos)[m
+[31m-[m
+[31m-                # If we've already reached MAX_REPOS, no need to check other installations[m
+[31m-                if len(all_repos) >= MAX_REPOS:[m
+[31m-                    break[m
+[31m-[m
+[31m-            if sort == 'pushed':[m
+[31m-                all_repos.sort(key=self.parse_pushed_at_date, reverse=True)[m
+[31m-        else:[m
+[31m-            # Original behavior for non-SaaS mode[m
+[31m-            params = {'per_page': str(PER_PAGE), 'sort': sort}[m
+[31m-            url = f'{self.BASE_URL}/user/repos'[m
+[31m-[m
+[31m-            # Fetch user repositories[m
+[31m-            all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)[m
+[31m-[m
+[31m-        # Convert to Repository objects[m
+[31m-        return [self._parse_repository(repo) for repo in all_repos][m
+[31m-[m
+[31m-    async def get_installations(self) -> list[str]:[m
+[31m-        url = f'{self.BASE_URL}/user/installations'[m
+[31m-        response, _ = await self._make_request(url)[m
+[31m-        installations = response.get('installations', [])[m
+[31m-        return [str(i['id']) for i in installations][m
+[31m-[m
+[31m-    async def get_user_organizations(self) -> list[str]:[m
+[31m-        """Get list of organization logins that the user is a member of."""[m
+[31m-        url = f'{self.BASE_URL}/user/orgs'[m
+[31m-        try:[m
+[31m-            response, _ = await self._make_request(url)[m
+[31m-            orgs = [org['login'] for org in response][m
+[31m-            return orgs[m
+[31m-        except Exception as e:[m
+[31m-            logger.warning(f'Failed to get user organizations: {e}')[m
+[31m-            return [][m
+[31m-[m
+[31m-    def _fuzzy_match_org_name(self, query: str, org_name: str) -> bool:[m
+[31m-        """Check if query fuzzy matches organization name."""[m
+[31m-        query_lower = query.lower().replace('-', '').replace('_', '').replace(' ', '')[m
+[31m-        org_lower = org_name.lower().replace('-', '').replace('_', '').replace(' ', '')[m
+[31m-[m
+[31m-        # Exact match after normalization[m
+[31m-        if query_lower == org_lower:[m
+[31m-            return True[m
+[31m-[m
+[31m-        # Query is a substring of org name[m
+[31m-        if query_lower in org_lower:[m
+[31m-            return True[m
+[31m-[m
+[31m-        # Org name is a substring of query (less common but possible)[m
+[31m-        if org_lower in query_lower:[m
+[31m-            return True[m
+[31m-[m
+[31m-        return False[m
+[31m-[m
+[31m-    async def search_repositories([m
+[31m-        self, query: str, per_page: int, sort: str, order: str, public: bool[m
+[31m-    ) -> list[Repository]:[m
+[31m-        url = f'{self.BASE_URL}/search/repositories'[m
+[31m-        params = {[m
+[31m-            'per_page': per_page,[m
+[31m-            'sort': sort,[m
+[31m-            'order': order,[m
+[31m-        }[m
+[31m-[m
+[31m-        if public:[m
+[31m-            url_parts = query.split('/')[m
+[31m-            if len(url_parts) < 4:[m
+[31m-                return [][m
+[31m-[m
+[31m-            org = url_parts[3][m
+[31m-            repo_name = url_parts[4][m
+[31m-            # Add is:public to the query to ensure we only search for public repositories[m
+[31m-            params['q'] = f'in:name {org}/{repo_name} is:public'[m
+[31m-[m
+[31m-        # Handle private repository searches[m
+[31m-        if not public and '/' in query:[m
+[31m-            org, repo_query = query.split('/', 1)[m
+[31m-            query_with_user = f'org:{org} in:name {repo_query}'[m
+[31m-            params['q'] = query_with_user[m
+[31m-        elif not public:[m
+[31m-            # Expand search scope to include user's repositories and organizations they're a member of[m
+[31m-            user = await self.get_user()[m
+[31m-            user_orgs = await self.get_user_organizations()[m
+[31m-[m
+[31m-            # Search in user repos and org repos separately[m
+[31m-            all_repos = [][m
+[31m-[m
+[31m-            # Search in user repositories[m
+[31m-            user_query = f'{query} user:{user.login}'[m
+[31m-            user_params = params.copy()[m
+[31m-            user_params['q'] = user_query[m
+[31m-[m
+[31m-            try:[m
+[31m-                user_response, _ = await self._make_request(url, user_params)[m
+[31m-                user_items = user_response.get('items', [])[m
+[31m-                all_repos.extend(user_items)[m
+[31m-            except Exception as e:[m
+[31m-                logger.warning(f'User search failed: {e}')[m
+[31m-[m
+[31m-            # Search for repos named "query" in each organization[m
+[31m-            for org in user_orgs:[m
+[31m-                org_query = f'{query} org:{org}'[m
+[31m-                org_params = params.copy()[m
+[31m-                org_params['q'] = org_query[m
+[31m-[m
+[31m-                try:[m
+[31m-                    org_response, _ = await self._make_request(url, org_params)[m
+[31m-                    org_items = org_response.get('items', [])[m
+[31m-                    all_repos.extend(org_items)[m
+[31m-                except Exception as e:[m
+[31m-                    logger.warning(f'Org {org} search failed: {e}')[m
+[31m-[m
+[31m-            # Also search for top repos from orgs that match the query name[m
+[31m-            for org in user_orgs:[m
+[31m-                if self._fuzzy_match_org_name(query, org):[m
+[31m-                    org_repos_query = f'org:{org}'[m
+[31m-                    org_repos_params = params.copy()[m
+[31m-                    org_repos_params['q'] = org_repos_query[m
+[31m-                    org_repos_params['sort'] = 'stars'[m
+[31m-                    org_repos_params['per_page'] = 2  # Limit to first 2 repos[m
+[31m-[m
+[31m-                    try:[m
+[31m-                        org_repos_response, _ = await self._make_request([m
+[31m-                            url, org_repos_params[m
+[31m-                        )[m
+[31m-                        org_repo_items = org_repos_response.get('items', [])[m
+[31m-                        all_repos.extend(org_repo_items)[m
+[31m-                    except Exception as e:[m
+[31m-                        logger.warning(f'Org repos search for {org} failed: {e}')[m
+[31m-[m
+[31m-            return [self._parse_repository(repo) for repo in all_repos][m
+[31m-[m
+[31m-        # Default case (public search or slash query)[m
+[31m-        response, _ = await self._make_request(url, params)[m
+[31m-        repo_items = response.get('items', [])[m
+[31m-        return [self._parse_repository(repo) for repo in repo_items][m
+[31m-[m
+[31m-    async def execute_graphql_query([m
+[31m-        self, query: str, variables: dict[str, Any][m
+[31m-    ) -> dict[str, Any]:[m
+[31m-        """Execute a GraphQL query against the GitHub API."""[m
+[31m-        try:[m
+[31m-            async with httpx.AsyncClient() as client:[m
+[31m-                github_headers = await self._get_github_headers()[m
+[31m-                response = await client.post([m
+[31m-                    f'{self.BASE_URL}/graphql',[m
+[31m-                    headers=github_headers,[m
+[31m-                    json={'query': query, 'variables': variables},[m
+[31m-                )[m
+[31m-                response.raise_for_status()[m
+[31m-[m
+[31m-                result = response.json()[m
+[31m-                if 'errors' in result:[m
+[31m-                    raise UnknownException([m
+[31m-                        f'GraphQL query error: {json.dumps(result["errors"])}'[m
+[31m-                    )[m
+[31m-[m
+[31m-                return dict(result)[m
+[31m-[m
+[31m-        except httpx.HTTPStatusError as e:[m
+[31m-            raise self.handle_http_status_error(e)[m
+[31m-        except httpx.HTTPError as e:[m
+[31m-            raise self.handle_http_error(e)[m
+[31m-[m
+[31m-    async def get_suggested_tasks(self) -> list[SuggestedTask]:[m
+[31m-        """Get suggested tasks for the authenticated user across all repositories.[m
+[31m-[m
+[31m-        Returns:[m
+[31m-        - PRs authored by the user.[m
+[31m-        - Issues assigned to the user.[m
+[31m-[m
+[31m-        Note: Queries are split to avoid timeout issues.[m
+[31m-        """[m
+[31m-        # Get user info to use in queries[m
+[31m-        user = await self.get_user()[m
+[31m-        login = user.login[m
+[31m-        tasks: list[SuggestedTask] = [][m
+[31m-        variables = {'login': login}[m
+[31m-[m
+[31m-        try:[m
+[31m-            pr_response = await self.execute_graphql_query([m
+[31m-                suggested_task_pr_graphql_query, variables[m
+[31m-            )[m
+[31m-            pr_data = pr_response['data']['user'][m
+[31m-[m
+[31m-            # Process pull requests[m
+[31m-            for pr in pr_data['pullRequests']['nodes']:[m
+[31m-                repo_name = pr['repository']['nameWithOwner'][m
+[31m-[m
+[31m-                # Start with default task type[m
+[31m-                task_type = TaskType.OPEN_PR[m
+[31m-[m
+[31m-                # Check for specific states[m
+[31m-                if pr['mergeable'] == 'CONFLICTING':[m
+[31m-                    task_type = TaskType.MERGE_CONFLICTS[m
+[31m-                elif ([m
+[31m-                    pr['commits']['nodes'][m
+[31m-                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][m
+[31m-                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][[m
+[31m-                        'state'[m
+[31m-                    ][m
+[31m-                    == 'FAILURE'[m
+[31m-                ):[m
+[31m-                    task_type = TaskType.FAILING_CHECKS[m
+[31m-                elif any([m
+[31m-                    review['state'] in ['CHANGES_REQUESTED', 'COMMENTED'][m
+[31m-                    for review in pr['reviews']['nodes'][m
+[31m-                ):[m
+[31m-                    task_type = TaskType.UNRESOLVED_COMMENTS[m
+[31m-[m
+[31m-                # Only add the task if it's not OPEN_PR[m
+[31m-                if task_type != TaskType.OPEN_PR:[m
+[31m-                    tasks.append([m
+[31m-                        SuggestedTask([m
+[31m-                            git_provider=ProviderType.GITHUB,[m
+[31m-                            task_type=task_type,[m
+[31m-                            repo=repo_name,[m
+[31m-                            issue_number=pr['number'],[m
+[31m-                            title=pr['title'],[m
+[31m-                        )[m
+[31m-                    )[m
+[31m-[m
+[31m-        except Exception as e:[m
+[31m-            logger.info([m
+[31m-                f'Error fetching suggested task for PRs: {e}',[m
+[31m-                extra={[m
+[31m-                    'signal': 'github_suggested_tasks',[m
+[31m-                    'user_id': self.external_auth_id,[m
+[31m-                },[m
+[31m-            )[m
+[31m-[m
+[31m-        try:[m
+[31m-            # Execute issue query[m
+[31m-            issue_response = await self.execute_graphql_query([m
+[31m-                suggested_task_issue_graphql_query, variables[m
+[31m-            )[m
+[31m-            issue_data = issue_response['data']['user'][m
+[31m-[m
+[31m-            # Process issues[m
+[31m-            for issue in issue_data['issues']['nodes']:[m
+[31m-                repo_name = issue['repository']['nameWithOwner'][m
+[31m-                tasks.append([m
+[31m-                    SuggestedTask([m
+[31m-                        git_provider=ProviderType.GITHUB,[m
+[31m-                        task_type=TaskType.OPEN_ISSUE,[m
+[31m-                        repo=repo_name,[m
+[31m-                        issue_number=issue['number'],[m
+[31m-                        title=issue['title'],[m
+[31m-                    )[m
+[31m-                )[m
+[31m-[m
+[31m-            return tasks[m
+[31m-[m
+[31m-        except Exception as e:[m
+[31m-            logger.info([m
+[31m-                f'Error fetching suggested task for issues: {e}',[m
+[31m-                extra={[m
+[31m-                    'signal': 'github_suggested_tasks',[m
+[31m-                    'user_id': self.external_auth_id,[m
+[31m-                },[m
+[31m-            )[m
+[31m-[m
+[31m-        return tasks[m
+[31m-[m
+[31m-    async def get_repository_details_from_repo_name([m
+[31m-        self, repository: str[m
+[31m-    ) -> Repository:[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}'[m
+[31m-        repo, _ = await self._make_request(url)[m
+[31m-[m
+[31m-        return self._parse_repository(repo)[m
+[31m-[m
+[31m-    async def get_branches(self, repository: str) -> list[Branch]:[m
+[31m-        """Get branches for a repository"""[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}/branches'[m
+[31m-[m
+[31m-        # Set maximum branches to fetch (100 per page)[m
+[31m-        MAX_BRANCHES = 5_000[m
+[31m-        PER_PAGE = 100[m
+[31m-[m
+[31m-        all_branches: list[Branch] = [][m
+[31m-        page = 1[m
+[31m-[m
+[31m-        # Fetch up to 10 pages of branches[m
+[31m-        while len(all_branches) < MAX_BRANCHES:[m
+[31m-            params = {'per_page': str(PER_PAGE), 'page': str(page)}[m
+[31m-            response, headers = await self._make_request(url, params)[m
+[31m-[m
+[31m-            if not response:  # No more branches[m
+[31m-                break[m
+[31m-[m
+[31m-            for branch_data in response:[m
+[31m-                # Extract the last commit date if available[m
+[31m-                last_push_date = None[m
+[31m-                if branch_data.get('commit') and branch_data['commit'].get('commit'):[m
+[31m-                    commit_info = branch_data['commit']['commit'][m
+[31m-                    if commit_info.get('committer') and commit_info['committer'].get([m
+[31m-                        'date'[m
+[31m-                    ):[m
+[31m-                        last_push_date = commit_info['committer']['date'][m
+[31m-[m
+[31m-                branch = Branch([m
+[31m-                    name=branch_data.get('name'),[m
+[31m-                    commit_sha=branch_data.get('commit', {}).get('sha', ''),[m
+[31m-                    protected=branch_data.get('protected', False),[m
+[31m-                    last_push_date=last_push_date,[m
+[31m-                )[m
+[31m-                all_branches.append(branch)[m
+[31m-[m
+[31m-            page += 1[m
+[31m-[m
+[31m-            # Check if we've reached the last page[m
+[31m-            link_header = headers.get('Link', '')[m
+[31m-            if 'rel="next"' not in link_header:[m
+[31m-                break[m
+[31m-[m
+[31m-        return all_branches[m
+[31m-[m
+[31m-    async def get_paginated_branches([m
+[31m-        self, repository: str, page: int = 1, per_page: int = 30[m
+[31m-    ) -> PaginatedBranchesResponse:[m
+[31m-        """Get branches for a repository with pagination"""[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}/branches'[m
+[31m-[m
+[31m-        params = {'per_page': str(per_page), 'page': str(page)}[m
+[31m-        response, headers = await self._make_request(url, params)[m
+[31m-[m
+[31m-        branches: list[Branch] = [][m
+[31m-        for branch_data in response:[m
+[31m-            # Extract the last commit date if available[m
+[31m-            last_push_date = None[m
+[31m-            if branch_data.get('commit') and branch_data['commit'].get('commit'):[m
+[31m-                commit_info = branch_data['commit']['commit'][m
+[31m-                if commit_info.get('committer') and commit_info['committer'].get([m
+[31m-                    'date'[m
+[31m-                ):[m
+[31m-                    last_push_date = commit_info['committer']['date'][m
+[31m-[m
+[31m-            branch = Branch([m
+[31m-                name=branch_data.get('name'),[m
+[31m-                commit_sha=branch_data.get('commit', {}).get('sha', ''),[m
+[31m-                protected=branch_data.get('protected', False),[m
+[31m-                last_push_date=last_push_date,[m
+[31m-            )[m
+[31m-            branches.append(branch)[m
+[31m-[m
+[31m-        # Parse Link header to determine if there's a next page[m
+[31m-        has_next_page = False[m
+[31m-        if 'Link' in headers:[m
+[31m-            link_header = headers['Link'][m
+[31m-            has_next_page = 'rel="next"' in link_header[m
+[31m-[m
+[31m-        return PaginatedBranchesResponse([m
+[31m-            branches=branches,[m
+[31m-            has_next_page=has_next_page,[m
+[31m-            current_page=page,[m
+[31m-            per_page=per_page,[m
+[31m-            total_count=None,  # GitHub doesn't provide total count in branch API[m
+[31m-        )[m
+[31m-[m
+[31m-    async def search_branches([m
+[31m-        self, repository: str, query: str, per_page: int = 30[m
+[31m-    ) -> list[Branch]:[m
+[31m-        """Search branches by name using GitHub GraphQL with a partial query."""[m
+[31m-        # Require a non-empty query[m
+[31m-        if not query:[m
+[31m-            return [][m
+[31m-[m
+[31m-        # Clamp per_page to GitHub GraphQL limits[m
+[31m-        per_page = min(max(per_page, 1), 100)[m
+[31m-[m
+[31m-        # Extract owner and repo name from the repository string[m
+[31m-        parts = repository.split('/')[m
+[31m-        if len(parts) < 2:[m
+[31m-            return [][m
+[31m-        owner, name = parts[-2], parts[-1][m
+[31m-[m
+[31m-        variables = {[m
+[31m-            'owner': owner,[m
+[31m-            'name': name,[m
+[31m-            'query': query or '',[m
+[31m-            'perPage': per_page,[m
+[31m-        }[m
+[31m-[m
+[31m-        try:[m
+[31m-            result = await self.execute_graphql_query([m
+[31m-                search_branches_graphql_query, variables[m
+[31m-            )[m
+[31m-        except Exception as e:[m
+[31m-            logger.warning(f'Failed to search for branches: {e}')[m
+[31m-            # Fallback to empty result on any GraphQL error[m
+[31m-            return [][m
+[31m-[m
+[31m-        repo = result.get('data', {}).get('repository')[m
+[31m-        if not repo or not repo.get('refs'):[m
+[31m-            return [][m
+[31m-[m
+[31m-        branches: list[Branch] = [][m
+[31m-        for node in repo['refs'].get('nodes', []):[m
+[31m-            bname = node.get('name') or ''[m
+[31m-            target = node.get('target') or {}[m
+[31m-            typename = target.get('__typename')[m
+[31m-            commit_sha = ''[m
+[31m-            last_push_date = None[m
+[31m-            if typename == 'Commit':[m
+[31m-                commit_sha = target.get('oid', '') or ''[m
+[31m-                last_push_date = target.get('committedDate')[m
+[31m-[m
+[31m-            protected = node.get('branchProtectionRule') is not None[m
+[31m-[m
+[31m-            branches.append([m
+[31m-                Branch([m
+[31m-                    name=bname,[m
+[31m-                    commit_sha=commit_sha,[m
+[31m-                    protected=protected,[m
+[31m-                    last_push_date=last_push_date,[m
+[31m-                )[m
+[31m-            )[m
+[31m-[m
+[31m-        return branches[m
+[31m-[m
+[31m-    async def create_pr([m
+[31m-        self,[m
+[31m-        repo_name: str,[m
+[31m-        source_branch: str,[m
+[31m-        target_branch: str,[m
+[31m-        title: str,[m
+[31m-        body: str | None = None,[m
+[31m-        draft: bool = True,[m
+[31m-        labels: list[str] | None = None,[m
+[31m-    ) -> str:[m
+[31m-        """Creates a PR using user credentials[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repo_name: The full name of the repository (owner/repo)[m
+[31m-            source_branch: The name of the branch where your changes are implemented[m
+[31m-            target_branch: The name of the branch you want the changes pulled into[m
+[31m-            title: The title of the pull request (optional, defaults to a generic title)[m
+[31m-            body: The body/description of the pull request (optional)[m
+[31m-            draft: Whether to create the PR as a draft (optional, defaults to False)[m
+[31m-            labels: A list of labels to apply to the pull request (optional)[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            - PR URL when successful[m
+[31m-            - Error message when unsuccessful[m
+[31m-        """[m
+[31m-        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'[m
+[31m-[m
+[31m-        # Set default body if none provided[m
+[31m-        if not body:[m
+[31m-            body = f'Merging changes from {source_branch} into {target_branch}'[m
+[31m-[m
+[31m-        # Prepare the request payload[m
+[31m-        payload = {[m
+[31m-            'title': title,[m
+[31m-            'head': source_branch,[m
+[31m-            'base': target_branch,[m
+[31m-            'body': body,[m
+[31m-            'draft': draft,[m
+[31m-        }[m
+[31m-[m
+[31m-        # Make the POST request to create the PR[m
+[31m-        response, _ = await self._make_request([m
+[31m-            url=url, params=payload, method=RequestMethod.POST[m
+[31m-        )[m
+[31m-[m
+[31m-        # Add labels if provided (PRs are a type of issue in GitHub's API)[m
+[31m-        if labels and len(labels) > 0:[m
+[31m-            pr_number = response['number'][m
+[31m-            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'[m
+[31m-            labels_payload = {'labels': labels}[m
+[31m-            await self._make_request([m
+[31m-                url=labels_url, params=labels_payload, method=RequestMethod.POST[m
+[31m-            )[m
+[31m-[m
+[31m-        # Return the HTML URL of the created PR[m
+[31m-        return response['html_url'][m
+[31m-[m
+[31m-    async def get_pr_details(self, repository: str, pr_number: int) -> dict:[m
+[31m-        """Get detailed information about a specific pull request[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repository: Repository name in format 'owner/repo'[m
+[31m-            pr_number: The pull request number[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            Raw GitHub API response for the pull request[m
+[31m-        """[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}'[m
+[31m-        pr_data, _ = await self._make_request(url)[m
+[31m-[m
+[31m-        return pr_data[m
+[31m-[m
+[31m-    async def get_microagent_content([m
+[31m-        self, repository: str, file_path: str[m
+[31m-    ) -> MicroagentContentResponse:[m
+[31m-        """Fetch individual file content from GitHub repository.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repository: Repository name in format 'owner/repo'[m
+[31m-            file_path: Path to the file within the repository[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            MicroagentContentResponse with parsed content and triggers[m
+[31m-[m
+[31m-        Raises:[m
+[31m-            RuntimeError: If file cannot be fetched or doesn't exist[m
+[31m-        """[m
+[31m-        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'[m
+[31m-[m
+[31m-        file_data, _ = await self._make_request(file_url)[m
+[31m-        file_content = base64.b64decode(file_data['content']).decode('utf-8')[m
+[31m-[m
+[31m-        # Parse the content to extract triggers from frontmatter[m
+[31m-        return self._parse_microagent_content(file_content, file_path)[m
+[31m-[m
+[31m-    async def is_pr_open(self, repository: str, pr_number: int) -> bool:[m
+[31m-        """Check if a GitHub PR is still active (not closed/merged).[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repository: Repository name in format 'owner/repo'[m
+[31m-            pr_number: The PR number to check[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            True if PR is active (open), False if closed/merged[m
+[31m-        """[m
+[31m-        try:[m
+[31m-            pr_details = await self.get_pr_details(repository, pr_number)[m
+[31m-[m
+[31m-            # GitHub API response structure[m
+[31m-            # https://docs.github.com/en/rest/pulls/pulls#get-a-pull-request[m
+[31m-            if 'state' in pr_details:[m
+[31m-                return pr_details['state'] == 'open'[m
+[31m-            elif 'merged' in pr_details and 'closed_at' in pr_details:[m
+[31m-                # Check if PR is merged or closed[m
+[31m-                return not (pr_details['merged'] or pr_details['closed_at'])[m
+[31m-[m
+[31m-            # If we can't determine the state, assume it's active (safer default)[m
+[31m-            logger.warning([m
+[31m-                f'Could not determine GitHub PR status for {repository}#{pr_number}. '[m
+[31m-                f'Response keys: {list(pr_details.keys())}. Assuming PR is active.'[m
+[31m-            )[m
+[31m-            return True[m
+[31m-[m
+[31m-        except Exception as e:[m
+[31m-            logger.warning([m
+[31m-                f'Could not determine GitHub PR status for {repository}#{pr_number}: {e}. '[m
+[31m-                f'Including conversation to be safe.'[m
+[31m-            )[m
+[31m-            # If we can't determine the PR status, include the conversation to be safe[m
+[31m-            return True[m
+[31m-[m
+[31m-    async def get_issue_or_pr_comments([m
+[31m-        self, repository: str, issue_number: int, max_comments: int = 10[m
+[31m-    ) -> list[Comment]:[m
+[31m-        """Get comments for an issue.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repository: Repository name in format 'owner/repo'[m
+[31m-            issue_number: The issue number[m
+[31m-            discussion_id: Not used for GitHub (kept for compatibility with GitLab)[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            List of Comment objects ordered by creation date[m
+[31m-        """[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'[m
+[31m-        page = 1[m
+[31m-        all_comments: list[dict] = [][m
+[31m-[m
+[31m-        while len(all_comments) < max_comments:[m
+[31m-            params = {[m
+[31m-                'per_page': 10,[m
+[31m-                'sort': 'created',[m
+[31m-                'direction': 'asc',[m
+[31m-                'page': page,[m
+[31m-            }[m
+[31m-            response, headers = await self._make_request(url, params=params)[m
+[31m-            all_comments.extend(response or [])[m
+[31m-[m
+[31m-            # Parse the Link header for rel="next"[m
+[31m-            link_header = headers.get('Link', '')[m
+[31m-            if 'rel="next"' not in link_header:[m
+[31m-                break[m
+[31m-[m
+[31m-            page += 1[m
+[31m-[m
+[31m-        return self._process_raw_comments(all_comments)[m
+[31m-[m
+[31m-    async def get_issue_or_pr_title_and_body([m
+[31m-        self, repository: str, issue_number: int[m
+[31m-    ) -> tuple[str, str]:[m
+[31m-        """Get the title and body of an issue.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            repository: Repository name in format 'owner/repo'[m
+[31m-            issue_number: The issue number[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            A tuple of (title, body)[m
+[31m-        """[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}'[m
+[31m-        response, _ = await self._make_request(url)[m
+[31m-        title = response.get('title') or ''[m
+[31m-        body = response.get('body') or ''[m
+[31m-        return title, body[m
+[31m-[m
+[31m-    async def get_review_thread_comments([m
+[31m-        self,[m
+[31m-        comment_id: str,[m
+[31m-        repository: str,[m
+[31m-        pr_number: int,[m
+[31m-    ) -> list[Comment]:[m
+[31m-        """Get all comments in a review thread starting from a specific comment.[m
+[31m-[m
+[31m-        Uses GraphQL to traverse the reply chain from the given comment up to the root[m
+[31m-        comment, then finds the review thread and returns all comments in the thread.[m
+[31m-[m
+[31m-        Args:[m
+[31m-            comment_id: The GraphQL node ID of any comment in the thread[m
+[31m-            repo: Repository name[m
+[31m-            pr_number: Pull request number[m
+[31m-[m
+[31m-        Returns:[m
+[31m-            List of Comment objects representing the entire thread[m
+[31m-        """[m
+[31m-[m
+[31m-        # Step 1: Use existing GraphQL query to get the comment and check for replyTo[m
+[31m-        variables = {'commentId': comment_id}[m
+[31m-        data = await self.execute_graphql_query([m
+[31m-            get_thread_from_comment_graphql_query, variables[m
+[31m-        )[m
+[31m-[m
+[31m-        comment_node = data.get('data', {}).get('node')[m
+[31m-        if not comment_node:[m
+[31m-            return [][m
+[31m-[m
+[31m-        # Step 2: If replyTo exists, traverse to the root comment[m
+[31m-        root_comment_id = comment_id[m
+[31m-        reply_to = comment_node.get('replyTo')[m
+[31m-        if reply_to:[m
+[31m-            root_comment_id = reply_to['id'][m
+[31m-[m
+[31m-        # Step 3: Get all review threads and find the one containing our root comment[m
+[31m-        owner, repo = repository.split('/')[m
+[31m-        thread_id = None[m
+[31m-        after_cursor = None[m
+[31m-        has_next_page = True[m
+[31m-[m
+[31m-        while has_next_page and not thread_id:[m
+[31m-            threads_variables: dict[str, Any] = {[m
+[31m-                'owner': owner,[m
+[31m-                'repo': repo,[m
+[31m-                'number': pr_number,[m
+[31m-                'first': 50,[m
+[31m-            }[m
+[31m-            if after_cursor:[m
+[31m-                threads_variables['after'] = after_cursor[m
+[31m-[m
+[31m-            threads_data = await self.execute_graphql_query([m
+[31m-                get_review_threads_graphql_query, threads_variables[m
+[31m-            )[m
+[31m-[m
+[31m-            review_threads_data = ([m
+[31m-                threads_data.get('data', {})[m
+[31m-                .get('repository', {})[m
+[31m-                .get('pullRequest', {})[m
+[31m-                .get('reviewThreads', {})[m
+[31m-            )[m
+[31m-[m
+[31m-            review_threads = review_threads_data.get('nodes', [])[m
+[31m-            page_info = review_threads_data.get('pageInfo', {})[m
+[31m-[m
+[31m-            # Search for the thread containing our root comment[m
+[31m-            for thread in review_threads:[m
+[31m-                first_comments = thread.get('comments', {}).get('nodes', [])[m
+[31m-                for first_comment in first_comments:[m
+[31m-                    if first_comment.get('id') == root_comment_id:[m
+[31m-                        thread_id = thread.get('id')[m
+[31m-                        break[m
+[31m-                if thread_id:[m
+[31m-                    break[m
+[31m-[m
+[31m-            # Update pagination variables[m
+[31m-            has_next_page = page_info.get('hasNextPage', False)[m
+[31m-            after_cursor = page_info.get('endCursor')[m
+[31m-[m
+[31m-        if not thread_id:[m
+[31m-            # Fallback: return just the comments we found during traversal[m
+[31m-            logger.warning([m
+[31m-                f'Could not find review thread for comment {comment_id}, returning traversed comments'[m
+[31m-            )[m
+[31m-            return [][m
+[31m-[m
+[31m-        # Step 4: Get all comments from the review thread using the thread ID[m
+[31m-        all_thread_comments = [][m
+[31m-        after_cursor = None[m
+[31m-        has_next_page = True[m
+[31m-[m
+[31m-        while has_next_page:[m
+[31m-            comments_variables: dict[str, Any] = {}[m
+[31m-            comments_variables['threadId'] = thread_id[m
+[31m-            comments_variables['page'] = 50[m
+[31m-            if after_cursor:[m
+[31m-                comments_variables['after'] = after_cursor[m
+[31m-[m
+[31m-            thread_comments_data = await self.execute_graphql_query([m
+[31m-                get_thread_comments_graphql_query, comments_variables[m
+[31m-            )[m
+[31m-[m
+[31m-            thread_node = thread_comments_data.get('data', {}).get('node')[m
+[31m-            if not thread_node:[m
+[31m-                break[m
+[31m-[m
+[31m-            comments_data = thread_node.get('comments', {})[m
+[31m-            comments_nodes = comments_data.get('nodes', [])[m
+[31m-            page_info = comments_data.get('pageInfo', {})[m
+[31m-[m
+[31m-            all_thread_comments.extend(comments_nodes)[m
+[31m-[m
+[31m-            has_next_page = page_info.get('hasNextPage', False)[m
+[31m-            after_cursor = page_info.get('endCursor')[m
+[31m-[m
+[31m-        return self._process_raw_comments(all_thread_comments)[m
+[31m-[m
+[31m-    def _process_raw_comments([m
+[31m-        self, comments_data: list, max_comments: int = 10[m
+[31m-    ) -> list[Comment]:[m
+[31m-        """Convert raw comment data to Comment objects."""[m
+[31m-        comments: list[Comment] = [][m
+[31m-        for comment in comments_data:[m
+[31m-            author = 'unknown'[m
+[31m-[m
+[31m-            if comment.get('author'):[m
+[31m-                author = comment.get('author', {}).get('login', 'unknown')[m
+[31m-            elif comment.get('user'):[m
+[31m-                author = comment.get('user', {}).get('login', 'unknown')[m
+[31m-[m
+[31m-            comments.append([m
+[31m-                Comment([m
+[31m-                    id=str(comment.get('id', 'unknown')),[m
+[31m-                    body=self._truncate_comment(comment.get('body', '')),[m
+[31m-                    author=author,[m
+[31m-                    created_at=datetime.fromisoformat([m
+[31m-                        comment.get('createdAt', '').replace('Z', '+00:00')[m
+[31m-                    )[m
+[31m-                    if comment.get('createdAt')[m
+[31m-                    else datetime.fromtimestamp(0),[m
+[31m-                    updated_at=datetime.fromisoformat([m
+[31m-                        comment.get('updatedAt', '').replace('Z', '+00:00')[m
+[31m-                    )[m
+[31m-                    if comment.get('updatedAt')[m
+[31m-                    else datetime.fromtimestamp(0),[m
+[31m-                    system=False,[m
+[31m-                )[m
+[31m-            )[m
+[31m-[m
+[31m-        # Sort comments by creation date to maintain chronological order[m
+[31m-        comments.sort(key=lambda c: c.created_at)[m
+[31m-        return comments[-max_comments:][m
+[31m-[m
+ [m
+ github_service_cls = os.environ.get([m
+     'OPENHANDS_GITHUB_SERVICE_CLS',[m
+[1mdiff --git a/openhands/integrations/github/service/__init__.py b/openhands/integrations/github/service/__init__.py[m
+[1mdeleted file mode 100644[m
+[1mindex 2ad7e055d..000000000[m
+[1m--- a/openhands/integrations/github/service/__init__.py[m
+[1m+++ /dev/null[m
+[36m@@ -1,54 +0,0 @@[m
+[31m-from pydantic import SecretStr[m
+[31m-[m
+[31m-from openhands.integrations.github.service.branches_prs import ([m
+[31m-    GitHubBranchesMixin,[m
+[31m-    GitHubPRsMixin,[m
+[31m-)[m
+[31m-from openhands.integrations.github.service.graphql import GitHubGraphQLMixin[m
+[31m-from openhands.integrations.github.service.microagents import GitHubMicroagentsMixin[m
+[31m-from openhands.integrations.github.service.repos import GitHubReposMixin[m
+[31m-from openhands.integrations.service_types import ([m
+[31m-    BaseGitService,[m
+[31m-    GitService,[m
+[31m-    InstallationsService,[m
+[31m-)[m
+[31m-[m
+[31m-[m
+[31m-class GitHubService([m
+[31m-    GitHubReposMixin,[m
+[31m-    GitHubBranchesMixin,[m
+[31m-    GitHubPRsMixin,[m
+[31m-    GitHubGraphQLMixin,[m
+[31m-    GitHubMicroagentsMixin,[m
+[31m-    BaseGitService,[m
+[31m-    GitService,[m
+[31m-    InstallationsService,[m
+[31m-):[m
+[31m-    """Assembled GitHub service class combining mixins by feature area."""[m
+[31m-[m
+[31m-    def __init__([m
+[31m-        self,[m
+[31m-        user_id: str | None = None,[m
+[31m-        external_auth_id: str | None = None,[m
+[31m-        external_auth_token: SecretStr | None = None,[m
+[31m-        token: SecretStr | None = None,[m
+[31m-        external_token_manager: bool = False,[m
+[31m-        base_domain: str | None = None,[m
+[31m-    ) -> None:[m
+[31m-        self.user_id = user_id[m
+[31m-        self.external_token_manager = external_token_manager[m
+[31m-[m
+[31m-        if token:[m
+[31m-            self.token = token[m
+[31m-[m
+[31m-        if base_domain and base_domain != 'github.com':[m
+[31m-            self.BASE_URL = f'https://{base_domain}/api/v3'[m
+[31m-[m
+[31m-        self.external_auth_id = external_auth_id[m
+[31m-        self.external_auth_token = external_auth_token[m
+[31m-[m
+[31m-    @property[m
+[31m-    def provider(self) -> str:[m
+[31m-        from openhands.integrations.service_types import ProviderType[m
+[31m-[m
+[31m-        return ProviderType.GITHUB.value[m
+[1mdiff --git a/openhands/integrations/github/service/_base.py b/openhands/integrations/github/service/_base.py[m
+[1mdeleted file mode 100644[m
+[1mindex 53007e827..000000000[m
+[1m--- a/openhands/integrations/github/service/_base.py[m
+[1m+++ /dev/null[m
+[36m@@ -1,129 +0,0 @@[m
+[31m-import json[m
+[31m-from typing import Any, cast[m
+[31m-[m
+[31m-import httpx[m
+[31m-from pydantic import SecretStr[m
+[31m-[m
+[31m-from openhands.integrations.service_types import ([m
+[31m-    BaseGitService,[m
+[31m-    RequestMethod,[m
+[31m-    UnknownException,[m
+[31m-    User,[m
+[31m-)[m
+[31m-[m
+[31m-[m
+[31m-class GitHubMixinBase(BaseGitService):[m
+[31m-    """Type-support base for GitHub mixins to satisfy static typing.[m
+[31m-[m
+[31m-    Declares common attributes and method signatures used across mixins.[m
+[31m-    """[m
+[31m-[m
+[31m-    BASE_URL: str[m
+[31m-    token: SecretStr[m
+[31m-    refresh: bool[m
+[31m-    external_auth_id: str | None[m
+[31m-[m
+[31m-    async def _get_github_headers(self) -> dict:[m
+[31m-        """Retrieve the GH Token from settings store to construct the headers."""[m
+[31m-        if not self.token:[m
+[31m-            latest_token = await self.get_latest_token()[m
+[31m-            if latest_token:[m
+[31m-                self.token = latest_token[m
+[31m-[m
+[31m-        return {[m
+[31m-            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',[m
+[31m-            'Accept': 'application/vnd.github.v3+json',[m
+[31m-        }[m
+[31m-[m
+[31m-    async def get_latest_token(self) -> SecretStr | None:  # type: ignore[override][m
+[31m-        return self.token[m
+[31m-[m
+[31m-    async def _make_request([m
+[31m-        self,[m
+[31m-        url: str,[m
+[31m-        params: dict | None = None,[m
+[31m-        method: RequestMethod = RequestMethod.GET,[m
+[31m-    ) -> tuple[Any, dict]:  # type: ignore[override][m
+[31m-        try:[m
+[31m-            async with httpx.AsyncClient() as client:[m
+[31m-                github_headers = await self._get_github_headers()[m
+[31m-[m
+[31m-                # Make initial request[m
+[31m-                response = await self.execute_request([m
+[31m-                    client=client,[m
+[31m-                    url=url,[m
+[31m-                    headers=github_headers,[m
+[31m-                    params=params,[m
+[31m-                    method=method,[m
+[31m-                )[m
+[31m-[m
+[31m-                # Handle token refresh if needed[m
+[31m-                if self.refresh and self._has_token_expired(response.status_code):[m
+[31m-                    await self.get_latest_token()[m
+[31m-                    github_headers = await self._get_github_headers()[m
+[31m-                    response = await self.execute_request([m
+[31m-                        client=client,[m
+[31m-                        url=url,[m
+[31m-                        headers=github_headers,[m
+[31m-                        params=params,[m
+[31m-                        method=method,[m
+[31m-                    )[m
+[31m-[m
+[31m-                response.raise_for_status()[m
+[31m-                headers: dict = {}[m
+[31m-                if 'Link' in response.headers:[m
+[31m-                    headers['Link'] = response.headers['Link'][m
+[31m-[m
+[31m-                return response.json(), headers[m
+[31m-[m
+[31m-        except httpx.HTTPStatusError as e:[m
+[31m-            raise self.handle_http_status_error(e)[m
+[31m-        except httpx.HTTPError as e:[m
+[31m-            raise self.handle_http_error(e)[m
+[31m-[m
+[31m-    async def execute_graphql_query([m
+[31m-        self, query: str, variables: dict[str, Any][m
+[31m-    ) -> dict[str, Any]:[m
+[31m-        try:[m
+[31m-            async with httpx.AsyncClient() as client:[m
+[31m-                github_headers = await self._get_github_headers()[m
+[31m-                response = await client.post([m
+[31m-                    f'{self.BASE_URL}/graphql',[m
+[31m-                    headers=github_headers,[m
+[31m-                    json={'query': query, 'variables': variables},[m
+[31m-                )[m
+[31m-                response.raise_for_status()[m
+[31m-[m
+[31m-                result = response.json()[m
+[31m-                if 'errors' in result:[m
+[31m-                    raise UnknownException([m
+[31m-                        f'GraphQL query error: {json.dumps(result["errors"])}'[m
+[31m-                    )[m
+[31m-[m
+[31m-                return dict(result)[m
+[31m-[m
+[31m-        except httpx.HTTPStatusError as e:[m
+[31m-            raise self.handle_http_status_error(e)[m
+[31m-        except httpx.HTTPError as e:[m
+[31m-            raise self.handle_http_error(e)[m
+[31m-[m
+[31m-    async def verify_access(self) -> bool:[m
+[31m-        url = f'{self.BASE_URL}'[m
+[31m-        await self._make_request(url)[m
+[31m-        return True[m
+[31m-[m
+[31m-    async def get_user(self):  # Return type imported lazily to avoid cycles[m
+[31m-        url = f'{self.BASE_URL}/user'[m
+[31m-        response, _ = await self._make_request(url)[m
+[31m-[m
+[31m-        return User([m
+[31m-            id=str(response.get('id', '')),[m
+[31m-            login=cast(str, response.get('login') or ''),[m
+[31m-            avatar_url=cast(str, response.get('avatar_url') or ''),[m
+[31m-            company=response.get('company'),[m
+[31m-            name=response.get('name'),[m
+[31m-            email=response.get('email'),[m
+[31m-        )[m
+[31m-[m
+[31m-    # @abstractmethod[m
+[31m-    # async def get_installations(self) -> list[str]: ...[m
+[1mdiff --git a/openhands/integrations/github/service/branches_prs.py b/openhands/integrations/github/service/branches_prs.py[m
+[1mindex cd3b91288..ecbf5b91c 100644[m
+[1m--- a/openhands/integrations/github/service/branches_prs.py[m
+[1m+++ b/openhands/integrations/github/service/branches_prs.py[m
+[36m@@ -1,24 +1,33 @@[m
+[31m-from openhands.integrations.github.service._base import GitHubMixinBase[m
+[31m-from openhands.integrations.service_types import Branch, RequestMethod[m
+[32m+[m[32mfrom openhands.core.logger import openhands_logger as logger[m
+[32m+[m[32mfrom openhands.integrations.github.queries import ([m
+[32m+[m[32m    search_branches_graphql_query,[m
+[32m+[m[32m)[m
+[32m+[m[32mfrom openhands.integrations.github.service.base import GitHubMixinBase[m
+[32m+[m[32mfrom openhands.integrations.service_types import Branch, PaginatedBranchesResponse[m
+ [m
+ [m
+ class GitHubBranchesMixin(GitHubMixinBase):[m
+     async def get_branches(self, repository: str) -> list[Branch]:[m
+[32m+[m[32m        """Get branches for a repository"""[m
+         url = f'{self.BASE_URL}/repos/{repository}/branches'[m
+[31m-        MAX_BRANCHES = 5000[m
+[32m+[m
+[32m+[m[32m        # Set maximum branches to fetch (100 per page)[m
+[32m+[m[32m        MAX_BRANCHES = 5_000[m
+         PER_PAGE = 100[m
+ [m
+         all_branches: list[Branch] = [][m
+         page = 1[m
+ [m
+[32m+[m[32m        # Fetch up to 10 pages of branches[m
+         while len(all_branches) < MAX_BRANCHES:[m
+             params = {'per_page': str(PER_PAGE), 'page': str(page)}[m
+             response, headers = await self._make_request(url, params)[m
+ [m
+[31m-            if not response:[m
+[32m+[m[32m            if not response:  # No more branches[m
+                 break[m
+ [m
+             for branch_data in response:[m
+[32m+[m[32m                # Extract the last commit date if available[m
+                 last_push_date = None[m
+                 if branch_data.get('commit') and branch_data['commit'].get('commit'):[m
+                     commit_info = branch_data['commit']['commit'][m
+[36m@@ -37,47 +46,112 @@[m [mclass GitHubBranchesMixin(GitHubMixinBase):[m
+ [m
+             page += 1[m
+ [m
+[32m+[m[32m            # Check if we've reached the last page[m
+             link_header = headers.get('Link', '')[m
+             if 'rel="next"' not in link_header:[m
+                 break[m
+ [m
+         return all_branches[m
+ [m
+[32m+[m[32m    async def get_paginated_branches([m
+[32m+[m[32m        self, repository: str, page: int = 1, per_page: int = 30[m
+[32m+[m[32m    ) -> PaginatedBranchesResponse:[m
+[32m+[m[32m        """Get branches for a repository with pagination"""[m
+[32m+[m[32m        url = f'{self.BASE_URL}/repos/{repository}/branches'[m
+ [m
+[31m-class GitHubPRsMixin(GitHubMixinBase):[m
+[31m-    async def create_pr([m
+[31m-        self,[m
+[31m-        repo_name: str,[m
+[31m-        source_branch: str,[m
+[31m-        target_branch: str,[m
+[31m-        title: str,[m
+[31m-        body: str | None = None,[m
+[31m-        draft: bool = True,[m
+[31m-        labels: list[str] | None = None,[m
+[31m-    ) -> str:[m
+[31m-        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'[m
+[31m-[m
+[31m-        if not body:[m
+[31m-            body = f'Merging changes from {source_branch} into {target_branch}'[m
+[31m-[m
+[31m-        payload = {[m
+[31m-            'title': title,[m
+[31m-            'head': source_branch,[m
+[31m-            'base': target_branch,[m
+[31m-            'body': body,[m
+[31m-            'draft': draft,[m
+[31m-        }[m
+[31m-[m
+[31m-        response, _ = await self._make_request([m
+[31m-            url=url, params=payload, method=RequestMethod.POST[m
+[32m+[m[32m        params = {'per_page': str(per_page), 'page': str(page)}[m
+[32m+[m[32m        response, headers = await self._make_request(url, params)[m
+[32m+[m
+[32m+[m[32m        branches: list[Branch] = [][m
+[32m+[m[32m        for branch_data in response:[m
+[32m+[m[32m            # Extract the last commit date if available[m
+[32m+[m[32m            last_push_date = None[m
+[32m+[m[32m            if branch_data.get('commit') and branch_data['commit'].get('commit'):[m
+[32m+[m[32m                commit_info = branch_data['commit']['commit'][m
+[32m+[m[32m                if commit_info.get('committer') and commit_info['committer'].get([m
+[32m+[m[32m                    'date'[m
+[32m+[m[32m                ):[m
+[32m+[m[32m                    last_push_date = commit_info['committer']['date'][m
+[32m+[m
+[32m+[m[32m            branch = Branch([m
+[32m+[m[32m                name=branch_data.get('name'),[m
+[32m+[m[32m                commit_sha=branch_data.get('commit', {}).get('sha', ''),[m
+[32m+[m[32m                protected=branch_data.get('protected', False),[m
+[32m+[m[32m                last_push_date=last_push_date,[m
+[32m+[m[32m            )[m
+[32m+[m[32m            branches.append(branch)[m
+[32m+[m
+[32m+[m[32m        # Parse Link header to determine if there's a next page[m
+[32m+[m[32m        has_next_page = False[m
+[32m+[m[32m        if 'Link' in headers:[m
+[32m+[m[32m            link_header = headers['Link'][m
+[32m+[m[32m            has_next_page = 'rel="next"' in link_header[m
+[32m+[m
+[32m+[m[32m        return PaginatedBranchesResponse([m
+[32m+[m[32m            branches=branches,[m
+[32m+[m[32m            has_next_page=has_next_page,[m
+[32m+[m[32m            current_page=page,[m
+[32m+[m[32m            per_page=per_page,[m
+[32m+[m[32m            total_count=None,  # GitHub doesn't provide total count in branch API[m
+         )[m
+ [m
+[31m-        if labels and len(labels) > 0:[m
+[31m-            pr_number = response['number'][m
+[31m-            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'[m
+[31m-            labels_payload = {'labels': labels}[m
+[31m-            await self._make_request([m
+[31m-                url=labels_url, params=labels_payload, method=RequestMethod.POST[m
+[32m+[m[32m    async def search_branches([m
+[32m+[m[32m        self, repository: str, query: str, per_page: int = 30[m
+[32m+[m[32m    ) -> list[Branch]:[m
+[32m+[m[32m        """Search branches by name using GitHub GraphQL with a partial query."""[m
+[32m+[m[32m        # Require a non-empty query[m
+[32m+[m[32m        if not query:[m
+[32m+[m[32m            return [][m
+[32m+[m
+[32m+[m[32m        # Clamp per_page to GitHub GraphQL limits[m
+[32m+[m[32m        per_page = min(max(per_page, 1), 100)[m
+[32m+[m
+[32m+[m[32m        # Extract owner and repo name from the repository string[m
+[32m+[m[32m        parts = repository.split('/')[m
+[32m+[m[32m        if len(parts) < 2:[m
+[32m+[m[32m            return [][m
+[32m+[m[32m        owner, name = parts[-2], parts[-1][m
+[32m+[m
+[32m+[m[32m        variables = {[m
+[32m+[m[32m            'owner': owner,[m
+[32m+[m[32m            'name': name,[m
+[32m+[m[32m            'query': query or '',[m
+[32m+[m[32m            'perPage': per_page,[m
+[32m+[m[32m        }[m
+[32m+[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            result = await self.execute_graphql_query([m
+[32m+[m[32m                search_branches_graphql_query, variables[m
+[32m+[m[32m            )[m
+[32m+[m[32m        except Exception as e:[m
+[32m+[m[32m            logger.warning(f'Failed to search for branches: {e}')[m
+[32m+[m[32m            # Fallback to empty result on any GraphQL error[m
+[32m+[m[32m            return [][m
+[32m+[m
+[32m+[m[32m        repo = result.get('data', {}).get('repository')[m
+[32m+[m[32m        if not repo or not repo.get('refs'):[m
+[32m+[m[32m            return [][m
+[32m+[m
+[32m+[m[32m        branches: list[Branch] = [][m
+[32m+[m[32m        for node in repo['refs'].get('nodes', []):[m
+[32m+[m[32m            bname = node.get('name') or ''[m
+[32m+[m[32m            target = node.get('target') or {}[m
+[32m+[m[32m            typename = target.get('__typename')[m
+[32m+[m[32m            commit_sha = ''[m
+[32m+[m[32m            last_push_date = None[m
+[32m+[m[32m            if typename == 'Commit':[m
+[32m+[m[32m                commit_sha = target.get('oid', '') or ''[m
+[32m+[m[32m                last_push_date = target.get('committedDate')[m
+[32m+[m
+[32m+[m[32m            protected = node.get('branchProtectionRule') is not None[m
+[32m+[m
+[32m+[m[32m            branches.append([m
+[32m+[m[32m                Branch([m
+[32m+[m[32m                    name=bname,[m
+[32m+[m[32m                    commit_sha=commit_sha,[m
+[32m+[m[32m                    protected=protected,[m
+[32m+[m[32m                    last_push_date=last_push_date,[m
+[32m+[m[32m                )[m
+             )[m
+ [m
+[31m-        return response['html_url'][m
+[32m+[m[32m        return branches[m
+[1mdiff --git a/openhands/integrations/github/service/graphql.py b/openhands/integrations/github/service/graphql.py[m
+[1mdeleted file mode 100644[m
+[1mindex fe360563e..000000000[m
+[1m--- a/openhands/integrations/github/service/graphql.py[m
+[1m+++ /dev/null[m
+[36m@@ -1,94 +0,0 @@[m
+[31m-from openhands.core.logger import openhands_logger as logger[m
+[31m-from openhands.integrations.github.queries import ([m
+[31m-    suggested_task_issue_graphql_query,[m
+[31m-    suggested_task_pr_graphql_query,[m
+[31m-)[m
+[31m-from openhands.integrations.github.service._base import GitHubMixinBase[m
+[31m-from openhands.integrations.service_types import ([m
+[31m-    ProviderType,[m
+[31m-    SuggestedTask,[m
+[31m-    TaskType,[m
+[31m-)[m
+[31m-[m
+[31m-[m
+[31m-class GitHubGraphQLMixin(GitHubMixinBase):[m
+[31m-    async def get_suggested_tasks(self) -> list[SuggestedTask]:[m
+[31m-        user = await self.get_user()[m
+[31m-        login = user.login[m
+[31m-        tasks: list[SuggestedTask] = [][m
+[31m-        variables = {'login': login}[m
+[31m-[m
+[31m-        try:[m
+[31m-            pr_response = await self.execute_graphql_query([m
+[31m-                suggested_task_pr_graphql_query, variables[m
+[31m-            )[m
+[31m-            pr_data = pr_response['data']['user'][m
+[31m-[m
+[31m-            for pr in pr_data['pullRequests']['nodes']:[m
+[31m-                repo_name = pr['repository']['nameWithOwner'][m
+[31m-                task_type = TaskType.OPEN_PR[m
+[31m-[m
+[31m-                if pr['mergeable'] == 'CONFLICTING':[m
+[31m-                    task_type = TaskType.MERGE_CONFLICTS[m
+[31m-                elif ([m
+[31m-                    pr['commits']['nodes'][m
+[31m-                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][m
+[31m-                    and pr['commits']['nodes'][0]['commit']['statusCheckRollup'][[m
+[31m-                        'state'[m
+[31m-                    ][m
+[31m-                    == 'FAILURE'[m
+[31m-                ):[m
+[31m-                    task_type = TaskType.FAILING_CHECKS[m
+[31m-                elif any([m
+[31m-                    review['state'] in ['CHANGES_REQUESTED', 'COMMENTED'][m
+[31m-                    for review in pr['reviews']['nodes'][m
+[31m-                ):[m
+[31m-                    task_type = TaskType.UNRESOLVED_COMMENTS[m
+[31m-[m
+[31m-                if task_type != TaskType.OPEN_PR:[m
+[31m-                    tasks.append([m
+[31m-                        SuggestedTask([m
+[31m-                            git_provider=ProviderType.GITHUB,[m
+[31m-                            task_type=task_type,[m
+[31m-                            repo=repo_name,[m
+[31m-                            issue_number=pr['number'],[m
+[31m-                            title=pr['title'],[m
+[31m-                        )[m
+[31m-                    )[m
+[31m-        except Exception as e:[m
+[31m-            logger.info([m
+[31m-                f'Error fetching suggested task for PRs: {e}',[m
+[31m-                extra={[m
+[31m-                    'signal': 'github_suggested_tasks',[m
+[31m-                    'user_id': self.external_auth_id,[m
+[31m-                },[m
+[31m-            )[m
+[31m-[m
+[31m-        try:[m
+[31m-            issue_response = await self.execute_graphql_query([m
+[31m-                suggested_task_issue_graphql_query, variables[m
+[31m-            )[m
+[31m-            issue_data = issue_response['data']['user'][m
+[31m-[m
+[31m-            for issue in issue_data['issues']['nodes']:[m
+[31m-                repo_name = issue['repository']['nameWithOwner'][m
+[31m-                tasks.append([m
+[31m-                    SuggestedTask([m
+[31m-                        git_provider=ProviderType.GITHUB,[m
+[31m-                        task_type=TaskType.OPEN_ISSUE,[m
+[31m-                        repo=repo_name,[m
+[31m-                        issue_number=issue['number'],[m
+[31m-                        title=issue['title'],[m
+[31m-                    )[m
+[31m-                )[m
+[31m-            return tasks[m
+[31m-        except Exception as e:[m
+[31m-            logger.info([m
+[31m-                f'Error fetching suggested task for issues: {e}',[m
+[31m-                extra={[m
+[31m-                    'signal': 'github_suggested_tasks',[m
+[31m-                    'user_id': self.external_auth_id,[m
+[31m-                },[m
+[31m-            )[m
+[31m-[m
+[31m-        return tasks[m
+[1mdiff --git a/openhands/integrations/github/service/microagents.py b/openhands/integrations/github/service/microagents.py[m
+[1mindex 469380a7c..86dd3a8d2 100644[m
+[1m--- a/openhands/integrations/github/service/microagents.py[m
+[1m+++ b/openhands/integrations/github/service/microagents.py[m
+[36m@@ -1,6 +1,6 @@[m
+ import base64[m
+ [m
+[31m-from openhands.integrations.github.service._base import GitHubMixinBase[m
+[32m+[m[32mfrom openhands.integrations.github.service.base import GitHubMixinBase[m
+ from openhands.integrations.service_types import ([m
+     MicroagentContentResponse,[m
+ )[m
+[36m@@ -8,17 +8,17 @@[m [mfrom openhands.integrations.service_types import ([m
+ [m
+ class GitHubMicroagentsMixin(GitHubMixinBase):[m
+     async def _get_cursorrules_url(self, repository: str) -> str:[m
+[32m+[m[32m        """Get the URL for checking .cursorrules file."""[m
+         return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'[m
+ [m
+     async def _get_microagents_directory_url([m
+         self, repository: str, microagents_path: str[m
+     ) -> str:[m
+[32m+[m[32m        """Get the URL for checking microagents directory."""[m
+         return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'[m
+ [m
+[31m-    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:[m
+[31m-        return None[m
+[31m-[m
+     def _is_valid_microagent_file(self, item: dict) -> bool:[m
+[32m+[m[32m        """Check if an item represents a valid microagent file."""[m
+         return ([m
+             item['type'] == 'file'[m
+             and item['name'].endswith('.md')[m
+[36m@@ -26,15 +26,36 @@[m [mclass GitHubMicroagentsMixin(GitHubMixinBase):[m
+         )[m
+ [m
+     def _get_file_name_from_item(self, item: dict) -> str:[m
+[32m+[m[32m        """Extract file name from directory item."""[m
+         return item['name'][m
+ [m
+     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:[m
+[32m+[m[32m        """Extract file path from directory item."""[m
+         return f'{microagents_path}/{item["name"]}'[m
+ [m
+[32m+[m[32m    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:[m
+[32m+[m[32m        """Get parameters for the microagents directory request. Return None if no parameters needed."""[m
+[32m+[m[32m        return None[m
+[32m+[m
+     async def get_microagent_content([m
+         self, repository: str, file_path: str[m
+     ) -> MicroagentContentResponse:[m
+[32m+[m[32m        """Fetch individual file content from GitHub repository.[m
+[32m+[m
+[32m+[m[32m        Args:[m
+[32m+[m[32m            repository: Repository name in format 'owner/repo'[m
+[32m+[m[32m            file_path: Path to the file within the repository[m
+[32m+[m
+[32m+[m[32m        Returns:[m
+[32m+[m[32m            MicroagentContentResponse with parsed content and triggers[m
+[32m+[m
+[32m+[m[32m        Raises:[m
+[32m+[m[32m            RuntimeError: If file cannot be fetched or doesn't exist[m
+[32m+[m[32m        """[m
+         file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'[m
+[32m+[m
+         file_data, _ = await self._make_request(file_url)[m
+         file_content = base64.b64decode(file_data['content']).decode('utf-8')[m
+[32m+[m
+[32m+[m[32m        # Parse the content to extract triggers from frontmatter[m
+         return self._parse_microagent_content(file_content, file_path)[m
+[1mdiff --git a/openhands/integrations/github/service/repos.py b/openhands/integrations/github/service/repos.py[m
+[1mindex 9c5278a08..cd6f53f5b 100644[m
+[1m--- a/openhands/integrations/github/service/repos.py[m
+[1m+++ b/openhands/integrations/github/service/repos.py[m
+[36m@@ -1,8 +1,9 @@[m
+ from datetime import datetime[m
+[31m-from typing import cast[m
+ [m
+[31m-from openhands.integrations.github.service._base import GitHubMixinBase[m
+[32m+[m[32mfrom openhands.core.logger import openhands_logger as logger[m
+[32m+[m[32mfrom openhands.integrations.github.service.base import GitHubMixinBase[m
+ from openhands.integrations.service_types import OwnerType, ProviderType, Repository[m
+[32m+[m[32mfrom openhands.server.types import AppMode[m
+ [m
+ [m
+ class GitHubReposMixin(GitHubMixinBase):[m
+[36m@@ -15,6 +16,17 @@[m [mclass GitHubReposMixin(GitHubMixinBase):[m
+     async def _fetch_paginated_repos([m
+         self, url: str, params: dict, max_repos: int, extract_key: str | None = None[m
+     ) -> list[dict]:[m
+[32m+[m[32m        """Fetch repositories with pagination support.[m
+[32m+[m
+[32m+[m[32m        Args:[m
+[32m+[m[32m            url: The API endpoint URL[m
+[32m+[m[32m            params: Query parameters for the request[m
+[32m+[m[32m            max_repos: Maximum number of repositories to fetch[m
+[32m+[m[32m            extract_key: If provided, extract repositories from this key in the response[m
+[32m+[m
+[32m+[m[32m        Returns:[m
+[32m+[m[32m            List of repository dictionaries[m
+[32m+[m[32m        """[m
+         repos: list[dict] = [][m
+         page = 1[m
+ [m
+[36m@@ -22,29 +34,41 @@[m [mclass GitHubReposMixin(GitHubMixinBase):[m
+             page_params = {**params, 'page': str(page)}[m
+             response, headers = await self._make_request(url, page_params)[m
+ [m
+[32m+[m[32m            # Extract repositories from response[m
+             page_repos = response.get(extract_key, []) if extract_key else response[m
+[31m-            if not page_repos:[m
+[32m+[m
+[32m+[m[32m            if not page_repos:  # No more repositories[m
+                 break[m
+ [m
+             repos.extend(page_repos)[m
+             page += 1[m
+ [m
+[32m+[m[32m            # Check if we've reached the last page[m
+             link_header = headers.get('Link', '')[m
+             if 'rel="next"' not in link_header:[m
+                 break[m
+ [m
+[31m-        return repos[:max_repos][m
+[32m+[m[32m        return repos[:max_repos]  # Trim to max_repos if needed[m
+ [m
+[31m-    def parse_pushed_at_date(self, repo: dict) -> datetime:[m
+[32m+[m[32m    def parse_pushed_at_date(self, repo):[m
+         ts = repo.get('pushed_at')[m
+         return datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ') if ts else datetime.min[m
+ [m
+     def _parse_repository([m
+         self, repo: dict, link_header: str | None = None[m
+     ) -> Repository:[m
+[32m+[m[32m        """Parse a GitHub API repository response into a Repository object.[m
+[32m+[m
+[32m+[m[32m        Args:[m
+[32m+[m[32m            repo: Repository data from GitHub API[m
+[32m+[m[32m            link_header: Optional link header for pagination[m
+[32m+[m
+[32m+[m[32m        Returns:[m
+[32m+[m[32m            Repository object[m
+[32m+[m[32m        """[m
+         return Repository([m
+[31m-            id=str(repo.get('id')),[m
+[31m-            full_name=cast(str, repo.get('full_name') or ''),[m
+[32m+[m[32m            id=str(repo.get('id')),  # type: ignore[arg-type][m
+[32m+[m[32m            full_name=repo.get('full_name'),  # type: ignore[arg-type][m
+             stargazers_count=repo.get('stargazers_count'),[m
+             git_provider=ProviderType.GITHUB,[m
+             is_public=not repo.get('private', True),[m
+[36m@@ -54,6 +78,7 @@[m [mclass GitHubReposMixin(GitHubMixinBase):[m
+                 else OwnerType.USER[m
+             ),[m
+             link_header=link_header,[m
+[32m+[m[32m            main_branch=repo.get('default_branch'),[m
+         )[m
+ [m
+     async def get_paginated_repos([m
+[36m@@ -80,49 +105,82 @@[m [mclass GitHubReposMixin(GitHubMixinBase):[m
+         ][m
+ [m
+     async def get_all_repositories([m
+[31m-        self, sort: str, app_mode[m
+[31m-    ):  # AppMode type avoided to prevent cycle[m
+[31m-        from openhands.server.types import AppMode[m
+[31m-[m
+[32m+[m[32m        self, sort: str, app_mode: AppMode[m
+[32m+[m[32m    ) -> list[Repository]:[m
+         MAX_REPOS = 1000[m
+[31m-        PER_PAGE = 100[m
+[32m+[m[32m        PER_PAGE = 100  # Maximum allowed by GitHub API[m
+         all_repos: list[dict] = [][m
+ [m
+         if app_mode == AppMode.SAAS:[m
+[32m+[m[32m            # Get all installation IDs and fetch repos for each one[m
+             installation_ids = await self.get_installations()[m
+[32m+[m
+[32m+[m[32m            # Iterate through each installation ID[m
+             for installation_id in installation_ids:[m
+                 params = {'per_page': str(PER_PAGE)}[m
+                 url = ([m
+                     f'{self.BASE_URL}/user/installations/{installation_id}/repositories'[m
+                 )[m
+[32m+[m
+[32m+[m[32m                # Fetch repositories for this installation[m
+                 installation_repos = await self._fetch_paginated_repos([m
+                     url, params, MAX_REPOS - len(all_repos), extract_key='repositories'[m
+                 )[m
+[32m+[m
+                 all_repos.extend(installation_repos)[m
+[32m+[m
+[32m+[m[32m                # If we've already reached MAX_REPOS, no need to check other installations[m
+                 if len(all_repos) >= MAX_REPOS:[m
+                     break[m
+ [m
+             if sort == 'pushed':[m
+                 all_repos.sort(key=self.parse_pushed_at_date, reverse=True)[m
+         else:[m
+[32m+[m[32m            # Original behavior for non-SaaS mode[m
+             params = {'per_page': str(PER_PAGE), 'sort': sort}[m
+             url = f'{self.BASE_URL}/user/repos'[m
+[32m+[m
+[32m+[m[32m            # Fetch user repositories[m
+             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)[m
+ [m
+[32m+[m[32m        # Convert to Repository objects[m
+         return [self._parse_repository(repo) for repo in all_repos][m
+ [m
+[31m-    async def get_repository_details_from_repo_name([m
+[31m-        self, repository: str[m
+[31m-    ) -> Repository:[m
+[31m-        url = f'{self.BASE_URL}/repos/{repository}'[m
+[31m-        repo, _ = await self._make_request(url)[m
+[31m-        return self._parse_repository(repo)[m
+[32m+[m[32m    async def get_user_organizations(self) -> list[str]:[m
+[32m+[m[32m        """Get list of organization logins that the user is a member of."""[m
+[32m+[m[32m        url = f'{self.BASE_URL}/user/orgs'[m
+[32m+[m[32m        try:[m
+[32m+[m[32m            response, _ = await self._make_request(url)[m
+[32m+[m[32m            orgs = [org['login'] for org in response][m
+[32m+[m[32m            return orgs[m
+[32m+[m[32m        except Exception as e:[m
+[32m+[m[32m            logger.warning(f'Failed to get user organizations: {e}')[m
+[32m+[m[32m            return [][m
+[32m+[m
+[32m+[m[32m    def _fuzzy_match_org_name(self, query: str, org_name: str) -> bool:[m
+[32m+[m[32m        """Check if query fuzzy matches organization name."""[m
+[32m+[m[32m        query_lower = query.lower().replace('-', '').replace('_', '').replace(' ', '')[m
+[32m+[m[32m        org_lower = org_name.lower().replace('-', '').replace('_', '').replace(' ', '')[m
+[32m+[m
+[32m+[m[32m        # Exact match after normalization[m
+[32m+[m[32m        if query_lower == org_lower:[m
+[32m+[m[32m            return True[m
+[32m+[m
+[32m+[m[32m        # Query is a substring of org name[m
+[32m+[m[32m        if query_lower in org_lower:[m
+[32m+[m[32m            return True[m
+[32m+[m
+[32m+[m[32m        # Org name is a substring of query (less common but possible)[m
+[32m+[m[32m        if org_lower in query_lower:[m
+[32m+[m[32m            return True[m
+[32m+[m
+[32m+[m[32m        return False[m
+ [m
+     async def search_repositories([m
+         self, query: str, per_page: int, sort: str, order: str, public: bool[m
+     ) -> list[Repository]:[m
+         url = f'{self.BASE_URL}/search/repositories'[m
+[31m-        params: dict = {[m
+[32m+[m[32m        params = {[m
+             'per_page': per_page,[m
+             'sort': sort,[m
+             'order': order,[m
+[36m@@ -132,18 +190,71 @@[m [mclass GitHubReposMixin(GitHubMixinBase):[m
+             url_parts = query.split('/')[m
+             if len(url_parts) < 4:[m
+                 return [][m
+[32m+[m
+             org = url_parts[3][m
+             repo_name = url_parts[4][m
+[32m+[m[32m            # Add is:public to the query to ensure we only search for public repositories[m
+             params['q'] = f'in:name {org}/{repo_name} is:public'[m
+ [m
+[32m+[m[32m        # Handle private repository searches[m
+         if not public and '/' in query:[m
+             org, repo_query = query.split('/', 1)[m
+             query_with_user = f'org:{org} in:name {repo_query}'[m
+             params['q'] = query_with_user[m
+         elif not public:[m
+[32m+[m[32m            # Expand search scope to include user's repositories and organizations they're a member of[m
+             user = await self.get_user()[m
+[31m-            params['q'] = f'in:name {query} user:{user.login}'[m
+[32m+[m[32m            user_orgs = await self.get_user_organizations()[m
+[32m+[m
+[32m+[m[32m            # Search in user repos and org repos separately[m
+[32m+[m[32m            all_repos = [][m
+[32m+[m
+[32m+[m[32m            # Search in user repositories[m
+[32m+[m[32m            user_query = f'{query} user:{user.login}'[m
+[32m+[m[32m            user_params = params.copy()[m
+[32m+[m[32m            user_params['q'] = user_query[m
+[32m+[m
+[32m+[m[32m            try:[m
+[32m+[m[32m                user_response, _ = await self._make_request(url, user_params)[m
+[32m+[m[32m                user_items = user_response.get('items', [])[m
+[32m+[m[32m                all_repos.extend(user_items)[m
+[32m+[m[32m            except Exception as e:[m
+[32m+[m[32m                logger.warning(f'User search failed: {e}')[m
+[32m+[m
+[32m+[m[32m            # Search for repos named "query" in each organization[m
+[32m+[m[32m            for org in user_orgs:[m
+[32m+[m[32m                org_query = f'{query} org:{org}'[m
+[32m+[m[32m                org_params = params.copy()[m
+[32m+[m[32m                org_params['q'] = org_query[m
+[32m+[m
+[32m+[m[32m                try:[m
+[32m+[m[32m                    org_response, _ = await self._make_request(url, org_params)[m
+[32m+[m[32m                    org_items = org_response.get('items', [])[m
+[32m+[m[32m                    all_repos.extend(org_items)[m
+[32m+[m[32m                except Exception as e:[m
+[32m+[m[32m                    logger.warning(f'Org {org} search failed: {e}')[m
+[32m+[m
+[32m+[m[32m            # Also search for top repos from orgs that match the query name[m
+[32m+[m[32m            for org in user_orgs:[m
+[32m+[m[32m                if self._fuzzy_match_org_name(query, org):[m
+[32m+[m[32m                    org_repos_query = f'org:{org}'[m
+[32m+[m[32m                    org_repos_params = params.copy()[m
+[32m+[m[32m                    org_repos_params['q'] = org_repos_query[m
+[32m+[m[32m                    org_repos_params['sort'] = 'stars'[m
+[32m+[m[32m                    org_repos_params['per_page'] = 2  # Limit to first 2 repos[m
+[32m+[m
+[32m+[m[32m                    try:[m
+[32m+[m[32m                        org_repos_response, _ = await self._make_request([m
+[32m+[m[32m                            url, org_repos_params[m
+[32m+[m[32m                        )[m
+[32m+[m[32m                        org_repo_items = org_repos_response.get('items', [])[m
+[32m+[m[32m                        all_repos.extend(org_repo_items)[m
+[32m+[m[32m                    except Exception as e:[m
+[32m+[m[32m                        logger.warning(f'Org repos search for {org} failed: {e}')[m
+[32m+[m
+[32m+[m[32m            return [self._parse_repository(repo) for repo in all_repos][m
+ [m
+[32m+[m[32m        # Default case (public search or slash query)[m
+         response, _ = await self._make_request(url, params)[m
+         repo_items = response.get('items', [])[m
+         return [self._parse_repository(repo) for repo in repo_items][m

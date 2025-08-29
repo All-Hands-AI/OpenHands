@@ -3,7 +3,7 @@ from openhands.integrations.github.queries import (
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
 )
-from openhands.integrations.github.service._base import GitHubMixinBase
+from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import (
     ProviderType,
     SuggestedTask,
@@ -11,8 +11,17 @@ from openhands.integrations.service_types import (
 )
 
 
-class GitHubGraphQLMixin(GitHubMixinBase):
+class GitHubFeaturesMixin(GitHubMixinBase):
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
+        """Get suggested tasks for the authenticated user across all repositories.
+
+        Returns:
+        - PRs authored by the user.
+        - Issues assigned to the user.
+
+        Note: Queries are split to avoid timeout issues.
+        """
+        # Get user info to use in queries
         user = await self.get_user()
         login = user.login
         tasks: list[SuggestedTask] = []
@@ -24,10 +33,14 @@ class GitHubGraphQLMixin(GitHubMixinBase):
             )
             pr_data = pr_response['data']['user']
 
+            # Process pull requests
             for pr in pr_data['pullRequests']['nodes']:
                 repo_name = pr['repository']['nameWithOwner']
+
+                # Start with default task type
                 task_type = TaskType.OPEN_PR
 
+                # Check for specific states
                 if pr['mergeable'] == 'CONFLICTING':
                     task_type = TaskType.MERGE_CONFLICTS
                 elif (
@@ -45,6 +58,7 @@ class GitHubGraphQLMixin(GitHubMixinBase):
                 ):
                     task_type = TaskType.UNRESOLVED_COMMENTS
 
+                # Only add the task if it's not OPEN_PR
                 if task_type != TaskType.OPEN_PR:
                     tasks.append(
                         SuggestedTask(
@@ -55,6 +69,7 @@ class GitHubGraphQLMixin(GitHubMixinBase):
                             title=pr['title'],
                         )
                     )
+
         except Exception as e:
             logger.info(
                 f'Error fetching suggested task for PRs: {e}',
@@ -65,11 +80,13 @@ class GitHubGraphQLMixin(GitHubMixinBase):
             )
 
         try:
+            # Execute issue query
             issue_response = await self.execute_graphql_query(
                 suggested_task_issue_graphql_query, variables
             )
             issue_data = issue_response['data']['user']
 
+            # Process issues
             for issue in issue_data['issues']['nodes']:
                 repo_name = issue['repository']['nameWithOwner']
                 tasks.append(
@@ -81,7 +98,9 @@ class GitHubGraphQLMixin(GitHubMixinBase):
                         title=issue['title'],
                     )
                 )
+
             return tasks
+
         except Exception as e:
             logger.info(
                 f'Error fetching suggested task for issues: {e}',
