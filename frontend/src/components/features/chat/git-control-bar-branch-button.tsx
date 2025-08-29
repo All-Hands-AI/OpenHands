@@ -33,7 +33,7 @@ export function GitControlBarBranchButton({
       className={cn(
         "group flex flex-row items-center justify-between gap-2 pl-2.5 pr-2.5 py-1 rounded-[100px] w-fit max-w-none flex-shrink-0 max-w-[108px] truncate relative",
         hasBranch
-          ? "bg-[#25272D] hover:bg-[#737373] cursor-pointer"
+          ? "bg-[#25272D] hover:bg-[#454545] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed min-w-[108px]",
       )}
     >

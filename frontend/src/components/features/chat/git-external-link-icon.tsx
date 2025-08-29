@@ -9,7 +9,7 @@ export function GitExternalLinkIcon({ className }: GitExternalLinkIconProps) {
   return (
     <div
       className={cn(
-        "w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity absolute right-2 top-1/2 -translate-y-1/2",
+        "w-3 h-3 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute right-0 top-1/2 -translate-y-1/2 h-full w-10.5 pr-2.5 justify-end git-external-link-icon",
         className,
       )}
     >

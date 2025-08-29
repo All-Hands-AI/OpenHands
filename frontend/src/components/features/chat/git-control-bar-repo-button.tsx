@@ -35,7 +35,7 @@ export function GitControlBarRepoButton({
       className={cn(
         "group flex flex-row items-center justify-between gap-2 pl-2.5 pr-2.5 py-1 rounded-[100px] w-fit flex-shrink-0 max-w-[170px] truncate relative",
         hasRepository
-          ? "bg-[#25272D] hover:bg-[#737373] cursor-pointer"
+          ? "bg-[#25272D] hover:bg-[#454545] cursor-pointer"
           : "bg-[rgba(71,74,84,0.50)] cursor-not-allowed min-w-[170px]",
       )}
     >
@@ -60,9 +60,7 @@ export function GitControlBarRepoButton({
           {buttonText}
         </div>
       </div>
-      {hasRepository && (
-        <GitExternalLinkIcon className="absolute right-2 top-1/2 -translate-y-1/2" />
-      )}
+      {hasRepository && <GitExternalLinkIcon />}
     </a>
   );
 }
