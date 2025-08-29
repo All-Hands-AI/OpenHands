@@ -24,6 +24,7 @@ interface ConversationState {
   shouldShownAgentLoading: boolean;
   submittedMessage: string | null;
   shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
+  hasRightPanelToggled: boolean;
 }
 
 export const conversationSlice = createSlice({
@@ -41,6 +42,7 @@ export const conversationSlice = createSlice({
     shouldShownAgentLoading: false,
     submittedMessage: null,
     shouldHideSuggestions: false, // Initialize to false
+    hasRightPanelToggled: true,
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
@@ -119,6 +121,9 @@ export const conversationSlice = createSlice({
       state.isRightPanelShown = true;
       state.shouldHideSuggestions = false;
     },
+    setHasRightPanelToggled: (state, action) => {
+      state.hasRightPanelToggled = action.payload;
+    },
   },
 });
 
@@ -142,6 +147,7 @@ export const {
   setMessageToSend,
   setSubmittedMessage,
   resetConversationState,
+  setHasRightPanelToggled,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;
