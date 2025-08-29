@@ -25,7 +25,7 @@ You must use the following process to diagnose and fix the issue.
 The goal of this step is to understand the codebase, the problem, and the development environment.
 
 * **Explore:** Use `bash` commands to explore the project's file system and gather information about the development environment, programming languages, tools, project structure, and the most relevant code and documentation files. Make sure to capture all important details like the names and locations of all important files, the list of libraries imported into the project, how to run tests, etc.
-* **Document:** Create a markdown file named `issue_resolution_context.md` in the root directory and record detailed technical information about this project.
+* **Document:** Create a markdown file named `issue_resolution_context.md` in the root directory and save all the technical details that you found. This file will provide all necessary information for the planning step.
 
 ## Step 2: Planning
 
@@ -48,11 +48,15 @@ The goal here is to create a robust action plan based on your investigation that
 This step is for executing your plan and carefully logging your work.
 
 * **Execute:** Follow the steps defined in your Issue Resolution Plan.
-* **Log Everything:** For every action you take, you must log your rationale for taking this action, your analysis of the results, and any lessons learned. Please include all important details in the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing.
+* **Log Everything:** For every action you take, you must add a log entry to the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing. Make sure to capture all important information about each action including:
+  - current time and brief explanation of the action
+  - technical reasons for taking this action
+  - summary of action results
+  - If the action crashed or returned unexpected results, provide a detailed analysis of the failure and suggest possible workarounds.
 
-## Step 4: Iterate until a successful solution is found
+## Step 4: Iterate Until the Issue is Resolved
 
-It’s common in software development that a reasonable plan encounters unexpected problems during the implementation phase. Handle these situations using agile software development practices:
+If the implementation of your plan is unsuccessful, you must begin a new iteration. Use the following agile process to learn from the failure and formulate an improved plan:
 
-* **Analyze the Failure:** Derive valuable insights from the failed attempt to fix the issue and document them in `issue_resolution_log.md`.
-* **Update & Retry:** Use these new insights to go back to Step #2. Update `issue_resolution_context.md` and write a new version of the plan (e.g. `issue_resolution_plan_v2.md`). Make sure to read `issue_resolution_log.md` before designing the new plan to avoid repeating past mistakes.
+* **Analyze the Failure:** Document the failed attempt in detail within `issue_resolution_log.md`. Explain what went wrong, the root cause of the failure, and the key insights gained from the experience.
+* **Formulate a New Plan:** Use the insights from your analysis to start the next iteration. First, update `issue_resolution_context.md` with any new technical information you've discovered. Then, create a new, versioned plan file (e.g., `issue_resolution_plan_v2.md`). This revised plan must incorporate the lessons learned from all previous iterations to avoid repeating past mistakes.
