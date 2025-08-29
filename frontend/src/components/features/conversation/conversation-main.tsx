@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
+import { useWindowSize } from "@uidotdev/usehooks";
+import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { ChatInterface } from "../chat/chat-interface";
 import { ConversationTabContent } from "./conversation-tabs/conversation-tab-content";
-import {
-  Orientation,
-  ResizablePanel,
-} from "#/components/layout/resizable-panel";
 import { cn } from "#/utils/utils";
 import { RootState } from "#/store";
 
@@ -30,24 +27,12 @@ export function ChatInterfaceWrapper({
 }
 
 export function ConversationMain() {
-  const [width, setWidth] = useState(window.innerWidth);
-
-  function handleResize() {
-    setWidth(window.innerWidth);
-  }
-
-  useEffect(() => {
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, []);
-
+  const { width } = useWindowSize();
   const isRightPanelShown = useSelector(
     (state: RootState) => state.conversation.isRightPanelShown,
   );
 
-  if (width <= 1024) {
+  if (width && width <= 1024) {
     return (
       <div className="flex flex-col gap-3 overflow-auto w-full">
         <div
@@ -69,21 +54,30 @@ export function ConversationMain() {
 
   if (isRightPanelShown) {
     return (
-      <ResizablePanel
-        orientation={Orientation.HORIZONTAL}
+      <PanelGroup
+        direction="horizontal"
         className="grow h-full min-h-0 min-w-0"
-        initialSize={564}
-        firstClassName="overflow-hidden bg-base"
-        secondClassName="flex flex-col overflow-hidden"
-        firstChild={
+      >
+        <Panel
+          defaultSize={50}
+          minSize={30}
+          maxSize={80}
+          className="overflow-hidden bg-base"
+        >
           <ChatInterfaceWrapper isRightPanelShown={isRightPanelShown} />
-        }
-        secondChild={
+        </Panel>
+        <PanelResizeHandle className="cursor-ew-resize" />
+        <Panel
+          defaultSize={50}
+          minSize={20}
+          maxSize={70}
+          className="flex flex-col overflow-hidden"
+        >
           <div className="flex flex-col flex-1 gap-3">
             <ConversationTabContent />
           </div>
-        }
-      />
+        </Panel>
+      </PanelGroup>
     );
   }
 
