@@ -1,8 +1,10 @@
 import asyncio
+import os
 import time
 from logging import LoggerAdapter
 
 import socketio
+from pydantic import SecretStr
 
 from openhands.controller.agent import Agent
 from openhands.core.config import OpenHandsConfig
@@ -156,7 +158,15 @@ class Session:
             else self.config.max_budget_per_task
         )
 
-        self.config.search_api_key = settings.search_api_key
+        # Preserve existing search_api_key if settings doesn't provide one; otherwise, use settings
+        if settings.search_api_key is not None:
+            self.config.search_api_key = settings.search_api_key
+        elif getattr(self.config, 'search_api_key', None) is None:
+            # Fallback to environment variables if still None
+            env_key = os.getenv('SEARCH_API_KEY') or os.getenv('TAVILY_API_KEY')
+            if env_key:
+                self.config.search_api_key = SecretStr(env_key)
+
         if settings.sandbox_api_key:
             self.config.sandbox.api_key = settings.sandbox_api_key.get_secret_value()
 
