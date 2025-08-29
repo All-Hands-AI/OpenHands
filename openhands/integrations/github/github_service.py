@@ -160,7 +160,9 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
 
                 response.raise_for_status()
                 headers = {}
+                print('response headers', response.headers)
                 if 'Link' in response.headers:
+                    print('found link headers')
                     headers['Link'] = response.headers['Link']
 
                 return response.json(), headers
@@ -276,6 +278,8 @@ class GitHubService(BaseGitService, GitService, InstallationsService):
             response, headers = await self._make_request(url, params)
 
         next_link: str = headers.get('Link', '')
+        print('got next header')
+        print('repos', response)
         return [
             self._parse_repository(repo, link_header=next_link) for repo in response
         ]
