@@ -48,7 +48,7 @@ describe("HomeHeader", () => {
 
     const yellowHandIcon = screen.getByTestId("yellow-hand-icon");
     expect(yellowHandIcon).toBeInTheDocument();
-    expect(yellowHandIcon).toHaveClass("w-[77px]", "h-[94px]");
+    expect(yellowHandIcon).toHaveClass("animate-wave", "flex-shrink-0");
   });
 
   it("should render the GuideMessage component", () => {

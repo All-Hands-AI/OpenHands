@@ -8,6 +8,7 @@ export function WavingHand() {
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
         className="animate-wave flex-shrink-0"
+        data-testid="yellow-hand-icon"
       >
         <g clipPath="url(#clip0_8467_33285)">
           <g clipPath="url(#clip1_8467_33285)">
