@@ -12,6 +12,7 @@ from openhands.integrations.service_types import (
     Comment,
     GitService,
     OwnerType,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     RequestMethod,
@@ -265,6 +266,7 @@ class GitLabService(BaseGitService, GitService):
                 else OwnerType.USER
             ),
             link_header=link_header,
+            main_branch=repo.get('default_branch'),
         )
 
     def _parse_gitlab_url(self, url: str) -> str | None:
@@ -577,6 +579,68 @@ class GitLabService(BaseGitService, GitService):
 
         return all_branches
 
+    async def get_paginated_branches(
+        self, repository: str, page: int = 1, per_page: int = 30
+    ) -> PaginatedBranchesResponse:
+        """Get branches for a repository with pagination"""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        params = {'per_page': str(per_page), 'page': str(page)}
+        response, headers = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            branch = Branch(
+                name=branch_data.get('name'),
+                commit_sha=branch_data.get('commit', {}).get('id', ''),
+                protected=branch_data.get('protected', False),
+                last_push_date=branch_data.get('commit', {}).get('committed_date'),
+            )
+            branches.append(branch)
+
+        # Parse pagination headers
+        has_next_page = False
+        total_count = None
+
+        if 'X-Next-Page' in headers and headers['X-Next-Page']:
+            has_next_page = True
+        if 'X-Total' in headers:
+            try:
+                total_count = int(headers['X-Total'])
+            except (ValueError, TypeError):
+                pass
+
+        return PaginatedBranchesResponse(
+            branches=branches,
+            has_next_page=has_next_page,
+            current_page=page,
+            per_page=per_page,
+            total_count=total_count,
+        )
+
+    async def search_branches(
+        self, repository: str, query: str, per_page: int = 30
+    ) -> list[Branch]:
+        """Search branches using GitLab API which supports `search` param."""
+        encoded_name = repository.replace('/', '%2F')
+        url = f'{self.BASE_URL}/projects/{encoded_name}/repository/branches'
+
+        params = {'per_page': str(per_page), 'search': query}
+        response, _ = await self._make_request(url, params)
+
+        branches: list[Branch] = []
+        for branch_data in response:
+            branches.append(
+                Branch(
+                    name=branch_data.get('name'),
+                    commit_sha=branch_data.get('commit', {}).get('id', ''),
+                    protected=branch_data.get('protected', False),
+                    last_push_date=branch_data.get('commit', {}).get('committed_date'),
+                )
+            )
+        return branches
+
     async def create_mr(
         self,
         id: int | str,
@@ -692,79 +756,129 @@ class GitLabService(BaseGitService, GitService):
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(response, file_path)
 
-    async def get_issue_comments(
-        self, project_id: str, issue_iid: int, limit: int = 100
+    async def get_review_thread_comments(
+        self, project_id: str, issue_iid: int, discussion_id: str
     ) -> list[Comment]:
-        """Get the last n comments for a specific issue.
+        url = (
+            f'{self.BASE_URL}/projects/{project_id}'
+            f'/merge_requests/{issue_iid}/discussions/{discussion_id}'
+        )
+
+        # Single discussion fetch; notes are returned inline.
+        response, _ = await self._make_request(url)
+        notes = response.get('notes') or []
+        return self._process_raw_comments(notes)
+
+    async def get_issue_or_mr_title_and_body(
+        self, project_id: str, issue_number: int, is_mr: bool = False
+    ) -> tuple[str, str]:
+        """Get the title and body of an issue or merge request.
 
         Args:
-            project_id: The GitLab project ID (can be numeric ID or URL-encoded path)
-            issue_iid: The issue internal ID (iid) in GitLab
-            limit: Maximum number of comments to retrieve (default: 100)
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            issue_number: The issue/MR IID within the project
+            is_mr: If True, treat as merge request; if False, treat as issue;
+                   if None, try issue first then merge request (default behavior)
 
         Returns:
-            List of Comment objects, ordered by creation date (newest first)
-
-        Raises:
-            UnknownException: If the request fails or the issue is not found
+            A tuple of (title, body)
         """
-        # URL-encode the project_id if it contains special characters
-        if '/' in str(project_id):
-            encoded_project_id = str(project_id).replace('/', '%2F')
-        else:
-            encoded_project_id = str(project_id)
+        if is_mr:
+            url = f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}'
+            response, _ = await self._make_request(url)
+            title = response.get('title') or ''
+            body = response.get('description') or ''
+            return title, body
 
-        url = f'{self.BASE_URL}/projects/{encoded_project_id}/issues/{issue_iid}/notes'
+        url = f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}'
+        response, _ = await self._make_request(url)
+        title = response.get('title') or ''
+        body = response.get('description') or ''
+        return title, body
 
+    async def get_issue_or_mr_comments(
+        self,
+        project_id: str,
+        issue_number: int,
+        max_comments: int = 10,
+        is_mr: bool = False,
+    ) -> list[Comment]:
+        """Get comments for an issue or merge request.
+
+        Args:
+            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
+            issue_number: The issue/MR IID within the project
+            max_comments: Maximum number of comments to retrieve
+            is_pr: If True, treat as merge request; if False, treat as issue;
+                   if None, try issue first then merge request (default behavior)
+
+        Returns:
+            List of Comment objects ordered by creation date
+        """
         all_comments: list[Comment] = []
         page = 1
-        per_page = min(limit, 100)  # GitLab API max per_page is 100
+        per_page = min(max_comments, 10)
 
-        while len(all_comments) < limit:
-            # Get comments with pagination, ordered by creation date descending
+        url = (
+            f'{self.BASE_URL}/projects/{project_id}/merge_requests/{issue_number}/discussions'
+            if is_mr
+            else f'{self.BASE_URL}/projects/{project_id}/issues/{issue_number}/notes'
+        )
+
+        while len(all_comments) < max_comments:
             params = {
                 'per_page': per_page,
                 'page': page,
                 'order_by': 'created_at',
-                'sort': 'desc',  # Get newest comments first
+                'sort': 'asc',
             }
 
             response, headers = await self._make_request(url, params)
-
-            if not response:  # No more comments
+            if not response:
                 break
 
-            # Filter out system comments and convert to Comment objects
-            for comment_data in response:
-                if len(all_comments) >= limit:
-                    break
+            if is_mr:
+                for discussions in response:
+                    # Keep root level comments
+                    all_comments.append(discussions['notes'][0])
+            else:
+                all_comments.extend(response)
 
-                # Skip system-generated comments unless explicitly requested
-                if comment_data.get('system', False):
-                    continue
-
-                comment = Comment(
-                    id=str(comment_data['id']),
-                    body=comment_data['body'],
-                    author=comment_data.get('author', {}).get('username', 'unknown'),
-                    created_at=datetime.fromisoformat(
-                        comment_data['created_at'].replace('Z', '+00:00')
-                    ),
-                    updated_at=datetime.fromisoformat(
-                        comment_data['updated_at'].replace('Z', '+00:00')
-                    ),
-                    system=comment_data.get('system', False),
-                )
-                all_comments.append(comment)
-
-            # Check if we have more pages
             link_header = headers.get('Link', '')
-            if 'rel="next"' not in link_header or len(all_comments) >= limit:
+            if 'rel="next"' not in link_header:
                 break
 
             page += 1
 
-        return all_comments
+        return self._process_raw_comments(all_comments)
+
+    def _process_raw_comments(
+        self, comments: list, max_comments: int = 10
+    ) -> list[Comment]:
+        """Helper method to fetch comments from a given URL with pagination."""
+        all_comments: list[Comment] = []
+        for comment_data in comments:
+            comment = Comment(
+                id=str(comment_data.get('id', 'unknown')),
+                body=self._truncate_comment(comment_data.get('body', '')),
+                author=comment_data.get('author', {}).get('username', 'unknown'),
+                created_at=datetime.fromisoformat(
+                    comment_data.get('created_at', '').replace('Z', '+00:00')
+                )
+                if comment_data.get('created_at')
+                else datetime.fromtimestamp(0),
+                updated_at=datetime.fromisoformat(
+                    comment_data.get('updated_at', '').replace('Z', '+00:00')
+                )
+                if comment_data.get('updated_at')
+                else datetime.fromtimestamp(0),
+                system=comment_data.get('system', False),
+            )
+            all_comments.append(comment)
+
+        # Sort comments by creation date and return the most recent ones
+        all_comments.sort(key=lambda c: c.created_at)
+        return all_comments[-max_comments:]
 
     async def is_pr_open(self, repository: str, pr_number: int) -> bool:
         """Check if a GitLab merge request is still active (not closed/merged).

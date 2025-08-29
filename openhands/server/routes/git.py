@@ -13,6 +13,7 @@ from openhands.integrations.provider import (
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     SuggestedTask,
@@ -163,6 +164,49 @@ async def search_repositories(
     raise AuthenticationError('Git provider token required.')
 
 
+@app.get('/search/branches', response_model=list[Branch])
+async def search_branches(
+    repository: str,
+    query: str,
+    per_page: int = 30,
+    selected_provider: ProviderType | None = None,
+    provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
+    access_token: SecretStr | None = Depends(get_access_token),
+    user_id: str | None = Depends(get_user_id),
+) -> list[Branch] | JSONResponse:
+    if provider_tokens:
+        client = ProviderHandler(
+            provider_tokens=provider_tokens,
+            external_auth_token=access_token,
+            external_auth_id=user_id,
+        )
+        try:
+            branches: list[Branch] = await client.search_branches(
+                selected_provider, repository, query, per_page
+            )
+            return branches
+
+        except AuthenticationError as e:
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        except UnknownException as e:
+            return JSONResponse(
+                content=str(e),
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    logger.info(
+        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+    )
+    return JSONResponse(
+        content='Git provider token required.',
+        status_code=status.HTTP_401_UNAUTHORIZED,
+    )
+
+
 @app.get('/suggested-tasks', response_model=list[SuggestedTask])
 async def get_suggested_tasks(
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
@@ -192,28 +236,34 @@ async def get_suggested_tasks(
     raise AuthenticationError('No providers set.')
 
 
-@app.get('/repository/branches', response_model=list[Branch])
+@app.get('/repository/branches', response_model=PaginatedBranchesResponse)
 async def get_repository_branches(
     repository: str,
+    page: int = 1,
+    per_page: int = 30,
     provider_tokens: PROVIDER_TOKEN_TYPE | None = Depends(get_provider_tokens),
     access_token: SecretStr | None = Depends(get_access_token),
     user_id: str | None = Depends(get_user_id),
-) -> list[Branch] | JSONResponse:
+) -> PaginatedBranchesResponse | JSONResponse:
     """Get branches for a repository.
 
     Args:
         repository: The repository name in the format 'owner/repo'
+        page: Page number for pagination (default: 1)
+        per_page: Number of branches per page (default: 30)
 
     Returns:
-        A list of branches for the repository
+        A paginated response with branches for the repository
     """
     if provider_tokens:
         client = ProviderHandler(
             provider_tokens=provider_tokens, external_auth_token=access_token
         )
         try:
-            branches: list[Branch] = await client.get_branches(repository)
-            return branches
+            branches_response: PaginatedBranchesResponse = await client.get_branches(
+                repository, page=page, per_page=per_page
+            )
+            return branches_response
 
         except UnknownException as e:
             return JSONResponse(
