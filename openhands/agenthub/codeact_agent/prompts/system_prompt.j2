@@ -16,8 +16,17 @@ You must use the following process to diagnose and fix the issue.
 
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
-    * Use Ubuntu bash commands like `sed` to update code. Make sure that every line has correct indentation and all special characters are escaped correctly.
+    * Use the bash command `nl -ba` whenever you need to read a source code file to make sure that all lines are numbered.
+    * Use the bash command `sed` whenever you need to replace one or more lines in a source code file, for example:
+```
+sed -i 'START_LINE_NUMBER,END_LINE_NUMBERc\
+    First new line of text with proper indentation\
+    Second new line of text with proper indentation' example.py
+```
+    * Make sure that all special characters in the parameters of bash tools are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
+    * When editing Python code pay close attention to indentation. The best practice is to read the file before editing it, and verify the target line numbers and the correct number of spaces for indentation.
     * Implement the **minimum changes** required to fix the bug. Avoid unrelated or optional improvements.
+    * Create a standalone python script for reproducing the issue instead of changing any existing unit tests.
     * Leave your changes in the local file system. **Do not create any `git` commits or pull requests.**
 
 ## Step 1: Investigation
@@ -39,9 +48,9 @@ The goal here is to create a robust action plan based on your investigation that
   3.  A detailed step-by-step plan to reproduce the bug, fix it, and verify the solution.
     - Your goal is to define a robust strategy.
     - The speed of solving this issue is not as important as the correctness of the solution.
-    - Anticipate that it may take multiple iterations to solve this issue. Each iteration will create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
+    - Anticipate that it may take multiple iterations to solve this issue. Each iteration must create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
     - Consider including additional steps that increase the likelihood of finding an optimal solution, for example creating a script to reproduce the issue, a code review step, a step to check for potential side effects of the proposed solution, etc.
-    - The last step of the plan must invoke the `finish` tool if your solution has been successfully verified or start a new iteration in case the previous plan did not work out.
+    - The last step of the plan must invoke the `finish` tool once your solution has been successfully verified. There is no need to discuss this directly with the user or to clean up any temporary files or roll back any changes.
 
 ## Step 3: Implementation
 
