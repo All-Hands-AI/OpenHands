@@ -518,7 +518,7 @@ def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
     stats_b.restored_metrics = {'b-restored': m_b_restored}
 
     # Merge B into A
-    stats_a.merge(stats_b)
+    stats_a.merge_and_save(stats_b)
 
     # All keys from both sides (active + restored) should be in A's active dict now
     assert set(stats_a.service_to_metrics.keys()) == {
@@ -581,7 +581,9 @@ def test_merge_conversation_stats_raises_on_duplicate_service_id(
         stats_b.restored_metrics[dupe_id] = m2
 
     with pytest.raises(ValueError, match='Duplicate service IDs'):
-        stats_a.merge(stats_b)
+        stats_a.merge_and_save(stats_b)
+
+
 def test_save_metrics_preserves_restored_metrics_fix(mock_file_store):
     """Test that save_metrics correctly preserves restored metrics for unregistered services."""
     conversation_id = 'test-conversation-id'

@@ -102,7 +102,7 @@ class ConversationStats:
 
         self.service_to_metrics[service_id] = llm.metrics
 
-    def merge(self, conversation_stats: 'ConversationStats'):
+    def merge_and_save(self, conversation_stats: 'ConversationStats'):
         """
         Merge two ConversationStats objects.
 
