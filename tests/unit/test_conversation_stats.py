@@ -574,7 +574,9 @@ def test_merge_conversation_stats_raises_on_duplicate_service_id(
     # Place the same service id on the specified sides
     dupe_id = 'dupe-service'
     m1 = Metrics(model_name='m')
+    m1.add_cost(0.1)  # ensure not dropped
     m2 = Metrics(model_name='m')
+    m2.add_cost(0.2)  # ensure not dropped
 
     if self_side == 'active':
         stats_a.service_to_metrics[dupe_id] = m1

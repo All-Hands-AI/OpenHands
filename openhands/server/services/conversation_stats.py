@@ -106,34 +106,46 @@ class ConversationStats:
         """
         Merge two ConversationStats objects.
 
+        - Drop any entries with zero accumulated_cost from both stats objects
+          before checking for duplicates
         - Take all metrics from both `restored_metrics` and `service_to_metrics`
           for each object.
-        - If any service_id exists in BOTH objects, raise an error.
+        - If any service_id exists in BOTH objects (after dropping zeros), raise an error.
         - Combine into a single dict on `self.service_to_metrics` and clear
           `self.restored_metrics`.
         - Save the merged result.
         """
-        # All IDs present on self (both active and restored)
+
+        # 1) Drop zero-cost entries from both sides before duplicate detection
+        def _drop_zero_cost(d: dict[str, Metrics]) -> None:
+            to_delete = [
+                k for k, v in d.items() if getattr(v, 'accumulated_cost', 0) == 0
+            ]
+            for k in to_delete:
+                del d[k]
+
+        _drop_zero_cost(self.service_to_metrics)
+        _drop_zero_cost(self.restored_metrics)
+        _drop_zero_cost(conversation_stats.service_to_metrics)
+        _drop_zero_cost(conversation_stats.restored_metrics)
+
+        # 2) Compute IDs and check for duplicates
         self_ids = set(self.service_to_metrics.keys()) | set(
             self.restored_metrics.keys()
         )
-
-        # All IDs present on the other stats (both active and restored)
         other_ids = set(conversation_stats.service_to_metrics.keys()) | set(
             conversation_stats.restored_metrics.keys()
         )
 
-        # Any overlap between the two services should error out
         dupes = self_ids & other_ids
         if dupes:
             raise ValueError(f'Duplicate service IDs across stats: {sorted(dupes)}')
 
+        # 3) Merge and save
         self.restored_metrics.update(conversation_stats.restored_metrics)
         self.service_to_metrics.update(conversation_stats.service_to_metrics)
         self.save_metrics()
         logger.info(
             'Merged conversation stats',
-            extra={
-                'conversation_id': self.conversation_id,
-            },
+            extra={'conversation_id': self.conversation_id},
         )
