@@ -128,7 +128,7 @@ export const useCreateConversationAndSubscribeMultiple = () => {
       conversationInstructions: string;
       repository: {
         name: string;
-        branch: string;
+        branch?: string;
         gitProvider: Provider;
       };
       createMicroagent?: CreateMicroagent;
