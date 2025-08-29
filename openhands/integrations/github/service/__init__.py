@@ -9,7 +9,6 @@ from .resolver import GitHubResolverMixin
 __all__ = [
     'GitHubBranchesMixin',
     'GitHubFeaturesMixin',
-    'GitHubMicroagentsMixin',
     'GitHubPRsMixin',
     'GitHubReposMixin',
     'GitHubResolverMixin',
