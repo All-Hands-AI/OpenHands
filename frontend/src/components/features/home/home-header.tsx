@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { GuideMessage } from "./guide-message";
+import { WavingHand } from "./waving-hand";
 import YellowHand from "#/icons/yellow-hand.svg?react";
 
 export function HomeHeader() {
@@ -9,6 +10,7 @@ export function HomeHeader() {
     <header className="flex flex-col items-center">
       <GuideMessage />
       <div className="mt-5 flex flex-col gap-4 items-center">
+        <WavingHand />
         <YellowHand
           className="w-[77px] h-[94px]"
           data-testid="yellow-hand-icon"
