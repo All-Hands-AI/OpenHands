@@ -540,6 +540,15 @@ class OpenHands {
     per_page = 30,
   ) {
     const installationId = installations[installationIndex];
+    console.log('🔧 API: Fetching repos for installation', {
+      selected_provider,
+      installationIndex,
+      installationId,
+      installations: installations.map((id, idx) => `${idx}:${id}`),
+      page,
+      per_page,
+    });
+
     const response = await openHands.get<GitRepository[]>(
       "/api/user/repositories",
       {
@@ -552,6 +561,7 @@ class OpenHands {
         },
       },
     );
+
     const link =
       response.data.length > 0 && response.data[0].link_header
         ? response.data[0].link_header
@@ -565,11 +575,23 @@ class OpenHands {
     } else {
       nextInstallation = null;
     }
-    return {
+
+    const result = {
       data: response.data,
       nextPage,
       installationIndex: nextInstallation,
     };
+
+    console.log('🔧 API: Installation repos response', {
+      installationIndex,
+      installationId,
+      dataCount: result.data.length,
+      repos: result.data.map(r => r.full_name),
+      nextPage: result.nextPage,
+      nextInstallationIndex: result.installationIndex,
+    });
+
+    return result;
   }
 
   static async getRepositoryBranches(
