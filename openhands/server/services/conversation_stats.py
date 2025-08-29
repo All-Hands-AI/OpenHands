@@ -63,7 +63,7 @@ class ConversationStats:
             serialized_metrics = base64.b64encode(pickled).decode('utf-8')
             self.file_store.write(self.metrics_path, serialized_metrics)
             logger.info(
-                'Saved converation stats',
+                'Saved conversation stats',
                 extra={'conversation_id': self.conversation_id},
             )
 
