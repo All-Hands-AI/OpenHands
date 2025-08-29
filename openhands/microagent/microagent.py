@@ -24,6 +24,29 @@ class BaseMicroagent(BaseModel):
     type: MicroagentType
 
     @classmethod
+    def _handle_third_party(
+        cls, path: Path, file_content: str
+    ) -> Union['RepoMicroagent', None]:
+        # Determine the agent name based on file type
+        microagent_name = None
+        if path.name == '.cursorrules':
+            microagent_name = 'cursorrules'
+        elif path.name.lower() in ['agents.md', 'agent.md']:
+            microagent_name = 'agents'
+
+        # Create RepoMicroagent if we recognized the file type
+        if microagent_name is not None:
+            return RepoMicroagent(
+                name=microagent_name,
+                content=file_content,
+                metadata=MicroagentMetadata(name=microagent_name),
+                source=str(path),
+                type=MicroagentType.REPO_KNOWLEDGE,
+            )
+
+        return None
+
+    @classmethod
     def load(
         cls,
         path: Union[str, Path],
@@ -40,9 +63,11 @@ class BaseMicroagent(BaseModel):
         # Otherwise, we will rely on the name from metadata later
         derived_name = None
         if microagent_dir is not None:
-            # Special handling for .cursorrules files which are not in microagent_dir
+            # Special handling for files which are not in microagent_dir
             if path.name == '.cursorrules':
                 derived_name = 'cursorrules'
+            elif path.name.lower() in ['agents.md', 'agent.md']:
+                derived_name = 'agents'
             else:
                 derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
 
@@ -61,15 +86,10 @@ class BaseMicroagent(BaseModel):
                 type=MicroagentType.REPO_KNOWLEDGE,
             )
 
-        # Handle .cursorrules files
-        if path.name == '.cursorrules':
-            return RepoMicroagent(
-                name='cursorrules',
-                content=file_content,
-                metadata=MicroagentMetadata(name='cursorrules'),
-                source=str(path),
-                type=MicroagentType.REPO_KNOWLEDGE,
-            )
+        # Handle third-party agent instruction files
+        third_party_agent = cls._handle_third_party(path, file_content)
+        if third_party_agent is not None:
+            return third_party_agent
 
         file_io = io.StringIO(file_content)
         loaded = frontmatter.load(file_io)
@@ -276,31 +296,44 @@ def load_microagents_from_dir(
 
     # Load all agents from microagents directory
     logger.debug(f'Loading agents from {microagent_dir}')
-    if microagent_dir.exists():
-        # Collect .cursorrules file from repo root and .md files from microagents dir
-        cursorrules_files = []
-        if (microagent_dir.parent.parent / '.cursorrules').exists():
-            cursorrules_files = [microagent_dir.parent.parent / '.cursorrules']
 
+    # Always check for .cursorrules and AGENTS.md files in repo root, regardless of whether microagents_dir exists
+    special_files = []
+    repo_root = microagent_dir.parent.parent
+
+    # Check for .cursorrules
+    if (repo_root / '.cursorrules').exists():
+        special_files.append(repo_root / '.cursorrules')
+
+    # Check for AGENTS.md (case-insensitive)
+    for agents_filename in ['AGENTS.md', 'agents.md', 'AGENT.md', 'agent.md']:
+        agents_path = repo_root / agents_filename
+        if agents_path.exists():
+            special_files.append(agents_path)
+            break  # Only add the first one found to avoid duplicates
+
+    # Collect .md files from microagents directory if it exists
+    md_files = []
+    if microagent_dir.exists():
         md_files = [f for f in microagent_dir.rglob('*.md') if f.name != 'README.md']
 
-        # Process all files in one loop
-        for file in chain(cursorrules_files, md_files):
-            try:
-                agent = BaseMicroagent.load(file, microagent_dir)
-                if isinstance(agent, RepoMicroagent):
-                    repo_agents[agent.name] = agent
-                elif isinstance(agent, KnowledgeMicroagent):
-                    # Both KnowledgeMicroagent and TaskMicroagent go into knowledge_agents
-                    knowledge_agents[agent.name] = agent
-            except MicroagentValidationError as e:
-                # For validation errors, include the original exception
-                error_msg = f'Error loading microagent from {file}: {str(e)}'
-                raise MicroagentValidationError(error_msg) from e
-            except Exception as e:
-                # For other errors, wrap in a ValueError with detailed message
-                error_msg = f'Error loading microagent from {file}: {str(e)}'
-                raise ValueError(error_msg) from e
+    # Process all files in one loop
+    for file in chain(special_files, md_files):
+        try:
+            agent = BaseMicroagent.load(file, microagent_dir)
+            if isinstance(agent, RepoMicroagent):
+                repo_agents[agent.name] = agent
+            elif isinstance(agent, KnowledgeMicroagent):
+                # Both KnowledgeMicroagent and TaskMicroagent go into knowledge_agents
+                knowledge_agents[agent.name] = agent
+        except MicroagentValidationError as e:
+            # For validation errors, include the original exception
+            error_msg = f'Error loading microagent from {file}: {str(e)}'
+            raise MicroagentValidationError(error_msg) from e
+        except Exception as e:
+            # For other errors, wrap in a ValueError with detailed message
+            error_msg = f'Error loading microagent from {file}: {str(e)}'
+            raise ValueError(error_msg) from e
 
     logger.debug(
         f'Loaded {len(repo_agents) + len(knowledge_agents)} microagents: '
