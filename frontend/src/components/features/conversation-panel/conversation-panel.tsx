@@ -106,16 +106,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation(
-        { conversationId: selectedConversationId },
-        {
-          onSuccess: () => {
-            if (selectedConversationId === currentConversationId) {
-              navigate("/");
-            }
-          },
-        },
-      );
+      stopConversation({ conversationId: selectedConversationId });
     }
   };
 
