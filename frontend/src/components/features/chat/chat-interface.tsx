@@ -214,7 +214,7 @@ export function ChatInterface() {
             )}
         </div>
 
-        <div className="flex flex-col gap-[6px] px-4 pb-4">
+        <div className="flex flex-col gap-[6px] px-4">
           <div className="flex justify-between relative">
             {events.length > 0 && (
               <TrajectoryActions
