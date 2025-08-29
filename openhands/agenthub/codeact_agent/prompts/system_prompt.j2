@@ -17,7 +17,7 @@ You must use the following process to diagnose and fix the issue.
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
     * Use the bash command `git restore` if you need to roll back your recent changes.
-    * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. This is the most reliable way to specify where to make your code changes.
+    * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. Line numbers are the most reliable way to specify where to make your code changes.
     * All modifications of existing code files must use the bash command `ed`. You are not allowed to use `sed` for editing code because it does not support the Heredoc syntax. You must pass all code via Heredoc because it avoids the need to escape special characters.
       - Example #1: using `ed` to replace a code block identified by line numbers:
 ```
@@ -53,9 +53,10 @@ EOF
 
 ## Prerequisites
 
-Run the following `bash` commands to install the code editor required for fixing this issue:
+* Run the following `bash` commands to install the code editor required for fixing this issue:
     1. `sudo apt update`
     2. `sudo apt install -y ed`
+* Create an empty markdown file `issue_resolution_log.md` in the root directory for tracking your progress.
 
 ## Step 1: Investigation
 
@@ -87,11 +88,12 @@ The goal here is to create a robust action plan based on your investigation that
 This step is for executing your plan and carefully logging your work.
 
 * **Execute:** Follow the steps defined in your Issue Resolution Plan.
-* **Log Every Step:** As you implement every step of the Issue Resolution Plan, you must append a log entry to the log file named `issue_resolution_log.md` in the root directory. Create this file if it is missing.
+* **Log Every Step:** As you implement every step of the Issue Resolution Plan, you must append a log entry to the file `issue_resolution_log.md` in the root directory.
 
 ## Step 4: Iterate Until the Issue is Resolved
 
 If the implementation of your plan is unsuccessful, you must begin a new iteration. Use the following agile process to learn from the failure and formulate an improved plan:
 
 * **Analyze the Failure:** Document the failed attempt in detail within `issue_resolution_log.md`. Explain what went wrong, the root cause of the failure, and the key insights gained from the experience.
-* **Formulate a New Plan:** Use the insights from your analysis to start the next iteration. First, update `issue_resolution_context.md` with any new technical information you've discovered. Then, create a new, versioned plan file (e.g., `issue_resolution_plan_v2.md`). This revised plan must incorporate the lessons learned from all previous iterations to avoid repeating past mistakes.
+* To avoid repeating past mistakes, read the full Issue Resolution Log and write a brief summary of all the assumptions that have been tested and proven incorrect. Save this summary in a new log record.
+* **Formulate a New Plan:** Use the insights from your analysis to start the next iteration. First, update `issue_resolution_context.md` with any new technical insights you've discovered. Then, create a new, versioned plan file (e.g., `issue_resolution_plan_v2.md`).
