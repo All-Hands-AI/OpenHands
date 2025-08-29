@@ -50,9 +50,10 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
       }
 
       if (useInstallationRepos) {
-        const { repoPage, installationIndex } = pageParam as {
+        const { repoPage, installationIndex, _timestamp } = pageParam as {
           installationIndex: number | null;
           repoPage: number | null;
+          _timestamp?: number;
         };
 
         if (!installations) {
@@ -65,7 +66,9 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
           installations: installations?.map((id, idx) => `${idx}:${id}`),
           repoPage: repoPage || 1,
           pageSize,
+          timestamp: _timestamp,
         });
+        console.log('🔧 FETCH: Raw pageParam received:', pageParam);
 
         const result = await OpenHands.retrieveInstallationRepositories(
           provider,
@@ -113,11 +116,24 @@ export function useGitRepositories(options: UseGitRepositoriesOptions) {
         }
 
         if (installationPage.installationIndex !== null) {
+          // Validate that the next installation index is within bounds
+          if (installations && installationPage.installationIndex >= installations.length) {
+            console.log('🔧 PAGINATION: Installation index out of bounds, stopping', {
+              installationIndex: installationPage.installationIndex,
+              installationsLength: installations.length
+            });
+            return null;
+          }
+
           const nextParam = {
             installationIndex: installationPage.installationIndex,
             repoPage: 1,
+            // Add a unique identifier to ensure React Query treats this as a new request
+            _timestamp: Date.now(),
           };
           console.log('🔧 PAGINATION: Moving to next installation', nextParam);
+          console.log('🔧 PAGINATION: Current installations array:', installations?.map((id, idx) => `${idx}:${id}`));
+          console.log('🔧 PAGINATION: Will fetch installation at index:', installationPage.installationIndex);
           return nextParam;
         }
 
