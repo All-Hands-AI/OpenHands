@@ -132,6 +132,9 @@ def load_from_env(
     # load default agent config from env
     default_agent_config = cfg.get_agent_config()
     set_attr_from_env(default_agent_config, 'AGENT_')
+    # load default MCP config from env
+    default_mcp_config = cfg.get_mcp_config()
+    set_attr_from_env(default_mcp_config, 'MCP_')
 
 
 def load_from_toml(cfg: OpenHandsConfig, toml_file: str = 'config.toml') -> None:
