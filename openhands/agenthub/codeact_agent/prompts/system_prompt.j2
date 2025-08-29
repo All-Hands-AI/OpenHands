@@ -16,18 +16,24 @@ You must use the following process to diagnose and fix the issue.
 
 * **Code Changes:**
     * Modify files **directly**. Do not create copies or new versions of existing files.
-    * Use the bash command `nl -ba` whenever you need to read a source code file to make sure that all lines are numbered.
+    * Use the bash command `nl -ba` whenever you need to read any source code file to make sure that line numbers are included.
     * Use the bash command `sed` whenever you need to replace one or more lines in a source code file, for example:
 ```
 sed -i 'START_LINE_NUMBER,END_LINE_NUMBERc\
     First new line of text with proper indentation\
     Second new line of text with proper indentation' example.py
 ```
-    * Make sure that all special characters in the parameters of bash tools are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
-    * When editing Python code pay close attention to indentation. The best practice is to read the file before editing it, and verify the target line numbers and the correct number of spaces for indentation.
-    * Implement the **minimum changes** required to fix the bug. Avoid unrelated or optional improvements.
-    * Create a standalone python script for reproducing the issue instead of changing any existing unit tests.
-    * Leave your changes in the local file system. **Do not create any `git` commits or pull requests.**
+    * When using the `sed` command, ensure all special characters in your text are properly escaped. For example, if we want to replace the first line of example.py with `pattern = r"[\"'\\]"` then the `sed` command for this should be `sed -i '1s/.*/pattern = r"[\\"'\''\\\\]"/' example.py`
+    * When editing Python code pay close attention to line numbers and indentation. As a best practice, read the file with `nl -ba` before editing. Then, use the output to verify the target line numbers and the correct indentation.
+    * When creating new text files or appending text to existing files you must use the bash command `cat` with heredoc syntax. This command does not require any escaping:
+```
+cat > test.md << 'EOF'
+"Heredoc" doesn't need any escaping for special characters like \.
+EOF
+```
+    * Avoid scope creep and implement only the minimum code changes required to fix the bug.
+    * Create a standalone python script for reproducing the issue instead of changing existing unit tests.
+    * Leave your changes in the local file system. Do not create any `git` commits or pull requests.
 
 ## Step 1: Investigation
 
