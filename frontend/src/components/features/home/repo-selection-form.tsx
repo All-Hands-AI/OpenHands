@@ -72,15 +72,22 @@ export function RepositorySelectionForm({
   }, []);
 
   // Render the provider dropdown
-  const renderProviderSelector = () => (
-    <GitProviderDropdown
-      providers={providers}
-      value={selectedProvider}
-      placeholder="Select Provider"
-      className="max-w-[124px]"
-      onChange={handleProviderSelection}
-    />
-  );
+  const renderProviderSelector = () => {
+    // Only render if there are multiple providers
+    if (providers.length <= 1) {
+      return null;
+    }
+
+    return (
+      <GitProviderDropdown
+        providers={providers}
+        value={selectedProvider}
+        placeholder="Select Provider"
+        className="max-w-[500px]"
+        onChange={handleProviderSelection}
+      />
+    );
+  };
 
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {
