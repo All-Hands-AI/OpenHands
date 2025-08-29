@@ -75,6 +75,7 @@ def create_conversation_validator() -> ConversationValidator:
         'OPENHANDS_CONVERSATION_VALIDATOR_CLS',
         'openhands.storage.conversation.conversation_validator.ConversationValidator',
     )
+    logger.info(f'conversation_validator_cls is {conversation_validator_cls}')
     ConversationValidatorImpl = get_impl(
         ConversationValidator, conversation_validator_cls
     )
