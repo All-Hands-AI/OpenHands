@@ -3,7 +3,7 @@ import os
 import time
 import warnings
 from functools import partial
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 import httpx
 
@@ -220,7 +220,9 @@ class LLM(RetryMixin, DebugMixin):
             """Wrapper for the litellm completion function. Logs the input and output of the completion function."""
             from openhands.io import json
 
-            messages_kwarg: list[dict[str, Any]] | dict[str, Any] = []
+            messages_kwarg: (
+                dict[str, Any] | Message | list[dict[str, Any]] | list[Message]
+            ) = []
             mock_function_calling = not self.is_function_calling_active()
 
             # some callers might send the model and messages directly
@@ -239,9 +241,19 @@ class LLM(RetryMixin, DebugMixin):
                 messages_kwarg = kwargs['messages']
 
             # ensure we work with a list of messages
-            messages: list[dict[str, Any]] = (
+            messages_list = (
                 messages_kwarg if isinstance(messages_kwarg, list) else [messages_kwarg]
             )
+            # Format Message objects to dict format if needed
+            messages: list[dict] = []
+            if messages_list and isinstance(messages_list[0], Message):
+                messages = self.format_messages_for_llm(
+                    cast(list[Message], messages_list)
+                )
+            else:
+                messages = cast(list[dict[str, Any]], messages_list)
+
+            kwargs['messages'] = messages
 
             # handle conversion of to non-function calling messages if needed
             original_fncall_messages = copy.deepcopy(messages)
