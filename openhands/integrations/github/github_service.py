@@ -5,7 +5,6 @@ from pydantic import SecretStr
 from openhands.integrations.github.service import (
     GitHubBranchesMixin,
     GitHubFeaturesMixin,
-    GitHubMicroagentsMixin,
     GitHubPRsMixin,
     GitHubReposMixin,
     GitHubResolverMixin,
@@ -22,7 +21,6 @@ from openhands.utils.import_utils import get_impl
 class GitHubService(
     GitHubBranchesMixin,
     GitHubFeaturesMixin,
-    GitHubMicroagentsMixin,
     GitHubPRsMixin,
     GitHubReposMixin,
     GitHubResolverMixin,
