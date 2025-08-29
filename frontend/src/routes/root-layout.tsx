@@ -208,9 +208,11 @@ export default function MainApp() {
       <Sidebar />
 
       <div className="flex flex-col w-full h-[calc(100%-50px)] md:h-full gap-3">
-        <div className="flex-shrink-0">
-          <MaintenanceBanner startTime="2024-07-01T10:00:00-05:00" />
-        </div>
+        {config.data?.MAINTENANCE && (
+          <div className="flex-shrink-0">
+            <MaintenanceBanner startTime={config.data.MAINTENANCE.startTime} />
+          </div>
+        )}
         <div id="root-outlet" className="flex-1 relative overflow-auto">
           <EmailVerificationGuard>
             <Outlet />

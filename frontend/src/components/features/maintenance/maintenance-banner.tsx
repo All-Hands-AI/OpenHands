@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useLocalStorage } from "@uidotdev/usehooks";
 import { FaTriangleExclamation } from "react-icons/fa6";
 import CloseIcon from "#/icons/close.svg?react";
 import { cn } from "#/utils/utils";
@@ -9,9 +10,11 @@ interface MaintenanceBannerProps {
 }
 
 export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
-  const [isBannerShown, setIsBannerShown] = useState<boolean>(true);
-
   const { t } = useTranslation();
+  const [dismissedAt, setDismissedAt] = useLocalStorage<string | null>(
+    "maintenance_banner_dismissed_at",
+    null,
+  );
 
   // Convert EST timestamp to user's local timezone
   const formatMaintenanceTime = (estTimeString: string): string => {
@@ -58,10 +61,14 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
 
   const localTime = formatMaintenanceTime(startTime);
 
-  const isBannerVisible = useMemo(
-    () => isBannerShown && !Number.isNaN(new Date(startTime).getTime()),
-    [isBannerShown, startTime],
-  );
+  const isBannerVisible = useMemo(() => {
+    console.log("dismissedAt", dismissedAt);
+    const isValid = !Number.isNaN(new Date(startTime).getTime());
+    if (!isValid) {
+      return false;
+    }
+    return dismissedAt !== localTime;
+  }, [dismissedAt, startTime]);
 
   if (!isBannerVisible) {
     return null;
@@ -89,7 +96,7 @@ export function MaintenanceBanner({ startTime }: MaintenanceBannerProps) {
       <button
         type="button"
         data-testid="dismiss-button"
-        onClick={() => setIsBannerShown(false)}
+        onClick={() => setDismissedAt(localTime)}
         className={cn(
           "bg-[#0D0F11] rounded-full w-5 h-5 flex items-center justify-center cursor-pointer",
         )}
