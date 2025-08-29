@@ -186,6 +186,26 @@ install-pre-commit-hooks: check-python check-poetry install-python-dependencies
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
 	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@# Install the selective pre-commit hook
+	@if [ -f ".openhands/pre-commit.sh" ]; then \
+		chmod +x .openhands/pre-commit.sh; \
+		cp .git/hooks/pre-commit .git/hooks/pre-commit.local 2>/dev/null || true; \
+		echo '#!/bin/bash' > .git/hooks/pre-commit; \
+		echo '# This hook was installed by OpenHands' >> .git/hooks/pre-commit; \
+		echo '# It calls the pre-commit script in the .openhands directory' >> .git/hooks/pre-commit; \
+		echo '' >> .git/hooks/pre-commit; \
+		echo 'if [ -x ".openhands/pre-commit.sh" ]; then' >> .git/hooks/pre-commit; \
+		echo '	source ".openhands/pre-commit.sh"' >> .git/hooks/pre-commit; \
+		echo '	exit $$?' >> .git/hooks/pre-commit; \
+		echo 'else' >> .git/hooks/pre-commit; \
+		echo '	echo "Warning: .openhands/pre-commit.sh not found or not executable"' >> .git/hooks/pre-commit; \
+		echo '	exit 0' >> .git/hooks/pre-commit; \
+		echo 'fi' >> .git/hooks/pre-commit; \
+		chmod +x .git/hooks/pre-commit; \
+		echo "$(BLUE)Selective pre-commit hook installed.$(RESET)"; \
+	else \
+		echo "$(YELLOW)Warning: .openhands/pre-commit.sh not found. Only standard pre-commit hooks installed.$(RESET)"; \
+	fi
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend: install-pre-commit-hooks
