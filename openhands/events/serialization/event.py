@@ -162,6 +162,3 @@ def event_to_trajectory(event: 'Event', include_screenshots: bool = False) -> di
             else DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS,
         )
     return d
-
-
-# Import from the new location to maintain backward compatibility
