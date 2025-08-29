@@ -79,13 +79,6 @@ class Session:
             EventStreamSubscriber.SERVER, self.on_event, self.sid
         )
         self.config = config
-
-        # Lazy import to avoid circular dependency
-        from openhands.experiments.experiment_manager import ExperimentManagerImpl
-
-        self.config = ExperimentManagerImpl.run_config_variant_test(
-            user_id, sid, self.config
-        )
         self.loop = asyncio.get_event_loop()
         self.user_id = user_id
 
@@ -224,6 +217,15 @@ class Session:
                 f' keep_first=4, max_size={max_events_for_condenser})'
             )
             agent_config.condenser = default_condenser_config
+
+        # Apply experiment manager changes after default condensers are set
+        # Lazy import to avoid circular dependency
+        from openhands.experiments.experiment_manager import ExperimentManagerImpl
+
+        self.config = ExperimentManagerImpl.run_config_variant_test(
+            self.user_id, self.sid, self.config
+        )
+
         agent = Agent.get_cls(agent_cls)(agent_config, self.llm_registry)
 
         self.llm_registry.retry_listner = self._notify_on_llm_retry
