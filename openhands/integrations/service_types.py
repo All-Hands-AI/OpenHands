@@ -454,6 +454,14 @@ class BaseGitService(ABC):
 
         return microagents
 
+    def _truncate_comment(
+        self, comment_body: str, max_comment_length: int = 500
+    ) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) > max_comment_length:
+            return comment_body[:max_comment_length] + '...'
+        return comment_body
+
 
 class InstallationsService(Protocol):
     async def get_installations(self) -> list[str]:
