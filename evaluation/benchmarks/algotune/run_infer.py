@@ -71,7 +71,7 @@ def get_config(metadata: EvalMetadata, workspace_id: str = None, enable_volumes:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.timeout = 600 # Set execution timeout to 10 minutes
     sandbox_config.remote_runtime_api_timeout = 600
-    sandbox_config.base_container_image = "linhaowei1/algotune-image:v0.0.1"
+    sandbox_config.base_container_image = "linhaowei1/algotune-openhands:v0.0.2"
     sandbox_config.use_host_network = True
 
     # Set volumes based on enable_volumes parameter
