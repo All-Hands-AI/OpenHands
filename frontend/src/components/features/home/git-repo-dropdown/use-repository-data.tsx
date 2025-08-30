@@ -11,6 +11,7 @@ export function useRepositoryData(
   urlSearchResults: GitRepository[],
   inputValue: string,
   value?: string | null,
+  repositoryName?: string | null,
 ) {
   // Fetch user repositories with pagination
   const {
@@ -25,9 +26,18 @@ export function useRepositoryData(
     enabled: !disabled,
   });
 
+  // Determine if we should skip search (when input matches selected repository)
+  const shouldSkipSearch = useMemo(
+    () => inputValue === repositoryName,
+    [repositoryName, inputValue],
+  );
+
   // Search repositories when user types
   const { data: searchData, isLoading: isSearchLoading } =
-    useSearchRepositories(processedSearchInput, provider);
+    useSearchRepositories(
+      shouldSkipSearch ? "" : processedSearchInput,
+      provider,
+    );
 
   // Combine all repositories from paginated data
   const allRepositories = useMemo(
