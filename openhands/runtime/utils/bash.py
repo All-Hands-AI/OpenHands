@@ -231,12 +231,13 @@ class BashSession:
         logger.debug(f'pane: {self.pane}; history_limit: {self.session.history_limit}')
         _initial_window.kill()
 
-        # Configure bash to use simple PS1 and disable PS2
-        self.pane.send_keys(
-            f'export PROMPT_COMMAND=\'export PS1="{self.PS1}"\'; export PS2=""'
-        )
-        time.sleep(0.1)  # Wait for command to take effect
+        # Configure prompt instrumentation using a robust PROMPT_COMMAND function
+        self._install_prompt_instrumentation()
+        time.sleep(0.1)
         self._clear_screen()
+        # Trigger a fresh prompt so the PS1 metadata block is present post-clear
+        self.pane.send_keys(':')
+        time.sleep(0.4)
 
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
@@ -247,6 +248,26 @@ class BashSession:
         # Maintain the current working directory
         self._cwd = os.path.abspath(self.work_dir)
         self._initialized = True
+
+    def _install_prompt_instrumentation(self) -> None:
+        """Install a robust prompt instrumentation that works with set -euo pipefail.
+
+        We avoid evaluating complex command substitutions inside PS1. Instead,
+        we define a PROMPT_COMMAND function that prints our JSON metadata block
+        via printf and always returns 0. PS1 itself remains simple and static.
+        """
+        # Define a robust shell function and set PROMPT_COMMAND to it. Keep PS1 simple.
+        # Notes:
+        # - Use BASHPID (or $$ if not available) for a stable pid.
+        # - Prefer PWD; fall back to $(pwd) guarded with || true.
+        # - Use command -v python for interpreter path; guard errors.
+        # - Avoid pipelines; ensure the function always returns 0.
+        bash_fn_line = r"""__oh_prompt() { local ec=$?; local user="${USER:-}"; local host="${HOSTNAME:-$(hostname 2>/dev/null || true)}"; local wd="${PWD:-$(pwd 2>/dev/null || true)}"; local py="$(command -v python 2>/dev/null || true)"; local pid="${BASHPID:-$$}"; printf '\n###PS1JSON###\n{"pid":"%s","exit_code":%d,"username":"%s","hostname":"%s","working_dir":"%s","py_interpreter_path":"%s"}\n###PS1END###\n' "$pid" "$ec" "$user" "$host" "$wd" "$py"; return 0; }"""
+        # Install the function, set PROMPT_COMMAND to call it, and keep PS1 simple; also disable PS2.
+        self.pane.send_keys(bash_fn_line)
+        self.pane.send_keys(
+            'export PROMPT_COMMAND=__oh_prompt; export PS1="$ "; export PS2=""'
+        )
 
     def __del__(self) -> None:
         """Ensure the session is closed when the object is destroyed."""
