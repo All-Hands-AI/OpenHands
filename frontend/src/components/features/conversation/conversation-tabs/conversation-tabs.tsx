@@ -39,9 +39,6 @@ export function ConversationTabs() {
         if (!selectedTab) {
           onTabChange("editor");
         }
-      } else {
-        // Reset state when panel is hidden
-        onTabChange(null);
       }
     };
 
@@ -63,44 +60,47 @@ export function ConversationTabs() {
     }
   };
 
+  const isTabActive = (tab: ConversationTab) =>
+    isRightPanelShown && selectedTab === tab;
+
   const tabs = [
     {
-      isActive: selectedTab === "editor",
+      isActive: isTabActive("editor"),
       icon: GitChanges,
       onClick: () => onTabSelected("editor"),
       tooltipContent: t(I18nKey.COMMON$CHANGES),
       tooltipAriaLabel: t(I18nKey.COMMON$CHANGES),
     },
     {
-      isActive: selectedTab === "vscode",
+      isActive: isTabActive("vscode"),
       icon: VSCodeIcon,
       onClick: () => onTabSelected("vscode"),
       tooltipContent: <VSCodeTooltipContent />,
       tooltipAriaLabel: t(I18nKey.COMMON$CODE),
     },
     {
-      isActive: selectedTab === "terminal",
+      isActive: isTabActive("terminal"),
       icon: TerminalIcon,
       onClick: () => onTabSelected("terminal"),
       tooltipContent: t(I18nKey.COMMON$TERMINAL),
       tooltipAriaLabel: t(I18nKey.COMMON$TERMINAL),
     },
     {
-      isActive: selectedTab === "jupyter",
+      isActive: isTabActive("jupyter"),
       icon: JupyterIcon,
       onClick: () => onTabSelected("jupyter"),
       tooltipContent: t(I18nKey.COMMON$JUPYTER),
       tooltipAriaLabel: t(I18nKey.COMMON$JUPYTER),
     },
     {
-      isActive: selectedTab === "served",
+      isActive: isTabActive("served"),
       icon: ServerIcon,
       onClick: () => onTabSelected("served"),
       tooltipContent: t(I18nKey.COMMON$APP),
       tooltipAriaLabel: t(I18nKey.COMMON$APP),
     },
     {
-      isActive: selectedTab === "browser",
+      isActive: isTabActive("browser"),
       icon: GlobeIcon,
       onClick: () => onTabSelected("browser"),
       tooltipContent: t(I18nKey.COMMON$BROWSER),
