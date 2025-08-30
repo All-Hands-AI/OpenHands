@@ -9,8 +9,8 @@ AGENT=$3
 EVAL_LIMIT=$4
 MAX_ITER=$5
 NUM_WORKERS=$6
-SPLIT=$8
-N_RUNS=$9
+SPLIT=$7
+N_RUNS=$8
 
 
 if [ -z "$NUM_WORKERS" ]; then

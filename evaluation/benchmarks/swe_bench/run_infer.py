@@ -66,6 +66,7 @@ from openhands.utils.shutdown_listener import sleep_if_should_continue
 USE_HINT_TEXT = os.environ.get('USE_HINT_TEXT', 'false').lower() == 'true'
 RUN_WITH_BROWSING = os.environ.get('RUN_WITH_BROWSING', 'false').lower() == 'true'
 ENABLE_LLM_EDITOR = os.environ.get('ENABLE_LLM_EDITOR', 'false').lower() == 'true'
+SYSTEM_PROMPT_FILENAME = os.environ.get('SYSTEM_PROMPT_FILENAME', 'system_prompt.j2')
 BenchMode = Literal['swe', 'swt', 'swt-ci']
 
 # Global variable to track dataset type
@@ -247,9 +248,11 @@ def get_config(
         enable_jupyter=False,
         enable_browsing=RUN_WITH_BROWSING,
         enable_llm_editor=ENABLE_LLM_EDITOR,
+        system_prompt_filename=SYSTEM_PROMPT_FILENAME,
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
+        skip_memory_collection=True,
     )
     config.set_agent_config(agent_config)
     return config

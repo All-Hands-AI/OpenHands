@@ -80,7 +80,6 @@ class FakeUser:
             model=self.llm_config.model,
             messages=self.chat_history,
             api_key=self.llm_config.api_key.get_secret_value(),
-            temperature=self.llm_config.temperature,
             base_url=self.llm_config.base_url,
         )
 

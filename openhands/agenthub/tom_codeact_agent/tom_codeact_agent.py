@@ -117,7 +117,6 @@ class TomCodeActAgent(CodeActAgent):
 
         if action is None:
             action = super().step(state)
-
         if isinstance(action, ImproveInstructionAction):
             logger.info(
                 '🔧 Tom: Detected ImproveInstructionAction, triggering Tom improve instruction'
