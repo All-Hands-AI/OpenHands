@@ -33,7 +33,7 @@ Use the main evaluation script:
 ```bash
 poetry run python evaluation/benchmarks/algotune/run_infer.py \
   --agent-cls CodeActAgent \
-  --llm-config openai/gpt-5 \
+  --llm-config llm.gpt-5 \
   --optim_task all \
   --max-iterations 20 \
   --eval-num-workers 7
