@@ -194,7 +194,9 @@ def _parse_evaluation_output(output: str) -> Dict[str, Any]:
         target_speedup_match = re.search(r'--- TARGET SPEEDUP ---\s*([\d.]+)\s*--- TARGET SPEED END ---', output)
         if target_speedup_match:
             results['target_speedup'] = float(target_speedup_match.group(1))
-
+        
+        logger.info(f"Target speedup: {results['target_speedup']}")
+        
         # Isolate the final validation section to parse solver stats and test results
         if "Running final validation on original solver..." not in output:
             results['error'] = "Final validation section not found in output."
@@ -202,7 +204,7 @@ def _parse_evaluation_output(output: str) -> Dict[str, Any]:
             return results
 
         final_validation_section = output.split("Running final validation on original solver...")[-1]
-
+        logger.info(f"Final validation section: {final_validation_section}")
         # The second performance summary block relates to the final solver's stats
         perf_summary_match = re.search(
             r'--- Performance Summary ---\s*'
@@ -214,15 +216,17 @@ def _parse_evaluation_output(output: str) -> Dict[str, Any]:
         )
         if perf_summary_match:
             results['solver_speedup'] = float(perf_summary_match.group(2))
-
+        logger.info(f"Solver speedup: {results['solver_speedup']}")
         # Extract passed tests from the final validation block
         passed_tests = re.findall(r'PASSED\s+([^\n]+)', final_validation_section)
         results['passed_tests'] = [test.strip() for test in passed_tests]
-
+        logger.info(f"Passed tests: {results['passed_tests']}")
         # Determine overall validity based on the final test run summary
+        
         summary_line_match = re.search(r'={2,}\s(\d+\spassed.*)\s={2,}', final_validation_section)
         if summary_line_match:
             summary_line = summary_line_match.group(1).strip()
+            logger.info(f"Summary line: {summary_line}")
             # If the summary contains "failed" or "errors", it's not valid.
             if "failed" not in summary_line and "errors" not in summary_line and "passed" in summary_line:
                 results['validity'] = True
