@@ -5,7 +5,13 @@ import { MicroagentManagementRepositories } from "./microagent-management-reposi
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 
-export function MicroagentManagementSidebarTabs() {
+interface MicroagentManagementSidebarTabsProps {
+  isSearchLoading?: boolean;
+}
+
+export function MicroagentManagementSidebarTabs({
+  isSearchLoading = false,
+}: MicroagentManagementSidebarTabsProps) {
   const { t } = useTranslation();
 
   const { repositories, personalRepositories, organizationRepositories } =
@@ -29,18 +35,21 @@ export function MicroagentManagementSidebarTabs() {
           <MicroagentManagementRepositories
             repositories={personalRepositories}
             tabType="personal"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
         <Tab key="repositories" title={t(I18nKey.COMMON$REPOSITORIES)}>
           <MicroagentManagementRepositories
             repositories={repositories}
             tabType="repositories"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
         <Tab key="organizations" title={t(I18nKey.COMMON$ORGANIZATIONS)}>
           <MicroagentManagementRepositories
             repositories={organizationRepositories}
             tabType="organizations"
+            isSearchLoading={isSearchLoading}
           />
         </Tab>
       </Tabs>
