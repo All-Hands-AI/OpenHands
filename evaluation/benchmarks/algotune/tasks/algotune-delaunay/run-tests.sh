@@ -257,7 +257,7 @@ mv /workspace/solver.py.bak /workspace/solver.py
 # Now that the original solver is restored, run the final pytest
 # validation to ensure correctness.
 echo "Running final validation on original solver..."
-pytest /workspace/test_outputs.py -rA -s
+/usr/local/bin/pytest /workspace/test_outputs.py -rA -s
 
 # --- Step 7: Exit ---
 # The script has completed its execution.
