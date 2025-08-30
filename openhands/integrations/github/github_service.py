@@ -42,6 +42,7 @@ class GitHubService(
     """
 
     BASE_URL = 'https://api.github.com'
+    GRAPHQL_URL = 'https://api.github.com/graphql'
     token: SecretStr = SecretStr('')
     refresh = False
 
@@ -56,12 +57,14 @@ class GitHubService(
     ) -> None:
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+        self.base_domain = base_domain
 
         if token:
             self.token = token
 
         if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
