@@ -16,11 +16,6 @@ if [ -z "$NUM_WORKERS" ]; then
   echo "Number of workers not specified, use default $NUM_WORKERS"
 fi
 
-# Set default values
-if [ -z "$COMMIT_HASH" ]; then
-  COMMIT_HASH=fd5ad39fecf077039a336038cb391ce404307506
-  echo "use 0.52.0 commit hash $COMMIT_HASH"
-fi
 
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
@@ -56,7 +51,7 @@ fi
 echo "ENABLE_VOLUMES: $ENABLE_VOLUMES"
 
 # Construct the command
-COMMAND="poetry run python evaluation/benchmarks/willbench/algotune/run_infer.py \
+COMMAND="poetry run python evaluation/benchmarks/algotune/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --optim_task $OPTIM_TASK \
