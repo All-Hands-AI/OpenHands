@@ -36,7 +36,7 @@ poetry run python evaluation/benchmarks/algotune/run_infer.py \
   --llm-config openai/gpt-5 \
   --optim_task all \
   --max-iterations 20 \
-  --eval-num-workers 4
+  --eval-num-workers 7
 ```
 
 Or use the convenience script:
