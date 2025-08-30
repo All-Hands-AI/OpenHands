@@ -16,6 +16,12 @@ if [ -z "$NUM_WORKERS" ]; then
   echo "Number of workers not specified, use default $NUM_WORKERS"
 fi
 
+# Set default values
+if [ -z "$COMMIT_HASH" ]; then
+  COMMIT_HASH=fd5ad39fecf077039a336038cb391ce404307506
+  echo "use 0.52.0 commit hash $COMMIT_HASH"
+fi
+
 if [ -z "$AGENT" ]; then
   echo "Agent not specified, use default CodeActAgent"
   AGENT="CodeActAgent"
