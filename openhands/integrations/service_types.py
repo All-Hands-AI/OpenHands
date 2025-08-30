@@ -462,6 +462,9 @@ class BaseGitService(ABC):
             return comment_body[:max_comment_length] + '...'
         return comment_body
 
+    def _has_token_expired(self, status_code: int) -> bool:
+        return status_code == 401
+
 
 class InstallationsService(Protocol):
     async def get_installations(self) -> list[str]:
