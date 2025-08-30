@@ -23,12 +23,12 @@ fi
 
 if [ -z "$OPTIM_TASK" ]; then
   echo "Optimization task not specified, use default kmeans"
-  OPTIM_TASK="kmeans"
+  OPTIM_TASK="all"
 fi
 
 if [ -z "$MAX_ITER" ]; then
   echo "MAX_ITER not specified, use default 10"
-  MAX_ITER=50
+  MAX_ITER=20
 fi
 
 checkout_eval_branch
@@ -45,7 +45,7 @@ EVAL_NOTE=$OPENHANDS_VERSION
 
 # Handle enable volumes option
 if [ -z "$ENABLE_VOLUMES" ]; then
-  export ENABLE_VOLUMES=true
+  export ENABLE_VOLUMES=false
 fi
 echo "ENABLE_VOLUMES: $ENABLE_VOLUMES"
 

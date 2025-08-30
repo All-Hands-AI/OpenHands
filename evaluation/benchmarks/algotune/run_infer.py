@@ -4,23 +4,27 @@ import os
 from typing import Any, Dict
 from datetime import datetime
 from pathlib import Path
+import re
 
+import pandas as pd
 from evaluation.utils.shared import (
     EvalMetadata,
     EvalOutput,
     compatibility_for_eval_history_pairs,
     get_default_sandbox_config_for_eval,
     make_metadata,
+    prepare_dataset,
     reset_logger_for_multiprocessing,
+    run_evaluation,
     update_llm_config_for_completions_logging,
 )
 from openhands.controller.state.state import State
 from openhands.core.config import (
     AgentConfig,
     OpenHandsConfig,
-    get_llm_config_arg,
+    get_agent_config_arg,
     get_evaluation_parser,
-    get_agent_config_arg
+    get_llm_config_arg,
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.core.main import create_runtime, run_controller
@@ -67,7 +71,7 @@ def get_config(metadata: EvalMetadata, workspace_id: str = None, enable_volumes:
     sandbox_config = get_default_sandbox_config_for_eval()
     sandbox_config.timeout = 600 # Set execution timeout to 10 minutes
     sandbox_config.remote_runtime_api_timeout = 600
-    sandbox_config.base_container_image = "linhaoweilinhaowei1/algotune-image:v0.0.1"
+    sandbox_config.base_container_image = "linhaowei1/algotune-image:v0.0.1"
     sandbox_config.use_host_network = True
 
     # Set volumes based on enable_volumes parameter
@@ -161,6 +165,18 @@ def initialize_runtime(runtime: Runtime, task_name: str):
     logger.info(f'{"-" * 50} END Runtime Initialization {"-" * 50}')
 
 
+def _backup_solver_code(runtime: Runtime) -> str:
+    """Reads the content of the solver.py file from the runtime."""
+    try:
+        # Use run_action to cat the file content
+        action = CmdRunAction(command='cat /workspace/solver.py')
+        obs = runtime.run_action(action)
+        if obs.exit_code == 0:
+            return obs.content
+        else:
+            return f"Error reading solver file: {obs.content}"
+    except Exception as e:
+        return f"Failed to backup solver code: {str(e)}"
 
 def _parse_evaluation_output(output: str) -> Dict[str, Any]:
     """Parses the complex output from the run-tests.sh script."""
@@ -342,7 +358,8 @@ def process_training_and_testing(
     else:
         logger.info(f'Starting training and testing for {task_name}.')
 
-    problem_statement = None
+    # read from task_dir
+    problem_statement = open(f"evaluation/benchmarks/algotune/tasks/{task_name}/problem_statement.txt").read()
 
     # Prepare instruction for training phase
     instruction = f"""You are tasked with developing and optimizing an algorithm.
@@ -412,19 +429,35 @@ def process_training_and_testing(
         except Exception as e:
             logger.warning(f'Failed to close runtime for workspace {workspace_id}: {e}')
 
+def process_task(
+    instance: pd.Series,
+    metadata: EvalMetadata,
+    reset_logger: bool = True,
+) -> EvalOutput:
+    """
+    Wrapper function to process a single task, called by run_evaluation.
+    """
+    task_name = instance['task_name']
+    enable_volumes = metadata.details.get('enable_volumes', False)
+    return process_training_and_testing(
+        metadata=metadata,
+        task_name=task_name,
+        reset_logger=reset_logger,
+        enable_volumes=enable_volumes,
+    )
+
 
 if __name__ == '__main__':
     parser = get_evaluation_parser()
-
-    # Discover available tasks
     available_tasks = discover_tasks()
 
+    optim_task_choices = ['all'] + list(available_tasks.keys())
     parser.add_argument(
         '--optim_task',
         type=str,
-        choices=list(available_tasks.keys()),
-        default=list(available_tasks.keys())[0] if available_tasks else None,
-        help=f'Algorithm optimization task type. Available: {list(available_tasks.keys())}'
+        choices=optim_task_choices,
+        default='all',
+        help=f'Algorithm optimization task to run. Use "all" to run all tasks. Available: {optim_task_choices}',
     )
     parser.add_argument(
         '--enable_volumes',
@@ -437,14 +470,23 @@ if __name__ == '__main__':
     args, _ = parser.parse_known_args()
 
     if not available_tasks:
-        logger.error("No valid tasks found in algotune directory")
+        logger.error("No valid tasks found in the algotune/tasks directory.")
         exit(1)
 
-    if args.optim_task not in available_tasks:
-        logger.error(f"Task '{args.optim_task}' not found. Available tasks: {list(available_tasks.keys())}")
-        exit(1)
+    # Determine which tasks to run
+    if args.optim_task == "all":
+        tasks_to_run = list(available_tasks.keys())
+        dataset_name = 'algotune_all'
+    else:
+        tasks_to_run = [args.optim_task]
+        dataset_name = f'algotune_{args.optim_task}'
 
-    # Load LLM configuration
+    # Create a DataFrame for the tasks
+    tasks_df = pd.DataFrame({
+        'instance_id': tasks_to_run,
+        'task_name': tasks_to_run
+    })
+
     llm_config = None
     if args.llm_config:
         llm_config = get_llm_config_arg(args.llm_config)
@@ -455,47 +497,41 @@ if __name__ == '__main__':
     if llm_config is None:
         raise ValueError(f'Could not find LLM config: --llm_config {args.llm_config}')
 
-    agent_config = None
-    if args.agent_config:
-        agent_config = get_agent_config_arg(args.agent_config)
+    agent_config = get_agent_config_arg(args.agent_config) if args.agent_config else None
 
-    # Add timestamp to eval_output_dir
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     eval_output_dir_with_timestamp = os.path.join(args.eval_output_dir, "algotune", timestamp)
 
-    # Create metadata
+    details = {'enable_volumes': args.enable_volumes.lower() == 'true'}
+
     metadata = make_metadata(
         llm_config,
-        f'algotune_{args.optim_task}',
+        dataset_name,
         args.agent_cls,
         args.max_iterations,
         args.eval_note,
         eval_output_dir_with_timestamp,
-        agent_config=agent_config
+        agent_config=agent_config,
+        details=details,
     )
 
-    # Output file without timestamp
     output_file = os.path.join(metadata.eval_output_dir, 'output.jsonl')
 
-    # Run single training-testing experiment
-    result = process_training_and_testing(
-        metadata,
-        args.optim_task,
-        enable_volumes=(args.enable_volumes.lower() == 'true'),
+    # Filter out tasks that have already been completed
+    instances_to_run = prepare_dataset(
+        tasks_df,
+        output_file,
+        args.eval_n_limit,
     )
 
-    # Save result
-    with open(output_file, 'w') as f:
-        f.write(result.model_dump_json() + '\n')
+    # Use the evaluation utility to run the tasks
+    run_evaluation(
+        dataset=instances_to_run,
+        metadata=metadata,
+        output_file=output_file,
+        num_workers=args.eval_num_workers,
+        process_instance_func=process_task,
+        timeout_seconds=1800
+    )
 
-    # Print summary
-    test_eval = result.test_result.get('test_evaluation', {})
-    logger.info(f"\n{'='*60}")
-    logger.info(f"FINAL RESULTS FOR {args.optim_task.upper()}")
-    logger.info(f"{'='*60}")
-    logger.info(f"Test instances evaluated: {test_eval.get('total_test_instances', 0)}")
-    logger.info(f"Valid solutions: {test_eval.get('valid_solutions', 0)}")
-    if test_eval.get('valid_solutions', 0) > 0:
-        logger.info(f"Average test score: {test_eval.get('average_score', 0):.4f}")
-        logger.info(f"Total test score: {test_eval.get('total_score', 0):.4f}")
-    logger.info(f"{'='*60}")
+    logger.info(f"Evaluation finished. Results are in {output_file}")
