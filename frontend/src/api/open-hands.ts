@@ -31,6 +31,7 @@ import { SuggestedTask } from "#/components/features/home/tasks/task.types";
 import { extractNextPageFromLink } from "#/utils/extract-next-page-from-link";
 import { RepositoryMicroagent } from "#/types/microagent-management";
 import { BatchFeedbackData } from "#/hooks/query/use-batch-feedback";
+import { SubscriptionAccess } from "#/types/billing";
 
 class OpenHands {
   private static currentConversation: Conversation | null = null;
@@ -431,6 +432,13 @@ class OpenHands {
       "/api/billing/credits",
     );
     return data.credits;
+  }
+
+  static async getSubscriptionAccess(): Promise<SubscriptionAccess | null> {
+    const { data } = await openHands.get<SubscriptionAccess | null>(
+      "/api/billing/subscription-access",
+    );
+    return data;
   }
 
   static async getGitUser(): Promise<GitUser> {

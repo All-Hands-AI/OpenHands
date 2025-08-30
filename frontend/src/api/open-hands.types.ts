@@ -49,7 +49,6 @@ export interface GetConfigResponse {
   APP_SLUG?: string;
   GITHUB_CLIENT_ID: string;
   POSTHOG_CLIENT_KEY: string;
-  STRIPE_PUBLISHABLE_KEY?: string;
   PROVIDERS_CONFIGURED?: Provider[];
   AUTH_URL?: string;
   FEATURE_FLAGS: {
