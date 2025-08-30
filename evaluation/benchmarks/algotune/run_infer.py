@@ -73,6 +73,7 @@ def get_config(metadata: EvalMetadata, workspace_id: str = None, enable_volumes:
     sandbox_config.remote_runtime_api_timeout = 600
     sandbox_config.base_container_image = "linhaowei1/algotune-openhands:v0.0.2"
     sandbox_config.use_host_network = True
+    sandbox_config.enable_auto_lint = True
 
     # Set volumes based on enable_volumes parameter
     if enable_volumes:
@@ -131,7 +132,6 @@ def get_config(metadata: EvalMetadata, workspace_id: str = None, enable_volumes:
     agent_config = AgentConfig(
         enable_jupyter=False,
         enable_browsing=False,
-        enable_llm_editor=True,
         enable_mcp=False,
         condenser=metadata.condenser_config,
         enable_prompt_extensions=False,
