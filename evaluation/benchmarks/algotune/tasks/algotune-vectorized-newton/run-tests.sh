@@ -429,7 +429,7 @@ EOF
 # The result is saved to a file. If the test fails or the speedup
 # cannot be determined, it defaults to "1.0".
 echo "Running performance test..."
-(set -o pipefail; pytest -s /workspace/test_outputs.py 2>&1 | tee /workspace/test_outputs.log | tee /dev/stderr | grep "Calculated Speedup" | awk '{print $3}' | sed 's/x$//' > /workspace/.best_solver_speedup.txt) \
+(set -o pipefail; /usr/local/bin/pytest -s /workspace/test_outputs.py 2>&1 | tee /workspace/test_outputs.log | tee /dev/stderr | grep "Calculated Speedup" | awk '{print $3}' | sed 's/x$//' > /workspace/.best_solver_speedup.txt) \
 || echo "1.0" > /workspace/.best_solver_speedup.txt
 
 # --- Output Speedup and Solver Code for Review ---
