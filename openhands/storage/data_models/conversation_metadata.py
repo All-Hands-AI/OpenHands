@@ -25,6 +25,7 @@ class ConversationMetadata:
     selected_branch: str | None = None
     git_provider: ProviderType | None = None
     title: str | None = None
+    user_set_title: bool = False  # Track if title was manually set by user
     last_updated_at: datetime | None = None
     trigger: ConversationTrigger | None = None
     pr_number: list[int] = field(default_factory=list)
