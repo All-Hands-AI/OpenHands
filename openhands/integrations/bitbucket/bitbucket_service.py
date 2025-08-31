@@ -1,12 +1,11 @@
-import base64
 import os
 import re
 from typing import Any
 
-import httpx
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.bitbucket.http_client import BitBucketHTTPClient
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -19,14 +18,15 @@ from openhands.integrations.service_types import (
     RequestMethod,
     ResourceNotFoundError,
     SuggestedTask,
-    User,
 )
-from openhands.microagent.types import MicroagentContentResponse
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class BitBucketService(BaseGitService, GitService, InstallationsService):
+class BitBucketService(
+    BaseGitService, GitService, InstallationsService, BitBucketHTTPClient
+):
     """Default implementation of GitService for Bitbucket integration.
 
     This is an extension point in OpenHands that allows applications to customize Bitbucket
@@ -38,10 +38,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'https://api.bitbucket.org/2.0'
-    token: SecretStr = SecretStr('')
-    refresh = False
-
     def __init__(
         self,
         user_id: str | None = None,
@@ -51,16 +47,17 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
         external_token_manager: bool = False,
         base_domain: str | None = None,
     ):
+        # Initialize the HTTP client
+        BitBucketHTTPClient.__init__(
+            self,
+            token=token,
+            external_auth_id=external_auth_id,
+            base_domain=base_domain,
+        )
+
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-        self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
-        self.base_domain = base_domain or 'bitbucket.org'
-
-        if token:
-            self.token = token
-        if base_domain:
-            self.BASE_URL = f'https://api.{base_domain}/2.0'
 
     @property
     def provider(self) -> str:
@@ -83,10 +80,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             raise ValueError(f'Invalid repository name: {repository}')
 
         return parts[-2], parts[-1]
-
-    async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the user."""
-        return self.token
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
@@ -131,81 +124,6 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
         """Extract file path from directory item."""
         return item['path']
-
-    def _has_token_expired(self, status_code: int) -> bool:
-        return status_code == 401
-
-    async def _get_bitbucket_headers(self) -> dict[str, str]:
-        """Get headers for Bitbucket API requests."""
-        token_value = self.token.get_secret_value()
-
-        # Check if the token contains a colon, which indicates it's in username:password format
-        if ':' in token_value:
-            auth_str = base64.b64encode(token_value.encode()).decode()
-            return {
-                'Authorization': f'Basic {auth_str}',
-                'Accept': 'application/json',
-            }
-        else:
-            return {
-                'Authorization': f'Bearer {token_value}',
-                'Accept': 'application/json',
-            }
-
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]:
-        """Make a request to the Bitbucket API.
-
-        Args:
-            url: The URL to request
-            params: Optional parameters for the request
-            method: The HTTP method to use
-
-        Returns:
-            A tuple of (response_data, response_headers)
-
-        """
-        try:
-            async with httpx.AsyncClient() as client:
-                bitbucket_headers = await self._get_bitbucket_headers()
-                response = await self.execute_request(
-                    client, url, bitbucket_headers, params, method
-                )
-                if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
-                    bitbucket_headers = await self._get_bitbucket_headers()
-                    response = await self.execute_request(
-                        client=client,
-                        url=url,
-                        headers=bitbucket_headers,
-                        params=params,
-                        method=method,
-                    )
-                response.raise_for_status()
-                return response.json(), dict(response.headers)
-        except httpx.HTTPStatusError as e:
-            raise self.handle_http_status_error(e)
-        except httpx.HTTPError as e:
-            raise self.handle_http_error(e)
-
-    async def get_user(self) -> User:
-        """Get the authenticated user's information."""
-        url = f'{self.BASE_URL}/user'
-        data, _ = await self._make_request(url)
-
-        account_id = data.get('account_id', '')
-
-        return User(
-            id=account_id,
-            login=data.get('username', ''),
-            avatar_url=data.get('links', {}).get('avatar', {}).get('href', ''),
-            name=data.get('display_name'),
-            email=None,  # Bitbucket API doesn't return email in this endpoint
-        )
 
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
@@ -754,6 +672,57 @@ class BitBucketService(BaseGitService, GitService, InstallationsService):
             )
             # If we can't determine the PR status, include the conversation to be safe
             return True
+
+    async def _fetch_cursorrules_content(self, repository: str) -> Any | None:
+        """Fetch .cursorrules file content from the repository via API."""
+        cursorrules_url = await self._get_cursorrules_url(repository)
+        cursorrules_response, _ = await self._make_request(cursorrules_url)
+        return cursorrules_response
+
+    async def _process_microagents_directory(
+        self, repository: str, microagents_path: str
+    ) -> list[MicroagentResponse]:
+        """Process microagents directory and return list of microagent responses."""
+        microagents = []
+
+        try:
+            directory_url = await self._get_microagents_directory_url(
+                repository, microagents_path
+            )
+            directory_params = self._get_microagents_directory_params(microagents_path)
+            response, _ = await self._make_request(directory_url, directory_params)
+
+            # Handle different response structures
+            items = response
+            if isinstance(response, dict) and 'values' in response:
+                # Bitbucket format
+                items = response['values']
+            elif isinstance(response, dict) and 'nodes' in response:
+                # GraphQL format (if used)
+                items = response['nodes']
+
+            for item in items:
+                if self._is_valid_microagent_file(item):
+                    try:
+                        file_name = self._get_file_name_from_item(item)
+                        file_path = self._get_file_path_from_item(
+                            item, microagents_path
+                        )
+                        microagents.append(
+                            self._create_microagent_response(file_name, file_path)
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item.get("name", "unknown")}: {str(e)}'
+                        )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        return microagents
 
 
 bitbucket_service_cls = os.environ.get(

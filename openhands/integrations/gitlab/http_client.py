@@ -1,5 +1,4 @@
-import json
-from typing import Any, cast
+from typing import Any
 
 import httpx
 from pydantic import SecretStr
@@ -11,10 +10,10 @@ from openhands.integrations.service_types import (
 )
 
 
-class GitHubHTTPClient:
+class GitLabHTTPClient:
     """
-    HTTP client implementation for GitHub API operations.
-    Implements HTTPClientInterface and provides common functionality for GitHub API interactions.
+    HTTP client implementation for GitLab API operations.
+    Implements HTTPClientInterface and provides common functionality for GitLab API interactions.
     """
 
     BASE_URL: str
@@ -30,22 +29,29 @@ class GitHubHTTPClient:
         external_auth_id: str | None = None,
         base_domain: str | None = None,
     ) -> None:
-        """Initialize the GitHub HTTP client with configuration."""
+        """Initialize the GitLab HTTP client with configuration."""
         # Set default values
-        self.BASE_URL = 'https://api.github.com'
-        self.GRAPHQL_URL = 'https://api.github.com/graphql'
+        self.BASE_URL = 'https://gitlab.com/api/v4'
+        self.GRAPHQL_URL = 'https://gitlab.com/api/graphql'
         self.token = token or SecretStr('')
         self.refresh = False
         self.external_auth_id = external_auth_id
         self.base_domain = base_domain
 
         # Handle custom domain configuration
-        if base_domain and base_domain != 'github.com':
-            self.BASE_URL = f'https://{base_domain}/api/v3'
-            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+        if base_domain:
+            # Check if protocol is already included
+            if base_domain.startswith(('http://', 'https://')):
+                # Use the provided protocol
+                self.BASE_URL = f'{base_domain}/api/v4'
+                self.GRAPHQL_URL = f'{base_domain}/api/graphql'
+            else:
+                # Default to https if no protocol specified
+                self.BASE_URL = f'https://{base_domain}/api/v4'
+                self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
     async def _get_headers(self) -> dict:
-        """Retrieve the GH Token from settings store to construct the headers."""
+        """Retrieve the GitLab Token to construct the headers."""
         if not self.token:
             latest_token = await self.get_latest_token()
             if latest_token:
@@ -53,14 +59,9 @@ class GitHubHTTPClient:
 
         return {
             'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
-            'Accept': 'application/vnd.github.v3+json',
         }
 
-    async def _get_github_headers(self) -> dict:
-        """Backward compatibility method."""
-        return await self._get_headers()
-
-    async def get_latest_token(self) -> SecretStr | None:  # type: ignore[override]
+    async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
     async def _make_request(
@@ -68,7 +69,7 @@ class GitHubHTTPClient:
         url: str,
         params: dict | None = None,
         method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]:  # type: ignore[override]
+    ) -> tuple[Any, dict]:
         try:
             async with httpx.AsyncClient() as client:
                 headers = await self._get_headers()
@@ -95,11 +96,18 @@ class GitHubHTTPClient:
                     )
 
                 response.raise_for_status()
-                response_headers: dict = {}
+                response_headers = {}
                 if 'Link' in response.headers:
                     response_headers['Link'] = response.headers['Link']
 
-                return response.json(), response_headers
+                if 'X-Total' in response.headers:
+                    response_headers['X-Total'] = response.headers['X-Total']
+
+                content_type = response.headers.get('Content-Type', '')
+                if 'application/json' in content_type:
+                    return response.json(), response_headers
+                else:
+                    return response.text, response_headers
 
         except httpx.HTTPStatusError as e:
             raise self._handle_http_status_error(e)
@@ -107,27 +115,44 @@ class GitHubHTTPClient:
             raise self._handle_http_error(e)
 
     async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]
+        self, query: str, variables: dict[str, Any] | None = None
     ) -> dict[str, Any]:
+        if variables is None:
+            variables = {}
         try:
             async with httpx.AsyncClient() as client:
                 headers = await self._get_headers()
+                # Add content type header for GraphQL
+                headers['Content-Type'] = 'application/json'
+
+                payload = {
+                    'query': query,
+                    'variables': variables if variables is not None else {},
+                }
 
                 response = await client.post(
-                    self.GRAPHQL_URL,
-                    headers=headers,
-                    json={'query': query, 'variables': variables},
+                    self.GRAPHQL_URL, headers=headers, json=payload
                 )
-                response.raise_for_status()
 
-                result = response.json()
-                if 'errors' in result:
-                    raise UnknownException(
-                        f'GraphQL query error: {json.dumps(result["errors"])}'
+                if self.refresh and self._has_token_expired(response.status_code):
+                    await self.get_latest_token()
+                    headers = await self._get_headers()
+                    headers['Content-Type'] = 'application/json'
+                    response = await client.post(
+                        self.GRAPHQL_URL, headers=headers, json=payload
                     )
 
-                return dict(result)
+                response.raise_for_status()
+                result = response.json()
 
+                # Check for GraphQL errors
+                if 'errors' in result:
+                    error_message = result['errors'][0].get(
+                        'message', 'Unknown GraphQL error'
+                    )
+                    raise UnknownException(f'GraphQL error: {error_message}')
+
+                return result.get('data')
         except httpx.HTTPStatusError as e:
             raise self._handle_http_status_error(e)
         except httpx.HTTPError as e:
@@ -138,17 +163,21 @@ class GitHubHTTPClient:
         await self._make_request(url)
         return True
 
-    async def get_user(self):
+    async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)
 
+        # Use a default avatar URL if not provided
+        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
+        avatar_url = response.get('avatar_url') or ''
+
         return User(
             id=str(response.get('id', '')),
-            login=cast(str, response.get('login') or ''),
-            avatar_url=cast(str, response.get('avatar_url') or ''),
-            company=response.get('company'),
+            login=response.get('username'),  # type: ignore[call-arg]
+            avatar_url=avatar_url,
             name=response.get('name'),
             email=response.get('email'),
+            company=response.get('organization'),
         )
 
     # Helper methods needed by the HTTP client
@@ -174,15 +203,15 @@ class GitHubHTTPClient:
         if e.response.status_code == 401:
             from openhands.integrations.service_types import AuthenticationError
 
-            return AuthenticationError('Invalid GitHub token')
+            return AuthenticationError('Invalid GitLab token')
         elif e.response.status_code == 404:
             from openhands.integrations.service_types import ResourceNotFoundError
 
-            return ResourceNotFoundError(f'Resource not found on GitHub API: {e}')
+            return ResourceNotFoundError(f'Resource not found on GitLab API: {e}')
         elif e.response.status_code == 429:
             from openhands.integrations.service_types import RateLimitError
 
-            return RateLimitError('GitHub API rate limit exceeded')
+            return RateLimitError('GitLab API rate limit exceeded')
 
         from openhands.integrations.service_types import UnknownException
 
@@ -193,7 +222,3 @@ class GitHubHTTPClient:
         from openhands.integrations.service_types import UnknownException
 
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
-
-
-# Backward compatibility alias
-GitHubMixinBase = GitHubHTTPClient

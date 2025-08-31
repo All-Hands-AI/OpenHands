@@ -2,10 +2,10 @@ import os
 from datetime import datetime
 from typing import Any
 
-import httpx
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.gitlab.http_client import GitLabHTTPClient
 from openhands.integrations.service_types import (
     BaseGitService,
     Branch,
@@ -16,17 +16,16 @@ from openhands.integrations.service_types import (
     ProviderType,
     Repository,
     RequestMethod,
+    ResourceNotFoundError,
     SuggestedTask,
     TaskType,
-    UnknownException,
-    User,
 )
-from openhands.microagent.types import MicroagentContentResponse
+from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 from openhands.utils.import_utils import get_impl
 
 
-class GitLabService(BaseGitService, GitService):
+class GitLabService(BaseGitService, GitService, GitLabHTTPClient):
     """Default implementation of GitService for GitLab integration.
 
     TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
@@ -39,11 +38,6 @@ class GitLabService(BaseGitService, GitService):
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    BASE_URL = 'https://gitlab.com/api/v4'
-    GRAPHQL_URL = 'https://gitlab.com/api/graphql'
-    token: SecretStr = SecretStr('')
-    refresh = False
-
     def __init__(
         self,
         user_id: str | None = None,
@@ -53,43 +47,20 @@ class GitLabService(BaseGitService, GitService):
         external_token_manager: bool = False,
         base_domain: str | None = None,
     ):
+        # Initialize the HTTP client
+        GitLabHTTPClient.__init__(
+            self,
+            token=token,
+            external_auth_id=external_auth_id,
+            base_domain=base_domain,
+        )
+
         self.user_id = user_id
         self.external_token_manager = external_token_manager
-
-        if token:
-            self.token = token
-
-        if base_domain:
-            # Check if protocol is already included
-            if base_domain.startswith(('http://', 'https://')):
-                # Use the provided protocol
-                self.BASE_URL = f'{base_domain}/api/v4'
-                self.GRAPHQL_URL = f'{base_domain}/api/graphql'
-            else:
-                # Default to https if no protocol specified
-                self.BASE_URL = f'https://{base_domain}/api/v4'
-                self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
     @property
     def provider(self) -> str:
         return ProviderType.GITLAB.value
-
-    async def _get_gitlab_headers(self) -> dict[str, Any]:
-        """Retrieve the GitLab Token to construct the headers"""
-        if not self.token:
-            latest_token = await self.get_latest_token()
-            if latest_token:
-                self.token = latest_token
-
-        return {
-            'Authorization': f'Bearer {self.token.get_secret_value()}',
-        }
-
-    def _has_token_expired(self, status_code: int) -> bool:
-        return status_code == 401
-
-    async def get_latest_token(self) -> SecretStr | None:
-        return self.token
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
@@ -124,126 +95,6 @@ class GitLabService(BaseGitService, GitService):
     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
         """Extract file path from directory item."""
         return item['path']
-
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]:
-        try:
-            async with httpx.AsyncClient() as client:
-                gitlab_headers = await self._get_gitlab_headers()
-
-                # Make initial request
-                response = await self.execute_request(
-                    client=client,
-                    url=url,
-                    headers=gitlab_headers,
-                    params=params,
-                    method=method,
-                )
-
-                # Handle token refresh if needed
-                if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
-                    gitlab_headers = await self._get_gitlab_headers()
-                    response = await self.execute_request(
-                        client=client,
-                        url=url,
-                        headers=gitlab_headers,
-                        params=params,
-                        method=method,
-                    )
-
-                response.raise_for_status()
-                headers = {}
-                if 'Link' in response.headers:
-                    headers['Link'] = response.headers['Link']
-
-                if 'X-Total' in response.headers:
-                    headers['X-Total'] = response.headers['X-Total']
-
-                content_type = response.headers.get('Content-Type', '')
-                if 'application/json' in content_type:
-                    return response.json(), headers
-                else:
-                    return response.text, headers
-
-        except httpx.HTTPStatusError as e:
-            raise self.handle_http_status_error(e)
-        except httpx.HTTPError as e:
-            raise self.handle_http_error(e)
-
-    async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any] | None = None
-    ) -> Any:
-        """Execute a GraphQL query against the GitLab GraphQL API
-
-        Args:
-            query: The GraphQL query string
-            variables: Optional variables for the GraphQL query
-
-        Returns:
-            The data portion of the GraphQL response
-        """
-        if variables is None:
-            variables = {}
-        try:
-            async with httpx.AsyncClient() as client:
-                gitlab_headers = await self._get_gitlab_headers()
-                # Add content type header for GraphQL
-                gitlab_headers['Content-Type'] = 'application/json'
-
-                payload = {
-                    'query': query,
-                    'variables': variables if variables is not None else {},
-                }
-
-                response = await client.post(
-                    self.GRAPHQL_URL, headers=gitlab_headers, json=payload
-                )
-
-                if self.refresh and self._has_token_expired(response.status_code):
-                    await self.get_latest_token()
-                    gitlab_headers = await self._get_gitlab_headers()
-                    gitlab_headers['Content-Type'] = 'application/json'
-                    response = await client.post(
-                        self.GRAPHQL_URL, headers=gitlab_headers, json=payload
-                    )
-
-                response.raise_for_status()
-                result = response.json()
-
-                # Check for GraphQL errors
-                if 'errors' in result:
-                    error_message = result['errors'][0].get(
-                        'message', 'Unknown GraphQL error'
-                    )
-                    raise UnknownException(f'GraphQL error: {error_message}')
-
-                return result.get('data')
-        except httpx.HTTPStatusError as e:
-            raise self.handle_http_status_error(e)
-        except httpx.HTTPError as e:
-            raise self.handle_http_error(e)
-
-    async def get_user(self) -> User:
-        url = f'{self.BASE_URL}/user'
-        response, _ = await self._make_request(url)
-
-        # Use a default avatar URL if not provided
-        # In some self-hosted GitLab instances, the avatar_url field may be returned as None.
-        avatar_url = response.get('avatar_url') or ''
-
-        return User(
-            id=str(response.get('id', '')),
-            login=response.get('username'),  # type: ignore[call-arg]
-            avatar_url=avatar_url,
-            name=response.get('name'),
-            email=response.get('email'),
-            company=response.get('organization'),
-        )
 
     def _parse_repository(
         self, repo: dict, link_header: str | None = None
@@ -917,6 +768,57 @@ class GitLabService(BaseGitService, GitService):
             )
             # If we can't determine the MR status, include the conversation to be safe
             return True
+
+    async def _fetch_cursorrules_content(self, repository: str) -> Any | None:
+        """Fetch .cursorrules file content from the repository via API."""
+        cursorrules_url = await self._get_cursorrules_url(repository)
+        cursorrules_response, _ = await self._make_request(cursorrules_url)
+        return cursorrules_response
+
+    async def _process_microagents_directory(
+        self, repository: str, microagents_path: str
+    ) -> list[MicroagentResponse]:
+        """Process microagents directory and return list of microagent responses."""
+        microagents = []
+
+        try:
+            directory_url = await self._get_microagents_directory_url(
+                repository, microagents_path
+            )
+            directory_params = self._get_microagents_directory_params(microagents_path)
+            response, _ = await self._make_request(directory_url, directory_params)
+
+            # Handle different response structures
+            items = response
+            if isinstance(response, dict) and 'values' in response:
+                # Bitbucket format
+                items = response['values']
+            elif isinstance(response, dict) and 'nodes' in response:
+                # GraphQL format (if used)
+                items = response['nodes']
+
+            for item in items:
+                if self._is_valid_microagent_file(item):
+                    try:
+                        file_name = self._get_file_name_from_item(item)
+                        file_path = self._get_file_path_from_item(
+                            item, microagents_path
+                        )
+                        microagents.append(
+                            self._create_microagent_response(file_name, file_path)
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            f'Error processing microagent {item.get("name", "unknown")}: {str(e)}'
+                        )
+        except ResourceNotFoundError:
+            logger.info(
+                f'No microagents directory found in {repository} at {microagents_path}'
+            )
+        except Exception as e:
+            logger.warning(f'Error fetching microagents directory: {str(e)}')
+
+        return microagents
 
 
 gitlab_service_cls = os.environ.get(

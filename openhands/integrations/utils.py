@@ -39,7 +39,7 @@ async def validate_provider_token(
     # Try GitLab next
     gitlab_error = None
     try:
-        gitlab_service = GitLabService(token=token, base_domain=base_domain)
+        gitlab_service = GitLabService(token=token, base_domain=base_domain)  # type: ignore[abstract]
         await gitlab_service.get_user()
         return ProviderType.GITLAB
     except Exception as e:
@@ -48,7 +48,7 @@ async def validate_provider_token(
     # Try Bitbucket last
     bitbucket_error = None
     try:
-        bitbucket_service = BitBucketService(token=token, base_domain=base_domain)
+        bitbucket_service = BitBucketService(token=token, base_domain=base_domain)  # type: ignore[abstract]
         await bitbucket_service.get_user()
         return ProviderType.BITBUCKET
     except Exception as e:

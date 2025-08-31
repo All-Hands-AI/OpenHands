@@ -4,7 +4,6 @@ from enum import Enum
 from pathlib import Path
 from typing import Any, Protocol
 
-from httpx import AsyncClient, HTTPError, HTTPStatusError
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
@@ -201,15 +200,6 @@ class BaseGitService(ABC):
     def provider(self) -> str:
         raise NotImplementedError('Subclasses must implement the provider property')
 
-    # Method used to satisfy mypy for abstract class definition
-    @abstractmethod
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]: ...
-
     @abstractmethod
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
@@ -241,40 +231,6 @@ class BaseGitService(ABC):
     def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
         """Extract file path from directory item."""
         ...
-
-    async def execute_request(
-        self,
-        client: AsyncClient,
-        url: str,
-        headers: dict,
-        params: dict | None,
-        method: RequestMethod = RequestMethod.GET,
-    ):
-        if method == RequestMethod.POST:
-            return await client.post(url, headers=headers, json=params)
-        return await client.get(url, headers=headers, params=params)
-
-    def handle_http_status_error(
-        self, e: HTTPStatusError
-    ) -> (
-        AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
-    ):
-        if e.response.status_code == 401:
-            return AuthenticationError(f'Invalid {self.provider} token')
-        elif e.response.status_code == 404:
-            return ResourceNotFoundError(
-                f'Resource not found on {self.provider} API: {e}'
-            )
-        elif e.response.status_code == 429:
-            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
-            return RateLimitError('GitHub API rate limit exceeded')
-
-        logger.warning(f'Status error on {self.provider} API: {e}')
-        return UnknownException(f'Unknown error: {e}')
-
-    def handle_http_error(self, e: HTTPError) -> UnknownException:
-        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
-        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
     def _determine_microagents_path(self, repository_name: str) -> str:
         """Determine the microagents directory path based on repository name."""
@@ -341,6 +297,7 @@ class BaseGitService(ABC):
                 f'Failed to parse microagent file {file_path}: {str(e)}'
             )
 
+    @abstractmethod
     async def _fetch_cursorrules_content(self, repository: str) -> Any | None:
         """Fetch .cursorrules file content from the repository via API.
 
@@ -350,9 +307,6 @@ class BaseGitService(ABC):
         Returns:
             Raw API response content if .cursorrules file exists, None otherwise
         """
-        cursorrules_url = await self._get_cursorrules_url(repository)
-        cursorrules_response, _ = await self._make_request(cursorrules_url)
-        return cursorrules_response
 
     async def _check_cursorrules_file(
         self, repository: str
@@ -376,6 +330,7 @@ class BaseGitService(ABC):
 
         return None
 
+    @abstractmethod
     async def _process_microagents_directory(
         self, repository: str, microagents_path: str
     ) -> list[MicroagentResponse]:
@@ -388,46 +343,6 @@ class BaseGitService(ABC):
         Returns:
             List of MicroagentResponse objects found in the directory
         """
-        microagents = []
-
-        try:
-            directory_url = await self._get_microagents_directory_url(
-                repository, microagents_path
-            )
-            directory_params = self._get_microagents_directory_params(microagents_path)
-            response, _ = await self._make_request(directory_url, directory_params)
-
-            # Handle different response structures
-            items = response
-            if isinstance(response, dict) and 'values' in response:
-                # Bitbucket format
-                items = response['values']
-            elif isinstance(response, dict) and 'nodes' in response:
-                # GraphQL format (if used)
-                items = response['nodes']
-
-            for item in items:
-                if self._is_valid_microagent_file(item):
-                    try:
-                        file_name = self._get_file_name_from_item(item)
-                        file_path = self._get_file_path_from_item(
-                            item, microagents_path
-                        )
-                        microagents.append(
-                            self._create_microagent_response(file_name, file_path)
-                        )
-                    except Exception as e:
-                        logger.warning(
-                            f'Error processing microagent {item.get("name", "unknown")}: {str(e)}'
-                        )
-        except ResourceNotFoundError:
-            logger.info(
-                f'No microagents directory found in {repository} at {microagents_path}'
-            )
-        except Exception as e:
-            logger.warning(f'Error fetching microagents directory: {str(e)}')
-
-        return microagents
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Generic implementation of get_microagents that works across all providers.
@@ -461,9 +376,6 @@ class BaseGitService(ABC):
         if len(comment_body) > max_comment_length:
             return comment_body[:max_comment_length] + '...'
         return comment_body
-
-    def _has_token_expired(self, status_code: int) -> bool:
-        return status_code == 401
 
 
 class InstallationsService(Protocol):
