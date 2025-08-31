@@ -140,12 +140,6 @@ class GitLabMixinBase(BaseGitService):
         except httpx.HTTPError as e:
             raise self.handle_http_error(e)
 
-    async def verify_access(self) -> bool:
-        """Verify if the token is valid by making a simple request."""
-        url = f'{self.BASE_URL}'
-        await self._make_request(url)
-        return True
-
     async def get_user(self) -> User:
         url = f'{self.BASE_URL}/user'
         response, _ = await self._make_request(url)

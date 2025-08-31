@@ -8,28 +8,6 @@ class GitLabPRsMixin(GitLabMixinBase):
     Methods for interacting with GitLab merge requests (PRs)
     """
 
-    def _extract_project_id(self, repository: str) -> str:
-        """Extract project_id from repository name for GitLab API calls.
-
-        Args:
-            repository: Repository name in format 'owner/repo' or 'domain/owner/repo'
-
-        Returns:
-            URL-encoded project ID for GitLab API
-        """
-        if '/' in repository:
-            parts = repository.split('/')
-            if len(parts) >= 3 and '.' in parts[0]:
-                # Self-hosted GitLab: 'domain/owner/repo' -> 'owner/repo'
-                project_id = '/'.join(parts[1:]).replace('/', '%2F')
-            else:
-                # Regular GitLab: 'owner/repo' -> 'owner/repo'
-                project_id = repository.replace('/', '%2F')
-        else:
-            project_id = repository
-
-        return project_id
-
     async def create_mr(
         self,
         id: int | str,
