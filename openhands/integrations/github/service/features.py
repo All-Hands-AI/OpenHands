@@ -5,19 +5,25 @@ from openhands.integrations.github.queries import (
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
 )
-from openhands.integrations.github.service.base import GitHubMixinBase
+from openhands.integrations.github.service.base import GitHubHTTPClient
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
+    MicroagentParseError,
     ProviderType,
     SuggestedTask,
     TaskType,
 )
+from openhands.microagent.microagent import BaseMicroagent
 
 
-class GitHubFeaturesMixin(GitHubMixinBase):
+class GitHubFeaturesMixin:
     """
     Methods used for custom features in UI driven via GitHub integration
     """
+
+    # This mixin expects the class to have a github_http_client attribute
+    github_http_client: GitHubHTTPClient
+    external_auth_id: str | None
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -29,13 +35,13 @@ class GitHubFeaturesMixin(GitHubMixinBase):
         Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
-        user = await self.get_user()
+        user = await self.github_http_client.get_user()
         login = user.login
         tasks: list[SuggestedTask] = []
         variables = {'login': login}
 
         try:
-            pr_response = await self.execute_graphql_query(
+            pr_response = await self.github_http_client.execute_graphql_query(
                 suggested_task_pr_graphql_query, variables
             )
             pr_data = pr_response['data']['user']
@@ -88,7 +94,7 @@ class GitHubFeaturesMixin(GitHubMixinBase):
 
         try:
             # Execute issue query
-            issue_response = await self.execute_graphql_query(
+            issue_response = await self.github_http_client.execute_graphql_query(
                 suggested_task_issue_graphql_query, variables
             )
             issue_data = issue_response['data']['user']
@@ -125,13 +131,13 @@ class GitHubFeaturesMixin(GitHubMixinBase):
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
-        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
+        return f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/.cursorrules'
 
     async def _get_microagents_directory_url(
         self, repository: str, microagents_path: str
     ) -> str:
         """Get the URL for checking microagents directory."""
-        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+        return f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/{microagents_path}'
 
     def _is_valid_microagent_file(self, item: dict) -> bool:
         """Check if an item represents a valid microagent file."""
@@ -168,10 +174,43 @@ class GitHubFeaturesMixin(GitHubMixinBase):
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
         """
-        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
+        file_url = f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/{file_path}'
 
-        file_data, _ = await self._make_request(file_url)
+        file_data, _ = await self.github_http_client._make_request(file_url)
         file_content = base64.b64decode(file_data['content']).decode('utf-8')
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(file_content, file_path)
+
+    def _parse_microagent_content(
+        self, content: str, file_path: str
+    ) -> MicroagentContentResponse:
+        """Parse microagent content and extract triggers using BaseMicroagent.load."""
+        from pathlib import Path
+
+        from openhands.core.logger import openhands_logger as logger
+
+        try:
+            # Use BaseMicroagent.load to properly parse the content
+            # Create a temporary path object for the file
+            temp_path = Path(file_path)
+
+            # Load the microagent using the existing infrastructure
+            microagent = BaseMicroagent.load(path=temp_path, file_content=content)
+
+            # Extract triggers from the microagent's metadata
+            triggers = microagent.metadata.triggers
+
+            # Return the MicroagentContentResponse
+            return MicroagentContentResponse(
+                content=microagent.content,
+                path=file_path,
+                triggers=triggers,
+                git_provider=ProviderType.GITHUB.value,
+            )
+
+        except Exception as e:
+            logger.error(f'Error parsing microagent content for {file_path}: {str(e)}')
+            raise MicroagentParseError(
+                f'Failed to parse microagent file {file_path}: {str(e)}'
+            )

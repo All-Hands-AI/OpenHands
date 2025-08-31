@@ -1,20 +1,62 @@
 import json
-from typing import Any, cast
+from typing import Any, Protocol, cast
 
 import httpx
 from pydantic import SecretStr
 
 from openhands.integrations.service_types import (
-    BaseGitService,
     RequestMethod,
     UnknownException,
     User,
 )
 
 
-class GitHubMixinBase(BaseGitService):
+class HTTPClientInterface(Protocol):
+    """Protocol defining the HTTP client interface for GitHub operations."""
+
+    BASE_URL: str
+    GRAPHQL_URL: str
+    token: SecretStr
+    refresh: bool
+    external_auth_id: str | None
+    base_domain: str | None
+
+    async def _get_github_headers(self) -> dict:
+        """Retrieve the GH Token from settings store to construct the headers."""
+        ...
+
+    async def get_latest_token(self) -> SecretStr | None:
+        """Get latest working token of the user."""
+        ...
+
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
+    ) -> tuple[Any, dict]:
+        """Make an HTTP request to the GitHub API."""
+        ...
+
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Execute a GraphQL query against the GitHub API."""
+        ...
+
+    async def verify_access(self) -> bool:
+        """Verify that the client has access to the GitHub API."""
+        ...
+
+    async def get_user(self) -> User:
+        """Get the authenticated user's information."""
+        ...
+
+
+class GitHubHTTPClient:
     """
-    Declares common attributes and method signatures used across mixins.
+    HTTP client implementation for GitHub API operations.
+    Implements HTTPClientInterface and provides common functionality for GitHub API interactions.
     """
 
     BASE_URL: str
@@ -50,7 +92,7 @@ class GitHubMixinBase(BaseGitService):
                 github_headers = await self._get_github_headers()
 
                 # Make initial request
-                response = await self.execute_request(
+                response = await self._execute_request(
                     client=client,
                     url=url,
                     headers=github_headers,
@@ -62,7 +104,7 @@ class GitHubMixinBase(BaseGitService):
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
                     github_headers = await self._get_github_headers()
-                    response = await self.execute_request(
+                    response = await self._execute_request(
                         client=client,
                         url=url,
                         headers=github_headers,
@@ -78,9 +120,9 @@ class GitHubMixinBase(BaseGitService):
                 return response.json(), headers
 
         except httpx.HTTPStatusError as e:
-            raise self.handle_http_status_error(e)
+            raise self._handle_http_status_error(e)
         except httpx.HTTPError as e:
-            raise self.handle_http_error(e)
+            raise self._handle_http_error(e)
 
     async def execute_graphql_query(
         self, query: str, variables: dict[str, Any]
@@ -105,9 +147,9 @@ class GitHubMixinBase(BaseGitService):
                 return dict(result)
 
         except httpx.HTTPStatusError as e:
-            raise self.handle_http_status_error(e)
+            raise self._handle_http_status_error(e)
         except httpx.HTTPError as e:
-            raise self.handle_http_error(e)
+            raise self._handle_http_error(e)
 
     async def verify_access(self) -> bool:
         url = f'{self.BASE_URL}'
@@ -126,3 +168,50 @@ class GitHubMixinBase(BaseGitService):
             name=response.get('name'),
             email=response.get('email'),
         )
+
+    # Helper methods needed by the HTTP client
+    async def _execute_request(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        headers: dict,
+        params: dict | None,
+        method: RequestMethod = RequestMethod.GET,
+    ):
+        """Execute HTTP request."""
+        if method == RequestMethod.POST:
+            return await client.post(url, headers=headers, json=params)
+        return await client.get(url, headers=headers, params=params)
+
+    def _has_token_expired(self, status_code: int) -> bool:
+        """Check if the token has expired based on status code."""
+        return status_code == 401
+
+    def _handle_http_status_error(self, e: httpx.HTTPStatusError):
+        """Handle HTTP status errors."""
+        if e.response.status_code == 401:
+            from openhands.integrations.service_types import AuthenticationError
+
+            return AuthenticationError('Invalid GitHub token')
+        elif e.response.status_code == 404:
+            from openhands.integrations.service_types import ResourceNotFoundError
+
+            return ResourceNotFoundError(f'Resource not found on GitHub API: {e}')
+        elif e.response.status_code == 429:
+            from openhands.integrations.service_types import RateLimitError
+
+            return RateLimitError('GitHub API rate limit exceeded')
+
+        from openhands.integrations.service_types import UnknownException
+
+        return UnknownException(f'Unknown error: {e}')
+
+    def _handle_http_error(self, e: httpx.HTTPError):
+        """Handle HTTP errors."""
+        from openhands.integrations.service_types import UnknownException
+
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
+
+
+# Backward compatibility alias
+GitHubMixinBase = GitHubHTTPClient

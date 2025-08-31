@@ -7,14 +7,17 @@ from openhands.integrations.github.queries import (
     get_thread_comments_graphql_query,
     get_thread_from_comment_graphql_query,
 )
-from openhands.integrations.github.service.base import GitHubMixinBase
+from openhands.integrations.github.service.base import GitHubHTTPClient
 from openhands.integrations.service_types import Comment
 
 
-class GitHubResolverMixin(GitHubMixinBase):
+class GitHubResolverMixin:
     """
     Helper methods used for the GitHub Resolver
     """
+
+    # This mixin expects the class to have a github_http_client attribute
+    github_http_client: GitHubHTTPClient
 
     async def get_issue_or_pr_title_and_body(
         self, repository: str, issue_number: int
@@ -28,8 +31,8 @@ class GitHubResolverMixin(GitHubMixinBase):
         Returns:
             A tuple of (title, body)
         """
-        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}'
-        response, _ = await self._make_request(url)
+        url = f'{self.github_http_client.BASE_URL}/repos/{repository}/issues/{issue_number}'
+        response, _ = await self.github_http_client._make_request(url)
         title = response.get('title') or ''
         body = response.get('body') or ''
         return title, body
@@ -47,7 +50,7 @@ class GitHubResolverMixin(GitHubMixinBase):
         Returns:
             List of Comment objects ordered by creation date
         """
-        url = f'{self.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'
+        url = f'{self.github_http_client.BASE_URL}/repos/{repository}/issues/{issue_number}/comments'
         page = 1
         all_comments: list[dict] = []
 
@@ -58,7 +61,9 @@ class GitHubResolverMixin(GitHubMixinBase):
                 'direction': 'asc',
                 'page': page,
             }
-            response, headers = await self._make_request(url, params=params)
+            response, headers = await self.github_http_client._make_request(
+                url, params=params
+            )
             all_comments.extend(response or [])
 
             # Parse the Link header for rel="next"
@@ -92,7 +97,7 @@ class GitHubResolverMixin(GitHubMixinBase):
 
         # Step 1: Use existing GraphQL query to get the comment and check for replyTo
         variables = {'commentId': comment_id}
-        data = await self.execute_graphql_query(
+        data = await self.github_http_client.execute_graphql_query(
             get_thread_from_comment_graphql_query, variables
         )
 
@@ -122,7 +127,7 @@ class GitHubResolverMixin(GitHubMixinBase):
             if after_cursor:
                 threads_variables['after'] = after_cursor
 
-            threads_data = await self.execute_graphql_query(
+            threads_data = await self.github_http_client.execute_graphql_query(
                 get_review_threads_graphql_query, threads_variables
             )
 
@@ -169,7 +174,7 @@ class GitHubResolverMixin(GitHubMixinBase):
             if after_cursor:
                 comments_variables['after'] = after_cursor
 
-            thread_comments_data = await self.execute_graphql_query(
+            thread_comments_data = await self.github_http_client.execute_graphql_query(
                 get_thread_comments_graphql_query, comments_variables
             )
 
@@ -223,3 +228,9 @@ class GitHubResolverMixin(GitHubMixinBase):
         # Sort comments by creation date to maintain chronological order
         comments.sort(key=lambda c: c.created_at)
         return comments[-max_comments:]
+
+    def _truncate_comment(self, comment_body: str, max_length: int = 500) -> str:
+        """Truncate comment body to a maximum length."""
+        if len(comment_body) <= max_length:
+            return comment_body
+        return comment_body[:max_length] + '...'

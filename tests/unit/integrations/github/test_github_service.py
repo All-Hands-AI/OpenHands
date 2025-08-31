@@ -274,14 +274,16 @@ async def test_github_search_repositories_with_organizations():
     }
 
     with (
-        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(service.github_http_client, 'get_user', return_value=mock_user),
         patch.object(
             service,
             'get_user_organizations',
             return_value=['All-Hands-AI', 'example-org'],
         ),
         patch.object(
-            service, '_make_request', return_value=(mock_search_response, {})
+            service.github_http_client,
+            '_make_request',
+            return_value=(mock_search_response, {}),
         ) as mock_request,
     ):
         repositories = await service.search_repositories(
@@ -324,7 +326,11 @@ async def test_github_get_user_organizations():
         {'login': 'example-org', 'id': 2},
     ]
 
-    with patch.object(service, '_make_request', return_value=(mock_orgs_response, {})):
+    with patch.object(
+        service.github_http_client,
+        '_make_request',
+        return_value=(mock_orgs_response, {}),
+    ):
         orgs = await service.get_user_organizations()
 
         assert orgs == ['All-Hands-AI', 'example-org']
@@ -335,7 +341,9 @@ async def test_github_get_user_organizations_error_handling():
     """Test that get_user_organizations handles errors gracefully."""
     service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
 
-    with patch.object(service, '_make_request', side_effect=Exception('API Error')):
+    with patch.object(
+        service.github_http_client, '_make_request', side_effect=Exception('API Error')
+    ):
         orgs = await service.get_user_organizations()
 
         # Should return empty list on error

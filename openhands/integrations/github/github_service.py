@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 from pydantic import SecretStr
 
@@ -9,11 +10,14 @@ from openhands.integrations.github.service import (
     GitHubReposMixin,
     GitHubResolverMixin,
 )
+from openhands.integrations.github.service.base import GitHubHTTPClient
 from openhands.integrations.service_types import (
     BaseGitService,
     GitService,
     InstallationsService,
     ProviderType,
+    RequestMethod,
+    User,
 )
 from openhands.utils.import_utils import get_impl
 
@@ -31,7 +35,9 @@ class GitHubService(
     """
     Assembled GitHub service class combining mixins by feature area.
 
-    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
+    Now uses composition for HTTP client functionality via a class variable.
+    This allows for incremental migration from mixins to composition.
+
     This is an extension point in OpenHands that allows applications to customize GitHub
     integration behavior. Applications can substitute their own implementation by:
     1. Creating a class that inherits from GitService
@@ -40,6 +46,10 @@ class GitHubService(
 
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
+
+    # Class variable for HTTP client (composition)
+    github_http_client: GitHubHTTPClient
+    external_auth_id: str | None
 
     BASE_URL = 'https://api.github.com'
     GRAPHQL_URL = 'https://api.github.com/graphql'
@@ -56,14 +66,27 @@ class GitHubService(
         base_domain: str | None = None,
     ) -> None:
         self.user_id = user_id
+        self.external_auth_id = external_auth_id
         self.external_token_manager = external_token_manager
+
+        # Initialize HTTP client
+        self.github_http_client = GitHubHTTPClient()
+        self.github_http_client.BASE_URL = 'https://api.github.com'
+        self.github_http_client.GRAPHQL_URL = 'https://api.github.com/graphql'
+        self.github_http_client.token = token or SecretStr('')
+        self.github_http_client.refresh = False
+        self.github_http_client.external_auth_id = external_auth_id
+        self.github_http_client.base_domain = base_domain
 
         if token:
             self.token = token
+            self.github_http_client.token = token
 
         if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
             self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+            self.github_http_client.BASE_URL = self.BASE_URL
+            self.github_http_client.GRAPHQL_URL = self.GRAPHQL_URL
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
@@ -71,6 +94,72 @@ class GitHubService(
     @property
     def provider(self) -> str:
         return ProviderType.GITHUB.value
+
+    # Implementation of abstract methods from BaseGitService
+    async def _make_request(
+        self,
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
+    ) -> tuple[Any, dict]:
+        """Delegate to HTTP client."""
+        return await self.github_http_client._make_request(url, params, method)
+
+    async def _get_cursorrules_url(self, repository: str) -> str:
+        """Get the URL for checking .cursorrules file."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
+
+    async def _get_microagents_directory_url(
+        self, repository: str, microagents_path: str
+    ) -> str:
+        """Get the URL for checking microagents directory."""
+        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+
+    def _is_valid_microagent_file(self, item: dict) -> bool:
+        """Check if an item represents a valid microagent file."""
+        return (
+            item['type'] == 'file'
+            and item['name'].endswith('.md')
+            and item['name'] != 'README.md'
+        )
+
+    def _get_file_name_from_item(self, item: dict) -> str:
+        """Extract file name from directory item."""
+        return item['name']
+
+    def _get_file_path_from_item(self, item: dict, microagents_path: str) -> str:
+        """Extract file path from directory item."""
+        return f'{microagents_path}/{item["name"]}'
+
+    def _get_microagents_directory_params(self, microagents_path: str) -> dict | None:
+        """Get parameters for the microagents directory request. Return None if no parameters needed."""
+        return None
+
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Execute a GraphQL query."""
+        return await self.github_http_client.execute_graphql_query(query, variables)
+
+    async def _get_github_headers(self) -> dict[str, str]:
+        """Get GitHub API headers."""
+        return await self.github_http_client._get_github_headers()
+
+    def _has_token_expired(self, status_code: int) -> bool:
+        """Check if token has expired based on status code."""
+        return self.github_http_client._has_token_expired(status_code)
+
+    async def get_latest_token(self) -> SecretStr | None:
+        """Get the latest token."""
+        return await self.github_http_client.get_latest_token()
+
+    async def verify_access(self) -> bool:
+        """Verify access to GitHub API."""
+        return await self.github_http_client.verify_access()
+
+    async def get_user(self) -> User:
+        """Get the authenticated user."""
+        return await self.github_http_client.get_user()
 
 
 github_service_cls = os.environ.get(

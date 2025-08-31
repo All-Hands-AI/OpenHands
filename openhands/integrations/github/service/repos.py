@@ -1,19 +1,22 @@
 from datetime import datetime
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.service.base import GitHubMixinBase
+from openhands.integrations.github.service.base import GitHubHTTPClient
 from openhands.integrations.service_types import OwnerType, ProviderType, Repository
 from openhands.server.types import AppMode
 
 
-class GitHubReposMixin(GitHubMixinBase):
+class GitHubReposMixin:
     """
     Methods for interacting with GitHub repositories (from both personal and app installations)
     """
 
+    # This mixin expects the class to have a github_http_client attribute
+    github_http_client: GitHubHTTPClient
+
     async def get_installations(self) -> list[str]:
-        url = f'{self.BASE_URL}/user/installations'
-        response, _ = await self._make_request(url)
+        url = f'{self.github_http_client.BASE_URL}/user/installations'
+        response, _ = await self.github_http_client._make_request(url)
         installations = response.get('installations', [])
         return [str(i['id']) for i in installations]
 
@@ -36,7 +39,9 @@ class GitHubReposMixin(GitHubMixinBase):
 
         while len(repos) < max_repos:
             page_params = {**params, 'page': str(page)}
-            response, headers = await self._make_request(url, page_params)
+            response, headers = await self.github_http_client._make_request(
+                url, page_params
+            )
 
             # Extract repositories from response
             page_repos = response.get(extract_key, []) if extract_key else response
@@ -95,13 +100,13 @@ class GitHubReposMixin(GitHubMixinBase):
     ):
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:
-            url = f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-            response, headers = await self._make_request(url, params)
+            url = f'{self.github_http_client.BASE_URL}/user/installations/{installation_id}/repositories'
+            response, headers = await self.github_http_client._make_request(url, params)
             response = response.get('repositories', [])
         else:
-            url = f'{self.BASE_URL}/user/repos'
+            url = f'{self.github_http_client.BASE_URL}/user/repos'
             params['sort'] = sort
-            response, headers = await self._make_request(url, params)
+            response, headers = await self.github_http_client._make_request(url, params)
 
         next_link: str = headers.get('Link', '')
         return [
@@ -122,9 +127,7 @@ class GitHubReposMixin(GitHubMixinBase):
             # Iterate through each installation ID
             for installation_id in installation_ids:
                 params = {'per_page': str(PER_PAGE)}
-                url = (
-                    f'{self.BASE_URL}/user/installations/{installation_id}/repositories'
-                )
+                url = f'{self.github_http_client.BASE_URL}/user/installations/{installation_id}/repositories'
 
                 # Fetch repositories for this installation
                 installation_repos = await self._fetch_paginated_repos(
@@ -142,7 +145,7 @@ class GitHubReposMixin(GitHubMixinBase):
         else:
             # Original behavior for non-SaaS mode
             params = {'per_page': str(PER_PAGE), 'sort': sort}
-            url = f'{self.BASE_URL}/user/repos'
+            url = f'{self.github_http_client.BASE_URL}/user/repos'
 
             # Fetch user repositories
             all_repos = await self._fetch_paginated_repos(url, params, MAX_REPOS)
@@ -152,9 +155,9 @@ class GitHubReposMixin(GitHubMixinBase):
 
     async def get_user_organizations(self) -> list[str]:
         """Get list of organization logins that the user is a member of."""
-        url = f'{self.BASE_URL}/user/orgs'
+        url = f'{self.github_http_client.BASE_URL}/user/orgs'
         try:
-            response, _ = await self._make_request(url)
+            response, _ = await self.github_http_client._make_request(url)
             orgs = [org['login'] for org in response]
             return orgs
         except Exception as e:
@@ -183,7 +186,7 @@ class GitHubReposMixin(GitHubMixinBase):
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool
     ) -> list[Repository]:
-        url = f'{self.BASE_URL}/search/repositories'
+        url = f'{self.github_http_client.BASE_URL}/search/repositories'
         params = {
             'per_page': per_page,
             'sort': sort,
@@ -207,7 +210,7 @@ class GitHubReposMixin(GitHubMixinBase):
             params['q'] = query_with_user
         elif not public:
             # Expand search scope to include user's repositories and organizations they're a member of
-            user = await self.get_user()
+            user = await self.github_http_client.get_user()
             user_orgs = await self.get_user_organizations()
 
             # Search in user repos and org repos separately
@@ -219,7 +222,9 @@ class GitHubReposMixin(GitHubMixinBase):
             user_params['q'] = user_query
 
             try:
-                user_response, _ = await self._make_request(url, user_params)
+                user_response, _ = await self.github_http_client._make_request(
+                    url, user_params
+                )
                 user_items = user_response.get('items', [])
                 all_repos.extend(user_items)
             except Exception as e:
@@ -232,7 +237,9 @@ class GitHubReposMixin(GitHubMixinBase):
                 org_params['q'] = org_query
 
                 try:
-                    org_response, _ = await self._make_request(url, org_params)
+                    org_response, _ = await self.github_http_client._make_request(
+                        url, org_params
+                    )
                     org_items = org_response.get('items', [])
                     all_repos.extend(org_items)
                 except Exception as e:
@@ -248,7 +255,10 @@ class GitHubReposMixin(GitHubMixinBase):
                     org_repos_params['per_page'] = 2  # Limit to first 2 repos
 
                     try:
-                        org_repos_response, _ = await self._make_request(
+                        (
+                            org_repos_response,
+                            _,
+                        ) = await self.github_http_client._make_request(
                             url, org_repos_params
                         )
                         org_repo_items = org_repos_response.get('items', [])
@@ -259,14 +269,14 @@ class GitHubReposMixin(GitHubMixinBase):
             return [self._parse_repository(repo) for repo in all_repos]
 
         # Default case (public search or slash query)
-        response, _ = await self._make_request(url, params)
+        response, _ = await self.github_http_client._make_request(url, params)
         repo_items = response.get('items', [])
         return [self._parse_repository(repo) for repo in repo_items]
 
     async def get_repository_details_from_repo_name(
         self, repository: str
     ) -> Repository:
-        url = f'{self.BASE_URL}/repos/{repository}'
-        repo, _ = await self._make_request(url)
+        url = f'{self.github_http_client.BASE_URL}/repos/{repository}'
+        repo, _ = await self.github_http_client._make_request(url)
 
         return self._parse_repository(repo)
