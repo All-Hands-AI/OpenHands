@@ -1,20 +1,13 @@
-from typing import Any
-
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import ResourceNotFoundError
 from openhands.microagent.types import MicroagentContentResponse
 
 
-class BitBucketFeaturesMixin:
+class BitBucketFeaturesMixin(BitBucketMixinBase):
     """
     Mixin for BitBucket feature operations (microagents, cursor rules, etc.)
     """
-
-    # Type hints for methods from other mixins
-    BASE_URL: str
-    get_repository_details_from_repo_name: Any
-    _make_request: Any
-    _parse_microagent_content: Any
 
     async def get_microagent_content(
         self, repository: str, file_path: str

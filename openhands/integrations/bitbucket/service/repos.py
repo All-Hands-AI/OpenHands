@@ -1,20 +1,15 @@
 import re
 from typing import Any
 
+from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import Repository, SuggestedTask
 from openhands.server.types import AppMode
 
 
-class BitBucketReposMixin:
+class BitBucketReposMixin(BitBucketMixinBase):
     """
     Mixin for BitBucket repository-related operations
     """
-
-    # Type hints for methods from other mixins
-    BASE_URL: str
-    _make_request: Any
-    _parse_repository: Any
-    get_repository_details_from_repo_name: Any
 
     async def search_repositories(
         self, query: str, per_page: int, sort: str, order: str, public: bool

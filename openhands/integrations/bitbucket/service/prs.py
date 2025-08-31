@@ -1,18 +1,12 @@
-from typing import Any
-
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import RequestMethod
 
 
-class BitBucketPRsMixin:
+class BitBucketPRsMixin(BitBucketMixinBase):
     """
     Mixin for BitBucket pull request operations
     """
-
-    # Type hints for methods from other mixins
-    BASE_URL: str
-    _extract_owner_and_repo: Any
-    _make_request: Any
 
     async def create_pr(
         self,

@@ -1,18 +1,11 @@
-from typing import Any
-
+from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import Branch, PaginatedBranchesResponse
 
 
-class BitBucketBranchesMixin:
+class BitBucketBranchesMixin(BitBucketMixinBase):
     """
     Mixin for BitBucket branch-related operations
     """
-
-    # Type hints for methods from other mixins
-    BASE_URL: str
-    _extract_owner_and_repo: Any
-    _make_request: Any
-    _fetch_paginated_data: Any
 
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository."""
