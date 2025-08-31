@@ -91,7 +91,7 @@ class HTTPClient(Protocol):
         Returns:
             True if the token has expired, False otherwise
         """
-        ...
+        return status_code == 401
 
     async def execute_request(
         self,
