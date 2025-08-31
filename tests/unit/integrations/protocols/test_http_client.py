@@ -14,7 +14,6 @@ from openhands.integrations.service_types import (
     RequestMethod,
     ResourceNotFoundError,
     UnknownException,
-    User,
 )
 
 
@@ -52,9 +51,6 @@ class TestableHTTPClient(HTTPClient):
     ):
         # Mock implementation for testing
         return {'test': 'data'}, {}
-
-    async def get_user(self) -> User:
-        return User(id='123', login='testuser', avatar_url='')
 
 
 @pytest.mark.asyncio
