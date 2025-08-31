@@ -2,9 +2,18 @@
 
 from typing import Any, Protocol, runtime_checkable
 
+from httpx import AsyncClient, HTTPError, HTTPStatusError
 from pydantic import SecretStr
 
-from openhands.integrations.service_types import RequestMethod, User
+from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.service_types import (
+    AuthenticationError,
+    RateLimitError,
+    RequestMethod,
+    ResourceNotFoundError,
+    UnknownException,
+    User,
+)
 
 
 @runtime_checkable
@@ -21,6 +30,12 @@ class HTTPClient(Protocol):
     refresh: bool
     external_auth_id: str | None
     base_domain: str | None
+
+    # Required property
+    @property
+    def provider(self) -> str:
+        """Get the provider name for this service."""
+        ...
 
     async def get_latest_token(self) -> SecretStr | None:
         """Get the latest working token for the service.
@@ -77,3 +92,67 @@ class HTTPClient(Protocol):
             True if the token has expired, False otherwise
         """
         ...
+
+    async def execute_request(
+        self,
+        client: AsyncClient,
+        url: str,
+        headers: dict,
+        params: dict | None,
+        method: RequestMethod = RequestMethod.GET,
+    ):
+        """Execute an HTTP request using the provided client.
+
+        Args:
+            client: The HTTP client to use for the request
+            url: The URL to request
+            headers: HTTP headers for the request
+            params: Optional parameters for the request
+            method: The HTTP method to use
+
+        Returns:
+            The response from the HTTP request
+        """
+        if method == RequestMethod.POST:
+            return await client.post(url, headers=headers, json=params)
+        return await client.get(url, headers=headers, params=params)
+
+    def handle_http_status_error(
+        self, e: HTTPStatusError
+    ) -> (
+        AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
+    ):
+        """Handle HTTP status errors and convert them to appropriate exceptions.
+
+        Args:
+            e: The HTTPStatusError to handle
+
+        Returns:
+            An appropriate exception based on the status code
+        """
+        if e.response.status_code == 401:
+            return AuthenticationError(f'Invalid {self.provider} token')
+        elif e.response.status_code == 404:
+            return ResourceNotFoundError(
+                f'Resource not found on {self.provider} API: {e}'
+            )
+        elif e.response.status_code == 429:
+            logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
+            # Use generic rate limit message since provider-specific messages
+            # would require knowing the specific provider
+            return RateLimitError(f'{self.provider} API rate limit exceeded')
+
+        logger.warning(f'Status error on {self.provider} API: {e}')
+        return UnknownException(f'Unknown error: {e}')
+
+    def handle_http_error(self, e: HTTPError) -> UnknownException:
+        """Handle general HTTP errors.
+
+        Args:
+            e: The HTTPError to handle
+
+        Returns:
+            An UnknownException wrapping the original error
+        """
+        logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
+        return UnknownException(f'HTTP error {type(e).__name__} : {e}')
