@@ -871,3 +871,220 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
     assert ProviderType.GITHUB in provider_tokens
     assert ProviderType.GITLAB in provider_tokens
     assert ProviderType.BITBUCKET not in provider_tokens
+
+
+@pytest.mark.asyncio
+async def test_get_paginated_repos_order_parameter():
+    """Test that get_paginated_repos correctly honors the order parameter."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response with repositories
+        mock_response = {
+            'values': [
+                {
+                    'uuid': 'repo-1',
+                    'slug': 'repo1',
+                    'workspace': {'slug': 'test-workspace'},
+                    'is_private': False,
+                    'updated_on': '2023-01-01T00:00:00Z',
+                },
+                {
+                    'uuid': 'repo-2',
+                    'slug': 'repo2',
+                    'workspace': {'slug': 'test-workspace'},
+                    'is_private': True,
+                    'updated_on': '2023-01-02T00:00:00Z',
+                },
+            ]
+        }
+        mock_request.return_value = (mock_response, {})
+
+        # Test descending order (default)
+        await service.get_paginated_repos(
+            1, 10, 'updated', 'test-workspace', None, 'desc'
+        )
+
+        # Verify the sort parameter includes descending prefix
+        args, kwargs = mock_request.call_args
+        url, params = args
+        assert params['sort'] == '-updated_on'
+
+        # Test ascending order
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id='test-workspace',
+            query=None,
+            order='asc',
+        )
+
+        # Verify the sort parameter does not include descending prefix
+        args, kwargs = mock_request.call_args
+        url, params = args
+        assert params['sort'] == 'updated_on'
+
+
+@pytest.mark.asyncio
+async def test_get_paginated_repos_order_parameter_all_sort_fields():
+    """Test that order parameter works correctly with all supported sort fields."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        mock_response = {'values': []}
+        mock_request.return_value = (mock_response, {})
+
+        # Test cases: (sort_field, expected_bitbucket_field)
+        test_cases = [
+            ('pushed', 'updated_on'),  # pushed maps to updated_on
+            ('updated', 'updated_on'),
+            ('created', 'created_on'),
+            ('full_name', 'name'),  # full_name maps to name
+            ('unknown', 'updated_on'),  # unknown defaults to updated_on
+        ]
+
+        for sort_field, expected_field in test_cases:
+            # Test descending order
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort=sort_field,
+                installation_id='test-workspace',
+                query=None,
+                order='desc',
+            )
+
+            args, kwargs = mock_request.call_args
+            url, params = args
+            assert params['sort'] == f'-{expected_field}', (
+                f'Failed for sort={sort_field}, order=desc'
+            )
+
+            # Test ascending order
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort=sort_field,
+                installation_id='test-workspace',
+                query=None,
+                order='asc',
+            )
+
+            args, kwargs = mock_request.call_args
+            url, params = args
+            assert params['sort'] == expected_field, (
+                f'Failed for sort={sort_field}, order=asc'
+            )
+
+
+@pytest.mark.asyncio
+async def test_get_paginated_repos_default_order():
+    """Test that get_paginated_repos uses descending order by default."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        mock_response = {'values': []}
+        mock_request.return_value = (mock_response, {})
+
+        # Call without specifying order parameter (should default to 'desc')
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id='test-workspace',
+            query=None,
+        )
+
+        # Verify the sort parameter includes descending prefix by default
+        args, kwargs = mock_request.call_args
+        url, params = args
+        assert params['sort'] == '-updated_on'
+
+
+@pytest.mark.asyncio
+async def test_search_repositories_passes_order_parameter():
+    """Test that search_repositories correctly passes the order parameter to get_paginated_repos."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the get_paginated_repos method to verify it receives the order parameter
+    with patch.object(service, 'get_paginated_repos') as mock_get_paginated:
+        mock_get_paginated.return_value = []
+
+        # Test search with workspace/repo format (calls get_paginated_repos directly)
+        await service.search_repositories(
+            query='test-workspace/test-repo',
+            per_page=10,
+            sort='updated',
+            order='asc',
+            public=False,
+        )
+
+        # Verify get_paginated_repos was called with the correct order parameter
+        mock_get_paginated.assert_called_with(
+            1, 10, 'updated', 'test-workspace', 'test-repo', 'asc'
+        )
+
+        # Reset mock
+        mock_get_paginated.reset_mock()
+
+        # Test with descending order
+        await service.search_repositories(
+            query='test-workspace/test-repo',
+            per_page=10,
+            sort='created',
+            order='desc',
+            public=False,
+        )
+
+        # Verify get_paginated_repos was called with the correct order parameter
+        mock_get_paginated.assert_called_with(
+            1, 10, 'created', 'test-workspace', 'test-repo', 'desc'
+        )
+
+
+@pytest.mark.asyncio
+async def test_search_repositories_order_parameter_with_workspace_search():
+    """Test that search_repositories passes order parameter when searching workspaces."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock dependencies
+    with (
+        patch.object(service, 'get_installations') as mock_get_installations,
+        patch.object(service, 'get_paginated_repos') as mock_get_paginated,
+    ):
+        # Mock installations
+        mock_get_installations.return_value = ['test-workspace', 'another-workspace']
+        mock_get_paginated.return_value = []
+
+        # Test search that matches workspace names
+        await service.search_repositories(
+            query='test',  # This will match 'test-workspace'
+            per_page=10,
+            sort='full_name',
+            order='asc',
+            public=False,
+        )
+
+        # Verify get_paginated_repos was called with the correct order parameter
+        # Should be called twice: once for workspace name match, once for repo name search
+        expected_calls = [
+            # Call for workspace name match
+            (1, 10, 'full_name', 'test-workspace', None, 'asc'),
+            # Calls for repo name search in all workspaces
+            (1, 10, 'full_name', 'test-workspace', 'test', 'asc'),
+            (1, 10, 'full_name', 'another-workspace', 'test', 'asc'),
+        ]
+
+        assert mock_get_paginated.call_count == 3
+        for i, expected_call in enumerate(expected_calls):
+            actual_call = mock_get_paginated.call_args_list[i]
+            assert actual_call.args == expected_call
