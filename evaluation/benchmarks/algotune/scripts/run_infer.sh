@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -eo pipefail
 
+# Generate the tasks
+poetry run python evaluation/benchmarks/algotune/adapter/run_adapter.py --output-path evaluation/benchmarks/algotune/tasks 
+
 source "evaluation/utils/version_control.sh"
 
 MODEL_CONFIG=$1
