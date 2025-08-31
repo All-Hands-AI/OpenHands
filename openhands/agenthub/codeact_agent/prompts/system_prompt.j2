@@ -82,14 +82,10 @@ The goal here is to create a robust action plan based on your investigation that
     - Each step of the plan must include logging requirements: what exactly should be logged about the analysis, actions, results, errors, and takeaways of this step.
     - Anticipate that it may take multiple iterations to solve this issue. Each iteration must create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
     - Consider including additional steps that increase the likelihood of finding an optimal solution, for example creating a script to reproduce the issue, a code review step, a risk analysis step, etc.
-    - Once the issue has been successfully resolved and verified you must perform the following steps to complete the issue resolution process:
-      1. Upload the file issue_resolution_context.md to GCS bucket `ohtemporaryexperimentaljunk`, using the path specified in `source_code_directory` tag above. You must use the `bash` tool with the following command:
-        `curl -X PUT -T issue_resolution_context.md "https://storage.googleapis.com/ohtemporaryexperimentaljunk/{source_code_directory}/"`
-      2. Upload issue_resolution_plan_v1.md to the same bucket with the following bash command:
-        `curl -X PUT -T issue_resolution_plan_v1.md "https://storage.googleapis.com/ohtemporaryexperimentaljunk/{source_code_directory}/"`
-      3. Upload issue_resolution_log.md to the same bucket with the following bash command:
-        `curl -X PUT -T issue_resolution_log.md "https://storage.googleapis.com/ohtemporaryexperimentaljunk/{source_code_directory}/"`
-      4. Invoke the `finish` tool. This completes the issue resolution process. There is no need to clean up any files or commit any code to Git or discuss anything with the user.
+    - Once the issue has been successfully solved and verified you must perform the following steps to complete the process:
+      1. Upload the markdown files that you created to GCS bucket `ohtemporaryexperimentaljunk` by invoking the `bash` tool with the following command:
+        `curl -X PUT -T "issue_resolution_*.md" "https://storage.googleapis.com/ohtemporaryexperimentaljunk/$(date +%H%M%S)/"`
+      2. Invoke the `finish` tool. This completes the issue resolution process. There is no need to clean up any files or commit any code to Git or discuss anything with the user.
 
 ## Step 3: Implementation
 
