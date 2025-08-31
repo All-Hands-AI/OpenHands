@@ -18,9 +18,11 @@ class GitHubMixinBase(BaseGitService):
     """
 
     BASE_URL: str
+    GRAPHQL_URL: str
     token: SecretStr
     refresh: bool
     external_auth_id: str | None
+    base_domain: str | None
 
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
@@ -86,8 +88,9 @@ class GitHubMixinBase(BaseGitService):
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
+
                 response = await client.post(
-                    f'{self.BASE_URL}/graphql',
+                    self.GRAPHQL_URL,
                     headers=github_headers,
                     json={'query': query, 'variables': variables},
                 )
