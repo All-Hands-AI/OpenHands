@@ -1,13 +1,9 @@
 # Task List
 
-1. ✅ Explore current GitHubService and GitHubMixinBase structure
+1. ✅ Add constructor to GitHubHTTPClient with initialization logic
 
-2. ✅ Create HTTPClientInterface protocol
+2. ✅ Update GitHubService constructor to pass parameters to GitHubHTTPClient
 
-3. ✅ Make GitHubHTTPClient inherit HTTPClientInterface, not BaseGitService
+3. ✅ Test the changes to ensure functionality is preserved
 
-4. ✅ Add github_http_client class variable to GitHubService
-
-5. ✅ Update individual service classes to use the class variable
-
-6. 🔄 Test the changes to ensure functionality is preserved
+4. 🔄 Commit and push the changes

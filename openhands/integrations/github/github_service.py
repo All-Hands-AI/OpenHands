@@ -68,28 +68,22 @@ class GitHubService(
         self.user_id = user_id
         self.external_auth_id = external_auth_id
         self.external_token_manager = external_token_manager
+        self.external_auth_token = external_auth_token
 
-        # Initialize HTTP client
-        self.github_http_client = GitHubHTTPClient()
-        self.github_http_client.BASE_URL = 'https://api.github.com'
-        self.github_http_client.GRAPHQL_URL = 'https://api.github.com/graphql'
-        self.github_http_client.token = token or SecretStr('')
-        self.github_http_client.refresh = False
-        self.github_http_client.external_auth_id = external_auth_id
-        self.github_http_client.base_domain = base_domain
+        # Initialize HTTP client with all configuration
+        self.github_http_client = GitHubHTTPClient(
+            token=token,
+            external_auth_id=external_auth_id,
+            base_domain=base_domain,
+        )
 
+        # Set service-level attributes for backward compatibility
         if token:
             self.token = token
-            self.github_http_client.token = token
 
-        if base_domain and base_domain != 'github.com':
-            self.BASE_URL = f'https://{base_domain}/api/v3'
-            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
-            self.github_http_client.BASE_URL = self.BASE_URL
-            self.github_http_client.GRAPHQL_URL = self.GRAPHQL_URL
-
-        self.external_auth_id = external_auth_id
-        self.external_auth_token = external_auth_token
+        # Set service-level URLs for backward compatibility
+        self.BASE_URL = self.github_http_client.BASE_URL
+        self.GRAPHQL_URL = self.github_http_client.GRAPHQL_URL
 
     @property
     def provider(self) -> str:

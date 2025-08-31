@@ -66,6 +66,26 @@ class GitHubHTTPClient:
     external_auth_id: str | None
     base_domain: str | None
 
+    def __init__(
+        self,
+        token: SecretStr | None = None,
+        external_auth_id: str | None = None,
+        base_domain: str | None = None,
+    ) -> None:
+        """Initialize the GitHub HTTP client with configuration."""
+        # Set default values
+        self.BASE_URL = 'https://api.github.com'
+        self.GRAPHQL_URL = 'https://api.github.com/graphql'
+        self.token = token or SecretStr('')
+        self.refresh = False
+        self.external_auth_id = external_auth_id
+        self.base_domain = base_domain
+
+        # Handle custom domain configuration
+        if base_domain and base_domain != 'github.com':
+            self.BASE_URL = f'https://{base_domain}/api/v3'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+
     async def _get_github_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
         if not self.token:
