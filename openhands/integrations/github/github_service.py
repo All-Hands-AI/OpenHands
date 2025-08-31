@@ -17,7 +17,6 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     ProviderType,
-    RequestMethod,
     ResourceNotFoundError,
     User,
 )
@@ -91,16 +90,6 @@ class GitHubService(
     @property
     def provider(self) -> str:
         return ProviderType.GITHUB.value
-
-    # Implementation of abstract methods from BaseGitService
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]:
-        """Delegate to HTTP client."""
-        return await self.github_http_client._make_request(url, params, method)
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""

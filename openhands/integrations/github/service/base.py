@@ -4,9 +4,14 @@ from typing import Any, cast
 import httpx
 from pydantic import SecretStr
 
+from openhands.integrations.protocols.http_client import (
+    AuthenticationError,
+    RateLimitError,
+    ResourceNotFoundError,
+    UnknownException,
+)
 from openhands.integrations.service_types import (
     RequestMethod,
-    UnknownException,
     User,
 )
 
@@ -172,26 +177,16 @@ class GitHubHTTPClient:
     def _handle_http_status_error(self, e: httpx.HTTPStatusError):
         """Handle HTTP status errors."""
         if e.response.status_code == 401:
-            from openhands.integrations.service_types import AuthenticationError
-
             return AuthenticationError('Invalid GitHub token')
         elif e.response.status_code == 404:
-            from openhands.integrations.service_types import ResourceNotFoundError
-
             return ResourceNotFoundError(f'Resource not found on GitHub API: {e}')
         elif e.response.status_code == 429:
-            from openhands.integrations.service_types import RateLimitError
-
             return RateLimitError('GitHub API rate limit exceeded')
-
-        from openhands.integrations.service_types import UnknownException
 
         return UnknownException(f'Unknown error: {e}')
 
     def _handle_http_error(self, e: httpx.HTTPError):
         """Handle HTTP errors."""
-        from openhands.integrations.service_types import UnknownException
-
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
 
 

@@ -20,8 +20,8 @@ from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+from openhands.integrations.protocols.http_client import AuthenticationError
 from openhands.integrations.service_types import (
-    AuthenticationError,
     Branch,
     GitService,
     InstallationsService,

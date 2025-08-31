@@ -6,18 +6,20 @@ from fastapi.responses import JSONResponse
 from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.protocols.http_client import (
+    AuthenticationError,
+    UnknownException,
+)
 from openhands.integrations.provider import (
     PROVIDER_TOKEN_TYPE,
     ProviderHandler,
 )
 from openhands.integrations.service_types import (
-    AuthenticationError,
     Branch,
     PaginatedBranchesResponse,
     ProviderType,
     Repository,
     SuggestedTask,
-    UnknownException,
     User,
 )
 from openhands.microagent.types import (
