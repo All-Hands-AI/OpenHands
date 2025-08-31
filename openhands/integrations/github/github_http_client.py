@@ -1,21 +1,18 @@
 import json
-from typing import Any, cast
+from typing import Any
 
 import httpx
 from pydantic import SecretStr
 
 from openhands.integrations.protocols.http_client import (
-    AuthenticationError,
     HTTPClientProtocol,
-    RateLimitError,
-    ResourceNotFoundError,
     UnknownException,
 )
 from openhands.integrations.service_types import (
     ProviderType,
     RequestMethod,
-    User,
 )
+
 
 class GitHubHTTPClient(HTTPClientProtocol):
     """
@@ -53,7 +50,6 @@ class GitHubHTTPClient(HTTPClientProtocol):
     @property
     def provider(self) -> str:
         return ProviderType.GITHUB.value
-
 
     async def _get_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""
@@ -122,12 +118,10 @@ class GitHubHTTPClient(HTTPClientProtocol):
         try:
             async with httpx.AsyncClient() as client:
                 github_headers = await self._get_github_headers()
-                headers = await self._get_headers()
 
                 response = await client.post(
                     self.GRAPHQL_URL,
                     headers=github_headers,
-                    headers=headers,
                     json={'query': query, 'variables': variables},
                 )
                 response.raise_for_status()

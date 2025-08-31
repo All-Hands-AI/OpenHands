@@ -8,12 +8,10 @@ from openhands.integrations.github.queries import (
 from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
-    MicroagentParseError,
     ProviderType,
     SuggestedTask,
     TaskType,
 )
-from openhands.microagent.microagent import BaseMicroagent
 
 
 class GitHubFeaturesMixin(GitHubMixinBase):
@@ -177,36 +175,3 @@ class GitHubFeaturesMixin(GitHubMixinBase):
 
         # Parse the content to extract triggers from frontmatter
         return self._parse_microagent_content(file_content, file_path)
-
-    def _parse_microagent_content(
-        self, content: str, file_path: str
-    ) -> MicroagentContentResponse:
-        """Parse microagent content and extract triggers using BaseMicroagent.load."""
-        from pathlib import Path
-
-        from openhands.core.logger import openhands_logger as logger
-
-        try:
-            # Use BaseMicroagent.load to properly parse the content
-            # Create a temporary path object for the file
-            temp_path = Path(file_path)
-
-            # Load the microagent using the existing infrastructure
-            microagent = BaseMicroagent.load(path=temp_path, file_content=content)
-
-            # Extract triggers from the microagent's metadata
-            triggers = microagent.metadata.triggers
-
-            # Return the MicroagentContentResponse
-            return MicroagentContentResponse(
-                content=microagent.content,
-                path=file_path,
-                triggers=triggers,
-                git_provider=ProviderType.GITHUB.value,
-            )
-
-        except Exception as e:
-            logger.error(f'Error parsing microagent content for {file_path}: {str(e)}')
-            raise MicroagentParseError(
-                f'Failed to parse microagent file {file_path}: {str(e)}'
-            )
