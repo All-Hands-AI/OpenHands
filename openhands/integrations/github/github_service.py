@@ -44,7 +44,11 @@ class GitHubService(
     BASE_URL = 'https://api.github.com'
     GRAPHQL_URL = 'https://api.github.com/graphql'
     token: SecretStr = SecretStr('')
-    refresh = False
+    refresh: bool = False
+    external_auth_id: str | None = None
+    external_auth_token: SecretStr | None = None
+    external_token_manager: bool = False
+    base_domain: str | None = None
 
     def __init__(
         self,

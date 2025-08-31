@@ -19,10 +19,6 @@ class GitLabMixinBase(BaseGitService, HTTPClient):
 
     BASE_URL: str
     GRAPHQL_URL: str
-    token: SecretStr
-    refresh: bool
-    external_auth_id: str | None
-    base_domain: str | None
 
     async def _get_headers(self) -> dict[str, Any]:
         """Retrieve the GitLab Token to construct the headers"""

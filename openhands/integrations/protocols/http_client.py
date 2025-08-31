@@ -26,10 +26,12 @@ class HTTPClient(Protocol):
     """
 
     # Required attributes
-    token: SecretStr
-    refresh: bool
-    external_auth_id: str | None
-    base_domain: str | None
+    token: SecretStr = SecretStr('')
+    refresh: bool = False
+    external_auth_id: str | None = None
+    external_auth_token: SecretStr | None = None
+    external_token_manager: bool = False
+    base_domain: str | None = None
 
     # Required property
     @property

@@ -20,10 +20,6 @@ class GitHubMixinBase(BaseGitService, HTTPClient):
 
     BASE_URL: str
     GRAPHQL_URL: str
-    token: SecretStr
-    refresh: bool
-    external_auth_id: str | None
-    base_domain: str | None
 
     async def _get_headers(self) -> dict:
         """Retrieve the GH Token from settings store to construct the headers."""

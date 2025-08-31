@@ -22,10 +22,6 @@ class BitBucketMixinBase(BaseGitService, HTTPClient):
     """
 
     BASE_URL = 'https://api.bitbucket.org/2.0'
-    token: SecretStr = SecretStr('')
-    refresh = False
-    external_auth_id: str | None = None
-    base_domain: str | None = None
 
     def _extract_owner_and_repo(self, repository: str) -> tuple[str, str]:
         """Extract owner and repo from repository string.
