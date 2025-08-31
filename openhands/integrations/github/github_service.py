@@ -45,12 +45,12 @@ class GitHubService(
     """
 
     # Class variable for HTTP client (composition)
-    github_http_client: GitHubHTTPClient
+    http_client: GitHubHTTPClient
     external_auth_id: str | None
 
     BASE_URL = 'https://api.github.com'
     GRAPHQL_URL = 'https://api.github.com/graphql'
-    token: SecretStr = SecretStr('')
+    token: SecretStr | None
     refresh = False
 
     def __init__(
@@ -68,20 +68,18 @@ class GitHubService(
         self.external_auth_token = external_auth_token
 
         # Initialize HTTP client with all configuration
-        self.github_http_client = GitHubHTTPClient(
+        self.http_client = GitHubHTTPClient(
             token=token,
             external_auth_id=external_auth_id,
             base_domain=base_domain,
         )
 
-        # Set service-level attributes for backward compatibility
-        if token:
-            self.token = token
+        self.token = token
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
-        self.BASE_URL = self.github_http_client.BASE_URL
-        self.GRAPHQL_URL = self.github_http_client.GRAPHQL_URL
+        self.BASE_URL = self.http_client.BASE_URL
+        self.GRAPHQL_URL = self.http_client.GRAPHQL_URL
 
     @property
     def provider(self) -> str:

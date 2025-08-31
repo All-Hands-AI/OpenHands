@@ -35,7 +35,7 @@ class GitHubFeaturesMixin(GitHubMixinBase):
         variables = {'login': login}
 
         try:
-            pr_response = await self.github_http_client.execute_graphql_query(
+            pr_response = await self.execute_graphql_query(
                 suggested_task_pr_graphql_query, variables
             )
             pr_data = pr_response['data']['user']
@@ -88,7 +88,7 @@ class GitHubFeaturesMixin(GitHubMixinBase):
 
         try:
             # Execute issue query
-            issue_response = await self.github_http_client.execute_graphql_query(
+            issue_response = await self.execute_graphql_query(
                 suggested_task_issue_graphql_query, variables
             )
             issue_data = issue_response['data']['user']
@@ -125,13 +125,13 @@ class GitHubFeaturesMixin(GitHubMixinBase):
 
     async def _get_cursorrules_url(self, repository: str) -> str:
         """Get the URL for checking .cursorrules file."""
-        return f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/.cursorrules'
+        return f'{self.BASE_URL}/repos/{repository}/contents/.cursorrules'
 
     async def _get_microagents_directory_url(
         self, repository: str, microagents_path: str
     ) -> str:
         """Get the URL for checking microagents directory."""
-        return f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/{microagents_path}'
+        return f'{self.BASE_URL}/repos/{repository}/contents/{microagents_path}'
 
     def _is_valid_microagent_file(self, item: dict) -> bool:
         """Check if an item represents a valid microagent file."""
@@ -168,9 +168,9 @@ class GitHubFeaturesMixin(GitHubMixinBase):
         Raises:
             RuntimeError: If file cannot be fetched or doesn't exist
         """
-        file_url = f'{self.github_http_client.BASE_URL}/repos/{repository}/contents/{file_path}'
+        file_url = f'{self.BASE_URL}/repos/{repository}/contents/{file_path}'
 
-        file_data, _ = await self.github_http_client._make_request(file_url)
+        file_data, _ = await self._make_request(file_url)
         file_content = base64.b64decode(file_data['content']).decode('utf-8')
 
         # Parse the content to extract triggers from frontmatter

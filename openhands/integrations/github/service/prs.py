@@ -1,15 +1,12 @@
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.github_http_client import GitHubHTTPClient
+from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import RequestMethod
 
 
-class GitHubPRsMixin:
+class GitHubPRsMixin(GitHubMixinBase):
     """
     Methods for interacting with GitHub PRs
     """
-
-    # This mixin expects the class to have a github_http_client attribute
-    github_http_client: GitHubHTTPClient
 
     async def create_pr(
         self,
@@ -36,7 +33,7 @@ class GitHubPRsMixin:
             - PR URL when successful
             - Error message when unsuccessful
         """
-        url = f'{self.github_http_client.BASE_URL}/repos/{repo_name}/pulls'
+        url = f'{self.BASE_URL}/repos/{repo_name}/pulls'
 
         # Set default body if none provided
         if not body:
@@ -52,16 +49,16 @@ class GitHubPRsMixin:
         }
 
         # Make the POST request to create the PR
-        response, _ = await self.github_http_client._make_request(
+        response, _ = await self._make_request(
             url=url, params=payload, method=RequestMethod.POST
         )
 
         # Add labels if provided (PRs are a type of issue in GitHub's API)
         if labels and len(labels) > 0:
             pr_number = response['number']
-            labels_url = f'{self.github_http_client.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'
+            labels_url = f'{self.BASE_URL}/repos/{repo_name}/issues/{pr_number}/labels'
             labels_payload = {'labels': labels}
-            await self.github_http_client._make_request(
+            await self._make_request(
                 url=labels_url, params=labels_payload, method=RequestMethod.POST
             )
 
@@ -78,8 +75,8 @@ class GitHubPRsMixin:
         Returns:
             Raw GitHub API response for the pull request
         """
-        url = f'{self.github_http_client.BASE_URL}/repos/{repository}/pulls/{pr_number}'
-        pr_data, _ = await self.github_http_client._make_request(url)
+        url = f'{self.BASE_URL}/repos/{repository}/pulls/{pr_number}'
+        pr_data, _ = await self._make_request(url)
 
         return pr_data
 

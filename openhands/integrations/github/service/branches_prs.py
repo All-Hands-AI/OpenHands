@@ -1,22 +1,19 @@
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.github_http_client import GitHubHTTPClient
 from openhands.integrations.github.queries import (
     search_branches_graphql_query,
 )
+from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import Branch, PaginatedBranchesResponse
 
 
-class GitHubBranchesMixin:
+class GitHubBranchesMixin(GitHubMixinBase):
     """
     Methods for interacting with branches for a repo
     """
 
-    # This mixin expects the class to have a github_http_client attribute
-    github_http_client: GitHubHTTPClient
-
     async def get_branches(self, repository: str) -> list[Branch]:
         """Get branches for a repository"""
-        url = f'{self.github_http_client.BASE_URL}/repos/{repository}/branches'
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
 
         # Set maximum branches to fetch (100 per page)
         MAX_BRANCHES = 5_000
@@ -28,7 +25,7 @@ class GitHubBranchesMixin:
         # Fetch up to 10 pages of branches
         while len(all_branches) < MAX_BRANCHES:
             params = {'per_page': str(PER_PAGE), 'page': str(page)}
-            response, headers = await self.github_http_client._make_request(url, params)
+            response, headers = await self._make_request(url, params)
 
             if not response:  # No more branches
                 break
@@ -64,10 +61,10 @@ class GitHubBranchesMixin:
         self, repository: str, page: int = 1, per_page: int = 30
     ) -> PaginatedBranchesResponse:
         """Get branches for a repository with pagination"""
-        url = f'{self.github_http_client.BASE_URL}/repos/{repository}/branches'
+        url = f'{self.BASE_URL}/repos/{repository}/branches'
 
         params = {'per_page': str(per_page), 'page': str(page)}
-        response, headers = await self.github_http_client._make_request(url, params)
+        response, headers = await self._make_request(url, params)
 
         branches: list[Branch] = []
         for branch_data in response:
@@ -127,7 +124,7 @@ class GitHubBranchesMixin:
         }
 
         try:
-            result = await self.github_http_client.execute_graphql_query(
+            result = await self.execute_graphql_query(
                 search_branches_graphql_query, variables
             )
         except Exception as e:

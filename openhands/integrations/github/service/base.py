@@ -1,8 +1,10 @@
-from typing import cast
+import json
+from typing import Any, cast
 
+import httpx
 from pydantic import SecretStr
 
-from openhands.integrations.github.github_http_client import GitHubHTTPClient
+from openhands.integrations.protocols.http_client import UnknownException
 from openhands.integrations.service_types import (
     BaseGitService,
     RequestMethod,
@@ -11,32 +13,106 @@ from openhands.integrations.service_types import (
 
 
 class GitHubMixinBase(BaseGitService):
-    github_http_client: GitHubHTTPClient
+    """
+    Declares common attributes and method signatures used across mixins.
+    """
 
-    def __init__(
+    BASE_URL: str
+    GRAPHQL_URL: str
+    token: SecretStr | None
+    refresh: bool
+    external_auth_id: str | None
+    base_domain: str | None
+
+    async def _get_github_headers(self) -> dict:
+        """Retrieve the GH Token from settings store to construct the headers."""
+        if not self.token:
+            latest_token = await self.get_latest_token()
+            if latest_token:
+                self.token = latest_token
+
+        return {
+            'Authorization': f'Bearer {self.token.get_secret_value() if self.token else ""}',
+            'Accept': 'application/vnd.github.v3+json',
+        }
+
+    async def get_latest_token(self) -> SecretStr | None:  # type: ignore[override]
+        return self.token
+
+    async def _make_request(
         self,
-        token: SecretStr | None = None,
-        external_auth_id: str | None = None,
-        base_domain: str | None = None,
-    ) -> None:
-        """Initialize the GitHub HTTP client with configuration."""
-        self.BASE_URL = 'https://api.github.com'
-        self.GRAPHQL_URL = 'https://api.github.com/graphql'
-        self.token = token or SecretStr('')
-        self.refresh = False
-        self.external_auth_id = external_auth_id
-        self.base_domain = base_domain
+        url: str,
+        params: dict | None = None,
+        method: RequestMethod = RequestMethod.GET,
+    ) -> tuple[Any, dict]:  # type: ignore[override]
+        try:
+            async with httpx.AsyncClient() as client:
+                github_headers = await self._get_github_headers()
 
-        # Handle custom domain configuration
-        if base_domain and base_domain != 'github.com':
-            self.BASE_URL = f'https://{base_domain}/api/v3'
-            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
+                # Make initial request
+                response = await self.execute_request(
+                    client=client,
+                    url=url,
+                    headers=github_headers,
+                    params=params,
+                    method=method,
+                )
 
-    async def get_latest_token(self) -> SecretStr | None:
-        return await self.github_http_client.get_latest_token()
+                # Handle token refresh if needed
+                if self.refresh and self._has_token_expired(response.status_code):
+                    await self.get_latest_token()
+                    github_headers = await self._get_github_headers()
+                    response = await self.execute_request(
+                        client=client,
+                        url=url,
+                        headers=github_headers,
+                        params=params,
+                        method=method,
+                    )
 
-    async def _make_request(self, url, params=None, method=RequestMethod.GET):
-        return await self.github_http_client._make_request(url, params, method)
+                response.raise_for_status()
+                headers: dict = {}
+                if 'Link' in response.headers:
+                    headers['Link'] = response.headers['Link']
+
+                return response.json(), headers
+
+        except httpx.HTTPStatusError as e:
+            raise self.handle_http_status_error(e)
+        except httpx.HTTPError as e:
+            raise self.handle_http_error(e)
+
+    async def execute_graphql_query(
+        self, query: str, variables: dict[str, Any]
+    ) -> dict[str, Any]:
+        try:
+            async with httpx.AsyncClient() as client:
+                github_headers = await self._get_github_headers()
+
+                response = await client.post(
+                    self.GRAPHQL_URL,
+                    headers=github_headers,
+                    json={'query': query, 'variables': variables},
+                )
+                response.raise_for_status()
+
+                result = response.json()
+                if 'errors' in result:
+                    raise UnknownException(
+                        f'GraphQL query error: {json.dumps(result["errors"])}'
+                    )
+
+                return dict(result)
+
+        except httpx.HTTPStatusError as e:
+            raise self.handle_http_status_error(e)
+        except httpx.HTTPError as e:
+            raise self.handle_http_error(e)
+
+    async def verify_access(self) -> bool:
+        url = f'{self.BASE_URL}'
+        await self._make_request(url)
+        return True
 
     async def get_user(self):
         url = f'{self.BASE_URL}/user'
@@ -50,8 +126,3 @@ class GitHubMixinBase(BaseGitService):
             name=response.get('name'),
             email=response.get('email'),
         )
-
-    async def verify_access(self) -> bool:
-        url = f'{self.BASE_URL}'
-        await self._make_request(url)
-        return True
