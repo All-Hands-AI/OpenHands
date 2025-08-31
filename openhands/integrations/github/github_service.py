@@ -2,7 +2,6 @@ import os
 
 from pydantic import SecretStr
 
-from openhands.integrations.github.github_http_client import GitHubHTTPClient
 from openhands.integrations.github.service import (
     GitHubBranchesMixin,
     GitHubFeaturesMixin,
@@ -32,9 +31,7 @@ class GitHubService(
     """
     Assembled GitHub service class combining mixins by feature area.
 
-    Now uses composition for HTTP client functionality via a class variable.
-    This allows for incremental migration from mixins to composition.
-
+    TODO: This doesn't seem a good candidate for the get_impl() pattern. What are the abstract methods we should actually separate and implement here?
     This is an extension point in OpenHands that allows applications to customize GitHub
     integration behavior. Applications can substitute their own implementation by:
     1. Creating a class that inherits from GitService
@@ -44,13 +41,9 @@ class GitHubService(
     The class is instantiated via get_impl() in openhands.server.shared.py.
     """
 
-    # Class variable for HTTP client (composition)
-    http_client: GitHubHTTPClient
-    external_auth_id: str | None
-
     BASE_URL = 'https://api.github.com'
     GRAPHQL_URL = 'https://api.github.com/graphql'
-    token: SecretStr | None
+    token: SecretStr = SecretStr('')
     refresh = False
 
     def __init__(
@@ -63,23 +56,17 @@ class GitHubService(
         base_domain: str | None = None,
     ) -> None:
         self.user_id = user_id
-        self.external_auth_id = external_auth_id
         self.external_token_manager = external_token_manager
-        self.external_auth_token = external_auth_token
 
-        # Initialize HTTP client with all configuration
-        self.http_client = GitHubHTTPClient(
-            token=token,
-            external_auth_id=external_auth_id,
-            base_domain=base_domain,
-        )
+        if token:
+            self.token = token
 
-        self.token = token
+        if base_domain and base_domain != 'github.com':
+            self.BASE_URL = f'https://{base_domain}/api/v3'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
-        self.BASE_URL = self.http_client.BASE_URL
-        self.GRAPHQL_URL = self.http_client.GRAPHQL_URL
 
     @property
     def provider(self) -> str:
