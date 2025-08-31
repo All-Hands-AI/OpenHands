@@ -55,6 +55,9 @@ class GitLabService(BaseGitService, GitService):
     ):
         self.user_id = user_id
         self.external_token_manager = external_token_manager
+        self.base_domain = base_domain
+        self.external_auth_id = external_auth_id
+        self.external_auth_token = external_auth_token
 
         if token:
             self.token = token

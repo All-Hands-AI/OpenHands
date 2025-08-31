@@ -5,7 +5,7 @@ from openhands.integrations.github.queries import (
     suggested_task_issue_graphql_query,
     suggested_task_pr_graphql_query,
 )
-from openhands.integrations.github.service.base import GitHubHTTPClient
+from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
     MicroagentParseError,
@@ -16,14 +16,10 @@ from openhands.integrations.service_types import (
 from openhands.microagent.microagent import BaseMicroagent
 
 
-class GitHubFeaturesMixin:
+class GitHubFeaturesMixin(GitHubMixinBase):
     """
     Methods used for custom features in UI driven via GitHub integration
     """
-
-    # This mixin expects the class to have a github_http_client attribute
-    github_http_client: GitHubHTTPClient
-    external_auth_id: str | None
 
     async def get_suggested_tasks(self) -> list[SuggestedTask]:
         """Get suggested tasks for the authenticated user across all repositories.
@@ -35,7 +31,7 @@ class GitHubFeaturesMixin:
         Note: Queries are split to avoid timeout issues.
         """
         # Get user info to use in queries
-        user = await self.github_http_client.get_user()
+        user = await self.get_user()
         login = user.login
         tasks: list[SuggestedTask] = []
         variables = {'login': login}

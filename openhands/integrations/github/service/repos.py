@@ -1,12 +1,13 @@
 from datetime import datetime
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.integrations.github.service.base import GitHubHTTPClient
+from openhands.integrations.github.github_http_client import GitHubHTTPClient
+from openhands.integrations.github.service.base import GitHubMixinBase
 from openhands.integrations.service_types import OwnerType, ProviderType, Repository
 from openhands.server.types import AppMode
 
 
-class GitHubReposMixin:
+class GitHubReposMixin(GitHubMixinBase):
     """
     Methods for interacting with GitHub repositories (from both personal and app installations)
     """
@@ -210,7 +211,7 @@ class GitHubReposMixin:
             params['q'] = query_with_user
         elif not public:
             # Expand search scope to include user's repositories and organizations they're a member of
-            user = await self.github_http_client.get_user()
+            user = await self.get_user()
             user_orgs = await self.get_user_organizations()
 
             # Search in user repos and org repos separately

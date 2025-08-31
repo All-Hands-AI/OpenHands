@@ -1,8 +1,8 @@
 from openhands.core.logger import openhands_logger as logger
+from openhands.integrations.github.github_http_client import GitHubHTTPClient
 from openhands.integrations.github.queries import (
     search_branches_graphql_query,
 )
-from openhands.integrations.github.service.base import GitHubHTTPClient
 from openhands.integrations.service_types import Branch, PaginatedBranchesResponse
 
 

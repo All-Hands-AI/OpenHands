@@ -1,24 +1,11 @@
-from typing import Any, Protocol
-
-import httpx
-from pydantic import SecretStr
-
-from openhands.integrations.service_types import RequestMethod, User
-
-from abc import ABC, abstractmethod
-from datetime import datetime
-from enum import Enum
-from pathlib import Path
+from abc import abstractmethod
 from typing import Any, Protocol
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError
-from jinja2 import Environment, FileSystemLoader
-from pydantic import BaseModel, SecretStr
+from pydantic import SecretStr
 
 from openhands.core.logger import openhands_logger as logger
-from openhands.microagent.microagent import BaseMicroagent
-from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
-from openhands.server.types import AppMode
+from openhands.integrations.service_types import RequestMethod
 
 
 class AuthenticationError(ValueError):
@@ -31,7 +18,6 @@ class UnknownException(ValueError):
     """Raised when there is an issue with GitHub communcation."""
 
     pass
-
 
 
 class RateLimitError(ValueError):
@@ -50,8 +36,7 @@ class HTTPClientProtocol(Protocol):
     """Protocol defining the HTTP client interface for Git service operations."""
 
     BASE_URL: str
-    GRAPHQL_URL: str | None
-    token: SecretStr
+    token: SecretStr | None
     refresh: bool
     external_auth_id: str | None
     base_domain: str | None
@@ -60,7 +45,6 @@ class HTTPClientProtocol(Protocol):
     def provider(self) -> str:
         raise NotImplementedError('Subclasses must implement the provider property')
 
-
     @abstractmethod
     async def _make_request(
         self,
@@ -68,33 +52,6 @@ class HTTPClientProtocol(Protocol):
         params: dict | None = None,
         method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]: ...
-
-
-    async def _get_headers(self) -> dict:
-        """Retrieve the token from settings store to construct the headers."""
-        ...
-
-    async def get_latest_token(self) -> SecretStr | None:
-        """Get latest working token of the user."""
-        ...
-
-    async def execute_graphql_query(
-        self, query: str, variables: dict[str, Any]
-    ) -> dict[str, Any]:
-        """Execute a GraphQL query against the API."""
-        ...
-
-    async def verify_access(self) -> bool:
-        """Verify that the client has access to the API."""
-        ...
-
-    async def get_user(self) -> User:
-        """Get the authenticated user's information."""
-        ...
-
-    def _has_token_expired(self, status_code: int) -> bool:
-        """Check if the token has expired based on status code."""
-        ...
 
     async def execute_request(
         self,
@@ -126,7 +83,9 @@ class HTTPClientProtocol(Protocol):
         logger.warning(f'Status error on {self.provider} API: {e}')
         return UnknownException(f'Unknown error: {e}')
 
-
     def handle_http_error(self, e: HTTPError) -> UnknownException:
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
+
+    def _has_token_expired(self, status_code: int) -> bool:
+        return status_code == 401
