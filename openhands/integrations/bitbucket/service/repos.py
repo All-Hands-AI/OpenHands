@@ -74,40 +74,6 @@ class BitBucketReposMixin(BitBucketMixinBase):
         data, _ = await self._make_request(url)
         return data.get('values', [])
 
-    async def _fetch_paginated_data(
-        self, url: str, params: dict, max_items: int
-    ) -> list[dict]:
-        """Fetch data with pagination support for Bitbucket API.
-
-        Args:
-            url: The API endpoint URL
-            params: Query parameters for the request
-            max_items: Maximum number of items to fetch
-
-        Returns:
-            List of data items from all pages
-        """
-        all_items: list[dict] = []
-        current_url = url
-
-        while current_url and len(all_items) < max_items:
-            response, _ = await self._make_request(current_url, params)
-
-            # Extract items from response
-            page_items = response.get('values', [])
-            if not page_items:  # No more items
-                break
-
-            all_items.extend(page_items)
-
-            # Get the next page URL from the response
-            current_url = response.get('next')
-
-            # Clear params for subsequent requests since the next URL already contains all parameters
-            params = {}
-
-        return all_items[:max_items]  # Trim to max_items if needed
-
     async def get_installations(
         self, query: str | None = None, limit: int = 100
     ) -> list[str]:
