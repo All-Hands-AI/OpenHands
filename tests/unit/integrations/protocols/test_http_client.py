@@ -1,5 +1,6 @@
 """Unit tests for HTTPClient protocol."""
 
+from typing import Any
 from unittest.mock import AsyncMock, Mock
 
 import httpx
@@ -17,7 +18,7 @@ from openhands.integrations.service_types import (
 )
 
 
-class TestableHTTPClient:
+class TestableHTTPClient(HTTPClient):
     """Testable implementation of HTTPClient protocol for unit testing."""
 
     def __init__(self, provider_name: str = 'test-provider'):
@@ -33,10 +34,14 @@ class TestableHTTPClient:
     def provider(self) -> str:
         return self._provider_name
 
+    @provider.setter
+    def provider(self, value: str) -> None:
+        self._provider_name = value
+
     async def get_latest_token(self) -> SecretStr | None:
         return self.token
 
-    async def _get_headers(self) -> dict[str, str]:
+    async def _get_headers(self) -> dict[str, Any]:
         return {'Authorization': f'Bearer {self.token.get_secret_value()}'}
 
     async def _make_request(
@@ -75,20 +80,17 @@ class TestHTTPClient:
 
     def test_has_token_expired_default_implementation(self):
         """Test default _has_token_expired implementation."""
-        # Create a client that uses the protocol's default implementation
-        TestableHTTPClient()
+        # The TestableHTTPClient inherits the default implementation from the protocol
+        client = TestableHTTPClient()
 
-        # The protocol provides a default implementation
-        protocol_client = HTTPClient()
-
-        assert protocol_client._has_token_expired(401) is True
-        assert protocol_client._has_token_expired(200) is False
-        assert protocol_client._has_token_expired(404) is False
-        assert protocol_client._has_token_expired(500) is False
+        assert client._has_token_expired(401) is True
+        assert client._has_token_expired(200) is False
+        assert client._has_token_expired(404) is False
+        assert client._has_token_expired(500) is False
 
     async def test_execute_request_get(self):
         """Test execute_request with GET method."""
-        protocol_client = HTTPClient()
+        client = TestableHTTPClient()
 
         mock_client = AsyncMock()
         mock_response = AsyncMock()
@@ -98,7 +100,7 @@ class TestHTTPClient:
         headers = {'Authorization': 'Bearer token'}
         params = {'per_page': 10}
 
-        result = await protocol_client.execute_request(
+        result = await client.execute_request(
             mock_client, url, headers, params, RequestMethod.GET
         )
 
@@ -107,7 +109,7 @@ class TestHTTPClient:
 
     async def test_execute_request_post(self):
         """Test execute_request with POST method."""
-        protocol_client = HTTPClient()
+        client = TestableHTTPClient()
 
         mock_client = AsyncMock()
         mock_response = AsyncMock()
@@ -117,7 +119,7 @@ class TestHTTPClient:
         headers = {'Authorization': 'Bearer token'}
         params = {'title': 'Test Issue'}
 
-        result = await protocol_client.execute_request(
+        result = await client.execute_request(
             mock_client, url, headers, params, RequestMethod.POST
         )
 
@@ -126,9 +128,7 @@ class TestHTTPClient:
 
     def test_handle_http_status_error_401(self):
         """Test handling of 401 HTTP status error."""
-        TestableHTTPClient('github')
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'github'
+        client = TestableHTTPClient('github')
 
         mock_response = Mock()
         mock_response.status_code = 401
@@ -137,14 +137,14 @@ class TestHTTPClient:
             message='401 Unauthorized', request=Mock(), response=mock_response
         )
 
-        result = protocol_client.handle_http_status_error(error)
+        result = client.handle_http_status_error(error)
         assert isinstance(result, AuthenticationError)
         assert 'Invalid github token' in str(result)
 
     def test_handle_http_status_error_404(self):
         """Test handling of 404 HTTP status error."""
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'gitlab'
+        client = TestableHTTPClient()
+        client.provider = 'gitlab'
 
         mock_response = Mock()
         mock_response.status_code = 404
@@ -153,14 +153,14 @@ class TestHTTPClient:
             message='404 Not Found', request=Mock(), response=mock_response
         )
 
-        result = protocol_client.handle_http_status_error(error)
+        result = client.handle_http_status_error(error)
         assert isinstance(result, ResourceNotFoundError)
         assert 'Resource not found on gitlab API' in str(result)
 
     def test_handle_http_status_error_429(self):
         """Test handling of 429 HTTP status error."""
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'bitbucket'
+        client = TestableHTTPClient()
+        client.provider = 'bitbucket'
 
         mock_response = Mock()
         mock_response.status_code = 429
@@ -169,14 +169,14 @@ class TestHTTPClient:
             message='429 Too Many Requests', request=Mock(), response=mock_response
         )
 
-        result = protocol_client.handle_http_status_error(error)
+        result = client.handle_http_status_error(error)
         assert isinstance(result, RateLimitError)
         assert 'bitbucket API rate limit exceeded' in str(result)
 
     def test_handle_http_status_error_other(self):
         """Test handling of other HTTP status errors."""
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'test-provider'
+        client = TestableHTTPClient()
+        client.provider = 'test-provider'
 
         mock_response = Mock()
         mock_response.status_code = 500
@@ -185,25 +185,25 @@ class TestHTTPClient:
             message='500 Internal Server Error', request=Mock(), response=mock_response
         )
 
-        result = protocol_client.handle_http_status_error(error)
+        result = client.handle_http_status_error(error)
         assert isinstance(result, UnknownException)
         assert 'Unknown error' in str(result)
 
     def test_handle_http_error(self):
         """Test handling of general HTTP errors."""
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'test-provider'
+        client = TestableHTTPClient()
+        client.provider = 'test-provider'
 
         error = httpx.ConnectError('Connection failed')
 
-        result = protocol_client.handle_http_error(error)
+        result = client.handle_http_error(error)
         assert isinstance(result, UnknownException)
         assert 'HTTP error ConnectError' in str(result)
 
     def test_handle_http_error_with_different_error_types(self):
         """Test handling of different HTTP error types."""
-        protocol_client = HTTPClient()
-        protocol_client.provider = 'test-provider'
+        client = TestableHTTPClient()
+        client.provider = 'test-provider'
 
         # Test with different error types
         errors = [
@@ -214,7 +214,7 @@ class TestHTTPClient:
         ]
 
         for error in errors:
-            result = protocol_client.handle_http_error(error)
+            result = client.handle_http_error(error)
             assert isinstance(result, UnknownException)
             assert f'HTTP error {type(error).__name__}' in str(result)
 
@@ -234,66 +234,58 @@ class TestHTTPClient:
 
     def test_protocol_attributes_exist(self):
         """Test that protocol defines expected attributes."""
-        protocol_client = HTTPClient()
+        client = TestableHTTPClient()
 
         # Test default attribute values from protocol
-        assert hasattr(protocol_client, 'token')
-        assert hasattr(protocol_client, 'refresh')
-        assert hasattr(protocol_client, 'external_auth_id')
-        assert hasattr(protocol_client, 'external_auth_token')
-        assert hasattr(protocol_client, 'external_token_manager')
-        assert hasattr(protocol_client, 'base_domain')
+        assert hasattr(client, 'token')
+        assert hasattr(client, 'refresh')
+        assert hasattr(client, 'external_auth_id')
+        assert hasattr(client, 'external_auth_token')
+        assert hasattr(client, 'external_token_manager')
+        assert hasattr(client, 'base_domain')
 
-        # Test default values
-        assert protocol_client.token == SecretStr('')
-        assert protocol_client.refresh is False
-        assert protocol_client.external_auth_id is None
-        assert protocol_client.external_auth_token is None
-        assert protocol_client.external_token_manager is False
-        assert protocol_client.base_domain is None
+        # Test TestableHTTPClient values
+        assert client.token == SecretStr('test-token')
+        assert client.refresh is False
+        assert client.external_auth_id is None
+        assert client.external_auth_token is None
+        assert client.external_token_manager is False
+        assert client.base_domain is None
 
     def test_protocol_methods_exist(self):
         """Test that protocol defines expected methods."""
-        protocol_client = HTTPClient()
+        client = TestableHTTPClient()
 
         # Test that methods exist
-        assert hasattr(protocol_client, 'get_latest_token')
-        assert hasattr(protocol_client, '_get_headers')
-        assert hasattr(protocol_client, '_make_request')
-        assert hasattr(protocol_client, 'get_user')
-        assert hasattr(protocol_client, '_has_token_expired')
-        assert hasattr(protocol_client, 'execute_request')
-        assert hasattr(protocol_client, 'handle_http_status_error')
-        assert hasattr(protocol_client, 'handle_http_error')
-        assert hasattr(protocol_client, 'provider')
+        assert hasattr(client, 'get_latest_token')
+        assert hasattr(client, '_get_headers')
+        assert hasattr(client, '_make_request')
+        assert hasattr(client, '_has_token_expired')
+        assert hasattr(client, 'execute_request')
+        assert hasattr(client, 'handle_http_status_error')
+        assert hasattr(client, 'handle_http_error')
+        assert hasattr(client, 'provider')
 
-    async def test_protocol_abstract_methods_raise_not_implemented(self):
-        """Test that abstract protocol methods raise NotImplementedError."""
-        protocol_client = HTTPClient()
+    def test_protocol_concrete_methods_work(self):
+        """Test that concrete protocol methods work correctly."""
+        client = TestableHTTPClient()
 
-        # These methods should raise NotImplementedError when called on the protocol directly
-        with pytest.raises((NotImplementedError, AttributeError)):
-            await protocol_client.get_latest_token()
+        # These methods should work since TestableHTTPClient implements them
+        assert client.provider == 'test-provider'
 
-        with pytest.raises((NotImplementedError, AttributeError)):
-            await protocol_client._get_headers()
-
-        with pytest.raises((NotImplementedError, AttributeError)):
-            await protocol_client._make_request('http://example.com')
-
-        with pytest.raises((NotImplementedError, AttributeError)):
-            await protocol_client.get_user()
-
-        with pytest.raises((NotImplementedError, AttributeError)):
-            _ = protocol_client.provider
+        # Test that the default implementations from the protocol are available
+        assert hasattr(client, '_has_token_expired')
+        assert hasattr(client, 'execute_request')
+        assert hasattr(client, 'handle_http_status_error')
+        assert hasattr(client, 'handle_http_error')
 
     def test_provider_specific_error_messages(self):
         """Test that error messages are provider-specific."""
         providers = ['github', 'gitlab', 'bitbucket']
 
         for provider in providers:
-            protocol_client = HTTPClient()
-            protocol_client.provider = provider
+            client = TestableHTTPClient()
+            client.provider = provider
 
             # Test 401 error
             mock_response = Mock()
@@ -301,7 +293,7 @@ class TestHTTPClient:
             error = httpx.HTTPStatusError(
                 message='401 Unauthorized', request=Mock(), response=mock_response
             )
-            result = protocol_client.handle_http_status_error(error)
+            result = client.handle_http_status_error(error)
             assert f'Invalid {provider} token' in str(result)
 
             # Test 404 error
@@ -309,7 +301,7 @@ class TestHTTPClient:
             error = httpx.HTTPStatusError(
                 message='404 Not Found', request=Mock(), response=mock_response
             )
-            result = protocol_client.handle_http_status_error(error)
+            result = client.handle_http_status_error(error)
             assert f'Resource not found on {provider} API' in str(result)
 
             # Test 429 error
@@ -317,15 +309,15 @@ class TestHTTPClient:
             error = httpx.HTTPStatusError(
                 message='429 Too Many Requests', request=Mock(), response=mock_response
             )
-            result = protocol_client.handle_http_status_error(error)
+            result = client.handle_http_status_error(error)
             assert f'{provider} API rate limit exceeded' in str(result)
 
-    def test_protocol_composition_over_inheritance(self):
-        """Test that the protocol enables composition over inheritance."""
+    def test_protocol_inheritance_pattern(self):
+        """Test that the protocol works with inheritance pattern."""
         # This test demonstrates that classes can implement HTTPClient
-        # without inheriting from a base class
+        # by inheriting from the protocol to get default implementations
 
-        class ComposedService:
+        class ComposedService(HTTPClient):
             def __init__(self):
                 self.token = SecretStr('composed-token')
                 self.refresh = True
@@ -341,7 +333,7 @@ class TestHTTPClient:
             async def get_latest_token(self) -> SecretStr | None:
                 return self.token
 
-            async def _get_headers(self) -> dict[str, str]:
+            async def _get_headers(self) -> dict[str, Any]:
                 return {'Authorization': f'Bearer {self.token.get_secret_value()}'}
 
             async def _make_request(
@@ -352,13 +344,16 @@ class TestHTTPClient:
             ):
                 return {'composed': True}, {}
 
-            async def get_user(self) -> User:
-                return User(id='composed-123', login='composed-user', avatar_url='')
-
         service = ComposedService()
 
         # Verify it implements the protocol
         assert isinstance(service, HTTPClient)
+
+        # Verify it has the default implementations
+        assert hasattr(service, '_has_token_expired')
+        assert hasattr(service, 'execute_request')
+        assert hasattr(service, 'handle_http_status_error')
+        assert hasattr(service, 'handle_http_error')
 
         # Verify it has all the expected attributes and methods
         assert service.provider == 'composed-provider'

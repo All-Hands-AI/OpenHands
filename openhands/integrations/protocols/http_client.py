@@ -12,7 +12,6 @@ from openhands.integrations.service_types import (
     RequestMethod,
     ResourceNotFoundError,
     UnknownException,
-    User,
 )
 
 
@@ -73,14 +72,6 @@ class HTTPClient(Protocol):
 
         Returns:
             A tuple of (response_data, response_headers)
-        """
-        ...
-
-    async def get_user(self) -> User:
-        """Get the authenticated user's information.
-
-        Returns:
-            User object with authenticated user details
         """
         ...
 
