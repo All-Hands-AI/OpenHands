@@ -341,13 +341,19 @@ class TestBitbucketProviderDomain(unittest.TestCase):
         )
 
         # Verify that run_action was called at least once (for git clone)
-        self.assertTrue(mock_run_action.called)
+        mock_run_action.assert_called()
 
         # Verify that the domain used was 'bitbucket.org'
-        # Extract the command from the first call to run_action
-        args, _ = mock_run_action.call_args
-        action = args[0]
-        self.assertIn('bitbucket.org', action.command)
+        # Check that at least one call contains 'bitbucket.org' in the action command
+        calls_with_bitbucket = [
+            call_args
+            for call_args in mock_run_action.call_args_list
+            if 'bitbucket.org' in call_args[0][0].command
+        ]
+        self.assertTrue(
+            len(calls_with_bitbucket) > 0,
+            "Expected at least one call with 'bitbucket.org' in the command",
+        )
 
 
 # Provider Token Validation Tests
@@ -417,12 +423,10 @@ async def test_check_provider_tokens_with_only_bitbucket():
     ):
         result = await check_provider_tokens(post_model, None)
 
-        # Verify that validate_provider_token was called only once (for Bitbucket)
-        assert mock_validate.call_count == 1
-
-        # Verify that the token passed to validate_provider_token was the Bitbucket token
-        args, kwargs = mock_validate.call_args
-        assert args[0].get_secret_value() == 'username:app_password'
+        # Verify that validate_provider_token was called only once with the Bitbucket token and host
+        expected_token = provider_tokens[ProviderType.BITBUCKET].token
+        expected_host = provider_tokens[ProviderType.BITBUCKET].host
+        mock_validate.assert_called_once_with(expected_token, expected_host)
 
         # Verify that no error message was returned
         assert result == ''
@@ -450,13 +454,20 @@ async def test_bitbucket_sort_parameter_mapping():
         # Verify that the second call used 'updated_on' instead of 'pushed'
         assert mock_request.call_count == 2
 
-        # Check the second call (repositories call)
-        second_call_args = mock_request.call_args_list[1]
-        url, params = second_call_args[0]
+        # Verify the second call was made with the correct parameters
+        # We can't use assert_called_with directly because we need to check partial URL and params
+        # But we can verify the call structure more explicitly
+        calls = mock_request.call_args_list
+        assert len(calls) == 2, f'Expected 2 calls, got {len(calls)}'
 
-        # Verify the sort parameter was mapped correctly (with descending order)
-        assert params['sort'] == '-updated_on'
-        assert 'repositories/test-workspace' in url
+        # Check the second call (repositories call) contains the mapped sort parameter
+        second_call_url, second_call_params = calls[1][0]
+        assert second_call_params['sort'] == '-updated_on', (
+            f"Expected sort parameter '-updated_on', got {second_call_params.get('sort')}"
+        )
+        assert 'repositories/test-workspace' in second_call_url, (
+            f"Expected URL to contain 'repositories/test-workspace', got {second_call_url}"
+        )
 
 
 @pytest.mark.asyncio
@@ -741,23 +752,31 @@ def test_initialize_repository_for_runtime_with_bitbucket_token(
 
     # Verify that call_async_from_sync was called with the correct arguments
     mock_call_async_from_sync.assert_called_once()
-    args, kwargs = mock_call_async_from_sync.call_args
 
-    # Check that the function called was clone_or_init_repo
-    assert args[0] == mock_runtime.clone_or_init_repo
+    # Extract call arguments to verify the provider tokens were set correctly
+    call_args = mock_call_async_from_sync.call_args
+    assert call_args[0][0] == mock_runtime.clone_or_init_repo, (
+        'Expected first argument to be clone_or_init_repo method'
+    )
 
     # Check that provider tokens were passed correctly
-    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
-    assert provider_tokens is not None
-    assert ProviderType.BITBUCKET in provider_tokens
+    provider_tokens = call_args[0][2]  # Third argument is immutable_provider_tokens
+    assert provider_tokens is not None, 'Provider tokens should not be None'
+    assert ProviderType.BITBUCKET in provider_tokens, (
+        'BITBUCKET provider should be in provider_tokens'
+    )
     assert (
         provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
         == 'username:app_password'
+    ), (
+        f"Expected BITBUCKET token to be 'username:app_password', got {provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()}"
     )
 
     # Check that the repository was passed correctly
-    assert args[3] == 'all-hands-ai/test-repo'  # selected_repository
-    assert args[4] is None  # selected_branch
+    assert call_args[0][3] == 'all-hands-ai/test-repo', (
+        "Expected selected_repository to be 'all-hands-ai/test-repo'"
+    )
+    assert call_args[0][4] is None, 'Expected selected_branch to be None'
 
 
 @patch('openhands.core.setup.call_async_from_sync')
@@ -797,29 +816,41 @@ def test_initialize_repository_for_runtime_with_multiple_tokens(
 
     # Verify that call_async_from_sync was called
     mock_call_async_from_sync.assert_called_once()
-    args, kwargs = mock_call_async_from_sync.call_args
 
-    # Check that provider tokens were passed correctly
-    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
-    assert provider_tokens is not None
+    # Extract call arguments to verify the provider tokens were set correctly
+    call_args = mock_call_async_from_sync.call_args
+    provider_tokens = call_args[0][2]  # Third argument is immutable_provider_tokens
+    assert provider_tokens is not None, 'Provider tokens should not be None'
 
     # Verify all three provider types are present
-    assert ProviderType.GITHUB in provider_tokens
-    assert ProviderType.GITLAB in provider_tokens
-    assert ProviderType.BITBUCKET in provider_tokens
+    assert ProviderType.GITHUB in provider_tokens, (
+        'GITHUB provider should be in provider_tokens'
+    )
+    assert ProviderType.GITLAB in provider_tokens, (
+        'GITLAB provider should be in provider_tokens'
+    )
+    assert ProviderType.BITBUCKET in provider_tokens, (
+        'BITBUCKET provider should be in provider_tokens'
+    )
 
     # Verify token values
     assert (
         provider_tokens[ProviderType.GITHUB].token.get_secret_value()
         == 'github_token_123'
+    ), (
+        f"Expected GITHUB token to be 'github_token_123', got {provider_tokens[ProviderType.GITHUB].token.get_secret_value()}"
     )
     assert (
         provider_tokens[ProviderType.GITLAB].token.get_secret_value()
         == 'gitlab_token_456'
+    ), (
+        f"Expected GITLAB token to be 'gitlab_token_456', got {provider_tokens[ProviderType.GITLAB].token.get_secret_value()}"
     )
     assert (
         provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()
         == 'username:bitbucket_app_password'
+    ), (
+        f"Expected BITBUCKET token to be 'username:bitbucket_app_password', got {provider_tokens[ProviderType.BITBUCKET].token.get_secret_value()}"
     )
 
 
@@ -861,16 +892,22 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
 
     # Verify that call_async_from_sync was called
     mock_call_async_from_sync.assert_called_once()
-    args, kwargs = mock_call_async_from_sync.call_args
 
-    # Check that provider tokens were passed correctly
-    provider_tokens = args[2]  # Third argument is immutable_provider_tokens
-    assert provider_tokens is not None
+    # Extract call arguments to verify the provider tokens were set correctly
+    call_args = mock_call_async_from_sync.call_args
+    provider_tokens = call_args[0][2]  # Third argument is immutable_provider_tokens
+    assert provider_tokens is not None, 'Provider tokens should not be None'
 
     # Verify only GitHub and GitLab are present, not Bitbucket
-    assert ProviderType.GITHUB in provider_tokens
-    assert ProviderType.GITLAB in provider_tokens
-    assert ProviderType.BITBUCKET not in provider_tokens
+    assert ProviderType.GITHUB in provider_tokens, (
+        'GITHUB provider should be in provider_tokens'
+    )
+    assert ProviderType.GITLAB in provider_tokens, (
+        'GITLAB provider should be in provider_tokens'
+    )
+    assert ProviderType.BITBUCKET not in provider_tokens, (
+        'BITBUCKET provider should not be in provider_tokens'
+    )
 
 
 @pytest.mark.asyncio
@@ -895,11 +932,15 @@ async def test_bitbucket_order_parameter_honored():
         )
 
         # Verify the call was made with ascending order (no '-' prefix)
-        assert mock_request.call_count == 1
-        call_args = mock_request.call_args_list[0]
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
         url, params = call_args[0]
-        assert params['sort'] == 'updated_on'  # No '-' prefix for ascending
-        assert 'repositories/test-workspace' in url
+        assert params['sort'] == 'updated_on', (
+            f"Expected sort parameter 'updated_on', got {params.get('sort')}"
+        )
+        assert 'repositories/test-workspace' in url, (
+            f"Expected URL to contain 'repositories/test-workspace', got {url}"
+        )
 
         # Reset mock for next test
         mock_request.reset_mock()
@@ -915,11 +956,15 @@ async def test_bitbucket_order_parameter_honored():
         )
 
         # Verify the call was made with descending order ('-' prefix)
-        assert mock_request.call_count == 1
-        call_args = mock_request.call_args_list[0]
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
         url, params = call_args[0]
-        assert params['sort'] == '-updated_on'  # '-' prefix for descending
-        assert 'repositories/test-workspace' in url
+        assert params['sort'] == '-updated_on', (
+            f"Expected sort parameter '-updated_on', got {params.get('sort')}"
+        )
+        assert 'repositories/test-workspace' in url, (
+            f"Expected URL to contain 'repositories/test-workspace', got {url}"
+        )
 
         # Reset mock for next test
         mock_request.reset_mock()
@@ -935,10 +980,12 @@ async def test_bitbucket_order_parameter_honored():
         )
 
         # Verify the call was made with descending order by default
-        assert mock_request.call_count == 1
-        call_args = mock_request.call_args_list[0]
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
         url, params = call_args[0]
-        assert params['sort'] == '-created_on'  # '-' prefix for default descending
+        assert params['sort'] == '-created_on', (
+            f"Expected sort parameter '-created_on', got {params.get('sort')}"
+        )
 
 
 @pytest.mark.asyncio
@@ -965,14 +1012,14 @@ async def test_bitbucket_search_repositories_passes_order():
             )
 
             # Verify get_paginated_repos was called with the correct order parameter
-            assert mock_paginated_repos.call_count >= 1
+            mock_paginated_repos.assert_called()
 
             # Check that at least one call included the 'asc' order parameter
             calls_with_asc = [
-                call
-                for call in mock_paginated_repos.call_args_list
-                if len(call[0]) > 5
-                and call[0][5] == 'asc'  # order is the 6th positional argument
+                call_args
+                for call_args in mock_paginated_repos.call_args_list
+                if len(call_args[0]) > 5
+                and call_args[0][5] == 'asc'  # order is the 6th positional argument
             ]
             assert len(calls_with_asc) > 0, (
                 "Expected at least one call with 'asc' order parameter"
@@ -991,14 +1038,14 @@ async def test_bitbucket_search_repositories_passes_order():
             )
 
             # Verify get_paginated_repos was called with the correct order parameter
-            assert mock_paginated_repos.call_count >= 1
+            mock_paginated_repos.assert_called()
 
             # Check that at least one call included the 'desc' order parameter
             calls_with_desc = [
-                call
-                for call in mock_paginated_repos.call_args_list
-                if len(call[0]) > 5
-                and call[0][5] == 'desc'  # order is the 6th positional argument
+                call_args
+                for call_args in mock_paginated_repos.call_args_list
+                if len(call_args[0]) > 5
+                and call_args[0][5] == 'desc'  # order is the 6th positional argument
             ]
             assert len(calls_with_desc) > 0, (
                 "Expected at least one call with 'desc' order parameter"
@@ -1009,7 +1056,7 @@ async def test_bitbucket_search_repositories_passes_order():
 async def test_get_bitbucket_sort_param_all_sort_types():
     """Test _get_bitbucket_sort_param with all supported sort types and default desc order."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test all sort types with default desc order
     assert service._get_bitbucket_sort_param('pushed') == '-updated_on'
     assert service._get_bitbucket_sort_param('updated') == '-updated_on'
@@ -1022,33 +1069,37 @@ async def test_get_bitbucket_sort_param_all_sort_types():
 async def test_get_bitbucket_sort_param_asc_order():
     """Test _get_bitbucket_sort_param with ascending order for all sort types."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test all sort types with ascending order
     assert service._get_bitbucket_sort_param('pushed', 'asc') == 'updated_on'
     assert service._get_bitbucket_sort_param('updated', 'asc') == 'updated_on'
     assert service._get_bitbucket_sort_param('created', 'asc') == 'created_on'
     assert service._get_bitbucket_sort_param('full_name', 'asc') == 'name'
-    assert service._get_bitbucket_sort_param('unknown_sort', 'asc') == 'updated_on'  # default
+    assert (
+        service._get_bitbucket_sort_param('unknown_sort', 'asc') == 'updated_on'
+    )  # default
 
 
 @pytest.mark.asyncio
 async def test_get_bitbucket_sort_param_desc_order():
     """Test _get_bitbucket_sort_param with explicit descending order for all sort types."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test all sort types with explicit descending order
     assert service._get_bitbucket_sort_param('pushed', 'desc') == '-updated_on'
     assert service._get_bitbucket_sort_param('updated', 'desc') == '-updated_on'
     assert service._get_bitbucket_sort_param('created', 'desc') == '-created_on'
     assert service._get_bitbucket_sort_param('full_name', 'desc') == '-name'
-    assert service._get_bitbucket_sort_param('unknown_sort', 'desc') == '-updated_on'  # default
+    assert (
+        service._get_bitbucket_sort_param('unknown_sort', 'desc') == '-updated_on'
+    )  # default
 
 
 @pytest.mark.asyncio
 async def test_get_bitbucket_sort_param_case_insensitive_order():
     """Test _get_bitbucket_sort_param with case-insensitive order parameters."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test case insensitive order parameters
     assert service._get_bitbucket_sort_param('updated', 'DESC') == '-updated_on'
     assert service._get_bitbucket_sort_param('updated', 'Desc') == '-updated_on'
@@ -1062,7 +1113,7 @@ async def test_get_bitbucket_sort_param_case_insensitive_order():
 async def test_get_bitbucket_sort_param_invalid_order():
     """Test _get_bitbucket_sort_param with invalid order parameters defaults to asc (no prefix)."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test invalid order parameters - should default to asc behavior (no prefix)
     # Only 'desc' (case insensitive) gets the '-' prefix, everything else is treated as asc
     assert service._get_bitbucket_sort_param('updated', 'invalid') == 'updated_on'
@@ -1074,35 +1125,39 @@ async def test_get_bitbucket_sort_param_invalid_order():
 async def test_get_bitbucket_sort_param_edge_cases():
     """Test _get_bitbucket_sort_param with edge cases and boundary conditions."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Test empty sort parameter - should default to updated_on
     assert service._get_bitbucket_sort_param('', 'asc') == 'updated_on'
     assert service._get_bitbucket_sort_param('', 'desc') == '-updated_on'
-    
+
     # Test None-like values (if they could be passed)
-    assert service._get_bitbucket_sort_param('None', 'asc') == 'updated_on'  # treated as unknown
-    
+    assert (
+        service._get_bitbucket_sort_param('None', 'asc') == 'updated_on'
+    )  # treated as unknown
+
     # Test whitespace handling
-    assert service._get_bitbucket_sort_param(' updated ', 'asc') == 'updated_on'  # treated as unknown due to spaces
+    assert (
+        service._get_bitbucket_sort_param(' updated ', 'asc') == 'updated_on'
+    )  # treated as unknown due to spaces
 
 
 @pytest.mark.asyncio
 async def test_get_bitbucket_sort_param_mapping_correctness():
     """Test that _get_bitbucket_sort_param correctly maps to Bitbucket API field names."""
     service = BitBucketService(token=SecretStr('test-token'))
-    
+
     # Verify the mapping is correct for Bitbucket API
     # 'pushed' -> 'updated_on' (Bitbucket doesn't have pushed_at)
     assert 'updated_on' in service._get_bitbucket_sort_param('pushed', 'asc')
-    
+
     # 'updated' -> 'updated_on'
     assert 'updated_on' in service._get_bitbucket_sort_param('updated', 'asc')
-    
+
     # 'created' -> 'created_on'
     assert 'created_on' in service._get_bitbucket_sort_param('created', 'asc')
-    
+
     # 'full_name' -> 'name' (Bitbucket uses 'name' field)
     assert service._get_bitbucket_sort_param('full_name', 'asc') == 'name'
-    
+
     # Default case -> 'updated_on'
     assert 'updated_on' in service._get_bitbucket_sort_param('anything_else', 'asc')
