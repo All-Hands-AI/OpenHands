@@ -230,7 +230,7 @@ class ProviderHandler:
 
             service = self._get_service(selected_provider)
             return await service.get_paginated_repos(
-                page, per_page, sort, installation_id, order='desc'
+                page, per_page, sort, installation_id
             )
 
         all_repos: list[Repository] = []
