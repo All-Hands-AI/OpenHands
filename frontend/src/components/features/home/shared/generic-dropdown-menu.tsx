@@ -53,7 +53,7 @@ export function GenericDropdownMenu<T>({
         ref: menuRef,
         className: cn(
           "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none max-h-60 overflow-auto",
-          "focus:outline-none p-1 mt-1",
+          "focus:outline-none p-1 mt-1 z-[9999]",
         ),
         onScroll,
       })}

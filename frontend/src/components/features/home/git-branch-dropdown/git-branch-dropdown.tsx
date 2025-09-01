@@ -16,6 +16,7 @@ import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
 import { ErrorMessage } from "../shared/error-message";
 import { BranchDropdownMenu } from "./branch-dropdown-menu";
+import BranchIcon from "#/icons/u-code-branch.svg?react";
 
 export interface GitBranchDropdownProps {
   repository: string | null;
@@ -187,6 +188,9 @@ export function GitBranchDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
+          <BranchIcon width={16} height={16} />
+        </div>
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
@@ -194,24 +198,27 @@ export function GitBranchDropdown({
             placeholder,
             className: cn(
               "w-full px-3 py-2 border border-[#727987] rounded-sm shadow-none h-[42px] min-h-[42px] max-h-[42px]",
-              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3] placeholder:italic",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
               "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10 text-sm font-normal leading-5", // Space for toggle button
+              "pl-7 pr-2 text-sm font-normal leading-5", // Space for toggle button
             ),
           })}
           data-testid="git-branch-dropdown-input"
         />
 
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {selectedBranch && (
-            <ClearButton disabled={disabled} onClear={handleClear} />
+            <div className="absolute right-7 translate-y-[1px]">
+              <ClearButton disabled={disabled} onClear={handleClear} />
+            </div>
           )}
 
           <ToggleButton
             isOpen={isOpen}
             disabled={disabled || !repository}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName="w-10 h-10 translate-y-[1px]"
           />
         </div>
 
