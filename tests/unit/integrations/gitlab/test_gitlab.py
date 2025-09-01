@@ -440,3 +440,263 @@ async def test_gitlab_search_repositories_single_term_query():
 
         # Verify we got the expected repositories
         assert len(repositories) == 1
+
+
+@pytest.mark.asyncio
+async def test_gitlab_order_parameter_honored():
+    """Test that the GitLab service correctly honors the order parameter (asc/desc)."""
+    # Create a service instance
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test ascending order - use get_all_repositories which we know works
+        await service.get_all_repositories('updated', AppMode.SAAS, order='asc')
+
+        # Verify the call was made with ascending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['sort'] == 'asc', (
+            f"Expected sort parameter 'asc', got {params.get('sort')}"
+        )
+        assert params['order_by'] == 'last_activity_at', (
+            f"Expected order_by parameter 'last_activity_at', got {params.get('order_by')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.get_all_repositories('created', AppMode.SAAS, order='desc')
+
+        # Verify the call was made with descending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['sort'] == 'desc', (
+            f"Expected sort parameter 'desc', got {params.get('sort')}"
+        )
+        assert params['order_by'] == 'created_at', (
+            f"Expected order_by parameter 'created_at', got {params.get('order_by')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_gitlab_search_repositories_passes_order():
+    """Test that search_repositories correctly passes the order parameter to get_paginated_repos."""
+    # Create a service instance
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the get_paginated_repos method to capture calls
+    with patch.object(service, 'get_paginated_repos') as mock_paginated_repos:
+        mock_paginated_repos.return_value = []
+
+        # Test ascending order
+        await service.search_repositories(
+            query='test-repo',
+            per_page=10,
+            sort='updated',
+            order='asc',
+            public=False,
+        )
+
+        # Verify get_paginated_repos was called with the correct order parameter
+        mock_paginated_repos.assert_called_once_with(
+            1, 10, 'updated', None, 'test-repo', 'asc'
+        )
+
+        # Reset mock for next test
+        mock_paginated_repos.reset_mock()
+
+        # Test descending order
+        await service.search_repositories(
+            query='test-repo',
+            per_page=20,
+            sort='created',
+            order='desc',
+            public=False,
+        )
+
+        # Verify get_paginated_repos was called with the correct order parameter
+        mock_paginated_repos.assert_called_once_with(
+            1, 20, 'created', None, 'test-repo', 'desc'
+        )
+
+
+@pytest.mark.asyncio
+async def test_gitlab_get_all_repositories_honors_order():
+    """Test that get_all_repositories correctly honors the order parameter."""
+    # Create a service instance
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {'Link': ''})  # No next page
+
+        # Test ascending order
+        await service.get_all_repositories('updated', AppMode.SAAS, order='asc')
+
+        # Verify the call was made with ascending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['sort'] == 'asc', (
+            f"Expected sort parameter 'asc', got {params.get('sort')}"
+        )
+        assert params['order_by'] == 'last_activity_at', (
+            f"Expected order_by parameter 'last_activity_at', got {params.get('order_by')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.get_all_repositories('created', AppMode.SAAS, order='desc')
+
+        # Verify the call was made with descending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['sort'] == 'desc', (
+            f"Expected sort parameter 'desc', got {params.get('sort')}"
+        )
+        assert params['order_by'] == 'created_at', (
+            f"Expected order_by parameter 'created_at', got {params.get('order_by')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test default order (should be descending)
+        await service.get_all_repositories('pushed', AppMode.SAAS)
+
+        # Verify the call was made with descending order by default
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['sort'] == 'desc', (
+            f"Expected sort parameter 'desc', got {params.get('sort')}"
+        )
+        assert params['order_by'] == 'last_activity_at', (
+            f"Expected order_by parameter 'last_activity_at', got {params.get('order_by')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_gitlab_sort_parameter_mapping():
+    """Test that GitLab service correctly maps sort parameters to GitLab API field names."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test all sort types with their expected mappings
+        sort_mappings = {
+            'pushed': 'last_activity_at',
+            'updated': 'last_activity_at',
+            'created': 'created_at',
+            'full_name': 'name',
+            'unknown_sort': 'last_activity_at',  # default
+        }
+
+        for sort_param, expected_order_by in sort_mappings.items():
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort=sort_param,
+                installation_id=None,
+                query=None,
+                order='asc',
+            )
+
+            # Verify the call was made with correct order_by mapping
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['order_by'] == expected_order_by, (
+                f"For sort '{sort_param}', expected order_by '{expected_order_by}', got {params.get('order_by')}"
+            )
+            assert params['sort'] == 'asc', (
+                f"Expected sort parameter 'asc', got {params.get('sort')}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_gitlab_order_parameter_case_insensitive():
+    """Test that GitLab service handles case-insensitive order parameters correctly."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test case variations - GitLab should receive them as-is
+        order_variations = ['asc', 'ASC', 'Asc', 'desc', 'DESC', 'Desc']
+
+        for order_param in order_variations:
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort='updated',
+                installation_id=None,
+                query=None,
+                order=order_param,
+            )
+
+            # Verify the call was made with the exact order parameter passed
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['sort'] == order_param, (
+                f"Expected sort parameter '{order_param}', got {params.get('sort')}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_gitlab_order_parameter_edge_cases():
+    """Test that GitLab service handles edge cases for order parameters."""
+    service = GitLabService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test invalid order parameters - should be passed through as-is
+        invalid_orders = ['invalid', '', 'random', '123']
+
+        for order_param in invalid_orders:
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort='updated',
+                installation_id=None,
+                query=None,
+                order=order_param,
+            )
+
+            # Verify the call was made with the exact order parameter passed
+            # GitLab service doesn't validate order parameters, it passes them through
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['sort'] == order_param, (
+                f"Expected sort parameter '{order_param}', got {params.get('sort')}"
+            )
