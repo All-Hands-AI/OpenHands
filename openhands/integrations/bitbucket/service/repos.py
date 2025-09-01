@@ -1,5 +1,6 @@
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 from openhands.integrations.bitbucket.service.base import BitBucketMixinBase
 from openhands.integrations.service_types import Repository, SuggestedTask
@@ -18,18 +19,28 @@ class BitBucketReposMixin(BitBucketMixinBase):
         repositories = []
 
         if public:
-            # Extract workspace and repo from URL
+            # Extract workspace and repo from URL using robust URL parsing
             # URL format: https://{domain}/{workspace}/{repo}/{additional_params}
-            # Split by '/' and find workspace and repo parts
-            url_parts = query.split('/')
-            if len(url_parts) >= 5:  # https:, '', domain, workspace, repo
-                workspace_slug = url_parts[3]
-                repo_name = url_parts[4]
+            try:
+                parsed_url = urlparse(query)
+                # Remove leading slash and split path into segments
+                path_segments = [
+                    segment for segment in parsed_url.path.split('/') if segment
+                ]
 
-                repo = await self.get_repository_details_from_repo_name(
-                    f'{workspace_slug}/{repo_name}'
-                )
-                repositories.append(repo)
+                # We need at least 2 path segments: workspace and repo
+                if len(path_segments) >= 2:
+                    workspace_slug = path_segments[0]
+                    repo_name = path_segments[1]
+
+                    repo = await self.get_repository_details_from_repo_name(
+                        f'{workspace_slug}/{repo_name}'
+                    )
+                    repositories.append(repo)
+            except (ValueError, IndexError):
+                # If URL parsing fails or doesn't have expected structure,
+                # return empty list for public search
+                pass
 
             return repositories
 
