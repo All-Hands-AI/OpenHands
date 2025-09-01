@@ -1,12 +1,10 @@
-from abc import ABC, abstractmethod
 from datetime import datetime
 from enum import Enum
-from typing import Any, Protocol
+from typing import Protocol
 
 from jinja2 import Environment, FileSystemLoader
 from pydantic import BaseModel, SecretStr
 
-from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
 from openhands.server.types import AppMode
 
 
@@ -186,21 +184,21 @@ class RequestMethod(Enum):
     GET = 'get'
 
 
-class BaseGitService(ABC):
-    @property
-    @abstractmethod
-    def provider(self) -> str:
-        """Return the provider type for this service."""
-        ...
+class BaseGitService:
+    # @property
+    # @abstractmethod
+    # def provider(self) -> str:
+    #     """Return the provider type for this service."""
+    #     ...
 
-    # Method used to satisfy mypy for abstract class definition
-    @abstractmethod
-    async def _make_request(
-        self,
-        url: str,
-        params: dict | None = None,
-        method: RequestMethod = RequestMethod.GET,
-    ) -> tuple[Any, dict]: ...
+    # # Method used to satisfy mypy for abstract class definition
+    # @abstractmethod
+    # async def _make_request(
+    #     self,
+    #     url: str,
+    #     params: dict | None = None,
+    #     method: RequestMethod = RequestMethod.GET,
+    # ) -> tuple[Any, dict]: ...
 
     def _truncate_comment(
         self, comment_body: str, max_comment_length: int = 500
@@ -284,20 +282,6 @@ class GitService(Protocol):
         self, repository: str, query: str, per_page: int = 30
     ) -> list[Branch]:
         """Search for branches within a repository"""
-
-    async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
-        """Get microagents from a repository"""
-        ...
-
-    async def get_microagent_content(
-        self, repository: str, file_path: str
-    ) -> MicroagentContentResponse:
-        """Get content of a specific microagent file
-
-        Returns:
-            MicroagentContentResponse with parsed content and triggers
-        """
-        ...
 
     async def get_pr_details(self, repository: str, pr_number: int) -> dict:
         """Get detailed information about a specific pull request/merge request

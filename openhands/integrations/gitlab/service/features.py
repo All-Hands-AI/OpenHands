@@ -3,12 +3,12 @@ from openhands.integrations.protocols.microagent_management_client import (
     MicroagentManagementClient,
 )
 from openhands.integrations.service_types import (
-    MicroagentContentResponse,
     ProviderType,
     RequestMethod,
     SuggestedTask,
     TaskType,
 )
+from openhands.microagent.types import MicroagentContentResponse
 
 
 class GitLabFeaturesMixin(GitLabMixinBase, MicroagentManagementClient):

@@ -10,11 +10,11 @@ from openhands.integrations.protocols.microagent_management_client import (
     MicroagentManagementClient,
 )
 from openhands.integrations.service_types import (
-    MicroagentContentResponse,
     ProviderType,
     SuggestedTask,
     TaskType,
 )
+from openhands.microagent.types import MicroagentContentResponse
 
 
 class GitHubFeaturesMixin(GitHubMixinBase, MicroagentManagementClient):
