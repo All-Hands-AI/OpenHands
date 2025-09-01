@@ -1,4 +1,4 @@
-"""Unit tests for HTTPClient protocol."""
+"""Unit tests for HTTPClient abstract base class (ABC)."""
 
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -18,7 +18,7 @@ from openhands.integrations.service_types import (
 
 
 class TestableHTTPClient(HTTPClient):
-    """Testable implementation of HTTPClient protocol for unit testing."""
+    """Testable concrete implementation of HTTPClient for unit testing."""
 
     def __init__(self, provider_name: str = 'test-provider'):
         self.token = SecretStr('test-token')
@@ -55,7 +55,7 @@ class TestableHTTPClient(HTTPClient):
 
 @pytest.mark.asyncio
 class TestHTTPClient:
-    """Test cases for HTTPClient protocol."""
+    """Test cases for HTTPClient ABC."""
 
     def setup_method(self):
         """Set up test fixtures."""
@@ -307,54 +307,3 @@ class TestHTTPClient:
             )
             result = client.handle_http_status_error(error)
             assert f'{provider} API rate limit exceeded' in str(result)
-
-    def test_protocol_inheritance_pattern(self):
-        """Test that the protocol works with inheritance pattern."""
-        # This test demonstrates that classes can implement HTTPClient
-        # by inheriting from the protocol to get default implementations
-
-        class ComposedService(HTTPClient):
-            def __init__(self):
-                self.token = SecretStr('composed-token')
-                self.refresh = True
-                self.external_auth_id = 'external-id'
-                self.external_auth_token = SecretStr('external-token')
-                self.external_token_manager = True
-                self.base_domain = 'example.com'
-
-            @property
-            def provider(self) -> str:
-                return 'composed-provider'
-
-            async def get_latest_token(self) -> SecretStr | None:
-                return self.token
-
-            async def _get_headers(self) -> dict[str, Any]:
-                return {'Authorization': f'Bearer {self.token.get_secret_value()}'}
-
-            async def _make_request(
-                self,
-                url: str,
-                params: dict | None = None,
-                method: RequestMethod = RequestMethod.GET,
-            ):
-                return {'composed': True}, {}
-
-        service = ComposedService()
-
-        # Verify it implements the protocol
-        assert isinstance(service, HTTPClient)
-
-        # Verify it has the default implementations
-        assert hasattr(service, '_has_token_expired')
-        assert hasattr(service, 'execute_request')
-        assert hasattr(service, 'handle_http_status_error')
-        assert hasattr(service, 'handle_http_error')
-
-        # Verify it has all the expected attributes and methods
-        assert service.provider == 'composed-provider'
-        assert service.token.get_secret_value() == 'composed-token'
-        assert service.refresh is True
-        assert service.external_auth_id == 'external-id'
-        assert service.external_token_manager is True
-        assert service.base_domain == 'example.com'
