@@ -1,6 +1,7 @@
 """HTTP Client Protocol for Git Service Integrations."""
 
-from typing import Any, Protocol, runtime_checkable
+from abc import ABC, abstractmethod
+from typing import Any
 
 from httpx import AsyncClient, HTTPError, HTTPStatusError
 from pydantic import SecretStr
@@ -15,16 +16,14 @@ from openhands.integrations.service_types import (
 )
 
 
-@runtime_checkable
-class HTTPClient(Protocol):
-    """Protocol defining the HTTP client interface for Git service integrations.
+class HTTPClient(ABC):
+    """Abstract base class defining the HTTP client interface for Git service integrations.
 
-    This protocol abstracts the common HTTP client functionality needed by all
-    Git service providers (GitHub, GitLab, BitBucket) to enable composition
-    over inheritance patterns.
+    This class abstracts the common HTTP client functionality needed by all
+    Git service providers (GitHub, GitLab, BitBucket) while keeping inheritance in place.
     """
 
-    # Required attributes
+    # Default attributes (subclasses may override)
     token: SecretStr = SecretStr('')
     refresh: bool = False
     external_auth_id: str | None = None
@@ -32,58 +31,34 @@ class HTTPClient(Protocol):
     external_token_manager: bool = False
     base_domain: str | None = None
 
-    # Required property
+    # Provider identification must be implemented by subclasses
     @property
-    def provider(self) -> str:
-        """Get the provider name for this service."""
-        ...
+    @abstractmethod
+    def provider(self) -> str: ...
 
+    # Abstract methods that concrete classes must implement
+    @abstractmethod
     async def get_latest_token(self) -> SecretStr | None:
-        """Get the latest working token for the service.
-
-        Returns:
-            The latest token if available, None otherwise
-        """
+        """Get the latest working token for the service."""
         ...
 
+    @abstractmethod
     async def _get_headers(self) -> dict[str, Any]:
-        """Get HTTP headers for API requests.
-
-        This method should construct the appropriate headers including
-        authentication for the specific Git service provider.
-
-        Returns:
-            Dictionary of HTTP headers
-        """
+        """Get HTTP headers for API requests."""
         ...
 
+    @abstractmethod
     async def _make_request(
         self,
         url: str,
         params: dict | None = None,
         method: RequestMethod = RequestMethod.GET,
     ) -> tuple[Any, dict]:
-        """Make an HTTP request to the Git service API.
-
-        Args:
-            url: The URL to request
-            params: Optional parameters for the request
-            method: The HTTP method to use
-
-        Returns:
-            A tuple of (response_data, response_headers)
-        """
+        """Make an HTTP request to the Git service API."""
         ...
 
     def _has_token_expired(self, status_code: int) -> bool:
-        """Check if the token has expired based on HTTP status code.
-
-        Args:
-            status_code: HTTP status code from the response
-
-        Returns:
-            True if the token has expired, False otherwise
-        """
+        """Check if the token has expired based on HTTP status code."""
         return status_code == 401
 
     async def execute_request(
@@ -94,18 +69,7 @@ class HTTPClient(Protocol):
         params: dict | None,
         method: RequestMethod = RequestMethod.GET,
     ):
-        """Execute an HTTP request using the provided client.
-
-        Args:
-            client: The HTTP client to use for the request
-            url: The URL to request
-            headers: HTTP headers for the request
-            params: Optional parameters for the request
-            method: The HTTP method to use
-
-        Returns:
-            The response from the HTTP request
-        """
+        """Execute an HTTP request using the provided client."""
         if method == RequestMethod.POST:
             return await client.post(url, headers=headers, json=params)
         return await client.get(url, headers=headers, params=params)
@@ -115,14 +79,7 @@ class HTTPClient(Protocol):
     ) -> (
         AuthenticationError | RateLimitError | ResourceNotFoundError | UnknownException
     ):
-        """Handle HTTP status errors and convert them to appropriate exceptions.
-
-        Args:
-            e: The HTTPStatusError to handle
-
-        Returns:
-            An appropriate exception based on the status code
-        """
+        """Handle HTTP status errors and convert them to appropriate exceptions."""
         if e.response.status_code == 401:
             return AuthenticationError(f'Invalid {self.provider} token')
         elif e.response.status_code == 404:
@@ -131,21 +88,12 @@ class HTTPClient(Protocol):
             )
         elif e.response.status_code == 429:
             logger.warning(f'Rate limit exceeded on {self.provider} API: {e}')
-            # Use generic rate limit message since provider-specific messages
-            # would require knowing the specific provider
             return RateLimitError(f'{self.provider} API rate limit exceeded')
 
         logger.warning(f'Status error on {self.provider} API: {e}')
         return UnknownException(f'Unknown error: {e}')
 
     def handle_http_error(self, e: HTTPError) -> UnknownException:
-        """Handle general HTTP errors.
-
-        Args:
-            e: The HTTPError to handle
-
-        Returns:
-            An UnknownException wrapping the original error
-        """
+        """Handle general HTTP errors."""
         logger.warning(f'HTTP error on {self.provider} API: {type(e).__name__} : {e}')
         return UnknownException(f'HTTP error {type(e).__name__} : {e}')
