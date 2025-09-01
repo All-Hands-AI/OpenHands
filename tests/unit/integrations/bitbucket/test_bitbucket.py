@@ -1003,3 +1003,106 @@ async def test_bitbucket_search_repositories_passes_order():
             assert len(calls_with_desc) > 0, (
                 "Expected at least one call with 'desc' order parameter"
             )
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_all_sort_types():
+    """Test _get_bitbucket_sort_param with all supported sort types and default desc order."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test all sort types with default desc order
+    assert service._get_bitbucket_sort_param('pushed') == '-updated_on'
+    assert service._get_bitbucket_sort_param('updated') == '-updated_on'
+    assert service._get_bitbucket_sort_param('created') == '-created_on'
+    assert service._get_bitbucket_sort_param('full_name') == '-name'
+    assert service._get_bitbucket_sort_param('unknown_sort') == '-updated_on'  # default
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_asc_order():
+    """Test _get_bitbucket_sort_param with ascending order for all sort types."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test all sort types with ascending order
+    assert service._get_bitbucket_sort_param('pushed', 'asc') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'asc') == 'updated_on'
+    assert service._get_bitbucket_sort_param('created', 'asc') == 'created_on'
+    assert service._get_bitbucket_sort_param('full_name', 'asc') == 'name'
+    assert service._get_bitbucket_sort_param('unknown_sort', 'asc') == 'updated_on'  # default
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_desc_order():
+    """Test _get_bitbucket_sort_param with explicit descending order for all sort types."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test all sort types with explicit descending order
+    assert service._get_bitbucket_sort_param('pushed', 'desc') == '-updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'desc') == '-updated_on'
+    assert service._get_bitbucket_sort_param('created', 'desc') == '-created_on'
+    assert service._get_bitbucket_sort_param('full_name', 'desc') == '-name'
+    assert service._get_bitbucket_sort_param('unknown_sort', 'desc') == '-updated_on'  # default
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_case_insensitive_order():
+    """Test _get_bitbucket_sort_param with case-insensitive order parameters."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test case insensitive order parameters
+    assert service._get_bitbucket_sort_param('updated', 'DESC') == '-updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'Desc') == '-updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'ASC') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'Asc') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'asc') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'desc') == '-updated_on'
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_invalid_order():
+    """Test _get_bitbucket_sort_param with invalid order parameters defaults to asc (no prefix)."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test invalid order parameters - should default to asc behavior (no prefix)
+    # Only 'desc' (case insensitive) gets the '-' prefix, everything else is treated as asc
+    assert service._get_bitbucket_sort_param('updated', 'invalid') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', '') == 'updated_on'
+    assert service._get_bitbucket_sort_param('updated', 'random') == 'updated_on'
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_edge_cases():
+    """Test _get_bitbucket_sort_param with edge cases and boundary conditions."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Test empty sort parameter - should default to updated_on
+    assert service._get_bitbucket_sort_param('', 'asc') == 'updated_on'
+    assert service._get_bitbucket_sort_param('', 'desc') == '-updated_on'
+    
+    # Test None-like values (if they could be passed)
+    assert service._get_bitbucket_sort_param('None', 'asc') == 'updated_on'  # treated as unknown
+    
+    # Test whitespace handling
+    assert service._get_bitbucket_sort_param(' updated ', 'asc') == 'updated_on'  # treated as unknown due to spaces
+
+
+@pytest.mark.asyncio
+async def test_get_bitbucket_sort_param_mapping_correctness():
+    """Test that _get_bitbucket_sort_param correctly maps to Bitbucket API field names."""
+    service = BitBucketService(token=SecretStr('test-token'))
+    
+    # Verify the mapping is correct for Bitbucket API
+    # 'pushed' -> 'updated_on' (Bitbucket doesn't have pushed_at)
+    assert 'updated_on' in service._get_bitbucket_sort_param('pushed', 'asc')
+    
+    # 'updated' -> 'updated_on'
+    assert 'updated_on' in service._get_bitbucket_sort_param('updated', 'asc')
+    
+    # 'created' -> 'created_on'
+    assert 'created_on' in service._get_bitbucket_sort_param('created', 'asc')
+    
+    # 'full_name' -> 'name' (Bitbucket uses 'name' field)
+    assert service._get_bitbucket_sort_param('full_name', 'asc') == 'name'
+    
+    # Default case -> 'updated_on'
+    assert 'updated_on' in service._get_bitbucket_sort_param('anything_else', 'asc')
