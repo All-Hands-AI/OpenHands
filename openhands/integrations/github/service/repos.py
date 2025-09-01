@@ -92,6 +92,7 @@ class GitHubReposMixin(GitHubMixinBase):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ):
         params = {'page': str(page), 'per_page': str(per_page)}
         if installation_id:

@@ -871,3 +871,135 @@ def test_initialize_repository_for_runtime_without_bitbucket_token(
     assert ProviderType.GITHUB in provider_tokens
     assert ProviderType.GITLAB in provider_tokens
     assert ProviderType.BITBUCKET not in provider_tokens
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_order_parameter_honored():
+    """Test that the Bitbucket service correctly honors the order parameter (asc/desc)."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ({'values': []}, {})
+
+        # Test ascending order
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id='test-workspace',
+            query=None,
+            order='asc',
+        )
+
+        # Verify the call was made with ascending order (no '-' prefix)
+        assert mock_request.call_count == 1
+        call_args = mock_request.call_args_list[0]
+        url, params = call_args[0]
+        assert params['sort'] == 'updated_on'  # No '-' prefix for ascending
+        assert 'repositories/test-workspace' in url
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id='test-workspace',
+            query=None,
+            order='desc',
+        )
+
+        # Verify the call was made with descending order ('-' prefix)
+        assert mock_request.call_count == 1
+        call_args = mock_request.call_args_list[0]
+        url, params = call_args[0]
+        assert params['sort'] == '-updated_on'  # '-' prefix for descending
+        assert 'repositories/test-workspace' in url
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test default order (should be descending)
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='created',
+            installation_id='test-workspace',
+            query=None,
+            # order parameter omitted, should default to 'desc'
+        )
+
+        # Verify the call was made with descending order by default
+        assert mock_request.call_count == 1
+        call_args = mock_request.call_args_list[0]
+        url, params = call_args[0]
+        assert params['sort'] == '-created_on'  # '-' prefix for default descending
+
+
+@pytest.mark.asyncio
+async def test_bitbucket_search_repositories_passes_order():
+    """Test that search_repositories correctly passes the order parameter to get_paginated_repos."""
+    # Create a service instance
+    service = BitBucketService(token=SecretStr('test-token'))
+
+    # Mock the get_installations method
+    with patch.object(service, 'get_installations') as mock_installations:
+        mock_installations.return_value = ['test-workspace']
+
+        # Mock the get_paginated_repos method to capture calls
+        with patch.object(service, 'get_paginated_repos') as mock_paginated_repos:
+            mock_paginated_repos.return_value = []
+
+            # Test ascending order
+            await service.search_repositories(
+                query='test-repo',
+                per_page=10,
+                sort='updated',
+                order='asc',
+                public=False,
+            )
+
+            # Verify get_paginated_repos was called with the correct order parameter
+            assert mock_paginated_repos.call_count >= 1
+
+            # Check that at least one call included the 'asc' order parameter
+            calls_with_asc = [
+                call
+                for call in mock_paginated_repos.call_args_list
+                if len(call[0]) > 5
+                and call[0][5] == 'asc'  # order is the 6th positional argument
+            ]
+            assert len(calls_with_asc) > 0, (
+                "Expected at least one call with 'asc' order parameter"
+            )
+
+            # Reset mock for next test
+            mock_paginated_repos.reset_mock()
+
+            # Test descending order
+            await service.search_repositories(
+                query='test-repo',
+                per_page=10,
+                sort='created',
+                order='desc',
+                public=False,
+            )
+
+            # Verify get_paginated_repos was called with the correct order parameter
+            assert mock_paginated_repos.call_count >= 1
+
+            # Check that at least one call included the 'desc' order parameter
+            calls_with_desc = [
+                call
+                for call in mock_paginated_repos.call_args_list
+                if len(call[0]) > 5
+                and call[0][5] == 'desc'  # order is the 6th positional argument
+            ]
+            assert len(calls_with_desc) > 0, (
+                "Expected at least one call with 'desc' order parameter"
+            )

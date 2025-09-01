@@ -514,6 +514,7 @@ class GitService(Protocol):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ) -> list[Repository]:
         """Get a page of repositories for the authenticated user"""
         ...

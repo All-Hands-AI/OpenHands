@@ -37,7 +37,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         if '/' in query:
             workspace_slug, repo_query = query.split('/', 1)
             return await self.get_paginated_repos(
-                1, per_page, sort, workspace_slug, repo_query
+                1, per_page, sort, workspace_slug, repo_query, order
             )
 
         all_installations = await self.get_installations()
@@ -50,7 +50,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories where query matches workspace name
             try:
                 repos = await self.get_paginated_repos(
-                    1, per_page, sort, workspace_slug
+                    1, per_page, sort, workspace_slug, None, order
                 )
                 repositories.extend(repos)
             except Exception:
@@ -60,7 +60,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories in all workspaces where query matches repo name
             try:
                 repos = await self.get_paginated_repos(
-                    1, per_page, sort, workspace_slug, query
+                    1, per_page, sort, workspace_slug, query, order
                 )
                 repositories.extend(repos)
             except Exception:
@@ -97,6 +97,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ) -> list[Repository]:
         """Get paginated repositories for a specific workspace.
 
@@ -105,6 +106,8 @@ class BitBucketReposMixin(BitBucketMixinBase):
             per_page: The number of repositories per page
             sort: The sort field ('pushed', 'updated', 'created', 'full_name')
             installation_id: The workspace slug to fetch repositories from (as int, will be converted to string)
+            query: Optional query string to filter repositories by name
+            order: The sort order ('asc' or 'desc', defaults to 'desc')
 
         Returns:
             A list of Repository objects
@@ -117,19 +120,23 @@ class BitBucketReposMixin(BitBucketMixinBase):
         workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
         # Map sort parameter to Bitbucket API compatible values
-        bitbucket_sort = sort
         if sort == 'pushed':
             # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-            bitbucket_sort = '-updated_on'  # Use negative prefix for descending order
+            bitbucket_sort = 'updated_on'
         elif sort == 'updated':
-            bitbucket_sort = '-updated_on'
+            bitbucket_sort = 'updated_on'
         elif sort == 'created':
-            bitbucket_sort = '-created_on'
+            bitbucket_sort = 'created_on'
         elif sort == 'full_name':
             bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
         else:
-            # Default to most recently updated first
-            bitbucket_sort = '-updated_on'
+            # Default to most recently updated
+            bitbucket_sort = 'updated_on'
+
+        # Apply order (asc/desc) - Bitbucket uses '-' prefix for descending order
+        if order.lower() == 'desc':
+            bitbucket_sort = f'-{bitbucket_sort}'
+        # For 'asc' order, no prefix is needed (default behavior)
 
         params = {
             'pagelen': per_page,

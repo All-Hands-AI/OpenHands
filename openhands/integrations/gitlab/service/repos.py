@@ -85,7 +85,7 @@ class GitLabReposMixin(GitLabMixinBase):
             repository = await self.get_repository_details_from_repo_name(repo_path)
             return [repository]
 
-        return await self.get_paginated_repos(1, per_page, sort, None, query)
+        return await self.get_paginated_repos(1, per_page, sort, None, query, order)
 
     async def get_paginated_repos(
         self,
@@ -94,6 +94,7 @@ class GitLabReposMixin(GitLabMixinBase):
         sort: str,
         installation_id: str | None,
         query: str | None = None,
+        order: str = 'desc',
     ) -> list[Repository]:
         url = f'{self.BASE_URL}/projects'
         order_by = {
@@ -107,7 +108,7 @@ class GitLabReposMixin(GitLabMixinBase):
             'page': str(page),
             'per_page': str(per_page),
             'order_by': order_by,
-            'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+            'sort': order,  # GitLab uses sort for direction (asc/desc)
             'membership': True,  # Include projects user is a member of
         }
 
