@@ -43,8 +43,6 @@ class GitHubService(
 
     BASE_URL = 'https://api.github.com'
     GRAPHQL_URL = 'https://api.github.com/graphql'
-    token: SecretStr = SecretStr('')
-    refresh = False
 
     def __init__(
         self,

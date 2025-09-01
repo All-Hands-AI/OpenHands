@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 from pydantic import SecretStr
 
+from openhands.integrations.protocols.http_client import HTTPClient
 from openhands.integrations.service_types import (
     BaseGitService,
     OwnerType,
@@ -15,14 +16,12 @@ from openhands.integrations.service_types import (
 )
 
 
-class BitBucketMixinBase(BaseGitService):
+class BitBucketMixinBase(BaseGitService, HTTPClient):
     """
     Base mixin for BitBucket service containing common functionality
     """
 
     BASE_URL = 'https://api.bitbucket.org/2.0'
-    token: SecretStr = SecretStr('')
-    refresh = False
 
     def _extract_owner_and_repo(self, repository: str) -> tuple[str, str]:
         """Extract owner and repo from repository string.
@@ -49,7 +48,7 @@ class BitBucketMixinBase(BaseGitService):
     def _has_token_expired(self, status_code: int) -> bool:
         return status_code == 401
 
-    async def _get_bitbucket_headers(self) -> dict[str, str]:
+    async def _get_headers(self) -> dict[str, str]:
         """Get headers for Bitbucket API requests."""
         token_value = self.token.get_secret_value()
 
@@ -85,13 +84,13 @@ class BitBucketMixinBase(BaseGitService):
         """
         try:
             async with httpx.AsyncClient() as client:
-                bitbucket_headers = await self._get_bitbucket_headers()
+                bitbucket_headers = await self._get_headers()
                 response = await self.execute_request(
                     client, url, bitbucket_headers, params, method
                 )
                 if self.refresh and self._has_token_expired(response.status_code):
                     await self.get_latest_token()
-                    bitbucket_headers = await self._get_bitbucket_headers()
+                    bitbucket_headers = await self._get_headers()
                     response = await self.execute_request(
                         client=client,
                         url=url,

@@ -24,7 +24,7 @@ async def test_github_service_token_handling():
     assert service.token.get_secret_value() == 'test-token'
 
     # Test headers contain the token correctly
-    headers = await service._get_github_headers()
+    headers = await service._get_headers()
     assert headers['Authorization'] == 'Bearer test-token'
     assert headers['Accept'] == 'application/vnd.github.v3+json'
 
