@@ -42,8 +42,7 @@ class GitHubService(
     """
 
     BASE_URL = 'https://api.github.com'
-    token: SecretStr = SecretStr('')
-    refresh = False
+    GRAPHQL_URL = 'https://api.github.com/graphql'
 
     def __init__(
         self,
@@ -62,6 +61,7 @@ class GitHubService(
 
         if base_domain and base_domain != 'github.com':
             self.BASE_URL = f'https://{base_domain}/api/v3'
+            self.GRAPHQL_URL = f'https://{base_domain}/api/graphql'
 
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
