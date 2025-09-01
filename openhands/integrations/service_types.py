@@ -185,21 +185,6 @@ class RequestMethod(Enum):
 
 
 class BaseGitService:
-    # @property
-    # @abstractmethod
-    # def provider(self) -> str:
-    #     """Return the provider type for this service."""
-    #     ...
-
-    # # Method used to satisfy mypy for abstract class definition
-    # @abstractmethod
-    # async def _make_request(
-    #     self,
-    #     url: str,
-    #     params: dict | None = None,
-    #     method: RequestMethod = RequestMethod.GET,
-    # ) -> tuple[Any, dict]: ...
-
     def _truncate_comment(
         self, comment_body: str, max_comment_length: int = 500
     ) -> str:
