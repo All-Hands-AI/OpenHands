@@ -1,14 +1,11 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.microagent.microagent import BaseMicroagent
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
-
-if TYPE_CHECKING:
-    pass
 
 
 class MicroagentParseError(ValueError):
