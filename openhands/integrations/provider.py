@@ -20,12 +20,14 @@ from openhands.events.stream import EventStream
 from openhands.integrations.bitbucket.bitbucket_service import BitBucketServiceImpl
 from openhands.integrations.github.github_service import GithubServiceImpl
 from openhands.integrations.gitlab.gitlab_service import GitLabServiceImpl
+from openhands.integrations.protocols.microagent_management_client import (
+    MicroagentParseError,
+)
 from openhands.integrations.service_types import (
     AuthenticationError,
     Branch,
     GitService,
     InstallationsService,
-    MicroagentParseError,
     PaginatedBranchesResponse,
     ProviderType,
     Repository,

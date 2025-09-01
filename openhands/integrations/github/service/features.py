@@ -6,6 +6,9 @@ from openhands.integrations.github.queries import (
     suggested_task_pr_graphql_query,
 )
 from openhands.integrations.github.service.base import GitHubMixinBase
+from openhands.integrations.protocols.microagent_management_client import (
+    MicroagentManagementClient,
+)
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
     ProviderType,
@@ -14,7 +17,7 @@ from openhands.integrations.service_types import (
 )
 
 
-class GitHubFeaturesMixin(GitHubMixinBase):
+class GitHubFeaturesMixin(GitHubMixinBase, MicroagentManagementClient):
     """
     Methods used for custom features in UI driven via GitHub integration
     """

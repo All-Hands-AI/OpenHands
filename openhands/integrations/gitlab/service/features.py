@@ -1,4 +1,7 @@
 from openhands.integrations.gitlab.service.base import GitLabMixinBase
+from openhands.integrations.protocols.microagent_management_client import (
+    MicroagentManagementClient,
+)
 from openhands.integrations.service_types import (
     MicroagentContentResponse,
     ProviderType,
@@ -8,7 +11,7 @@ from openhands.integrations.service_types import (
 )
 
 
-class GitLabFeaturesMixin(GitLabMixinBase):
+class GitLabFeaturesMixin(GitLabMixinBase, MicroagentManagementClient):
     """
     Methods used for custom features in UI driven via GitLab integration
     """
