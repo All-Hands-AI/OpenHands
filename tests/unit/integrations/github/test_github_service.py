@@ -430,3 +430,371 @@ async def test_github_service_graphql_url_github_com():
 
         # This should be correct for GitHub.com
         assert actual_url == 'https://api.github.com/graphql'
+
+
+@pytest.mark.asyncio
+async def test_github_order_parameter_honored():
+    """Test that the GitHub service correctly honors the order parameter (asc/desc)."""
+    # Create a service instance
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test ascending order
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id=None,
+            query=None,
+            order='asc',
+        )
+
+        # Verify the call was made with ascending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'asc', (
+            f"Expected direction parameter 'asc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'updated', (
+            f"Expected sort parameter 'updated', got {params.get('sort')}"
+        )
+        assert url == f'{service.BASE_URL}/user/repos', (
+            f"Expected URL to be '{service.BASE_URL}/user/repos', got {url}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='created',
+            installation_id=None,
+            query=None,
+            order='desc',
+        )
+
+        # Verify the call was made with descending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'desc', (
+            f"Expected direction parameter 'desc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'created', (
+            f"Expected sort parameter 'created', got {params.get('sort')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test default order (should be descending)
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='full_name',
+            installation_id=None,
+            query=None,
+            # order parameter omitted, should default to 'desc'
+        )
+
+        # Verify the call was made with descending order by default
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'desc', (
+            f"Expected direction parameter 'desc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'full_name', (
+            f"Expected sort parameter 'full_name', got {params.get('sort')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_github_order_parameter_with_installation():
+    """Test that the GitHub service handles order parameter correctly with installation_id."""
+    # Create a service instance
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for installation repositories
+        mock_request.return_value = ({'repositories': []}, {})
+
+        # Test with installation_id (should not include sort/direction parameters)
+        await service.get_paginated_repos(
+            page=1,
+            per_page=10,
+            sort='updated',
+            installation_id='123',
+            query=None,
+            order='asc',
+        )
+
+        # Verify the call was made to installation endpoint without sort/direction
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert 'installations/123/repositories' in url, (
+            f"Expected URL to contain 'installations/123/repositories', got {url}"
+        )
+        assert 'direction' not in params, (
+            f'Expected no direction parameter for installation endpoint, got {params}'
+        )
+        assert 'sort' not in params, (
+            f'Expected no sort parameter for installation endpoint, got {params}'
+        )
+        assert params['page'] == '1', (
+            f"Expected page parameter '1', got {params.get('page')}"
+        )
+        assert params['per_page'] == '10', (
+            f"Expected per_page parameter '10', got {params.get('per_page')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_github_get_all_repositories_honors_order():
+    """Test that get_all_repositories correctly honors the order parameter."""
+    # Create a service instance
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {'Link': ''})  # No next page
+
+        # Test ascending order
+        await service.get_all_repositories('updated', AppMode.SAAS, order='asc')
+
+        # Verify the call was made with ascending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'asc', (
+            f"Expected direction parameter 'asc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'updated', (
+            f"Expected sort parameter 'updated', got {params.get('sort')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.get_all_repositories('created', AppMode.SAAS, order='desc')
+
+        # Verify the call was made with descending order
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'desc', (
+            f"Expected direction parameter 'desc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'created', (
+            f"Expected sort parameter 'created', got {params.get('sort')}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test default order (should be descending)
+        await service.get_all_repositories('pushed', AppMode.SAAS)
+
+        # Verify the call was made with descending order by default
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['direction'] == 'desc', (
+            f"Expected direction parameter 'desc', got {params.get('direction')}"
+        )
+        assert params['sort'] == 'pushed', (
+            f"Expected sort parameter 'pushed', got {params.get('sort')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_github_search_repositories_passes_order():
+    """Test that search_repositories correctly passes the order parameter."""
+    # Create a service instance
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+
+    # Mock user data
+    mock_user = User(
+        id='123', login='testuser', avatar_url='https://example.com/avatar.jpg'
+    )
+
+    # Mock search response
+    mock_search_response = {
+        'items': [
+            {
+                'id': 1,
+                'name': 'test-repo',
+                'full_name': 'testuser/test-repo',
+                'private': False,
+                'html_url': 'https://github.com/testuser/test-repo',
+                'clone_url': 'https://github.com/testuser/test-repo.git',
+                'pushed_at': '2023-01-01T00:00:00Z',
+                'owner': {'login': 'testuser', 'type': 'User'},
+            }
+        ]
+    }
+
+    with (
+        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(service, 'get_user_organizations', return_value=[]),
+        patch.object(
+            service, '_make_request', return_value=(mock_search_response, {})
+        ) as mock_request,
+    ):
+        # Test ascending order
+        await service.search_repositories(
+            query='test-repo', per_page=10, sort='stars', order='asc', public=False
+        )
+
+        # Verify the request was made with correct order parameter
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['order'] == 'asc', (
+            f"Expected order parameter 'asc', got {params.get('order')}"
+        )
+        assert params['sort'] == 'stars', (
+            f"Expected sort parameter 'stars', got {params.get('sort')}"
+        )
+        assert 'search/repositories' in url, (
+            f"Expected URL to contain 'search/repositories', got {url}"
+        )
+
+        # Reset mock for next test
+        mock_request.reset_mock()
+
+        # Test descending order
+        await service.search_repositories(
+            query='test-repo', per_page=20, sort='updated', order='desc', public=False
+        )
+
+        # Verify the request was made with correct order parameter
+        mock_request.assert_called_once()
+        call_args = mock_request.call_args
+        url, params = call_args[0]
+        assert params['order'] == 'desc', (
+            f"Expected order parameter 'desc', got {params.get('order')}"
+        )
+        assert params['sort'] == 'updated', (
+            f"Expected sort parameter 'updated', got {params.get('sort')}"
+        )
+
+
+@pytest.mark.asyncio
+async def test_github_order_parameter_case_insensitive():
+    """Test that GitHub service handles case-insensitive order parameters correctly."""
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test case variations - GitHub should receive them as-is
+        order_variations = ['asc', 'ASC', 'Asc', 'desc', 'DESC', 'Desc']
+
+        for order_param in order_variations:
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort='updated',
+                installation_id=None,
+                query=None,
+                order=order_param,
+            )
+
+            # Verify the call was made with the exact order parameter passed
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['direction'] == order_param, (
+                f"Expected direction parameter '{order_param}', got {params.get('direction')}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_github_order_parameter_edge_cases():
+    """Test that GitHub service handles edge cases for order parameters."""
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test invalid order parameters - should be passed through as-is
+        invalid_orders = ['invalid', '', 'random', '123']
+
+        for order_param in invalid_orders:
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort='updated',
+                installation_id=None,
+                query=None,
+                order=order_param,
+            )
+
+            # Verify the call was made with the exact order parameter passed
+            # GitHub service doesn't validate order parameters, it passes them through
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['direction'] == order_param, (
+                f"Expected direction parameter '{order_param}', got {params.get('direction')}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_github_sort_parameter_passthrough():
+    """Test that GitHub service correctly passes through sort parameters without modification."""
+    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+
+    # Mock the _make_request method to avoid actual API calls
+    with patch.object(service, '_make_request') as mock_request:
+        # Mock response for repositories
+        mock_request.return_value = ([], {})
+
+        # Test all common sort types - GitHub should receive them as-is
+        sort_params = ['pushed', 'updated', 'created', 'full_name', 'unknown_sort']
+
+        for sort_param in sort_params:
+            # Reset mock for each test
+            mock_request.reset_mock()
+
+            await service.get_paginated_repos(
+                page=1,
+                per_page=10,
+                sort=sort_param,
+                installation_id=None,
+                query=None,
+                order='asc',
+            )
+
+            # Verify the call was made with the exact sort parameter passed
+            mock_request.assert_called_once()
+            call_args = mock_request.call_args
+            url, params = call_args[0]
+            assert params['sort'] == sort_param, (
+                f"Expected sort parameter '{sort_param}', got {params.get('sort')}"
+            )
+            assert params['direction'] == 'asc', (
+                f"Expected direction parameter 'asc', got {params.get('direction')}"
+            )
