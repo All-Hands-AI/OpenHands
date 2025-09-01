@@ -18,7 +18,7 @@ You must use the following process to diagnose and fix the issue.
     * Modify files **directly**. Do not create copies or new versions of existing files.
     * Use the bash command `git restore` if you need to roll back your recent changes.
     * Before editing a source code file, use the `nl -ba` bash command to display its contents with line numbers. Line numbers are the most reliable way to specify where to make your code changes.
-    * All modifications of existing code files must use the bash command `ed`. You are not allowed to use `sed` for editing code because it does not support the Heredoc syntax. You must pass all code via Heredoc because it avoids the need to escape special characters.
+    * All modifications of existing code files must use the bash command `ed` because `sed` is prohibited in this project. You must pass all code via Heredoc because it avoids the need to escape special characters.
       - Example #1: using `ed` to replace a code block identified by line numbers:
 ```
 ed -s myfile.py <<'EOT'
