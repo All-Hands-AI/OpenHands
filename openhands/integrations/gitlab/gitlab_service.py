@@ -41,8 +41,6 @@ class GitLabService(
 
     BASE_URL = 'https://gitlab.com/api/v4'
     GRAPHQL_URL = 'https://gitlab.com/api/graphql'
-    token: SecretStr = SecretStr('')
-    refresh = False
 
     def __init__(
         self,
