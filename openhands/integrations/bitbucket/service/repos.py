@@ -180,7 +180,7 @@ class BitBucketReposMixin(BitBucketMixinBase):
         return repositories
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         """Get repositories for the authenticated user using workspaces endpoint.
 
@@ -205,23 +205,24 @@ class BitBucketReposMixin(BitBucketMixinBase):
             # Get repositories for this workspace with pagination
             workspace_repos_url = f'{self.BASE_URL}/repositories/{workspace_slug}'
 
-            # Map sort parameter to Bitbucket API compatible values and ensure descending order
-            # to show most recently changed repos at the top
-            bitbucket_sort = sort
+            # Map sort parameter to Bitbucket API compatible values
             if sort == 'pushed':
                 # Bitbucket doesn't support 'pushed', use 'updated_on' instead
-                bitbucket_sort = (
-                    '-updated_on'  # Use negative prefix for descending order
-                )
+                bitbucket_sort = 'updated_on'
             elif sort == 'updated':
-                bitbucket_sort = '-updated_on'
+                bitbucket_sort = 'updated_on'
             elif sort == 'created':
-                bitbucket_sort = '-created_on'
+                bitbucket_sort = 'created_on'
             elif sort == 'full_name':
                 bitbucket_sort = 'name'  # Bitbucket uses 'name' not 'full_name'
             else:
-                # Default to most recently updated first
-                bitbucket_sort = '-updated_on'
+                # Default to most recently updated
+                bitbucket_sort = 'updated_on'
+
+            # Apply order (asc/desc) - Bitbucket uses '-' prefix for descending order
+            if order.lower() == 'desc':
+                bitbucket_sort = f'-{bitbucket_sort}'
+            # For 'asc' order, no prefix is needed (default behavior)
 
             params = {
                 'pagelen': PER_PAGE,

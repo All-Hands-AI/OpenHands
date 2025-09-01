@@ -125,7 +125,7 @@ class GitLabReposMixin(GitLabMixinBase):
         return repos
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         MAX_REPOS = 1000
         PER_PAGE = 100  # Maximum allowed by GitLab API
@@ -146,7 +146,7 @@ class GitLabReposMixin(GitLabMixinBase):
                 'page': str(page),
                 'per_page': str(PER_PAGE),
                 'order_by': order_by,
-                'sort': 'desc',  # GitLab uses sort for direction (asc/desc)
+                'sort': order,  # GitLab uses sort for direction (asc/desc)
                 'membership': 1,  # Use 1 instead of True
             }
             response, headers = await self._make_request(url, params)

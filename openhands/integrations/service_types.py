@@ -502,7 +502,7 @@ class GitService(Protocol):
         ...
 
     async def get_all_repositories(
-        self, sort: str, app_mode: AppMode
+        self, sort: str, app_mode: AppMode, order: str = 'desc'
     ) -> list[Repository]:
         """Get repositories for the authenticated user"""
         ...
