@@ -17,7 +17,7 @@ RUN apt-get update && \
 RUN pip install alembic psycopg2-binary cloud-sql-python-connector pg8000 gspread stripe python-keycloak asyncpg sqlalchemy[asyncio] resend tenacity slack-sdk ddtrace posthog "limits==5.2.0" coredis prometheus-client shap scikit-learn pandas numpy
 
 WORKDIR /app
-COPY app .
+COPY enterprise .
 
 RUN chown -R openhands:openhands /app && chmod -R 770 /app
 USER openhands
