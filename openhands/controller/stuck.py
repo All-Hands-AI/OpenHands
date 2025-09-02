@@ -1,7 +1,7 @@
 from openhands.controller.state.state import State
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action.action import Action
-from openhands.events.action.commands import IPythonRunCellAction
+from openhands.events.action.commands import CmdRunAction, IPythonRunCellAction
 from openhands.events.action.empty import NullAction
 from openhands.events.action.message import MessageAction
 from openhands.events.event import Event, EventSource
@@ -70,19 +70,20 @@ class StuckDetector:
         if len(filtered_history) < 3:
             return False
 
-        # the first few scenarios detect 3 or 4 repeated steps
-        # prepare the last 4 actions and observations, to check them out
+        # the first few scenarios detect 3 or 4 repeated steps for regular commands
+        # but up to 10 repeated steps for empty commands
+        # prepare the last 10 actions and observations, to check them out
         last_actions: list[Event] = []
         last_observations: list[Event] = []
 
-        # retrieve the last four actions and observations starting from the end of history, wherever they are
+        # retrieve the last ten actions and observations starting from the end of history, wherever they are
         for event in reversed(filtered_history):
-            if isinstance(event, Action) and len(last_actions) < 4:
+            if isinstance(event, Action) and len(last_actions) < 10:
                 last_actions.append(event)
-            elif isinstance(event, Observation) and len(last_observations) < 4:
+            elif isinstance(event, Observation) and len(last_observations) < 10:
                 last_observations.append(event)
 
-            if len(last_actions) == 4 and len(last_observations) == 4:
+            if len(last_actions) == 10 and len(last_observations) == 10:
                 break
 
         # scenario 1: same action, same observation
@@ -113,21 +114,42 @@ class StuckDetector:
         self, last_actions: list[Event], last_observations: list[Event]
     ) -> bool:
         # scenario 1: same action, same observation
-        # it takes 4 actions and 4 observations to detect a loop
-        # assert len(last_actions) == 4 and len(last_observations) == 4
+        # it takes 4 actions and 4 observations to detect a loop for regular commands
+        # but 10 actions and 10 observations for empty commands (to allow agents to wait for output)
 
-        # Check for a loop of 4 identical action-observation pairs
-        if len(last_actions) == 4 and len(last_observations) == 4:
+        # Check if we have empty CmdRunAction commands
+        is_empty_command_loop = (
+            len(last_actions) > 0
+            and isinstance(last_actions[0], CmdRunAction)
+            and last_actions[0].command == ''
+        )
+
+        # For empty commands, require 10 identical pairs; for others, require 4
+        required_pairs = 10 if is_empty_command_loop else 4
+
+        if (
+            len(last_actions) >= required_pairs
+            and len(last_observations) >= required_pairs
+        ):
+            actions_to_check = last_actions[:required_pairs]
+            observations_to_check = last_observations[:required_pairs]
+
             actions_equal = all(
-                self._eq_no_pid(last_actions[0], action) for action in last_actions
+                self._eq_no_pid(actions_to_check[0], action)
+                for action in actions_to_check
             )
             observations_equal = all(
-                self._eq_no_pid(last_observations[0], observation)
-                for observation in last_observations
+                self._eq_no_pid(observations_to_check[0], observation)
+                for observation in observations_to_check
             )
 
             if actions_equal and observations_equal:
-                logger.warning('Action, Observation loop detected')
+                if is_empty_command_loop:
+                    logger.warning(
+                        'Empty command loop detected (10+ identical empty commands)'
+                    )
+                else:
+                    logger.warning('Action, Observation loop detected')
                 return True
 
         return False
@@ -295,6 +317,7 @@ class StuckDetector:
         # scenario 4: action, observation pattern on the last six steps
         # check if the agent repeats the same (Action, Observation)
         # every other step in the last six steps
+        # For empty commands, we skip this check since it's handled by scenario 1
         last_six_actions: list[Event] = []
         last_six_observations: list[Event] = []
 
@@ -307,6 +330,15 @@ class StuckDetector:
 
             if len(last_six_actions) == 6 and len(last_six_observations) == 6:
                 break
+
+        # Check if we have empty CmdRunAction commands - if so, skip this check
+        # as it's handled by the more lenient scenario 1
+        if (
+            len(last_six_actions) > 0
+            and isinstance(last_six_actions[0], CmdRunAction)
+            and last_six_actions[0].command == ''
+        ):
+            return False
 
         # this pattern is every other step, like:
         # (action_1, obs_1), (action_2, obs_2), (action_1, obs_1), (action_2, obs_2),...
