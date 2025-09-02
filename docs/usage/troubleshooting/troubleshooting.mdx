@@ -46,7 +46,14 @@ When running on Linux, you might run into the error `ERROR:root:<class 'httpx.Co
 
 **Resolution**
 
-* Add the `--network host` to the docker run command.
+If you installed Docker from your distribution’s package repository (e.g., docker.io on Debian/Ubuntu), be aware that
+these packages can sometimes be outdated or include changes that cause compatibility issues. try reinstalling Docker
+[using the official instructions](https://docs.docker.com/engine/install/) to ensure you are running a compatible version.
+
+If that does not solve the issue, try incrementally adding the following parameters to the docker run command:
+* `--network host`
+* `-e SANDBOX_USE_HOST_NETWORK=true`
+* `-e DOCKER_HOST_ADDR=127.0.0.1`
 
 ### Internal Server Error. Ports are not available
 
