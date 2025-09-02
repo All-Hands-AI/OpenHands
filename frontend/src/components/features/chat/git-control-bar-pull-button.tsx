@@ -44,7 +44,10 @@ export function GitControlBarPullButton({
       <div className="w-3 h-3 flex items-center justify-center">
         <ArrowDownIcon width={12} height={12} color="white" />
       </div>
-      <div className="font-normal text-white text-sm leading-5">
+      <div
+        className="font-normal text-white text-sm leading-5 max-w-[76px] truncate"
+        title={t(I18nKey.COMMON$PULL)}
+      >
         {t(I18nKey.COMMON$PULL)}
       </div>
     </button>
