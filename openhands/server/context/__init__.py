@@ -4,7 +4,7 @@ This module provides a context-based approach to managing server dependencies,
 replacing the global variables in shared.py. This enables:
 
 - Dependency injection for better testability
-- Easy extensibility for SaaS and enterprise features
+- Easy extensibility for custom implementations
 - Per-request contexts for multi-user scenarios
 - No import-time dependencies on environment variables
 
@@ -20,7 +20,7 @@ Usage:
         config = context.get_config()
         # ... use context instead of importing from shared
 
-    # For SaaS extensions
+    # For custom extensions
     from openhands.server.context import set_context_class
     set_context_class('myapp.context.MyServerContext')
 """

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from openhands.utils.import_utils import get_impl
@@ -9,30 +10,26 @@ from openhands.utils.import_utils import get_impl
 if TYPE_CHECKING:
     from fastapi import Request
 
-    from .server_context import ServerContext
-
-# Global variable to store the configured context class
-_context_class: str | None = None
+from .server_context import ServerContext
 
 
 def set_context_class(context_class: str) -> None:
     """Set the server context class to use globally.
 
-    This allows SaaS implementations to configure their own context class
+    This allows implementations to configure their own context class
     without modifying OpenHands code. The context class will be used for
     all requests unless overridden at the request level.
 
     Args:
         context_class: Fully qualified name of the ServerContext implementation
-                      e.g., 'myapp.context.SaaSServerContext'
+                      e.g., 'myapp.context.CustomServerContext'
 
     Example:
-        # In SaaS application startup
+        # In application startup
         from openhands.server.context import set_context_class
-        set_context_class('saas.context.EnterpriseServerContext')
+        set_context_class('myapp.context.EnterpriseServerContext')
     """
-    global _context_class
-    _context_class = context_class
+    os.environ['OPENHANDS_SERVER_CONTEXT_CLASS'] = context_class
 
 
 def get_context_class() -> str:
@@ -41,9 +38,9 @@ def get_context_class() -> str:
     Returns:
         str: Fully qualified name of the context class, or default if none set
     """
-    return (
-        _context_class
-        or 'openhands.server.context.default_server_context.DefaultServerContext'
+    return os.environ.get(
+        'OPENHANDS_SERVER_CONTEXT_CLASS',
+        'openhands.server.context.default_server_context.DefaultServerContext'
     )
 
 
@@ -83,9 +80,6 @@ async def get_server_context(request: Request) -> ServerContext:
     if context:
         return context
 
-    # Import here to avoid circular imports
-    from .server_context import ServerContext
-
     # Get the configured context class or use default
     context_cls_name = get_context_class()
     context_cls = get_impl(ServerContext, context_cls_name)
@@ -118,9 +112,6 @@ def create_server_context(context_class: str | None = None) -> ServerContext:
         # Use default/configured context
         context = create_server_context()
     """
-    # Import here to avoid circular imports
-    from .server_context import ServerContext
-
     context_cls_name = context_class or get_context_class()
     context_cls = get_impl(ServerContext, context_cls_name)
     return context_cls()

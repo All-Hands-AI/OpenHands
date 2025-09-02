@@ -1,7 +1,7 @@
-"""Example SaaS extension demonstrating the new context system.
+"""Example extension demonstrating the new context system.
 
-This example shows how a SaaS implementation can extend OpenHands
-with enterprise features using the new ServerContext system.
+This example shows how implementations can extend OpenHands
+with custom features using the new ServerContext system.
 """
 
 from __future__ import annotations
@@ -89,8 +89,8 @@ class MultiTenantFileStore:
     # (This is just an example - real implementation would be more complex)
 
 
-class SaaSServerContext(ServerContext):
-    """SaaS server context with multi-tenant support.
+class CustomServerContext(ServerContext):
+    """Custom server context with multi-tenant support.
 
     This context provides:
     - Per-organization configuration
@@ -263,14 +263,14 @@ class SaaSServerContext(ServerContext):
 
 
 # Example usage in SaaS application
-def setup_saas_context():
-    """Example of how SaaS would set up the context system."""
+def setup_custom_context():
+    """Example of how to set up the context system."""
     from openhands.server.context import set_context_class
 
     # Configure the context class globally
-    set_context_class('examples.saas_extension.SaaSServerContext')
+    set_context_class('examples.saas_extension.CustomServerContext')
 
-    print('✓ SaaS context configured')
+    print('✓ Custom context configured')
 
 
 # Example FastAPI route using the context
