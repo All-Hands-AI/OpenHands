@@ -9,7 +9,7 @@ import { Route } from "./+types/settings";
 import OpenHands from "#/api/open-hands";
 import { queryClient } from "#/query-client-config";
 import { GetConfigResponse } from "#/api/open-hands.types";
-import { useSubscriptionAccess } from "#/hooks/query/use-subscription_access";
+import { useSubscriptionAccess } from "#/hooks/query/use-subscription-access";
 
 const SAAS_ONLY_PATHS = [
   "/settings/user",
