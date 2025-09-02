@@ -1359,6 +1359,38 @@
     "de": "Repositories werden geladen...",
     "uk": "Завантаження репозиторіїв..."
   },
+  "HOME$SEARCHING_REPOSITORIES": {
+    "en": "Searching repositories...",
+    "ja": "リポジトリを検索中...",
+    "zh-CN": "搜索仓库中...",
+    "zh-TW": "搜尋儲存庫中...",
+    "ko-KR": "저장소 검색 중...",
+    "no": "Søker i repositories...",
+    "it": "Ricerca repository in corso...",
+    "pt": "Pesquisando repositórios...",
+    "es": "Buscando repositorios...",
+    "ar": "جار البحث في المستودعات...",
+    "fr": "Recherche de dépôts...",
+    "tr": "Depolar aranıyor...",
+    "de": "Repositories werden durchsucht...",
+    "uk": "Пошук репозиторіїв..."
+  },
+  "HOME$LOADING_MORE_REPOSITORIES": {
+    "en": "Loading more repositories...",
+    "ja": "さらに多くのリポジトリを読み込み中...",
+    "zh-CN": "加载更多仓库中...",
+    "zh-TW": "載入更多儲存庫中...",
+    "ko-KR": "더 많은 저장소 로딩 중...",
+    "no": "Laster flere repositories...",
+    "it": "Caricamento di altri repository...",
+    "pt": "Carregando mais repositórios...",
+    "es": "Cargando más repositorios...",
+    "ar": "جار تحميل المزيد من المستودعات...",
+    "fr": "Chargement de plus de dépôts...",
+    "tr": "Daha fazla depolar yükleniyor...",
+    "de": "Weitere Repositories werden geladen...",
+    "uk": "Завантаження більше репозиторіїв..."
+  },
   "HOME$FAILED_TO_LOAD_REPOSITORIES": {
     "en": "Failed to load repositories",
     "ja": "リポジトリの読み込みに失敗しました",

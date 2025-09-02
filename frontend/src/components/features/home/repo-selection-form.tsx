@@ -106,6 +106,7 @@ export function RepositorySelectionForm({
       <GitRepoDropdown
         provider={selectedProvider || providers[0]}
         value={selectedRepository?.id || null}
+        repositoryName={selectedRepository?.full_name || null}
         placeholder="user/repo"
         disabled={!selectedProvider}
         onChange={handleRepoSelection}
