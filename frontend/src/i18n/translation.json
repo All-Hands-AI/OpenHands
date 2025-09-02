@@ -10688,7 +10688,7 @@
     "uk": "Не вдалося надіслати відгук"
   },
   "HOME$ADD_GITHUB_REPOS": {
-    "en": "Add GitHub repos",
+    "en": "+ Add GitHub Repos",
     "ja": "GitHubリポジトリを追加",
     "zh-CN": "添加GitHub仓库",
     "zh-TW": "新增GitHub儲存庫",

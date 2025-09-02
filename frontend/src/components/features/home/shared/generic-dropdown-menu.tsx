@@ -17,7 +17,7 @@ export interface GenericDropdownMenuProps<T> {
   getItemProps: <Options>(
     options: UseComboboxGetItemPropsOptions<T> & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onScroll?: (event: React.UIEvent<HTMLUListElement>) => void;
+  onScroll?: (event: React.UIEvent<HTMLDivElement>) => void;
   menuRef?: React.RefObject<HTMLUListElement | null>;
   renderItem: (
     item: T,
@@ -29,6 +29,7 @@ export interface GenericDropdownMenuProps<T> {
     ) => any, // eslint-disable-line @typescript-eslint/no-explicit-any
   ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
+  stickyFooterItem?: React.ReactNode;
 }
 
 export function GenericDropdownMenu<T>({
@@ -43,32 +44,69 @@ export function GenericDropdownMenu<T>({
   menuRef,
   renderItem,
   renderEmptyState,
+  stickyFooterItem,
 }: GenericDropdownMenuProps<T>) {
   if (!isOpen) return null;
 
+  const hasItems = filteredItems.length > 0;
+  const showEmptyState = !hasItems && !stickyFooterItem;
+
   return (
-    <ul
-      // eslint-disable-next-line react/jsx-props-no-spreading
-      {...getMenuProps({
-        ref: menuRef,
-        className: cn(
-          "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none max-h-60 overflow-auto",
-          "focus:outline-none p-1 mt-1 z-[9999]",
-        ),
-        onScroll,
-      })}
-    >
-      {filteredItems.length === 0
-        ? renderEmptyState(inputValue)
-        : filteredItems.map((item, index) =>
-            renderItem(
-              item,
-              index,
-              highlightedIndex,
-              selectedItem,
-              getItemProps,
-            ),
-          )}
-    </ul>
+    <div className="relative">
+      <ul
+        // eslint-disable-next-line react/jsx-props-no-spreading
+        {...getMenuProps({
+          ref: menuRef,
+          className: cn(
+            "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
+            "focus:outline-none mt-1 z-[9999]",
+            stickyFooterItem
+              ? "max-h-60 overflow-hidden"
+              : "max-h-60 overflow-auto p-1",
+          ),
+          onScroll: stickyFooterItem ? undefined : onScroll,
+        })}
+      >
+        {stickyFooterItem ? (
+          <>
+            {/* Scrollable content area */}
+            <div
+              className={cn("max-h-48 overflow-auto p-1", hasItems && "pb-0")}
+              onScroll={onScroll}
+            >
+              {showEmptyState
+                ? renderEmptyState(inputValue)
+                : filteredItems.map((item, index) =>
+                    renderItem(
+                      item,
+                      index,
+                      highlightedIndex,
+                      selectedItem,
+                      getItemProps,
+                    ),
+                  )}
+            </div>
+            {/* Sticky footer */}
+            <div className="border-t border-[#727987] bg-[#454545] p-1">
+              {stickyFooterItem}
+            </div>
+          </>
+        ) : (
+          <div className="p-1">
+            {showEmptyState
+              ? renderEmptyState(inputValue)
+              : filteredItems.map((item, index) =>
+                  renderItem(
+                    item,
+                    index,
+                    highlightedIndex,
+                    selectedItem,
+                    getItemProps,
+                  ),
+                )}
+          </div>
+        )}
+      </ul>
+    </div>
   );
 }
