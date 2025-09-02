@@ -276,7 +276,11 @@ class BashSession:
         self._clear_screen()
         # Trigger a fresh prompt so the PS1 metadata block is present post-clear
         self.pane.send_keys(':')
-        time.sleep(0.4)
+        # Wait briefly until the PS1 metadata block appears to avoid race conditions
+        for _ in range(20):  # up to ~1s
+            time.sleep(0.05)
+            if CmdOutputMetadata.matches_ps1_metadata(self._get_pane_content()):
+                break
 
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
@@ -377,6 +381,7 @@ class BashSession:
         pane_content: str,
         ps1_matches: list[re.Match],
         hidden: bool,
+        initial_ps1_count: int,
     ) -> CmdOutputObservation:
         is_special_key = self._is_special_key(command)
         assert len(ps1_matches) >= 1, (
@@ -387,7 +392,10 @@ class BashSession:
 
         # Special case where the previous command output is truncated due to history limit
         # We should get the content BEFORE the last PS1 prompt
-        get_content_before_last_match = bool(len(ps1_matches) == 1)
+        # Only treat as truncation if there was at least one PS1 before execution and now only one is present.
+        get_content_before_last_match = bool(
+            len(ps1_matches) == 1 and initial_ps1_count >= 1
+        )
 
         # Update the current working directory if it has changed
         if metadata.working_dir != self._cwd and metadata.working_dir:
@@ -405,6 +413,8 @@ class BashSession:
             # Count the number of lines in the truncated output
             num_lines = len(raw_command_output.splitlines())
             metadata.prefix = f'[Previous command outputs are truncated. Showing the last {num_lines} lines of the output below.]\n'
+        else:
+            metadata.prefix = metadata.prefix or ''
 
         metadata.suffix = (
             f'\n[The command completed with exit code {metadata.exit_code}.]'
@@ -681,6 +691,7 @@ class BashSession:
                     pane_content=cur_pane_output,
                     ps1_matches=ps1_matches,
                     hidden=getattr(action, 'hidden', False),
+                    initial_ps1_count=initial_ps1_count,
                 )
 
             # Timeout checks should only trigger if a new prompt hasn't appeared yet.
