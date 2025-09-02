@@ -8,7 +8,7 @@ import { BrandButton } from "../settings/brand-button";
 import { I18nKey } from "#/i18n/declaration";
 import { RootState } from "#/store";
 import XIcon from "#/icons/x.svg?react";
-import { cn } from "#/utils/utils";
+import { cn, getRepoMdCreatePrompt } from "#/utils/utils";
 import { LearnThisRepoFormData } from "#/types/microagent-management";
 import { Branch } from "#/types/git";
 import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
@@ -76,23 +76,25 @@ export function MicroagentManagementLearnThisRepoModal({
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!query.trim()) {
-      return;
-    }
+    const finalQuery = getRepoMdCreatePrompt(
+      selectedRepository?.git_provider || "github",
+      query.trim(),
+    );
 
     onConfirm({
-      query: query.trim(),
+      query: finalQuery,
       selectedBranch: selectedBranch?.name || "",
     });
   };
 
   const handleConfirm = () => {
-    if (!query.trim()) {
-      return;
-    }
+    const finalQuery = getRepoMdCreatePrompt(
+      selectedRepository?.git_provider || "github",
+      query.trim(),
+    );
 
     onConfirm({
-      query: query.trim(),
+      query: finalQuery,
       selectedBranch: selectedBranch?.name || "",
     });
   };
@@ -244,7 +246,6 @@ export function MicroagentManagementLearnThisRepoModal({
             onClick={handleConfirm}
             testId="confirm-button"
             isDisabled={
-              !query.trim() ||
               isLoading ||
               isLoadingBranches ||
               !selectedBranch ||

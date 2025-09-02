@@ -22,6 +22,14 @@ interface Branch {
   last_push_date?: string;
 }
 
+interface PaginatedBranchesResponse {
+  branches: Branch[];
+  has_next_page: boolean;
+  current_page: number;
+  per_page: number;
+  total_count?: number;
+}
+
 interface GitRepository {
   id: string;
   full_name: string;
@@ -31,6 +39,7 @@ interface GitRepository {
   link_header?: string;
   pushed_at?: string;
   owner_type?: "user" | "organization";
+  main_branch?: string;
 }
 
 interface GitHubCommit {

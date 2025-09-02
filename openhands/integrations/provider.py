@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import os
 from types import MappingProxyType
 from typing import Annotated, Any, Coroutine, Literal, cast, overload
 
+import httpx
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -24,10 +26,12 @@ from openhands.integrations.service_types import (
     GitService,
     InstallationsService,
     MicroagentParseError,
+    PaginatedBranchesResponse,
     ProviderType,
     Repository,
     ResourceNotFoundError,
     SuggestedTask,
+    TokenResponse,
     User,
 )
 from openhands.microagent.types import MicroagentContentResponse, MicroagentResponse
@@ -112,6 +116,8 @@ class ProviderHandler:
         external_auth_id: str | None = None,
         external_auth_token: SecretStr | None = None,
         external_token_manager: bool = False,
+        session_api_key: str | None = None,
+        sid: str | None = None,
     ):
         if not isinstance(provider_tokens, MappingProxyType):
             raise TypeError(
@@ -127,7 +133,13 @@ class ProviderHandler:
         self.external_auth_id = external_auth_id
         self.external_auth_token = external_auth_token
         self.external_token_manager = external_token_manager
+        self.session_api_key = session_api_key
+        self.sid = sid
         self._provider_tokens = provider_tokens
+        WEB_HOST = os.getenv('WEB_HOST', '').strip()
+        self.REFRESH_TOKEN_URL = (
+            f'https://{WEB_HOST}/api/refresh-tokens' if WEB_HOST else None
+        )
 
     @property
     def provider_tokens(self) -> PROVIDER_TOKEN_TYPE:
@@ -161,8 +173,24 @@ class ProviderHandler:
         self, provider: ProviderType
     ) -> SecretStr | None:
         """Get latest token from service"""
-        service = self._get_service(provider)
-        return await service.get_latest_token()
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    self.REFRESH_TOKEN_URL,
+                    headers={
+                        'X-Session-API-Key': self.session_api_key,
+                    },
+                    params={'provider': provider.value, 'sid': self.sid},
+                )
+
+            resp.raise_for_status()
+            data = TokenResponse.model_validate_json(resp.text)
+            return SecretStr(data.token)
+
+        except Exception as e:
+            logger.warning(f'Failed to fetch latest token for provider {provider}: {e}')
+
+        return None
 
     async def get_github_installations(self) -> list[str]:
         service = cast(InstallationsService, self._get_service(ProviderType.GITHUB))
@@ -198,18 +226,12 @@ class ProviderHandler:
 
         if selected_provider:
             if not page or not per_page:
-                logger.error('Failed to provider params for paginating repos')
-                return []
+                raise ValueError('Failed to provider params for paginating repos')
 
             service = self._get_service(selected_provider)
-            try:
-                return await service.get_paginated_repos(
-                    page, per_page, sort, installation_id
-                )
-            except Exception as e:
-                logger.warning(f'Error fetching repos from {selected_provider}: {e}')
-
-            return []
+            return await service.get_paginated_repos(
+                page, per_page, sort, installation_id
+            )
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
@@ -235,6 +257,33 @@ class ProviderHandler:
 
         return tasks
 
+    async def search_branches(
+        self,
+        selected_provider: ProviderType | None,
+        repository: str,
+        query: str,
+        per_page: int = 30,
+    ) -> list[Branch]:
+        """Search for branches within a repository using the appropriate provider service."""
+        if selected_provider:
+            service = self._get_service(selected_provider)
+            try:
+                return await service.search_branches(repository, query, per_page)
+            except Exception as e:
+                logger.warning(
+                    f'Error searching branches from selected provider {selected_provider}: {e}'
+                )
+                return []
+
+        # If provider not specified, determine provider by verifying repository access
+        try:
+            repo_details = await self.verify_repo_provider(repository)
+            service = self._get_service(repo_details.git_provider)
+            return await service.search_branches(repository, query, per_page)
+        except Exception as e:
+            logger.warning(f'Error searching branches for {repository}: {e}')
+            return []
+
     async def search_repositories(
         self,
         selected_provider: ProviderType | None,
@@ -246,17 +295,10 @@ class ProviderHandler:
         if selected_provider:
             service = self._get_service(selected_provider)
             public = self._is_repository_url(query, selected_provider)
-            try:
-                user_repos = await service.search_repositories(
-                    query, per_page, sort, order, public
-                )
-                return self._deduplicate_repositories(user_repos)
-            except Exception as e:
-                logger.warning(
-                    f'Error searching repos from select provider {selected_provider}: {e}'
-                )
-
-            return []
+            user_repos = await service.search_repositories(
+                query, per_page, sort, order, public
+            )
+            return self._deduplicate_repositories(user_repos)
 
         all_repos: list[Repository] = []
         for provider in self.provider_tokens:
@@ -369,7 +411,7 @@ class ProviderHandler:
                     else SecretStr('')
                 )
 
-                if get_latest:
+                if get_latest and self.REFRESH_TOKEN_URL and self.sid:
                     token = await self._get_latest_provider_token(provider)
 
                 if token:
@@ -428,24 +470,27 @@ class ProviderHandler:
         raise AuthenticationError(f'Unable to access repo {repository}')
 
     async def get_branches(
-        self, repository: str, specified_provider: ProviderType | None = None
-    ) -> list[Branch]:
+        self,
+        repository: str,
+        specified_provider: ProviderType | None = None,
+        page: int = 1,
+        per_page: int = 30,
+    ) -> PaginatedBranchesResponse:
         """Get branches for a repository
 
         Args:
             repository: The repository name
             specified_provider: Optional provider type to use
+            page: Page number for pagination (default: 1)
+            per_page: Number of branches per page (default: 30)
 
         Returns:
-            A list of branches for the repository
+            A paginated response with branches for the repository
         """
-        all_branches: list[Branch] = []
-
         if specified_provider:
             try:
                 service = self._get_service(specified_provider)
-                branches = await service.get_branches(repository)
-                return branches
+                return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(
                     f'Error fetching branches from {specified_provider}: {e}'
@@ -454,30 +499,18 @@ class ProviderHandler:
         for provider in self.provider_tokens:
             try:
                 service = self._get_service(provider)
-                branches = await service.get_branches(repository)
-                all_branches.extend(branches)
-                # If we found branches, no need to check other providers
-                if all_branches:
-                    break
+                return await service.get_paginated_branches(repository, page, per_page)
             except Exception as e:
                 logger.warning(f'Error fetching branches from {provider}: {e}')
 
-        # Sort branches by last push date (newest first)
-        all_branches.sort(
-            key=lambda b: b.last_push_date if b.last_push_date else '', reverse=True
+        # Return empty response if no provider worked
+        return PaginatedBranchesResponse(
+            branches=[],
+            has_next_page=False,
+            current_page=page,
+            per_page=per_page,
+            total_count=0,
         )
-
-        # Move main/master branch to the top if it exists
-        main_branches = []
-        other_branches = []
-
-        for branch in all_branches:
-            if branch.name.lower() in ['main', 'master']:
-                main_branches.append(branch)
-            else:
-                other_branches.append(branch)
-
-        return main_branches + other_branches
 
     async def get_microagents(self, repository: str) -> list[MicroagentResponse]:
         """Get microagents from a repository using the appropriate service.
@@ -626,3 +659,30 @@ class ProviderHandler:
             remote_url = f'https://{domain}/{repo_name}.git'
 
         return remote_url
+
+    async def is_pr_open(
+        self, repository: str, pr_number: int, git_provider: ProviderType
+    ) -> bool:
+        """Check if a PR is still active (not closed/merged).
+
+        This method checks the PR status using the provider's service method.
+
+        Args:
+            repository: Repository name in format 'owner/repo'
+            pr_number: The PR number to check
+            git_provider: The Git provider type for this repository
+
+        Returns:
+            True if PR is active (open), False if closed/merged, True if can't determine
+        """
+        try:
+            service = self._get_service(git_provider)
+            return await service.is_pr_open(repository, pr_number)
+
+        except Exception as e:
+            logger.warning(
+                f'Could not determine PR status for {repository}#{pr_number}: {e}. '
+                f'Including conversation to be safe.'
+            )
+            # If we can't determine the PR status, include the conversation to be safe
+            return True
