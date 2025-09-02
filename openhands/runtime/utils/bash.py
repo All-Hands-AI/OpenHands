@@ -173,8 +173,6 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
     This handles the case where the command is preceded by a prompt like "$ ".
     """
-    import re
-
     output = command_output.lstrip()
     command_stripped = command.lstrip()
 
