@@ -364,3 +364,184 @@ def test_load_microagents_with_cursorrules(temp_microagents_dir_with_cursorrules
     assert cursorrules_agent.name == 'cursorrules'
     assert 'Always use TypeScript for new files' in cursorrules_agent.content
     assert cursorrules_agent.type == MicroagentType.REPO_KNOWLEDGE
+
+
+@pytest.fixture
+def temp_dir_with_cursorrules_only():
+    """Create a temporary directory with only .cursorrules file (no .openhands/microagents directory)."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+
+        # Create .cursorrules file in repository root
+        cursorrules_content = """Always use Python for new files.
+Follow PEP 8 style guidelines."""
+        (root / '.cursorrules').write_text(cursorrules_content)
+
+        # Note: We intentionally do NOT create .openhands/microagents directory
+        yield root
+
+
+def test_load_cursorrules_without_microagents_dir(temp_dir_with_cursorrules_only):
+    """Test loading .cursorrules file when .openhands/microagents directory doesn't exist.
+
+    This test reproduces the bug where .cursorrules is only loaded when
+    .openhands/microagents directory exists.
+    """
+    # Try to load from non-existent microagents directory
+    microagents_dir = temp_dir_with_cursorrules_only / '.openhands' / 'microagents'
+
+    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+    # This should find the .cursorrules file even though microagents_dir doesn't exist
+    assert len(repo_agents) == 1  # Only .cursorrules
+    assert 'cursorrules' in repo_agents
+    assert len(knowledge_agents) == 0
+
+    # Check .cursorrules agent
+    cursorrules_agent = repo_agents['cursorrules']
+    assert isinstance(cursorrules_agent, RepoMicroagent)
+    assert cursorrules_agent.name == 'cursorrules'
+    assert 'Always use Python for new files' in cursorrules_agent.content
+    assert cursorrules_agent.type == MicroagentType.REPO_KNOWLEDGE
+
+
+def test_agents_md_file_load():
+    """Test loading AGENTS.md file as a RepoMicroagent."""
+    agents_content = """# Project Setup
+
+## Setup commands
+
+- Install deps: `npm install`
+- Start dev server: `npm run dev`
+- Run tests: `npm test`
+
+## Code style
+
+- TypeScript strict mode
+- Single quotes, no semicolons
+- Use functional patterns where possible"""
+
+    agents_path = Path('AGENTS.md')
+
+    # Test loading AGENTS.md file directly
+    agent = BaseMicroagent.load(agents_path, file_content=agents_content)
+
+    # Verify it's loaded as a RepoMicroagent
+    assert isinstance(agent, RepoMicroagent)
+    assert agent.name == 'agents'
+    assert agent.content == agents_content
+    assert agent.type == MicroagentType.REPO_KNOWLEDGE
+    assert agent.metadata.name == 'agents'
+    assert agent.source == str(agents_path)
+
+
+def test_agents_md_case_insensitive():
+    """Test that AGENTS.md loading is case-insensitive."""
+    agents_content = """# Development Guide
+
+Use TypeScript for all new files."""
+
+    test_cases = ['AGENTS.md', 'agents.md', 'AGENT.md', 'agent.md']
+
+    for filename in test_cases:
+        agents_path = Path(filename)
+        agent = BaseMicroagent.load(agents_path, file_content=agents_content)
+
+        assert isinstance(agent, RepoMicroagent)
+        assert agent.name == 'agents'
+        assert agent.content == agents_content
+        assert agent.type == MicroagentType.REPO_KNOWLEDGE
+
+
+@pytest.fixture
+def temp_dir_with_agents_md_only():
+    """Create a temporary directory with only AGENTS.md file (no .openhands/microagents directory)."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+
+        # Create AGENTS.md file in repository root
+        agents_content = """# Development Guide
+
+## Setup commands
+
+- Install deps: `poetry install`
+- Start dev server: `poetry run python app.py`
+- Run tests: `poetry run pytest`
+
+## Code style
+
+- Python 3.12+
+- Follow PEP 8 guidelines
+- Use type hints everywhere"""
+        (root / 'AGENTS.md').write_text(agents_content)
+
+        # Note: We intentionally do NOT create .openhands/microagents directory
+        yield root
+
+
+def test_load_agents_md_without_microagents_dir(temp_dir_with_agents_md_only):
+    """Test loading AGENTS.md file when .openhands/microagents directory doesn't exist."""
+    # Try to load from non-existent microagents directory
+    microagents_dir = temp_dir_with_agents_md_only / '.openhands' / 'microagents'
+
+    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+    # This should find the AGENTS.md file even though microagents_dir doesn't exist
+    assert len(repo_agents) == 1  # Only AGENTS.md
+    assert 'agents' in repo_agents
+    assert len(knowledge_agents) == 0
+
+    # Check AGENTS.md agent
+    agents_agent = repo_agents['agents']
+    assert isinstance(agents_agent, RepoMicroagent)
+    assert agents_agent.name == 'agents'
+    assert 'Install deps: `poetry install`' in agents_agent.content
+    assert agents_agent.type == MicroagentType.REPO_KNOWLEDGE
+
+
+@pytest.fixture
+def temp_dir_with_both_cursorrules_and_agents():
+    """Create a temporary directory with both .cursorrules and AGENTS.md files."""
+    with tempfile.TemporaryDirectory() as temp_dir:
+        root = Path(temp_dir)
+
+        # Create .cursorrules file
+        cursorrules_content = """Always use Python for new files.
+Follow PEP 8 style guidelines."""
+        (root / '.cursorrules').write_text(cursorrules_content)
+
+        # Create AGENTS.md file
+        agents_content = """# Development Guide
+
+## Setup commands
+
+- Install deps: `poetry install`
+- Run tests: `poetry run pytest`"""
+        (root / 'AGENTS.md').write_text(agents_content)
+
+        yield root
+
+
+def test_load_both_cursorrules_and_agents_md(temp_dir_with_both_cursorrules_and_agents):
+    """Test loading both .cursorrules and AGENTS.md files when .openhands/microagents doesn't exist."""
+    # Try to load from non-existent microagents directory
+    microagents_dir = (
+        temp_dir_with_both_cursorrules_and_agents / '.openhands' / 'microagents'
+    )
+
+    repo_agents, knowledge_agents = load_microagents_from_dir(microagents_dir)
+
+    # This should find both files
+    assert len(repo_agents) == 2  # .cursorrules + AGENTS.md
+    assert 'cursorrules' in repo_agents
+    assert 'agents' in repo_agents
+    assert len(knowledge_agents) == 0
+
+    # Check both agents
+    cursorrules_agent = repo_agents['cursorrules']
+    assert isinstance(cursorrules_agent, RepoMicroagent)
+    assert 'Always use Python for new files' in cursorrules_agent.content
+
+    agents_agent = repo_agents['agents']
+    assert isinstance(agents_agent, RepoMicroagent)
+    assert 'Install deps: `poetry install`' in agents_agent.content
