@@ -2,7 +2,7 @@ import io
 import re
 from itertools import chain
 from pathlib import Path
-from typing import Union
+from typing import ClassVar, Union
 
 import frontmatter
 from pydantic import BaseModel
@@ -23,7 +23,7 @@ class BaseMicroagent(BaseModel):
     source: str  # path to the file
     type: MicroagentType
 
-    PATH_TO_THIRD_PARTY_MICROAGENT_NAME = {
+    PATH_TO_THIRD_PARTY_MICROAGENT_NAME: ClassVar[dict[str, str]] = {
         '.cursorrules': 'cursorrules',
         'agents.md': 'agents',
         'agent.md': 'agents',
