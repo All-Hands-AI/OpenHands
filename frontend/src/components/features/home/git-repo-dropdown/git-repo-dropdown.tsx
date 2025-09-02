@@ -217,7 +217,7 @@ export function GitRepoDropdown({
         href={githubHref}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#525252] rounded transition-colors duration-150"
+        className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#5C5D62] rounded-md transition-colors duration-150 font-normal"
       >
         {t(I18nKey.HOME$ADD_GITHUB_REPOS)}
       </a>
@@ -240,7 +240,6 @@ export function GitRepoDropdown({
       getItemProps={itemGetItemProps}
       getDisplayText={(repo) => repo.full_name}
       getItemKey={(repo) => repo.id}
-      renderIcon={() => <RepoIcon className="w-4 h-4 text-[#A3A3A3]" />}
     />
   );
 

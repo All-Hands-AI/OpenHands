@@ -134,12 +134,6 @@ export function GitProviderDropdown({
       getDisplayText={formatProviderName}
       getItemKey={(provider) => provider}
       isProviderDropdown
-      renderIcon={(provider) => (
-        <GitProviderIcon
-          gitProvider={provider}
-          className="min-w-[14px] min-h-[14px] w-[14px] h-[14px]"
-        />
-      )}
     />
   );
 

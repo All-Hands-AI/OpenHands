@@ -55,36 +55,43 @@ export function GenericDropdownMenu<T>({
 
   return (
     <div className="relative">
-      <ul
-        // eslint-disable-next-line react/jsx-props-no-spreading
-        {...getMenuProps({
-          ref: menuRef,
-          className: cn(
-            "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
-            "focus:outline-none mt-1 z-[9999] max-h-60 overflow-auto",
-            stickyFooterItem ? "pb-0" : "p-1",
-          ),
-          onScroll,
-          "data-testid": testId,
-        })}
-      >
-        {showEmptyState
-          ? renderEmptyState(inputValue)
-          : filteredItems.map((item, index) =>
-              renderItem(
-                item,
-                index,
-                highlightedIndex,
-                selectedItem,
-                getItemProps,
-              ),
-            )}
-        {stickyFooterItem && (
-          <li className="sticky bottom-0 border-t border-[#727987] bg-[#454545] p-1 -mb-1">
-            {stickyFooterItem}
-          </li>
+      <div
+        className={cn(
+          "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
+          "focus:outline-none mt-1 z-[9999]",
+          stickyFooterItem ? "max-h-60" : "max-h-60",
         )}
-      </ul>
+      >
+        <ul
+          // eslint-disable-next-line react/jsx-props-no-spreading
+          {...getMenuProps({
+            ref: menuRef,
+            className: cn(
+              "w-full overflow-auto p-1",
+              stickyFooterItem ? "max-h-[calc(15rem-3rem)]" : "max-h-60", // Reserve space for sticky footer
+            ),
+            onScroll,
+            "data-testid": testId,
+          })}
+        >
+          {showEmptyState
+            ? renderEmptyState(inputValue)
+            : filteredItems.map((item, index) =>
+                renderItem(
+                  item,
+                  index,
+                  highlightedIndex,
+                  selectedItem,
+                  getItemProps,
+                ),
+              )}
+        </ul>
+        {stickyFooterItem && (
+          <div className="border-t border-[#727987] bg-[#454545] p-1 rounded-b-lg">
+            {stickyFooterItem}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
