@@ -34,10 +34,7 @@ export function useRepositoryData(
 
   // Search repositories when user types
   const { data: searchData, isLoading: isSearchLoading } =
-    useSearchRepositories(
-      shouldSkipSearch ? "" : processedSearchInput,
-      provider,
-    );
+    useSearchRepositories(processedSearchInput, provider, shouldSkipSearch);
 
   // Combine all repositories from paginated data
   const allRepositories = useMemo(
