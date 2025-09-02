@@ -1,3 +1,22 @@
+"""OpenHands (OH) server extension system.
+
+This lightweight mechanism lets external repositories (e.g., an enterprise or custom extension)
+mount routes, middleware, and lifecycle hooks onto the OH FastAPI app without modifying
+OH code or relying on environment-variable-driven class switching everywhere.
+
+Two discovery mechanisms are supported:
+- Environment variable OPENHANDS_EXTENSIONS: a comma-separated list of references like
+  "pkg.mod:register" or "pkg.mod:MyExtension.register". Each reference must resolve to a
+  callable or to an object that exposes a callable attribute `register` (and optional
+  `on_startup`, `on_shutdown`).
+- Python entry points under group "openhands_server_extensions": each entry point is
+  resolved similarly and invoked to register with the app.
+
+Terminology:
+- OH refers to the core OpenHands project.
+- Enterprise extension or custom extension refers to an external repo that extends OH.
+"""
+
 from __future__ import annotations
 
 import os

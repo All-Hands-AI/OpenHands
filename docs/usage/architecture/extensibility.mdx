@@ -1,0 +1,114 @@
+---
+# This doc describes the extension system for OpenHands (OH)
+---
+
+# OpenHands Extensibility (Enterprise/Custom Extensions)
+
+This page documents a lightweight extension system that allows external repositories (e.g., an enterprise or custom extension) to mount routes and lifecycle hooks into the OpenHands (OH) backend without modifying OH.
+
+Key goals:
+- Keep OH free of multi-user/enterprise-specific concerns
+- Enable external extensions to integrate cleanly via explicit hooks
+- Allow both development-time and production-time registration
+
+## Overview
+
+Extensions register themselves with the OH FastAPI app at startup. They can:
+- Mount additional routers (e.g., `/enterprise`, `/orgs/{org_id}`)
+- Add middleware
+- Hook into startup/shutdown events
+
+The extension mechanism lives in `openhands.server.extension` and supports two discovery modes:
+1. Environment variable `OPENHANDS_EXTENSIONS`;
+2. Python entry points under the group `openhands_server_extensions`.
+
+OH stays neutral: route shapes, multi-tenant context, and auth remain the domain of the extension.
+
+## How to Register an Extension
+
+### Option A: Environment Variable
+
+Set `OPENHANDS_EXTENSIONS` to a comma-separated list of references:
+
+- `pkg.module:register` where `register(app: FastAPI) -> None`
+- `pkg.module:MyExtension.register` where `MyExtension` exposes `register`, optionally `on_startup` and `on_shutdown` methods
+
+Example:
+
+```
+export OPENHANDS_EXTENSIONS="your_pkg.saas_extension:register"
+```
+
+### Option B: Entry Points (Recommended for packaged extensions)
+
+In your extension repo’s `pyproject.toml`:
+
+```
+[project.entry-points."openhands_server_extensions"]
+your-saas = "your_pkg.saas_extension:register"
+```
+
+Then install the extension (e.g., `pip install -e .`). OH will discover it automatically at startup.
+
+## Server Configuration Overrides from Extensions
+
+Extensions can also provide a custom server configuration by exporting a `ServerConfig` subclass via the `openhands_server_config` entry point, or by pointing `OPENHANDS_CONFIG_CLS` to a fully-qualified class name.
+
+- Entry point (preferred):
+
+```
+[project.entry-points."openhands_server_config"]
+default = "your_pkg.saas_config:EnterpriseServerConfig"
+```
+
+- Environment variable override:
+
+```
+export OPENHANDS_CONFIG_CLS="your_pkg.saas_config.EnterpriseServerConfig"
+```
+
+Your `EnterpriseServerConfig` can set:
+- `app_mode = AppMode.SAAS` (naming remains internal to OH)
+- `user_auth_class`, `conversation_manager_class`,
+  `conversation_store_class`, `settings_store_class`, `secret_store_class`, etc.
+
+## Example Extension Skeleton
+
+In your extension repo:
+
+```python
+# your_pkg/saas_extension.py
+from fastapi import APIRouter, FastAPI
+
+router = APIRouter(prefix="/enterprise")
+
+@router.get("/health")
+async def enterprise_health():
+    return {"status": "ok"}
+
+def register(app: FastAPI) -> None:
+    app.include_router(router)
+```
+
+```python
+# your_pkg/saas_config.py
+from openhands.server.config.server_config import ServerConfig
+from openhands.server.types import AppMode
+
+class EnterpriseServerConfig(ServerConfig):
+    app_mode = AppMode.SAAS
+    user_auth_class = "your_pkg.auth.SaaSUserAuth"
+    # Optionally override storage/manager classes, etc.
+```
+
+## Design Notes
+
+- OH does not prescribe route shapes or introduce multi-tenant fields. Extensions are free to define their own routing and context propagation.
+- The extension system is intentionally small to minimize coupling and allow incremental refactoring elsewhere (e.g., gradual removal of import-time globals).
+- Backward compatible: if no extension/config is provided, OH behavior remains unchanged.
+
+## Next Steps in the Refactor
+
+- Introduce an application container and request-scoped dependency helpers to reduce reliance on import-time globals.
+- Migrate modules to consume dependencies via FastAPI DI rather than `openhands.server.shared`.
+- Keep OH terminology consistent: refer to the core as “OH”, and external repos as “enterprise extensions” or “custom extensions”.
