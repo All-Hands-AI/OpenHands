@@ -171,31 +171,44 @@ class BashCommandStatus(Enum):
 def _remove_command_prefix(command_output: str, command: str) -> str:
     """Remove the command prefix from the command output.
 
-    This handles the case where the command is preceded by a prompt like "$ ".
+    This handles cases where the command appears with a prompt like "$ command".
     """
     output = command_output.lstrip()
     command_stripped = command.lstrip()
 
-    # Try to match "$ {command}" with flexible spacing using regex
-    # This handles cases like "$ command", "$  command", etc.
-    escaped_command = re.escape(command_stripped)
-    prompt_pattern = rf'^\$\s+{escaped_command}(?:\n|$)'
+    # First try the original approach
+    if output.startswith(command_stripped):
+        result = output.removeprefix(command_stripped).lstrip()
+        # Clean up trailing prompt if present
+        return _clean_trailing_prompt(result)
 
-    match = re.match(prompt_pattern, output)
-    if match:
-        # Remove the matched prompt and command
-        remaining = output[match.end() :]
+    # If that doesn't work, try to handle the "$ command" case
+    prompt_with_command = f'$ {command_stripped}'
+    if output.startswith(prompt_with_command):
+        result = output.removeprefix(prompt_with_command).lstrip()
+        return _clean_trailing_prompt(result)
 
-        # Remove trailing prompt and extra whitespace
-        # The output typically ends with something like "\n\n\n$" or just "$"
-        remaining = remaining.rstrip()
-        if remaining.endswith('$'):
-            remaining = remaining[:-1].rstrip()
+    # Handle cases with multiple spaces after $
+    if output.startswith('$ '):
+        # Find the command after the prompt
+        lines = output.split('\n')
+        first_line = lines[0]
+        if first_line.startswith('$ ') and command_stripped in first_line:
+            # Remove the entire first line and return the rest
+            result = '\n'.join(lines[1:]).lstrip()
+            return _clean_trailing_prompt(result)
 
-        return remaining
+    # Fall back to original behavior
+    result = output.removeprefix(command_stripped).lstrip()
+    return _clean_trailing_prompt(result)
 
-    # Fall back to original behavior if the prompt pattern doesn't match
-    return output.removeprefix(command_stripped).lstrip().rstrip()
+
+def _clean_trailing_prompt(output: str) -> str:
+    """Remove trailing prompt markers like '\n\n\n$' from output."""
+    output = output.rstrip()
+    if output.endswith('$'):
+        output = output[:-1].rstrip()
+    return output
 
 
 class BashSession:
