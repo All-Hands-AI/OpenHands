@@ -1,4 +1,5 @@
 import os
+from importlib.metadata import EntryPoint, entry_points
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.server.types import AppMode, ServerConfigInterface
@@ -49,12 +50,50 @@ class ServerConfig(ServerConfigInterface):
         return config
 
 
+def _load_server_config_from_entry_point() -> type[ServerConfig] | None:
+    try:
+        eps: list[EntryPoint] = list(
+            entry_points().select(group='openhands_server_config')
+        )
+    except Exception:
+        return None
+    if not eps:
+        return None
+    if len(eps) > 1:
+        logger.warning(
+            'Multiple entry points found for openhands_server_config; using the first one: %s',
+            eps[0].name,
+        )
+    ep = eps[0]
+    loaded = ep.load()
+    # Accept either a class or a callable returning a class
+    if callable(loaded) and not isinstance(loaded, type):
+        loaded = loaded()
+    if isinstance(loaded, type) and issubclass(loaded, ServerConfig):
+        return loaded
+    # Fallback: allow any subclass of ServerConfigInterface via get_impl semantics
+    try:
+        if isinstance(loaded, type) and issubclass(loaded, ServerConfigInterface):
+            return loaded  # type: ignore[return-value]
+    except Exception:
+        pass
+    logger.error(
+        'Entry point %s did not provide a ServerConfig class; ignoring', ep.name
+    )
+    return None
+
+
 def load_server_config() -> ServerConfig:
+    # Priority 1: explicit class via env var for backward compatibility
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
-    logger.info(f'Using config class {config_cls}')
+    if config_cls:
+        logger.info(f'Using config class {config_cls} (env OPENHANDS_CONFIG_CLS)')
+        server_config_cls = get_impl(ServerConfig, config_cls)
+    else:
+        # Priority 2: entry point discovery to allow external repos to supply config
+        server_config_cls = _load_server_config_from_entry_point() or ServerConfig
+        logger.info('Using config class %s (entry points/default)', server_config_cls)
 
-    server_config_cls = get_impl(ServerConfig, config_cls)
-    server_config: ServerConfig = server_config_cls()
+    server_config: ServerConfig = server_config_cls()  # type: ignore[call-arg]
     server_config.verify_config()
-
     return server_config
