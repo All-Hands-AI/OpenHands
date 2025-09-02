@@ -64,7 +64,7 @@ The goal of this step is to understand the codebase, the problem, and the develo
 
 * **Explore:** Use `bash` commands to explore the project's file system and gather information about the development environment, programming languages, tools, project structure, and the most relevant code and documentation files. Make sure to capture all important details like the names and locations of all important files, the list of libraries imported into the project, how to run tests, etc.
 * **Document:** Create a markdown file named `issue_resolution_context.md` in the root directory and save all the technical details that you found in this file. It will provide helpful context for the following steps.
-* **Best practices for writing the Issue Resolution Context document:**
+* **Best practices for the Issue Resolution Context document:**
 
   *   **Provide High-Level Project Context:** Start every report with essential project metadata. This orients the developer immediately, especially in large, multi-project environments.
       *   **Elements:** Project Name, Root Directory, Version, Programming Language, and any relevant subsystems (e.g., Database, UI Backend).
@@ -135,7 +135,7 @@ If the implementation of your plan is unsuccessful, you must begin a new iterati
 * To avoid repeating past mistakes, read the full Issue Resolution Log and write a brief summary of all the assumptions that have been tested and proven incorrect. Save this summary in a new log record.
 * **Formulate a New Plan:** Use the insights from your analysis to start the next iteration. First, update `issue_resolution_context.md` with any new technical insights you've discovered. Then, create a new, versioned plan file (e.g., `issue_resolution_plan_v2.md`).
 
-# Pro Tips for avoiding mistakes
+# Appendix: Tips for avoiding mistakes
 
 ## 1. Master the Art of Root Cause Analysis
 *   **Ask "Why" Five Times:** Don't stop at the first symptom. If you see an `IndexError`, ask *why* the index is out of bounds. If the array is empty, ask *why* it's empty. Trace the logic back to its origin.
