@@ -14,9 +14,9 @@ from openhands.events.action import (
     BrowseInteractiveAction,
     BrowseURLAction,
     CmdRunAction,
+    ConsultTomAgentAction,
     FileEditAction,
     FileReadAction,
-    ImproveInstructionAction,
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
@@ -30,10 +30,10 @@ from openhands.events.observation import (
     AgentThinkObservation,
     BrowserOutputObservation,
     CmdOutputObservation,
+    ConsultTomAgentObservation,
     FileDownloadObservation,
     FileEditObservation,
     FileReadObservation,
-    ImproveInstructionObservation,
     IPythonRunCellObservation,
     TaskTrackingObservation,
     UserRejectObservation,
@@ -339,7 +339,7 @@ class ConversationMemory:
                     tool_calls=None,
                 )
             ]
-        elif isinstance(action, ImproveInstructionAction):
+        elif isinstance(action, ConsultTomAgentAction):
             return [
                 Message(
                     role='user',
@@ -531,7 +531,7 @@ class ConversationMemory:
         elif isinstance(obs, FileDownloadObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
-        elif isinstance(obs, ImproveInstructionObservation):
+        elif isinstance(obs, ConsultTomAgentObservation):
             text = truncate_content(obs.content, max_message_chars)
             message = Message(role='user', content=[TextContent(text=text)])
         elif (

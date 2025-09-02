@@ -59,5 +59,5 @@ class ObservationType(str, Enum):
     TASK_TRACKING = 'task_tracking'
     """Result of a task tracking operation"""
 
-    IMPROVE_INSTRUCTION = 'improve_instruction'
-    """Result of Tom instruction improvement process"""
+    CONSULT_TOM_AGENT = 'consult_tom_agent'
+    """Result of Tom agent consultation process"""

@@ -15,8 +15,8 @@ from tom_swe.memory.locations import get_usermodeling_dir  # type: ignore
 from tom_swe.tom_agent import create_tom_agent  # type: ignore
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
-from openhands.agenthub.codeact_agent.tools.tom_improve_instruction import (
-    ImproveInstructionTool,
+from openhands.agenthub.codeact_agent.tools.tom_consult_agent import (
+    ConsultTomAgentTool,
 )
 from openhands.cli.tui import (
     CLI_DISPLAY_LEVEL,
@@ -30,7 +30,7 @@ from openhands.core.logger import openhands_logger as logger
 from openhands.core.message import TextContent
 from openhands.events.action import (
     AgentFinishAction,
-    ImproveInstructionAction,
+    ConsultTomAgentAction,
     MessageAction,
 )
 from openhands.events.event import Event
@@ -93,9 +93,9 @@ class TomCodeActAgent(CodeActAgent):
         )
 
     def _get_tools(self) -> list['ChatCompletionToolParam']:
-        """Override to add Tom improve instruction tool."""
+        """Override to add Tom consult agent tool."""
         tools = super()._get_tools()
-        tools.append(ImproveInstructionTool)
+        tools.append(ConsultTomAgentTool)
         return tools
 
     def step(self, state: State) -> 'Action':
@@ -107,19 +107,20 @@ class TomCodeActAgent(CodeActAgent):
                 self.sleeptime_compute(user_id=state.user_id or '')
                 return AgentFinishAction()
             elif (
-                latest_user_message.content.strip() == '/tom_improve_instruction'
+                latest_user_message.content.strip() == '/consult_tom_agent'
                 and self._is_new_user_message(latest_user_message)
             ):
-                action = ImproveInstructionAction(
-                    content="User wants to let the agent guess what they want to do next, it's better to communicate with Tom agent to get a better picture."
+                action = ConsultTomAgentAction(
+                    content='User wants to consult Tom agent about their intent',
+                    use_user_message=True,
                 )
                 self._last_processed_user_message_id = latest_user_message.id
 
         if action is None:
             action = super().step(state)
-        if isinstance(action, ImproveInstructionAction):
+        if isinstance(action, ConsultTomAgentAction):
             logger.info(
-                '🔧 Tom: Detected ImproveInstructionAction, triggering Tom improve instruction'
+                '🔧 Tom: Detected ConsultTomAgentAction, triggering Tom consultation'
             )
             # Format messages for Tom processing
             condensed_history: list[Event] = []
@@ -132,26 +133,42 @@ class TomCodeActAgent(CodeActAgent):
             initial_user_message = self._get_initial_user_message(state.history)
             messages = self._get_messages(condensed_history, initial_user_message)
             formatted_messages = self.llm.format_messages_for_llm(messages)[1:]
-            # Process with Tom and get improved instruction
-            if latest_user_message:
-                improved_instruction = self.tom_improve_instruction(
-                    latest_user_message, formatted_messages, state
+
+            # Determine what to consult about
+            if action.use_user_message and latest_user_message:
+                consultation_result = self.tom_consult_agent(
+                    query_text=f"I am SWE agent. {action.content}. I need to consult ToM agent about the user's message: {latest_user_message.content}",
+                    formatted_messages=formatted_messages,
+                    state=state,
+                    is_user_query=True,
+                )
+            elif action.custom_query:
+                consultation_result = self.tom_consult_agent(
+                    query_text=f'I am SWE agent. {action.content}. I need to consult ToM agent: {action.custom_query}',
+                    formatted_messages=formatted_messages,
+                    state=state,
+                    is_user_query=False,
                 )
             else:
-                improved_instruction = None
-            # Return action to update the observation with the improved instruction
-            if improved_instruction:
+                logger.warning('⚠️ Tom: No query specified for consultation')
+                consultation_result = None
+
+            # Return action to update the observation with the consultation result
+            if consultation_result:
                 logger.info(
-                    '✅ Tom: Requesting observation update via UpdateObservationAction'
+                    '✅ Tom: Requesting observation update with consultation result'
                 )
-                return ImproveInstructionAction(
+                return ConsultTomAgentAction(
                     content=action.content
-                    + '\n\n[Starting communicating with Tom agent...]'
-                    + improved_instruction
-                    + '\n\n[Finished communicating with ToM Agent...]'
+                    + f'I need to consult Tom agent about {action.custom_query or "the user's message"}'
+                    + '\n\n[Starting consultation with Tom agent...]'
+                    + consultation_result
+                    + '\n\n[Finished consulting with ToM Agent...]',
+                    use_user_message=action.use_user_message,
+                    custom_query=action.custom_query,
                 )
             else:
-                logger.warning('⚠️ Tom: Cannot update observation - no ID found')
+                logger.warning('⚠️ Tom: No consultation result received')
 
         # If finishing and Tom enabled, run sleeptime compute
         if (
@@ -181,21 +198,26 @@ class TomCodeActAgent(CodeActAgent):
 
         return source_check and id_check and length_check
 
-    def tom_improve_instruction(
-        self, user_message: MessageAction, formatted_messages: list, state: State
+    def tom_consult_agent(
+        self,
+        query_text: str,
+        formatted_messages: list,
+        state: State,
+        is_user_query: bool = True,
     ) -> Optional[str]:
-        """INTEGRATION POINT 1: Get instruction improvements from Tom.
+        """INTEGRATION POINT 1: Get guidance from Tom agent.
 
         Args:
-            user_message: The user message to improve
+            query_text: The text to query Tom agent about
             formatted_messages: Full conversation context in LLM format
             state: Current agent state
+            is_user_query: Whether this is about a user message or agent query
 
         Returns:
-            Enhanced instruction string if improvements are available, None otherwise
+            Tom agent's guidance if available, None otherwise
         """
         logger.info(
-            '🚀 Tom: Integration Point triggered via tool - improving user instruction'
+            f'🚀 Tom: Integration Point triggered - consulting about {"user query" if is_user_query else "agent query"}'
         )
         try:
             user_id = state.user_id or ''
@@ -203,25 +225,25 @@ class TomCodeActAgent(CodeActAgent):
             # Capture tom thinking process in CLI if available
             if CLI_AVAILABLE:
                 with capture_tom_thinking():
-                    improved_instruction = self.tom_agent.propose_instructions(
+                    tom_suggestion = self.tom_agent.give_suggestions(
                         user_id=user_id,
-                        original_instruction=user_message.content,
+                        query=query_text,
                         formatted_messages=formatted_messages,
                     )
             else:
-                improved_instruction = self.tom_agent.propose_instructions(
+                tom_suggestion = self.tom_agent.give_suggestions(
                     user_id=user_id,
-                    original_instruction=user_message.content,
+                    query=query_text,
                     formatted_messages=formatted_messages,
                 )
-            if improved_instruction:
-                logger.debug('✅ Tom: Received improved instruction')
-                logger.debug(f'💡 Tom: Improved instruction: {improved_instruction}')
-                # In CLI mode, show improvement to user and get their choice
+            if tom_suggestion:
+                logger.debug('✅ Tom: Received consultation result')
+                logger.debug(f'💡 Tom: Consultation result: {tom_suggestion}')
+                # In CLI mode, show consultation result to user and get their choice
                 if CLI_AVAILABLE:
                     user_response = display_instruction_improvement(
-                        original_instruction=user_message.content,
-                        improved_instruction=improved_instruction.improved_instruction,
+                        original_instruction=query_text,
+                        suggestions=tom_suggestion.suggestions,
                     )
 
                     # Record the interaction with tri-state value
@@ -231,10 +253,11 @@ class TomCodeActAgent(CodeActAgent):
 
                         interaction = {
                             'session_id': state.session_id,
-                            'original': user_message.content,
-                            'improved': improved_instruction.improved_instruction,
+                            'original': query_text,
+                            'improved': tom_suggestion.suggestions,
                             'accepted': user_response['value'],  # Now 1, 0.5, or 0
                             'timestamp': datetime.now().isoformat(),
+                            'is_user_query': is_user_query,
                         }
 
                         # Append to JSONL file (read existing content + append new line)
@@ -247,22 +270,22 @@ class TomCodeActAgent(CodeActAgent):
                         else:
                             self.file_store.write(str(record_file), new_line)
                         logger.log(CLI_DISPLAY_LEVEL, '🔍 Tom: Recorded interaction')
-                        return user_response['instruction']
+                        return user_response['suggestions']
 
                     except Exception as e:
                         logger.error(f'❌ Tom: Failed to record interaction: {e}')
-                        return user_response['instruction']
+                        return user_response['suggestions']
                 else:
-                    # Non-CLI mode: use improvement automatically
-                    logger.info("✅ Tom: Using Tom's enhanced instruction")
-                    return improved_instruction.improved_instruction
+                    # Non-CLI mode: use consultation result automatically
+                    logger.info("✅ Tom: Using Tom's guidance")
+                    return tom_suggestion.suggestions
             else:
                 logger.warning(
-                    '⚠️ Tom: No instruction improvements provided (could be the original instruction is clear enough)'
+                    '⚠️ Tom: No guidance provided (could be the query is clear enough)'
                 )
 
         except Exception as e:
-            logger.error(f'❌ Tom: Error in instruction improvement: {e}')
+            logger.error(f'❌ Tom: Error in consultation: {e}')
         return None
 
     def sleeptime_compute(

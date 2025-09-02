@@ -1131,25 +1131,16 @@ def capture_tom_thinking():
 
 
 def display_instruction_improvement(
-    original_instruction: str, improved_instruction: str
+    original_instruction: str, suggestions: str
 ) -> dict:
-    """Display improved instruction and get user choice with tri-state response.
-
-    Args:
-        improved_instruction: The improved instruction text
-
-    Returns:
-        dict: Response containing action ('accept', 'modify', 'reject'),
-              value (1, 0.5, 0), and instruction (combined text if modified)
-    """
     from openhands.core.config import OpenHandsConfig
 
     print_formatted_text('')
-    print_formatted_text(HTML('<gold>🎯 Tom has improved your instruction:</gold>'))
+    print_formatted_text(HTML('<gold>🎯 ToM agent is here to help:</gold>'))
     print_formatted_text('')
 
     # Extract content after the ToM Agent Analysis marker
-    text = improved_instruction.strip()
+    text = suggestions.strip()
 
     # Look for the ToM Agent Analysis marker and extract content after it
     marker = '*****************ToM Agent Analysis Start Here*****************'
@@ -1165,7 +1156,7 @@ def display_instruction_improvement(
             read_only=True,
             wrap_lines=True,
         ),
-        title='Instruction Proposal',
+        title="ToM agent's suggestion",
         style='fg:ansiblue',
     )
     print_container(container)
@@ -1179,31 +1170,31 @@ def display_instruction_improvement(
     choice = cli_confirm(
         config,
         'How would you like to proceed with this improved instruction?',
-        ['Accept', 'Almost right, let me modify it', 'Reject'],
+        ['Accept', 'Almost right, let me give some suggestions to modify it', 'Reject'],
         initial_selection=0,
     )
 
     # Return structured response instead of boolean
     if choice == 0:
-        return {'action': 'accept', 'value': 1, 'instruction': improved_instruction}
+        return {'action': 'accept', 'value': 1, 'suggestions': suggestions}
     elif choice == 1:
         # Return enhanced instruction that tells LLM to ask for modification
-        enhanced_instruction = f"""Tom suggested this improvement to user's instruction:
+        enhanced_instruction = f"""Tom suggested this improvement to the SWE agent:
 
-{improved_instruction}
+{suggestions}
 
 However, user indicated this needs modification. So given [Modification Request], ask the user: 'How would you like to modify Tom's suggestion?'"""
 
         return {
             'action': 'modify',
             'value': 0.5,
-            'instruction': enhanced_instruction,
+            'suggestions': enhanced_instruction,
             'skip_next_tom': True,
         }
     else:
         original_instruction = original_instruction.replace(
             '\tom_improve_instruction', 'Guess what I want to do next'
         )
-        enhanced_instruction = f"User rejected ToM agent's suggestion. Please proceed with user's original instruction (and not ask ToM agent for help this round): {original_instruction}"
+        enhanced_instruction = "User rejected ToM agent's suggestion. Please proceed with user's original instruction (and not ask ToM agent for help this round)"
 
-        return {'action': 'reject', 'value': 0, 'instruction': enhanced_instruction}
+        return {'action': 'reject', 'value': 0, 'suggestions': enhanced_instruction}

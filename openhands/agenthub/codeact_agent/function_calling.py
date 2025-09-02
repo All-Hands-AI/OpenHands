@@ -12,8 +12,8 @@ from litellm import (
 from openhands.agenthub.codeact_agent.tools import (
     BrowserTool,
     CondensationRequestTool,
+    ConsultTomAgentTool,
     FinishTool,
-    ImproveInstructionTool,
     IPythonTool,
     LLMBasedFileEditTool,
     ThinkTool,
@@ -34,9 +34,9 @@ from openhands.events.action import (
     AgentThinkAction,
     BrowseInteractiveAction,
     CmdRunAction,
+    ConsultTomAgentAction,
     FileEditAction,
     FileReadAction,
-    ImproveInstructionAction,
     IPythonRunCellAction,
     MessageAction,
     TaskTrackingAction,
@@ -271,10 +271,14 @@ def response_to_actions(
                 )
 
             # ================================================
-            # ImproveInstructionAction
+            # ConsultTomAgentAction
             # ================================================
-            elif tool_call.function.name == ImproveInstructionTool['function']['name']:
-                action = ImproveInstructionAction(content=arguments.get('reason', ''))
+            elif tool_call.function.name == ConsultTomAgentTool['function']['name']:
+                action = ConsultTomAgentAction(
+                    content=arguments.get('reason', ''),
+                    use_user_message=arguments.get('use_user_message', True),
+                    custom_query=arguments.get('custom_query', None),
+                )
 
             # ================================================
             # MCPAction (MCP)

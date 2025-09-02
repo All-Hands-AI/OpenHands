@@ -7,8 +7,8 @@ from openhands.events.observation.observation import Observation
 
 
 @dataclass
-class ImproveInstructionObservation(Observation):
-    """Observation containing fake user message to trigger Tom improve instruction."""
+class ConsultTomAgentObservation(Observation):
+    """Observation containing Tom agent consultation result."""
 
     content: str = ''
-    observation: str = ObservationType.IMPROVE_INSTRUCTION
+    observation: str = ObservationType.CONSULT_TOM_AGENT
