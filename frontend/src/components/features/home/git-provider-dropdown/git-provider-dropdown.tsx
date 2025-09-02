@@ -172,22 +172,23 @@ export function GitProviderDropdown({
             placeholder,
             readOnly: true, // Make it non-searchable like the original
             className: cn(
-              "w-full py-0 border border-[#727987] rounded-sm shadow-none h-6 min-h-6 max-h-6",
-              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3] placeholder:italic",
+              "w-29.5 h-6 py-0 border border-[#727987] rounded shadow-none h-6 min-h-6 max-h-6 ",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
               "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-8 cursor-pointer text-xs font-normal leading-5", // Space for toggle button and pointer cursor
-              selectedItem ? "pl-8" : "pl-2", // Add left padding when icon is present
+              "pl-1.5 pr-[1px] cursor-pointer text-xs font-normal leading-5", // Space for toggle button and pointer cursor
+              selectedItem && "pl-6",
             ),
           })}
           data-testid="git-provider-dropdown"
         />
 
-        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           <ToggleButton
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName="w-[23px] h-[23px] translate-y-[1px]"
           />
         </div>
 
