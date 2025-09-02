@@ -1,0 +1,522 @@
+config.template.toml:288:#user_id = 1000
+docs/openapi.json:3309:          "user_id": {
+docs/usage/configuration-options.mdx:337:- `user_id`
+openhands/cli/gui_launcher.py:179:                user_id = subprocess.check_output(['id', '-u'], text=True).strip()
+openhands/cli/gui_launcher.py:180:                docker_cmd.extend(['-e', f'SANDBOX_USER_ID={user_id}'])
+openhands/cli/main.py:103:        event_stream.user_id,
+openhands/cli/main.py:596:    settings_store = await FileSettingsStore.get_instance(config=config, user_id=None)
+openhands/controller/agent_controller.py:126:        user_id: str | None = None,
+openhands/controller/agent_controller.py:155:        self.user_id = user_id
+openhands/controller/agent_controller.py:171:        self.state_tracker = StateTracker(sid, file_store, user_id)
+openhands/controller/agent_controller.py:719:            user_id=self.user_id,
+openhands/controller/agent_controller.py:740:            user_id=self.user_id,
+openhands/controller/state/state.py:82:    user_id: str | None = None
+openhands/controller/state/state.py:123:        self, sid: str, file_store: FileStore, user_id: str | None
+openhands/controller/state/state.py:133:                get_conversation_agent_state_filename(sid, user_id), encoded
+openhands/controller/state/state.py:137:            if user_id:
+openhands/controller/state/state.py:151:        sid: str, file_store: FileStore, user_id: str | None = None
+openhands/controller/state/state.py:157:                get_conversation_agent_state_filename(sid, user_id)
+openhands/controller/state/state.py:162:            # if user_id is provided, we are in a saas/remote use case
+openhands/controller/state/state.py:164:            if user_id:
+openhands/controller/state/state.py:277:            'trace_user_id': self.user_id,
+openhands/controller/state/state_tracker.py:32:        self, sid: str | None, file_store: FileStore | None, user_id: str | None
+openhands/controller/state/state_tracker.py:36:        self.user_id = user_id
+openhands/controller/state/state_tracker.py:75:                user_id=self.user_id,
+openhands/controller/state/state_tracker.py:249:            self.state.save_to_session(self.sid, self.file_store, self.user_id)
+openhands/core/config/mcp_config.py:337:        host: str, config: 'OpenHandsConfig', user_id: str | None = None
+openhands/core/config/mcp_config.py:344:            user_id: Optional user ID for the MCP server
+openhands/core/config/sandbox_config.py:16:        user_id: The user ID for the sandbox.
+openhands/core/config/sandbox_config.py:59:    user_id: int = Field(default=os.getuid() if hasattr(os, 'getuid') else 1000)
+openhands/core/config/sandbox_config.py:60:    logger.debug(f'SandboxConfig user_id default: {user_id}')
+openhands/core/main.py:225:            event_stream.sid, event_stream.file_store, event_stream.user_id
+openhands/events/event_store.py:49:    user_id: str | None
+openhands/events/event_store.py:69:            events_dir = get_conversation_events_dir(self.sid, self.user_id)
+openhands/events/event_store.py:139:        filename = self._get_filename_for_id(id, self.user_id)
+openhands/events/event_store.py:155:    def _get_filename_for_id(self, id: int, user_id: str | None) -> str:
+openhands/events/event_store.py:156:        return get_conversation_event_filename(self.sid, id, user_id)
+openhands/events/event_store.py:159:        return f'{get_conversation_dir(self.sid, self.user_id)}event_cache/{start}-{end}.json'
+openhands/events/event_store_abc.py:15:    user_id: str | None
+openhands/events/nested_event_store.py:20:    user_id: str | None
+openhands/events/stream.py:34:    sid: str, file_store: FileStore, user_id: str | None = None
+openhands/events/stream.py:37:        await call_sync_from_async(file_store.list, get_conversation_dir(sid, user_id))
+openhands/events/stream.py:56:    def __init__(self, sid: str, file_store: FileStore, user_id: str | None = None):
+openhands/events/stream.py:57:        super().__init__(sid, file_store, user_id)
+openhands/events/stream.py:189:            filename = self._get_filename_for_id(event.id, self.user_id)
+openhands/events/stream.py:194:                        'user_id': self.user_id,
+openhands/experiments/experiment_manager.py:34:        user_id: str, conversation_id: str, conversation_settings: ConversationInitData
+openhands/experiments/experiment_manager.py:40:        user_id: str, conversation_id: str, config: OpenHandsConfig
+openhands/integrations/bitbucket/bitbucket_service.py:40:        user_id: str | None = None,
+openhands/integrations/bitbucket/bitbucket_service.py:47:        self.user_id = user_id
+openhands/integrations/github/github_service.py:49:        user_id: str | None = None,
+openhands/integrations/github/github_service.py:56:        self.user_id = user_id
+openhands/integrations/github/service/features.py:85:                    'user_id': self.external_auth_id,
+openhands/integrations/github/service/features.py:116:                    'user_id': self.external_auth_id,
+openhands/integrations/gitlab/gitlab_service.py:47:        user_id: str | None = None,
+openhands/integrations/gitlab/gitlab_service.py:54:        self.user_id = user_id
+openhands/integrations/provider.py:43:    user_id: str | None = Field(default=None)
+openhands/integrations/provider.py:62:            user_id = token_value.get('user_id')
+openhands/integrations/provider.py:64:            return cls(token=SecretStr(token_str), user_id=user_id, host=host)
+openhands/integrations/provider.py:154:            user_id=token.user_id,
+openhands/integrations/service_types.py:442:        user_id: str | None = None,
+openhands/resolver/issue_resolver.py:251:            user_id = os.getuid() if hasattr(os, 'getuid') else 1000
+openhands/resolver/issue_resolver.py:252:            if user_id == 0:
+openhands/resolver/issue_resolver.py:253:                sandbox_config.user_id = get_unique_uid()
+openhands/resolver/issue_resolver.py:265:        openhands_config.sandbox.user_id = sandbox_config.user_id
+openhands/runtime/action_execution_server.py:176:        user_id: int,
+openhands/runtime/action_execution_server.py:183:        self.user_id = user_id
+openhands/runtime/action_execution_server.py:185:            username=username, user_id=self.user_id, initial_cwd=work_dir
+openhands/runtime/action_execution_server.py:188:            self.user_id = _updated_user_id
+openhands/runtime/action_execution_server.py:553:                os.chown(filepath, self.user_id, self.user_id)
+openhands/runtime/action_execution_server.py:700:            user_id=args.user_id,
+openhands/runtime/base.py:139:        user_id: str | None = None,
+openhands/runtime/base.py:172:            external_auth_id=user_id,
+openhands/runtime/base.py:191:        self.user_id = user_id
+openhands/runtime/base.py:336:            external_auth_id=self.user_id,
+openhands/runtime/base.py:901:                    self.sid, self.event_stream.user_id
+openhands/runtime/impl/action_execution/action_execution_client.py:79:        user_id: str | None = None,
+openhands/runtime/impl/action_execution/action_execution_client.py:97:            user_id,
+openhands/runtime/impl/cli/cli_runtime.py:103:        user_id (str | None, optional): User ID for authentication. Defaults to None.
+openhands/runtime/impl/cli/cli_runtime.py:118:        user_id: str | None = None,
+openhands/runtime/impl/cli/cli_runtime.py:131:            user_id,
+openhands/runtime/impl/docker/docker_runtime.py:101:        user_id: str | None = None,
+openhands/runtime/impl/docker/docker_runtime.py:155:            user_id,
+openhands/runtime/impl/kubernetes/kubernetes_runtime.py:92:        user_id: str | None = None,
+openhands/runtime/impl/kubernetes/kubernetes_runtime.py:149:            user_id,
+openhands/runtime/impl/local/local_runtime.py:146:        user_id: str | None = None,
+openhands/runtime/impl/local/local_runtime.py:198:            user_id,
+openhands/runtime/impl/local/local_runtime.py:659:    user_id, username = get_user_info()
+openhands/runtime/impl/local/local_runtime.py:668:        override_user_id=user_id,
+openhands/runtime/impl/remote/remote_runtime.py:62:        user_id: str | None = None,
+openhands/runtime/impl/remote/remote_runtime.py:76:            user_id,
+openhands/runtime/impl/remote/remote_runtime.py:79:        logger.debug(f'RemoteRuntime.init user_id {user_id}')
+openhands/runtime/utils/command.py:46:    user_id = override_user_id or (1000 if app_config.run_as_openhands else 0)
+openhands/runtime/utils/command.py:61:        str(user_id),
+openhands/runtime/utils/runtime_init.py:9:    username: str, user_id: int, initial_cwd: str
+openhands/runtime/utils/runtime_init.py:20:        - If the UID differs, it logs a warning and return an updated user_id.
+openhands/runtime/utils/runtime_init.py:30:        user_id (int): The user ID to assign to the user.
+openhands/runtime/utils/runtime_init.py:55:        logger.debug(f'Attempting to create user `{username}` with UID {user_id}.')
+openhands/runtime/utils/runtime_init.py:64:            if existing_user_id == user_id:
+openhands/runtime/utils/runtime_init.py:66:                    f'User `{username}` already has the provided UID {user_id}. Skipping user setup.'
+openhands/runtime/utils/runtime_init.py:95:            f'-g root -G sudo -u {user_id} {username}'
+openhands/runtime/utils/runtime_init.py:100:                f'Added user `{username}` successfully with UID {user_id}. Output: [{output.stdout.decode()}]'
+openhands/runtime/utils/runtime_init.py:104:                f'Failed to create user `{username}` with UID {user_id}. Output: [{output.stderr.decode()}]'
+openhands/server/conversation_manager/conversation_manager.py:61:        self, sid: str, user_id: str | None = None
+openhands/server/conversation_manager/conversation_manager.py:75:        user_id: str | None,
+openhands/server/conversation_manager/conversation_manager.py:86:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/conversation_manager.py:92:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/conversation_manager.py:101:        user_id: str | None,
+openhands/server/conversation_manager/conversation_manager.py:136:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:71:        self, sid: str, user_id: str | None = None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:85:        user_id: str | None,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:91:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:110:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:120:        user_id: str | None,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:126:                sid, settings, user_id, initial_user_msg, replay_json
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:138:                user_id=user_id,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:152:        user_id: str | None,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:157:        await self.ensure_num_conversations_below_limit(sid, user_id)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:158:        runtime = await self._create_runtime(sid, user_id, settings)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:225:                            'user_id': v.user_id,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:385:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:419:                    user_id=user_id,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:458:    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:465:        store = await conversation_store_class.get_instance(self.config, user_id)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:491:        self, sid: str, user_id: str | None
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:493:        response_ids = await self.get_running_agent_loops(user_id)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:496:                f'too_many_sessions_for:{user_id or ""}',
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:497:                extra={'session_id': sid, 'user_id': user_id},
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:500:            conversation_store = await self._get_conversation_store(user_id)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:507:                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:508:                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:535:        self, sid: str, user_id: str | None, settings: Settings
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:541:            user_id, sid, self.config
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:545:            create_registry_and_conversation_stats(config, sid, user_id, settings)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:555:            user_id=user_id,
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:584:        conversation_dir = get_conversation_dir(sid, user_id)
+openhands/server/conversation_manager/docker_nested_conversation_manager.py:602:        event_stream = EventStream(sid, self.file_store, user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:92:        self, sid: str, user_id: str | None = None
+openhands/server/conversation_manager/standalone_conversation_manager.py:95:        if not await session_exists(sid, self.file_store, user_id=user_id):
+openhands/server/conversation_manager/standalone_conversation_manager.py:130:                user_id=user_id,
+openhands/server/conversation_manager/standalone_conversation_manager.py:156:        user_id: str | None,
+openhands/server/conversation_manager/standalone_conversation_manager.py:160:            extra={'session_id': sid, 'user_id': user_id},
+openhands/server/conversation_manager/standalone_conversation_manager.py:164:        agent_loop_info = await self.maybe_start_agent_loop(sid, settings, user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:230:    async def _get_conversation_store(self, user_id: str | None) -> ConversationStore:
+openhands/server/conversation_manager/standalone_conversation_manager.py:237:        store = await conversation_store_class.get_instance(self.config, user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:241:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/standalone_conversation_manager.py:257:        if user_id:
+openhands/server/conversation_manager/standalone_conversation_manager.py:258:            items = (item for item in items if item[1].user_id == user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:264:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/standalone_conversation_manager.py:273:        if user_id:
+openhands/server/conversation_manager/standalone_conversation_manager.py:276:                if not session or session.user_id != user_id:
+openhands/server/conversation_manager/standalone_conversation_manager.py:284:        user_id: str | None,
+openhands/server/conversation_manager/standalone_conversation_manager.py:292:                sid, settings, user_id, initial_user_msg, replay_json
+openhands/server/conversation_manager/standalone_conversation_manager.py:300:        user_id: str | None,
+openhands/server/conversation_manager/standalone_conversation_manager.py:306:        response_ids = await self.get_running_agent_loops(user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:309:                f'too_many_sessions_for:{user_id or ""}',
+openhands/server/conversation_manager/standalone_conversation_manager.py:310:                extra={'session_id': sid, 'user_id': user_id},
+openhands/server/conversation_manager/standalone_conversation_manager.py:313:            conversation_store = await self._get_conversation_store(user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:320:                    f'closing_from_too_many_sessions:{user_id or ""}:{oldest_conversation_id}',
+openhands/server/conversation_manager/standalone_conversation_manager.py:321:                    extra={'session_id': oldest_conversation_id, 'user_id': user_id},
+openhands/server/conversation_manager/standalone_conversation_manager.py:341:            create_registry_and_conversation_stats(self.config, sid, user_id, settings)
+openhands/server/conversation_manager/standalone_conversation_manager.py:350:            user_id=user_id,
+openhands/server/conversation_manager/standalone_conversation_manager.py:361:                    user_id, sid, settings, session.llm_registry
+openhands/server/conversation_manager/standalone_conversation_manager.py:475:        user_id: str | None,
+openhands/server/conversation_manager/standalone_conversation_manager.py:484:                user_id,
+openhands/server/conversation_manager/standalone_conversation_manager.py:495:        user_id: str,
+openhands/server/conversation_manager/standalone_conversation_manager.py:501:        conversation_store = await self._get_conversation_store(user_id)
+openhands/server/conversation_manager/standalone_conversation_manager.py:538:                conversation_id, user_id, self.file_store, settings, llm_registry
+openhands/server/conversation_manager/standalone_conversation_manager.py:714:        self, user_id: str | None = None, filter_to_sids: set[str] | None = None
+openhands/server/conversation_manager/standalone_conversation_manager.py:718:            if user_id and session.user_id != user_id:
+openhands/server/listen_socket.py:71:        user_id = await conversation_validator.validate(
+openhands/server/listen_socket.py:75:            f'User {user_id} is allowed to connect to conversation {conversation_id}'
+openhands/server/listen_socket.py:80:                conversation_id, conversation_manager.file_store, user_id
+openhands/server/listen_socket.py:121:            user_id, conversation_id, providers_set
+openhands/server/listen_socket.py:128:            user_id,
+openhands/server/routes/conversation.py:114:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/conversation.py:126:        user_id: User ID (injected by dependency)
+openhands/server/routes/conversation.py:145:        user_id=user_id,
+openhands/server/routes/files.py:233:    user_id: str = Depends(get_user_id),
+openhands/server/routes/git.py:43:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:49:            external_auth_id=user_id,
+openhands/server/routes/git.py:74:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:80:            external_auth_id=user_id,
+openhands/server/routes/git.py:100:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/server/routes/git.py:109:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:127:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/server/routes/git.py:141:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:147:            external_auth_id=user_id,
+openhands/server/routes/git.py:162:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/server/routes/git.py:175:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:181:            external_auth_id=user_id,
+openhands/server/routes/git.py:202:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/server/routes/git.py:214:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:235:    logger.info(f'Returning 401 Unauthorized - No providers set for user_id: {user_id}')
+openhands/server/routes/git.py:246:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:275:        f'Returning 401 Unauthorized - Git provider token required for user_id: {user_id}'
+openhands/server/routes/git.py:300:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:316:        user_id: User ID for authentication
+openhands/server/routes/git.py:327:            external_auth_id=user_id,
+openhands/server/routes/git.py:366:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/git.py:375:        user_id: User ID for authentication
+openhands/server/routes/git.py:389:            external_auth_id=user_id,
+openhands/server/routes/manage_conversations.py:193:    user_id: str = Depends(get_user_id),
+openhands/server/routes/manage_conversations.py:251:            user_id=user_id,
+openhands/server/routes/manage_conversations.py:356:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/manage_conversations.py:358:    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+openhands/server/routes/manage_conversations.py:381:        sid=conversation_id, file_store=file_store, user_id=metadata.user_id
+openhands/server/routes/manage_conversations.py:478:    user_id: str = Depends(get_user_id),
+openhands/server/routes/manage_conversations.py:505:            user_id, conversation_id, providers_set.providers_set or []
+openhands/server/routes/manage_conversations.py:512:            user_id=user_id,
+openhands/server/routes/manage_conversations.py:538:    user_id: str = Depends(get_user_id),
+openhands/server/routes/manage_conversations.py:550:            user_id=user_id, filter_to_sids={conversation_id}
+openhands/server/routes/manage_conversations.py:644:    user_id: str | None = Depends(get_user_id),
+openhands/server/routes/manage_conversations.py:655:        user_id: The authenticated user ID
+openhands/server/routes/manage_conversations.py:666:        extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/server/routes/manage_conversations.py:674:        if user_id and metadata.user_id != user_id:
+openhands/server/routes/manage_conversations.py:676:                f'User {user_id} attempted to update conversation {conversation_id} owned by {metadata.user_id}',
+openhands/server/routes/manage_conversations.py:677:                extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/server/routes/manage_conversations.py:715:            extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/server/routes/manage_conversations.py:723:            extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/server/routes/manage_conversations.py:736:            extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/server/routes/mcp.py:52:    user_id: str | None, conversation_id: str, tool_result: str
+openhands/server/routes/mcp.py:54:    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+openhands/server/routes/mcp.py:106:    user_id = await get_user_id(request)
+openhands/server/routes/mcp.py:115:        user_id=github_token.user_id,
+openhands/server/routes/mcp.py:116:        external_auth_id=user_id,
+openhands/server/routes/mcp.py:139:            await save_pr_metadata(user_id, conversation_id, response)
+openhands/server/routes/mcp.py:176:    user_id = await get_user_id(request)
+openhands/server/routes/mcp.py:185:        user_id=github_token.user_id,
+openhands/server/routes/mcp.py:186:        external_auth_id=user_id,
+openhands/server/routes/mcp.py:210:            await save_pr_metadata(user_id, conversation_id, response)
+openhands/server/routes/mcp.py:243:    user_id = await get_user_id(request)
+openhands/server/routes/mcp.py:252:        user_id=bitbucket_token.user_id,
+openhands/server/routes/mcp.py:253:        external_auth_id=user_id,
+openhands/server/routes/mcp.py:276:            await save_pr_metadata(user_id, conversation_id, response)
+openhands/server/routes/secrets.py:111:        # We don't have direct access to user_id here, but we can log the provider info
+openhands/server/routes/settings.py:62:                if provider_token.token or provider_token.user_id:
+openhands/server/routes/settings.py:79:        # Get user_id from settings if available
+openhands/server/routes/settings.py:80:        user_id = getattr(settings, 'user_id', 'unknown') if settings else 'unknown'
+openhands/server/routes/settings.py:82:            f'Returning 401 Unauthorized - Invalid token for user_id: {user_id}'
+openhands/server/services/conversation_service.py:35:    user_id: str | None,
+openhands/server/services/conversation_service.py:45:    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+openhands/server/services/conversation_service.py:50:            extra={'user_id': user_id, 'session_id': conversation_id},
+openhands/server/services/conversation_service.py:60:            user_id=user_id,
+openhands/server/services/conversation_service.py:79:    user_id: str | None,
+openhands/server/services/conversation_service.py:94:            'user_id': user_id,
+openhands/server/services/conversation_service.py:99:    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+openhands/server/services/conversation_service.py:133:        user_id, conversation_id, conversation_init_data
+openhands/server/services/conversation_service.py:138:        extra={'user_id': user_id, 'session_id': conversation_id},
+openhands/server/services/conversation_service.py:151:        user_id,
+openhands/server/services/conversation_service.py:160:    user_id: str | None,
+openhands/server/services/conversation_service.py:175:        user_id,
+openhands/server/services/conversation_service.py:187:        user_id,
+openhands/server/services/conversation_service.py:207:        provider_information[provider] = ProviderToken(token=None, user_id=None)
+openhands/server/services/conversation_service.py:213:    user_id: str | None, conversation_id: str, providers_set: list[ProviderType]
+openhands/server/services/conversation_service.py:218:        user_id: The user ID
+openhands/server/services/conversation_service.py:225:    settings_store = await SettingsStoreImpl.get_instance(config, user_id)
+openhands/server/services/conversation_service.py:228:    secrets_store = await SecretsStoreImpl.get_instance(config, user_id)
+openhands/server/services/conversation_service.py:254:        user_id, conversation_id, conversation_init_data
+openhands/server/services/conversation_stats.py:19:        user_id: str | None,
+openhands/server/services/conversation_stats.py:21:        self.metrics_path = get_conversation_stats_filename(conversation_id, user_id)
+openhands/server/services/conversation_stats.py:24:        self.user_id = user_id
+openhands/server/session/agent_session.py:50:    user_id: str | None
+openhands/server/session/agent_session.py:71:        user_id: str | None = None,
+openhands/server/session/agent_session.py:80:        self.event_stream = EventStream(sid, file_store, user_id)
+openhands/server/session/agent_session.py:83:        self.user_id = user_id
+openhands/server/session/agent_session.py:85:            extra={'session_id': sid, 'user_id': user_id}
+openhands/server/session/agent_session.py:342:                user_id=self.user_id,
+openhands/server/session/agent_session.py:429:            user_id=self.user_id,
+openhands/server/session/agent_session.py:501:                self.sid, self.file_store, self.user_id
+openhands/server/session/conversation.py:17:    user_id: str | None
+openhands/server/session/conversation.py:25:        user_id: str | None,
+openhands/server/session/conversation.py:32:        self.user_id = user_id
+openhands/server/session/conversation.py:35:            event_stream = EventStream(sid, file_store, user_id)
+openhands/server/session/session.py:50:    user_id: str | None
+openhands/server/session/session.py:61:        user_id: str | None = None,
+openhands/server/session/session.py:76:            user_id=user_id,
+openhands/server/session/session.py:87:            user_id, sid, self.config
+openhands/server/session/session.py:90:        self.user_id = user_id
+openhands/server/session/session.py:178:                self.config.mcp_host, self.config, self.user_id
+openhands/server/user_auth/__init__.py:26:    user_id = await user_auth.get_user_id()
+openhands/server/user_auth/__init__.py:27:    return user_id
+openhands/server/user_auth/default_user_auth.py:25:        """The default implementation does not support multi tenancy, so user_id is always None"""
+openhands/server/user_auth/default_user_auth.py:40:        user_id = await self.get_user_id()
+openhands/server/user_auth/default_user_auth.py:42:            shared.config, user_id
+openhands/server/user_auth/default_user_auth.py:67:        user_id = await self.get_user_id()
+openhands/server/user_auth/default_user_auth.py:69:            shared.config, user_id
+openhands/server/utils.py:66:    user_id = await get_user_id(request)
+openhands/server/utils.py:67:    conversation_store = await ConversationStoreImpl.get_instance(config, user_id)
+openhands/server/utils.py:97:    conversation_id: str, user_id: str | None = Depends(get_user_id)
+openhands/server/utils.py:101:        conversation_id, user_id
+openhands/server/utils.py:106:            extra={'session_id': conversation_id, 'user_id': user_id},
+openhands/storage/conversation/conversation_store.py:36:    async def validate_metadata(self, conversation_id: str, user_id: str) -> bool:
+openhands/storage/conversation/conversation_store.py:39:        if not metadata.user_id or metadata.user_id != user_id:
+openhands/storage/conversation/conversation_store.py:69:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/storage/conversation/conversation_validator.py:33:        user_id = None
+openhands/storage/conversation/conversation_validator.py:34:        metadata = await self._ensure_metadata_exists(conversation_id, user_id)
+openhands/storage/conversation/conversation_validator.py:35:        return metadata.user_id
+openhands/storage/conversation/conversation_validator.py:40:        user_id: str | None,
+openhands/storage/conversation/conversation_validator.py:50:            config, user_id
+openhands/storage/conversation/conversation_validator.py:63:                    user_id=user_id,
+openhands/storage/conversation/file_conversation_store.py:106:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/storage/data_models/conversation_metadata.py:24:    user_id: str | None = None
+openhands/storage/data_models/user_secrets.py:69:                'user_id': provider_token.user_id,
+openhands/storage/locations.py:4:def get_conversation_dir(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:5:    if user_id:
+openhands/storage/locations.py:6:        return f'users/{user_id}/conversations/{sid}/'
+openhands/storage/locations.py:11:def get_conversation_events_dir(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:12:    return f'{get_conversation_dir(sid, user_id)}events/'
+openhands/storage/locations.py:16:    sid: str, id: int, user_id: str | None = None
+openhands/storage/locations.py:18:    return f'{get_conversation_events_dir(sid, user_id)}{id}.json'
+openhands/storage/locations.py:21:def get_conversation_metadata_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:22:    return f'{get_conversation_dir(sid, user_id)}metadata.json'
+openhands/storage/locations.py:25:def get_conversation_init_data_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:26:    return f'{get_conversation_dir(sid, user_id)}init.json'
+openhands/storage/locations.py:29:def get_conversation_agent_state_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:30:    return f'{get_conversation_dir(sid, user_id)}agent_state.pkl'
+openhands/storage/locations.py:33:def get_conversation_llm_registry_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:34:    return f'{get_conversation_dir(sid, user_id)}llm_registry.json'
+openhands/storage/locations.py:37:def get_conversation_stats_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:38:    return f'{get_conversation_dir(sid, user_id)}conversation_stats.pkl'
+openhands/storage/locations.py:41:def get_experiment_config_filename(sid: str, user_id: str | None = None) -> str:
+openhands/storage/locations.py:42:    return f'{get_conversation_dir(sid, user_id)}exp_config.json'
+openhands/storage/secrets/file_secrets_store.py:40:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/storage/secrets/secrets_store.py:34:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/storage/settings/file_settings_store.py:34:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/storage/settings/settings_store.py:34:        cls, config: OpenHandsConfig, user_id: str | None
+openhands/utils/conversation_summary.py:81:    user_id: str | None,
+openhands/utils/conversation_summary.py:91:        user_id: The ID of the user
+openhands/utils/conversation_summary.py:98:        event_store = EventStore(conversation_id, file_store, user_id)
+openhands/utils/utils.py:25:    user_id: str | None,
+openhands/utils/utils.py:41:    conversation_stats = ConversationStats(file_store, sid, user_id)
+tests/runtime/test_bash.py:806:    # while the user_id we get via os.getuid() is different from root
+tests/unit/controller/test_agent_controller.py:79:        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
+tests/unit/controller/test_agent_delegation.py:53:        file_store=file_store, conversation_id=conversation_id, user_id='test-user'
+tests/unit/core/config/test_config.py:231:user_id = 1001
+tests/unit/core/config/test_config.py:258:    assert default_config.sandbox.user_id == 1002
+tests/unit/core/config/test_config.py:280:user_id = 1001
+tests/unit/core/config/test_config.py:297:    assert default_config.sandbox.user_id == 1001
+tests/unit/core/config/test_config.py:307:    assert default_config.sandbox.user_id == 1002
+tests/unit/core/config/test_config.py:329:user_id = 1001
+tests/unit/core/config/test_config.py:345:    assert default_config.sandbox.user_id == 1001
+tests/unit/core/config/test_config.py:536:user_id = 1001
+tests/unit/core/config/test_config.py:546:    assert default_config.sandbox.user_id == 1001
+tests/unit/events/test_event_stream.py:178:        event_stream._get_filename_for_id(event.id, event_stream.user_id),
+tests/unit/events/test_event_stream.py:717:    missing_filename = new_stream._get_filename_for_id(missing_id, new_stream.user_id)
+tests/unit/events/test_nested_event_store.py:56:            user_id='test-user',
+tests/unit/events/test_nested_event_store.py:330:            user_id='test-user',
+tests/unit/events/test_nested_event_store.py:395:        server_stream = EventStream('test-session', fs, user_id='test-user')
+tests/unit/integrations/github/test_github_service.py:22:    service = GitHubService(user_id=None, token=token)
+tests/unit/integrations/github/test_github_service.py:32:    service = GitHubService(user_id='test-user')
+tests/unit/integrations/github/test_github_service.py:40:    service = GitHubService(user_id=None, token=token)
+tests/unit/integrations/github/test_github_service.py:68:        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:94:    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:133:    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:172:    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:212:    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:253:    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:320:    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:336:    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:349:    service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/github/test_github_service.py:354:        user_id=None, token=SecretStr('test-token'), base_domain='github.enterprise.com'
+tests/unit/integrations/github/test_github_service.py:360:        user_id=None, token=SecretStr('test-token'), base_domain='github.com'
+tests/unit/integrations/github/test_github_service.py:382:            user_id=None,
+tests/unit/integrations/github/test_github_service.py:419:        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+tests/unit/integrations/test_provider_immutability.py:18:    token = ProviderToken(token=SecretStr('test'), user_id='user1')
+tests/unit/integrations/test_provider_immutability.py:25:        token.user_id = 'new_user'
+tests/unit/integrations/test_provider_immutability.py:33:    assert token.user_id == 'user1'
+tests/unit/integrations/test_provider_immutability.py:159:    assert store1.secrets_store.provider_tokens[ProviderType.GITHUB].user_id is None
+tests/unit/integrations/test_provider_immutability.py:163:        provider_tokens={'github': {'token': 'test_token', 'user_id': 'user1'}}
+tests/unit/integrations/test_provider_immutability.py:169:    assert store2.provider_tokens[ProviderType.GITHUB].user_id == 'user1'
+tests/unit/integrations/test_provider_immutability.py:172:    token = ProviderToken(token=SecretStr('test_token'), user_id='user2')
+tests/unit/integrations/test_provider_immutability.py:178:    assert store3.provider_tokens[ProviderType.GITHUB].user_id == 'user2'
+tests/unit/runtime/test_runtime_git_tokens.py:110:        user_id='test_user',
+tests/unit/runtime/test_runtime_git_tokens.py:132:    """Test that no token export happens when user_id is not set"""
+tests/unit/runtime/test_runtime_git_tokens.py:155:        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+tests/unit/runtime/test_runtime_git_tokens.py:198:        user_id='test_user',
+tests/unit/runtime/test_runtime_git_tokens.py:249:        config=config, event_stream=event_stream, sid='test', user_id=None
+tests/unit/runtime/test_runtime_git_tokens.py:267:    """Test that git init is not run when no repository is selected, no user_id, but workspace_base is set"""
+tests/unit/runtime/test_runtime_git_tokens.py:273:        config=config, event_stream=event_stream, sid='test', user_id=None
+tests/unit/runtime/test_runtime_git_tokens.py:291:        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+tests/unit/runtime/test_runtime_git_tokens.py:325:        user_id='test_user',
+tests/unit/runtime/test_runtime_git_tokens.py:360:        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+tests/unit/runtime/test_runtime_git_tokens.py:398:        user_id='test_user',
+tests/unit/runtime/test_runtime_git_tokens.py:434:        config=config, event_stream=event_stream, sid='test', user_id='test_user'
+tests/unit/server/data_models/test_conversation.py:54:                'user_id': '12345',
+tests/unit/server/data_models/test_conversation.py:88:        user_id='test_user',
+tests/unit/server/data_models/test_conversation.py:153:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:237:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:308:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:379:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:451:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:522:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:617:                user_id='12345',
+tests/unit/server/data_models/test_conversation.py:698:            assert call_args['user_id'] == 'test_user'
+tests/unit/server/data_models/test_conversation.py:757:                assert call_args['user_id'] == 'test_user'
+tests/unit/server/data_models/test_conversation.py:853:                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:878:                        'some_conversation_id', user_id='12345'
+tests/unit/server/data_models/test_conversation.py:1068:            assert call_args['user_id'] == 'test_user'
+tests/unit/server/data_models/test_conversation.py:1127:            assert call_args['user_id'] == 'test_user'
+tests/unit/server/data_models/test_conversation.py:1182:            assert call_args['user_id'] == 'test_user'
+tests/unit/server/data_models/test_conversation.py:1245:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1316:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1387:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1423:                user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1502:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1515:                                    user_id='12345',
+tests/unit/server/data_models/test_conversation.py:1528:                                    user_id='12345',
+tests/unit/server/routes/test_conversation_routes.py:174:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:181:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:207:            user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:236:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:249:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:269:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:275:        user_id=owner_id,
+tests/unit/server/routes/test_conversation_routes.py:292:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:313:    """Test conversation update when user_id is None and metadata has user_id."""
+tests/unit/server/routes/test_conversation_routes.py:315:    user_id = None
+tests/unit/server/routes/test_conversation_routes.py:321:        user_id=owner_id,
+tests/unit/server/routes/test_conversation_routes.py:338:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:351:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:357:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:384:            user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:400:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:415:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:435:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:442:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:468:            user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:486:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:492:        user_id=user_id,  # Same user
+tests/unit/server/routes/test_conversation_routes.py:518:            user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:532:    user_id = 'test_user_456'
+tests/unit/server/routes/test_conversation_routes.py:539:        user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:565:            user_id=user_id,
+tests/unit/server/routes/test_conversation_routes.py:581:    """Test successful update when both user_id and metadata.user_id are None."""
+tests/unit/server/routes/test_conversation_routes.py:583:    user_id = None
+tests/unit/server/routes/test_conversation_routes.py:586:    # Create mock metadata with no user_id
+tests/unit/server/routes/test_conversation_routes.py:589:        user_id=None,
+tests/unit/server/routes/test_conversation_routes.py:615:            user_id=user_id,
+tests/unit/server/routes/test_get_microagent_management_conversations.py:32:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:43:            user_id='user_2',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:152:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:163:            user_id='user_2',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:225:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:236:            user_id='user_2',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:298:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:309:            user_id='user_2',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:373:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:436:            user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:498:        user_id='user_1',
+tests/unit/server/routes/test_get_microagent_management_conversations.py:510:        user_id='user_2',
+tests/unit/server/session/test_agent_session.py:38:        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+tests/unit/server/session/test_session.py:48:        file_store=file_store, conversation_id='test-conversation', user_id='test-user'
+tests/unit/server/session/test_session.py:70:        user_id='..uid..',
+tests/unit/storage/conversation/test_file_conversation_store.py:16:        user_id='some-user-id',
+tests/unit/storage/conversation/test_file_conversation_store.py:33:                        'user_id': '67890',
+tests/unit/storage/conversation/test_file_conversation_store.py:43:    assert found.user_id == '67890'
+tests/unit/storage/conversation/test_file_conversation_store.py:63:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:72:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:81:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:109:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:150:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:178:                        'user_id': '123',
+tests/unit/storage/conversation/test_file_conversation_store.py:187:                        'user_id': '123',
+tests/unit/storage/data_models/test_secret_store.py:21:            token=SecretStr('github-token-123'), user_id='user1'
+tests/unit/storage/data_models/test_secret_store.py:24:            token=SecretStr('gitlab-token-456'), user_id='user2'
+tests/unit/storage/data_models/test_secret_store.py:43:        assert store.provider_tokens[ProviderType.GITHUB].user_id == 'user1'
+tests/unit/storage/data_models/test_secret_store.py:48:        assert store.provider_tokens[ProviderType.GITLAB].user_id == 'user2'
+tests/unit/storage/data_models/test_secret_store.py:88:            ProviderType.GITHUB: {'token': 'github-token-123', 'user_id': 'user1'},
+tests/unit/storage/data_models/test_secret_store.py:114:            token=SecretStr('gitlab-token-456'), user_id='user2'
+tests/unit/storage/data_models/test_secret_store.py:141:            token=SecretStr('github-token-123'), user_id='user1'
+tests/unit/storage/data_models/test_secret_store.py:156:            token=SecretStr('gitlab-token-456'), user_id='user2'
+tests/unit/storage/data_models/test_secret_store.py:218:            token=SecretStr('github-token-123'), user_id='user1'
+tests/unit/storage/data_models/test_secret_store.py:242:        assert serialized_provider_tokens['github']['user_id'] == 'user1'
+tests/unit/storage/data_models/test_secret_store.py:273:                'user_id': 'user1',
+tests/unit/storage/data_models/test_secret_store.py:277:                'user_id': 'user2',
+tests/unit/storage/data_models/test_secret_store.py:283:            token=SecretStr('gitlab-token-456'), user_id='user2'
+tests/unit/storage/data_models/test_secret_store.py:303:        assert github_token.user_id == 'user1'
+tests/unit/storage/data_models/test_secret_store.py:309:        assert gitlab_token_result.user_id == 'user2'
+tests/unit/test_conversation_stats.py:27:        user_id='test-user-id',
+tests/unit/test_conversation_stats.py:50:    assert conversation_stats.user_id == 'test-user-id'
+tests/unit/test_conversation_stats.py:93:    user_id = 'test-user-id'
+tests/unit/test_conversation_stats.py:98:    metrics_path = get_conversation_stats_filename(conversation_id, user_id)
+tests/unit/test_conversation_stats.py:105:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:429:    user_id = 'test-user-id'
+tests/unit/test_conversation_stats.py:432:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:454:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:499:        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+tests/unit/test_conversation_stats.py:502:        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+tests/unit/test_conversation_stats.py:565:        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+tests/unit/test_conversation_stats.py:568:        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+tests/unit/test_conversation_stats.py:607:    user_id = 'test-user-id'
+tests/unit/test_conversation_stats.py:611:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:637:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:678:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_conversation_stats.py:696:    user_id = 'test-user-id'
+tests/unit/test_conversation_stats.py:699:        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+tests/unit/test_state_metrics_exposure.py:15:        self.user_id = None
+tests/unit/test_state_metrics_exposure.py:82:        file_store=store, conversation_id='cid', user_id=None
+tests/unit/test_state_metrics_exposure.py:89:    tracker = StateTracker(sid='sid', file_store=store, user_id=None)
+tests/unit/utils/test_auto_generate_title.py:31:    user_id = 'test-user'
+tests/unit/utils/test_auto_generate_title.py:64:            conversation_id, user_id, file_store, settings, llm_registry
+tests/unit/utils/test_auto_generate_title.py:72:            conversation_id, file_store, user_id
+tests/unit/utils/test_auto_generate_title.py:88:    user_id = 'test-user'
+tests/unit/utils/test_auto_generate_title.py:118:            conversation_id, user_id, file_store, settings, llm_registry
+tests/unit/utils/test_auto_generate_title.py:127:            conversation_id, file_store, user_id
+tests/unit/utils/test_auto_generate_title.py:140:    user_id = 'test-user'
+tests/unit/utils/test_auto_generate_title.py:160:            conversation_id, user_id, file_store, settings, llm_registry
+tests/unit/utils/test_auto_generate_title.py:168:            conversation_id, file_store, user_id
+tests/unit/utils/test_auto_generate_title.py:184:    user_id = 'test-user'
+tests/unit/utils/test_auto_generate_title.py:218:            user_id, conversation_id, settings, llm_registry
+tests/unit/utils/test_search_utils.py:52:                        'user_id': '123',
+tests/unit/utils/test_search_utils.py:62:                        'user_id': '123',
+tests/unit/utils/test_search_utils.py:91:                        'user_id': '123',
+tests/unit/utils/test_search_utils.py:126:                        'user_id': '123',
+third_party/runtime/impl/daytona/daytona_runtime.py:46:        user_id: str | None = None,
+third_party/runtime/impl/daytona/daytona_runtime.py:86:            user_id,
+third_party/runtime/impl/e2b/e2b_runtime.py:36:        user_id: str | None = None,
+third_party/runtime/impl/e2b/e2b_runtime.py:49:            user_id,
+third_party/runtime/impl/modal/modal_runtime.py:58:        user_id: str | None = None,
+third_party/runtime/impl/modal/modal_runtime.py:117:            user_id,
+third_party/runtime/impl/runloop/runloop_runtime.py:41:        user_id: str | None = None,
+third_party/runtime/impl/runloop/runloop_runtime.py:66:            user_id,
