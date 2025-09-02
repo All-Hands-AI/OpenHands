@@ -37,34 +37,27 @@ const selectRepository = async (repoName: string) => {
 
   // First select the provider
   const providerDropdown = await waitFor(() =>
-    screen.getByText("Select Provider"),
+    screen.getByTestId("git-provider-dropdown"),
   );
   await userEvent.click(providerDropdown);
-  await userEvent.click(screen.getByText("Github"));
+  await userEvent.click(screen.getByText("GitHub"));
 
   // Then select the repository
-  const dropdown = within(repoConnector).getByTestId("repo-dropdown");
-  const repoInput = within(dropdown).getByRole("combobox");
+  const repoInput = within(repoConnector).getByTestId("git-repo-dropdown");
   await userEvent.click(repoInput);
 
   // Wait for the options to be loaded and displayed
   await waitFor(() => {
-    const options = screen.getAllByText(repoName);
-    // Find the option in the dropdown (it will have role="option")
-    const dropdownOption = options.find(
-      (el) => el.getAttribute("role") === "option",
-    );
-    expect(dropdownOption).toBeInTheDocument();
+    const dropdownMenu = screen.getByTestId("git-repo-dropdown-menu");
+    expect(within(dropdownMenu).getByText(repoName)).toBeInTheDocument();
   });
-  const options = screen.getAllByText(repoName);
-  const dropdownOption = options.find(
-    (el) => el.getAttribute("role") === "option",
-  );
-  await userEvent.click(dropdownOption!);
+  const dropdownMenu = screen.getByTestId("git-repo-dropdown-menu");
+  await userEvent.click(within(dropdownMenu).getByText(repoName));
 
   // Wait for the branch to be auto-selected
   await waitFor(() => {
-    expect(screen.getByText("main")).toBeInTheDocument();
+    const branchInput = screen.getByTestId("git-branch-dropdown-input");
+    expect(branchInput).toHaveValue("main");
   });
 };
 
@@ -85,12 +78,14 @@ const MOCK_RESPOSITORIES: GitRepository[] = [
     full_name: "octocat/hello-world",
     git_provider: "github",
     is_public: true,
+    main_branch: "main",
   },
   {
     id: "2",
     full_name: "octocat/earth",
     git_provider: "github",
     is_public: true,
+    main_branch: "main",
   },
 ];
 
@@ -140,10 +135,10 @@ describe("HomeScreen", () => {
         await screen.findAllByTestId("task-launch-button");
 
       // Mock the repository branches API call
-      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue([
+      vi.spyOn(OpenHands, "getRepositoryBranches").mockResolvedValue({ branches: [
         { name: "main", commit_sha: "123", protected: false },
         { name: "develop", commit_sha: "456", protected: false },
-      ]);
+      ], has_next_page: false, current_page: 1, per_page: 30, total_count: 2 });
 
       // Select a repository to enable the repo launch button
       await selectRepository("octocat/hello-world");
