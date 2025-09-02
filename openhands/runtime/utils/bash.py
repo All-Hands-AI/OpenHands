@@ -169,7 +169,31 @@ class BashCommandStatus(Enum):
 
 
 def _remove_command_prefix(command_output: str, command: str) -> str:
-    return command_output.lstrip().removeprefix(command.lstrip()).lstrip()
+    """Remove the command prefix from the command output.
+
+    This handles the case where the command is preceded by a prompt like "$ ".
+    """
+    output = command_output.lstrip()
+    command_stripped = command.lstrip()
+
+    # Try to remove "$ {command}" from the beginning
+    prompt_and_command = f'$ {command_stripped}'
+    if output.startswith(prompt_and_command):
+        # Remove the prompt and command, plus any following newline
+        remaining = output[len(prompt_and_command) :]
+        if remaining.startswith('\n'):
+            remaining = remaining[1:]
+
+        # Remove trailing prompt and extra whitespace
+        # The output typically ends with something like "\n\n\n$" or just "$"
+        remaining = remaining.rstrip()
+        if remaining.endswith('$'):
+            remaining = remaining[:-1].rstrip()
+
+        return remaining
+
+    # Fall back to original behavior if the prompt pattern doesn't match
+    return output.removeprefix(command_stripped).lstrip().rstrip()
 
 
 class BashSession:
