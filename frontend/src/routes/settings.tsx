@@ -67,15 +67,16 @@ function SettingsScreen() {
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
-  const navItems = [];
-  if (isSaas) {
-    if (subscriptionAccess) {
-      navItems.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
-    }
-    navItems.push(...SAAS_NAV_ITEMS);
+const navItems = useMemo(() => {
+  const items = [];
+  if (config?.APP_MODE === "saas") {
+    if (subscriptionAccess) items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
+    items.push(...SAAS_NAV_ITEMS);
   } else {
-    navItems.push(...OSS_NAV_ITEMS);
+    items.push(...OSS_NAV_ITEMS);
   }
+  return items;
+}, [config?.APP_MODE, subscriptionAccess]);
 
   return (
     <main
