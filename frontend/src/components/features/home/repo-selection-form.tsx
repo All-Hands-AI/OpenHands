@@ -2,15 +2,15 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
-import { useRepositoryBranches } from "#/hooks/query/use-repository-branches";
+// Removed useRepositoryBranches import - GitBranchDropdown manages its own data
 import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation";
 import { Branch, GitRepository } from "#/types/git";
 import { BrandButton } from "../settings/brand-button";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { Provider } from "#/types/settings";
-import { GitProviderDropdown } from "../../common/git-provider-dropdown";
-import { GitRepositoryDropdown } from "../../common/git-repository-dropdown";
-import { GitBranchDropdown } from "../../common/git-branch-dropdown";
+import { GitProviderDropdown } from "./git-provider-dropdown";
+import { GitBranchDropdown } from "./git-branch-dropdown";
+import { GitRepoDropdown } from "./git-repo-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
@@ -28,8 +28,6 @@ export function RepositorySelectionForm({
   const [selectedProvider, setSelectedProvider] =
     React.useState<Provider | null>(null);
   const { providers } = useUserProviders();
-  const { data: branches, isLoading: isLoadingBranches } =
-    useRepositoryBranches(selectedRepository?.full_name || null);
   const {
     mutate: createConversation,
     isPending,
@@ -50,8 +48,7 @@ export function RepositorySelectionForm({
   const isCreatingConversation =
     isPending || isSuccess || isCreatingConversationElsewhere;
 
-  // Check if repository has no branches (empty array after loading completes)
-  const hasNoBranches = !isLoadingBranches && branches && branches.length === 0;
+  // Branch selection is now handled by GitBranchDropdown component
 
   const handleProviderSelection = (provider: Provider | null) => {
     setSelectedProvider(provider);
@@ -60,14 +57,9 @@ export function RepositorySelectionForm({
     onRepoSelection(null); // Reset parent component's selected repo
   };
 
-  const handleBranchSelection = (branchName: string | null) => {
-    const selectedBranchObj = branches?.find(
-      (branch) => branch.name === branchName,
-    );
-    if (selectedBranchObj) {
-      setSelectedBranch(selectedBranchObj);
-    }
-  };
+  const handleBranchSelection = React.useCallback((branch: Branch | null) => {
+    setSelectedBranch(branch);
+  }, []);
 
   // Render the provider dropdown
   const renderProviderSelector = () => {
@@ -87,19 +79,6 @@ export function RepositorySelectionForm({
     );
   };
 
-  // Effect to auto-select main/master branch when branches are loaded
-  React.useEffect(() => {
-    if (branches?.length) {
-      // Look for main or master branch
-      const defaultBranch = branches.find(
-        (branch) => branch.name === "main" || branch.name === "master",
-      );
-
-      // If found, select it, otherwise select the first branch
-      setSelectedBranch(defaultBranch || branches[0]);
-    }
-  }, [branches]);
-
   // Render the repository selector using our new component
   const renderRepositorySelector = () => {
     const handleRepoSelection = (repository?: GitRepository) => {
@@ -107,13 +86,14 @@ export function RepositorySelectionForm({
         onRepoSelection(repository);
         setSelectedRepository(repository);
       } else {
+        onRepoSelection(null); // Notify parent component that repo was cleared
         setSelectedRepository(null);
         setSelectedBranch(null);
       }
     };
 
     return (
-      <GitRepositoryDropdown
+      <GitRepoDropdown
         provider={selectedProvider || providers[0]}
         value={selectedRepository?.id || null}
         placeholder="Search repositories..."
@@ -125,16 +105,21 @@ export function RepositorySelectionForm({
   };
 
   // Render the branch selector
-  const renderBranchSelector = () => (
-    <GitBranchDropdown
-      repositoryName={selectedRepository?.full_name}
-      value={selectedBranch?.name || null}
-      placeholder="Select branch..."
-      className="max-w-[500px]"
-      disabled={!selectedRepository}
-      onChange={handleBranchSelection}
-    />
-  );
+  const renderBranchSelector = () => {
+    const defaultBranch = selectedRepository?.main_branch || null;
+    return (
+      <GitBranchDropdown
+        repository={selectedRepository?.full_name || null}
+        provider={selectedProvider || providers[0]}
+        selectedBranch={selectedBranch}
+        onBranchSelect={handleBranchSelection}
+        defaultBranch={defaultBranch}
+        placeholder="Select branch..."
+        className="max-w-[500px]"
+        disabled={!selectedRepository}
+      />
+    );
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -148,8 +133,7 @@ export function RepositorySelectionForm({
         type="button"
         isDisabled={
           !selectedRepository ||
-          (!selectedBranch && !hasNoBranches) ||
-          isLoadingBranches ||
+          !selectedBranch ||
           isCreatingConversation ||
           (providers.length > 1 && !selectedProvider)
         }
@@ -159,7 +143,7 @@ export function RepositorySelectionForm({
               repository: {
                 name: selectedRepository?.full_name || "",
                 gitProvider: selectedRepository?.git_provider || "github",
-                branch: selectedBranch?.name || (hasNoBranches ? "" : "main"),
+                branch: selectedBranch?.name || "main",
               },
             },
             {

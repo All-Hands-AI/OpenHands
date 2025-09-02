@@ -5,7 +5,7 @@ import { Spinner } from "@heroui/react";
 import { MicroagentManagementMicroagentCard } from "./microagent-management-microagent-card";
 import { MicroagentManagementLearnThisRepo } from "./microagent-management-learn-this-repo";
 import { useRepositoryMicroagents } from "#/hooks/query/use-repository-microagents";
-import { useSearchConversations } from "#/hooks/query/use-search-conversations";
+import { useMicroagentManagementConversations } from "#/hooks/query/use-microagent-management-conversations";
 import { GitRepository } from "#/types/git";
 import { RootState } from "#/store";
 import { setSelectedMicroagentItem } from "#/state/microagent-management-slice";
@@ -42,9 +42,9 @@ export function MicroagentManagementRepoMicroagents({
     data: conversations,
     isLoading: isLoadingConversations,
     isError: isErrorConversations,
-  } = useSearchConversations(
+  } = useMicroagentManagementConversations(
     repositoryName,
-    "microagent_management",
+    undefined,
     1000,
     true,
   );
@@ -137,7 +137,7 @@ export function MicroagentManagementRepoMicroagents({
       {hasConversations && (
         <div className={cn("flex flex-col", hasMicroagents && "mt-4")}>
           <span className="text-md text-white font-medium leading-5 mb-4">
-            {t(I18nKey.MICROAGENT_MANAGEMENT$OPEN_MICROAGENT_PULL_REQUESTS)}
+            {t(I18nKey.COMMON$IN_PROGRESS)}
           </span>
           {conversations?.map((conversation) => (
             <div key={conversation.conversation_id} className="pb-4 last:pb-0">
