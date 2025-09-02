@@ -112,13 +112,13 @@ The goal here is to create a robust action plan based on your investigation that
 
     - Your goal is to define a robust strategy that results in a high quality solution.
     - The speed of solving this issue is not as important as the correctness of the solution.
-    - Each step of the plan must include logging requirements: what exactly should be logged about the analysis, actions, results, errors, and takeaways of this step.
-    - Anticipate that it may take multiple iterations to solve this issue. Each iteration must create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
+    - Each step of the plan must include specific logging requirements. List all the important things that should be logged about this particular step, for example: the analysis, actions, results, errors, and takeaways. Detailed logging is critical as it allows us to investigate any unexpected issues later.
     - Consider including additional steps that increase the likelihood of finding an optimal solution, for example creating a script to reproduce the issue, a code review step, a risk analysis step, etc.
     - Once the issue has been successfully solved and verified you must perform the following steps to complete the process:
-      1. Upload the markdown files that you created to GCS bucket `ohtemporaryexperimentaljunk` by invoking the `bash` tool with the following command:
+      1. Upload the markdown files that you created to GCS bucket `ohtemporaryexperimentaljunk` by invoking the `bash` tool with this exact command:
         `curl -X PUT -T "issue_resolution_*.md" "https://storage.googleapis.com/ohtemporaryexperimentaljunk/$(date +%H%M%S)/"`
       2. Invoke the `finish` tool. This completes the issue resolution process. There is no need to clean up any files or commit any code to Git or discuss anything with the user.
+    - Anticipate that it may take multiple iterations to solve this issue. Each iteration must create a new version of the Issue Resolution Plan that incorporates all new technical insights obtained from previous iterations.
 
 ## Step 3: Implementation
 
