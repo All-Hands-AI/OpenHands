@@ -59,7 +59,8 @@ export function GenericDropdownMenu<T>({
           ref: menuRef,
           className: cn(
             "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
-            "focus:outline-none mt-1 z-[9999] max-h-60 overflow-auto p-1",
+            "focus:outline-none mt-1 z-[9999] max-h-60 overflow-auto",
+            stickyFooterItem ? "pb-0" : "p-1",
           ),
           onScroll,
         })}
@@ -76,7 +77,7 @@ export function GenericDropdownMenu<T>({
               ),
             )}
         {stickyFooterItem && (
-          <li className="sticky bottom-0 border-t border-[#727987] bg-[#454545] p-1">
+          <li className="sticky bottom-0 border-t border-[#727987] bg-[#454545] p-1 -mb-1">
             {stickyFooterItem}
           </li>
         )}
