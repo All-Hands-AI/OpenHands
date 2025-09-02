@@ -23,16 +23,18 @@ class BaseMicroagent(BaseModel):
     source: str  # path to the file
     type: MicroagentType
 
+    PATH_TO_THIRD_PARTY_MICROAGENT_NAME = {
+        '.cursorrules': 'cursorrules',
+        'agents.md': 'agents',
+        'agent.md': 'agents',
+    }
+
     @classmethod
     def _handle_third_party(
         cls, path: Path, file_content: str
     ) -> Union['RepoMicroagent', None]:
         # Determine the agent name based on file type
-        microagent_name = None
-        if path.name == '.cursorrules':
-            microagent_name = 'cursorrules'
-        elif path.name.lower() in ['agents.md', 'agent.md']:
-            microagent_name = 'agents'
+        microagent_name = cls.PATH_TO_THIRD_PARTY_MICROAGENT_NAME.get(path.name.lower())
 
         # Create RepoMicroagent if we recognized the file type
         if microagent_name is not None:
@@ -64,12 +66,9 @@ class BaseMicroagent(BaseModel):
         derived_name = None
         if microagent_dir is not None:
             # Special handling for files which are not in microagent_dir
-            if path.name == '.cursorrules':
-                derived_name = 'cursorrules'
-            elif path.name.lower() in ['agents.md', 'agent.md']:
-                derived_name = 'agents'
-            else:
-                derived_name = str(path.relative_to(microagent_dir).with_suffix(''))
+            derived_name = cls.PATH_TO_THIRD_PARTY_MICROAGENT_NAME.get(
+                path.name.lower()
+            ) or str(path.relative_to(microagent_dir).with_suffix(''))
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
