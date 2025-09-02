@@ -2,6 +2,7 @@ import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { Provider } from "#/types/settings";
 import { SuggestedTaskGroup } from "#/utils/types";
+import { ConversationStatus } from "#/types/conversation-status";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -437,4 +438,28 @@ export const getRepoMdCreatePrompt = (
             }
 
 Please push the changes to your branch on ${providerName} and create a ${pr}. Please create a meaningful branch name that describes the changes. If a ${pr} template exists in the repository, please follow it when creating the ${prShort} description.`;
+};
+
+/**
+ * Get the label for a conversation status
+ * @param status The conversation status
+ * @returns The localized label for the status
+ */
+export const getConversationStatusLabel = (
+  status: ConversationStatus,
+): string => {
+  switch (status) {
+    case "STOPPED":
+      return "COMMON$STOPPED";
+    case "RUNNING":
+      return "COMMON$RUNNING";
+    case "STARTING":
+      return "COMMON$STARTING";
+    case "ERROR":
+      return "COMMON$ERROR";
+    case "ARCHIVED":
+      return "COMMON$ARCHIVED"; // Use STOPPED for archived conversations
+    default:
+      return "COMMON$UNKNOWN";
+  }
 };
