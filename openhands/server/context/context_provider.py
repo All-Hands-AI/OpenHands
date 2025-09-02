@@ -1,47 +1,18 @@
-"""Context provider system for dependency injection."""
+"""Context provider system for dependency injection.
+
+This module provides the default context provider for OpenHands routes.
+For custom context implementations, use the factory pattern from
+openhands.server.factory instead of modifying global state.
+"""
 
 from __future__ import annotations
 
-import os
 from typing import TYPE_CHECKING
-
-from openhands.utils.import_utils import get_impl
 
 if TYPE_CHECKING:
     from fastapi import Request
 
 from .server_context import ServerContext
-
-
-def set_context_class(context_class: str) -> None:
-    """Set the server context class to use globally.
-
-    This allows implementations to configure their own context class
-    without modifying OpenHands code. The context class will be used for
-    all requests unless overridden at the request level.
-
-    Args:
-        context_class: Fully qualified name of the ServerContext implementation
-                      e.g., 'myapp.context.CustomServerContext'
-
-    Example:
-        # In application startup
-        from openhands.server.context import set_context_class
-        set_context_class('myapp.context.EnterpriseServerContext')
-    """
-    os.environ['OPENHANDS_SERVER_CONTEXT_CLASS'] = context_class
-
-
-def get_context_class() -> str:
-    """Get the currently configured context class name.
-
-    Returns:
-        str: Fully qualified name of the context class, or default if none set
-    """
-    return os.environ.get(
-        'OPENHANDS_SERVER_CONTEXT_CLASS',
-        'openhands.server.context.default_server_context.DefaultServerContext'
-    )
 
 
 async def get_server_context(request: Request) -> ServerContext:
@@ -80,12 +51,9 @@ async def get_server_context(request: Request) -> ServerContext:
     if context:
         return context
 
-    # Get the configured context class or use default
-    context_cls_name = get_context_class()
-    context_cls = get_impl(ServerContext, context_cls_name)
-
-    # Create new context instance
-    context = context_cls()
+    # Create default context instance
+    from .default_server_context import DefaultServerContext
+    context = DefaultServerContext()
 
     # Cache on request for subsequent use
     request.state.server_context = context
@@ -99,19 +67,24 @@ def create_server_context(context_class: str | None = None) -> ServerContext:
     you need a context outside of a FastAPI request.
 
     Args:
-        context_class: Optional context class name. If None, uses the globally
-                      configured class or default.
+        context_class: Optional context class name. If None, uses DefaultServerContext.
 
     Returns:
         ServerContext: New context instance
 
     Example:
-        # For testing
-        context = create_server_context('tests.mocks.MockServerContext')
+        # For testing with custom context
+        from openhands.utils.import_utils import get_impl
+        context_cls = get_impl(ServerContext, 'tests.mocks.MockServerContext')
+        context = context_cls()
 
-        # Use default/configured context
+        # Use default context
         context = create_server_context()
     """
-    context_cls_name = context_class or get_context_class()
-    context_cls = get_impl(ServerContext, context_cls_name)
-    return context_cls()
+    if context_class:
+        from openhands.utils.import_utils import get_impl
+        context_cls = get_impl(ServerContext, context_class)
+        return context_cls()
+    else:
+        from .default_server_context import DefaultServerContext
+        return DefaultServerContext()

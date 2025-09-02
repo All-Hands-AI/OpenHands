@@ -21,22 +21,18 @@ Usage:
         # ... use context instead of importing from shared
 
     # For custom extensions
-    from openhands.server.context import set_context_class
-    set_context_class('myapp.context.MyServerContext')
+    from openhands.server.factory import create_openhands_app
+    app = create_openhands_app(context_factory=MyServerContext)
 """
 
 from .context_provider import (
     create_server_context,
-    get_context_class,
     get_server_context,
-    set_context_class,
 )
 from .server_context import ServerContext
 
 __all__ = [
     'ServerContext',
     'get_server_context',
-    'set_context_class',
-    'get_context_class',
     'create_server_context',
 ]
