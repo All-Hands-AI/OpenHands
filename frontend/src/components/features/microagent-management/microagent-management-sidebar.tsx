@@ -54,7 +54,7 @@ export function MicroagentManagementSidebar({
 
   // Server-side search functionality
   const { data: searchResults, isLoading: isSearchLoading } =
-    useSearchRepositories(debouncedSearchQuery, selectedProvider, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
+    useSearchRepositories(debouncedSearchQuery, selectedProvider, false, 500); // Increase page size to 500 to to retrieve all search results. This should be optimized in the future.
 
   // Auto-select provider if there's only one
   useEffect(() => {

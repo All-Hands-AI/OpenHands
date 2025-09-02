@@ -22,6 +22,7 @@ import RepoIcon from "#/icons/repo.svg?react";
 export interface GitRepoDropdownProps {
   provider: Provider;
   value?: string | null;
+  repositoryName?: string | null;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -31,6 +32,7 @@ export interface GitRepoDropdownProps {
 export function GitRepoDropdown({
   provider,
   value,
+  repositoryName,
   placeholder = "Search repositories...",
   className,
   disabled = false,
@@ -76,6 +78,7 @@ export function GitRepoDropdown({
     urlSearchResults,
     inputValue,
     value,
+    repositoryName,
   );
 
   // Filter repositories based on input value
