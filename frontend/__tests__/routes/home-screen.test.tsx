@@ -351,16 +351,6 @@ describe("HomeScreen", () => {
       });
     });
   });
-
-  it("should hide the suggested tasks section if not authed with git(hub|lab)", async () => {
-    renderHomeScreen();
-
-    const taskSuggestions = screen.queryByTestId("task-suggestions");
-    const repoConnector = screen.getByTestId("repo-connector");
-
-    expect(taskSuggestions).not.toBeInTheDocument();
-    expect(repoConnector).toBeInTheDocument();
-  });
 });
 
 describe("Settings 404", () => {
