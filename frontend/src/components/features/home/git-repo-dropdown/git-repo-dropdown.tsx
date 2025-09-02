@@ -17,6 +17,7 @@ import { ErrorMessage } from "../shared/error-message";
 import { useUrlSearch } from "./use-url-search";
 import { useRepositoryData } from "./use-repository-data";
 import { DropdownMenu } from "./dropdown-menu";
+import RepoIcon from "#/icons/repo.svg?react";
 
 export interface GitRepoDropdownProps {
   provider: Provider;
@@ -195,6 +196,9 @@ export function GitRepoDropdown({
   return (
     <div className={cn("relative", className)}>
       <div className="relative">
+        <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
+          <RepoIcon width={16} height={16} />
+        </div>
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
           {...getInputProps({
@@ -202,27 +206,29 @@ export function GitRepoDropdown({
             placeholder,
             className: cn(
               "w-full px-3 py-2 border border-[#727987] rounded-sm shadow-none h-[42px] min-h-[42px] max-h-[42px]",
-              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3] placeholder:italic",
+              "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
               "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pr-10 text-sm font-normal leading-5", // Space for toggle button
+              "pl-7 pr-2 text-sm font-normal leading-5", // Space for toggle button
             ),
           })}
           data-testid="git-repo-dropdown"
         />
 
-        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {selectedRepository && (
-            <ClearButton disabled={disabled} onClear={handleClear} />
+            <div className="absolute right-7 translate-y-[1px]">
+              <ClearButton disabled={disabled} onClear={handleClear} />
+            </div>
           )}
 
           <ToggleButton
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
+            iconClassName="w-10 h-10 translate-y-[1px]"
           />
         </div>
-
         {isLoadingState && (
           <LoadingSpinner hasSelection={!!selectedRepository} />
         )}
