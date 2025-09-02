@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Provider } from "#/types/settings";
 import { GitRepository } from "#/types/git";
 import { useGitRepositories } from "#/hooks/query/use-git-repositories";
@@ -73,6 +73,35 @@ export function useRepositoryData(
     allRepositories,
     selectedRepository,
     inputValue,
+  ]);
+
+  // Auto-load more repositories when there aren't enough items to create a scrollable dropdown
+  // This is particularly important for SaaS mode with installations that might have very few repos
+  useEffect(() => {
+    const shouldAutoLoad =
+      !disabled &&
+      !isLoading &&
+      !isFetchingNextPage &&
+      !isSearchLoading &&
+      hasNextPage &&
+      !processedSearchInput && // Not during search (use all repos, not search results)
+      urlSearchResults.length === 0 &&
+      repositories.length > 0 && // Have some repositories loaded
+      repositories.length < 10; // But not enough to create a scrollable dropdown
+
+    if (shouldAutoLoad) {
+      fetchNextPage();
+    }
+  }, [
+    disabled,
+    isLoading,
+    isFetchingNextPage,
+    isSearchLoading,
+    hasNextPage,
+    processedSearchInput,
+    urlSearchResults.length,
+    repositories.length,
+    fetchNextPage,
   ]);
 
   return {
