@@ -235,10 +235,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             OPENHANDS_VERSION=${{ env.OPENHANDS_DOCKER_TAG }}
-          # Use buildx cache
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new,mode=max
-          # Optimize build with parallel processing
           platforms: linux/amd64
           # Add build provenance
           provenance: true
