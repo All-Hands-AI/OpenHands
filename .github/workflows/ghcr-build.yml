@@ -230,7 +230,7 @@ jobs:
         with:
           context: .
           file: enterprise/Dockerfile
-          push: false # tmp pr
+          push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
