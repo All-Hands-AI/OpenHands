@@ -64,7 +64,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -90,7 +89,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -105,7 +103,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={{
           selected_repository: "org/selectedRepository",
@@ -126,7 +123,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -147,7 +143,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -169,7 +164,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -193,7 +187,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={{
@@ -222,7 +215,6 @@ describe("ConversationCard", () => {
     const { rerender } = renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -238,7 +230,6 @@ describe("ConversationCard", () => {
     rerender(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -268,7 +259,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -294,7 +284,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onClick={onClick}
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -314,7 +303,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -338,7 +326,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}
@@ -362,7 +349,6 @@ describe("ConversationCard", () => {
       <ConversationCard
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -382,7 +368,6 @@ describe("ConversationCard", () => {
         onDelete={onDelete}
         onChangeTitle={onChangeTitle}
         showOptions
-        isActive
         title="Conversation 1"
         selectedRepository={null}
         lastUpdatedAt="2021-10-01T12:00:00Z"
@@ -402,7 +387,6 @@ describe("ConversationCard", () => {
     renderWithProviders(
       <ConversationCard
         onDelete={onDelete}
-        isActive
         onChangeTitle={onChangeTitle}
         title="Conversation 1"
         selectedRepository={null}

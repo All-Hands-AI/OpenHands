@@ -14159,6 +14159,22 @@
     "de": "Mehr anzeigen",
     "uk": "Переглянути більше"
   },
+  "COMMON$ARCHIVED": {
+    "en": "Archived",
+    "ja": "アーカイブ済み",
+    "zh-CN": "已归档",
+    "zh-TW": "已歸檔",
+    "ko-KR": "보관됨",
+    "no": "Arkivert",
+    "it": "Archiviato",
+    "pt": "Arquivado",
+    "es": "Archivado",
+    "ar": "مؤرشف",
+    "fr": "Archivé",
+    "tr": "Arşivlendi",
+    "de": "Archiviert",
+    "uk": "Архівовано"
+  },
   "HOME$GUIDE_MESSAGE_TITLE": {
     "en": "New around here? Not sure where to start?",
     "ja": "このあたりは初めてですか？どこから始めればいいかわかりませんか？",
