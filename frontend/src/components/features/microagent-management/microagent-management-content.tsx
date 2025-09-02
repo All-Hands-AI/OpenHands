@@ -288,7 +288,6 @@ export function MicroagentManagementContent() {
       conversationInstructions: formData.query,
       repository: {
         name: repositoryName,
-        branch: formData.selectedBranch,
         gitProvider,
       },
       createMicroagent,
