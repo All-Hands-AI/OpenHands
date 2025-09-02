@@ -1,7 +1,6 @@
-import { lazy, Suspense } from "react";
+import { lazy } from "react";
 import { useSelector } from "react-redux";
 import { cn } from "#/utils/utils";
-import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { RootState } from "#/store";
 import { ConversationLoading } from "../conversation-loading";
 import Terminal from "../../terminal/terminal";
@@ -44,62 +43,54 @@ export function ConversationTabContent() {
         <div className="h-full w-full">
           <div className="h-full w-full relative">
             {/* Each tab content is always loaded but only visible when active */}
-            <Suspense
-              fallback={
-                <div className="flex items-center justify-center h-full">
-                  <LoadingSpinner size="large" />
-                </div>
-              }
+            <div
+              className={cn(
+                "absolute inset-0",
+                isEditorActive ? "block" : "hidden",
+              )}
             >
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isEditorActive ? "block" : "hidden",
-                )}
-              >
-                <EditorTab />
-              </div>
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isBrowserActive ? "block" : "hidden",
-                )}
-              >
-                <BrowserTab />
-              </div>
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isJupyterActive ? "block" : "hidden",
-                )}
-              >
-                <JupyterTab />
-              </div>
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isServedActive ? "block" : "hidden",
-                )}
-              >
-                <ServedTab />
-              </div>
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isVSCodeActive ? "block" : "hidden",
-                )}
-              >
-                <VSCodeTab />
-              </div>
-              <div
-                className={cn(
-                  "absolute inset-0",
-                  isTerminalActive ? "block" : "hidden",
-                )}
-              >
-                <Terminal />
-              </div>
-            </Suspense>
+              <EditorTab />
+            </div>
+            <div
+              className={cn(
+                "absolute inset-0",
+                isBrowserActive ? "block" : "hidden",
+              )}
+            >
+              <BrowserTab />
+            </div>
+            <div
+              className={cn(
+                "absolute inset-0",
+                isJupyterActive ? "block" : "hidden",
+              )}
+            >
+              <JupyterTab />
+            </div>
+            <div
+              className={cn(
+                "absolute inset-0",
+                isServedActive ? "block" : "hidden",
+              )}
+            >
+              <ServedTab />
+            </div>
+            <div
+              className={cn(
+                "absolute inset-0",
+                isVSCodeActive ? "block" : "hidden",
+              )}
+            >
+              <VSCodeTab />
+            </div>
+            <div
+              className={cn(
+                "absolute inset-0",
+                isTerminalActive ? "block" : "hidden",
+              )}
+            >
+              <Terminal />
+            </div>
           </div>
         </div>
       </div>
