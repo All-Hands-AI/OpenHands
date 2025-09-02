@@ -1,77 +1,76 @@
-import os
+"""Shared server dependencies - DEPRECATED.
 
-import socketio
-from dotenv import load_dotenv
+This module is deprecated and maintained only for backward compatibility.
+New code should use the context system from openhands.server.context instead.
 
-from openhands.core.config import load_openhands_config
-from openhands.core.config.openhands_config import OpenHandsConfig
-from openhands.server.config.server_config import ServerConfig, load_server_config
-from openhands.server.conversation_manager.conversation_manager import (
-    ConversationManager,
-)
-from openhands.server.monitoring import MonitoringListener
-from openhands.server.types import ServerConfigInterface
-from openhands.storage import get_file_store
-from openhands.storage.conversation.conversation_store import ConversationStore
-from openhands.storage.files import FileStore
-from openhands.storage.secrets.secrets_store import SecretsStore
-from openhands.storage.settings.settings_store import SettingsStore
-from openhands.utils.import_utils import get_impl
+The context system provides:
+- Better dependency injection
+- Easier testing and mocking
+- SaaS extensibility
+- Per-request contexts
+- No import-time side effects
 
-load_dotenv()
+Migration guide:
+    # Old way (deprecated)
+    from openhands.server.shared import config, server_config
 
-config: OpenHandsConfig = load_openhands_config()
-server_config_interface: ServerConfigInterface = load_server_config()
-assert isinstance(server_config_interface, ServerConfig), (
-    'Loaded server config interface is not a ServerConfig, despite this being assumed'
-)
-server_config: ServerConfig = server_config_interface
-file_store: FileStore = get_file_store(
-    file_store_type=config.file_store,
-    file_store_path=config.file_store_path,
-    file_store_web_hook_url=config.file_store_web_hook_url,
-    file_store_web_hook_headers=config.file_store_web_hook_headers,
-    file_store_web_hook_batch=config.file_store_web_hook_batch,
-)
+    # New way (recommended)
+    from openhands.server.context import get_server_context
 
-client_manager = None
-redis_host = os.environ.get('REDIS_HOST')
-if redis_host:
-    client_manager = socketio.AsyncRedisManager(
-        f'redis://{redis_host}',
-        redis_options={'password': os.environ.get('REDIS_PASSWORD')},
-    )
+    @app.get('/example')
+    async def example_route(
+        request: Request,
+        context: ServerContext = Depends(get_server_context)
+    ):
+        config = context.get_config()
+        server_config = context.get_server_config()
+"""
 
+import warnings
 
-sio = socketio.AsyncServer(
-    async_mode='asgi',
-    cors_allowed_origins='*',
-    client_manager=client_manager,
-    # Increase buffer size to 4MB (to handle 3MB files with base64 overhead)
-    max_http_buffer_size=4 * 1024 * 1024,
-)
+from openhands.server.context.default_server_context import DefaultServerContext
 
-MonitoringListenerImpl = get_impl(
-    MonitoringListener,
-    server_config.monitoring_listener_class,
+# Load environment variables for backward compatibility
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except ImportError:
+    # dotenv is optional
+    pass
+
+# Create default context for backward compatibility
+_default_context = DefaultServerContext()
+
+# Issue deprecation warning when this module is imported
+warnings.warn(
+    'openhands.server.shared is deprecated. Use openhands.server.context instead. '
+    'See the module docstring for migration guidance.',
+    DeprecationWarning,
+    stacklevel=2,
 )
 
-monitoring_listener = MonitoringListenerImpl.get_instance(config)
 
-ConversationManagerImpl = get_impl(
-    ConversationManager,
-    server_config.conversation_manager_class,
-)
-
-conversation_manager = ConversationManagerImpl.get_instance(
-    sio, config, file_store, server_config, monitoring_listener
-)
-
-SettingsStoreImpl = get_impl(SettingsStore, server_config.settings_store_class)
-
-SecretsStoreImpl = get_impl(SecretsStore, server_config.secret_store_class)
-
-ConversationStoreImpl = get_impl(
-    ConversationStore,
-    server_config.conversation_store_class,
-)
+# Module-level lazy loading using __getattr__
+def __getattr__(name: str):
+    """Lazy loading for backward compatibility globals."""
+    if name == 'config':
+        return _default_context.get_config()
+    elif name == 'server_config':
+        return _default_context.get_server_config()
+    elif name == 'file_store':
+        return _default_context.get_file_store()
+    elif name == 'sio':
+        return _default_context.get_socketio_server()
+    elif name == 'conversation_manager':
+        return _default_context.get_conversation_manager()
+    elif name == 'monitoring_listener':
+        return _default_context.get_monitoring_listener()
+    elif name == 'SettingsStoreImpl':
+        return _default_context.get_settings_store_class()
+    elif name == 'SecretsStoreImpl':
+        return _default_context.get_secrets_store_class()
+    elif name == 'ConversationStoreImpl':
+        return _default_context.get_conversation_store_class()
+    else:
+        raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
