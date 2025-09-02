@@ -16,7 +16,7 @@ export function ChatInterfaceWrapper({
   if (!isRightPanelShown) {
     return (
       <div className="flex justify-center w-full h-full">
-        <div className="max-w-[768px]">
+        <div className="w-full max-w-[768px]">
           <ChatInterface />
         </div>
       </div>
