@@ -59,52 +59,26 @@ export function GenericDropdownMenu<T>({
           ref: menuRef,
           className: cn(
             "absolute z-10 w-full bg-[#454545] border border-[#727987] rounded-lg shadow-none",
-            "focus:outline-none mt-1 z-[9999]",
-            stickyFooterItem
-              ? "max-h-60 overflow-hidden"
-              : "max-h-60 overflow-auto p-1",
+            "focus:outline-none mt-1 z-[9999] max-h-60 overflow-auto p-1",
           ),
-          onScroll: stickyFooterItem ? undefined : onScroll,
+          onScroll,
         })}
       >
-        {stickyFooterItem ? (
-          <>
-            {/* Scrollable content area */}
-            <div
-              className={cn("max-h-48 overflow-auto p-1", hasItems && "pb-0")}
-              onScroll={onScroll}
-            >
-              {showEmptyState
-                ? renderEmptyState(inputValue)
-                : filteredItems.map((item, index) =>
-                    renderItem(
-                      item,
-                      index,
-                      highlightedIndex,
-                      selectedItem,
-                      getItemProps,
-                    ),
-                  )}
-            </div>
-            {/* Sticky footer */}
-            <div className="border-t border-[#727987] bg-[#454545] p-1">
-              {stickyFooterItem}
-            </div>
-          </>
-        ) : (
-          <div className="p-1">
-            {showEmptyState
-              ? renderEmptyState(inputValue)
-              : filteredItems.map((item, index) =>
-                  renderItem(
-                    item,
-                    index,
-                    highlightedIndex,
-                    selectedItem,
-                    getItemProps,
-                  ),
-                )}
-          </div>
+        {showEmptyState
+          ? renderEmptyState(inputValue)
+          : filteredItems.map((item, index) =>
+              renderItem(
+                item,
+                index,
+                highlightedIndex,
+                selectedItem,
+                getItemProps,
+              ),
+            )}
+        {stickyFooterItem && (
+          <li className="sticky bottom-0 border-t border-[#727987] bg-[#454545] p-1">
+            {stickyFooterItem}
+          </li>
         )}
       </ul>
     </div>
