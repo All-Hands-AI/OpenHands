@@ -213,14 +213,16 @@ export function GitRepoDropdown({
     const githubHref = `https://github.com/apps/${config.APP_SLUG}/installations/new`;
 
     return (
-      <a
-        href={githubHref}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#525252] rounded transition-colors duration-150"
-      >
-        {t(I18nKey.HOME$ADD_GITHUB_REPOS)}
-      </a>
+      <li>
+        <a
+          href={githubHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#525252] rounded transition-colors duration-150"
+        >
+          {t(I18nKey.HOME$ADD_GITHUB_REPOS)}
+        </a>
+      </li>
     );
   }, [provider, config, t]);
 
