@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { NavLink, Outlet, redirect } from "react-router";
 import { useTranslation } from "react-i18next";
 import SettingsIcon from "#/icons/settings.svg?react";
@@ -67,16 +68,18 @@ function SettingsScreen() {
 
   const isSaas = config?.APP_MODE === "saas";
   // this is used to determine which settings are available in the UI
-const navItems = useMemo(() => {
-  const items = [];
-  if (config?.APP_MODE === "saas") {
-    if (subscriptionAccess) items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
-    items.push(...SAAS_NAV_ITEMS);
-  } else {
-    items.push(...OSS_NAV_ITEMS);
-  }
-  return items;
-}, [config?.APP_MODE, subscriptionAccess]);
+  const navItems = useMemo(() => {
+    const items = [];
+    if (isSaas) {
+      if (subscriptionAccess) {
+        items.push({ to: "/settings", text: "SETTINGS$NAV_LLM" });
+      }
+      items.push(...SAAS_NAV_ITEMS);
+    } else {
+      items.push(...OSS_NAV_ITEMS);
+    }
+    return items;
+  }, [isSaas, !!subscriptionAccess]);
 
   return (
     <main
