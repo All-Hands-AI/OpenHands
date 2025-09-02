@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import { TooltipButton } from "./tooltip-button";
-import UnionIcon from "#/icons/union.svg?react";
+import RobotIcon from "#/icons/robot.svg?react";
 
 interface MicroagentManagementButtonProps {
   disabled?: boolean;
@@ -22,7 +22,7 @@ export function MicroagentManagementButton({
       testId="microagent-management-button"
       disabled={disabled}
     >
-      <UnionIcon />
+      <RobotIcon width={28} height={28} />
     </TooltipButton>
   );
 }
