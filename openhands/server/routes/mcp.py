@@ -91,7 +91,10 @@ async def create_pr(
     body: Annotated[str | None, Field(description='PR body')],
     draft: Annotated[bool, Field(description='Whether PR opened is a draft')] = True,
     labels: Annotated[
-        list[str] | None, Field(description='Labels to apply to the PR')
+        list[str] | None, Field(
+            description='Labels to apply to the PR. Must be selected from the repository’s existing labels. '
+            'Do not invent new labels. If the labels are not known, fetch them first.'
+        )
     ] = None,
 ) -> str:
     """Open a PR in GitHub"""
@@ -161,7 +164,10 @@ async def create_mr(
     ],
     description: Annotated[str | None, Field(description='MR description')],
     labels: Annotated[
-        list[str] | None, Field(description='Labels to apply to the MR')
+        list[str] | None, Field(
+            description='Labels to apply to the MR. Must be selected from the repository’s existing labels. '
+            'Do not invent new labels. If the labels are not known, fetch them first.'
+        )
     ] = None,
 ) -> str:
     """Open a MR in GitLab"""
