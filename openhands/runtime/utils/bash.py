@@ -173,16 +173,20 @@ def _remove_command_prefix(command_output: str, command: str) -> str:
 
     This handles the case where the command is preceded by a prompt like "$ ".
     """
+    import re
+
     output = command_output.lstrip()
     command_stripped = command.lstrip()
 
-    # Try to remove "$ {command}" from the beginning
-    prompt_and_command = f'$ {command_stripped}'
-    if output.startswith(prompt_and_command):
-        # Remove the prompt and command, plus any following newline
-        remaining = output[len(prompt_and_command) :]
-        if remaining.startswith('\n'):
-            remaining = remaining[1:]
+    # Try to match "$ {command}" with flexible spacing using regex
+    # This handles cases like "$ command", "$  command", etc.
+    escaped_command = re.escape(command_stripped)
+    prompt_pattern = rf'^\$\s+{escaped_command}(?:\n|$)'
+
+    match = re.match(prompt_pattern, output)
+    if match:
+        # Remove the matched prompt and command
+        remaining = output[match.end() :]
 
         # Remove trailing prompt and extra whitespace
         # The output typically ends with something like "\n\n\n$" or just "$"
