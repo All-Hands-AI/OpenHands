@@ -40,7 +40,9 @@ from openhands.runtime.plugins import PluginRequirement
 from openhands.runtime.plugins.vscode import VSCodeRequirement
 from openhands.runtime.runtime_status import RuntimeStatus
 from openhands.runtime.utils import find_available_tcp_port
-from openhands.runtime.utils.command import get_action_execution_server_startup_command
+from openhands.runtime.utils.command import (
+    get_action_execution_server_startup_command,
+)
 from openhands.utils.async_utils import call_sync_from_async
 from openhands.utils.tenacity_stop import stop_if_should_exit
 

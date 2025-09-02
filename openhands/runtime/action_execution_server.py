@@ -645,6 +645,405 @@ class ActionExecutor:
             self.browser.close()
 
 
+def run_action_execution_server_with_args(args: argparse.Namespace) -> None:
+    # Start the file viewer server in a separate thread
+    logger.info('Starting file viewer server')
+    _file_viewer_port = find_available_tcp_port(
+        min_port=args.port + 1, max_port=min(args.port + 1024, 65535)
+    )
+    server_url, _ = start_file_viewer_server(port=_file_viewer_port)
+    logger.info(f'File viewer server started at {server_url}')
+
+    plugins_to_load: list[Plugin] = []
+    if args.plugins:
+        for plugin in args.plugins:
+            if plugin not in ALL_PLUGINS:
+                raise ValueError(f'Plugin {plugin} not found')
+            plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
+
+    client: ActionExecutor | None = None
+    mcp_proxy_manager: MCPProxyManager | None = None
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        nonlocal client, mcp_proxy_manager
+        logger.info('Initializing ActionExecutor...')
+        client = ActionExecutor(
+            plugins_to_load,
+            work_dir=args.working_dir,
+            username=args.username,
+            user_id=args.user_id,
+            enable_browser=args.enable_browser,
+            browsergym_eval_env=args.browsergym_eval_env,
+        )
+        await client.ainit()
+        logger.info('ActionExecutor initialized.')
+
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        # Initialize and mount MCP Proxy Manager (skip on Windows)
+        if is_windows:
+            logger.info('Skipping MCP Proxy initialization on Windows')
+            mcp_proxy_manager = None
+        else:
+            logger.info('Initializing MCP Proxy Manager...')
+            # Create a MCP Proxy Manager
+            mcp_proxy_manager = MCPProxyManager(
+                auth_enabled=bool(SESSION_API_KEY),
+                api_key=SESSION_API_KEY,
+                logger_level=logger.getEffectiveLevel(),
+            )
+            mcp_proxy_manager.initialize()
+            # Mount the proxy to the app
+            allowed_origins = ['*']
+            try:
+                await mcp_proxy_manager.mount_to_app(app, allowed_origins)
+            except Exception as e:
+                logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
+                raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
+
+        yield
+
+        # Clean up & release the resources
+        logger.info('Shutting down MCP Proxy Manager...')
+        if mcp_proxy_manager:
+            del mcp_proxy_manager
+            mcp_proxy_manager = None
+        else:
+            logger.info('MCP Proxy Manager instance not found for shutdown.')
+
+        logger.info('Closing ActionExecutor...')
+        if client:
+            try:
+                client.close()
+                logger.info('ActionExecutor closed successfully.')
+            except Exception as e:
+                logger.error(f'Error closing ActionExecutor: {e}', exc_info=True)
+        else:
+            logger.info('ActionExecutor instance not found for closing.')
+        logger.info('Shutdown complete.')
+
+    app = FastAPI(lifespan=lifespan)
+
+    # TODO below 3 exception handlers were recommended by Sonnet.
+    # Are these something we should keep?
+    @app.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception):
+        logger.exception('Unhandled exception occurred:')
+        return JSONResponse(
+            status_code=500,
+            content={'detail': 'An unexpected error occurred. Please try again later.'},
+        )
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+        logger.error(f'HTTP exception occurred: {exc.detail}')
+        return JSONResponse(status_code=exc.status_code, content={'detail': exc.detail})
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request, exc: RequestValidationError
+    ):
+        logger.error(f'Validation error occurred: {exc}')
+        return JSONResponse(
+            status_code=422,
+            content={
+                'detail': 'Invalid request parameters',
+                'errors': str(exc.errors()),
+            },
+        )
+
+    @app.middleware('http')
+    async def authenticate_requests(request: Request, call_next):
+        if request.url.path != '/alive' and request.url.path != '/server_info':
+            try:
+                verify_api_key(request.headers.get('X-Session-API-Key'))
+            except HTTPException as e:
+                return JSONResponse(
+                    status_code=e.status_code, content={'detail': e.detail}
+                )
+        response = await call_next(request)
+        return response
+
+    @app.get('/server_info')
+    async def get_server_info():
+        assert client is not None
+        current_time = time.time()
+        uptime = current_time - client.start_time
+        idle_time = current_time - client.last_execution_time
+
+        response = {
+            'uptime': uptime,
+            'idle_time': idle_time,
+            'resources': get_system_stats(),
+        }
+        logger.info('Server info endpoint response: %s', response)
+        return response
+
+    @app.post('/execute_action')
+    async def execute_action(action_request: ActionRequest):
+        assert client is not None
+        try:
+            action = event_from_dict(action_request.action)
+            if not isinstance(action, Action):
+                raise HTTPException(status_code=400, detail='Invalid action type')
+            client.last_execution_time = time.time()
+            observation = await client.run_action(action)
+            return event_to_dict(observation)
+        except Exception as e:
+            logger.error(f'Error while running /execute_action: {str(e)}')
+            raise HTTPException(
+                status_code=500,
+                detail=traceback.format_exc(),
+            )
+        finally:
+            update_last_execution_time()
+
+    @app.post('/update_mcp_server')
+    async def update_mcp_server(request: Request):
+        # Check if we're on Windows
+        is_windows = sys.platform == 'win32'
+
+        # Access the global mcp_proxy_manager variable
+        nonlocal mcp_proxy_manager
+
+        if is_windows:
+            # On Windows, just return a success response without doing anything
+            logger.info(
+                'MCP server update request received on Windows - skipping as MCP is disabled'
+            )
+            return JSONResponse(
+                status_code=200,
+                content={
+                    'detail': 'MCP server update skipped (MCP is disabled on Windows)',
+                    'router_error_log': '',
+                },
+            )
+
+        # Non-Windows implementation
+        if mcp_proxy_manager is None:
+            raise HTTPException(
+                status_code=500, detail='MCP Proxy Manager is not initialized'
+            )
+
+        # Get the request body
+        mcp_tools_to_sync = await request.json()
+        if not isinstance(mcp_tools_to_sync, list):
+            raise HTTPException(
+                status_code=400, detail='Request must be a list of MCP tools to sync'
+            )
+        logger.info(
+            f'Updating MCP server with tools: {json.dumps(mcp_tools_to_sync, indent=2)}'
+        )
+        mcp_tools_to_sync = [MCPStdioServerConfig(**tool) for tool in mcp_tools_to_sync]
+        try:
+            await mcp_proxy_manager.update_and_remount(app, mcp_tools_to_sync, ['*'])
+            logger.info('MCP Proxy Manager updated and remounted successfully')
+            router_error_log = ''
+        except Exception as e:
+            logger.error(f'Error updating MCP Proxy Manager: {e}', exc_info=True)
+            router_error_log = str(e)
+
+        return JSONResponse(
+            status_code=200,
+            content={
+                'detail': 'MCP server updated successfully',
+                'router_error_log': router_error_log,
+            },
+        )
+
+    @app.post('/upload_file')
+    async def upload_file(
+        file: UploadFile,
+        destination: str = '/',
+        recursive: bool = False,
+    ):
+        assert client is not None
+
+        try:
+            # Ensure the destination directory exists
+            if not os.path.isabs(destination):
+                raise HTTPException(
+                    status_code=400, detail='Destination must be an absolute path'
+                )
+
+            full_dest_path = destination
+            if not os.path.exists(full_dest_path):
+                os.makedirs(full_dest_path, exist_ok=True)
+
+            if recursive or file.filename.endswith('.zip'):
+                # For recursive uploads, we expect a zip file
+                if not file.filename.endswith('.zip'):
+                    raise HTTPException(
+                        status_code=400, detail='Recursive uploads must be zip files'
+                    )
+
+                zip_path = os.path.join(full_dest_path, file.filename)
+                with open(zip_path, 'wb') as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+
+                # Extract the zip file
+                shutil.unpack_archive(zip_path, full_dest_path)
+                os.remove(zip_path)  # Remove the zip file after extraction
+
+                logger.debug(
+                    f'Uploaded file {file.filename} and extracted to {destination}'
+                )
+            else:
+                # For single file uploads
+                file_path = os.path.join(full_dest_path, file.filename)
+                with open(file_path, 'wb') as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                logger.debug(f'Uploaded file {file.filename} to {destination}')
+
+            return JSONResponse(
+                content={
+                    'filename': file.filename,
+                    'destination': destination,
+                    'recursive': recursive,
+                },
+                status_code=200,
+            )
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/download_files')
+    def download_file(path: str):
+        logger.debug('Downloading files')
+        try:
+            if not os.path.isabs(path):
+                raise HTTPException(
+                    status_code=400, detail='Path must be an absolute path'
+                )
+
+            if not os.path.exists(path):
+                raise HTTPException(status_code=404, detail='File not found')
+
+            with tempfile.NamedTemporaryFile(suffix='.zip', delete=False) as temp_zip:
+                with ZipFile(temp_zip, 'w') as zipf:
+                    for root, _, files in os.walk(path):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            zipf.write(
+                                file_path, arcname=os.path.relpath(file_path, path)
+                            )
+                return FileResponse(
+                    path=temp_zip.name,
+                    media_type='application/zip',
+                    filename=f'{os.path.basename(path)}.zip',
+                    background=BackgroundTask(lambda: os.unlink(temp_zip.name)),
+                )
+
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=str(e))
+
+    @app.get('/alive')
+    async def alive():
+        if client is None or not client.initialized:
+            return {'status': 'not initialized'}
+        return {'status': 'ok'}
+
+    # ================================
+    # VSCode-specific operations
+    # ================================
+
+    @app.get('/vscode/connection_token')
+    async def get_vscode_connection_token():
+        assert client is not None
+        if 'vscode' in client.plugins:
+            plugin: VSCodePlugin = client.plugins['vscode']  # type: ignore
+            return {'token': plugin.vscode_connection_token}
+        else:
+            return {'token': None}
+
+    # ================================
+    # File-specific operations for UI
+    # ================================
+
+    @app.post('/list_files')
+    async def list_files(request: Request):
+        """List files in the specified path.
+
+        This function retrieves a list of files from the agent's runtime file store,
+        excluding certain system and hidden files/directories.
+
+        To list files:
+        ```sh
+        curl -X POST -d '{"path": "/"}' http://localhost:3000/list_files
+        ```
+
+        Args:
+            request (Request): The incoming request object.
+            path (str, optional): The path to list files from. Defaults to '/'.
+
+        Returns:
+            list: A list of file names in the specified path.
+
+        Raises:
+            HTTPException: If there's an error listing the files.
+        """
+        assert client is not None
+
+        # get request as dict
+        request_dict = await request.json()
+        path = request_dict.get('path', None)
+
+        # Get the full path of the requested directory
+        if path is None:
+            full_path = client.initial_cwd
+        elif os.path.isabs(path):
+            full_path = path
+        else:
+            full_path = os.path.join(client.initial_cwd, path)
+
+        if not os.path.exists(full_path):
+            # if user just removed a folder, prevent server error 500 in UI
+            return JSONResponse(content=[])
+
+        try:
+            # Check if the directory exists
+            if not os.path.exists(full_path) or not os.path.isdir(full_path):
+                return JSONResponse(content=[])
+
+            entries = os.listdir(full_path)
+
+            # Separate directories and files
+            directories = []
+            files = []
+            for entry in entries:
+                # Remove leading slash and any parent directory components
+                entry_relative = entry.lstrip('/').split('/')[-1]
+
+                # Construct the full path by joining the base path with the relative entry path
+                full_entry_path = os.path.join(full_path, entry_relative)
+                if os.path.exists(full_entry_path):
+                    is_dir = os.path.isdir(full_entry_path)
+                    if is_dir:
+                        # add trailing slash to directories
+                        # required by FE to differentiate directories and files
+                        entry = entry.rstrip('/') + '/'
+                        directories.append(entry)
+                    else:
+                        files.append(entry)
+
+            # Sort directories and files separately
+            directories.sort(key=lambda s: s.lower())
+            files.sort(key=lambda s: s.lower())
+
+            # Combine sorted directories and files
+            sorted_entries = directories + files
+            return JSONResponse(content=sorted_entries)
+
+        except Exception as e:
+            logger.error(f'Error listing files: {e}')
+            return JSONResponse(content=[])
+
+    logger.debug(f'Starting action execution API on port {args.port}')
+    run(app, host='0.0.0.0', port=args.port)
+
+
 if __name__ == '__main__':
     logger.warning('Starting Action Execution Server')
     parser = argparse.ArgumentParser()

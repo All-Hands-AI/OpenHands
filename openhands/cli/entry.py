@@ -30,7 +30,7 @@ def main():
 
     # Special case: no subcommand provided, simulate "openhands cli"
     if len(sys.argv) == 1 or (
-        len(sys.argv) > 1 and sys.argv[1] not in ['cli', 'serve']
+        len(sys.argv) > 1 and sys.argv[1] not in ['cli', 'serve', 'run-action-server']
     ):
         # Inject 'cli' as default command
         sys.argv.insert(1, 'cli')
@@ -45,6 +45,16 @@ def main():
         launch_gui_server(mount_cwd=args.mount_cwd, gpu=args.gpu)
     elif args.command == 'cli' or args.command is None:
         run_cli_command(args)
+    elif args.command == 'run-action-server':
+        # Internal entry point: run the action execution server in the current process
+        from multiprocessing import freeze_support
+
+        from openhands.runtime.action_execution_server import (
+            run_action_execution_server_with_args,
+        )
+
+        freeze_support()
+        run_action_execution_server_with_args(args)
     else:
         parser.print_help()
         sys.exit(1)

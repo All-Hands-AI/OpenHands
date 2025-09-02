@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+import sys
+
 from openhands.core.config import OpenHandsConfig
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.plugins import PluginRequirement
@@ -11,6 +15,20 @@ DEFAULT_PYTHON_PREFIX = [
     'run',
 ]
 DEFAULT_MAIN_MODULE = 'openhands.runtime.action_execution_server'
+
+
+def _is_frozen() -> bool:
+    return bool(getattr(sys, 'frozen', False))
+
+
+def can_use_module_spawn() -> bool:
+    """Return True if we can rely on `python -m module` to start the server.
+
+    In a PyInstaller-frozen executable, sys.executable is the app itself and does not
+    implement interpreter flags like -m. In that case, we must not build commands that
+    use -m and should instead use an internal subcommand on the same executable.
+    """
+    return not _is_frozen()
 
 
 def get_action_execution_server_startup_command(
@@ -45,22 +63,39 @@ def get_action_execution_server_startup_command(
     )
     user_id = override_user_id or (1000 if app_config.run_as_openhands else 0)
 
-    base_cmd = [
-        *python_prefix,
-        python_executable,
-        '-u',
-        '-m',
-        main_module,
-        str(server_port),
-        '--working-dir',
-        app_config.workspace_mount_path_in_sandbox,
-        *plugin_args,
-        '--username',
-        username,
-        '--user-id',
-        str(user_id),
-        *browsergym_args,
-    ]
+    if can_use_module_spawn():
+        base_cmd = [
+            *python_prefix,
+            python_executable,
+            '-u',
+            '-m',
+            main_module,
+            str(server_port),
+            '--working-dir',
+            app_config.workspace_mount_path_in_sandbox,
+            *plugin_args,
+            '--username',
+            username,
+            '--user-id',
+            str(user_id),
+            *browsergym_args,
+        ]
+    else:
+        # Frozen executable path: re-invoke self with an internal subcommand
+        exe = sys.executable
+        base_cmd = [
+            exe,
+            'run-action-server',
+            str(server_port),
+            '--working-dir',
+            app_config.workspace_mount_path_in_sandbox,
+            *plugin_args,
+            '--username',
+            username,
+            '--user-id',
+            str(user_id),
+            *browsergym_args,
+        ]
 
     if not app_config.enable_browser:
         base_cmd.append('--no-enable-browser')

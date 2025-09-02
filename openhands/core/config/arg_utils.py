@@ -204,6 +204,36 @@ def get_cli_parser() -> argparse.ArgumentParser:
         default=None,
     )
 
+    # Internal subcommand used to launch the local action execution server from a frozen binary
+    internal_server_parser = subparsers.add_parser(
+        'run-action-server', help=argparse.SUPPRESS
+    )
+    internal_server_parser.add_argument('port', type=int, help='Port to listen on')
+    internal_server_parser.add_argument(
+        '--working-dir', type=str, help='Working directory'
+    )
+    internal_server_parser.add_argument(
+        '--plugins', type=str, help='Plugins to initialize', nargs='+'
+    )
+    internal_server_parser.add_argument(
+        '--username', type=str, help='User to run as', default='openhands'
+    )
+    internal_server_parser.add_argument(
+        '--user-id', type=int, help='User ID to run as', default=1000
+    )
+    internal_server_parser.add_argument(
+        '--enable-browser',
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help='Enable the browser environment',
+    )
+    internal_server_parser.add_argument(
+        '--browsergym-eval-env',
+        type=str,
+        help='BrowserGym environment used for browser evaluation',
+        default=None,
+    )
+
     return parser
 
 
