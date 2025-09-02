@@ -129,7 +129,7 @@ class TestConversationCallback:
 
         assert (
             callback.processor_type
-            == 'app.tests.unit.test_conversation_callback_processor.MockConversationCallbackProcessor'
+            == 'enterprise.tests.unit.test_conversation_callback_processor.MockConversationCallbackProcessor'
         )
 
         # Verify the JSON contains the processor data
