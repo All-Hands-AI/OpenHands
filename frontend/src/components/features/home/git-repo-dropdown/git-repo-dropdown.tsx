@@ -307,6 +307,7 @@ export function GitRepoDropdown({
         renderItem={renderItem}
         renderEmptyState={renderEmptyState}
         stickyFooterItem={stickyFooterItem}
+        testId="git-repo-dropdown-menu"
       />
 
       <ErrorMessage isError={isError} />

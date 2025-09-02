@@ -30,6 +30,7 @@ export interface GenericDropdownMenuProps<T> {
   ) => React.ReactNode;
   renderEmptyState: (inputValue: string) => React.ReactNode;
   stickyFooterItem?: React.ReactNode;
+  testId?: string;
 }
 
 export function GenericDropdownMenu<T>({
@@ -45,6 +46,7 @@ export function GenericDropdownMenu<T>({
   renderItem,
   renderEmptyState,
   stickyFooterItem,
+  testId,
 }: GenericDropdownMenuProps<T>) {
   if (!isOpen) return null;
 
@@ -63,6 +65,7 @@ export function GenericDropdownMenu<T>({
             stickyFooterItem ? "pb-0" : "p-1",
           ),
           onScroll,
+          "data-testid": testId,
         })}
       >
         {showEmptyState
