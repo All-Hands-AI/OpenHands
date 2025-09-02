@@ -151,7 +151,7 @@ export function GitRepoDropdown({
 
   // Handle scroll to bottom for pagination
   const handleMenuScroll = useCallback(
-    (event: React.UIEvent<HTMLDivElement>) => {
+    (event: React.UIEvent<HTMLUListElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
       const isNearBottom = scrollTop + clientHeight >= scrollHeight - 10;
 

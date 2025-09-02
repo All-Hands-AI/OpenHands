@@ -19,7 +19,7 @@ export interface BranchDropdownMenuProps {
   getItemProps: <Options>(
     options: UseComboboxGetItemPropsOptions<Branch> & Options,
   ) => any; // eslint-disable-line @typescript-eslint/no-explicit-any
-  onScroll: (event: React.UIEvent<HTMLDivElement>) => void;
+  onScroll: (event: React.UIEvent<HTMLUListElement>) => void;
   menuRef: React.RefObject<HTMLUListElement | null>;
 }
 

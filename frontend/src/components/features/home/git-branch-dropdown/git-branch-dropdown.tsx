@@ -99,7 +99,7 @@ export function GitBranchDropdown({
 
   // Handle menu scroll for infinite loading
   const handleMenuScroll = useCallback(
-    (event: React.UIEvent<HTMLDivElement>) => {
+    (event: React.UIEvent<HTMLUListElement>) => {
       const { scrollTop, scrollHeight, clientHeight } = event.currentTarget;
       if (
         scrollHeight - scrollTop <= clientHeight * 1.5 &&
