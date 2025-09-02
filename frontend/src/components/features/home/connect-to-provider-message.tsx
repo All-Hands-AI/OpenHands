@@ -15,7 +15,12 @@ export function ConnectToProviderMessage() {
         to="/settings/integrations"
         className="self-start"
       >
-        <BrandButton type="button" variant="primary" isDisabled={isLoading}>
+        <BrandButton
+          type="button"
+          variant="primary"
+          isDisabled={isLoading}
+          className="w-auto absolute bottom-5 left-5 right-5 font-semibold"
+        >
           {!isLoading && t("SETTINGS$TITLE")}
           {isLoading && t("HOME$LOADING")}
         </BrandButton>

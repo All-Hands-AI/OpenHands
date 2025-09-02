@@ -16,10 +16,12 @@ import { GitRepoDropdown } from "./git-repo-dropdown";
 
 interface RepositorySelectionFormProps {
   onRepoSelection: (repo: GitRepository | null) => void;
+  isLoadingSettings?: boolean;
 }
 
 export function RepositorySelectionForm({
   onRepoSelection,
+  isLoadingSettings = false,
 }: RepositorySelectionFormProps) {
   const navigate = useNavigate();
 
@@ -85,6 +87,7 @@ export function RepositorySelectionForm({
         placeholder="Select Provider"
         className="max-w-[500px]"
         onChange={handleProviderSelection}
+        disabled={isLoadingSettings}
       />
     );
   };
@@ -108,7 +111,7 @@ export function RepositorySelectionForm({
         value={selectedRepository?.id || null}
         repositoryName={selectedRepository?.full_name || null}
         placeholder="user/repo"
-        disabled={!selectedProvider}
+        disabled={!selectedProvider || isLoadingSettings}
         onChange={handleRepoSelection}
         className="max-w-auto"
       />
@@ -127,7 +130,7 @@ export function RepositorySelectionForm({
         defaultBranch={defaultBranch}
         placeholder="Select branch..."
         className="max-w-[500px]"
-        disabled={!selectedRepository}
+        disabled={!selectedRepository || isLoadingSettings}
       />
     );
   };
@@ -162,7 +165,8 @@ export function RepositorySelectionForm({
           !selectedRepository ||
           !selectedBranch ||
           isCreatingConversation ||
-          (providers.length > 1 && !selectedProvider)
+          (providers.length > 1 && !selectedProvider) ||
+          isLoadingSettings
         }
         onClick={() =>
           createConversation(
