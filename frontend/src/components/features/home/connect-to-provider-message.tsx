@@ -8,18 +8,18 @@ export function ConnectToProviderMessage() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 justify-between h-full">
       <p>{t("HOME$CONNECT_PROVIDER_MESSAGE")}</p>
       <Link
         data-testid="navigate-to-settings-button"
         to="/settings/integrations"
-        className="self-start"
+        className="self-start w-full"
       >
         <BrandButton
           type="button"
           variant="primary"
           isDisabled={isLoading}
-          className="w-auto absolute bottom-5 left-5 right-5 font-semibold"
+          className="w-full font-semibold"
         >
           {!isLoading && t("SETTINGS$TITLE")}
           {isLoading && t("HOME$LOADING")}

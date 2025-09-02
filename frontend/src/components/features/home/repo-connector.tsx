@@ -1,7 +1,5 @@
 import { ConnectToProviderMessage } from "./connect-to-provider-message";
 import { RepositorySelectionForm } from "./repo-selection-form";
-import { useConfig } from "#/hooks/query/use-config";
-import { RepoProviderLinks } from "./repo-provider-links";
 import { useUserProviders } from "#/hooks/use-user-providers";
 import { GitRepository } from "#/types/git";
 
@@ -11,9 +9,7 @@ interface RepoConnectorProps {
 
 export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
   const { providers, isLoadingSettings } = useUserProviders();
-  const { data: config } = useConfig();
 
-  const isSaaS = config?.APP_MODE === "saas";
   const providersAreSet = providers.length > 0;
 
   return (
@@ -28,8 +24,6 @@ export function RepoConnector({ onRepoSelection }: RepoConnectorProps) {
           isLoadingSettings={isLoadingSettings}
         />
       )}
-
-      {isSaaS && providersAreSet && <RepoProviderLinks />}
     </section>
   );
 }
