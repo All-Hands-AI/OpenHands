@@ -218,6 +218,11 @@ export function GitRepoDropdown({
         target="_blank"
         rel="noopener noreferrer"
         className="flex items-center w-full px-2 py-2 text-sm text-white hover:bg-[#5C5D62] rounded-md transition-colors duration-150 font-normal"
+        onMouseDown={(e) => {
+          // Prevent downshift from closing the menu when clicking the sticky footer
+          e.preventDefault();
+          e.stopPropagation();
+        }}
       >
         {t(I18nKey.HOME$ADD_GITHUB_REPOS)}
       </a>
