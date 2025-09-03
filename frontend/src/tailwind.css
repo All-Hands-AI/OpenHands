@@ -110,7 +110,7 @@
 /* Custom styles for contenteditable */
 .chat-input:empty:before {
   content: attr(data-placeholder);
-  color: #A1A1A1;
+  color: #a1a1a1;
   pointer-events: none;
   font-size: 16px;
   font-weight: 400;
@@ -243,4 +243,108 @@
       -20px 0 #c9b974;
     background: #c9b974;
   }
+}
+
+/* Custom styling for xterm */
+/* XTerm.js scrollbar styling - follows custom-scrollbar pattern */
+.xterm-viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.xterm-viewport::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb {
+  background: rgba(71, 74, 84, 0.5);
+  border-radius: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 1;
+}
+
+.xterm-viewport:hover::-webkit-scrollbar-thumb {
+  background: rgba(71, 74, 84, 0.7);
+  opacity: 1;
+}
+
+.xterm-viewport::-webkit-scrollbar-thumb:hover {
+  background: rgba(90, 93, 103, 0.7);
+}
+
+/* Firefox scrollbar styling for xterm */
+.xterm-viewport {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(71, 74, 84, 0.5) transparent;
+  transition: scrollbar-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.xterm-viewport:hover {
+  scrollbar-color: rgba(71, 74, 84, 0.7) transparent;
+}
+
+/* Force text wrapping and proper overflow handling for xterm */
+.xterm {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  background: transparent !important;
+  box-sizing: border-box !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.xterm-viewport {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  max-width: 100%;
+}
+
+.xterm-screen {
+  word-wrap: break-word;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  max-width: 100%;
+}
+
+/* Ensure terminal text doesn't overflow horizontally */
+.xterm .xterm-viewport {
+  overflow-x: hidden !important;
+  background: transparent !important;
+}
+
+.xterm .xterm-screen {
+  max-width: 100%;
+  word-break: break-all;
+  background: transparent !important;
+}
+
+/* Ensure all xterm elements have transparent backgrounds */
+.xterm * {
+  background: transparent !important;
+}
+
+/* Ensure xterm respects container boundaries */
+.xterm-viewport {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.xterm-screen {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.context-menu-box-shadow {
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05),
+    0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.git-external-link-icon {
+  background: linear-gradient(90deg, rgba(69, 69, 69, 0) 0.35%, #454545 41.39%);
 }

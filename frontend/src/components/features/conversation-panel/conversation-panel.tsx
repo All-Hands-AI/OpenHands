@@ -106,16 +106,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const handleConfirmStop = () => {
     if (selectedConversationId) {
-      stopConversation(
-        { conversationId: selectedConversationId },
-        {
-          onSuccess: () => {
-            if (selectedConversationId === currentConversationId) {
-              navigate("/");
-            }
-          },
-        },
-      );
+      stopConversation({ conversationId: selectedConversationId });
     }
   };
 
@@ -140,7 +131,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           <p className="text-danger">{error.message}</p>
         </div>
       )}
-      {conversations?.length === 0 && (
+      {!isFetching && conversations?.length === 0 && (
         <div className="flex flex-col items-center justify-center h-full">
           <p className="text-neutral-400">
             {t(I18nKey.CONVERSATION$NO_CONVERSATIONS)}
@@ -153,30 +144,27 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
           to={`/conversations/${project.conversation_id}`}
           onClick={onClose}
         >
-          {({ isActive }) => (
-            <ConversationCard
-              isActive={isActive}
-              onDelete={() => handleDeleteProject(project.conversation_id)}
-              onStop={() => handleStopConversation(project.conversation_id)}
-              onChangeTitle={(title) =>
-                handleConversationTitleChange(project.conversation_id, title)
-              }
-              title={project.title}
-              selectedRepository={{
-                selected_repository: project.selected_repository,
-                selected_branch: project.selected_branch,
-                git_provider: project.git_provider as Provider,
-              }}
-              lastUpdatedAt={project.last_updated_at}
-              createdAt={project.created_at}
-              conversationStatus={project.status}
-              conversationId={project.conversation_id}
-              contextMenuOpen={openContextMenuId === project.conversation_id}
-              onContextMenuToggle={(isOpen) =>
-                setOpenContextMenuId(isOpen ? project.conversation_id : null)
-              }
-            />
-          )}
+          <ConversationCard
+            onDelete={() => handleDeleteProject(project.conversation_id)}
+            onStop={() => handleStopConversation(project.conversation_id)}
+            onChangeTitle={(title) =>
+              handleConversationTitleChange(project.conversation_id, title)
+            }
+            title={project.title}
+            selectedRepository={{
+              selected_repository: project.selected_repository,
+              selected_branch: project.selected_branch,
+              git_provider: project.git_provider as Provider,
+            }}
+            lastUpdatedAt={project.last_updated_at}
+            createdAt={project.created_at}
+            conversationStatus={project.status}
+            conversationId={project.conversation_id}
+            contextMenuOpen={openContextMenuId === project.conversation_id}
+            onContextMenuToggle={(isOpen) =>
+              setOpenContextMenuId(isOpen ? project.conversation_id : null)
+            }
+          />
         </NavLink>
       ))}
 

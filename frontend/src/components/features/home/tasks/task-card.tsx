@@ -5,6 +5,7 @@ import { useIsCreatingConversation } from "#/hooks/use-is-creating-conversation"
 import { useCreateConversation } from "#/hooks/mutation/use-create-conversation";
 import { TaskIssueNumber } from "./task-issue-number";
 import { useOptimisticUserMessage } from "#/hooks/use-optimistic-user-message";
+import { cn } from "#/utils/utils";
 
 const getTaskTypeMap = (
   t: (key: string) => string,
@@ -61,28 +62,36 @@ export function TaskCard({ task }: TaskCardProps) {
   }
 
   return (
-    <li className="py-3 flex items-center gap-3 last:border-b-0">
-      <TaskIssueNumber issueNumber={task.issue_number} href={href} />
+    <button
+      type="button"
+      data-testid="task-launch-button"
+      className={cn(
+        "w-full pt-[6px] pb-3 text-left flex items-center justify-between cursor-pointer hover:bg-[#5C5D62] transition-all duration-300 rounded-lg px-2",
+        isCreatingConversation && "cursor-not-allowed",
+      )}
+      disabled={isCreatingConversation}
+      onClick={handleLaunchConversation}
+    >
+      <div className="flex items-center gap-3">
+        <TaskIssueNumber issueNumber={task.issue_number} href={href} />
 
-      <div className="w-full flex flex-col gap-1">
-        <span className="text-xs text-white leading-6 font-normal">
-          {getTaskTypeMap(t)[task.task_type]}
-        </span>
-        <span className="text-xs text-[#A3A3A3] leading-4 font-normal">
-          {task.title}
-        </span>
+        <div className="flex flex-col gap-1">
+          <span className="text-xs text-white leading-6 font-normal">
+            {getTaskTypeMap(t)[task.task_type]}
+          </span>
+          <span
+            className="text-xs text-[#A3A3A3] leading-4 font-normal max-w-50 truncate"
+            title={task.title}
+          >
+            {task.title}
+          </span>
+        </div>
       </div>
 
-      <button
-        type="button"
-        data-testid="task-launch-button"
-        className="text-xs text-[#A3A3A3] leading-4 font-normal cursor-pointer"
-        disabled={isCreatingConversation}
-        onClick={handleLaunchConversation}
-      >
+      <div className="text-xs text-[#A3A3A3] leading-4 font-normal">
         {!isPending && t("HOME$LAUNCH")}
         {isPending && t("HOME$LOADING")}
-      </button>
-    </li>
+      </div>
+    </button>
   );
 }

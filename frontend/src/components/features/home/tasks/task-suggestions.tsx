@@ -49,15 +49,19 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
           !hasSuggestedTasks && "mb-[14px]",
         )}
       >
-        <h3 className="text-xs leading-4 text-white font-semibold py-[14px] pl-4">
+        <h3 className="text-xs leading-4 text-white font-semibold py-[14px] pl-[14px]">
           {t(I18nKey.TASKS$SUGGESTED_TASKS)}
         </h3>
       </div>
 
       <div className="flex flex-col">
-        {isLoading && <TaskSuggestionsSkeleton />}
+        {isLoading && (
+          <div className="px-[14px]">
+            <TaskSuggestionsSkeleton />
+          </div>
+        )}
         {!hasSuggestedTasks && !isLoading && (
-          <span className="text-xs leading-4 text-white font-medium pl-4">
+          <span className="text-xs leading-4 text-white font-medium px-[14px]">
             {t(I18nKey.TASKS$NO_TASKS_AVAILABLE)}
           </span>
         )}
@@ -82,7 +86,7 @@ export function TaskSuggestions({ filterFor }: TaskSuggestionsProps) {
       </div>
 
       {!isLoading && hasMoreTasks && (
-        <div className="flex justify-start mt-6 mb-8 ml-4">
+        <div className="flex justify-start mt-6 mb-8 ml-[14px]">
           <button
             type="button"
             onClick={handleToggle}

@@ -81,16 +81,7 @@ export function useConversationNameContextMenu({
 
   const handleConfirmStop = () => {
     if (conversationId) {
-      stopConversation(
-        { conversationId },
-        {
-          onSuccess: () => {
-            if (conversationId === currentConversationId) {
-              navigate("/");
-            }
-          },
-        },
-      );
+      stopConversation({ conversationId });
     }
     setConfirmStopModalVisible(false);
   };

@@ -7,7 +7,8 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { RootState } from "#/store";
 import { AgentState } from "#/types/agent-state";
 import { ServerStatusContextMenu } from "./server-status-context-menu";
-import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { ConfirmStopModal } from "../conversation-panel/confirm-stop-modal";
+import { useConversationNameContextMenu } from "#/hooks/use-conversation-name-context-menu";
 import { useStartConversation } from "#/hooks/mutation/use-start-conversation";
 import { useConversationId } from "#/hooks/use-conversation-id";
 import { useUserProviders } from "#/hooks/use-user-providers";
@@ -24,13 +25,23 @@ export function ServerStatus({
   const [showContextMenu, setShowContextMenu] = useState(false);
 
   const { curAgentState } = useSelector((state: RootState) => state.agent);
-
   const { t } = useTranslation();
-
   const { conversationId } = useConversationId();
 
+  // Use the custom hook for context menu handlers
+  const {
+    handleStop,
+    handleConfirmStop,
+    confirmStopModalVisible,
+    setConfirmStopModalVisible,
+  } = useConversationNameContextMenu({
+    conversationId,
+    conversationStatus: conversationStatus || undefined,
+    showOptions: false, // We only need stop functionality
+    onContextMenuToggle: setShowContextMenu,
+  });
+
   // Mutation hooks
-  const stopConversationMutation = useStopConversation();
   const startConversationMutation = useStartConversation();
   const { providers } = useUserProviders();
 
@@ -78,12 +89,6 @@ export function ServerStatus({
     setShowContextMenu(false);
   };
 
-  const handleStopServer = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    stopConversationMutation.mutate({ conversationId });
-    setShowContextMenu(false);
-  };
-
   const handleStartServer = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.preventDefault();
     startConversationMutation.mutate({
@@ -108,10 +113,18 @@ export function ServerStatus({
       {showContextMenu && (
         <ServerStatusContextMenu
           onClose={handleCloseContextMenu}
-          onStopServer={handleStopServer}
+          onStopServer={handleStop}
           onStartServer={handleStartServer}
           conversationStatus={conversationStatus}
           position="top"
+        />
+      )}
+
+      {/* Confirm Stop Modal */}
+      {confirmStopModalVisible && (
+        <ConfirmStopModal
+          onConfirm={handleConfirmStop}
+          onCancel={() => setConfirmStopModalVisible(false)}
         />
       )}
     </div>

@@ -1,4 +1,5 @@
-import React, { useRef, useCallback, useState } from "react";
+import React, { useRef, useCallback, useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { ConversationStatus } from "#/types/conversation-status";
 import { ServerStatus } from "#/components/features/controls/server-status";
@@ -10,11 +11,19 @@ import { useAutoResize } from "#/hooks/use-auto-resize";
 import { DragOver } from "./drag-over";
 import { UploadedFiles } from "./uploaded-files";
 import { Tools } from "../controls/tools";
+import {
+  clearAllFiles,
+  setShouldHideSuggestions,
+  setSubmittedMessage,
+  setMessageToSend,
+  setIsRightPanelShown,
+} from "#/state/conversation-slice";
+import { CHAT_INPUT } from "#/utils/constants";
+import { RootState } from "#/store";
 
 export interface CustomChatInputProps {
   disabled?: boolean;
   showButton?: boolean;
-  value?: string;
   conversationStatus?: ConversationStatus | null;
   onSubmit: (message: string) => void;
   onStop?: () => void;
@@ -28,7 +37,6 @@ export interface CustomChatInputProps {
 export function CustomChatInput({
   disabled = false,
   showButton = true,
-  value = "",
   conversationStatus = null,
   onSubmit,
   onStop,
@@ -40,15 +48,41 @@ export function CustomChatInput({
 }: CustomChatInputProps) {
   const [isDragOver, setIsDragOver] = useState(false);
 
+  const { messageToSend, submittedMessage, hasRightPanelToggled } = useSelector(
+    (state: RootState) => state.conversation,
+  );
+
+  const dispatch = useDispatch();
+
   // Disable input when conversation is stopped
   const isConversationStopped = conversationStatus === "STOPPED";
   const isDisabled = disabled || isConversationStopped;
+
+  // Listen to submittedMessage state changes
+  useEffect(() => {
+    if (!submittedMessage || disabled) {
+      return;
+    }
+    onSubmit(submittedMessage);
+    dispatch(setSubmittedMessage(null));
+  }, [submittedMessage, disabled, onSubmit, dispatch]);
 
   const { t } = useTranslation();
 
   const chatInputRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const gripRef = useRef<HTMLDivElement>(null);
+
+  // Save current input value when drawer state changes
+  useEffect(() => {
+    if (chatInputRef.current) {
+      const currentText = chatInputRef.current?.innerText || "";
+      // Dispatch to save current input value when drawer state changes
+      dispatch(setMessageToSend(currentText));
+      dispatch(setIsRightPanelShown(hasRightPanelToggled));
+    }
+  }, [hasRightPanelToggled, dispatch]);
 
   // Helper function to check if contentEditable is truly empty
   const isContentEmpty = useCallback((): boolean => {
@@ -66,12 +100,52 @@ export function CustomChatInput({
     }
   }, [isContentEmpty]);
 
-  // Use the auto-resize hook
-  const { autoResize } = useAutoResize(chatInputRef, {
+  // Drag state management callbacks
+  const handleDragStart = useCallback(() => {
+    // Keep grip visible during drag by adding a CSS class
+    if (gripRef.current) {
+      gripRef.current.classList.add("opacity-100");
+      gripRef.current.classList.remove("opacity-0");
+    }
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    // Restore hover-based visibility
+    if (gripRef.current) {
+      gripRef.current.classList.remove("opacity-100");
+      gripRef.current.classList.add("opacity-0");
+    }
+  }, []);
+
+  // Callback to handle height changes and manage suggestions visibility
+  const handleHeightChange = useCallback(
+    (height: number) => {
+      // Hide suggestions when input height exceeds the threshold
+      const shouldHideChatSuggestions = height > CHAT_INPUT.HEIGHT_THRESHOLD;
+      dispatch(setShouldHideSuggestions(shouldHideChatSuggestions));
+    },
+    [dispatch],
+  );
+
+  // Use the auto-resize hook with height change callback
+  const { smartResize, handleGripMouseDown } = useAutoResize(chatInputRef, {
     minHeight: 20,
-    maxHeight: 450,
-    value,
+    maxHeight: 400,
+    onHeightChange: handleHeightChange,
+    onGripDragStart: handleDragStart,
+    onGripDragEnd: handleDragEnd,
+    value: messageToSend ?? undefined,
+    enableManualResize: true,
   });
+
+  // Cleanup: reset suggestions visibility when component unmounts
+  useEffect(
+    () => () => {
+      dispatch(setShouldHideSuggestions(false));
+      dispatch(clearAllFiles());
+    },
+    [dispatch],
+  );
 
   // Function to add files and notify parent
   const addFiles = useCallback(
@@ -137,8 +211,8 @@ export function CustomChatInput({
         fileInputRef.current.value = "";
       }
 
-      // Reset height
-      autoResize();
+      // Reset height and show suggestions again
+      smartResize();
     }
   };
 
@@ -156,8 +230,8 @@ export function CustomChatInput({
       fileInputRef.current.value = "";
     }
 
-    // Reset height
-    autoResize();
+    // Reset height and show suggestions again
+    smartResize();
   };
 
   // Handle stop button click
@@ -169,7 +243,7 @@ export function CustomChatInput({
 
   // Handle input events
   const handleInput = () => {
-    autoResize();
+    smartResize();
 
     // Clear empty content to ensure placeholder shows
     if (chatInputRef.current) {
@@ -215,7 +289,7 @@ export function CustomChatInput({
     document.execCommand("insertText", false, text);
 
     // Trigger resize
-    setTimeout(autoResize, 0);
+    setTimeout(smartResize, 0);
   };
 
   // Handle key events
@@ -230,7 +304,7 @@ export function CustomChatInput({
 
     // Auto-resize on key events that might change content
     setTimeout(() => {
-      autoResize();
+      smartResize();
       // Ensure cursor stays visible after key navigation
       if (!chatInputRef.current) {
         return;
@@ -292,71 +366,84 @@ export function CustomChatInput({
         data-testid="upload-image-input"
       />
 
-      {/* Chat Input Component */}
-      <div
-        ref={chatContainerRef}
-        className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-[16px] relative rounded-[15px] w-full"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
-        {/* Drag Over UI */}
-        {isDragOver && <DragOver />}
-
-        <UploadedFiles />
-
-        {/* Main Input Row */}
-        <div className="box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px] gap-2">
-          <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-end justify-start min-h-px min-w-px p-0 relative shrink-0">
-            <ChatAddFileButton
-              disabled={disabled}
-              handleFileIconClick={handleFileIconClick}
-            />
-
-            {/* Chat Input Area */}
-            <div
-              className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
-              data-name="Text & caret"
-            >
-              <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
-                <div
-                  ref={chatInputRef}
-                  className={cn(
-                    "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[450px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
-                    isDisabled && "cursor-not-allowed",
-                  )}
-                  contentEditable={!isDisabled}
-                  data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
-                  data-testid="chat-input"
-                  onInput={handleInput}
-                  onPaste={handlePaste}
-                  onKeyDown={handleKeyDown}
-                  onFocus={onFocus}
-                  onBlur={handleBlur}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Send Button */}
-          {showButton && (
-            <ChatSendButton
-              buttonClassName={cn(buttonClassName, "translate-y-[3px]")}
-              handleSubmit={handleSubmit}
-              disabled={isDisabled}
-            />
-          )}
+      {/* Container with grip */}
+      <div className="relative w-full">
+        {/* Top edge hover area - invisible area that triggers grip visibility */}
+        <div className="absolute -top-[12px] left-0 w-full h-[12px] z-20 group">
+          {/* Resize Grip - appears on hover of top edge area or when dragging */}
+          <div
+            ref={gripRef}
+            className="absolute top-[4px] left-0 w-full h-[3px] bg-white cursor-ns-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            onMouseDown={handleGripMouseDown}
+            style={{ userSelect: "none" }}
+          />
         </div>
 
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center gap-1">
-            <Tools />
-            <ServerStatus conversationStatus={conversationStatus} />
+        {/* Chat Input Component */}
+        <div
+          ref={chatContainerRef}
+          className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+        >
+          {/* Drag Over UI */}
+          {isDragOver && <DragOver />}
+
+          <UploadedFiles />
+          {/* Main Input Row */}
+          <div className="box-border content-stretch flex flex-row items-end justify-between p-0 relative shrink-0 w-full pb-[18px] gap-2">
+            <div className="basis-0 box-border content-stretch flex flex-row gap-4 grow items-end justify-start min-h-px min-w-px p-0 relative shrink-0">
+              <ChatAddFileButton
+                disabled={disabled}
+                handleFileIconClick={handleFileIconClick}
+              />
+
+              {/* Chat Input Area */}
+              <div
+                className="box-border content-stretch flex flex-row items-center justify-start min-h-6 p-0 relative shrink-0 flex-1"
+                data-name="Text & caret"
+              >
+                <div className="basis-0 flex flex-col font-normal grow justify-center leading-[0] min-h-px min-w-px overflow-ellipsis overflow-hidden relative shrink-0 text-[#d0d9fa] text-[16px] text-left">
+                  <div
+                    ref={chatInputRef}
+                    className={cn(
+                      "chat-input bg-transparent text-white text-[16px] font-normal leading-[20px] outline-none resize-none custom-scrollbar min-h-[20px] max-h-[400px] [text-overflow:inherit] [text-wrap-mode:inherit] [white-space-collapse:inherit] block whitespace-pre-wrap",
+                      disabled && "cursor-not-allowed",
+                    )}
+                    contentEditable={!disabled}
+                    data-placeholder={t("SUGGESTIONS$WHAT_TO_BUILD")}
+                    data-testid="chat-input"
+                    onInput={handleInput}
+                    onPaste={handlePaste}
+                    onKeyDown={handleKeyDown}
+                    onFocus={onFocus}
+                    onBlur={handleBlur}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Send Button */}
+            {showButton && (
+              <ChatSendButton
+                buttonClassName={cn(buttonClassName, "translate-y-[3px]")}
+                handleSubmit={handleSubmit}
+                disabled={disabled}
+              />
+            )}
           </div>
-          <AgentStatus
-            handleStop={handleStop}
-            handleResumeAgent={handleResumeAgent}
-          />
+
+          <div className="w-full flex items-center justify-between">
+            <div className="flex items-center gap-1">
+              <Tools />
+              <ServerStatus conversationStatus={conversationStatus} />
+            </div>
+            <AgentStatus
+              handleStop={handleStop}
+              handleResumeAgent={handleResumeAgent}
+            />
+          </div>
         </div>
       </div>
     </div>

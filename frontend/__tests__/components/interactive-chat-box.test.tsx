@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router";
@@ -89,12 +89,12 @@ describe("InteractiveChatBox", () => {
     expect(chatBox).toBeInTheDocument();
   });
 
-  it("should set custom values", () => {
+  it("should set custom values", async () => {
+    const user = userEvent.setup();
     renderInteractiveChatBox(
       {
         onSubmit: onSubmitMock,
         onStop: onStopMock,
-        value: "Hello, world!",
         isWaitingForUserInput: true,
         hasSubstantiveAgentActions: true,
         optimisticUserMessage: false,
@@ -104,11 +104,26 @@ describe("InteractiveChatBox", () => {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
           },
+          conversation: {
+            isRightPanelShown: true,
+            shouldStopConversation: false,
+            shouldStartConversation: false,
+            images: [],
+            files: [],
+            loadingFiles: [],
+            loadingImages: [],
+            messageToSend: null,
+            shouldShownAgentLoading: false,
+          },
         },
       },
     );
 
     const textbox = screen.getByTestId("chat-input");
+
+    // Simulate user typing to populate the input
+    await user.type(textbox, "Hello, world!");
+
     expect(textbox).toHaveTextContent("Hello, world!");
   });
 
@@ -286,7 +301,6 @@ describe("InteractiveChatBox", () => {
       {
         onSubmit: onSubmit,
         onStop: onStop,
-        value: "test message",
         isWaitingForUserInput: true,
         hasSubstantiveAgentActions: true,
         optimisticUserMessage: false,
@@ -296,13 +310,24 @@ describe("InteractiveChatBox", () => {
           agent: {
             curAgentState: AgentState.AWAITING_USER_INPUT,
           },
+          conversation: {
+            isRightPanelShown: true,
+            shouldStopConversation: false,
+            shouldStartConversation: false,
+            images: [],
+            files: [],
+            loadingFiles: [],
+            loadingImages: [],
+            messageToSend: null,
+            shouldShownAgentLoading: false,
+          },
         },
       },
     );
 
     // Verify text input has the initial value
     const textarea = screen.getByTestId("chat-input");
-    expect(textarea).toHaveTextContent("test message");
+    expect(textarea).toHaveTextContent("");
 
     // Set innerText directly as the component reads this property
     textarea.innerText = "test message";
@@ -320,7 +345,6 @@ describe("InteractiveChatBox", () => {
         <InteractiveChatBox
           onSubmit={onSubmit}
           onStop={onStop}
-          value=""
           isWaitingForUserInput={true}
           hasSubstantiveAgentActions={true}
           optimisticUserMessage={false}

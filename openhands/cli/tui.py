@@ -5,13 +5,14 @@
 import asyncio
 import contextlib
 import datetime
+import html
 import json
+import re
 import sys
 import threading
 import time
 from typing import Generator
 
-import markdown  # type: ignore
 from prompt_toolkit import PromptSession, print_formatted_text
 from prompt_toolkit.application import Application
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -23,11 +24,11 @@ from prompt_toolkit.key_binding.key_processor import KeyPressEvent
 from prompt_toolkit.keys import Keys
 from prompt_toolkit.layout.containers import HSplit, Window
 from prompt_toolkit.layout.controls import FormattedTextControl
+from prompt_toolkit.layout.dimension import Dimension
 from prompt_toolkit.layout.layout import Layout
 from prompt_toolkit.lexers import Lexer
 from prompt_toolkit.patch_stdout import patch_stdout
 from prompt_toolkit.shortcuts import print_container
-from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import Frame, TextArea
 
 from openhands import __version__
@@ -43,6 +44,7 @@ from openhands.events import EventSource, EventStream
 from openhands.events.action import (
     Action,
     ActionConfirmationStatus,
+    ActionSecurityRisk,
     ChangeAgentStateAction,
     CmdRunAction,
     MCPAction,
@@ -316,8 +318,8 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
         print_formatted_text('')
 
         try:
-            # Convert markdown to HTML for all messages
-            html_content = convert_markdown_to_html(message)
+            # Render only basic markdown (bold/underline), escaping any HTML
+            html_content = _render_basic_markdown(message)
 
             if is_agent_message:
                 # Use prompt_toolkit's HTML renderer with the agent color
@@ -338,38 +340,27 @@ def display_message(message: str, is_agent_message: bool = False) -> None:
                 print_formatted_text(message)
 
 
-def convert_markdown_to_html(text: str) -> str:
-    """Convert markdown to HTML for prompt_toolkit's HTML renderer using the markdown library.
+def _render_basic_markdown(text: str | None) -> str | None:
+    """Render a very small subset of markdown directly to prompt_toolkit HTML.
 
-    Args:
-        text: Markdown text to convert
+    Supported:
+    - Bold: **text** -> <b>text</b>
+    - Underline: __text__ -> <u>text</u>
 
-    Returns:
-        HTML formatted text with custom styling for headers and bullet points
+    Any existing HTML in input is escaped to avoid injection into the renderer.
+    If input is None, return None.
     """
-    if not text:
-        return text
+    if text is None:
+        return None
+    if text == '':
+        return ''
 
-    # Use the markdown library to convert markdown to HTML
-    # Enable the 'extra' extension for tables, fenced code, etc.
-    html = markdown.markdown(text, extensions=['extra'])
-
-    # Customize headers
-    for i in range(1, 7):
-        # Get the appropriate number of # characters for this heading level
-        prefix = '#' * i + ' '
-
-        # Replace <h1> with the prefix and bold text
-        html = html.replace(f'<h{i}>', f'<b>{prefix}')
-        html = html.replace(f'</h{i}>', '</b>\n')
-
-    # Customize bullet points to use dashes instead of dots with compact spacing
-    html = html.replace('<ul>', '')
-    html = html.replace('</ul>', '')
-    html = html.replace('<li>', '- ')
-    html = html.replace('</li>', '')
-
-    return html
+    safe = html.escape(text)
+    # Bold: greedy within a line, non-overlapping
+    safe = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', safe)
+    # Underline: double underscore
+    safe = re.sub(r'__(.+?)__', r'<u>\1</u>', safe)
+    return safe
 
 
 def display_error(error: str) -> None:
@@ -391,9 +382,12 @@ def display_error(error: str) -> None:
 
 
 def display_command(event: CmdRunAction) -> None:
+    # Create simple command frame
+    command_text = f'$ {event.command}'
+
     container = Frame(
         TextArea(
-            text=f'$ {event.command}',
+            text=command_text,
             read_only=True,
             style=COLOR_GREY,
             wrap_lines=True,
@@ -528,7 +522,7 @@ def display_task_tracking_action(event: TaskTrackingAction) -> None:
     """Display a TaskTracking action in the CLI."""
     # Display thought first if present
     if hasattr(event, 'thought') and event.thought:
-        display_message(event.thought)
+        display_thought_if_new(event.thought)
 
     # Format the command and task list for display
     display_text = f'Command: {event.command}'
@@ -842,20 +836,34 @@ async def read_prompt_input(
         return '/exit'
 
 
-async def read_confirmation_input(config: OpenHandsConfig) -> str:
+async def read_confirmation_input(
+    config: OpenHandsConfig, security_risk: ActionSecurityRisk
+) -> str:
     try:
-        choices = [
-            'Yes, proceed',
-            'No (and allow to enter instructions)',
-            "Always proceed (don't ask again)",
-        ]
+        if security_risk == ActionSecurityRisk.HIGH:
+            question = 'HIGH RISK command detected.\nReview carefully before proceeding.\n\nChoose an option:'
+            choices = [
+                'Yes, proceed (HIGH RISK - Use with caution)',
+                'No (and allow to enter instructions)',
+                "Always proceed (don't ask again - NOT RECOMMENDED)",
+            ]
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'always'}
+        else:
+            question = 'Choose an option:'
+            choices = [
+                'Yes, proceed',
+                'No (and allow to enter instructions)',
+                'Auto-confirm action with LOW/MEDIUM risk, ask for HIGH risk',
+                "Always proceed (don't ask again)",
+            ]
+            choice_mapping = {0: 'yes', 1: 'no', 2: 'auto_highrisk', 3: 'always'}
 
         # keep the outer coroutine responsive by using asyncio.to_thread which puts the blocking call app.run() of cli_confirm() in a separate thread
         index = await asyncio.to_thread(
-            cli_confirm, config, 'Choose an option:', choices
+            cli_confirm, config, question, choices, 0, security_risk
         )
 
-        return {0: 'yes', 1: 'no', 2: 'always'}.get(index, 'no')
+        return choice_mapping.get(index, 'no')
 
     except (KeyboardInterrupt, EOFError):
         return 'no'
@@ -914,6 +922,7 @@ def cli_confirm(
     question: str = 'Are you sure?',
     choices: list[str] | None = None,
     initial_selection: int = 0,
+    security_risk: ActionSecurityRisk = ActionSecurityRisk.UNKNOWN,
 ) -> int:
     """Display a confirmation prompt with the given question and choices.
 
@@ -924,8 +933,15 @@ def cli_confirm(
     selected = [initial_selection]  # Using list to allow modification in closure
 
     def get_choice_text() -> list:
+        # Use red styling for HIGH risk questions
+        question_style = (
+            'class:risk-high'
+            if security_risk == ActionSecurityRisk.HIGH
+            else 'class:question'
+        )
+
         return [
-            ('class:question', f'{question}\n\n'),
+            (question_style, f'{question}\n\n'),
         ] + [
             (
                 'class:selected' if i == selected[0] else 'class:unselected',
@@ -960,23 +976,33 @@ def cli_confirm(
     def _handle_enter(event: KeyPressEvent) -> None:
         event.app.exit(result=selected[0])
 
-    style = Style.from_dict({'selected': COLOR_GOLD, 'unselected': ''})
-
-    layout = Layout(
-        HSplit(
-            [
-                Window(
-                    FormattedTextControl(get_choice_text),
-                    always_hide_cursor=True,
-                )
-            ]
-        )
+    # Create layout with risk-based styling - full width but limited height
+    content_window = Window(
+        FormattedTextControl(get_choice_text),
+        always_hide_cursor=True,
+        height=Dimension(max=8),  # Limit height to prevent screen takeover
     )
+
+    # Add frame for HIGH risk commands
+    if security_risk == ActionSecurityRisk.HIGH:
+        layout = Layout(
+            HSplit(
+                [
+                    Frame(
+                        content_window,
+                        title='HIGH RISK',
+                        style='fg:#FF0000 bold',  # Red color for HIGH risk
+                    )
+                ]
+            )
+        )
+    else:
+        layout = Layout(HSplit([content_window]))
 
     app = Application(
         layout=layout,
         key_bindings=kb,
-        style=style,
+        style=DEFAULT_STYLE,
         full_screen=False,
     )
 

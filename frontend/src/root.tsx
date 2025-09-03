@@ -9,7 +9,7 @@ import {
 import "./tailwind.css";
 import "./index.css";
 import React from "react";
-import { ToastManager } from "@openhands/ui";
+import { Toaster } from "react-hot-toast";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -21,11 +21,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <ToastManager>
-          {children}
-          <ScrollRestoration />
-          <Scripts />
-        </ToastManager>
+        {children}
+        <ScrollRestoration />
+        <Scripts />
+        <Toaster />
       </body>
     </html>
   );

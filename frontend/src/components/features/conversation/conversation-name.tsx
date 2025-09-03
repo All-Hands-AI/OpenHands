@@ -123,7 +123,7 @@ export function ConversationName() {
   return (
     <>
       <div
-        className="flex items-center gap-2 h-[22px] text-base font-normal text-left"
+        className="flex items-center gap-2 h-[22px] text-base font-normal text-left pl-[14px]"
         data-testid="conversation-name"
       >
         {titleMode === "edit" ? (

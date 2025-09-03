@@ -20,6 +20,9 @@ import { ConversationStatus } from "#/types/conversation-status";
 import { RepositorySelection } from "#/api/open-hands.types";
 import EllipsisIcon from "#/icons/ellipsis.svg?react";
 import { ConversationCardTitle } from "./conversation-card-title";
+import { ConversationStatusIndicator } from "../../home/recent-conversations/conversation-status-indicator";
+import { ConversationStatusBadges } from "./conversation-status-badges";
+import { NoRepository } from "./no-repository";
 
 interface ConversationCardProps {
   onClick?: () => void;
@@ -27,7 +30,6 @@ interface ConversationCardProps {
   onStop?: () => void;
   onChangeTitle?: (title: string) => void;
   showOptions?: boolean;
-  isActive?: boolean;
   title: string;
   selectedRepository: RepositorySelection | null;
   lastUpdatedAt: string; // ISO 8601
@@ -44,7 +46,6 @@ export function ConversationCard({
   onStop,
   onChangeTitle,
   showOptions,
-  isActive,
   title,
   selectedRepository,
   // lastUpdatedAt is kept in props for backward compatibility
@@ -151,22 +152,34 @@ export function ConversationCard({
         className={cn(
           "relative h-auto w-full p-3.5 border-b border-neutral-600 cursor-pointer",
           "data-[context-menu-open=false]:hover:bg-[#454545]",
+          conversationStatus === "ARCHIVED" && "opacity-60",
         )}
       >
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden mr-2">
-            {isActive && (
-              <span className="w-2 h-2 bg-[#1FBD53] rounded-full flex-shrink-0" />
+            {/* Status Indicator */}
+            {conversationStatus && (
+              <div className="flex items-center">
+                <ConversationStatusIndicator
+                  conversationStatus={conversationStatus}
+                />
+              </div>
             )}
             <ConversationCardTitle
               title={title}
               titleMode={titleMode}
               onSave={onTitleSave}
             />
+            {/* Status Badges */}
+            {conversationStatus && (
+              <ConversationStatusBadges
+                conversationStatus={conversationStatus}
+              />
+            )}
           </div>
 
           {hasContextMenu && (
-            <div className="absolute top-0 right-0">
+            <div>
               <button
                 data-testid="ellipsis-button"
                 type="button"
@@ -175,7 +188,7 @@ export function ConversationCard({
                   event.stopPropagation();
                   onContextMenuToggle?.(!contextMenuOpen);
                 }}
-                className="cursor-pointer w-6 h-6 pt-2.25 pr-1 flex flex-row items-center justify-center"
+                className="cursor-pointer w-6 h-6 flex flex-row items-center justify-end"
               >
                 <EllipsisIcon />
               </button>
@@ -215,8 +228,10 @@ export function ConversationCard({
         </div>
 
         <div className={cn("flex flex-row justify-between items-center mt-1")}>
-          {selectedRepository?.selected_repository && (
+          {selectedRepository?.selected_repository ? (
             <ConversationRepoLink selectedRepository={selectedRepository} />
+          ) : (
+            <NoRepository />
           )}
           {(createdAt ?? lastUpdatedAt) && (
             <p className="text-xs text-[#A3A3A3] flex-1 text-right">

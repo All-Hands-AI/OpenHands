@@ -488,3 +488,236 @@ def test_save_and_restore_workflow(mock_file_store):
         assert llm.metrics.accumulated_cost == 0.05
         assert llm.metrics.accumulated_token_usage.prompt_tokens == 100
         assert llm.metrics.accumulated_token_usage.completion_tokens == 50
+
+
+def test_merge_conversation_stats_success_non_overlapping(mock_file_store):
+    """Merging two ConversationStats combines only restored metrics. Active metrics
+    (service_to_metrics) are not merged; if present, an error is logged but
+    execution continues. Incoming restored metrics overwrite duplicates.
+    """
+    stats_a = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+    )
+    stats_b = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+    )
+
+    # Self active + restored
+    m_a_active = Metrics(model_name='model-a')
+    m_a_active.add_cost(0.1)
+    m_a_restored = Metrics(model_name='model-a')
+    m_a_restored.add_cost(0.2)
+    stats_a.service_to_metrics['a-active'] = m_a_active
+    stats_a.restored_metrics = {'a-restored': m_a_restored}
+
+    # Other active + restored
+    m_b_active = Metrics(model_name='model-b')
+    m_b_active.add_cost(0.3)
+    m_b_restored = Metrics(model_name='model-b')
+    m_b_restored.add_cost(0.4)
+    stats_b.service_to_metrics['b-active'] = m_b_active
+    stats_b.restored_metrics = {'b-restored': m_b_restored}
+
+    # Merge B into A
+    stats_a.merge_and_save(stats_b)
+
+    # Active metrics should not be merged; only self's active metrics remain
+    assert set(stats_a.service_to_metrics.keys()) == {
+        'a-active',
+    }
+
+    # Restored metrics from both sides should be in A's restored_metrics
+    assert set(stats_a.restored_metrics.keys()) == {
+        'a-restored',
+        'b-restored',
+    }
+
+    # The exact Metrics objects should be present (no copies)
+    assert stats_a.service_to_metrics['a-active'] is m_a_active
+    assert stats_a.restored_metrics['a-restored'] is m_a_restored
+    assert stats_a.restored_metrics['b-restored'] is m_b_restored
+
+    # Merge triggers a save; confirm the saved blob decodes to expected keys
+    # The save_metrics method combines both service_to_metrics and restored_metrics
+    encoded = mock_file_store.read(stats_a.metrics_path)
+    pickled = base64.b64decode(encoded)
+    restored_dict = pickle.loads(pickled)
+    assert set(restored_dict.keys()) == {
+        'a-active',
+        'a-restored',
+        'b-restored',
+    }
+
+
+@pytest.mark.parametrize(
+    'self_side,other_side',
+    [
+        ('active', 'active'),
+        ('restored', 'active'),
+        ('active', 'restored'),
+        ('restored', 'restored'),
+    ],
+)
+def test_merge_conversation_stats_duplicates_overwrite_and_log_errors(
+    mock_file_store, self_side, other_side
+):
+    stats_a = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-a', user_id='user-x'
+    )
+    stats_b = ConversationStats(
+        file_store=mock_file_store, conversation_id='conv-merge-b', user_id='user-x'
+    )
+
+    # Place the same service id on the specified sides
+    dupe_id = 'dupe-service'
+    m1 = Metrics(model_name='m')
+    m1.add_cost(0.1)  # ensure not dropped
+    m2 = Metrics(model_name='m')
+    m2.add_cost(0.2)  # ensure not dropped
+
+    if self_side == 'active':
+        stats_a.service_to_metrics[dupe_id] = m1
+    else:
+        stats_a.restored_metrics[dupe_id] = m1
+
+    if other_side == 'active':
+        stats_b.service_to_metrics[dupe_id] = m2
+    else:
+        stats_b.restored_metrics[dupe_id] = m2
+
+    # Perform merge; should not raise and should log error internally if active metrics present
+    stats_a.merge_and_save(stats_b)
+
+    # Only restored metrics are merged; duplicates are allowed with incoming overwriting
+    if other_side == 'restored':
+        assert dupe_id in stats_a.restored_metrics
+        assert stats_a.restored_metrics[dupe_id] is m2  # incoming overwrites existing
+    else:
+        # No restored metric came from incoming; existing restored stays as-is
+        if self_side == 'restored':
+            assert dupe_id in stats_a.restored_metrics
+            assert stats_a.restored_metrics[dupe_id] is m1
+        else:
+            assert dupe_id not in stats_a.restored_metrics
+
+
+def test_save_metrics_preserves_restored_metrics_fix(mock_file_store):
+    """Test that save_metrics correctly preserves restored metrics for unregistered services."""
+    conversation_id = 'test-conversation-id'
+    user_id = 'test-user-id'
+
+    # Step 1: Create initial conversation stats with multiple services
+    stats1 = ConversationStats(
+        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+    )
+
+    # Add metrics for multiple services
+    service_a = 'service-a'
+    service_b = 'service-b'
+    service_c = 'service-c'
+
+    metrics_a = Metrics(model_name='gpt-4')
+    metrics_a.add_cost(0.10)
+
+    metrics_b = Metrics(model_name='gpt-3.5')
+    metrics_b.add_cost(0.05)
+
+    metrics_c = Metrics(model_name='claude-3')
+    metrics_c.add_cost(0.08)
+
+    stats1.service_to_metrics[service_a] = metrics_a
+    stats1.service_to_metrics[service_b] = metrics_b
+    stats1.service_to_metrics[service_c] = metrics_c
+
+    # Save metrics (all three services should be saved)
+    stats1.save_metrics()
+
+    # Step 2: Create new conversation stats instance (simulates app restart)
+    stats2 = ConversationStats(
+        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+    )
+
+    # Verify all metrics were restored
+    assert service_a in stats2.restored_metrics
+    assert service_b in stats2.restored_metrics
+    assert service_c in stats2.restored_metrics
+    assert stats2.restored_metrics[service_a].accumulated_cost == 0.10
+    assert stats2.restored_metrics[service_b].accumulated_cost == 0.05
+    assert stats2.restored_metrics[service_c].accumulated_cost == 0.08
+
+    # Step 3: Register only one LLM service (simulates partial LLM activation)
+    llm_config = LLMConfig(
+        model='gpt-4o',
+        api_key='test_key',
+        num_retries=2,
+        retry_min_wait=1,
+        retry_max_wait=2,
+    )
+
+    with patch('openhands.llm.llm.litellm_completion'):
+        llm_a = LLM(service_id=service_a, config=llm_config)
+        event_a = RegistryEvent(llm=llm_a, service_id=service_a)
+        stats2.register_llm(event_a)
+
+    # Verify service_a was moved from restored_metrics to service_to_metrics
+    assert service_a in stats2.service_to_metrics
+    assert service_a not in stats2.restored_metrics
+    assert stats2.service_to_metrics[service_a].accumulated_cost == 0.10
+
+    # Verify services B and C are still in restored_metrics (not yet registered)
+    assert service_b in stats2.restored_metrics
+    assert service_c in stats2.restored_metrics
+    assert stats2.restored_metrics[service_b].accumulated_cost == 0.05
+    assert stats2.restored_metrics[service_c].accumulated_cost == 0.08
+
+    # Step 4: Save metrics again (this is where the bug occurs)
+    stats2.save_metrics()
+
+    # Step 5: Create a third conversation stats instance to verify what was saved
+    stats3 = ConversationStats(
+        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+    )
+
+    # FIXED: All services should be restored because save_metrics now combines both dictionaries
+    # Service A should be restored with its current metrics from service_to_metrics
+    assert service_a in stats3.restored_metrics
+    assert stats3.restored_metrics[service_a].accumulated_cost == 0.10
+
+    # Services B and C should be preserved from restored_metrics
+    assert service_b in stats3.restored_metrics  # FIXED: Now preserved
+    assert service_c in stats3.restored_metrics  # FIXED: Now preserved
+    assert stats3.restored_metrics[service_b].accumulated_cost == 0.05
+    assert stats3.restored_metrics[service_c].accumulated_cost == 0.08
+
+
+def test_save_metrics_throws_error_on_duplicate_service_ids(mock_file_store):
+    """Test updated: save_metrics should NOT raise on duplicate service IDs; it should prefer service_to_metrics and proceed."""
+    conversation_id = 'test-conversation-id'
+    user_id = 'test-user-id'
+
+    stats = ConversationStats(
+        file_store=mock_file_store, conversation_id=conversation_id, user_id=user_id
+    )
+
+    # Manually create a scenario with duplicate service IDs (this should never happen in normal operation)
+    service_id = 'duplicate-service'
+
+    # Add to both restored_metrics and service_to_metrics
+    restored_metrics = Metrics(model_name='gpt-4')
+    restored_metrics.add_cost(0.10)
+    stats.restored_metrics[service_id] = restored_metrics
+
+    service_metrics = Metrics(model_name='gpt-3.5')
+    service_metrics.add_cost(0.05)
+    stats.service_to_metrics[service_id] = service_metrics
+
+    # Should not raise. Should save with service_to_metrics preferred.
+    stats.save_metrics()
+
+    # Verify the saved content prefers service_to_metrics for duplicates
+    encoded = mock_file_store.read(stats.metrics_path)
+    pickled = base64.b64decode(encoded)
+    restored = pickle.loads(pickled)
+
+    assert service_id in restored
+    assert restored[service_id].accumulated_cost == 0.05  # prefers service_to_metrics

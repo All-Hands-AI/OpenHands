@@ -5,6 +5,7 @@ import "@testing-library/jest-dom/vitest";
 
 HTMLCanvasElement.prototype.getContext = vi.fn();
 HTMLElement.prototype.scrollTo = vi.fn();
+window.scrollTo = vi.fn();
 
 // Mock ResizeObserver for test environment
 class MockResizeObserver {

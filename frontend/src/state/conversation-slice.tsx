@@ -1,19 +1,37 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+export type ConversationTab =
+  | "editor"
+  | "browser"
+  | "jupyter"
+  | "served"
+  | "vscode"
+  | "terminal";
+
+export interface IMessageToSend {
+  text: string;
+  timestamp: number;
+}
+
 interface ConversationState {
   isRightPanelShown: boolean;
+  selectedTab: ConversationTab | null;
   images: File[];
   files: File[];
   loadingFiles: string[]; // File names currently being processed
   loadingImages: string[]; // Image names currently being processed
-  messageToSend: string | null;
+  messageToSend: IMessageToSend | null;
   shouldShownAgentLoading: boolean;
+  submittedMessage: string | null;
+  shouldHideSuggestions: boolean; // New state to hide suggestions when input expands
+  hasRightPanelToggled: boolean;
 }
 
 export const conversationSlice = createSlice({
   name: "conversation",
   initialState: {
     isRightPanelShown: true,
+    selectedTab: "editor" as ConversationTab,
     shouldStopConversation: false,
     shouldStartConversation: false,
     images: [],
@@ -22,13 +40,22 @@ export const conversationSlice = createSlice({
     loadingImages: [],
     messageToSend: null,
     shouldShownAgentLoading: false,
+    submittedMessage: null,
+    shouldHideSuggestions: false, // Initialize to false
+    hasRightPanelToggled: true,
   } as ConversationState,
   reducers: {
     setIsRightPanelShown: (state, action) => {
       state.isRightPanelShown = action.payload;
     },
+    setSelectedTab: (state, action) => {
+      state.selectedTab = action.payload;
+    },
     setShouldShownAgentLoading: (state, action) => {
       state.shouldShownAgentLoading = action.payload;
+    },
+    setShouldHideSuggestions: (state, action) => {
+      state.shouldHideSuggestions = action.payload;
     },
     addImages: (state, action) => {
       state.images = [...state.images, ...action.payload];
@@ -80,14 +107,31 @@ export const conversationSlice = createSlice({
       state.loadingImages = [];
     },
     setMessageToSend: (state, action) => {
-      state.messageToSend = action.payload;
+      state.messageToSend = {
+        text: action.payload,
+        timestamp: Date.now(),
+      };
+    },
+    setSubmittedMessage: (state, action) => {
+      state.submittedMessage = action.payload;
+    },
+    // Reset conversation state (useful for cleanup)
+    resetConversationState: (state) => {
+      state.selectedTab = "editor";
+      state.isRightPanelShown = true;
+      state.shouldHideSuggestions = false;
+    },
+    setHasRightPanelToggled: (state, action) => {
+      state.hasRightPanelToggled = action.payload;
     },
   },
 });
 
 export const {
   setIsRightPanelShown,
+  setSelectedTab,
   setShouldShownAgentLoading,
+  setShouldHideSuggestions,
   addImages,
   addFiles,
   removeImage,
@@ -101,6 +145,9 @@ export const {
   removeImageLoading,
   clearAllLoading,
   setMessageToSend,
+  setSubmittedMessage,
+  resetConversationState,
+  setHasRightPanelToggled,
 } = conversationSlice.actions;
 
 export default conversationSlice.reducer;

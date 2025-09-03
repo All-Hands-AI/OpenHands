@@ -1,8 +1,7 @@
-import { useTranslation } from "react-i18next";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
-import { cn } from "#/utils/utils";
-import { ContextMenu } from "../../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../../context-menu/context-menu-list-item";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationNameContextMenuIconText } from "../../conversation/conversation-name-context-menu-icon-text";
@@ -66,12 +65,8 @@ export function ConversationCardContextMenu({
     <ContextMenu
       ref={ref}
       testId="context-menu"
-      className={cn(
-        "right-0 absolute mt-2 p-1",
-        "flex flex-col gap-1",
-        position === "top" && "bottom-full",
-        position === "bottom" && "top-full",
-      )}
+      position={position}
+      alignment="right"
     >
       {generateSection([
         onEdit && (

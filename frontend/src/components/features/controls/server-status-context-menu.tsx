@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
-import { cn } from "#/utils/utils";
-import { ContextMenu } from "../context-menu/context-menu";
+import { ContextMenu } from "#/ui/context-menu";
 import { I18nKey } from "#/i18n/declaration";
 import { ConversationStatus } from "#/types/conversation-status";
 import StopCircleIcon from "#/icons/stop-circle.svg?react";
@@ -30,16 +29,15 @@ export function ServerStatusContextMenu({
     <ContextMenu
       ref={ref}
       testId="server-status-context-menu"
-      className={cn(
-        "flex flex-col gap-2 left-2 absolute mt-2 z-50 text-white bg-tertiary rounded-[6px] p-[6px] w-fit min-w-max",
-        position === "top" && "bottom-full",
-        position === "bottom" && "top-full",
-      )}
+      position={position}
+      alignment="left"
+      size="default"
+      className="left-2 w-fit min-w-max"
     >
       {conversationStatus === "RUNNING" && onStopServer && (
         <ServerStatusContextMenuIconText
           icon={<StopCircleIcon width={18} height={18} />}
-          text={t(I18nKey.COMMON$STOP_SERVER)}
+          text={t(I18nKey.COMMON$CLOSE_CONVERSATION_STOP_RUNTIME)}
           onClick={onStopServer}
           testId="stop-server-button"
         />
@@ -48,7 +46,7 @@ export function ServerStatusContextMenu({
       {conversationStatus === "STOPPED" && onStartServer && (
         <ServerStatusContextMenuIconText
           icon={<PlayCircleIcon width={18} height={18} />}
-          text={t(I18nKey.COMMON$START_SERVER)}
+          text={t(I18nKey.COMMON$START_CONVERSATION)}
           onClick={onStartServer}
           testId="start-server-button"
         />
