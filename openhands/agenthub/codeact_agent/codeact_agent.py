@@ -280,7 +280,7 @@ class CodeActAgent(Agent):
         messages = self.conversation_memory.process_events(
             condensed_history=events,
             initial_user_action=initial_user_message,
-            max_message_chars=self.llm.config.max_message_chars,
+            max_message_chars=300000,
             vision_is_active=self.llm.vision_is_active(),
         )
 
