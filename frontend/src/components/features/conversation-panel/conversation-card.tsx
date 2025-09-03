@@ -25,6 +25,7 @@ interface ConversationCardProps {
   onClick?: () => void;
   onDelete?: () => void;
   onStop?: () => void;
+  onReset?: () => void;
   onChangeTitle?: (title: string) => void;
   showOptions?: boolean;
   isActive?: boolean;
@@ -45,6 +46,7 @@ export function ConversationCard({
   onClick,
   onDelete,
   onStop,
+  onReset,
   onChangeTitle,
   showOptions,
   isActive,
@@ -118,6 +120,13 @@ export function ConversationCard({
     event.preventDefault();
     event.stopPropagation();
     setTitleMode("edit");
+    onContextMenuToggle?.(false);
+  };
+
+  const handleReset = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    onReset?.();
     onContextMenuToggle?.(false);
   };
 
@@ -243,6 +252,7 @@ export function ConversationCard({
                       : undefined
                   }
                   onEdit={onChangeTitle && handleEdit}
+                  onReset={onReset && handleReset}
                   onDownloadViaVSCode={
                     conversationId && showOptions
                       ? handleDownloadViaVSCode

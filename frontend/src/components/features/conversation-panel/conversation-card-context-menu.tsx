@@ -6,6 +6,7 @@ import {
   Wallet,
   Wrench,
   Bot,
+  RotateCcw,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
@@ -21,6 +22,7 @@ interface ConversationCardContextMenuProps {
   onDelete?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onStop?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onEdit?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onReset?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onDisplayCost?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowAgentTools?: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onShowMicroagents?: (event: React.MouseEvent<HTMLButtonElement>) => void;
@@ -33,6 +35,7 @@ export function ConversationCardContextMenu({
   onDelete,
   onStop,
   onEdit,
+  onReset,
   onDisplayCost,
   onShowAgentTools,
   onShowMicroagents,
@@ -43,6 +46,7 @@ export function ConversationCardContextMenu({
   const ref = useClickOutsideElement<HTMLUListElement>(onClose);
 
   const hasEdit = Boolean(onEdit);
+  const hasReset = Boolean(onReset);
   const hasDownload = Boolean(onDownloadViaVSCode);
   const hasTools = Boolean(onShowAgentTools || onShowMicroagents);
   const hasInfo = Boolean(onDisplayCost);
@@ -67,9 +71,19 @@ export function ConversationCardContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasEdit && (hasDownload || hasTools || hasInfo || hasControl) && (
-        <ContextMenuSeparator />
+      {onReset && (
+        <ContextMenuListItem testId="reset-button" onClick={onReset}>
+          <ContextMenuIconText
+            icon={RotateCcw}
+            text={t(I18nKey.BUTTON$RESET)}
+          />
+        </ContextMenuListItem>
       )}
+
+      {(hasEdit || hasReset) &&
+        (hasDownload || hasTools || hasInfo || hasControl) && (
+          <ContextMenuSeparator />
+        )}
 
       {onDownloadViaVSCode && (
         <ContextMenuListItem

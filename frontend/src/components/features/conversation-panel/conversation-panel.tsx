@@ -7,8 +7,10 @@ import { usePaginatedConversations } from "#/hooks/query/use-paginated-conversat
 import { useInfiniteScroll } from "#/hooks/use-infinite-scroll";
 import { useDeleteConversation } from "#/hooks/mutation/use-delete-conversation";
 import { useStopConversation } from "#/hooks/mutation/use-stop-conversation";
+import { useResetConversation } from "#/hooks/mutation/use-reset-conversation";
 import { ConfirmDeleteModal } from "./confirm-delete-modal";
 import { ConfirmStopModal } from "./confirm-stop-modal";
+import { ConfirmResetModal } from "./confirm-reset-modal";
 import { LoadingSpinner } from "#/components/shared/loading-spinner";
 import { ExitConversationModal } from "./exit-conversation-modal";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
@@ -29,6 +31,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
   const [confirmDeleteModalVisible, setConfirmDeleteModalVisible] =
     React.useState(false);
   const [confirmStopModalVisible, setConfirmStopModalVisible] =
+    React.useState(false);
+  const [confirmResetModalVisible, setConfirmResetModalVisible] =
     React.useState(false);
   const [
     confirmExitConversationModalVisible,
@@ -55,6 +59,8 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
 
   const { mutate: deleteConversation } = useDeleteConversation();
   const { mutate: stopConversation } = useStopConversation();
+  const { mutate: resetConversation, isPending: isResettingConversation } =
+    useResetConversation();
   const { mutate: updateConversation } = useUpdateConversation();
 
   // Set up infinite scroll
@@ -119,6 +125,40 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
     }
   };
 
+  const handleResetConversation = (conversationId: string) => {
+    setSelectedConversationId(conversationId);
+    setConfirmResetModalVisible(true);
+  };
+
+  const handleConfirmReset = (deleteOldConversation: boolean = false) => {
+    if (selectedConversationId) {
+      resetConversation(
+        {
+          conversationId: selectedConversationId,
+          deleteOldConversation,
+        },
+        {
+          onSuccess: () => {
+            setConfirmResetModalVisible(false);
+            setSelectedConversationId(null);
+            // Optionally navigate to the conversation if it's the current one
+            if (selectedConversationId === currentConversationId) {
+              // The conversation is already active, no need to navigate
+            }
+          },
+        },
+      );
+    }
+  };
+
+  const handleCancelReset = () => {
+    if (isResettingConversation) {
+      return; // Prevent canceling while resetting
+    }
+    setConfirmResetModalVisible(false);
+    setSelectedConversationId(null);
+  };
+
   return (
     <div
       ref={(node) => {
@@ -158,6 +198,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               isActive={isActive}
               onDelete={() => handleDeleteProject(project.conversation_id)}
               onStop={() => handleStopConversation(project.conversation_id)}
+              onReset={() => handleResetConversation(project.conversation_id)}
               onChangeTitle={(title) =>
                 handleConversationTitleChange(project.conversation_id, title)
               }
@@ -213,6 +254,14 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
             onClose();
           }}
           onClose={() => setConfirmExitConversationModalVisible(false)}
+        />
+      )}
+
+      {confirmResetModalVisible && (
+        <ConfirmResetModal
+          onConfirm={handleConfirmReset}
+          onCancel={handleCancelReset}
+          isLoading={isResettingConversation}
         />
       )}
     </div>
