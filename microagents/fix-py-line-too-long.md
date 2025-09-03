@@ -26,9 +26,14 @@ message = ("This is a very long string "
 ```
 
 ## For long multi-line strings (docstrings)
-Add `# type: ignore` AFTER the ending `"""`. NEVER add it inside the docstring.
+Add `# noqa: E501` AFTER the ending `"""`. NEVER add it inside the docstring.
 ```python
 def example_function():
-    """This is a very long docstring that exceeds the line length limit."""  # type: ignore
+    """This is a very long docstring that exceeds the line length limit."""  # noqa: E501
     pass
 ```
+
+## What NOT to do
+- Do not add `# noqa: E501` inside docstrings or multi-line strings
+- Do not break strings in the middle of words
+- Do not sacrifice code readability for line length compliance
