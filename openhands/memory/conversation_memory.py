@@ -342,7 +342,7 @@ class ConversationMemory:
         elif isinstance(action, ConsultTomAgentAction):
             return [
                 Message(
-                    role='user',
+                    role='assistant',
                     content=[TextContent(text=action.content)],
                 )
             ]
@@ -533,7 +533,7 @@ class ConversationMemory:
             message = Message(role='user', content=[TextContent(text=text)])
         elif isinstance(obs, ConsultTomAgentObservation):
             text = truncate_content(obs.content, max_message_chars)
-            message = Message(role='user', content=[TextContent(text=text)])
+            message = Message(role='assistant', content=[TextContent(text=text)])
         elif (
             isinstance(obs, RecallObservation)
             and self.agent_config.enable_prompt_extensions

@@ -88,7 +88,7 @@ COMMANDS = {
     '/resume': 'Resume the agent when paused',
     '/mcp': 'Manage MCP server configuration and view errors',
     '/sleeptime': 'Run Tom sleeptime computation to process recent sessions',
-    '/tom_improve_instruction': 'Improve the instruction for the current task',
+    '/tom_give_suggestions': 'Ask Tom agent to give suggestions to the SWE agent',
 }
 
 print_lock = threading.Lock()
@@ -175,6 +175,25 @@ def display_welcome_message(message: str = '') -> None:
     print_formatted_text(
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
+
+    # Display Tom agent tips for new sessions
+    print_formatted_text(
+        HTML('<ansiblue>💡 Pro tips:</ansiblue>'),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text(
+        HTML(
+            '<grey>  • Use <b>/sleeptime</b> in the beginning of the session to let ToM agent analyze your previous sessions</grey>'
+        ),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text(
+        HTML(
+            "<grey>  • Use <b>/tom_give_suggestions</b> to get ToM agent's suggestions for your next action</grey>"
+        ),
+        style=DEFAULT_STYLE,
+    )
+    print_formatted_text('')
 
     if message:
         print_formatted_text(
@@ -650,6 +669,15 @@ def display_help() -> None:
         '• Specify the programming language or framework, if not obvious.\n'
     )
 
+    # Tom agent specific tips
+    print_formatted_text(
+        HTML(
+            '<ansiblue>Tom agent features:</ansiblue>\n'
+            '<grey>• Use <b>/sleeptime</b> to let Tom analyze recent sessions and improve performance</grey>\n'
+            "<grey>• Use <b>/tom_give_suggestions</b> to get Tom's suggestions for your next action</grey>\n"
+        )
+    )
+
     # Commands section
     print_formatted_text(HTML('Interactive commands:'))
     commands_html = ''
@@ -805,7 +833,10 @@ def create_prompt_session(config: OpenHandsConfig) -> PromptSession[str]:
 
 
 async def read_prompt_input(
-    config: OpenHandsConfig, agent_state: str, multiline: bool = False
+    config: OpenHandsConfig,
+    agent_state: str,
+    multiline: bool = False,
+    prefill_text: str = '',
 ) -> str:
     try:
         prompt_session = create_prompt_session(config)
@@ -834,6 +865,7 @@ async def read_prompt_input(
                 print_formatted_text('')
                 message = await prompt_session.prompt_async(
                     HTML('<gold>> </gold>'),
+                    default=prefill_text,
                 )
         return message if message is not None else ''
     except (KeyboardInterrupt, EOFError):

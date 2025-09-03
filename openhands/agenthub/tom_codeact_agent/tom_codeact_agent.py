@@ -102,6 +102,8 @@ class TomCodeActAgent(CodeActAgent):
         """Enhanced step method with Tom integration."""
         action: 'Action | None' = None
         latest_user_message = state.get_last_user_message()
+        # sleep time compute at the beginning of the session
+
         if latest_user_message:
             if latest_user_message.content.strip() == '/sleeptime':
                 self.sleeptime_compute(user_id=state.user_id or '')
@@ -135,7 +137,12 @@ class TomCodeActAgent(CodeActAgent):
             formatted_messages = self.llm.format_messages_for_llm(messages)[1:]
 
             # Determine what to consult about
-            if action.use_user_message and latest_user_message:
+            if self._has_tom_consultation_happened(formatted_messages):
+                consultation_result: Optional[str] = (
+                    'Tom agent has already given suggestions for the SWE agent. No need to consult Tom agent again.'
+                )
+
+            elif action.use_user_message and latest_user_message:
                 consultation_result = self.tom_consult_agent(
                     query_text=f"I am SWE agent. {action.content}. I need to consult ToM agent about the user's message: {latest_user_message.content}",
                     formatted_messages=formatted_messages,
@@ -158,9 +165,10 @@ class TomCodeActAgent(CodeActAgent):
                 logger.info(
                     '✅ Tom: Requesting observation update with consultation result'
                 )
+                query_description = action.custom_query or "the user's message"
                 return ConsultTomAgentAction(
                     content=action.content
-                    + f'I need to consult Tom agent about {action.custom_query or "the user's message"}'
+                    + f'I need to consult Tom agent about {query_description}'
                     + '\n\n[Starting consultation with Tom agent...]'
                     + consultation_result
                     + '\n\n[Finished consulting with ToM Agent...]',
@@ -197,6 +205,48 @@ class TomCodeActAgent(CodeActAgent):
         )
 
         return source_check and id_check and length_check
+
+    def _has_tom_consultation_happened(self, formatted_messages: list) -> bool:
+        """Check if Tom agent has already completed its consultation.
+
+        Args:
+            formatted_messages: The formatted message history
+
+        Returns:
+            True if Tom agent consultation is complete (marked with Done_communicating_with_Tom_agent)
+        """
+        if not formatted_messages:
+            return False
+
+        # Check the last two messages for the completion marker
+        messages_to_check = (
+            formatted_messages[-2:]
+            if len(formatted_messages) >= 2
+            else formatted_messages[-1:]
+        )
+
+        for message in messages_to_check:
+            try:
+                # Safely check if message has content and text
+                if (
+                    isinstance(message, dict)
+                    and 'content' in message
+                    and isinstance(message['content'], list)
+                    and len(message['content']) > 0
+                    and isinstance(message['content'][0], dict)
+                    and 'text' in message['content'][0]
+                ):
+                    text_content = message['content'][0]['text']
+                    if (
+                        text_content
+                        and '</Done_communicating_with_Tom_agent>' in text_content
+                    ):
+                        return True
+            except (KeyError, IndexError, TypeError):
+                # If we can't access the text content, continue to next message
+                continue
+
+        return False
 
     def tom_consult_agent(
         self,
