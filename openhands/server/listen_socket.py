@@ -76,8 +76,11 @@ async def connect(connection_id: str, environ: dict) -> None:
         )
 
         try:
+            from openhands.storage.paths import ConversationPaths
+
             event_store = EventStore(
-                conversation_id, conversation_manager.file_store, user_id
+                ConversationPaths(conversation_id, user_id),
+                conversation_manager.file_store,
             )
         except FileNotFoundError as e:
             logger.error(

@@ -72,6 +72,7 @@ from openhands.storage.data_models.conversation_status import ConversationStatus
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.data_models.user_secrets import UserSecrets
 from openhands.storage.locations import get_experiment_config_filename
+from openhands.storage.paths import ConversationPaths
 from openhands.storage.settings.settings_store import SettingsStore
 from openhands.utils.async_utils import wait_all
 from openhands.utils.conversation_summary import get_default_conversation_title
@@ -378,7 +379,7 @@ async def get_prompt(
 ):
     # get event store for the conversation
     event_store = EventStore(
-        sid=conversation_id, file_store=file_store, user_id=metadata.user_id
+        ConversationPaths(conversation_id, metadata.user_id), file_store
     )
 
     # retrieve the relevant events

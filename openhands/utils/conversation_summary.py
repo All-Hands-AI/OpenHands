@@ -10,6 +10,7 @@ from openhands.events.event_store import EventStore
 from openhands.llm.llm_registry import LLMRegistry
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.files import FileStore
+from openhands.storage.paths import ConversationPaths
 
 
 async def generate_conversation_title(
@@ -95,7 +96,9 @@ async def auto_generate_title(
     """
     try:
         # Create an event store for the conversation
-        event_store = EventStore(conversation_id, file_store, user_id)
+        event_store = EventStore(
+            ConversationPaths(conversation_id, user_id), file_store
+        )
 
         # Find the first user message
         first_user_message = None
