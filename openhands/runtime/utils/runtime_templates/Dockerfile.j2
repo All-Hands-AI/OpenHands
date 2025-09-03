@@ -19,7 +19,7 @@ ENV POETRY_VIRTUALENVS_PATH=/openhands/poetry \
 {% if (('ubuntu' in base_image) or ('mswebench' in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg ed \
         {%- if (base_image.endswith(':latest') or base_image.endswith(':24.04') or ('mswebench' in base_image)) -%}
         libgl1 \
         {%- else %}
@@ -40,7 +40,7 @@ RUN apt-get update && \
 {% if (('ubuntu' not in base_image) and ('mswebench' not in base_image)) %}
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg \
+        wget curl ca-certificates sudo apt-utils git jq tmux build-essential ripgrep ffmpeg ed \
         libgl1-mesa-glx \
         libasound2-plugins libatomic1 \
         # Install Docker dependencies
@@ -59,8 +59,8 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="/openhands/
 ENV PATH="/openhands/bin:${PATH}"
 
 # Remove UID 1000 named pn or ubuntu, so the 'openhands' user can be created from ubuntu hosts
-RUN (if getent passwd 1000 | grep -q pn; then userdel pn; fi) && \
-    (if getent passwd 1000 | grep -q ubuntu; then userdel ubuntu; fi)
+RUN (if getent passwd 1001 | grep -q pn; then userdel pn; fi) && \
+    (if getent passwd 1001 | grep -q ubuntu; then userdel ubuntu; fi)
 
 
 # Create necessary directories
