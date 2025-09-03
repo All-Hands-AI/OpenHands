@@ -50,9 +50,13 @@ DELETE_FROM_TRAJECTORY_EXTRAS_AND_SCREENSHOTS = DELETE_FROM_TRAJECTORY_EXTRAS | 
 
 
 def event_from_dict(data: dict[str, Any]) -> 'Event':
+    import sys
+    print(f"DEBUG: event_from_dict called with data: {data}", file=sys.stderr, flush=True)
     evt: Event
     if 'action' in data:
+        print(f"DEBUG: Calling action_from_dict")
         evt = action_from_dict(data)
+        print(f"DEBUG: action_from_dict returned: {type(evt)}, thought: {type(evt.thought)}")
     elif 'observation' in data:
         evt = observation_from_dict(data)
     else:
