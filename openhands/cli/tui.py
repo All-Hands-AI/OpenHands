@@ -1106,6 +1106,8 @@ def display_tom_thinking_step(message: str) -> None:
         prefix = 'Tom'
 
     # Display with consistent formatting using FormattedText for better color support
+    # message maximum length is 100 characters
+    message = message[:100]
     print_formatted_text(
         FormattedText([('fg:' + color, f'[{prefix}] '), ('', message)])
     )
