@@ -144,7 +144,7 @@ export function MicroagentManagementSidebar({
   return (
     <div
       className={cn(
-        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col",
+        "w-[418px] h-full max-h-full overflow-y-auto overflow-x-hidden border-r border-[#525252] bg-[#24272E] rounded-tl-lg rounded-bl-lg py-10 px-6 flex flex-col custom-scrollbar-always",
         isSmallerScreen && "w-full border-none",
       )}
       onScroll={handleScroll}
@@ -160,6 +160,9 @@ export function MicroagentManagementSidebar({
             placeholder="Select Provider"
             onChange={handleProviderChange}
             className="w-full"
+            inputClassName="w-full h-10 min-h-10 max-h-10 text-sm placeholder:text-tertiary-alt pl-6.5"
+            toggleButtonClassName="w-10 h-10 translate-y-[1px]"
+            itemClassName="text-sm"
           />
         </div>
       )}
@@ -178,7 +181,7 @@ export function MicroagentManagementSidebar({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className={cn(
-              "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:italic placeholder:text-tertiary-alt",
+              "bg-tertiary border border-[#717888] bg-[#454545] w-full rounded-sm p-2 placeholder:text-tertiary-alt",
               "disabled:bg-[#2D2F36] disabled:border-[#2D2F36] disabled:cursor-not-allowed h-10 box-shadow-none outline-none",
               "pr-10", // Space for spinner
             )}

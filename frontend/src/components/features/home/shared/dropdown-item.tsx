@@ -11,6 +11,7 @@ interface DropdownItemProps<T> {
   getItemKey: (item: T) => string;
   isProviderDropdown?: boolean;
   renderIcon?: (item: T) => React.ReactNode;
+  itemClassName?: string;
 }
 
 export function DropdownItem<T>({
@@ -23,6 +24,7 @@ export function DropdownItem<T>({
   getItemKey,
   isProviderDropdown = false,
   renderIcon,
+  itemClassName,
 }: DropdownItemProps<T>) {
   const itemProps = getItemProps({
     index,
@@ -38,6 +40,7 @@ export function DropdownItem<T>({
         "hover:bg-[#5C5D62]": !isSelected,
         "hover:bg-[#C9B974] hover:text-black": isSelected,
       },
+      itemClassName,
     ),
   });
 

@@ -19,6 +19,9 @@ export interface GitProviderDropdownProps {
   disabled?: boolean;
   isLoading?: boolean;
   onChange?: (provider: Provider | null) => void;
+  inputClassName?: string;
+  toggleButtonClassName?: string;
+  itemClassName?: string;
 }
 
 export function GitProviderDropdown({
@@ -30,6 +33,9 @@ export function GitProviderDropdown({
   disabled = false,
   isLoading = false,
   onChange,
+  inputClassName,
+  toggleButtonClassName,
+  itemClassName,
 }: GitProviderDropdownProps) {
   const [inputValue, setInputValue] = useState("");
   const [localSelectedItem, setLocalSelectedItem] = useState<Provider | null>(
@@ -134,6 +140,7 @@ export function GitProviderDropdown({
       getDisplayText={formatProviderName}
       getItemKey={(provider) => provider}
       isProviderDropdown
+      itemClassName={itemClassName}
     />
   );
 
@@ -172,6 +179,7 @@ export function GitProviderDropdown({
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
               "pl-1.5 pr-[1px] cursor-pointer text-xs font-normal leading-5", // Space for toggle button and pointer cursor
               selectedItem && "pl-6",
+              inputClassName,
             ),
           })}
           data-testid="git-provider-dropdown"
@@ -182,7 +190,10 @@ export function GitProviderDropdown({
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
-            iconClassName="w-[23px] h-[23px] translate-y-[1px]"
+            iconClassName={cn(
+              "w-[23px] h-[23px] translate-y-[1px]",
+              toggleButtonClassName,
+            )}
           />
         </div>
 
