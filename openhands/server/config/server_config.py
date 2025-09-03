@@ -84,7 +84,8 @@ def _load_server_config_from_entry_point() -> type[ServerConfig] | None:
 
 
 def load_server_config() -> ServerConfig:
-    # Priority 1: explicit class via env var for backward compatibility
+    # Priority 1: explicit class via env var for backward compatibility.
+    # Note: honoring legacy OPENHANDS_CONFIG_CLS here; this may be removed in a future release
     config_cls = os.environ.get('OPENHANDS_CONFIG_CLS', None)
     if config_cls:
         logger.info(f'Using config class {config_cls} (env OPENHANDS_CONFIG_CLS)')
