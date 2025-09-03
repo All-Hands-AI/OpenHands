@@ -87,6 +87,7 @@ class TomCodeActAgent(CodeActAgent):
         )
         self._last_processed_user_message_id: Optional[int] = None
         self._skip_next_tom_analysis: bool = False
+        # TODO(openhands): add tracking to posthog here
 
         logger.info(
             f'TomCodeActAgent initialized with Tom integration: {self.tom_enabled}'
@@ -321,6 +322,7 @@ class TomCodeActAgent(CodeActAgent):
                         else:
                             self.file_store.write(str(record_file), new_line)
                         logger.log(CLI_DISPLAY_LEVEL, '🔍 Tom: Recorded interaction')
+                        # TODO(openhands): add tracking to posthog here
                         return user_response['suggestions']
 
                     except Exception as e:
