@@ -15,15 +15,18 @@ import sys
 import tempfile
 import time
 import traceback
+from collections import deque
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncIterator
 from zipfile import ZipFile
 
 import puremagic
 from binaryornot.check import is_binary
 from fastapi import Depends, FastAPI, HTTPException, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.security import APIKeyHeader
 from openhands_aci.editor.editor import OHEditor
 from openhands_aci.editor.exceptions import ToolError
@@ -207,6 +210,13 @@ class ActionExecutor:
         self.downloaded_files: list[str] = []
         self.downloads_directory = '/workspace/.downloads'
 
+        # Queue for terminal output streaming
+        self.terminal_output_queue: deque = deque(
+            maxlen=1000  # Limit queue size to prevent memory issues
+        )
+        self.terminal_output_event = asyncio.Event()
+        self.current_command_id: int | None = None
+
         self.max_memory_gb: int | None = None
         if _override_max_memory_gb := os.environ.get('RUNTIME_MAX_MEMORY_GB', None):
             self.max_memory_gb = int(_override_max_memory_gb)
@@ -382,14 +392,51 @@ class ActionExecutor:
     ) -> CmdOutputObservation | ErrorObservation:
         try:
             bash_session = self.bash_session
+            # Generate a unique ID for this command execution
+            command_id = action.id
+            self.current_command_id = command_id
+
+            # Clear the queue for the new command
+            self.terminal_output_queue.clear()
+
             if action.is_static:
                 bash_session = self._create_bash_session(action.cwd)
             assert bash_session is not None
-            obs = await call_sync_from_async(bash_session.execute, action)
+
+            def stream_callback(content: str, metadata: dict):
+                self._add_to_output_queue(
+                    command_id, content, {**metadata, 'commandId': command_id}
+                )
+
+            # Execute the command with streaming enabled if not in Windows
+            obs = await call_sync_from_async(
+                bash_session.execute,
+                action,
+                None
+                if sys.platform == 'win32' or action.is_static
+                else stream_callback,
+            )
             return obs
         except Exception as e:
             logger.error(f'Error running command: {e}')
             return ErrorObservation(str(e))
+
+    def _add_to_output_queue(self, command_id: int, content: str, metadata: dict):
+        """Add output chunk to the queue and set the event to notify listeners."""
+        if self.current_command_id != command_id:
+            # This is from an old command, ignore it
+            return
+
+        # Add to queue with simplified structure
+        self.terminal_output_queue.append(
+            {
+                'content': content,
+                **metadata,  # Flatten metadata into the main object
+            }
+        )
+
+        # Notify listeners
+        self.terminal_output_event.set()
 
     async def run_ipython(self, action: IPythonRunCellAction) -> Observation:
         assert self.bash_session is not None
@@ -751,6 +798,15 @@ if __name__ == '__main__':
 
     app = FastAPI(lifespan=lifespan)
 
+    # Add CORS middleware to allow cross-origin requests
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=['*'],  # Allow all origins
+        allow_credentials=True,
+        allow_methods=['*'],  # Allow all methods
+        allow_headers=['*'],  # Allow all headers
+    )
+
     # TODO below 3 exception handlers were recommended by Sonnet.
     # Are these something we should keep?
     @app.exception_handler(Exception)
@@ -783,7 +839,13 @@ if __name__ == '__main__':
     async def authenticate_requests(request: Request, call_next):
         if request.url.path != '/alive' and request.url.path != '/server_info':
             try:
-                verify_api_key(request.headers.get('X-Session-API-Key'))
+                # For streaming endpoints, allow API key via query parameter
+                # since EventSource doesn't support custom headers
+                api_key = request.headers.get('X-Session-API-Key')
+                if not api_key and request.url.path == '/terminal-stream':
+                    api_key = request.query_params.get('api_key')
+
+                verify_api_key(api_key)
             except HTTPException as e:
                 return JSONResponse(
                     status_code=e.status_code, content={'detail': e.detail}
@@ -1064,6 +1126,59 @@ if __name__ == '__main__':
         except Exception as e:
             logger.error(f'Error listing files: {e}')
             return JSONResponse(content=[])
+
+    # ================================
+    # Bash command output streaming
+    # ================================
+    @app.get('/terminal-stream')
+    async def terminal_stream(request: Request):
+        """
+        Server-Sent Events (SSE) endpoint for streaming terminal output.
+
+        This endpoint streams terminal output in real-time as commands are executed.
+        Each event contains the output chunk and metadata about the command execution.
+        """
+        assert client is not None
+
+        async def event_generator() -> AsyncIterator[str]:
+            # Send any existing output chunks first
+            for chunk in client.terminal_output_queue:
+                yield format_sse_event(chunk)
+
+            # Then listen for new chunks
+            while True:
+                # Wait for new output
+                await client.terminal_output_event.wait()
+                # Clear the event AFTER we've been notified
+                client.terminal_output_event.clear()
+
+                # Process all accumulated chunks since last check
+                while client.terminal_output_queue:
+                    chunk = client.terminal_output_queue.popleft()
+                    yield format_sse_event(chunk)
+
+                # Check if client disconnected
+                if await request.is_disconnected():
+                    logger.debug('Client disconnected from terminal stream')
+                    break
+
+                # Small delay to prevent CPU spinning
+                await asyncio.sleep(0.01)
+
+        return StreamingResponse(
+            event_generator(),
+            media_type='text/event-stream',
+            headers={
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+                'Content-Type': 'text/event-stream',
+            },
+        )
+
+    def format_sse_event(data: dict) -> str:
+        """Format data as a Server-Sent Event."""
+        json_data = json.dumps(data)
+        return f'data: {json_data}\n\n'
 
     logger.debug(f'Starting action execution API on port {args.port}')
     run(app, host='0.0.0.0', port=args.port)

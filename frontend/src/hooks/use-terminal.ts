@@ -7,7 +7,12 @@ import { RootState } from "#/store";
 import { RUNTIME_INACTIVE_STATES } from "#/types/agent-state";
 import { useWsClient } from "#/context/ws-client-provider";
 import { getTerminalCommand } from "#/services/terminal-service";
+import {
+  getTerminalStreamService,
+  TerminalStreamService,
+} from "#/services/terminal-stream-service";
 import { parseTerminalOutput } from "#/utils/parse-terminal-output";
+import { useActionExecutionServerUrl } from "#/hooks/query/use-action-execution-server-url";
 
 /*
   NOTE: Tests for this hook are indirectly covered by the tests for the XTermTerminal component.
@@ -22,18 +27,16 @@ const DEFAULT_TERMINAL_CONFIG: UseTerminalConfig = {
   commands: [],
 };
 
-const renderCommand = (
-  command: Command,
-  terminal: Terminal,
-  isUserInput: boolean = false,
-) => {
-  const { content, type } = command;
+const renderCommand = (command: Command, terminal: Terminal) => {
+  // Skip completion indicator when replaying commands
+  if (
+    command.type === "output" &&
+    !command.isPartial &&
+    command.content === TerminalStreamService.END_OF_OUTPUT_INDICATOR
+  )
+    return; // Skip completion indicator when replaying commands
 
-  // Skip rendering user input commands that come from the event stream
-  // as they've already been displayed in the terminal as the user typed
-  if (type === "input" && isUserInput) {
-    return;
-  }
+  const { content } = command;
 
   terminal.writeln(
     parseTerminalOutput(content.replaceAll("\n", "\r\n").trim()),
@@ -55,6 +58,9 @@ export const useTerminal = ({
   const lastCommandIndex = persistentLastCommandIndex; // Use the persistent reference
   const keyEventDisposable = React.useRef<{ dispose: () => void } | null>(null);
   const disabled = RUNTIME_INACTIVE_STATES.includes(curAgentState);
+  const streamInitialized = React.useRef<boolean>(false);
+  const { url: actionExecutionServerUrl, sessionApiKey } =
+    useActionExecutionServerUrl();
 
   const createTerminal = () =>
     new Terminal({
@@ -119,6 +125,34 @@ export const useTerminal = ({
     return command.slice(0, -1);
   };
 
+  // Initialize terminal streaming service
+  React.useEffect(() => {
+    if (!streamInitialized.current && !disabled) {
+      try {
+        const streamService = getTerminalStreamService(
+          actionExecutionServerUrl,
+          sessionApiKey,
+        );
+        streamService.connect();
+        streamInitialized.current = true;
+      } catch (error) {
+        console.error("Failed to initialize terminal stream service:", error);
+      }
+    }
+
+    return () => {
+      if (streamInitialized.current) {
+        try {
+          const streamService = getTerminalStreamService();
+          streamService.disconnect();
+          streamInitialized.current = false;
+        } catch (error) {
+          console.error("Error disconnecting terminal stream:", error);
+        }
+      }
+    };
+  }, [disabled, actionExecutionServerUrl, sessionApiKey]);
+
   // Initialize terminal and handle cleanup
   React.useEffect(() => {
     terminal.current = createTerminal();
@@ -135,7 +169,7 @@ export const useTerminal = ({
           }
           // Don't pass isUserInput=true here because we're initializing the terminal
           // and need to show all previous commands
-          renderCommand(commands[i], terminal.current, false);
+          renderCommand(commands[i], terminal.current);
         }
         lastCommandIndex.current = commands.length;
       }
@@ -153,15 +187,26 @@ export const useTerminal = ({
       commands.length > 0 &&
       lastCommandIndex.current < commands.length
     ) {
-      let lastCommandType = "";
+      let lastCommand;
       for (let i = lastCommandIndex.current; i < commands.length; i += 1) {
-        lastCommandType = commands[i].type;
-        // Pass true for isUserInput to skip rendering user input commands
-        // that have already been displayed as the user typed
-        renderCommand(commands[i], terminal.current, true);
+        lastCommand = commands[i];
+        // Skip the output indicating completion
+        if (
+          commands[i].type !== "output" ||
+          commands[i].isPartial ||
+          commands[i].content !== TerminalStreamService.END_OF_OUTPUT_INDICATOR
+        ) {
+          renderCommand(commands[i], terminal.current);
+        }
       }
       lastCommandIndex.current = commands.length;
-      if (lastCommandType === "output") {
+
+      // Print the input prompt if the last command is a completion indicator
+      if (
+        lastCommand &&
+        lastCommand.type === "output" &&
+        !lastCommand.isPartial
+      ) {
         terminal.current.write("$ ");
       }
     }
