@@ -227,6 +227,7 @@ class BashSession:
         self.work_dir = work_dir
         self.username = username
         self._initialized = False
+        self._closed = False
         self.max_memory_mb = max_memory_mb
 
     def initialize(self) -> None:
@@ -285,7 +286,6 @@ class BashSession:
         # Store the last command for interactive input handling
         self.prev_status: BashCommandStatus | None = None
         self.prev_output: str = ''
-        self._closed: bool = False
         logger.debug(f'Bash session initialized with work dir: {self.work_dir}')
 
         # Maintain the current working directory
@@ -331,7 +331,8 @@ class BashSession:
         """Clean up the session."""
         if self._closed:
             return
-        self.session.kill()
+        if hasattr(self, 'session'):
+            self.session.kill()
         self._closed = True
 
     @property
