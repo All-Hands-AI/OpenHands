@@ -15,18 +15,15 @@ FROM base AS backend-builder
 WORKDIR /app
 ENV PYTHONPATH='/app'
 
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VIRTUALENVS_IN_PROJECT=1 \
-    POETRY_VIRTUALENVS_CREATE=1 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache
+ENV UV_CACHE_DIR=/tmp/uv_cache
 
 RUN apt-get update -y \
-    && apt-get install -y curl make git build-essential jq gettext \
-    && python3 -m pip install poetry --break-system-packages
+    && apt-get install -y curl make git build-essential jq gettext ca-certificates \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml poetry.lock ./
-RUN touch README.md
-RUN export POETRY_CACHE_DIR && poetry install --no-root && rm -rf $POETRY_CACHE_DIR
+RUN uv venv && uv sync --no-install-project && rm -rf /tmp/uv_cache
 
 FROM base AS openhands-app
 

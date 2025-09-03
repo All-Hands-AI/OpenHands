@@ -40,7 +40,7 @@ check-dependencies:
 ifeq ($(INSTALL_DOCKER),)
 	@$(MAKE) -s check-docker
 endif
-	@$(MAKE) -s check-poetry
+	@$(MAKE) -s check-uv
 	@$(MAKE) -s check-tmux
 	@echo "$(GREEN)Dependencies checked successfully.$(RESET)"
 
@@ -104,6 +104,15 @@ check-docker:
 		exit 1; \
 	fi
 
+check-uv:
+	@echo "$(YELLOW)Checking uv installation...$(RESET)"
+	@if command -v uv > /dev/null; then \
+		echo "$(BLUE)uv $$(uv --version) is already installed.$(RESET)"; \
+	else \
+		echo "$(RED)uv is not installed. Please install uv from https://docs.astral.sh/uv/ to continue.$(RESET)"; \
+		exit 1; \
+	fi
+
 check-tmux:
 	@echo "$(YELLOW)Checking tmux installation...$(RESET)"
 	@if command -v tmux > /dev/null; then \
@@ -142,31 +151,34 @@ install-python-dependencies:
 		echo "Defaulting TZ (timezone) to UTC"; \
 		export TZ="UTC"; \
 	fi
-	poetry env use python$(PYTHON_VERSION)
+	@if ! command -v uv > /dev/null; then \
+		echo "$(RED)uv is not installed. Please install uv from https://docs.astral.sh/uv/ before continuing.$(RESET)"; \
+		exit 1; \
+	fi
+	@uv venv --python python$(PYTHON_VERSION)
 	@if [ "$(shell uname)" = "Darwin" ]; then \
 		echo "$(BLUE)Installing chroma-hnswlib...$(RESET)"; \
 		export HNSWLIB_NO_NATIVE=1; \
-		poetry run pip install chroma-hnswlib; \
+		uv pip install --python .venv/bin/python chroma-hnswlib; \
 	fi
 	@if [ -n "${POETRY_GROUP}" ]; then \
-		echo "Installing only POETRY_GROUP=${POETRY_GROUP}"; \
-		poetry install --only $${POETRY_GROUP}; \
-	else \
-		poetry install --with dev,test,runtime; \
+		echo "POETRY_GROUP is no longer used. Install groups via uv with extras or use separate requirements."; \
 	fi
+	@uv pip install --python .venv/bin/python -e .
 	@if [ "${INSTALL_PLAYWRIGHT}" != "false" ] && [ "${INSTALL_PLAYWRIGHT}" != "0" ]; then \
 		if [ -f "/etc/manjaro-release" ]; then \
 			echo "$(BLUE)Detected Manjaro Linux. Installing Playwright dependencies...$(RESET)"; \
-			poetry run pip install playwright; \
-			poetry run playwright install chromium; \
+			uv pip install --python .venv/bin/python playwright; \
+			.venv/bin/playwright install chromium; \
 		else \
 			if [ ! -f cache/playwright_chromium_is_installed.txt ]; then \
 				echo "Running playwright install --with-deps chromium..."; \
-				poetry run playwright install --with-deps chromium; \
+				uv pip install --python .venv/bin/python playwright; \
+				.venv/bin/playwright install --with-deps chromium; \
 				mkdir -p cache; \
 				touch cache/playwright_chromium_is_installed.txt; \
 			else \
-				echo "Setup already done. Skipping playwright installation."; \
+				echo "Setup already done. Skipping Playwright installation."; \
 			fi \
 		fi \
 	else \
@@ -182,15 +194,15 @@ install-frontend-dependencies: check-npm check-nodejs
 	@cd frontend && npm install
 	@echo "$(GREEN)Frontend dependencies installed successfully.$(RESET)"
 
-install-pre-commit-hooks: check-python check-poetry install-python-dependencies
+install-pre-commit-hooks: check-python check-uv install-python-dependencies
 	@echo "$(YELLOW)Installing pre-commit hooks...$(RESET)"
 	@git config --unset-all core.hooksPath || true
-	@poetry run pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
+	@.venv/bin/pre-commit install --config $(PRE_COMMIT_CONFIG_PATH)
 	@echo "$(GREEN)Pre-commit hooks installed successfully.$(RESET)"
 
 lint-backend: install-pre-commit-hooks
 	@echo "$(YELLOW)Running linters...$(RESET)"
-	@poetry run pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
+	@.venv/bin/pre-commit run --all-files --show-diff-on-failure --config $(PRE_COMMIT_CONFIG_PATH)
 
 lint-frontend: install-frontend-dependencies
 	@echo "$(YELLOW)Running linters for frontend...$(RESET)"
@@ -248,7 +260,7 @@ build-frontend:
 # Start backend
 start-backend:
 	@echo "$(YELLOW)Starting backend...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
+	@.venv/bin/uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) --reload --reload-exclude "./workspace"
 
 # Start frontend
 start-frontend:
@@ -270,7 +282,7 @@ _run_setup:
 	fi
 	@mkdir -p logs
 	@echo "$(YELLOW)Starting backend server...$(RESET)"
-	@poetry run uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
+	@.venv/bin/uvicorn openhands.server.listen:app --host $(BACKEND_HOST) --port $(BACKEND_PORT) &
 	@echo "$(YELLOW)Waiting for the backend to start...$(RESET)"
 	@until nc -z localhost $(BACKEND_PORT); do sleep 0.1; done
 	@echo "$(GREEN)Backend started successfully.$(RESET)"

@@ -14,7 +14,7 @@ you can clone the OpenHands project directly.
 - [Docker](https://docs.docker.com/engine/install/) (For those on MacOS, make sure to allow the default Docker socket to be used from advanced settings!)
 - [Python](https://www.python.org/downloads/) = 3.12
 - [NodeJS](https://nodejs.org/en/download/package-manager) >= 22.x
-- [Poetry](https://python-poetry.org/docs/#installing-with-the-official-installer) >= 1.8
+- [uv](https://github.com/astral-sh/uv) >= 0.4
 - OS-specific dependencies:
   - Ubuntu: build-essential => `sudo apt-get install build-essential python3.12-dev`
   - WSL: netcat => `sudo apt-get install netcat`
@@ -45,7 +45,7 @@ bash Miniforge3-$(uname)-$(uname -m).sh
 # Install Python 3.12, nodejs, and poetry
 mamba install python=3.12
 mamba install conda-forge::nodejs
-mamba install conda-forge::poetry
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 2. Build and Setup The Environment
@@ -146,13 +146,13 @@ To run tests, refer to the following:
 #### Unit tests
 
 ```bash
-poetry run pytest ./tests/unit/test_*.py
+uv run -m pytest ./tests/unit/test_*.py
 ```
 
 ### 9. Add or update dependency
 
-1. Add your dependency in `pyproject.toml` or use `poetry add xxx`.
-2. Update the poetry.lock file via `poetry lock --no-update`.
+1. Add your dependency in `pyproject.toml`.
+2. Update the lock file via `uv lock`.
 
 ### 10. Use existing Docker image
 
