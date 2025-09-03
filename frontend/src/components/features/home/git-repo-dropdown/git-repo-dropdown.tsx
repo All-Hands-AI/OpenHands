@@ -11,7 +11,7 @@ import { Provider, ProviderOptions } from "#/types/settings";
 import { GitRepository } from "#/types/git";
 import { useDebounce } from "#/hooks/use-debounce";
 import { cn } from "#/utils/utils";
-import { LoadingSpinner } from "../shared/loading-spinner";
+
 import { ClearButton } from "../shared/clear-button";
 import { ToggleButton } from "../shared/toggle-button";
 import { ErrorMessage } from "../shared/error-message";
@@ -261,7 +261,11 @@ export function GitRepoDropdown({
     <div className={cn("relative", className)}>
       <div className="relative">
         <div className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10">
-          <RepoIcon width={16} height={16} />
+          {isLoadingState ? (
+            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+          ) : (
+            <RepoIcon width={16} height={16} />
+          )}
         </div>
         <input
           // eslint-disable-next-line react/jsx-props-no-spreading
@@ -279,7 +283,7 @@ export function GitRepoDropdown({
           data-testid="git-repo-dropdown"
         />
 
-        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center">
+        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
           {selectedRepository && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
@@ -291,9 +295,6 @@ export function GitRepoDropdown({
             iconClassName="w-10 h-10"
           />
         </div>
-        {isLoadingState && (
-          <LoadingSpinner hasSelection={!!selectedRepository} />
-        )}
       </div>
 
       <GenericDropdownMenu
