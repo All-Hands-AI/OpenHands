@@ -55,7 +55,7 @@ def extract_test_results(res_file_path: str) -> tuple[list[str], list[str]]:
 if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(
-            'Usage: poetry run python summarise_results.py <path_to_output_jsonl_file>'
+            'Usage: uv run python summarise_results.py <path_to_output_jsonl_file>'
         )
         sys.exit(1)
     json_file_path = sys.argv[1]
