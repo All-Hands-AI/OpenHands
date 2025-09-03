@@ -3,7 +3,7 @@ import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { cn } from "#/utils/utils";
 import { ContextMenu } from "#/ui/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
+import { Divider } from "#/ui/divider";
 import { I18nKey } from "#/i18n/declaration";
 
 import EditIcon from "#/icons/u-edit.svg?react";
@@ -77,12 +77,7 @@ export function ConversationNameContextMenu({
         </ContextMenuListItem>
       )}
 
-      {hasTools && (
-        <ContextMenuSeparator
-          testId="separator-tools"
-          className="bg-[#5C5D62]"
-        />
-      )}
+      {hasTools && <Divider testId="separator-tools" />}
 
       {onShowMicroagents && (
         <ContextMenuListItem
@@ -112,12 +107,7 @@ export function ConversationNameContextMenu({
         </ContextMenuListItem>
       )}
 
-      {(hasExport || hasDownload) && (
-        <ContextMenuSeparator
-          testId="separator-export"
-          className="bg-[#5C5D62]"
-        />
-      )}
+      {(hasExport || hasDownload) && <Divider testId="separator-export" />}
 
       {onExportConversation && (
         <ContextMenuListItem
@@ -147,12 +137,7 @@ export function ConversationNameContextMenu({
         </ContextMenuListItem>
       )}
 
-      {(hasInfo || hasControl) && (
-        <ContextMenuSeparator
-          testId="separator-info-control"
-          className="bg-[#5C5D62]"
-        />
-      )}
+      {(hasInfo || hasControl) && <Divider testId="separator-info-control" />}
 
       {onDisplayCost && (
         <ContextMenuListItem
