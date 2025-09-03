@@ -129,26 +129,19 @@ def action_from_dict(action: dict) -> Action:
     rc = args.pop('reasoning_content', None)
     if 'thought' in args:
         t = args['thought']
-        print(f"DEBUG: Original thought type: {type(t)}, value: {t}")
         if isinstance(t, dict):
             # Accept either {'text': '...', 'reasoning_content': '...'} or legacy {'thought': '...'}
             text = t.get('text') or t.get('thought') or ''
             reasoning_content = t.get('reasoning_content') or rc
-            thought_obj = Thought(text=text, reasoning_content=reasoning_content)
-            args['thought'] = thought_obj
-            print(f"DEBUG: Created Thought object: {type(thought_obj)}, value: {thought_obj}")
+            args['thought'] = Thought(text=text, reasoning_content=reasoning_content)
         elif isinstance(t, str):
-            thought_obj = Thought(text=t, reasoning_content=rc)
-            args['thought'] = thought_obj
-            print(f"DEBUG: Created Thought object from string: {type(thought_obj)}, value: {thought_obj}")
+            args['thought'] = Thought(text=t, reasoning_content=rc)
         # Inputs to action_from_dict come from wire (JSON→dict), so t will be dict or str.
         # Thought instances should not appear here; if they do, they are out-of-band.
         # We intentionally do not handle object instances to keep deserialization strict.
     elif rc is not None:
         # No text thought provided, but reasoning content exists
-        thought_obj = Thought(text='', reasoning_content=rc)
-        args['thought'] = thought_obj
-        print(f"DEBUG: Created Thought object from rc: {type(thought_obj)}, value: {thought_obj}")
+        args['thought'] = Thought(text='', reasoning_content=rc)
 
     # Handle security_risk deserialization
     if 'security_risk' in args and args['security_risk'] is not None:
@@ -163,9 +156,7 @@ def action_from_dict(action: dict) -> Action:
     args = handle_action_deprecated_args(args)
 
     try:
-        print(f"DEBUG: About to create action with args: {args}")
         decoded_action = action_class(**args)
-        print(f"DEBUG: Created action, thought type: {type(decoded_action.thought)}, value: {decoded_action.thought}")
         if 'timeout' in action:
             blocking = args.get('blocking', False)
             decoded_action.set_hard_timeout(action['timeout'], blocking=blocking)
