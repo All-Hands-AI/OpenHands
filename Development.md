@@ -42,7 +42,7 @@ If you want to develop without system admin/sudo access to upgrade/install `Pyth
 curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 bash Miniforge3-$(uname)-$(uname -m).sh
 
-# Install Python 3.12, nodejs, and poetry
+# Install Python 3.12, Node.js, and uv
 mamba install python=3.12
 mamba install conda-forge::nodejs
 curl -LsSf https://astral.sh/uv/install.sh | sh
