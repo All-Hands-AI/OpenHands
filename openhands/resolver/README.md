@@ -147,10 +147,10 @@ python -m openhands.resolver.resolve_issue --selected-repo all-hands-ai/openhand
 
 The output will be written to the `output/` directory.
 
-If you've installed the package from source using poetry, you can use:
+If you've installed the package from source using uv, you can use:
 
 ```bash
-poetry run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
+uv run python openhands/resolver/resolve_issue.py --selected-repo all-hands-ai/openhands --issue-number 100
 ```
 
 ## Responding to PR Comments
