@@ -113,8 +113,9 @@ class TomCodeActAgent(CodeActAgent):
                 and self._is_new_user_message(latest_user_message)
             ):
                 action = ConsultTomAgentAction(
-                    content='User wants to consult Tom agent about their intent',
-                    use_user_message=True,
+                    content='Users message is /consult_tom_agent. I better consult ToM agent about what user wants to do next and get some user preferences.',
+                    use_user_message=False,
+                    custom_query='what user wants to do next',
                 )
                 self._last_processed_user_message_id = latest_user_message.id
 
