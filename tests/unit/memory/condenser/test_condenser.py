@@ -489,7 +489,7 @@ def test_amortized_forgetting_condenser_keeps_first_and_last_events():
 
     events = [create_test_event(f'Event {i}', id=i) for i in range(max_size * 10)]
 
-    # To ensure the most recent event is always recorded, track it in a non-local variable udpated
+    # To ensure the most recent event is always recorded, track it in a non-local variable updated
     # with a closure we'll pass to the view generator as a callback.
     most_recent_event: Event | None = None
 
@@ -773,7 +773,7 @@ def test_structured_summary_condenser_keeps_first_and_summary_events(
             i, max_size
         )
 
-        # Ensure that the prefix is appropiately maintained
+        # Ensure that the prefix is appropriately maintained
         assert view[:keep_first] == events[: min(keep_first, i + 1)]
 
         # If we've condensed, ensure that the summary event is present
