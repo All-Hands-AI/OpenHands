@@ -12,7 +12,7 @@ To run OpenHands in headless mode with Python:
 1. Ensure you have followed the [Development setup instructions](https://github.com/All-Hands-AI/OpenHands/blob/main/Development.md).
 2. Run the following command:
 ```bash
-poetry run python -m openhands.core.main -t "write a bash script that prints hi"
+uv run python -m openhands.core.main -t "write a bash script that prints hi"
 ```
 
 You'll need to be sure to set your model, API key, and other settings via environment variables
@@ -26,24 +26,24 @@ You can specify a repository for OpenHands to work with using `--selected-repo` 
 
 ```bash
 # Using command-line argument
-poetry run python -m openhands.core.main \
+uv run python -m openhands.core.main \
   --selected-repo "owner/repo-name" \
   -t "analyze the codebase and suggest improvements"
 
 # Using environment variable
 export SANDBOX_SELECTED_REPO="owner/repo-name"
-poetry run python -m openhands.core.main -t "fix any linting issues"
+uv run python -m openhands.core.main -t "fix any linting issues"
 
 # Authentication tokens are currently required for ALL repository operations (public and private)
 # This includes GitHub, GitLab, and Bitbucket repositories
 export GITHUB_TOKEN="your-token"  # or GITLAB_TOKEN, BITBUCKET_TOKEN
-poetry run python -m openhands.core.main \
+uv run python -m openhands.core.main \
   --selected-repo "owner/repo-name" \
   -t "review the security implementation"
 
 # Using task files instead of inline task
 echo "Review the README and suggest improvements" > task.txt
-poetry run python -m openhands.core.main -f task.txt --selected-repo "owner/repo"
+uv run python -m openhands.core.main -f task.txt --selected-repo "owner/repo"
 ```
 
 ## With Docker
@@ -91,6 +91,6 @@ Common command-line options:
 - `-b 10.0` - Set budget limit (USD)
 - `--no-auto-continue` - Interactive mode
 
-Run `poetry run python -m openhands.core.main --help` for all options.
+Run `uv run python -m openhands.core.main --help` for all options.
 
 Set `export LOG_ALL_EVENTS=true` to log all agent actions.
