@@ -42,7 +42,7 @@ Backend:
 - Located in the `openhands` directory
 - Testing:
   - All tests are in `tests/unit/test_*.py`
-  - To test new code, run `poetry run pytest tests/unit/test_xxx.py` where `xxx` is the appropriate file for the current functionality
+  - To test new code, run `uv run pytest tests/unit/test_xxx.py` where `xxx` is the appropriate file for the current functionality
   - Write all tests with pytest
 
 Frontend:
