@@ -40,7 +40,7 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "DATASET: $DATASET"
 
-COMMAND="poetry run python evaluation/benchmarks/EDA/run_infer.py \
+COMMAND="uv run python evaluation/benchmarks/EDA/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --dataset $DATASET \
