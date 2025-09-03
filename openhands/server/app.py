@@ -80,7 +80,7 @@ app.include_router(feedback_api_router)
 app.include_router(conversation_api_router)
 app.include_router(manage_conversation_api_router)
 app.include_router(settings_router)
-# Allow external extensions (e.g. SaaS) to mount additional routes/endpoints
+# Allow external extensions (e.g., custom/TestExtension) to mount additional routes/endpoints
 mount_extensions(app)
 
 app.include_router(secrets_router)
