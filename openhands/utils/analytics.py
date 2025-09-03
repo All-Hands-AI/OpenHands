@@ -24,9 +24,16 @@ class AnalyticsClient:
 
         if POSTHOG_AVAILABLE:
             # Get PostHog configuration from environment or server config
-            api_key = os.environ.get(
-                'POSTHOG_API_KEY', 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
-            )
+            try:
+                from openhands.server.config.server_config import load_server_config
+
+                server_config = load_server_config()
+                default_api_key = server_config.posthog_client_key
+            except Exception:
+                # Fallback to hardcoded key if server config is not available
+                default_api_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
+
+            api_key = os.environ.get('POSTHOG_API_KEY', default_api_key)
             host = os.environ.get('POSTHOG_HOST', 'https://us.i.posthog.com')
 
             if api_key:

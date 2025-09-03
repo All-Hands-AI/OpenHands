@@ -88,24 +88,7 @@ class TomCodeActAgent(CodeActAgent):
         )
         self._last_processed_user_message_id: Optional[int] = None
         self._skip_next_tom_analysis: bool = False
-
-        # Track ToM agent initialization
-        try:
-            # We don't have session_id in __init__, so we'll track it without session_id for now
-            # The session_id will be available in the step method
-            track_tom_event(
-                user_id='unknown',  # Will be updated when we have user context
-                event='tom_agent_initialized',
-                properties={
-                    'tom_enabled': self.tom_enabled,
-                    'tom_enable_rag': self.tom_enable_rag,
-                    'tom_min_instruction_length': self.tom_min_instruction_length,
-                    'skip_memory_collection': self.skip_memory_collection,
-                    'llm_model': self.llm.config.model,
-                },
-            )
-        except Exception as e:
-            logger.error(f'Failed to track ToM agent initialization: {e}')
+        self._initialization_tracked: bool = False
 
         logger.info(
             f'TomCodeActAgent initialized with Tom integration: {self.tom_enabled}'
@@ -119,6 +102,25 @@ class TomCodeActAgent(CodeActAgent):
 
     def step(self, state: State) -> 'Action':
         """Enhanced step method with Tom integration."""
+        # Track ToM agent initialization on first step (CLI mode only)
+        if not self._initialization_tracked and CLI_AVAILABLE:
+            try:
+                track_tom_event(
+                    user_id=state.user_id or 'unknown',
+                    event='tom_agent_initialized',
+                    properties={
+                        'session_id': state.session_id,
+                        'tom_enabled': self.tom_enabled,
+                        'tom_enable_rag': self.tom_enable_rag,
+                        'tom_min_instruction_length': self.tom_min_instruction_length,
+                        'skip_memory_collection': self.skip_memory_collection,
+                        'llm_model': self.llm.config.model,
+                    },
+                )
+                self._initialization_tracked = True
+            except Exception as e:
+                logger.error(f'Failed to track ToM agent initialization: {e}')
+
         action: 'Action | None' = None
         latest_user_message = state.get_last_user_message()
         # sleep time compute at the beginning of the session
@@ -290,22 +292,6 @@ class TomCodeActAgent(CodeActAgent):
             f'🚀 Tom: Integration Point triggered - consulting about {"user query" if is_user_query else "agent query"}'
         )
 
-        # Track ToM consultation start
-        try:
-            user_id = state.user_id or ''
-            track_tom_event(
-                user_id=user_id,
-                event='tom_consultation_started',
-                properties={
-                    'session_id': state.session_id,
-                    'is_user_query': is_user_query,
-                    'trigger_type': 'automatic' if is_user_query else 'manual',
-                    'query_length': len(query_text),
-                },
-            )
-        except Exception as e:
-            logger.error(f'Failed to track ToM consultation start: {e}')
-
         try:
             user_id = state.user_id or ''
             # Single synchronous call that includes user context analysis
@@ -358,37 +344,6 @@ class TomCodeActAgent(CodeActAgent):
                             self.file_store.write(str(record_file), new_line)
                         logger.log(CLI_DISPLAY_LEVEL, '🔍 Tom: Recorded interaction')
 
-                        # Track ToM proposal and user acceptance
-                        try:
-                            # Determine acceptance status
-                            acceptance_value = user_response['value']
-                            if acceptance_value == 1:
-                                acceptance_status = 'accepted'
-                            elif acceptance_value == 0.5:
-                                acceptance_status = 'partially_accepted'
-                            else:
-                                acceptance_status = 'rejected'
-
-                            # Determine if this is automatic or manual trigger
-                            trigger_type = 'automatic' if is_user_query else 'manual'
-
-                            track_tom_event(
-                                user_id=user_id,
-                                event='tom_proposal_response',
-                                properties={
-                                    'session_id': state.session_id,
-                                    'trigger_type': trigger_type,
-                                    'is_user_query': is_user_query,
-                                    'acceptance_status': acceptance_status,
-                                    'acceptance_value': acceptance_value,
-                                    'original_length': len(query_text),
-                                    'improved_length': len(tom_suggestion.suggestions),
-                                    'timestamp': interaction['timestamp'],
-                                },
-                            )
-                        except Exception as e:
-                            logger.error(f'Failed to track ToM proposal response: {e}')
-
                         return user_response['suggestions']
 
                     except Exception as e:
@@ -397,29 +352,6 @@ class TomCodeActAgent(CodeActAgent):
                 else:
                     # Non-CLI mode: use consultation result automatically
                     logger.info("✅ Tom: Using Tom's guidance")
-
-                    # Track automatic acceptance in non-CLI mode
-                    try:
-                        trigger_type = 'automatic' if is_user_query else 'manual'
-                        track_tom_event(
-                            user_id=user_id,
-                            event='tom_proposal_response',
-                            properties={
-                                'session_id': state.session_id,
-                                'trigger_type': trigger_type,
-                                'is_user_query': is_user_query,
-                                'acceptance_status': 'auto_accepted',
-                                'acceptance_value': 1.0,  # Automatically accepted
-                                'original_length': len(query_text),
-                                'improved_length': len(tom_suggestion.suggestions),
-                                'cli_mode': False,
-                                'timestamp': datetime.now().isoformat(),
-                            },
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f'Failed to track automatic ToM proposal acceptance: {e}'
-                        )
 
                     return tom_suggestion.suggestions
             else:
