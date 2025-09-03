@@ -8,6 +8,9 @@ from openhands.cli.gui_launcher import launch_gui_server
 from openhands.cli.main import run_cli_command
 from openhands.core.config import get_cli_parser
 from openhands.core.config.arg_utils import get_subparser
+from openhands.utils.laminar import maybe_init_laminar
+
+maybe_init_laminar()
 
 
 def main():
