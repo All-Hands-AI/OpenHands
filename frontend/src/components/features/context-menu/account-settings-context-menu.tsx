@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router";
 import { ContextMenu } from "./context-menu";
 import { ContextMenuListItem } from "./context-menu-list-item";
-import { ContextMenuSeparator } from "./context-menu-separator";
+import { Divider } from "#/ui/divider";
 import { useClickOutsideElement } from "#/hooks/use-click-outside-element";
 import { useConfig } from "#/hooks/query/use-config";
 import { I18nKey } from "#/i18n/declaration";
@@ -115,7 +115,7 @@ export function AccountSettingsContextMenu({
         </Link>
       ))}
 
-      <ContextMenuSeparator className="bg-[#5C5D62]" />
+      <Divider />
 
       <ContextMenuListItem
         onClick={onLogout}

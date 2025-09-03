@@ -14,6 +14,7 @@ import DownloadIcon from "#/icons/u-download.svg?react";
 import CreditCardIcon from "#/icons/u-credit-card.svg?react";
 import CloseIcon from "#/icons/u-close.svg?react";
 import DeleteIcon from "#/icons/u-delete.svg?react";
+import { Divider } from "#/ui/divider";
 
 interface ConversationCardContextMenuProps {
   onClose: () => void;
@@ -47,10 +48,14 @@ export function ConversationCardContextMenu({
   const generateSection = useCallback(
     (items: React.ReactNode[], isLast?: boolean) => {
       const filteredItems = items.filter((i) => i != null);
-      const divider = <div className="border-b-1 border-[#A3A3A3]" />;
 
       if (filteredItems.length > 0) {
-        return !isLast ? [...filteredItems, divider] : filteredItems;
+        return !isLast
+          ? [
+              ...filteredItems,
+              <Divider key="conversation-card-context-menu-divider" />,
+            ]
+          : filteredItems;
       }
       return [];
     },

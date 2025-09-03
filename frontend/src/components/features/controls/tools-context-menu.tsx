@@ -6,7 +6,7 @@ import { useUserProviders } from "#/hooks/use-user-providers";
 import { cn } from "#/utils/utils";
 import { ContextMenu } from "../context-menu/context-menu";
 import { ContextMenuListItem } from "../context-menu/context-menu-list-item";
-import { ContextMenuSeparator } from "../context-menu/context-menu-separator";
+import { Divider } from "#/ui/divider";
 import { I18nKey } from "#/i18n/declaration";
 
 import CodeBranchIcon from "#/icons/u-code-branch.svg?react";
@@ -90,7 +90,7 @@ export function ToolsContextMenu({
         </div>
       </div>
 
-      <ContextMenuSeparator className="bg-[#5C5D62]" />
+      <Divider />
 
       {/* Show Available Microagents */}
       <ContextMenuListItem
