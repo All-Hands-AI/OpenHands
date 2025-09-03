@@ -273,24 +273,22 @@ export function GitRepoDropdown({
               "bg-[#454545] text-[#A3A3A3] placeholder:text-[#A3A3A3]",
               "focus:outline-none focus:ring-0 focus:border-[#727987]",
               "disabled:bg-[#363636] disabled:cursor-not-allowed disabled:opacity-60",
-              "pl-7 pr-2 text-sm font-normal leading-5", // Space for toggle button
+              "pl-7 pr-16 text-sm font-normal leading-5", // Space for clear and toggle buttons
             ),
           })}
           data-testid="git-repo-dropdown"
         />
 
-        <div className="absolute -right-2 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center">
           {selectedRepository && (
-            <div className="absolute right-7 translate-y-[1px]">
-              <ClearButton disabled={disabled} onClear={handleClear} />
-            </div>
+            <ClearButton disabled={disabled} onClear={handleClear} />
           )}
 
           <ToggleButton
             isOpen={isOpen}
             disabled={disabled}
             getToggleButtonProps={getToggleButtonProps}
-            iconClassName="w-10 h-10 translate-y-[1px]"
+            iconClassName="w-10 h-10"
           />
         </div>
         {isLoadingState && (
