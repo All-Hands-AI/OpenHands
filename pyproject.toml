@@ -94,6 +94,7 @@ kubernetes = "^33.1.0"
 pyyaml = "^6.0.2"
 memory-profiler = "^0.61.0"
 jupyter_kernel_gateway = "*"
+posthog = "^3.0.0"
 # tom-swe = { path = "/Users/xuhuizhou/Projects/ToM-SWE", develop = true }
 tom-swe = { git = "https://github.com/all-hands-ai/ToM-SWE.git", branch = "feat/improve_prompts_plus" }
 
