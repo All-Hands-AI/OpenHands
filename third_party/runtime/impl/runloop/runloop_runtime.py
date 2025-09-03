@@ -105,7 +105,7 @@ class RunloopRuntime(ActionExecutionClient):
         start_command_str = (
             "export MAMBA_ROOT_PREFIX=/openhands/micromamba && "
             "cd /openhands/code && "
-            "/openhands/micromamba/bin/micromamba run -n openhands poetry config virtualenvs.path /openhands/poetry && "
+            "/openhands/micromamba/bin/micromamba run -n openhands uv venv /openhands/poetry && "
             + " ".join(start_command)
         )
         entrypoint = f"sudo bash -c '{start_command_str}'"
