@@ -17,11 +17,9 @@ export interface IMicroagentItem {
 export interface MicroagentFormData {
   query: string;
   triggers: string[];
-  selectedBranch: string;
   microagentPath: string;
 }
 
 export interface LearnThisRepoFormData {
   query: string;
-  selectedBranch: string;
 }

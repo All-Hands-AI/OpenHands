@@ -59,6 +59,7 @@ interface EventMessageProps {
   actions?: Array<{
     icon: React.ReactNode;
     onClick: () => void;
+    tooltip?: string;
   }>;
   isInLast10Actions: boolean;
 }
