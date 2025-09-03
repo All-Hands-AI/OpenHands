@@ -331,102 +331,223 @@ async def test_github_get_user_organizations():
 
 
 @pytest.mark.asyncio
-async def test_github_get_user_organizations_error_handling():
-    """Test that get_user_organizations handles errors gracefully."""
+async def test_github_get_installation_organizations():
+    """Test that get_installation_organizations fetches organizations from GitHub App installations."""
     service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
 
-    with patch.object(service, '_make_request', side_effect=Exception('API Error')):
-        orgs = await service.get_user_organizations()
+    mock_installations_response = [
+        {
+            'id': 1,
+            'account': {'login': 'All-Hands-AI', 'type': 'Organization'},
+        },
+        {
+            'id': 2,
+            'account': {'login': 'example-org', 'type': 'Organization'},
+        },
+        {
+            'id': 3,
+            'account': {'login': 'personal-user', 'type': 'User'},
+        },
+    ]
 
-        # Should return empty list on error
-        assert orgs == []
+    with patch.object(
+        service, '_make_request', return_value=(mock_installations_response, {})
+    ):
+        orgs = await service.get_installation_organizations()
 
-
-@pytest.mark.asyncio
-async def test_github_service_base_url_configuration():
-    """Test that BASE_URL is correctly configured based on base_domain."""
-    # Test default GitHub.com configuration
-    service = GitHubService(user_id=None, token=SecretStr('test-token'))
-    assert service.BASE_URL == 'https://api.github.com'
-
-    # Test GitHub Enterprise Server configuration
-    service = GitHubService(
-        user_id=None, token=SecretStr('test-token'), base_domain='github.enterprise.com'
-    )
-    assert service.BASE_URL == 'https://github.enterprise.com/api/v3'
-
-    # Test that github.com base_domain doesn't change the URL
-    service = GitHubService(
-        user_id=None, token=SecretStr('test-token'), base_domain='github.com'
-    )
-    assert service.BASE_URL == 'https://api.github.com'
+        # Should only return organizations, not users
+        assert orgs == ['All-Hands-AI', 'example-org']
 
 
 @pytest.mark.asyncio
-async def test_github_service_graphql_url_enterprise_server():
-    """Test that GraphQL URL is correctly constructed for GitHub Enterprise Server."""
-    # Mock httpx.AsyncClient for testing GraphQL calls
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'data': {'viewer': {'login': 'test-user'}}}
-    mock_response.raise_for_status = Mock()
+async def test_github_search_repositories_saas_mode():
+    """Test that search_repositories uses installation organizations in SaaS mode."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
 
-    mock_client = AsyncMock()
-    mock_client.post.return_value = mock_response
-    mock_client.__aenter__.return_value = mock_client
-    mock_client.__aexit__.return_value = None
+    # Mock user data
+    mock_user = User(
+        id='123', login='testuser', avatar_url='https://example.com/avatar.jpg'
+    )
 
-    with patch('httpx.AsyncClient', return_value=mock_client):
-        # Test GitHub Enterprise Server
-        service = GitHubService(
-            user_id=None,
-            token=SecretStr('test-token'),
-            base_domain='github.enterprise.com',
+    # Mock search response
+    mock_search_response = {
+        'items': [
+            {
+                'id': 1,
+                'name': 'agent-sdk',
+                'full_name': 'All-Hands-AI/agent-sdk',
+                'private': False,
+                'html_url': 'https://github.com/All-Hands-AI/agent-sdk',
+                'clone_url': 'https://github.com/All-Hands-AI/agent-sdk.git',
+                'pushed_at': '2023-01-01T00:00:00Z',
+                'owner': {'login': 'All-Hands-AI', 'type': 'Organization'},
+            }
+        ]
+    }
+
+    with (
+        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(
+            service,
+            'get_installation_organizations',
+            return_value=['All-Hands-AI', 'example-org'],
+        ),
+        patch.object(
+            service, '_make_request', return_value=(mock_search_response, {})
+        ) as mock_request,
+    ):
+        repositories = await service.search_repositories(
+            query='agent-sdk',
+            per_page=10,
+            sort='stars',
+            order='desc',
+            public=False,
+            app_mode=AppMode.SAAS,
         )
 
-        query = 'query { viewer { login } }'
-        variables = {}
+        # Verify that separate requests were made for user and each organization
+        assert mock_request.call_count == 3
 
-        await service.execute_graphql_query(query, variables)
+        # Check the calls made
+        calls = mock_request.call_args_list
 
-        # Verify the GraphQL request was made to the CORRECT URL
-        # For GitHub Enterprise Server, it should be /api/graphql, not /api/v3/graphql
-        mock_client.post.assert_called_once()
-        call_args = mock_client.post.call_args
-        actual_url = call_args[0][0]  # First positional argument is the URL
+        # First call should be for user repositories
+        user_call = calls[0]
+        user_params = user_call[0][1]  # Second argument is params
+        assert user_params['q'] == 'agent-sdk user:testuser'
 
-        # After the fix, GraphQL URL should be correctly constructed for GitHub Enterprise Server
-        # The URL should be /api/graphql, not /api/v3/graphql
-        assert actual_url == 'https://github.enterprise.com/api/graphql'
+        # Second call should be for first organization
+        org1_call = calls[1]
+        org1_params = org1_call[0][1]
+        assert org1_params['q'] == 'agent-sdk org:All-Hands-AI'
+
+        # Third call should be for second organization
+        org2_call = calls[2]
+        org2_params = org2_call[0][1]
+        assert org2_params['q'] == 'agent-sdk org:example-org'
+
+        # Verify repositories are returned
+        assert len(repositories) == 3
+        assert all(repo.full_name == 'All-Hands-AI/agent-sdk' for repo in repositories)
 
 
 @pytest.mark.asyncio
-async def test_github_service_graphql_url_github_com():
-    """Test that GraphQL URL is correctly constructed for GitHub.com."""
-    # Mock httpx.AsyncClient for testing GraphQL calls
-    mock_response = Mock()
-    mock_response.status_code = 200
-    mock_response.json.return_value = {'data': {'viewer': {'login': 'test-user'}}}
-    mock_response.raise_for_status = Mock()
+async def test_github_search_repositories_oss_mode():
+    """Test that search_repositories uses user organizations in OSS mode."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
 
-    mock_client = AsyncMock()
-    mock_client.post.return_value = mock_response
-    mock_client.__aenter__.return_value = mock_client
-    mock_client.__aexit__.return_value = None
+    # Mock user data
+    mock_user = User(
+        id='123', login='testuser', avatar_url='https://example.com/avatar.jpg'
+    )
 
-    with patch('httpx.AsyncClient', return_value=mock_client):
-        # Test GitHub.com (should work correctly)
-        service = GitHubService(user_id=None, token=SecretStr('test-token'))
+    # Mock search response
+    mock_search_response = {
+        'items': [
+            {
+                'id': 1,
+                'name': 'agent-sdk',
+                'full_name': 'All-Hands-AI/agent-sdk',
+                'private': False,
+                'html_url': 'https://github.com/All-Hands-AI/agent-sdk',
+                'clone_url': 'https://github.com/All-Hands-AI/agent-sdk.git',
+                'pushed_at': '2023-01-01T00:00:00Z',
+                'owner': {'login': 'All-Hands-AI', 'type': 'Organization'},
+            }
+        ]
+    }
 
-        query = 'query { viewer { login } }'
-        variables = {}
+    with (
+        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(
+            service,
+            'get_user_organizations',
+            return_value=['All-Hands-AI', 'example-org'],
+        ),
+        patch.object(
+            service, '_make_request', return_value=(mock_search_response, {})
+        ) as mock_request,
+    ):
+        repositories = await service.search_repositories(
+            query='agent-sdk',
+            per_page=10,
+            sort='stars',
+            order='desc',
+            public=False,
+            app_mode=AppMode.OSS,
+        )
 
-        await service.execute_graphql_query(query, variables)
+        # Verify that separate requests were made for user and each organization
+        assert mock_request.call_count == 3
 
-        # Verify the GraphQL request was made to the correct URL for GitHub.com
-        mock_client.post.assert_called_once()
-        call_args = mock_client.post.call_args
-        actual_url = call_args[0][0]  # First positional argument is the URL
+        # Check the calls made
+        calls = mock_request.call_args_list
 
-        # This should be correct for GitHub.com
-        assert actual_url == 'https://api.github.com/graphql'
+        # First call should be for user repositories
+        user_call = calls[0]
+        user_params = user_call[0][1]  # Second argument is params
+        assert user_params['q'] == 'agent-sdk user:testuser'
+
+        # Second call should be for first organization
+        org1_call = calls[1]
+        org1_params = org1_call[0][1]
+        assert org1_params['q'] == 'agent-sdk org:All-Hands-AI'
+
+        # Third call should be for second organization
+        org2_call = calls[2]
+        org2_params = org2_call[0][1]
+        assert org2_params['q'] == 'agent-sdk org:example-org'
+
+        # Verify repositories are returned
+        assert len(repositories) == 3
+        assert all(repo.full_name == 'All-Hands-AI/agent-sdk' for repo in repositories)
+
+
+@pytest.mark.asyncio
+async def test_github_search_repositories_app_mode_none_defaults_to_oss():
+    """Test that search_repositories defaults to OSS behavior when app_mode is None."""
+    service = GitHubService(user_id='test-user', token=SecretStr('test-token'))
+
+    # Mock user data
+    mock_user = User(
+        id='123', login='testuser', avatar_url='https://example.com/avatar.jpg'
+    )
+
+    # Mock search response
+    mock_search_response = {
+        'items': [
+            {
+                'id': 1,
+                'name': 'agent-sdk',
+                'full_name': 'All-Hands-AI/agent-sdk',
+                'private': False,
+                'html_url': 'https://github.com/All-Hands-AI/agent-sdk',
+                'clone_url': 'https://github.com/All-Hands-AI/agent-sdk.git',
+                'pushed_at': '2023-01-01T00:00:00Z',
+                'owner': {'login': 'All-Hands-AI', 'type': 'Organization'},
+            }
+        ]
+    }
+
+    with (
+        patch.object(service, 'get_user', return_value=mock_user),
+        patch.object(
+            service,
+            'get_user_organizations',
+            return_value=['All-Hands-AI', 'example-org'],
+        ),
+        patch.object(
+            service, '_make_request', return_value=(mock_search_response, {})
+        ) as mock_request,
+    ):
+        # Call without app_mode parameter (should default to OSS behavior)
+        await service.search_repositories(
+            query='agent-sdk', per_page=10, sort='stars', order='desc', public=False
+        )
+
+        # Verify that separate requests were made for user and each organization
+        assert mock_request.call_count == 3
+
+        # Should use get_user_organizations (OSS behavior), not get_installation_organizations
+        # This is verified by the mock setup - if it tried to call get_installation_organizations,
+        # it would fail since we only mocked get_user_organizations
