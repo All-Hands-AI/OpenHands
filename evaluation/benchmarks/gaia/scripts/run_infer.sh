@@ -36,7 +36,7 @@ echo "OPENHANDS_VERSION: $OPENHANDS_VERSION"
 echo "MODEL_CONFIG: $MODEL_CONFIG"
 echo "LEVELS: $LEVELS"
 
-COMMAND="poetry run python ./evaluation/benchmarks/gaia/run_infer.py \
+COMMAND="uv run python ./evaluation/benchmarks/gaia/run_infer.py \
   --agent-cls $AGENT \
   --llm-config $MODEL_CONFIG \
   --max-iterations 60 \
