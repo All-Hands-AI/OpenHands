@@ -7,7 +7,7 @@ This is a WebSocket server that executes tasks using an agent.
 - [Initialize the frontend code](../../frontend/README.md)
 - Install Python 3.12 (`brew install python` for those using homebrew)
 - Install pipx: (`brew install pipx` followed by `pipx ensurepath`)
-- Install poetry: (`pipx install poetry`)
+- Install uv: (`pipx install uv`)
 
 ## Install
 
@@ -20,7 +20,7 @@ npm run build
 cd ..
 ```
 
-Next run `poetry shell` (So you don't have to repeat `poetry run`)
+Next run `uv sync` and then activate the virtual environment with `source .venv/bin/activate` (So you don't have to repeat `uv run`)
 
 ## Start the Server
 
