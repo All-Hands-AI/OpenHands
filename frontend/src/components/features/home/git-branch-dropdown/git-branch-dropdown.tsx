@@ -211,7 +211,7 @@ export function GitBranchDropdown({
           data-testid="git-branch-dropdown-input"
         />
 
-        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center gap-1">
+        <div className="absolute right-1 top-1/2 transform -translate-y-1/2 flex items-center">
           {selectedBranch && (
             <ClearButton disabled={disabled} onClear={handleClear} />
           )}
