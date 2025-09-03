@@ -158,6 +158,7 @@ class SetAuthCookieMiddleware:
             '/api/billing/success',
             '/api/billing/cancel',
             '/api/billing/customer-setup-success',
+            '/api/billing/stripe-webhook',
         )
 
         is_mcp = path.startswith('/mcp')
