@@ -393,10 +393,9 @@ class BashSession:
 
         # Special case where the previous command output is truncated due to history limit
         # We should get the content BEFORE the last PS1 prompt
-        # Only treat as truncation if there was at least one PS1 before execution and now only one is present.
-        get_content_before_last_match = bool(
-            len(ps1_matches) == 1 and initial_ps1_count >= 1
-        )
+        # When there's exactly one PS1 match, we want content before it (the command output)
+        # The only exception is when initial_ps1_count was 0 and we have no actual command output
+        get_content_before_last_match = bool(len(ps1_matches) == 1)
 
         # Update the current working directory if it has changed
         if metadata.working_dir != self._cwd and metadata.working_dir:
