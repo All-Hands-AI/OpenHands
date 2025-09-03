@@ -193,7 +193,7 @@ def get_config(
         dataset_name=metadata.dataset,
         instance_id=instance['instance_id'],
     )
-    oh_aci_li_cmd = '/openhands/micromamba/bin/micromamba run -n openhands poetry run pip install openhands-aci[llama]'
+    oh_aci_li_cmd = '/openhands/micromamba/bin/micromamba run -n openhands uv pip install openhands-aci[llama]'
     sandbox_config.runtime_extra_deps = oh_aci_li_cmd
     workspace_dir_name = _get_swebench_workspace_dir_name(instance)
     sandbox_config.runtime_startup_env_vars = {
