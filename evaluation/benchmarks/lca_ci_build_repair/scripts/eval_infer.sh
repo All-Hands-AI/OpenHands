@@ -21,7 +21,7 @@ if [ -n "$EXP_NAME" ]; then
 fi
 
 function run_eval() {
-  COMMAND="poetry run python ./evaluation/benchmarks/lca_ci_build_repair/eval_infer.py \
+  COMMAND="uv run python ./evaluation/benchmarks/lca_ci_build_repair/eval_infer.py \
     --predictions-path $PROCESS_FILEPATH "
 
   echo "RUNNING: $COMMAND"
