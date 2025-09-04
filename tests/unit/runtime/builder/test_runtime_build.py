@@ -75,7 +75,11 @@ def _check_source_code_in_dir(temp_dir):
     with open(os.path.join(code_dir, 'pyproject.toml'), 'r') as f:
         pyproject = toml.load(f)
 
-    _pyproject_version = pyproject['tool']['poetry']['version']
+    # Prefer PEP 621 [project] metadata; fallback to Poetry's legacy table
+    _pyproject_version = (
+        pyproject.get('project', {}).get('version')
+        or pyproject.get('tool', {}).get('poetry', {}).get('version')
+    )
     assert _pyproject_version == version('openhands-ai')
 
 
