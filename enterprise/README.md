@@ -1,10 +1,22 @@
-# Closed Source extension of Openhands proper (OSS)
+# OpenHands Enterprise Server
+> [!WARNING]
+> This software is licensed under the [Polyform Free Trial License](./LICENSE). This is **NOT** an open source license. Usage is limited to 30 days per calendar year without a commercial license. If you would like to use it beyond 30 days, please [contact us](https://www.all-hands.dev/contact).
 
-The closed source (CSS) code in the `/app` directory builds on top of open source (OSS) code, extending its functionality. The CSS code is entangled with the OSS code in two ways
+> [!WARNING]
+> This is a work in progress and may contain bugs, incomplete features, or breaking changes.
 
-- CSS stacks on top of OSS. For example, the middleware in CSS is stacked right on top of the middlewares in OSS. In `SAAS`, the middleware from BOTH repos will be present and running (which can sometimes cause conflicts)
+This directory contains the enterprise server used by [OpenHands Cloud](https://github.com/All-Hands-AI/OpenHands-Cloud/). The official, public version of OpenHands Cloud is available at
+[app.all-hands.dev](https://app.all-hands.dev).
 
-- CSS overrides the implementation in OSS (only one is present at a time). For example, the server config [`SaasServerConfig`](https://github.com/All-Hands-AI/deploy/blob/main/app/server/config.py#L43) which overrides [`ServerConfig`](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/server/config/server_config.py#L8) on OSS. This is done through dynamic imports ([see here](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/server/config/server_config.py#L37-#L45))
+You may also want to check out the MIT-licensed [OpenHands](https://github.com/All-Hands-AI/OpenHands)
+
+## Extension of OpenHands (OSS)
+
+The code in `/enterprise` directory builds on top of open source (OSS) code, extending its functionality. The enterprise code is entangled with the OSS code in two ways
+
+- Enterprise stacks on top of OSS. For example, the middleware in enterprise is stacked right on top of the middlewares in OSS. In `SAAS`, the middleware from BOTH repos will be present and running (which can sometimes cause conflicts)
+
+- Enterprise overrides the implementation in OSS (only one is present at a time). For example, the server config SaasServerConfig which overrides [`ServerConfig`](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/server/config/server_config.py#L8) on OSS. This is done through dynamic imports ([see here](https://github.com/All-Hands-AI/OpenHands/blob/main/openhands/server/config/server_config.py#L37-#L45))
 
 Key areas that change on `SAAS` are
 
@@ -12,21 +24,21 @@ Key areas that change on `SAAS` are
 - User settings
 - etc
 
-## Authentication
+### Authentication
 
-| Aspect                    | OSS                                                    | CSS                                                                                                                                 |
+| Aspect                    | OSS                                                    | Enterprise                                                                                                                                 |
 | ------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | **Authentication Method** | User adds a personal access token (PAT) through the UI | User performs OAuth through the UI. The Github app provides a short-lived access token and refresh token                            |
 | **Token Storage**         | PAT is stored in **Settings**                          | Token is stored in **GithubTokenManager** (a file store in our backend)                                                             |
 | **Authenticated status**  | We simply check if token exists in `Settings`          | We issue a signed cookie with `github_user_id` during oauth, so subsequent requests with the cookie can be considered authenticated |
 
-Note that in the future, authentication will happen via keycloak. All modifications for authentication will happen in CSS.
+Note that in the future, authentication will happen via keycloak. All modifications for authentication will happen in enterprise.
 
-## GitHub Service
+### GitHub Service
 
 The github service is responsible for interacting with Github APIs. As a consequence, it uses the user's token and refreshes it if need be
 
-| Aspect                    | OSS                                    | CSS                                            |
+| Aspect                    | OSS                                    | Enterprise                                            |
 | ------------------------- | -------------------------------------- | ---------------------------------------------- |
 | **Class used**            | `GitHubService`                        | `SaaSGitHubService`                            |
 | **Token used**            | User's PAT fetched from `Settings`     | User's token fetched from `GitHubTokenManager` |
@@ -39,6 +51,6 @@ NOTE: in the future we will simply replace the `GithubTokenManager` with keycloa
 ## User ID vs User Token
 
 - On OSS, the entire APP revolves around the Github token the user sets. `openhands/server` uses `request.state.github_token` for the entire app
-- On CSS, the entire APP resolves around the Github User ID. This is because the cookie sets it, so `openhands/server` AND `deploy/app/server` depend on it and completly ignore `request.state.github_token` (token is fetched from `GithubTokenManager` instead)
+- On Enterprise, the entire APP resolves around the Github User ID. This is because the cookie sets it, so `openhands/server` AND `enterprise/server` depend on it and completly ignore `request.state.github_token` (token is fetched from `GithubTokenManager` instead)
 
 Note that introducing Github User ID on OSS, for instance, will cause large breakages.
