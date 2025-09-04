@@ -201,7 +201,7 @@ RUN \
     # Install Playwright browsers in shared location accessible to all users
     export PLAYWRIGHT_BROWSERS_PATH=/opt/playwright-browsers && \
     mkdir -p /opt/playwright-browsers && \
-    /openhands/micromamba/bin/micromamba run -n openhands uv run -p /openhands/poetry/openhands/bin/python playwright install --with-deps chromium && \
+    /openhands/micromamba/bin/micromamba run -n openhands uv run -p /openhands/uv/openhands/bin/python playwright install --with-deps chromium && \
     # Set proper permissions for shared access
     chmod -R 755 /opt/playwright-browsers && \
     # Create cache directories and symlinks for both users
