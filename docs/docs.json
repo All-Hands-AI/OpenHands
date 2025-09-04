@@ -153,7 +153,9 @@
                 "group": "Architecture",
                 "pages": [
                   "usage/architecture/backend",
-                  "usage/architecture/runtime"
+                  "usage/architecture/runtime",
+                  "usage/architecture/auth-system-summary",
+                  "usage/architecture/auth-system-design"
                 ]
               },
               "usage/how-to/debugging",
