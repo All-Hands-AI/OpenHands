@@ -10,14 +10,14 @@ on:
     branches:
       - main
     tags:
-      - '*'
+      - "*"
   pull_request:
   workflow_dispatch:
     inputs:
       reason:
-        description: 'Reason for manual trigger'
+        description: "Reason for manual trigger"
         required: true
-        default: ''
+        default: ""
 
 # If triggered by a PR, it will be in the same group. However, each commit on main will be in its own unique group
 concurrency:
@@ -120,7 +120,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main INSTALL_PLAYWRIGHT=0
@@ -166,6 +166,89 @@ jobs:
           name: runtime-src-${{ matrix.base_image.tag }}
           path: containers/runtime
 
+  ghcr_build_enterprise:
+    name: Push Enterprise Image
+    runs-on: blacksmith-8vcpu-ubuntu-2204
+    permissions:
+      contents: read
+      packages: write
+    needs: [define-matrix, ghcr_build_app]
+    # Do not build enterprise in forks
+    if: github.event.pull_request.head.repo.fork != true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Set up Docker Buildx for better performance
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          driver-opts: network=host
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/all-hands-ai/enterprise-server
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha
+            type=sha,format=long
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+          flavor: |
+            latest=auto
+            prefix=
+            suffix=
+      - name: Determine app image tag
+        shell: bash
+        run: |
+          # Duplicated with build.sh
+          sanitized_ref_name=$(echo "$GITHUB_REF_NAME" | sed 's/[^a-zA-Z0-9.-]\+/-/g')
+          OPENHANDS_BUILD_VERSION=$sanitized_ref_name
+          sanitized_ref_name=$(echo "$sanitized_ref_name" | tr '[:upper:]' '[:lower:]') # lower case is required in tagging
+          echo "OPENHANDS_DOCKER_TAG=${sanitized_ref_name}" >> $GITHUB_ENV
+      - name: Build and push Docker image
+        uses: useblacksmith/build-push-action@v1
+        with:
+          context: .
+          file: enterprise/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            OPENHANDS_VERSION=${{ env.OPENHANDS_DOCKER_TAG }}
+          platforms: linux/amd64
+          # Add build provenance
+          provenance: true
+          # Add build attestations for better security
+          sbom: true
+
+  enterprise-preview:
+    name: Enterprise preview
+    if: |
+      (github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'deploy') ||
+      (github.event_name == 'pull_request' && github.event.action != 'labeled' && contains(github.event.pull_request.labels.*.name, 'deploy'))
+    runs-on: blacksmith-4vcpu-ubuntu-2204
+    needs: [ghcr_build_enterprise]
+    steps:
+      - name: Trigger remote job
+        run: |
+          curl --fail-with-body -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            -d "{\"ref\": \"main\", \"inputs\": {\"openhandsPrNumber\": \"${{ github.event.pull_request.number }}\", \"deployEnvironment\": \"feature\", \"enterpriseImageTag\": \"pr-${{ github.event.pull_request.number }}\" }}" \
+            https://api.github.com/repos/All-Hands-AI/deploy/actions/workflows/deploy.yaml/dispatches
+
   # Run unit tests with the Docker runtime Docker images as root
   test_runtime_root:
     name: RT Unit Tests (Root)
@@ -202,7 +285,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
@@ -264,7 +347,7 @@ jobs:
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: poetry
       - name: Install Python dependencies using Poetry
         run: make install-python-dependencies POETRY_GROUP=main,test,runtime INSTALL_PLAYWRIGHT=0
