@@ -220,6 +220,7 @@ def process_instance(
         error=state.last_error if state and state.last_error else None,
         test_result={
             'task_config': task_config,  # Store task config for later evaluation
+            'final_accessibility_tree': return_val.get('final_accessibility_tree') if return_val else None,
         },
     )
     return output
