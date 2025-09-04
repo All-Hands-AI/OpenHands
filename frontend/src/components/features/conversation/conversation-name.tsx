@@ -135,7 +135,7 @@ export function ConversationName() {
             onKeyUp={handleKeyUp}
             type="text"
             defaultValue={conversation.title}
-            className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit"
+            className="text-white leading-5 bg-transparent border-none outline-none text-base font-normal w-fit max-w-fit field-sizing-content"
           />
         ) : (
           <div
@@ -148,33 +148,35 @@ export function ConversationName() {
           </div>
         )}
 
-        <div className="relative flex items-center">
-          <EllipsisButton fill="#B1B9D3" onClick={handleEllipsisClick} />
-          {contextMenuOpen && (
-            <ConversationNameContextMenu
-              onClose={() => setContextMenuOpen(false)}
-              onRename={handleRename}
-              onDelete={handleDelete}
-              onStop={shouldShowStop ? handleStop : undefined}
-              onDisplayCost={
-                shouldShowDisplayCost ? handleDisplayCost : undefined
-              }
-              onShowAgentTools={
-                shouldShowAgentTools ? handleShowAgentTools : undefined
-              }
-              onShowMicroagents={
-                shouldShowMicroagents ? handleShowMicroagents : undefined
-              }
-              onExportConversation={
-                shouldShowExport ? handleExportConversation : undefined
-              }
-              onDownloadViaVSCode={
-                shouldShowDownload ? handleDownloadViaVSCode : undefined
-              }
-              position="bottom"
-            />
-          )}
-        </div>
+        {titleMode !== "edit" && (
+          <div className="relative flex items-center">
+            <EllipsisButton fill="#B1B9D3" onClick={handleEllipsisClick} />
+            {contextMenuOpen && (
+              <ConversationNameContextMenu
+                onClose={() => setContextMenuOpen(false)}
+                onRename={handleRename}
+                onDelete={handleDelete}
+                onStop={shouldShowStop ? handleStop : undefined}
+                onDisplayCost={
+                  shouldShowDisplayCost ? handleDisplayCost : undefined
+                }
+                onShowAgentTools={
+                  shouldShowAgentTools ? handleShowAgentTools : undefined
+                }
+                onShowMicroagents={
+                  shouldShowMicroagents ? handleShowMicroagents : undefined
+                }
+                onExportConversation={
+                  shouldShowExport ? handleExportConversation : undefined
+                }
+                onDownloadViaVSCode={
+                  shouldShowDownload ? handleDownloadViaVSCode : undefined
+                }
+                position="bottom"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* Metrics Modal */}
