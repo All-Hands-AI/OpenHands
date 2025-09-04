@@ -176,6 +176,20 @@ def display_welcome_message(message: str = '') -> None:
         HTML("<gold>Let's start building!</gold>\n"), style=DEFAULT_STYLE
     )
 
+    # Display anonymous user ID for transparency
+    try:
+        from openhands.utils.analytics import get_anonymous_user_id
+
+        anonymous_id = get_anonymous_user_id()
+        print_formatted_text(
+            HTML(f'<grey> Study User ID: {anonymous_id}</grey>'),
+            style=DEFAULT_STYLE,
+        )
+        print_formatted_text('')
+    except Exception:
+        # If we can't get the ID, don't show it
+        pass
+
     # Display Tom agent tips for new sessions
     print_formatted_text(
         HTML('<ansiblue>💡 Pro tips:</ansiblue>'),
