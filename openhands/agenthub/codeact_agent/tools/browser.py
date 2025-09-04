@@ -159,6 +159,11 @@ BrowserTool = ChatCompletionToolParam(
                         + _BROWSER_TOOL_DESCRIPTION
                     ),
                 },
+                'return_axtree': {
+                    'type': 'boolean',
+                    'description': 'Whether to return the accessibility tree in the observation. Set to true if you need to analyze page structure or find elements by text content. Default is false for performance.',
+                    'default': False,
+                },
                 'security_risk': {
                     'type': 'string',
                     'description': SECURITY_RISK_DESC,

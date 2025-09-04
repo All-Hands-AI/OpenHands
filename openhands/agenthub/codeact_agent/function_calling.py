@@ -247,7 +247,12 @@ def response_to_actions(
                     raise FunctionCallValidationError(
                         f'Missing required argument "code" in tool call {tool_call.function.name}'
                     )
-                action = BrowseInteractiveAction(browser_actions=arguments['code'])
+                # Allow user to specify whether they need accessibility tree
+                return_axtree = arguments.get('return_axtree', False)
+                action = BrowseInteractiveAction(
+                    browser_actions=arguments['code'],
+                    return_axtree=return_axtree
+                )
                 set_security_risk(action, arguments)
 
             # ================================================
