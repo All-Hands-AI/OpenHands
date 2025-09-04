@@ -66,7 +66,7 @@ jobs:
           ENABLE_BROWSER: true
           INSTALL_PLAYWRIGHT: 1
         run: |
-          # No poetry.lock fix needed with uv
+          # Using uv; no lockfile fix needed
 
           # Build OpenHands using make build
           echo "Running make build..."
