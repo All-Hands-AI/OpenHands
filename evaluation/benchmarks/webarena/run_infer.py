@@ -85,6 +85,7 @@ def get_instruction(task_config: dict) -> MessageAction:
     intent = task_config.get('intent', 'Complete the task')
     start_url = task_config.get('start_url', 'about:blank')
 
+    # BrowserGym WebArena already handles URL substitution, so we can use start_url directly
     # Create a comprehensive instruction that includes the task and starting point
     instruction = f"""You are a web browsing agent. Your task is: {intent}
 
@@ -230,38 +231,46 @@ if __name__ == '__main__':
     parser = get_evaluation_parser()
     args = parser.parse_args()
 
-    # Load webarena task configs
-    webarena_config_dir = '/workspace/project/webarena/config_files'
+    # Set up WebArena environment variables for BrowserGym
+    base_url = os.environ.get('WEBARENA_BASE_URL', None)
+    if not base_url:
+        raise ValueError('WEBARENA_BASE_URL must be set')
+    
+    # Set up the WA_ prefixed environment variables that BrowserGym expects
+    os.environ['WA_SHOPPING'] = f'{base_url}:7770/'
+    os.environ['WA_SHOPPING_ADMIN'] = f'{base_url}:7780/admin'
+    os.environ['WA_REDDIT'] = f'{base_url}:9999'
+    os.environ['WA_GITLAB'] = f'{base_url}:8023'
+    os.environ['WA_WIKIPEDIA'] = f'{base_url}:8888/wikipedia_en_all_maxi_2022-05/A/User:The_other_Kiwix_guy/Landing'
+    os.environ['WA_MAP'] = f'{base_url}:3000'
+    os.environ['WA_HOMEPAGE'] = f'{base_url}:4399'
+    
+    # Load webarena task configs from BrowserGym
+    from browsergym.webarena.task import GenericWebArenaTask
+    from browsergym.webarena.config import TASK_IDS
+    
     task_configs = []
-
-    # Load task configs from the webarena repository
-    for i in range(1, 1000):  # Assuming task IDs go from 1 to 999
-        config_file = os.path.join(webarena_config_dir, f'{i}.json')
-        if os.path.exists(config_file):
-            with open(config_file, 'r') as f:
-                task_config = json.load(f)
-                task_configs.append({'task_id': i, 'task_config': task_config})
-
-    if not task_configs:
-        # Fallback to example configs if no numbered configs found
-        example_dir = os.path.join(webarena_config_dir, 'examples')
-        if os.path.exists(example_dir):
-            for filename in os.listdir(example_dir):
-                if filename.endswith('.json'):
-                    config_file = os.path.join(example_dir, filename)
-                    with open(config_file, 'r') as f:
-                        task_config = json.load(f)
-                        task_id = task_config.get(
-                            'task_id', filename.replace('.json', '')
-                        )
-                        task_configs.append(
-                            {'task_id': task_id, 'task_config': task_config}
-                        )
+    
+    # Load a subset of tasks for testing (first 10 tasks)
+    test_task_ids = list(TASK_IDS)[:10]  # Use first 10 tasks for testing
+    
+    for task_id in test_task_ids:
+        try:
+            # Create a temporary task to get the config
+            temp_task = GenericWebArenaTask(seed=42, task_id=task_id)
+            
+            # Get the first (and likely only) task config for this task_id
+            if temp_task.task_configs:
+                task_config = temp_task.task_configs[0]
+                task_configs.append({'task_id': task_id, 'task_config': task_config})
+        except Exception as e:
+            print(f'Warning: Could not load task {task_id}: {e}')
+            continue
 
     if not task_configs:
-        raise ValueError(f'No task configs found in {webarena_config_dir}')
+        raise ValueError('No task configs could be loaded from BrowserGym WebArena')
 
-    print(f'Found {len(task_configs)} task configs')
+    print(f'Found {len(task_configs)} task configs from BrowserGym WebArena')
 
     # Store task configs globally for process_instance to access
     for task in task_configs:
