@@ -16,6 +16,7 @@ from openhands.server.conversation_manager.standalone_conversation_manager impor
 from openhands.server.monitoring import MonitoringListener
 from openhands.storage.data_models.settings import Settings
 from openhands.storage.memory import InMemoryFileStore
+from openhands.storage.paths import ConversationPaths
 from openhands.utils.conversation_summary import auto_generate_title
 
 
@@ -67,10 +68,13 @@ async def test_auto_generate_title_with_llm():
         # Verify the result
         assert title == 'Python Data Analysis Script'
 
-        # Verify EventStore was created with the correct parameters
-        mock_event_store_cls.assert_called_once_with(
-            conversation_id, file_store, user_id
-        )
+        # Verify EventStore was created with the correct parameters (paths + file_store)
+        mock_event_store_cls.assert_called_once()
+        call_args, _ = mock_event_store_cls.call_args
+        assert isinstance(call_args[0], ConversationPaths)
+        assert call_args[0].sid == conversation_id
+        assert call_args[0].user_id == user_id
+        assert call_args[1] is file_store
 
         # Verify LLM registry was called with appropriate parameters
         llm_registry.request_extraneous_completion.assert_called_once()
@@ -122,10 +126,13 @@ async def test_auto_generate_title_fallback():
         assert title == 'This is a very long message th...'
         assert len(title) <= 35
 
-        # Verify EventStore was created with the correct parameters
-        mock_event_store_cls.assert_called_once_with(
-            conversation_id, file_store, user_id
-        )
+        # Verify EventStore was created with the correct parameters (paths + file_store)
+        mock_event_store_cls.assert_called_once()
+        call_args, _ = mock_event_store_cls.call_args
+        assert isinstance(call_args[0], ConversationPaths)
+        assert call_args[0].sid == conversation_id
+        assert call_args[0].user_id == user_id
+        assert call_args[1] is file_store
 
 
 @pytest.mark.asyncio
@@ -163,10 +170,13 @@ async def test_auto_generate_title_no_messages():
         # Verify the result is empty
         assert title == ''
 
-        # Verify EventStore was created with the correct parameters
-        mock_event_store_cls.assert_called_once_with(
-            conversation_id, file_store, user_id
-        )
+        # Verify EventStore was created with the correct parameters (paths + file_store)
+        mock_event_store_cls.assert_called_once()
+        call_args, _ = mock_event_store_cls.call_args
+        assert isinstance(call_args[0], ConversationPaths)
+        assert call_args[0].sid == conversation_id
+        assert call_args[0].user_id == user_id
+        assert call_args[1] is file_store
 
 
 @pytest.mark.asyncio
