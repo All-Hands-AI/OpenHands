@@ -1,142 +1,53 @@
-"""Analytics utilities for tracking events with PostHog."""
+"""Simplified analytics utilities for tracking events with PostHog."""
 
-import os
+import socket
 from typing import Any, Optional
 
+import posthog
+
 from openhands.core.logger import openhands_logger as logger
+from openhands.server.config.server_config import load_server_config
 
-try:
-    import posthog
-
-    POSTHOG_AVAILABLE = True
-except ImportError:
-    POSTHOG_AVAILABLE = False
-    logger.warning('PostHog not available. Analytics tracking will be disabled.')
+server_config = load_server_config()
+posthog.api_key = server_config.posthog_client_key
+posthog.host = 'https://us.i.posthog.com'
+logger.debug('PostHog initialized successfully')
 
 
-class AnalyticsClient:
-    """Client for tracking analytics events with PostHog."""
-
-    def __init__(self):
-        """Initialize the analytics client."""
-        self._client = None
-        self._enabled = False
-
-        if POSTHOG_AVAILABLE:
-            # Get PostHog configuration from environment or server config
-            try:
-                from openhands.server.config.server_config import load_server_config
-
-                server_config = load_server_config()
-                default_api_key = server_config.posthog_client_key
-            except Exception:
-                # Fallback to hardcoded key if server config is not available
-                default_api_key = 'phc_3ESMmY9SgqEAGBB6sMGK5ayYHkeUuknH2vP6FmWH9RA'
-
-            api_key = os.environ.get('POSTHOG_API_KEY', default_api_key)
-            host = os.environ.get('POSTHOG_HOST', 'https://us.i.posthog.com')
-
-            if api_key:
-                try:
-                    posthog.api_key = api_key
-                    posthog.host = host
-                    self._client = posthog
-                    self._enabled = True
-                    logger.debug('PostHog analytics client initialized successfully')
-                except Exception as e:
-                    logger.error(f'Failed to initialize PostHog client: {e}')
-                    self._enabled = False
-            else:
-                logger.warning(
-                    'PostHog API key not found. Analytics tracking disabled.'
-                )
-        else:
-            logger.info('PostHog not available. Analytics tracking disabled.')
-
-    def track(
-        self, user_id: str, event: str, properties: Optional[dict[str, Any]] = None
-    ) -> None:
-        """Track an analytics event.
-
-        Args:
-            user_id: Unique identifier for the user
-            event: Name of the event to track
-            properties: Optional dictionary of event properties
-        """
-        if not self._enabled or not self._client:
-            logger.debug(f'Analytics tracking disabled. Would track: {event}')
-            return
-
-        try:
-            # Ensure properties is a dictionary
-            if properties is None:
-                properties = {}
-
-            # Add common properties
-            properties.update({'source': 'openhands', 'component': 'tom_agent'})
-
-            self._client.capture(
-                distinct_id=user_id, event=event, properties=properties
-            )
-            logger.debug(f'Tracked event: {event} for user: {user_id}')
-
-        except Exception as e:
-            logger.error(f'Failed to track event {event}: {e}')
-
-    def identify(
-        self, user_id: str, properties: Optional[dict[str, Any]] = None
-    ) -> None:
-        """Identify a user with properties.
-
-        Args:
-            user_id: Unique identifier for the user
-            properties: Optional dictionary of user properties
-        """
-        if not self._enabled or not self._client:
-            logger.debug(f'Analytics tracking disabled. Would identify user: {user_id}')
-            return
-
-        try:
-            if properties is None:
-                properties = {}
-
-            self._client.identify(distinct_id=user_id, properties=properties)
-            logger.debug(f'Identified user: {user_id}')
-
-        except Exception as e:
-            logger.error(f'Failed to identify user {user_id}: {e}')
-
-    def flush(self) -> None:
-        """Flush any pending events."""
-        if self._enabled and self._client:
-            try:
-                self._client.flush()
-                logger.debug('Flushed analytics events')
-            except Exception as e:
-                logger.error(f'Failed to flush analytics events: {e}')
+def get_anonymous_user_id() -> str:
+    """Generate anonymous user ID from machine info."""
+    try:
+        hostname = socket.gethostname()
+        local_ip = socket.gethostbyname(hostname)
+        combined = f'{local_ip}_{hostname}'
+        return combined
+    except Exception as e:
+        logger.error(f'Failed to generate anonymous user ID: {e}')
+        return 'unknown_user'
 
 
-# Global analytics client instance
-_analytics_client: Optional[AnalyticsClient] = None
-
-
-def get_analytics_client() -> AnalyticsClient:
-    """Get the global analytics client instance."""
-    global _analytics_client
-    if _analytics_client is None:
-        _analytics_client = AnalyticsClient()
-    return _analytics_client
-
-
-def track_tom_event(
-    user_id: str, event: str, properties: Optional[dict[str, Any]] = None
-) -> None:
-    """Convenience function to track ToM agent events.
+def track_tom_event(event: str, properties: Optional[dict[str, Any]] = None) -> None:
+    """Track ToM agent events with PostHog.
 
     Args:
-        user_id: Unique identifier for the user
+        user_id: User identifier (will be replaced with anonymous ID)
         event: Name of the event to track
         properties: Optional dictionary of event properties
     """
-    client = get_analytics_client()
-    client.track(user_id, event, properties)
+
+    try:
+        # Use anonymous user ID for privacy
+        anonymous_id = get_anonymous_user_id()
+
+        # Ensure properties is a dictionary
+        if properties is None:
+            properties = {}
+
+        # Add common properties
+        properties.update({'source': 'openhands_cli', 'component': 'tom_agent'})
+
+        posthog.capture(distinct_id=anonymous_id, event=event, properties=properties)
+        logger.debug(f'Tracked event: {event} for anonymous user: {anonymous_id}')
+
+    except Exception as e:
+        logger.error(f'Failed to track event {event}: {e}')

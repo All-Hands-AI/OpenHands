@@ -11,7 +11,10 @@ if TYPE_CHECKING:
     from openhands.events.action import Action
 
 from litellm import ChatCompletionToolParam
-from tom_swe.memory.locations import get_usermodeling_dir  # type: ignore
+from tom_swe.memory.locations import (  # type: ignore
+    get_overall_user_model_filename,
+    get_usermodeling_dir,
+)
 from tom_swe.tom_agent import create_tom_agent  # type: ignore
 
 from openhands.agenthub.codeact_agent.codeact_agent import CodeActAgent
@@ -106,7 +109,6 @@ class TomCodeActAgent(CodeActAgent):
         if not self._initialization_tracked and CLI_AVAILABLE:
             try:
                 track_tom_event(
-                    user_id=state.user_id or 'unknown',
                     event='tom_agent_initialized',
                     properties={
                         'session_id': state.session_id,
@@ -332,6 +334,10 @@ class TomCodeActAgent(CodeActAgent):
                             'timestamp': datetime.now().isoformat(),
                             'is_user_query': is_user_query,
                         }
+                        track_tom_event(
+                            event='tom_consult_agent_interaction',
+                            properties=interaction,
+                        )
 
                         # Append to JSONL file (read existing content + append new line)
                         new_line = json.dumps(interaction) + '\n'
@@ -379,12 +385,18 @@ class TomCodeActAgent(CodeActAgent):
 
         # Track sleeptime compute trigger
         try:
+            if self.file_store.exists(get_overall_user_model_filename(user_id)):  # type: ignore
+                overall_user_model_content = self.file_store.read(
+                    get_overall_user_model_filename(user_id)
+                )
+                overall_user_model: dict[str, Any] = json.loads(
+                    overall_user_model_content
+                )
+            else:
+                overall_user_model = {'user_profile': 'unknown'}
             track_tom_event(
-                user_id=user_id or 'unknown',
                 event='tom_sleeptime_triggered',
-                properties={
-                    'trigger_type': 'sleeptime_compute',
-                },
+                properties=overall_user_model,
             )
         except Exception as e:
             logger.error(f'Failed to track sleeptime compute trigger: {e}')
