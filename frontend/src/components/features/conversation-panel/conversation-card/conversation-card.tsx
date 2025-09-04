@@ -179,7 +179,7 @@ export function ConversationCard({
           </div>
 
           {hasContextMenu && (
-            <div>
+            <div className="group">
               <button
                 data-testid="ellipsis-button"
                 type="button"
@@ -192,36 +192,41 @@ export function ConversationCard({
               >
                 <EllipsisIcon />
               </button>
-              <div className="relative">
-                {contextMenuOpen && (
-                  <ConversationCardContextMenu
-                    onClose={() => onContextMenuToggle?.(false)}
-                    onDelete={onDelete && handleDelete}
-                    onStop={
-                      conversationStatus !== "STOPPED"
-                        ? onStop && handleStop
-                        : undefined
-                    }
-                    onEdit={onChangeTitle && handleEdit}
-                    onDownloadViaVSCode={
-                      conversationId && showOptions
-                        ? handleDownloadViaVSCode
-                        : undefined
-                    }
-                    onDisplayCost={showOptions ? handleDisplayCost : undefined}
-                    onShowAgentTools={
-                      showOptions && systemMessage
-                        ? handleShowAgentTools
-                        : undefined
-                    }
-                    onShowMicroagents={
-                      showOptions && conversationId
-                        ? handleShowMicroagents
-                        : undefined
-                    }
-                    position="bottom"
-                  />
+              <div
+                className={cn(
+                  // Show on hover (desktop) or when explicitly opened (click/touch)
+                  "relative opacity-0 invisible group-hover:opacity-100 group-hover:visible",
+                  // Override hover styles when explicitly opened via click
+                  contextMenuOpen && "opacity-100 visible",
                 )}
+              >
+                <ConversationCardContextMenu
+                  onClose={() => onContextMenuToggle?.(false)}
+                  onDelete={onDelete && handleDelete}
+                  onStop={
+                    conversationStatus !== "STOPPED"
+                      ? onStop && handleStop
+                      : undefined
+                  }
+                  onEdit={onChangeTitle && handleEdit}
+                  onDownloadViaVSCode={
+                    conversationId && showOptions
+                      ? handleDownloadViaVSCode
+                      : undefined
+                  }
+                  onDisplayCost={showOptions ? handleDisplayCost : undefined}
+                  onShowAgentTools={
+                    showOptions && systemMessage
+                      ? handleShowAgentTools
+                      : undefined
+                  }
+                  onShowMicroagents={
+                    showOptions && conversationId
+                      ? handleShowMicroagents
+                      : undefined
+                  }
+                  position="bottom"
+                />
               </div>
             </div>
           )}
