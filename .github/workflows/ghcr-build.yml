@@ -185,15 +185,6 @@ jobs:
         with:
           driver-opts: network=host
 
-      # # Cache Docker layers to speed up builds
-      # - name: Cache Docker layers
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: /tmp/.buildx-cache
-      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-buildx-
-
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -210,6 +201,7 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=sha
+            type=sha,format=long
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
@@ -240,12 +232,6 @@ jobs:
           provenance: true
           # Add build attestations for better security
           sbom: true
-
-      # # Move cache to prevent cache growth
-      # - name: Move cache
-      #   run: |
-      #     rm -rf /tmp/.buildx-cache
-      #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
   enterprise-preview:
     name: Enterprise preview
