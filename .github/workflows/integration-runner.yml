@@ -31,14 +31,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install poetry via pipx
-        run: pipx install poetry
+      - name: Install uv via pipx
+        run: pipx install uv
 
       - name: Set up Python
         uses: useblacksmith/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
 
       - name: Setup Node.js
         uses: useblacksmith/setup-node@v5
@@ -53,8 +52,8 @@ jobs:
           comment: |
             Hi! I started running the integration tests on your PR. You will receive a comment with the results shortly.
 
-      - name: Install Python dependencies using Poetry
-        run: poetry install --with dev,test,runtime,evaluation
+      - name: Install Python dependencies using uv
+        run: make install-python-dependencies INSTALL_PLAYWRIGHT=0
 
       - name: Configure config.toml for testing with Haiku
         env:
@@ -76,7 +75,8 @@ jobs:
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'haiku_run'
+          source .venv/bin/activate
+          ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'haiku_run'
 
           # get integration tests report
           REPORT_FILE_HAIKU=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/*haiku*_maxiter_10_N* -name "report.md" -type f | head -n 1)
@@ -106,7 +106,8 @@ jobs:
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'deepseek_run'
+          source .venv/bin/activate
+          ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD CodeActAgent '' 10 $N_PROCESSES '' 'deepseek_run'
 
           # get integration tests report
           REPORT_FILE_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/CodeActAgent/deepseek*_maxiter_10_N* -name "report.md" -type f | head -n 1)
@@ -137,7 +138,8 @@ jobs:
         env:
           SANDBOX_FORCE_REBUILD_RUNTIME: True
         run: |
-          poetry run ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD VisualBrowsingAgent '' 15 $N_PROCESSES "t05_simple_browsing,t06_github_pr_browsing.py" 'visualbrowsing_deepseek_run'
+          source .venv/bin/activate
+          ./evaluation/integration_tests/scripts/run_infer.sh llm.eval HEAD VisualBrowsingAgent '' 15 $N_PROCESSES "t05_simple_browsing,t06_github_pr_browsing.py" 'visualbrowsing_deepseek_run'
 
           # Find and export the visual browsing agent test results
           REPORT_FILE_VISUALBROWSING_DEEPSEEK=$(find evaluation/evaluation_outputs/outputs/integration_tests/VisualBrowsingAgent/deepseek*_maxiter_15_N* -name "report.md" -type f | head -n 1)
