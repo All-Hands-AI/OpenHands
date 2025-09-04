@@ -371,7 +371,7 @@ def process_training_and_testing(
   **Task Description:**
   {problem_statement}
 
-  You should create Solver class and function solve() in `/app/solver.py` by yourself.
+  You should create Solver class and function solve() in `/workspace/solver.py` by yourself.
 
   The additional packages have been installed in this environment: /usr/local/bin/python.
 """
