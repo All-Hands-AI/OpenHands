@@ -1,6 +1,5 @@
 import atexit
 import multiprocessing
-import os
 import time
 import uuid
 
@@ -21,11 +20,15 @@ BROWSER_EVAL_GET_REWARDS_ACTION = 'GET_EVAL_REWARDS'
 
 
 class BrowserEnv:
-    def __init__(self, browsergym_eval_env: str | None = None, browser_logging_dir: str | None = None):
+    def __init__(
+        self,
+        browsergym_eval_env: str | None = None,
+        browser_logging_dir: str | None = None,
+    ):
         self.html_text_converter = self.get_html_text_converter()
         self.eval_mode = False
         self.eval_dir = ''
-        
+
         # Browser state logging configuration (for WebArena evaluation)
         self.browser_logging_dir = browser_logging_dir
         self.enable_state_logging = browser_logging_dir is not None
@@ -82,16 +85,25 @@ class BrowserEnv:
 
         logger.info('Successfully called env.reset')
         logger.info('Browser env started.')
-        
+
         # Initialize browser state capture for WebArena evaluation
         state_capture = None
         if self.enable_state_logging:
             try:
-                from evaluation.benchmarks.webarena.browsergym_state_capture import BrowserGymStateCapture
-                state_capture = BrowserGymStateCapture(output_dir=self.browser_logging_dir)
-                logger.info(f'Browser state logging enabled: {self.browser_logging_dir}')
+                from evaluation.benchmarks.webarena.browsergym_state_capture import (
+                    BrowserGymStateCapture,
+                )
+
+                state_capture = BrowserGymStateCapture(
+                    output_dir=self.browser_logging_dir or '/tmp/webarena_states'
+                )
+                logger.info(
+                    f'Browser state logging enabled: {self.browser_logging_dir}'
+                )
             except ImportError:
-                logger.warning('Could not import BrowserGymStateCapture, state logging disabled')
+                logger.warning(
+                    'Could not import BrowserGymStateCapture, state logging disabled'
+                )
                 state_capture = None
 
         while should_continue():
@@ -111,7 +123,9 @@ class BrowserEnv:
                         # Set WebArena instance ID for state capture
                         if state_capture and 'instance_id' in action_data:
                             state_capture.set_instance_id(action_data['instance_id'])
-                            logger.info(f'Set WebArena instance ID: {action_data["instance_id"]}')
+                            logger.info(
+                                f'Set WebArena instance ID: {action_data["instance_id"]}'
+                            )
                         self.browser_side.send((unique_request_id, {'status': 'ok'}))
                         continue
                     elif unique_request_id == 'CAPTURE_WEBARENA_STATE':
@@ -119,12 +133,24 @@ class BrowserEnv:
                         if state_capture:
                             try:
                                 state_file = state_capture.save_state(env)
-                                self.browser_side.send((unique_request_id, {'status': 'ok', 'state_file': state_file}))
+                                self.browser_side.send(
+                                    (
+                                        unique_request_id,
+                                        {'status': 'ok', 'state_file': state_file},
+                                    )
+                                )
                             except Exception as e:
                                 logger.error(f'Failed to capture WebArena state: {e}')
-                                self.browser_side.send((unique_request_id, {'status': 'error', 'error': str(e)}))
+                                self.browser_side.send(
+                                    (
+                                        unique_request_id,
+                                        {'status': 'error', 'error': str(e)},
+                                    )
+                                )
                         else:
-                            self.browser_side.send((unique_request_id, {'status': 'disabled'}))
+                            self.browser_side.send(
+                                (unique_request_id, {'status': 'disabled'})
+                            )
                         continue
 
                     action = action_data['action']
@@ -175,13 +201,13 @@ class BrowserEnv:
                 return True
             logger.debug(f'Browser env is not alive. Response ID: {response_id}')
         return False
-    
+
     def set_webarena_instance_id(self, instance_id: str, timeout: float = 10) -> bool:
         """Set the WebArena instance ID for browser state capture."""
         if not self.enable_state_logging:
             logger.warning('Browser state logging is not enabled')
             return False
-        
+
         unique_request_id = 'SET_WEBARENA_INSTANCE'
         self.agent_side.send((unique_request_id, {'instance_id': instance_id}))
         start_time = time.time()
@@ -193,13 +219,13 @@ class BrowserEnv:
                 response_id, response = self.agent_side.recv()
                 if response_id == unique_request_id:
                     return response.get('status') == 'ok'
-    
+
     def capture_webarena_state(self, timeout: float = 30) -> str | None:
         """Capture the current browser state for WebArena evaluation."""
         if not self.enable_state_logging:
             logger.warning('Browser state logging is not enabled')
             return None
-        
+
         unique_request_id = 'CAPTURE_WEBARENA_STATE'
         self.agent_side.send((unique_request_id, {}))
         start_time = time.time()
@@ -213,7 +239,9 @@ class BrowserEnv:
                     if response.get('status') == 'ok':
                         return response.get('state_file')
                     else:
-                        logger.error(f'Failed to capture state: {response.get("error", "unknown error")}')
+                        logger.error(
+                            f'Failed to capture state: {response.get("error", "unknown error")}'
+                        )
                         return None
 
     def close(self) -> None:

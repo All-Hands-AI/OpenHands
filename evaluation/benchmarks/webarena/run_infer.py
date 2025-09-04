@@ -125,9 +125,35 @@ def complete_runtime(
     """
     logger.info(f'{"-" * 50} BEGIN Runtime Completion Fn {"-" * 50}')
 
-    # No need to get rewards from browsergym - evaluation will be done separately
-    logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
-    return {}
+    # Capture the final accessibility tree for WebArena evaluation
+    try:
+        # Create a browser action to get the current page state with accessibility tree
+        from openhands.events.action import BrowseInteractiveAction
+
+        # Use a no-op action that returns the accessibility tree
+        final_browse_action = BrowseInteractiveAction(
+            browser_actions='noop()',  # No-op action to just get current state
+            return_axtree=True,  # Ensure we get the accessibility tree
+        )
+
+        # Execute the action to get the final observation with accessibility tree
+        final_obs = runtime.browse_interactive(final_browse_action)
+
+        # Extract the accessibility tree from the observation
+        final_axtree = None
+        if hasattr(final_obs, 'axtree_object') and final_obs.axtree_object:
+            final_axtree = final_obs.axtree_object
+            logger.info('Successfully captured final accessibility tree')
+        else:
+            logger.warning('No accessibility tree found in final observation')
+
+        logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
+        return {'final_accessibility_tree': final_axtree}
+
+    except Exception as e:
+        logger.error(f'Error capturing final accessibility tree: {e}')
+        logger.info(f'{"-" * 50} END Runtime Completion Fn {"-" * 50}')
+        return {'final_accessibility_tree': None}
 
 
 def process_instance(

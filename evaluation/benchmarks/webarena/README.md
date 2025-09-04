@@ -6,6 +6,12 @@ This folder contains evaluation for [WebArena](https://github.com/web-arena-x/we
 
 Please follow instruction [here](../../README.md#setup) to setup your local development environment and LLM.
 
+Make sure to install the evaluation dependencies:
+
+```bash
+poetry install --with evaluation
+```
+
 ## Setup WebArena Environment
 
 WebArena requires you to set up websites containing pre-populated content that is accessible via URL to the machine running the OpenHands agents.

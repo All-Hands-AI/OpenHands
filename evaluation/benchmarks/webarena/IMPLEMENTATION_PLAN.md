@@ -27,16 +27,16 @@ class BrowserEnv:
     def __init__(self, ...):
         # ... existing code ...
         self.cdp_logger = CDPSessionLogger() if should_log_cdp() else None
-    
+
     def step(self, action):
         # ... existing action execution ...
-        
+
         # Log CDP state after each action
         if self.cdp_logger:
             self.cdp_logger.capture_state_snapshot(f"after_action_{action.action}")
-        
+
         # ... return observation ...
-    
+
     def close(self):
         # Save final CDP session
         if self.cdp_logger:
@@ -53,16 +53,16 @@ class CDPSessionLogger:
         # Access the underlying Playwright page from BrowserGym
         playwright_page = env.page  # or however BrowserGym exposes it
         self.attach_to_page(playwright_page)
-    
+
     def capture_state_snapshot(self, trigger: str):
         """Capture complete browser state using CDP."""
         # DOM snapshot (key for WebArena evaluators)
         dom_snapshot = self.cdp_session.send("DOMSnapshot.captureSnapshot", {
             "computedStyles": [],
-            "includeDOMRects": True, 
+            "includeDOMRects": True,
             "includePaintOrder": True,
         })
-        
+
         # All other state (cookies, localStorage, etc.)
         # ... as shown in POC ...
 ```
@@ -75,7 +75,7 @@ class CDPSessionLogger:
 class MockCDPSession:
     def __init__(self, saved_state):
         self.saved_state = saved_state
-    
+
     def send(self, method: str, params=None):
         """Return saved state instead of making live CDP calls."""
         if method == "DOMSnapshot.captureSnapshot":
@@ -87,7 +87,7 @@ class MockCDPSession:
 class MockPage:
     def __init__(self, saved_state):
         self.saved_state = saved_state
-    
+
     def url(self): return self.saved_state["final_url"]
     def title(self): return self.saved_state["final_title"]
     def context(self): return MockBrowserContext(self.saved_state)
@@ -101,16 +101,16 @@ class MockPage:
 ```python
 def evaluate_with_official_webarena_harness(instance_data, config_file):
     """Use official WebArena evaluators with saved CDP state."""
-    
+
     # Load saved CDP session
     cdp_integration = WebArenaCDPIntegration()
     mock_page, mock_client = cdp_integration.create_mock_page_and_client(
         instance_data["instance_id"]
     )
-    
+
     # Convert OpenHands trajectory to WebArena format
     trajectory = convert_openhands_trajectory_to_webarena_format(instance_data)
-    
+
     # Use official WebArena evaluator with mock objects
     evaluator = evaluator_router(config_file)
     score = evaluator(
@@ -119,7 +119,7 @@ def evaluate_with_official_webarena_harness(instance_data, config_file):
         page=mock_page,        # Mock page with saved state
         client=mock_client,    # Mock CDP session with saved state
     )
-    
+
     return score
 ```
 
