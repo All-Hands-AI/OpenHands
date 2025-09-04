@@ -7,6 +7,9 @@ from typing import Callable, Any, List, Tuple, Union
 import numpy as np
 import pytest
 
+from evaluator import Task
+task = Task()
+
 # --- Configuration ---
 SOLVER_PATH = Path("/workspace/solver.py")
 BEST_SOLVER_SPEEDUP_FILE = Path('/workspace/.best_solver_speedup.txt')
@@ -22,10 +25,6 @@ IQR_STABILITY_THRESHOLD = 0.05 # Stop when IQR changes by less than 5%
 # --- Setup ---
 logging.basicConfig(level=logging.INFO, format="%(name)s - %(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
-
-from evaluator import Task
-task = Task()
-
 
 @pytest.fixture(scope="module")
 def solver_instance() -> Any:
