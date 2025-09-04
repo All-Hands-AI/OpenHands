@@ -62,11 +62,11 @@ def _check_source_code_in_dir(temp_dir):
     assert os.path.exists(os.path.join(code_dir, 'pyproject.toml'))
 
     # The source code should only include the `openhands` folder,
-    # and pyproject.toml & poetry.lock that are needed to build the runtime image
+    # and pyproject.toml & uv.lock that are needed to build the runtime image
     assert set(os.listdir(code_dir)) == {
         'openhands',
         'pyproject.toml',
-        'poetry.lock',
+        'uv.lock',
     }
     assert os.path.exists(os.path.join(code_dir, 'openhands'))
     assert os.path.isdir(os.path.join(code_dir, 'openhands'))
@@ -162,7 +162,7 @@ def test_generate_dockerfile_build_from_scratch():
     assert base_image in dockerfile_content
     assert 'apt-get update' in dockerfile_content
     assert 'wget curl' in dockerfile_content
-    assert 'poetry' in dockerfile_content and '-c conda-forge' in dockerfile_content
+    assert 'uv' in dockerfile_content and '-c conda-forge' in dockerfile_content
     assert 'python=3.12' in dockerfile_content
 
     # Check the update command
@@ -171,7 +171,7 @@ def test_generate_dockerfile_build_from_scratch():
         in dockerfile_content
     )
     assert (
-        '/openhands/micromamba/bin/micromamba run -n openhands poetry install'
+        '/openhands/micromamba/bin/micromamba run -n openhands uv sync'
         in dockerfile_content
     )
 
@@ -188,7 +188,7 @@ def test_generate_dockerfile_build_from_lock():
     assert '-c conda-forge' not in dockerfile_content
     assert 'python=3.12' not in dockerfile_content
     assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
-    assert 'poetry install' not in dockerfile_content
+    assert 'uv sync' not in dockerfile_content
 
     # These update commands SHOULD still in the dockerfile
     assert (
@@ -211,7 +211,7 @@ def test_generate_dockerfile_build_from_versioned():
     assert 'https://micro.mamba.pm/install.sh' not in dockerfile_content
 
     # this SHOULD exist when build from versioned
-    assert 'poetry install' in dockerfile_content
+    assert 'uv sync' in dockerfile_content
     assert (
         'COPY --chown=openhands:openhands ./code/openhands /openhands/code/openhands'
         in dockerfile_content
