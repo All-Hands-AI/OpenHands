@@ -25,6 +25,7 @@ from pydantic import SecretStr
 from openhands.core.config import OpenHandsConfig
 from openhands.core.config.mcp_config import MCPConfig, MCPStdioServerConfig
 from openhands.core.logger import openhands_logger as logger
+from openhands.utils.encoding import safe_open
 from openhands.events import EventStream
 from openhands.events.action import (
     BrowseInteractiveAction,
@@ -557,7 +558,7 @@ class CLIRuntime(Runtime):
                 return ErrorObservation('ERROR_BINARY_FILE')
 
             # Read the file
-            with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+            with safe_open(file_path, 'r', errors='replace') as f:
                 content = f.read()
 
             return FileReadObservation(content=content, path=action.path)

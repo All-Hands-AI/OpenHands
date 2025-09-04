@@ -5,6 +5,7 @@ from typing import Callable
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.runtime.utils import git_changes, git_diff
+from openhands.utils.encoding import safe_read, safe_open
 
 GIT_CHANGES_CMD = 'python3 /openhands/code/openhands/runtime/utils/git_changes.py'
 GIT_DIFF_CMD = (
@@ -50,11 +51,69 @@ class GitHandler:
         self.cwd = cwd
 
     def _create_python_script_file(self, file: str):
+        # Try mktemp first (Unix/Linux), fall back to Windows-compatible approach
         result = self.execute('mktemp -d', self.cwd)
-        script_file = Path(result.content.strip(), Path(file).name)
-        with open(file, 'r') as f:
+        
+        if result.exit_code != 0:
+            # mktemp failed (likely on Windows), use a different approach
+            import tempfile
+            import os
+            
+            # Convert Unix-style path to Windows-style if needed
+            target_dir = self.cwd
+            if target_dir and target_dir.startswith('/'):
+                # Convert Unix path to Windows path for tempfile.mkdtemp
+                if target_dir == '/workspace':
+                    target_dir = 'C:\\workspace'
+                else:
+                    target_dir = 'C:' + target_dir.replace('/', '\\')
+            
+            try:
+                # Try to create in the target directory first
+                if target_dir and os.path.exists(target_dir):
+                    temp_dir = tempfile.mkdtemp(dir=target_dir)
+                else:
+                    # Fall back to a safe directory in the container
+                    # Use C:\temp or C:\openhands\temp as fallback
+                    fallback_dirs = ['C:\\temp', 'C:\\openhands\\temp', 'C:\\openhands\\workspace']
+                    temp_dir = None
+                    for fallback_dir in fallback_dirs:
+                        try:
+                            if not os.path.exists(fallback_dir):
+                                os.makedirs(fallback_dir, exist_ok=True)
+                            temp_dir = tempfile.mkdtemp(dir=fallback_dir)
+                            break
+                        except (OSError, PermissionError):
+                            continue
+                    
+                    # If all fallbacks fail, use system temp but with explicit directory
+                    if temp_dir is None:
+                        temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
+            except (OSError, PermissionError) as e:
+                # Last resort: use system temp directory
+                logger.warning(f"Could not create temp directory in {target_dir}: {e}")
+                temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
+            
+            script_file = Path(temp_dir, Path(file).name)
+        else:
+            # mktemp succeeded, use the result
+            temp_path = result.content.strip()
+            if not temp_path or not os.path.isabs(temp_path):
+                # Invalid result from mktemp, fall back to tempfile
+                import tempfile
+                try:
+                    temp_dir = tempfile.mkdtemp(dir='C:\\openhands\\workspace')
+                except (OSError, PermissionError):
+                    temp_dir = tempfile.mkdtemp(dir='C:\\Windows\\Temp')
+                script_file = Path(temp_dir, Path(file).name)
+            else:
+                script_file = Path(temp_path, Path(file).name)
+        
+        with safe_open(file, 'r') as f:
             self.create_file_fn(str(script_file), f.read())
-            result = self.execute(f'chmod +x "{script_file}"', self.cwd)
+            # Only try chmod on Unix-like systems
+            if result.exit_code == 0:  # Only if mktemp worked (Unix-like)
+                result = self.execute(f'chmod +x "{script_file}"', self.cwd)
         return script_file
 
     def get_current_branch(self) -> str | None:

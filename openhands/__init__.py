@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+from openhands.utils.encoding import safe_open
 
 __package_name__ = 'openhands_ai'
 
@@ -14,7 +15,7 @@ def get_version():
         ]
         for file_path in candidate_paths:
             if file_path.is_file():
-                with open(file_path, 'r') as f:
+                with safe_open(file_path, 'r') as f:
                     for line in f:
                         if line.strip().startswith('version ='):
                             return line.split('=', 1)[1].strip().strip('"').strip("'")

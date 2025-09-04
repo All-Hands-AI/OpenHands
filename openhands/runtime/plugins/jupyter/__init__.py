@@ -45,6 +45,11 @@ class JupyterPlugin(Plugin):
                 'export MAMBA_ROOT_PREFIX=/openhands/micromamba;\n'
                 '/openhands/micromamba/bin/micromamba run -n openhands '
             )
+            # For Windows containers, use the workspace path
+            if is_windows:
+                code_repo_path = 'C:\\workspace'
+            else:
+                code_repo_path = '/openhands/code'
         else:
             # LocalRuntime
             prefix = ''

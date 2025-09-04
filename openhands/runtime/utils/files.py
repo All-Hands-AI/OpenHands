@@ -7,6 +7,7 @@ from openhands.events.observation import (
     FileWriteObservation,
     Observation,
 )
+from openhands.utils.encoding import safe_open
 
 
 def resolve_path(
@@ -86,7 +87,7 @@ async def read_file(
         )
 
     try:
-        with open(whole_path, 'r', encoding='utf-8') as file:  # noqa: ASYNC101
+        with safe_open(whole_path, 'r') as file:  # noqa: ASYNC101
             lines = read_lines(file.readlines(), start, end)
     except FileNotFoundError:
         return ErrorObservation(f'File not found: {path}')

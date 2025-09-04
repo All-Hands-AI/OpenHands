@@ -20,6 +20,7 @@ Note:
 import os
 
 from openhands.linter import DefaultLinter, LintResult
+from openhands.utils.encoding import safe_open
 
 CURRENT_FILE: str | None = None
 CURRENT_LINE = 1
@@ -121,7 +122,7 @@ def _print_window(
     global CURRENT_LINE
     if not _check_current_file(file_path) or file_path is None:
         return ''
-    with open(file_path) as file:
+    with safe_open(file_path, 'r') as file:
         content = file.read()
 
         # Ensure the content ends with a newline character
@@ -203,7 +204,7 @@ def open_file(
         return
 
     CURRENT_FILE = os.path.abspath(path)
-    with open(CURRENT_FILE) as file:
+    with safe_open(CURRENT_FILE, 'r') as file:
         total_lines = max(1, sum(1 for _ in file))
 
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
@@ -238,7 +239,7 @@ def goto_line(line_number: int) -> None:
     if not _check_current_file():
         return
 
-    with open(str(CURRENT_FILE)) as file:
+    with safe_open(str(CURRENT_FILE), 'r') as file:
         total_lines = max(1, sum(1 for _ in file))
     if not isinstance(line_number, int) or line_number < 1 or line_number > total_lines:
         _output_error(f'Line number must be between 1 and {total_lines}.')
@@ -261,7 +262,7 @@ def scroll_down() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if not _check_current_file():
         return
-    with open(str(CURRENT_FILE)) as file:
+    with safe_open(str(CURRENT_FILE), 'r') as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE + WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
@@ -280,7 +281,7 @@ def scroll_up() -> None:
     global CURRENT_FILE, CURRENT_LINE, WINDOW
     if not _check_current_file():
         return
-    with open(str(CURRENT_FILE)) as file:
+    with safe_open(str(CURRENT_FILE), 'r') as file:
         total_lines = max(1, sum(1 for _ in file))
     CURRENT_LINE = _clamp(CURRENT_LINE - WINDOW, 1, total_lines)
     output = _cur_file_header(CURRENT_FILE, total_lines)
@@ -310,7 +311,7 @@ def search_dir(search_term: str, dir_path: str = './') -> None:
             if file.startswith('.'):
                 continue
             file_path = os.path.join(root, file)
-            with open(file_path, 'r', errors='ignore') as f:
+            with safe_open(file_path, 'r', errors='ignore') as f:
                 for line_num, line in enumerate(f, 1):
                     if search_term in line:
                         matches.append((file_path, line_num, line.strip()))
@@ -352,7 +353,7 @@ def search_file(search_term: str, file_path: str | None = None) -> None:
         return
 
     matches = []
-    with open(file_path) as file:
+    with safe_open(file_path, 'r') as file:
         for i, line in enumerate(file, 1):
             if search_term in line:
                 matches.append((i, line.strip()))

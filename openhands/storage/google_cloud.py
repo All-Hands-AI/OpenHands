@@ -7,6 +7,7 @@ from google.cloud.storage.bucket import Bucket
 from google.cloud.storage.client import Client
 
 from openhands.storage.files import FileStore
+from openhands.utils.encoding import safe_open
 
 
 class GoogleCloudFileStore(FileStore):
@@ -30,7 +31,7 @@ class GoogleCloudFileStore(FileStore):
     def read(self, path: str) -> str:
         blob: Blob = self.bucket.blob(path)
         try:
-            with blob.open('r') as f:
+            with safe_open(blob.open('r'), 'r') as f:
                 return str(f.read())
         except NotFound as err:
             raise FileNotFoundError(err)

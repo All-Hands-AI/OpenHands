@@ -35,6 +35,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from uvicorn import run
 
 from openhands.core.config.mcp_config import MCPStdioServerConfig
+from openhands.utils.encoding import safe_open
 from openhands.core.exceptions import BrowserUnavailableException
 from openhands.core.logger import openhands_logger as logger
 from openhands.events.action import (
@@ -63,8 +64,7 @@ from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 
-# Import our custom MCP Proxy Manager
-from openhands.runtime.mcp.proxy import MCPProxyManager
+# Import our custom MCP Proxy Manager (delayed to avoid circular imports)
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.bash import BashSession
@@ -487,7 +487,7 @@ class ActionExecutor:
 
                 return FileReadObservation(path=filepath, content=encoded_video)
 
-            with open(filepath, 'r', encoding='utf-8') as file:
+            with safe_open(filepath, 'r') as file:
                 lines = read_lines(file.readlines(), action.start, action.end)
         except FileNotFoundError:
             return ErrorObservation(
@@ -542,15 +542,17 @@ class ActionExecutor:
 
         # Attempt to handle file permissions
         try:
-            if file_exists:
-                assert file_stat is not None
-                # restore the original file permissions if the file already exists
-                os.chmod(filepath, file_stat.st_mode)
-                os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
-            else:
-                # set the new file permissions if the file is new
-                os.chmod(filepath, 0o664)
-                os.chown(filepath, self.user_id, self.user_id)
+            # Only set permissions and ownership on Unix-like systems
+            if hasattr(os, 'chmod') and hasattr(os, 'chown'):
+                if file_exists:
+                    assert file_stat is not None
+                    # restore the original file permissions if the file already exists
+                    os.chmod(filepath, file_stat.st_mode)
+                    os.chown(filepath, file_stat.st_uid, file_stat.st_gid)
+                else:
+                    # set the new file permissions if the file is new
+                    os.chmod(filepath, 0o664)
+                    os.chown(filepath, self.user_id, self.user_id)
         except PermissionError as e:
             return ErrorObservation(
                 f'File {filepath} written, but failed to change ownership and permissions: {e}'
@@ -687,7 +689,7 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
-    mcp_proxy_manager: MCPProxyManager | None = None
+    mcp_proxy_manager = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -713,20 +715,31 @@ if __name__ == '__main__':
             mcp_proxy_manager = None
         else:
             logger.info('Initializing MCP Proxy Manager...')
-            # Create a MCP Proxy Manager
-            mcp_proxy_manager = MCPProxyManager(
-                auth_enabled=bool(SESSION_API_KEY),
-                api_key=SESSION_API_KEY,
-                logger_level=logger.getEffectiveLevel(),
-            )
-            mcp_proxy_manager.initialize()
-            # Mount the proxy to the app
-            allowed_origins = ['*']
+            # Create a MCP Proxy Manager (delayed import to avoid circular imports)
             try:
-                await mcp_proxy_manager.mount_to_app(app, allowed_origins)
-            except Exception as e:
-                logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
-                raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
+                from openhands.runtime.mcp.proxy import MCPProxyManager
+                if MCPProxyManager is None:
+                    logger.info('MCPProxyManager is disabled on this platform')
+                    mcp_proxy_manager = None
+                else:
+                    mcp_proxy_manager = MCPProxyManager(
+                        auth_enabled=bool(SESSION_API_KEY),
+                        api_key=SESSION_API_KEY,
+                        logger_level=logger.getEffectiveLevel(),
+                    )
+            except ImportError as e:
+                logger.error(f'Failed to import MCPProxyManager: {e}')
+                mcp_proxy_manager = None
+            
+            if mcp_proxy_manager is not None:
+                mcp_proxy_manager.initialize()
+                # Mount the proxy to the app
+                allowed_origins = ['*']
+                try:
+                    await mcp_proxy_manager.mount_to_app(app, allowed_origins)
+                except Exception as e:
+                    logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
+                    raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
 
         yield
 

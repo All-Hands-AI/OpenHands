@@ -3,6 +3,7 @@ import shutil
 
 from openhands.core.logger import openhands_logger as logger
 from openhands.storage.files import FileStore
+from openhands.utils.encoding import safe_read, safe_write, safe_open
 
 
 class LocalFileStore(FileStore):
@@ -21,15 +22,17 @@ class LocalFileStore(FileStore):
 
     def write(self, path: str, contents: str | bytes) -> None:
         full_path = self.get_full_path(path)
+        # Ensure parent directory exists
         os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        mode = 'w' if isinstance(contents, str) else 'wb'
-        with open(full_path, mode) as f:
-            f.write(contents)
+        if isinstance(contents, str):
+            safe_write(full_path, contents)
+        else:
+            with safe_open(full_path, 'wb') as f:
+                f.write(contents)
 
     def read(self, path: str) -> str:
         full_path = self.get_full_path(path)
-        with open(full_path, 'r') as f:
-            return f.read()
+        return safe_read(full_path)
 
     def list(self, path: str) -> list[str]:
         full_path = self.get_full_path(path)

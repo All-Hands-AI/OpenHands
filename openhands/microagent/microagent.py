@@ -12,6 +12,7 @@ from openhands.core.exceptions import (
 )
 from openhands.core.logger import openhands_logger as logger
 from openhands.microagent.types import InputMetadata, MicroagentMetadata, MicroagentType
+from openhands.utils.encoding import safe_open
 
 
 class BaseMicroagent(BaseModel):
@@ -72,7 +73,7 @@ class BaseMicroagent(BaseModel):
 
         # Only load directly from path if file_content is not provided
         if file_content is None:
-            with open(path) as f:
+            with safe_open(path, 'r') as f:
                 file_content = f.read()
 
         # Legacy repo instructions are stored in .openhands_instructions
