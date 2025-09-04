@@ -10,22 +10,6 @@ readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "OpenHands" }]
 requires-python = ">=3.12,<3.14"
-
-[project.urls]
-Repository = "https://github.com/All-Hands-AI/OpenHands"
-
-[project.scripts]
-openhands = "openhands.cli.entry:main"
-
-[project.optional-dependencies]
-third_party_runtimes = [
-  "e2b>=1.0.5,<1.8.0",
-  "modal>=0.66.26,<1.2.0",
-  "runloop-api-client==0.50.0",
-  "daytona==0.24.2",
-]
-
-[project]
 dependencies = [
   "litellm>=1.74.3,!=1.64.4,!=1.67.*",
   "openai==1.99.9",
@@ -91,6 +75,21 @@ dependencies = [
   "jupyter_kernel_gateway",
   "httpx-aiohttp>=0.1.8,<0.2.0",
 ]
+
+[project.urls]
+Repository = "https://github.com/All-Hands-AI/OpenHands"
+
+[project.scripts]
+openhands = "openhands.cli.entry:main"
+
+[project.optional-dependencies]
+third_party_runtimes = [
+  "e2b>=1.0.5,<1.8.0",
+  "modal>=0.66.26,<1.2.0",
+  "runloop-api-client==0.50.0",
+  "daytona==0.24.2",
+]
+
 
 [dependency-groups]
 dev = [
