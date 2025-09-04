@@ -6,7 +6,7 @@ Example usage:
 export ALLHANDS_API_KEY="YOUR_API_KEY"
 export RUNTIME=remote
 export SANDBOX_REMOTE_RUNTIME_API_URL="https://runtime.staging.all-hands.dev"
-poetry run pytest -vvxss tests/runtime/test_stress_remote_runtime.py
+uv run pytest -vvxss tests/runtime/test_stress_remote_runtime.py
 ```
 
 """
