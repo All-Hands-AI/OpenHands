@@ -5,8 +5,7 @@
 > [!WARNING]
 > This is a work in progress and may contain bugs, incomplete features, or breaking changes.
 
-This directory contains the enterprise server used by [OpenHands Cloud](https://github.com/All-Hands-AI/OpenHands-Cloud/), which is also used to drive
-the official, public version of OpenHands Cloud at
+This directory contains the enterprise server used by [OpenHands Cloud](https://github.com/All-Hands-AI/OpenHands-Cloud/). The official, public version of OpenHands Cloud is available at
 [app.all-hands.dev](https://app.all-hands.dev).
 
 You may also want to check out the MIT-licensed [OpenHands](https://github.com/All-Hands-AI/OpenHands)
