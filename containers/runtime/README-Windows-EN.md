@@ -82,14 +82,14 @@ $env:RUNTIME = "windows-docker"
 $env:SANDBOX_RUNTIME_CONTAINER_IMAGE = "openhands-windows-runtime:latest"
 ```
 
-### 4. Start OpenHands
+### 5. Start OpenHands
 
 ```powershell
 # Start OpenHands service
 poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
 ```
 
-### 5. Access Application
+### 6. Access Application
 
 Open your browser and navigate to: `http://localhost:3000`
 

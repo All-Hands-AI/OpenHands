@@ -82,14 +82,14 @@ $env:RUNTIME = "windows-docker"
 $env:SANDBOX_RUNTIME_CONTAINER_IMAGE = "openhands-windows-runtime:latest"
 ```
 
-### 4. 启动OpenHands
+### 5. 启动OpenHands
 
 ```powershell
 # 启动OpenHands服务
 poetry run uvicorn openhands.server.listen:app --host 0.0.0.0 --port 3000 --reload --reload-exclude "./workspace"
 ```
 
-### 5. 访问应用
+### 6. 访问应用
 
 打开浏览器访问：`http://localhost:3000`
 

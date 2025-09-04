@@ -1,8 +1,8 @@
 """
-OpenHands 编码配置
+OpenHands encoding configuration.
 
-这个模块集中管理 OpenHands 项目中的所有编码相关配置，
-确保跨平台兼容性。
+This module centralizes all encoding‑related configuration used in OpenHands
+to ensure cross‑platform compatibility.
 """
 
 import os
@@ -11,45 +11,45 @@ from typing import List
 
 
 class EncodingConfig:
-    """编码配置类"""
+    """Encoding configuration container."""
     
-    # 默认编码
+    # Default encoding
     DEFAULT_ENCODING = 'utf-8'
     
-    # 回退编码列表（按优先级排序）
+    # Fallback encodings in priority order
     FALLBACK_ENCODINGS = [
         'utf-8-sig',  # UTF-8 with BOM
-        'latin-1',    # ISO-8859-1, 可以解码任何字节序列
+        'latin-1',    # ISO-8859-1; can decode any byte sequence
         'cp1252',     # Windows-1252
-        'gbk',        # 中文编码
-        'big5',       # 繁体中文编码
+        'gbk',        # Simplified Chinese
+        'big5',       # Traditional Chinese
     ]
     
-    # 错误处理方式
-    ERROR_HANDLING = 'replace'  # 使用替换字符
+    # Error handling strategy
+    ERROR_HANDLING = 'replace'  # use replacement characters
     
-    # 平台特定配置
+    # Platform-specific preferences
     WINDOWS_ENCODINGS = ['cp1252', 'gbk', 'big5']
     UNIX_ENCODINGS = ['utf-8', 'latin-1']
     
     @classmethod
     def get_system_encoding(cls) -> str:
-        """获取系统默认编码"""
+        """Return the system default encoding."""
         return sys.getdefaultencoding()
     
     @classmethod
     def get_preferred_encoding(cls) -> str:
-        """获取首选编码"""
+        """Return the preferred encoding."""
         return cls.DEFAULT_ENCODING
     
     @classmethod
     def get_fallback_encodings(cls) -> List[str]:
-        """获取回退编码列表"""
+        """Return a copy of fallback encodings."""
         return cls.FALLBACK_ENCODINGS.copy()
     
     @classmethod
     def get_platform_encodings(cls) -> List[str]:
-        """获取平台特定的编码列表"""
+        """Return platform‑specific preferred encodings."""
         if sys.platform == 'win32':
             return cls.WINDOWS_ENCODINGS.copy()
         else:
@@ -57,14 +57,14 @@ class EncodingConfig:
     
     @classmethod
     def get_all_encodings(cls) -> List[str]:
-        """获取所有可能的编码列表"""
+        """Return all encodings considered by the system."""
         encodings = [cls.DEFAULT_ENCODING]
         encodings.extend(cls.get_fallback_encodings())
         return encodings
     
     @classmethod
     def is_encoding_supported(cls, encoding: str) -> bool:
-        """检查编码是否受支持"""
+        """Check whether a given encoding is supported."""
         try:
             'test'.encode(encoding)
             return True
@@ -72,26 +72,26 @@ class EncodingConfig:
             return False
 
 
-# 全局配置实例
+# Global configuration instance
 encoding_config = EncodingConfig()
 
 
-# 便捷函数
+# Convenience helpers
 def get_default_encoding() -> str:
-    """获取默认编码"""
+    """Return the default encoding."""
     return encoding_config.get_preferred_encoding()
 
 
 def get_fallback_encodings() -> List[str]:
-    """获取回退编码列表"""
+    """Return fallback encodings."""
     return encoding_config.get_fallback_encodings()
 
 
 def get_all_encodings() -> List[str]:
-    """获取所有编码列表"""
+    """Return the list of all encodings."""
     return encoding_config.get_all_encodings()
 
 
 def is_encoding_supported(encoding: str) -> bool:
-    """检查编码是否受支持"""
+    """Check whether an encoding is supported."""
     return encoding_config.is_encoding_supported(encoding)

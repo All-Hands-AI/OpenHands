@@ -1,116 +1,112 @@
-# 编码迁移指南
+# Encoding Migration Guide
 
-这个指南帮助开发者将现有的文件操作代码迁移到统一的编码系统。
+This guide helps developers migrate existing file I/O code to the unified encoding utilities.
 
-## 快速迁移
+## Quick Migration
 
-### 1. 导入统一编码工具
+### 1. Import the unified encoding helpers
 
 ```python
 from openhands.utils.encoding import safe_read, safe_write, safe_open
 ```
 
-### 2. 替换现有的文件操作
+### 2. Replace existing file operations
 
-#### 读取文件
+#### Read text files
 ```python
-# 旧代码
+# Old
 with open(file_path, 'r') as f:
     content = f.read()
 
-# 新代码
+# New
 content = safe_read(file_path)
 ```
 
-#### 写入文件
+#### Write text files
 ```python
-# 旧代码
+# Old
 with open(file_path, 'w', encoding='utf-8') as f:
     f.write(content)
 
-# 新代码
+# New
 safe_write(file_path, content)
 ```
 
-#### 打开文件
+#### Open files
 ```python
-# 旧代码
+# Old
 with open(file_path, 'r', encoding='utf-8') as f:
-    # 处理文件
+    # process file
 
-# 新代码
+# New
 with safe_open(file_path, 'r') as f:
-    # 处理文件
+    # process file
 ```
 
-## 高级用法
+## Advanced Usage
 
-### 1. 自定义编码
+### 1. Custom encodings
 ```python
 from openhands.utils.encoding import open_text_file, read_text_file
 
-# 指定特定编码
+# Specify an explicit encoding
 with open_text_file(file_path, 'r', encoding='gbk') as f:
     content = f.read()
 
-# 使用自定义回退编码
+# Provide custom fallback encodings
 content = read_text_file(file_path, fallback_encodings=['utf-8', 'latin-1'])
 ```
 
-### 2. 配置管理
+### 2. Configuration management
 ```python
 from openhands.core.encoding_config import encoding_config
 
-# 获取当前配置
+# Read current config
 default_encoding = encoding_config.get_preferred_encoding()
 fallback_encodings = encoding_config.get_fallback_encodings()
 
-# 检查编码支持
+# Check encoding support
 if encoding_config.is_encoding_supported('gbk'):
-    # 使用 GBK 编码
+    # use GBK if needed
     pass
 ```
 
-## 迁移检查清单
+## Migration Checklist
 
-- [ ] 导入统一编码工具
-- [ ] 替换所有 `open()` 调用
-- [ ] 移除硬编码的编码参数
-- [ ] 测试跨平台兼容性
-- [ ] 更新文档和注释
+- [ ] Import the unified encoding helpers
+- [ ] Replace all direct `open()` calls
+- [ ] Remove hard-coded encoding arguments
+- [ ] Test cross-platform (Windows/Linux/macOS)
+- [ ] Update docs and comments
 
-## 常见问题
+## FAQ
 
-### Q: 为什么要统一编码配置？
-A: 统一编码配置可以：
-- 确保跨平台兼容性
-- 简化代码维护
-- 提供一致的错误处理
-- 支持多种编码的自动检测
+### Q: Why unify encoding configuration?
+A: To ensure cross-platform compatibility, simplify maintenance, provide consistent error handling, and support multiple fallback encodings.
 
-### Q: 如何处理特殊编码的文件？
-A: 使用 `read_text_file()` 函数，它会自动尝试多种编码：
+### Q: How to handle files with special encodings?
+A: Use `read_text_file()`, which tries multiple encodings automatically:
 ```python
 from openhands.utils.encoding import read_text_file
 
-# 自动尝试多种编码
+# Try multiple encodings automatically
 content = read_text_file(file_path)
 ```
 
-### Q: 如何添加新的编码支持？
-A: 修改 `encoding_config.py` 中的 `FALLBACK_ENCODINGS` 列表：
+### Q: How to add support for a new encoding?
+A: Modify the `FALLBACK_ENCODINGS` list in `encoding_config.py`:
 ```python
 FALLBACK_ENCODINGS = [
     'utf-8-sig',
     'latin-1',
     'cp1252',
     'gbk',
-    'your-new-encoding',  # 添加新编码
+    'your-new-encoding',  # add new encoding here
 ]
 ```
 
-## 性能考虑
+## Performance Notes
 
-- `safe_read()` 和 `safe_write()` 函数已经优化，性能影响最小
-- 编码检测只在第一次失败时进行
-- 二进制文件操作不受影响
+- `safe_read()` and `safe_write()` are optimized; overhead is minimal.
+- Encoding detection is only attempted after the first failure.
+- Binary file operations are unaffected.

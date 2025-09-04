@@ -1,5 +1,5 @@
 # build-windows-runtime.ps1
-# 构建OpenHands Windows Runtime Docker镜像的脚本
+# Script to build the OpenHands Windows Runtime Docker image
 
 param(
     [string]$ImageName = "openhands-windows-runtime",
@@ -10,7 +10,7 @@ param(
 
 Write-Host "Building OpenHands Windows Runtime Docker image..." -ForegroundColor Green
 
-# 检查Docker是否运行
+# Check whether Docker is running
 try {
     docker version | Out-Null
     if ($LASTEXITCODE -ne 0) {
@@ -21,13 +21,13 @@ try {
     exit 1
 }
 
-# 检查是否在正确的目录
+# Validate script is run from the correct directory
 if (-not (Test-Path "Dockerfile.windows")) {
     Write-Error "Dockerfile.windows not found. Please run this script from the OpenHands/containers/runtime/ directory."
     exit 1
 }
 
-# 检查是否在OpenHands项目根目录
+# Ensure we found the OpenHands project root
 $openhandsRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 if (-not (Test-Path (Join-Path $openhandsRoot "pyproject.toml"))) {
     Write-Error "OpenHands project root not found. Please ensure you're running this from the correct directory."
@@ -36,7 +36,7 @@ if (-not (Test-Path (Join-Path $openhandsRoot "pyproject.toml"))) {
 
 Write-Host "OpenHands project root: $openhandsRoot" -ForegroundColor Yellow
 
-# 构建参数
+# Build arguments
 $buildArgs = @(
     "build",
     "-f", "Dockerfile.windows",
@@ -47,12 +47,12 @@ if ($NoCache) {
     $buildArgs += "--no-cache"
 }
 
-# 设置构建上下文为OpenHands项目根目录
+# Set build context to OpenHands project root
 $buildArgs += $openhandsRoot
 
 Write-Host "Building with command: docker $($buildArgs -join ' ')" -ForegroundColor Yellow
 
-# 执行构建
+# Execute build
 try {
     & docker $buildArgs
     if ($LASTEXITCODE -eq 0) {
