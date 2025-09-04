@@ -154,7 +154,7 @@
                 "pages": [
                   "usage/architecture/backend",
                   "usage/architecture/runtime",
-                  "usage/architecture/proposal_auth_system",
+                  "usage/architecture/auth_system",
                   "usage/architecture/auth_findings"
                 ]
               },
