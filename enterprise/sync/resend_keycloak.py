@@ -31,6 +31,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 import resend
+from keycloak.exceptions import KeycloakError
 from resend.exceptions import ResendError
 from server.auth.token_manager import get_keycloak_admin
 from tenacity import (
@@ -40,7 +41,6 @@ from tenacity import (
     wait_exponential,
 )
 
-from keycloak.exceptions import KeycloakError
 from openhands.core.logger import openhands_logger as logger
 
 # Get Keycloak configuration from environment variables

@@ -1,3 +1,5 @@
+from keycloak.keycloak_admin import KeycloakAdmin
+from keycloak.keycloak_openid import KeycloakOpenID
 from server.auth.constants import (
     KEYCLOAK_ADMIN_PASSWORD,
     KEYCLOAK_CLIENT_ID,
@@ -8,9 +10,6 @@ from server.auth.constants import (
     KEYCLOAK_SERVER_URL_EXT,
 )
 from server.logger import logger
-
-from keycloak.keycloak_admin import KeycloakAdmin
-from keycloak.keycloak_openid import KeycloakOpenID
 
 logger.debug(
     f'KEYCLOAK_SERVER_URL:{KEYCLOAK_SERVER_URL}, KEYCLOAK_SERVER_URL_EXT:{KEYCLOAK_SERVER_URL_EXT}, KEYCLOAK_PROVIDER_NAME:{KEYCLOAK_PROVIDER_NAME}, KEYCLOAK_CLIENT_ID:{KEYCLOAK_CLIENT_ID}'
