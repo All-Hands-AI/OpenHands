@@ -14,9 +14,13 @@ poetry install --with evaluation
 
 ## Setup WebArena Environment
 
-WebArena requires you to set up websites containing pre-populated content that is accessible via URL to the machine running the OpenHands agents.
-Follow [this document](https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md) to set up your own WebArena environment through local servers or AWS EC2 instances.
-Take note of the base URL (`$WEBARENA_BASE_URL`) of the machine where the environment is installed.
+WebArena requires access to websites containing pre-populated content. You can either:
+
+1. **Use an existing WebArena environment** (recommended for evaluation): Set the `WEBARENA_BASE_URL` environment variable to point to an existing WebArena server.
+
+2. **Set up your own environment**: Follow [this document](https://github.com/web-arena-x/webarena/blob/main/environment_docker/README.md) to set up your own WebArena environment through local servers or AWS EC2 instances.
+
+The WebArena evaluation package is already installed with the evaluation dependencies, so you don't need to clone the WebArena repository separately.
 
 ## Test if your environment works
 
