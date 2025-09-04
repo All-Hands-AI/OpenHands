@@ -22,7 +22,9 @@ vi.mock("#/hooks/use-runtime-is-ready", () => ({
 
 vi.mock("#/api/open-hands", () => ({
   default: {
-    getWebHosts: vi.fn().mockResolvedValue(["http://localhost:3000", "http://localhost:3001"]),
+    getWebHosts: vi
+      .fn()
+      .mockResolvedValue(["http://localhost:3000", "http://localhost:3001"]),
   },
 }));
 
@@ -51,7 +53,7 @@ describe("useActiveHost", () => {
         },
       },
     });
-    
+
     // Mock useQuery to return hosts data
     const { useQuery, useQueries } = await import("@tanstack/react-query");
     vi.mocked(useQuery).mockReturnValue({
@@ -59,7 +61,7 @@ describe("useActiveHost", () => {
       isLoading: false,
       error: null,
     } as any);
-    
+
     // Mock useQueries to return empty array of results
     vi.mocked(useQueries).mockReturnValue([]);
   });
@@ -69,25 +71,22 @@ describe("useActiveHost", () => {
   });
 
   const wrapper = ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
   it("should configure refetchInterval for host availability queries", async () => {
     // Import the hook after mocks are set up
     const { useActiveHost } = await import("#/hooks/query/use-active-host");
     const { useQueries } = await import("@tanstack/react-query");
-    
+
     renderHook(() => useActiveHost(), { wrapper });
 
     // Check that useQueries was called
     expect(useQueries).toHaveBeenCalled();
-    
+
     // Get the queries configuration passed to useQueries
     const queriesConfig = vi.mocked(useQueries).mock.calls[0][0];
-    
-    
+
     // Verify that the queries configuration includes refetchInterval
     expect(queriesConfig).toEqual({
       queries: expect.arrayContaining([
@@ -102,21 +101,21 @@ describe("useActiveHost", () => {
     // Import the hook after mocks are set up
     const { useActiveHost } = await import("#/hooks/query/use-active-host");
     const { useQueries } = await import("@tanstack/react-query");
-    
+
     renderHook(() => useActiveHost(), { wrapper });
 
     // Check that useQueries was called
     expect(useQueries).toHaveBeenCalled();
-    
+
     // Get the queries configuration passed to useQueries
     const queriesConfig = vi.mocked(useQueries).mock.calls[0][0];
-    
+
     // This test will fail if refetchInterval is commented out in the hook
     // because the queries won't have the refetchInterval property
-    const hasRefetchInterval = (queriesConfig as any).queries.some((query: any) => 
-      query.refetchInterval === 3000
+    const hasRefetchInterval = (queriesConfig as any).queries.some(
+      (query: any) => query.refetchInterval === 3000,
     );
-    
+
     expect(hasRefetchInterval).toBe(true);
   });
 });
