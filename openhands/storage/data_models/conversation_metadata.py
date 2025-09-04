@@ -35,3 +35,5 @@ class ConversationMetadata:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     total_tokens: int = 0
+    # Reference to new conversation when this one is reset
+    replaced_by_conversation_id: str | None = None

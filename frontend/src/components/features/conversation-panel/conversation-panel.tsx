@@ -216,6 +216,7 @@ export function ConversationPanel({ onClose }: ConversationPanelProps) {
               onContextMenuToggle={(isOpen) =>
                 setOpenContextMenuId(isOpen ? project.conversation_id : null)
               }
+              replacedByConversationId={project.replaced_by_conversation_id}
             />
           )}
         </NavLink>

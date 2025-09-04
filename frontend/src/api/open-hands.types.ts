@@ -104,6 +104,7 @@ export interface Conversation {
   url: string | null;
   session_api_key: string | null;
   pr_number?: number[] | null;
+  replaced_by_conversation_id?: string | null;
 }
 
 export interface ResultSet<T> {

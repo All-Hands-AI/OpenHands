@@ -483,6 +483,7 @@ async def _get_conversation_info(
             url=agent_loop_info.url if agent_loop_info else None,
             session_api_key=getattr(agent_loop_info, 'session_api_key', None),
             pr_number=conversation.pr_number,
+            replaced_by_conversation_id=conversation.replaced_by_conversation_id,
         )
     except Exception as e:
         logger.error(
@@ -649,7 +650,7 @@ async def reset_conversation(
             current_metadata=current_metadata
         )
         
-        container_reused = await rename_container(conversation_id, new_conversation_id)
+        container_was_reused = await rename_container(conversation_id, new_conversation_id)
 
         if reset_request.delete_old_conversation:
             try:
@@ -661,23 +662,23 @@ async def reset_conversation(
             except Exception as e:
                 logger.warning(f"Error deleting old conversation: {str(e)}")
         else:
-            # Update old conversation title to add [OLD] suffix since it won't be deleted
+            # Update old conversation to mark it as replaced
             try:
                 old_metadata = await conversation_store.get_metadata(conversation_id)
-                if old_metadata and old_metadata.title and not old_metadata.title.endswith('[OLD]'):
-                    old_metadata.title = f"{old_metadata.title} [OLD]"
+                if old_metadata:
+                    old_metadata.replaced_by_conversation_id = new_conversation_id
                     await conversation_store.save_metadata(old_metadata)
-                    logger.info(f'Updated old conversation title: {conversation_id}')
+                    logger.info(f'Updated old conversation with replacement reference: {conversation_id} -> {new_conversation_id}')
             except FileNotFoundError:
                 # Conversation doesn't exist, skip update
-                logger.info(f"Conversation {conversation_id} not found, skipping title update")
+                logger.info(f"Old conversation {conversation_id} not found, skipping update")
             except Exception as e:
                 logger.warning(f'Error updating old conversation title: {str(e)}')
         
         return ConversationResponse(
             status='ok',
             conversation_id=new_conversation_id,
-            message=f'Conversation reset successfully{" with container reuse" if container_reused else ""}',
+            message=f'Conversation reset successfully{" with container reuse" if container_was_reused else ""}',
         )
     except Exception as e:
         logger.error(
