@@ -67,6 +67,7 @@ export function ConversationCardContextMenu({
       testId="context-menu"
       position={position}
       alignment="right"
+      className="mt-0"
     >
       {generateSection([
         onEdit && (
