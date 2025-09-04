@@ -8,7 +8,7 @@ import { useSettings } from "#/hooks/query/use-settings";
 import { hasAdvancedSettingsSet } from "#/utils/has-advanced-settings-set";
 import { useSaveSettings } from "#/hooks/mutation/use-save-settings";
 import { SettingsSwitch } from "#/components/features/settings/settings-switch";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 import QuestionCircleIcon from "#/icons/question-circle.svg?react";
 import { I18nKey } from "#/i18n/declaration";
 import { SettingsInput } from "#/components/features/settings/settings-input";
@@ -635,13 +635,14 @@ function LlmSettingsScreen() {
             >
               {t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
             </SettingsSwitch>
-            <TooltipButton
-              tooltip={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
+            <UnifiedButton
+              withTooltip
+              tooltipContent={t(I18nKey.SETTINGS$CONFIRMATION_MODE_TOOLTIP)}
               ariaLabel={t(I18nKey.SETTINGS$CONFIRMATION_MODE)}
-              className="text-[#9099AC] hover:text-white cursor-help"
+              className="text-[#9099AC] hover:text-white cursor-help bg-transparent hover:bg-transparent"
             >
               <QuestionCircleIcon width={16} height={16} />
-            </TooltipButton>
+            </UnifiedButton>
           </div>
 
           {confirmationModeEnabled && (

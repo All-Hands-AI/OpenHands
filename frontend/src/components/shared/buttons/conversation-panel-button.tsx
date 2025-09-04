@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
 import ListIcon from "#/icons/list.svg?react";
-import { TooltipButton } from "./tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 import { cn } from "#/utils/utils";
 
 interface ConversationPanelButtonProps {
@@ -18,12 +18,21 @@ export function ConversationPanelButton({
   const { t } = useTranslation();
 
   return (
-    <TooltipButton
-      testId="toggle-conversation-panel"
-      tooltip={t(I18nKey.SIDEBAR$CONVERSATIONS)}
+    <UnifiedButton
+      as="NavLink"
+      to="#"
+      withTooltip
+      tooltipContent={t(I18nKey.SIDEBAR$CONVERSATIONS)}
       ariaLabel={t(I18nKey.SIDEBAR$CONVERSATIONS)}
       onClick={onClick}
+      testId="toggle-conversation-panel"
       disabled={disabled}
+      activeClassName="text-white"
+      inactiveClassName="text-[#B1B9D3]"
+      tooltipProps={{
+        placement: "right",
+      }}
+      className="bg-transparent hover:bg-transparent"
     >
       <ListIcon
         width={24}
@@ -34,6 +43,6 @@ export function ConversationPanelButton({
           disabled && "opacity-50",
         )}
       />
-    </TooltipButton>
+    </UnifiedButton>
   );
 }

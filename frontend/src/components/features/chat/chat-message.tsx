@@ -9,7 +9,7 @@ import { CopyToClipboardButton } from "#/components/shared/buttons/copy-to-clipb
 import { anchor } from "../markdown/anchor";
 import { OpenHandsSourceType } from "#/types/core/base";
 import { paragraph } from "../markdown/paragraph";
-import { TooltipButton } from "#/components/shared/buttons/tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 
 interface ChatMessageProps {
   type: OpenHandsSourceType;
@@ -70,11 +70,13 @@ export function ChatMessage({
       >
         {actions?.map((action, index) =>
           action.tooltip ? (
-            <TooltipButton
+            <UnifiedButton
               key={index}
-              tooltip={action.tooltip}
+              withTooltip
+              tooltipContent={action.tooltip}
               ariaLabel={action.tooltip}
-              placement="top"
+              tooltipProps={{ placement: "top" }}
+              className="bg-transparent hover:bg-transparent"
             >
               <button
                 type="button"
@@ -84,7 +86,7 @@ export function ChatMessage({
               >
                 {action.icon}
               </button>
-            </TooltipButton>
+            </UnifiedButton>
           ) : (
             <button
               key={index}

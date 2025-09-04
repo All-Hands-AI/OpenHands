@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { I18nKey } from "#/i18n/declaration";
-import { TooltipButton } from "./tooltip-button";
+import { UnifiedButton } from "#/ui/unified-button/unified-button";
 import RobotIcon from "#/icons/robot.svg?react";
 
 interface MicroagentManagementButtonProps {
@@ -15,14 +15,20 @@ export function MicroagentManagementButton({
   const microagentManagement = t(I18nKey.MICROAGENT_MANAGEMENT$TITLE);
 
   return (
-    <TooltipButton
-      tooltip={microagentManagement}
+    <UnifiedButton
+      as="NavLink"
+      to="/microagent-management"
+      withTooltip
+      tooltipContent={microagentManagement}
       ariaLabel={microagentManagement}
-      navLinkTo="/microagent-management"
       testId="microagent-management-button"
       disabled={disabled}
+      tooltipProps={{
+        placement: "right",
+      }}
+      className="bg-transparent hover:bg-transparent"
     >
       <RobotIcon width={28} height={28} />
-    </TooltipButton>
+    </UnifiedButton>
   );
 }
