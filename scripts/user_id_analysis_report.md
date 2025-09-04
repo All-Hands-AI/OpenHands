@@ -264,6 +264,32 @@ def get_slack_user_id(keycloak_user_id: str) -> str:
 - Add user_id validation for all integration endpoints
 - Standardize integration user mapping patterns
 
+### 5. Applying the "Linus Philosophy" to User ID Architecture 🐧
+
+*In OpenHands, our AI agents follow a "Linus prompt" that embodies Linus Torvalds' programming philosophy, including the principle: **"Good code has no special cases"***
+
+**Current User ID Special Cases Analysis:**
+- **Business Logic Branches**: Authentication flows, resource scoping, cross-platform linking
+- **Design Patches**: Multiple user_id types (`keycloak_user_id`, `slack_user_id`, etc.) handling platform-specific quirks
+- **Potential Simplification**: Consider a unified `UserIdentity` abstraction that encapsulates all platform-specific IDs
+
+**Linus-Inspired Refactoring Opportunities:**
+```python
+# Current: Multiple special cases
+if platform == "slack":
+    user_id = slack_user.slack_user_id
+elif platform == "jira":
+    user_id = jira_user.jira_user_id
+elif platform == "linear":
+    user_id = linear_user.linear_user_id
+
+# Linus-approved: No special cases
+user_identity = UserIdentity(keycloak_user_id)
+platform_id = user_identity.get_platform_id(platform)
+```
+
+*Even our AI agents would approve of cleaner user_id architecture! 🤖*
+
 ## Conclusion
 
 The user_id system in OpenHands Enterprise serves as the foundational element for:
