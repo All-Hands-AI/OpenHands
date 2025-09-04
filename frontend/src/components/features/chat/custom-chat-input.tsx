@@ -382,7 +382,7 @@ export function CustomChatInput({
         {/* Chat Input Component */}
         <div
           ref={chatContainerRef}
-          className="bg-[#25272D] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
+          className="bg-[#1E1E1E] box-border content-stretch flex flex-col items-start justify-center p-4 pt-3 relative rounded-[15px] w-full"
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
