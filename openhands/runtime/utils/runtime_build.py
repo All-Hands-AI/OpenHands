@@ -285,21 +285,20 @@ def prep_build_folder(
         Path(project_root, 'microagents'), Path(build_folder, 'code', 'microagents')
     )
 
-    # Copy pyproject.toml and lock file (prefer uv.lock, fallback to poetry.lock)
+    # Copy pyproject.toml and uv.lock if present
     # Always copy pyproject.toml
     src = Path(openhands_source_dir, 'pyproject.toml')
     if not src.exists():
         src = Path(project_root, 'pyproject.toml')
     shutil.copy2(src, Path(build_folder, 'code', 'pyproject.toml'))
 
-    # Prefer uv.lock; fallback to poetry.lock if available
-    for lock_name in ['uv.lock', 'poetry.lock']:
-        src = Path(openhands_source_dir, lock_name)
-        if not src.exists():
-            src = Path(project_root, lock_name)
-        if src.exists():
-            shutil.copy2(src, Path(build_folder, 'code', lock_name))
-            break
+    # Copy uv.lock if available
+    lock_name = 'uv.lock'
+    src = Path(openhands_source_dir, lock_name)
+    if not src.exists():
+        src = Path(project_root, lock_name)
+    if src.exists():
+        shutil.copy2(src, Path(build_folder, 'code', lock_name))
 
     # Create a Dockerfile and write it to build_folder
     dockerfile_content = _generate_dockerfile(
@@ -333,15 +332,14 @@ def get_hash_for_lock_files(base_image: str, enable_browser: bool = True) -> str
     # Only include enable_browser in hash when it's False for backward compatibility
     if not enable_browser:
         md5.update(str(enable_browser).encode())
-    # Hash pyproject.toml and a lock file (prefer uv.lock, fallback to poetry.lock)
+    # Hash pyproject.toml and uv.lock if present
     files_to_hash: list[str] = ['pyproject.toml']
-    for candidate in ['uv.lock', 'poetry.lock']:
-        src = Path(openhands_source_dir, candidate)
-        if not src.exists():
-            src = Path(openhands_source_dir.parent, candidate)
-        if src.exists():
-            files_to_hash.append(candidate)
-            break
+    candidate = 'uv.lock'
+    src = Path(openhands_source_dir, candidate)
+    if not src.exists():
+        src = Path(openhands_source_dir.parent, candidate)
+    if src.exists():
+        files_to_hash.append(candidate)
 
     for file in files_to_hash:
         src = Path(openhands_source_dir, file)
