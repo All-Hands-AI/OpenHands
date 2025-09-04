@@ -1,0 +1,80 @@
+# Enterprise Auth Findings (Multi-User)
+
+This document summarizes how the enterprise (SaaS) directory implements authentication and how it couples to core OpenHands.
+The goal is to inform an AuthSystem design that supports:
+- None (no auth, optional Git provider token) in OH
+- SU (single user, GitHub OAuth) in OH
+- MU (multi-user) implemented in a separate MU application without polluting OH core
+
+## What exists today in OH (openhands/)
+
+- Extension seam: `UserAuth` interface
+  - File: `openhands/server/user_auth/user_auth.py`
+  - Methods: `get_user_id`, `get_user_email`, `get_access_token`, `get_provider_tokens`, `get_user_settings_store`, `get_user_settings`, `get_secrets_store`, `get_user_secrets`, `get_auth_type`, and `@classmethod get_instance(request)`
+  - Default impl: `DefaultUserAuth` in `openhands/server/user_auth/default_user_auth.py` returns `None` for identity and reads tokens/settings from the file-based stores.
+- Config seam: `ServerConfig.user_auth_class`
+  - File: `openhands/server/config/server_config.py` (defaults to DefaultUserAuth)
+- Routes depend on user auth for tokens and user context
+  - Example: `openhands/server/routes/manage_conversations.py` depends on `get_user_id`, `get_provider_tokens`, `get_user_secrets`, `get_user_settings` and passes tokens into services and the runtime.
+- Provider token usage is threaded via `ProviderHandler(provider_tokens)`
+  - File: `openhands/integrations/provider.py`
+  - Knows about mapping of `ProviderType -> ProviderToken` and instantiates concrete Git services (GitHub/GitLab/Bitbucket). Also contains MU-specific logic to refresh tokens via a SaaS endpoint when available (see Coupling below).
+
+## What exists today in the MU application (enterprise/)
+
+- Enterprise overrides the auth class via its own `ServerConfig`
+  - File: `enterprise/server/config.py`, class `SaaSServerConfig` sets `user_auth_class = 'server.auth.saas_user_auth.SaasUserAuth'`.
+- `SaasUserAuth` (MU strategy)
+  - File: `enterprise/server/auth/saas_user_auth.py`
+  - Identity: derived from Keycloak (user id, email, email_verified)
+  - Auth types: `AuthType.COOKIE` and `AuthType.BEARER`
+  - Acquisition:
+    - Cookie: `keycloak_auth` secure cookie holds a signed blob containing access and refresh tokens. Managed by `SetAuthCookieMiddleware` and `/oauth/keycloak/callback`.
+    - Bearer: API key header for backend-to-backend calls (and MCP proxy) is supported. Validation via `ApiKeyStore`.
+  - Provider tokens:
+    - Stored as Keycloak offline tokens mapped to user id and identity provider (GitHub/GitLab/Bitbucket) in DB (`AuthTokens`).
+    - Resolved on demand using `TokenManager.get_idp_token()` with Keycloak access token; result is exposed as `ProviderToken` mapping.
+  - Rate limiting per user via Redis-backed `RateLimiter`.
+- Middleware: `SetAuthCookieMiddleware`
+  - File: `enterprise/server/middleware.py`
+  - Responsibilities: refresh cookie if backend refreshed tokens, enforce ToS acceptance and email verification for protected routes, schedule background GitLab sync after auth refresh.
+- OAuth routes and token management
+  - File: `enterprise/server/routes/auth.py`
+  - Keycloak callback sets the `keycloak_auth` cookie (signed with server JWT secret), stores offline token, and redirects to frontend. Also exposes `/api/refresh-tokens` that validates `X-Session-API-Key` and returns a fresh provider token when asked by a nested runtime.
+
+## Coupling points between OH and the MU application
+
+- `ProviderHandler` (OH) contains MU-aware logic today:
+  - It builds `REFRESH_TOKEN_URL` from `WEB_HOST` env var and calls enterprise `/api/refresh-tokens` when asked to "get_latest" tokens (see `_get_latest_provider_token`).
+  - This leaks MU details into OH and makes `ProviderHandler` carry token refresh responsibility.
+- Core routes in OH accept `provider_tokens` injected from `UserAuth` and thread them through various services and the runtime. This forces auth details (token shapes) into many method signatures and increases coupling.
+- Conversation managers (enterprise `docker_nested_conversation_manager.py`) set `X-Session-API-Key` and pass it into runtime layers so enterprise can later verify token refresh requests. The same header is also used as a stand-in for authentication by the MCP HTTP client when the Authorization header is unavailable.
+
+## Summary of behavior by mode
+
+- OH None (DefaultUserAuth)
+  - No user identity; tokens come from local secrets file; routes pass `provider_tokens` mapping; no cookie/bearer auth in OH core.
+- MU application (SaasUserAuth)
+  - Multi-tenant identity with Keycloak; cookies for browser flows; bearer for service flows; provider tokens are dynamically refreshed and may differ over time; middleware enforces ToS/email; an endpoint serves refresh for nested runtime.
+
+## Gaps and opportunities
+
+1. Token refresh responsibility belongs in an explicit TokenProvider boundary, not in `ProviderHandler`.
+2. Route signatures should not accept or pass `provider_tokens`. They should receive a `TokenProvider` dependency that hides the storage/refresh mechanism.
+3. SU (single user) GitHub OAuth does not exist in OH core. The strategy seam is already `UserAuth`; we can add an OH `SingleUserGithubOAuthAuth` using cookies but without any multi-tenant DB or Keycloak.
+4. Remove ad-hoc `user_id` threading inside internals by scoping storage and sessions through a boundary (e.g., `UserContext` or `StorageNamespace`). This aligns with issue #10751.
+
+## References (key files)
+
+- OH:
+  - `openhands/server/user_auth/user_auth.py`
+  - `openhands/server/user_auth/default_user_auth.py`
+  - `openhands/server/config/server_config.py`
+  - `openhands/server/routes/manage_conversations.py`
+  - `openhands/integrations/provider.py`
+- Enterprise:
+  - `enterprise/server/config.py` (sets MU auth strategy)
+  - `enterprise/server/auth/saas_user_auth.py`
+  - `enterprise/server/middleware.py`
+  - `enterprise/server/routes/auth.py`
+  - `enterprise/server/saas_nested_conversation_manager.py` and `docker_nested_conversation_manager.py` for session api key usage
