@@ -64,7 +64,8 @@ from openhands.runtime.browser import browse
 from openhands.runtime.browser.browser_env import BrowserEnv
 from openhands.runtime.file_viewer_server import start_file_viewer_server
 
-# Import our custom MCP Proxy Manager (delayed to avoid circular imports)
+# Import our custom MCP Proxy Manager
+from openhands.runtime.mcp.proxy import MCPProxyManager
 from openhands.runtime.plugins import ALL_PLUGINS, JupyterPlugin, Plugin, VSCodePlugin
 from openhands.runtime.utils import find_available_tcp_port
 from openhands.runtime.utils.bash import BashSession
@@ -689,7 +690,7 @@ if __name__ == '__main__':
             plugins_to_load.append(ALL_PLUGINS[plugin]())  # type: ignore
 
     client: ActionExecutor | None = None
-    mcp_proxy_manager = None
+    mcp_proxy_manager: MCPProxyManager | None = None
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -715,31 +716,20 @@ if __name__ == '__main__':
             mcp_proxy_manager = None
         else:
             logger.info('Initializing MCP Proxy Manager...')
-            # Create a MCP Proxy Manager (delayed import to avoid circular imports)
+            # Create a MCP Proxy Manager
+            mcp_proxy_manager = MCPProxyManager(
+                auth_enabled=bool(SESSION_API_KEY),
+                api_key=SESSION_API_KEY,
+                logger_level=logger.getEffectiveLevel(),
+            )
+            mcp_proxy_manager.initialize()
+            # Mount the proxy to the app
+            allowed_origins = ['*']
             try:
-                from openhands.runtime.mcp.proxy import MCPProxyManager
-                if MCPProxyManager is None:
-                    logger.info('MCPProxyManager is disabled on this platform')
-                    mcp_proxy_manager = None
-                else:
-                    mcp_proxy_manager = MCPProxyManager(
-                        auth_enabled=bool(SESSION_API_KEY),
-                        api_key=SESSION_API_KEY,
-                        logger_level=logger.getEffectiveLevel(),
-                    )
-            except ImportError as e:
-                logger.error(f'Failed to import MCPProxyManager: {e}')
-                mcp_proxy_manager = None
-            
-            if mcp_proxy_manager is not None:
-                mcp_proxy_manager.initialize()
-                # Mount the proxy to the app
-                allowed_origins = ['*']
-                try:
-                    await mcp_proxy_manager.mount_to_app(app, allowed_origins)
-                except Exception as e:
-                    logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
-                    raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
+                await mcp_proxy_manager.mount_to_app(app, allowed_origins)
+            except Exception as e:
+                logger.error(f'Error mounting MCP Proxy: {e}', exc_info=True)
+                raise RuntimeError(f'Cannot mount MCP Proxy: {e}')
 
         yield
 

@@ -20,11 +20,35 @@
 7. **Poetry** - Python包管理器
 8. **Git** - 用于克隆仓库
 
-## 快速开始
+## 运行OpenHands
 
-### 方法1：使用预构建镜像（推荐）
+### 1. 克隆和设置OpenHands
 
-你可以直接使用已经构建好的Windows runtime镜像：
+```powershell
+# 克隆包含Windows支持的仓库
+git clone https://github.com/All-Hands-AI/OpenHands.git
+cd OpenHands
+
+# 切换到Windows支持分支（如果使用分支）
+git checkout windows_runtime_docker
+
+# 安装Python依赖
+poetry install
+```
+
+### 2. 构建前端
+
+```powershell
+# 构建前端资源
+cd frontend
+npm install
+npm run build
+cd ..
+```
+
+### 3. 获取Windows Runtime镜像
+
+#### 方法1：使用预构建镜像（推荐）
 
 ```powershell
 # 拉取预构建镜像
@@ -34,46 +58,23 @@ docker pull shx815666/openhands-windows-runtime:latest
 docker tag shx815666/openhands-windows-runtime:latest openhands-windows-runtime:latest
 ```
 
-### 方法2：构建Windows Runtime镜像
+#### 方法2：构建Windows Runtime镜像
 
-#### 使用构建脚本（推荐）
+##### 使用构建脚本（推荐）
 
 ```powershell
 # 在OpenHands/containers/runtime/目录下运行
 .\build-windows-runtime.ps1
 ```
 
-#### 手动构建
+##### 手动构建
 
 ```powershell
 # 在OpenHands项目根目录下运行
 docker build -f containers/runtime/Dockerfile.windows -t openhands-windows-runtime:latest .
 ```
 
-## 运行OpenHands
-
-### 1. 克隆和设置OpenHands
-
-```powershell
-# 克隆仓库
-git clone https://github.com/All-Hands-AI/OpenHands.git
-cd OpenHands
-
-# 安装依赖
-poetry install
-```
-
-### 2. 构建前端
-
-```powershell
-# 构建前端文件
-cd frontend
-npm install
-npm run build
-cd ..
-```
-
-### 3. 设置环境变量
+### 4. 设置环境变量
 
 ```powershell
 # 设置Windows Docker runtime

@@ -20,46 +20,19 @@ This directory contains the OpenHands Windows container runtime implementation, 
 7. **Poetry** - Python package manager
 8. **Git** - For cloning repositories
 
-## Quick Start
-
-### Method 1: Using Pre-built Images (Recommended)
-
-You can directly use the pre-built Windows runtime image:
-
-```powershell
-# Pull pre-built image
-docker pull shx815666/openhands-windows-runtime:latest
-
-# Re-tag for local use
-docker tag shx815666/openhands-windows-runtime:latest openhands-windows-runtime:latest
-```
-
-### Method 2: Building Windows Runtime Image
-
-#### Using Build Script (Recommended)
-
-```powershell
-# Run in OpenHands/containers/runtime/ directory
-.\build-windows-runtime.ps1
-```
-
-#### Manual Build
-
-```powershell
-# Run in OpenHands project root directory
-docker build -f containers/runtime/Dockerfile.windows -t openhands-windows-runtime:latest .
-```
-
 ## Running OpenHands
 
 ### 1. Clone and Setup OpenHands
 
 ```powershell
-# Clone repository
+# Clone repository with Windows support
 git clone https://github.com/All-Hands-AI/OpenHands.git
 cd OpenHands
 
-# Install dependencies
+# Switch to Windows support branch (if using branch)
+git checkout windows_runtime_docker
+
+# Install Python dependencies
 poetry install
 ```
 
@@ -73,7 +46,35 @@ npm run build
 cd ..
 ```
 
-### 3. Set Environment Variables
+### 3. Get Windows Runtime Image
+
+#### Method 1: Using Pre-built Image (Recommended)
+
+```powershell
+# Pull pre-built image
+docker pull shx815666/openhands-windows-runtime:latest
+
+# Re-tag for local use
+docker tag shx815666/openhands-windows-runtime:latest openhands-windows-runtime:latest
+```
+
+#### Method 2: Building Windows Runtime Image
+
+##### Using Build Script (Recommended)
+
+```powershell
+# Run in OpenHands/containers/runtime/ directory
+.\build-windows-runtime.ps1
+```
+
+##### Manual Build
+
+```powershell
+# Run in OpenHands project root directory
+docker build -f containers/runtime/Dockerfile.windows -t openhands-windows-runtime:latest .
+```
+
+### 4. Set Environment Variables
 
 ```powershell
 # Set Windows Docker runtime
