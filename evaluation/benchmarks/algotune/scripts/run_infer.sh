@@ -20,7 +20,7 @@ if [ -z "$NUM_WORKERS" ]; then
 fi
 
 if [ -z "$COMMIT_HASH" ]; then
-  COMMIT_HASH=7a86402
+  COMMIT_HASH=0166df6
   echo "Number of workers not specified, use default $COMMIT_HASH"
 fi
 
@@ -36,8 +36,8 @@ if [ -z "$OPTIM_TASK" ]; then
 fi
 
 if [ -z "$MAX_ITER" ]; then
-  echo "MAX_ITER not specified, use default 10"
-  MAX_ITER=20
+  echo "MAX_ITER not specified, use default 500"
+  MAX_ITER=500
 fi
 
 checkout_eval_branch
