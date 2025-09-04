@@ -1,19 +1,19 @@
 # OpenHands AuthSystem Design - Executive Summary
 
-## 🎯 Goal
+## Goal
 Design a flexible authentication system for OpenHands that supports three strategies:
 - **None**: Current behavior (no auth, optional GitHub token)
 - **SU (Single User)**: GitHub OAuth for personal use
 - **MU (Multi User)**: Extension point for custom builds (not in base OH)
 
-## 🔍 Current Problems
+## Current Problems
 - 339+ `user_id` occurrences scattered across 68 files
 - No auth strategy abstraction
-- `provider_tokens` polluting route signatures
+- `provider_tokens` dependency injection complexity
 - No single-user GitHub OAuth support
 - Mixed auth/business logic concerns
 
-## 🏗️ Solution Architecture
+## Solution Architecture
 
 ### Core Components
 1. **AuthStrategy Interface** - Pluggable auth strategies
@@ -80,33 +80,27 @@ class StorageNamespace:
         return f'sessions/{sid}/'
 ```
 
-## 📊 Benefits
+## Architectural Benefits
 
-### 🧹 Code Cleanup
-- Removes 7 redundant `if user_id` guards
-- Eliminates `provider_tokens` from route signatures
-- Reduces method signature complexity
-- Centralizes storage path logic
+### Codebase Cleanup
+- Removes 7 redundant `if user_id` guards across the codebase
+- Eliminates `provider_tokens` dependency injection complexity
+- Reduces method signature complexity throughout the system
+- Centralizes storage path logic in dedicated abstractions
 
-### 🔒 Security Improvements
-- Tokens never exposed in route parameters
-- Centralized token management
-- Immutable user context
-- Clear auth boundaries
+### Extensibility
+- Strategy pattern enables custom build extension points
+- Token refresh/rotation patterns built-in
+- Multi-tenancy ready without core changes
+- Additional auth methods can be added without refactoring
 
-### 🚀 Developer Experience
-- Simple configuration switching
-- Clear separation of concerns
-- Consistent patterns
-- Easy testing
+### Code Organization
+- Clear separation of auth and business logic
+- Consistent patterns across all authentication modes
+- Centralized token and credential management
+- Immutable user context prevents state corruption
 
-### 🔮 Future-Proof
-- Custom build extension points
-- Token refresh/rotation ready
-- Multi-tenancy compatible
-- Additional auth methods
-
-## 🛠️ Implementation Plan
+## Implementation Plan
 
 ### Phase 1: Foundation
 - [ ] Auth strategy interfaces
@@ -132,7 +126,7 @@ class StorageNamespace:
 - [ ] Migrate event stores
 - [ ] Legacy cleanup
 
-## 🎨 Architecture Highlights
+## Architecture Highlights
 
 ### Strategy Pattern
 ```python
@@ -188,39 +182,29 @@ OH_GITHUB_CLIENT_SECRET=secret456
 # Requires GitHub OAuth, restricts to specific user
 ```
 
-## 🎯 Success Metrics
+## Implementation Readiness
 
-### Backward Compatibility ✅
+### Backward Compatibility
 - None strategy maintains exact current behavior
 - No breaking changes for existing users
-- Gradual migration path
+- Gradual migration path available
 
-### Code Quality ✅
-- Reduced complexity (339 → ~50 user_id references)
-- Clear abstractions
-- Testable components
-- Maintainable patterns
+### Code Quality Improvements
+- Reduces complexity from 339 to ~50 user_id references
+- Introduces clear abstractions and boundaries
+- Enables better testing and maintainability
 
-### Security ✅
-- No tokens in route parameters
-- Centralized credential management
-- Immutable user context
-- Clear auth boundaries
+### Extensibility Foundation
+- Custom builds can add authentication strategies
+- Token refresh/rotation patterns built-in
+- Multi-tenancy foundation without core changes
 
-### Extensibility ✅
-- custom builds can add custom strategies
-- Token refresh/rotation support
-- Additional auth methods ready
-- Multi-tenancy foundation
+## Summary
 
-## 🚀 Ready for Implementation
+This design provides a clean authentication architecture for OpenHands with three key outcomes:
 
-This design provides a solid foundation for OpenHands authentication that:
-- ✅ Maintains current simplicity
-- ✅ Enables personal GitHub integration
-- ✅ Provides custom build extension points
-- ✅ Cleans up the codebase significantly
-- ✅ Improves security posture
-- ✅ Simplifies future development
+1. **Maintains simplicity** - Current users see no changes
+2. **Enables extension** - Custom builds can add authentication features
+3. **Improves codebase** - Reduces scattered auth logic and complexity
 
-The architecture is well-defined, the migration path is clear, and the benefits are substantial. This is ready to move forward with implementation.
+The architecture is well-defined with a clear migration path.

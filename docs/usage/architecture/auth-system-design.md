@@ -32,7 +32,7 @@ From **Issue #10751** (user_id audit):
 - Clean up storage path helpers
 
 From **Issue #10730** (token provider):
-- Remove `provider_tokens` from route signatures
+- Remove `provider_tokens` dependency injection
 - Introduce `TokenProvider` boundary abstraction
 - Support backend-only credential resolution
 - Enable custom builds with token refresh/rotation patterns
@@ -508,7 +508,7 @@ OH_GITHUB_CLIENT_SECRET=your_client_secret
 
 ### 2. Reduced Complexity
 - Eliminates 7 redundant `if user_id` guards
-- Removes provider_tokens from route signatures
+- Removes provider_tokens dependency injection
 - Simplifies method signatures throughout codebase
 
 ### 3. Forward Compatibility
@@ -542,7 +542,7 @@ OH_GITHUB_CLIENT_SECRET=your_client_secret
 
 ### Phase 3: Route Migration
 1. Update FastAPI dependencies
-2. Remove provider_tokens from routes
+2. Remove provider_tokens dependency injection
 3. Update ProviderHandler integration
 4. Clean up redundant if-guards
 
